@@ -7,8 +7,9 @@ function ST = particleOrbits(pathToBField,ND,res,timeStepParams,tracerParams,xo,
 % The example below traces an alpha-particle in an analytical magnetic
 % field. The parameters of the magnetic field are hard-coded in the
 % functions 'analyticalB' and 'DiegosInvariant'.
-%
-% ST = particleOrbits('','2D',[],[1E6,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.04,85],true);
+% ST = particleOrbits('some_VMEC_file.dat','2D',[150,150],[1E4,1E-2,10],[2,7.2938E3],[6,0,1],[0.03,80]);
+% ST = particleOrbits('','2D',[],[1E4,1E-2,10],[2,7.2938E3],[6,0,1],[0.03,80]);
+% ST = particleOrbits('PADUA.dat','2D',[],[1E4,1E-2,10],[2,7.2938E3],[6,0,1],[0.03,80]);
 
 narginchk(7,8);
 
@@ -54,11 +55,11 @@ end
 % Initial position and velocity of tracer, in SI units
 ST.params.Xo = xo; % Initial position
 ST.params.vo_params = vo_params; % vo_params = [velocity magnitude, pitch angle]
-[ST.params.vo, ST.params.vpar, ST.params.vperp] = initializeVelocity(ST);
-% ST.params.vo = 1E6*[-0.036189197304708, 3.075808124547131, 8.451315543332191];
-% ST.params.vpar = -3.076026563028068E6;
-% ST.params.vperp = -8.451313523562223E6;
+% [ST.params.vo, ST.params.vpar, ST.params.vperp] = initializeVelocity(ST);
 
+ST.params.vo = 1E6*[-0.036189197304708, 3.075808124547131, 8.451315543332191];
+ST.params.vpar = -3.076026563028068E6;
+ST.params.vperp = -8.451313523562223E6;
 
 % Particle's parameters
 ST.params.q = tracerParams(1)*ST.params.qe; %alpha-particle
@@ -139,8 +140,6 @@ xlabel('R [m]','Interpreter','latex','FontSize',16)
 ylabel('Z [m]','Interpreter','latex','FontSize',16)
 title('Poincare plot','Interpreter','latex','FontSize',16)
 
-
-
 end
 
 function [b,a] = unitVectors(ST)
@@ -173,45 +172,61 @@ function B = loadMagneticField(ST)
 % All quantities in SI units
 B = struct;
 
-if isempty(ST.res) % SIESTA case (r,z, phi, br, bz, bphi) 
+if isempty(ST.res) % magnetic field at scattered positions
     
     data = load(ST.pathToBField);
     if strcmp(ST.ND,'2D')
         B.R = data(:,1);
-        B.Z = data(:,2);
-        B.phi = data(:,3);
+        B.phi = data(:,2);
+        B.Z = data(:,3);
         
-        B.BR = data(:,4);
-        B.BZ = data(:,5);
+        B.BR = data(:,5);
         B.Bphi = data(:,6);
+        B.BZ = data(:,7);
     elseif strcmp(ST.ND,'3D')
         B.R = data(:,1);
-        B.Z = data(:,2);
-        B.phi = data(:,3);
+        B.phi = data(:,2);
+        B.Z = data(:,3);
         
-        B.BR = data(:,4);
-        B.BZ = data(:,5);
+        B.BR = data(:,5);
         B.Bphi = data(:,6);
+        B.BZ = data(:,7);
     end
     
     B.B = sqrt(B.BR.^2 + B.BZ.^2 + B.Bphi.^2);
     
     B.Bo = mean(mean(mean(B.B)));
     
-    B.SI = calculatescatteredInterpolant(ST,B);
+    disp('NOTE: Magnetic field in non-uniform grid!')
     
-    disp('NOTE: Using a SIESTA magnetic field')
+    figure
+    subplot(1,3,1)
+    scatter3(B.R,B.Z,B.BR,'k.')
+    axis square
+    box on
+    title('$B^R$ [T]','Interpreter','latex','FontSize',16)
+    xlabel('R [m]','Interpreter','latex','FontSize',16)
+    ylabel('Z [m]','Interpreter','latex','FontSize',16)
     
-    [R,phi,Z] = ...
-        meshgrid(linspace(min(B.R),max(B.R),100),...
-        linspace(min(B.phi),max(B.phi),10),...
-        linspace(min(B.Z),max(B.Z),100));
+    subplot(1,3,2)
+    scatter3(B.R,B.Z,B.Bphi,'k.')
+    axis square
+    box on
+    title('$B^\phi$ [T]','Interpreter','latex','FontSize',16)
+    xlabel('R [m]','Interpreter','latex','FontSize',16)
+    ylabel('Z [m]','Interpreter','latex','FontSize',16)
     
-    error('SIESTA fields!')
+    subplot(1,3,3)
+    scatter3(B.R,B.Z,B.BZ,'k.')
+    axis square
+    box on
+    title('$B^Z$ [T]','Interpreter','latex','FontSize',16)
+    xlabel('R [m]','Interpreter','latex','FontSize',16)
+    ylabel('Z [m]','Interpreter','latex','FontSize',16)
     
+    B.SI = calculateChebyshevInterpolant(ST,B);
     
-    
-else % if isempty(ST.res)
+else % structured data for magnetic field
     
     if strcmp(ST.ND,'2D')
         data = load(ST.pathToBField);
@@ -267,20 +282,6 @@ else % if isempty(ST.res)
         % used in the normalization and calculation of the time step.
         %     B.Bo = max(max(max(B.B)));
         B.Bo = mean(mean(mean(B.B)));
-        
-        % geometry params
-        B.grid.R = B.R(1,:);
-        B.grid.Z = B.Z(:,1);
-        
-        B.grid.Rmin = min(min(B.R));
-        B.grid.Rmax = max(max(B.R));
-        
-        B.grid.Zmin = min(min(B.Z));
-        B.grid.Zmax = max(max(B.Z));
-        
-        B.grid.dR = mean(diff(B.grid.R));
-        B.grid.dZ = mean(diff(B.grid.Z));
-        % geometry params
         
         sizegrid = 4;
         
@@ -414,11 +415,41 @@ else % if isempty(ST.res)
         error('Use 2D or 3D');
     end
     
-    B.SI = calculatescatteredInterpolant(ST,B);
+    B.SI = calculateChebyshevInterpolant(ST,B);
+%     B.SI = calculatescatteredInterpolant(ST,B);
     
 end % if isempty(ST.res)
 
 
+end
+
+function SI = calculateChebyshevInterpolant(ST,B)
+% Cylindrical coordinates
+% R = radius, phi = azimuthal angle, Z = z coordinate
+% calculate interpolant of the field B
+disp('Calculating chebfun2 interpolant...')
+SI = struct;
+
+if strcmp(ST.ND,'2D')
+    Rmin = min(min(B.R));
+    Rmax = max(max(B.R));
+    Zmin = min(min(B.Z));
+    Zmax = max(max(B.Z));
+    
+%     SI.BR = chebfun2(B.BR,[Rmin Rmax Zmin Zmax]);
+    SI.BR = chebfun2(B.BR,[Zmin Zmax Rmin Rmax]);
+    
+    SI.BZ = chebfun2(B.BZ,[Zmin Zmax Rmin Rmax]);
+    
+    SI.Bphi = chebfun2(B.Bphi,[Zmin Zmax Rmin Rmax]);
+    
+elseif strcmp(ST.ND,'3D')
+    SI = calculatescatteredInterpolant(ST,B);
+else
+    error('Please, use 2D or 3D.');
+end
+
+disp('chebfun2 interpolant: done!')
 end
 
 function SI = calculatescatteredInterpolant(ST,B)
@@ -444,8 +475,6 @@ if strcmp(ST.ND,'2D')
     DATA = reshape(B.Bphi,[numel(B.Bphi) 1]);
     SI.Bphi = scatteredInterpolant(R,Z,DATA);
     clear DATA
-    
-    SI.CELL = {SI.BR, SI.Bphi, SI.BZ};
     
 elseif strcmp(ST.ND,'3D')
     R = reshape(B.R,[numel(B.R) 1]);
@@ -476,8 +505,6 @@ elseif strcmp(ST.ND,'3D')
     SI.Bphi = scatteredInterpolant(R,Z,phi,DATA);
     clear DATA
     
-    SI.CELL = {SI.BR, SI.Bphi, SI.BZ};
-    
 else
     error('Use 2D or 3D');
 end
@@ -498,9 +525,15 @@ if strcmp(ST.ND,'2D')
     
     %     disp(['(R,phi,Z) = (' num2str(R) ',' num2str(phi) ',' num2str(Z) ')'])
     
-    BR = ST.B.SI.BR(R,Z);
-    Bphi = ST.B.SI.Bphi(R,Z);
-    BZ = ST.B.SI.BZ(R,Z);
+    if isa(ST.B.SI.BR,'scatteredInterpolant')
+        BR = ST.B.SI.BR(R,Z);
+        Bphi = ST.B.SI.Bphi(R,Z);
+        BZ = ST.B.SI.BZ(R,Z);
+    else
+        BR = ST.B.SI.BR(Z,R);
+        Bphi = ST.B.SI.Bphi(Z,R);
+        BZ = ST.B.SI.BZ(Z,R);
+    end
     
     Bx = BR*cos(phi) - Bphi*sin(phi);
     By = BR*sin(phi) + Bphi*cos(phi);

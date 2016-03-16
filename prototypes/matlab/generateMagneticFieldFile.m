@@ -1,37 +1,87 @@
-function GBF = generateMagneticFieldFile(pathToFile,res)
-narginchk(2,2)
+function GBF = generateMagneticFieldFile(pathToFile,spacing,NP)
+% Function to generate a table of values of the magnetic field components
+% in cylindrical coordinates (2D).
+% EXAMPLES: 
+% generateMagneticFieldFile('ANALYTIC2D.dat','equidistant',[150,150])
+% generateMagneticFieldFile('PADUA.dat','padua',150^2)
+% generateMagneticFieldFile('CHEBYSHEV.dat','chebyshev',[50,50])
 
-Nx = res(1);
-Nz = res(2);
+
+narginchk(3,3)
 
 B = analyticalB([],'initialize');
 
-xmin = (B.Ro - B.a) - 1;
-xmax = (B.Ro + B.a) + 1;
-zmin = - (B.a + 1);
-zmax = B.a + 1;
-x = linspace(xmin,xmax,Nx);
-z = linspace(zmin,zmax,Nz);
+Rmin = (B.Ro - B.a) - 1;
+Rmax = (B.Ro + B.a) + 1;
+Zmin = - (B.a + 1);
+Zmax = B.a + 1;
 
-numVals = Nx*Nz;
-data = zeros(1,7);
-
-fileID = fopen(pathToFile,'w');
-
-for ix=1:Nx
-    for iz=1:Nz
-        [data(5:7),data(1:3)] = analyticalB([x(ix),0,z(iz)]);
-        fprintf(fileID,'%3.7f\t %3.7f\t %3.7f\t %3.7f\t %3.7f\t %3.7f\t %3.7f\n',data);
-    end
+switch spacing
+    case 'equidistant'
+        NR = NP(1);
+        NZ = NP(2);
+        R = linspace(Rmin,Rmax,NR);
+        Z = linspace(Zmin,Zmax,NZ);
+    case 'padua'
+        n = 1; % initial guess for order of padua points
+        N = (n + 1)*(n + 2)/2;
+        while (N - NP < 0)
+            n = n + 1;
+            N = (n + 1)*(n + 2)/2;
+        end
+        RZ = paduapts(n, [Rmin, Rmax, Zmin, Zmax]);
+        R = RZ(:,1);
+        Z = RZ(:,2);
+        
+        disp(['Using Padua points of degree ' num2str(n)])
+        disp(['Array dimension [' num2str(N) ',' num2str(N) ']'])
+    case 'chebyshev'
+        NR = NP(1);
+        NZ = NP(2);
+        [R,Z] = chebpts2(NR,NZ,[Rmin, Rmax, Zmin, Zmax]);
+    otherwise
+        error('Enter a valid option.')
 end
-fclose(fileID)
+
+
+if strcmp(spacing,'equidistant')
+    
+elseif strcmp(spacing,'padua')
+   
+end
+
+data = zeros(1,7);
+fileID = fopen(pathToFile,'w');
+switch spacing
+    case 'equidistant'
+        for ix=1:NR
+            for iz=1:NZ
+                [data(5:7),data(1:3)] = analyticalB([R(ix),0,Z(iz)]);
+                fprintf(fileID,'%3.7f\t %3.7f\t %3.7f\t %3.7f\t %3.7f\t %3.7f\t %3.7f\n',data);
+            end
+        end
+    case 'padua'
+        for ii=1:N
+            [data(5:7),data(1:3)] = analyticalB([R(ii),0,Z(ii)]);
+            fprintf(fileID,'%3.7f\t %3.7f\t %3.7f\t %3.7f\t %3.7f\t %3.7f\t %3.7f\n',data);
+        end
+    case 'chebyshev'
+        for ix=1:NR
+            for iz=1:NZ
+                [data(5:7),data(1:3)] = analyticalB([R(ix,iz),0,Z(ix,iz)]);
+                fprintf(fileID,'%3.7f\t %3.7f\t %3.7f\t %3.7f\t %3.7f\t %3.7f\t %3.7f\n',data);
+            end
+        end
+end
+
+fclose(fileID);
 
 disp(['File: ``' pathToFile '`` generated!'])
 end
 
 function [B,P] = analyticalB(X,opt)
 % Analytical magnetic field
-% X is a vector X(1)=x, X(2)=y, X(3)=z.
+% X is a vector X(1)=R, X(2)=y, X(3)=Z.
 
 narginchk(1,2);
 
@@ -83,7 +133,7 @@ else
     
     % Now we change to cylindrical coordinates
     % Cylindrical coordinates
-    % R = radius, phi = azimuthal angle, Z = z coordinate
+    % R = radius, phi = azimuthal angle, Z = Z coordinate
     R = sqrt(X(1)^2 + X(2)^2);
     Z = X(3);
     phi = atan2(X(2),X(1));
