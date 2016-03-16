@@ -88,7 +88,7 @@ for ii=1:ST.params.numIt
 end
 
 ST.PP = particlePusherLeapfrogMod(ST);
-PoincarePlots(ST.PP.X);
+PoincarePlots(ST.PP);
 % DiegosInvariants(ST);
 
 % ST.PP = particlePusherMatlab(ST);
@@ -113,16 +113,27 @@ disp(['Perpendicular velocity: ' num2str(vperp/ST.params.c)])
 
 end
 
-function P = PoincarePlots(X)
+function P = PoincarePlots(PP)
+X = PP.X;
 
 R = sqrt(X(:,1).^2 + X(:,2).^2);
 Z = X(:,3);
+
+if isfield(PP,'R')
+    Rgc = sqrt(PP.R(:,1).^2 + PP.R(:,2).^2);
+    Zgc = PP.R(:,3);
+end
 
 zeta = atan2(X(:,2),X(:,1));
 locs = find(abs(diff(zeta)) > 6);
 
 figure
 plot(R,X(:,3),'k',R(locs),Z(locs),'r.','MarkerSize',15)
+if isfield(PP,'R')
+    hold on
+    plot(Rgc,Zgc,'g','LineWidth',2)
+    hold off
+end
 axis equal
 xlabel('R [m]','Interpreter','latex','FontSize',16)
 ylabel('Z [m]','Interpreter','latex','FontSize',16)
@@ -162,7 +173,6 @@ function B = loadMagneticField(ST)
 % All quantities in SI units
 B = struct;
 
-
 if isempty(ST.res) % SIESTA case (r,z, phi, br, bz, bphi) 
     
     data = load(ST.pathToBField);
@@ -196,6 +206,8 @@ if isempty(ST.res) % SIESTA case (r,z, phi, br, bz, bphi)
         meshgrid(linspace(min(B.R),max(B.R),100),...
         linspace(min(B.phi),max(B.phi),10),...
         linspace(min(B.Z),max(B.Z),100));
+    
+    error('SIESTA fields!')
     
     
     
@@ -666,6 +678,7 @@ PP.method = 'Leapfrog';
 X = zeros(ST.params.numIt,3); % (it,ii), ii=X,y,z
 v = zeros(ST.params.numIt,3);
 u = zeros(ST.params.numIt,3);
+R = zeros(ST.params.numIt,3);
 
 % Normalization
 X(1,:) = ST.params.Xo/ST.norm.l;
@@ -680,8 +693,11 @@ end
 dt = ST.params.dt*ST.norm.wc;
 E = ST.E/(ST.Bo*ST.params.c);
 
+
+% initial velocity at time level t = 0
 u(1,:) = v(1,:)/sqrt(1 - sum(v(1,:).^2));
 v(1,:) = u(1,:)/sqrt(1 + sum(u(1,:).^2));
+R(1,:) = X(1,:) + m*cross(v(1,:),B)/(q*sum(B.^2));
 
 % initial velocity
 DT = 0.5*dt;
@@ -724,18 +740,27 @@ for ii=2:ST.params.numIt
     
     u(ii,:) = U - 0.5*a*( E + cross(V,B) );
     v(ii,:) = u(ii,:)/sqrt(1 + sum(u(ii,:).^2));
+    
+    
+    R(ii,:) = X(ii,:) + m*cross(v(ii,:),B)/(q*sum(B.^2));
 end
 
 X = X*ST.norm.l;
+R = R*ST.norm.l;
 
 PP.X = X;
+PP.R = R;
 PP.v = v;
+
 
 PP.EK = 1./sqrt(1-sum(PP.v.^2,2));
 PP.ERR = 100*(PP.EK(1) - PP.EK)./PP.EK(1);
 
 figure
-plot3(PP.X(ST.params.inds,1),PP.X(ST.params.inds,2),PP.X(ST.params.inds,3))
+plot3(PP.X(ST.params.inds,1),PP.X(ST.params.inds,2),PP.X(ST.params.inds,3),'b')
+hold on
+plot3(PP.R(ST.params.inds,1),PP.R(ST.params.inds,2),PP.R(ST.params.inds,3),'r')
+hold off
 axis equal
 xlabel('X','Interpreter','latex','FontSize',16)
 ylabel('Y','Interpreter','latex','FontSize',16)
@@ -779,6 +804,7 @@ end
 E = ST.E/(ST.Bo*ST.params.c);
 
 u(1,:) = v(1,:)/sqrt(1 - sum(v(1,:).^2));
+v(1,:) = u(1,:)/sqrt(1 + sum(u(1,:).^2));
 
 options = odeset('RelTol',1E-5,'AbsTol',1E-10);%,'Stats','on','OutputFcn',@odeplot)
 % options = odeset('RelTol',1E-3,'AbsTol',1E-6);%,'Stats','on','OutputFcn',@odeplot)
