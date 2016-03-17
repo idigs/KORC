@@ -11,10 +11,12 @@ narginchk(3,3)
 
 B = analyticalB([],'initialize');
 
-Rmin = (B.Ro - B.a) - 1;
-Rmax = (B.Ro + B.a) + 1;
-Zmin = - (B.a + 1);
-Zmax = B.a + 1;
+offset = 2;
+
+Rmin = (B.Ro - B.a) - offset;
+Rmax = (B.Ro + B.a) + offset;
+Zmin = - (B.a + offset);
+Zmax = B.a + offset;
 
 switch spacing
     case 'equidistant'

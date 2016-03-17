@@ -8,8 +8,8 @@ function ST = particleOrbits(pathToBField,ND,res,timeStepParams,tracerParams,xo,
 % field. The parameters of the magnetic field are hard-coded in the
 % functions 'analyticalB' and 'DiegosInvariant'.
 % ST = particleOrbits('some_VMEC_file.dat','2D',[150,150],[1E4,1E-2,10],[2,7.2938E3],[6,0,1],[0.03,80]);
-% ST = particleOrbits('','2D',[],[1E4,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.04,80]);
-% ST = particleOrbits('CHEBYSHEV.dat','2D',[50,50],[1E4,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.04,80]);
+% ST = particleOrbits('','2D',[],[1E6,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
+% ST = particleOrbits('CHEBYSHEV.dat','2D',[50,50],[1E6,1.16E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
 
 narginchk(7,8);
 
@@ -57,9 +57,9 @@ ST.params.Xo = xo; % Initial position
 ST.params.vo_params = vo_params; % vo_params = [velocity magnitude, pitch angle]
 [ST.params.vo, ST.params.vpar, ST.params.vperp] = initializeVelocity(ST);
 
-% ST.params.vo = 1E7*[-0.002449618114251   0.208217539711322   1.180942065102119];
-% ST.params.vpar = -2.082319487310763E6;
-% ST.params.vperp = -1.180942065102119E7;
+% ST.params.vo = 1E6*[-0.018372196650106, 1.561631475004435, -8.857065500980882];
+% ST.params.vpar = -1.561739615483072E6;
+% ST.params.vperp = -8.857065488265894E6;
 
 % Particle's parameters
 ST.params.q = tracerParams(1)*ST.params.qe; %alpha-particle
@@ -98,6 +98,8 @@ PoincarePlots(ST.PP);
 
 end
 
+% INITIALIZATION
+
 function [vo,vpar,vperp] = initializeVelocity(ST)
 % ST.params.vo_params = [vo, pitch_angle]
 v = ST.params.vo_params(1)*ST.params.c; % magnitude of initial velocity
@@ -114,39 +116,9 @@ disp(['Perpendicular velocity: ' num2str(vperp/ST.params.c)])
 
 end
 
-function P = PoincarePlots(PP)
-X = PP.X;
-
-R = sqrt(X(:,1).^2 + X(:,2).^2);
-Z = X(:,3);
-
-if isfield(PP,'R')
-    Rgc = sqrt(PP.R(:,1).^2 + PP.R(:,2).^2);
-    Zgc = PP.R(:,3);
-end
-
-zeta = atan2(X(:,2),X(:,1));
-locs = find(abs(diff(zeta)) > 6);
-
-figure
-plot(R,X(:,3),'k',R(locs),Z(locs),'r.','MarkerSize',15)
-if isfield(PP,'R')
-    hold on
-    plot(Rgc,Zgc,'g','LineWidth',2)
-    hold off
-end
-axis equal
-xlabel('R [m]','Interpreter','latex','FontSize',16)
-ylabel('Z [m]','Interpreter','latex','FontSize',16)
-title('Poincare plot','Interpreter','latex','FontSize',16)
-
-end
-
 function [b,a] = unitVectors(ST)
 % initial condition of an electron drifting parallel to the local magnetic
 % field.
-
-% tmp = weightedInterpolation(ST,ST.params.Xo);
 
 if ST.analytical
     B = analyticalB(ST.params.Xo);
@@ -293,7 +265,7 @@ else % structured data for magnetic field
             axis equal
             box on
             colorbar
-            title('$B_R$ [T]','Interpreter','latex','FontSize',16)
+            title('$B^R$ [T]','Interpreter','latex','FontSize',16)
             xlabel('R [m]','Interpreter','latex','FontSize',16)
             ylabel('Z [m]','Interpreter','latex','FontSize',16)
             
@@ -303,7 +275,7 @@ else % structured data for magnetic field
             axis equal
             box on
             colorbar
-            title('$B_Z$ [T]','Interpreter','latex','FontSize',16)
+            title('$B^Z$ [T]','Interpreter','latex','FontSize',16)
             xlabel('R [m]','Interpreter','latex','FontSize',16)
             ylabel('Z [m]','Interpreter','latex','FontSize',16)
             
@@ -313,7 +285,7 @@ else % structured data for magnetic field
             axis equal
             box on
             colorbar
-            title('$B_\phi$ [T]','Interpreter','latex','FontSize',16)
+            title('$B^\phi$ [T]','Interpreter','latex','FontSize',16)
             xlabel('R [m]','Interpreter','latex','FontSize',16)
             ylabel('Z [m]','Interpreter','latex','FontSize',16)
             
@@ -355,7 +327,9 @@ else % structured data for magnetic field
         B.Z = zeros(B.NR,B.NZ,B.Nphi);
         B.phi = zeros(B.NR,B.NZ,B.Nphi);
         
-        phi = linspace(0,2*pi,B.Nphi);
+%         phi = linspace(0,2*pi,B.Nphi);
+        phi = ((0:1:B.Nphi-1) + 0.5)*(2*pi/B.Nphi);
+        
         
         B.B = zeros(B.NR,B.NZ,B.Nphi); % magnitude
         B.BR = zeros(B.NR,B.NZ,B.Nphi);
@@ -365,8 +339,8 @@ else % structured data for magnetic field
         
         for iphi = 1:B.Nphi;
             for iz=1:B.NZ
-                indi = (iz-1)*B.NR + 1;
-                indf = iz*B.NR;
+                indi = (iphi-1)*B.NR*B.NZ + (iz-1)*B.NR + 1;
+                indf = (iphi-1)*B.NR*B.NZ + iz*B.NR;
                 B.R(:,iz,iphi) = data(indi:indf,1);
                 B.Z(:,iz,iphi) = data(indi:indf,3);
                 
@@ -382,46 +356,76 @@ else % structured data for magnetic field
         
         B.Bo = mean(mean(mean(B.B)));
         
-        figure
-        subplot(1,3,1)
-        surfc(B.R(:,:,1),B.Z(:,:,1),B.BR(:,:,1),'LineStyle','none')
-        view([0,90])
-        axis equal
-        box on
-        colorbar
-        title('$B_R$ [T]','Interpreter','latex','FontSize',16)
-        xlabel('R [m]','Interpreter','latex','FontSize',16)
-        ylabel('Z [m]','Interpreter','latex','FontSize',16)
-        subplot(1,3,2)
-        surfc(B.R(:,:,1),B.Z(:,:,1),B.BZ(:,:,1),'LineStyle','none')
-        view([0,90])
-        axis equal
-        box on
-        colorbar
-        title('$B_Z$ [T]','Interpreter','latex','FontSize',16)
-        xlabel('R [m]','Interpreter','latex','FontSize',16)
-        ylabel('Z [m]','Interpreter','latex','FontSize',16)
-        subplot(1,3,3)
-        surfc(B.R(:,:,1),B.Z(:,:,1),B.Bphi(:,:,1),'LineStyle','none')
-        view([0,90])
-        axis equal
-        box on
-        colorbar
-        title('$B_\phi$ [T]','Interpreter','latex','FontSize',16)
-        xlabel('R [m]','Interpreter','latex','FontSize',16)
-        ylabel('Z [m]','Interpreter','latex','FontSize',16)
-        colormap(jet)
+        sizegrid = 4;
+        
+        if ST.opt
+            figure
+            subplot(1,sizegrid,1)
+            surfc(B.R(:,:,1),B.Z(:,:,1),B.BR(:,:,1),'LineStyle','none')
+            view([0,90])
+            axis equal
+            box on
+            colorbar
+            title('$B^R$ [T]','Interpreter','latex','FontSize',16)
+            xlabel('R [m]','Interpreter','latex','FontSize',16)
+            ylabel('Z [m]','Interpreter','latex','FontSize',16)
+            
+            subplot(1,sizegrid,2)
+            surfc(B.R(:,:,1),B.Z(:,:,1),B.BZ(:,:,1),'LineStyle','none')
+            view([0,90])
+            axis equal
+            box on
+            colorbar
+            title('$B^Z$ [T]','Interpreter','latex','FontSize',16)
+            xlabel('R [m]','Interpreter','latex','FontSize',16)
+            ylabel('Z [m]','Interpreter','latex','FontSize',16)
+            
+            subplot(1,sizegrid,3)
+            surfc(B.R(:,:,1),B.Z(:,:,1),B.Bphi(:,:,1),'LineStyle','none')
+            view([0,90])
+            axis equal
+            box on
+            colorbar
+            title('$B^\phi$ [T]','Interpreter','latex','FontSize',16)
+            xlabel('R [m]','Interpreter','latex','FontSize',16)
+            ylabel('Z [m]','Interpreter','latex','FontSize',16)
+            
+            if size(data,2) > 7
+                subplot(1,sizegrid,4)
+                surfc(B.R(:,:,1),B.Z(:,:,1),B.P(:,:,1),'LineStyle','none')
+                view([0,90])
+                axis equal
+                box on
+                colorbar
+                title('$P(R,Z)$','Interpreter','latex','FontSize',16)
+                xlabel('R [m]','Interpreter','latex','FontSize',16)
+                ylabel('Z [m]','Interpreter','latex','FontSize',16)
+            else
+                subplot(1,sizegrid,4)
+                surfc(B.R(:,:,1),B.Z(:,:,1),B.B(:,:,1),'LineStyle','none')
+                view([0,90])
+                axis equal
+                box on
+                colorbar
+                title('$P(R,Z)$','Interpreter','latex','FontSize',16)
+                xlabel('R [m]','Interpreter','latex','FontSize',16)
+                ylabel('Z [m]','Interpreter','latex','FontSize',16)
+            end
+            
+            colormap(jet)
+            
+        end
     else
         error('Use 2D or 3D');
     end
     
     B.SI = calculateChebyshevInterpolant(ST,B);
-%     B.SI = calculatescatteredInterpolant(ST,B);
     
 end % if isempty(ST.res)
 
-
 end
+
+% INTERPOLANTS
 
 function SI = calculateChebyshevInterpolant(ST,B)
 % Cylindrical coordinates
@@ -430,42 +434,48 @@ function SI = calculateChebyshevInterpolant(ST,B)
 disp('Calculating chebfun2 interpolant...')
 SI = struct;
 
-if strcmp(ST.ND,'2D')
-    Rmin = min(min(B.R));
-    Rmax = max(max(B.R));
-    Zmin = min(min(B.Z));
-    Zmax = max(max(B.Z));
-    
-%     SI.BR = chebfun2(B.BR,[Rmin Rmax Zmin Zmax]);
-    SI.BR = chebfun2(B.BR,[Zmin Zmax Rmin Rmax]);
-    
-    SI.BZ = chebfun2(B.BZ,[Zmin Zmax Rmin Rmax]);
-    
-    SI.Bphi = chebfun2(B.Bphi,[Zmin Zmax Rmin Rmax]);
-    
-    figure
-    subplot(1,3,1)
-    plot(SI.BR)
-    subplot(1,3,2)
-    plot(SI.Bphi)
-    subplot(1,3,3)
-    plot(SI.BZ)
-    colormap(jet)
-    
+if strcmp(ST.ND,'2D')   
+    if mean(diff(B.R(:,1))) ~= 0 % non-uniform grid
+        
+        Rmin = min(min(B.R));
+        Rmax = max(max(B.R));
+        Zmin = min(min(B.Z));
+        Zmax = max(max(B.Z));
+        
+        %     SI.BR = chebfun2(B.BR,[Rmin Rmax Zmin Zmax]);
+        SI.BR = chebfun2(B.BR,[Zmin Zmax Rmin Rmax]);
+        
+        SI.BZ = chebfun2(B.BZ,[Zmin Zmax Rmin Rmax]);
+        
+        SI.Bphi = chebfun2(B.Bphi,[Zmin Zmax Rmin Rmax]);
+        
+        figure
+        subplot(1,3,1)
+        plot(SI.BR)
+        subplot(1,3,2)
+        plot(SI.Bphi)
+        subplot(1,3,3)
+        plot(SI.BZ)
+        colormap(jet)
+        
+        disp('chebfun2 interpolant: done!')
+    elseif mean(diff(B.R(:,1))) == 0 % uniform grid
+        SI = calculatescatteredInterpolant(ST,B);
+    end
 elseif strcmp(ST.ND,'3D')
     SI = calculatescatteredInterpolant(ST,B);
 else
     error('Please, use 2D or 3D.');
 end
 
-disp('chebfun2 interpolant: done!')
 end
 
 function SI = calculatescatteredInterpolant(ST,B)
 % Cylindrical coordinates
 % R = radius, phi = azimuthal angle, Z = z coordinate
 % calculate interpolant of the field B
-disp('Calculating scattered interpolant...')
+disp('*** Uniform grid for the magnetic field detected! ***')
+disp('Switching to scattered interpolant...')
 SI = struct;
 
 
@@ -486,31 +496,27 @@ if strcmp(ST.ND,'2D')
     clear DATA
     
 elseif strcmp(ST.ND,'3D')
-    R = reshape(B.R,[numel(B.R) 1]);
-    Z = reshape(B.Z,[numel(B.Z) 1]);
-    phi = reshape(B.phi,[numel(B.phi) 1]);
-    
-%     [n, bin] = histc(R, unique(R));
-%     mR = find(n > 1);
-%     indR    = find(ismember(bin, mR));
-%     
-%     [n, bin] = histc(Z, unique(Z));
-%     mZ = find(n > 1);
-%     indZ    = find(ismember(bin, mZ));
-%     
-%     [n, bin] = histc(phi, unique(phi));
-%     mphi = find(n > 1);
-%     indphi    = find(ismember(bin, mphi));
 
-    DATA = reshape(B.BR,[numel(B.BR) 1]);
+    R = cat(3,B.R(:,:,end),B.R,B.R(:,:,1));
+    Z = cat(3,B.Z(:,:,end),B.Z,B.Z(:,:,1));
+    phi = cat(3,B.phi(:,:,end)-2*pi,B.phi,2*pi+B.phi(:,:,1));
+    
+    R = reshape(R,[numel(R) 1]);
+    Z = reshape(Z,[numel(Z) 1]);
+    phi = reshape(phi,[numel(phi) 1]);
+
+    DATA = cat(3,B.BR(:,:,end),B.BR,B.BR(:,:,1));
+    DATA = reshape(DATA,[numel(DATA) 1]);
     SI.BR = scatteredInterpolant(R,Z,phi,DATA);
     clear DATA
     
-    DATA = reshape(B.BZ,[numel(B.BZ) 1]);
+    DATA = cat(3,B.BZ(:,:,end),B.BZ,B.BZ(:,:,1));
+    DATA = reshape(DATA,[numel(DATA) 1]);
     SI.BZ = scatteredInterpolant(R,Z,phi,DATA);
     clear DATA
     
-    DATA = reshape(B.Bphi,[numel(B.Bphi) 1]);
+    DATA = cat(3,B.Bphi(:,:,end),B.Bphi,B.Bphi(:,:,1));
+    DATA = reshape(DATA,[numel(DATA) 1]);
     SI.Bphi = scatteredInterpolant(R,Z,phi,DATA);
     clear DATA
     
@@ -520,6 +526,8 @@ end
 
 disp('Scattered interpolant: done!')
 end
+
+% MODELS FOR MAGNETIC FIELD
 
 function BF = interpMagField(ST,X)
 % Cylindrical coordinates
@@ -531,8 +539,6 @@ if strcmp(ST.ND,'2D')
     if phi < 0
         phi = phi + 2*pi;
     end
-    
-    %     disp(['(R,phi,Z) = (' num2str(R) ',' num2str(phi) ',' num2str(Z) ')'])
     
     if isa(ST.B.SI.BR,'scatteredInterpolant')
         BR = ST.B.SI.BR(R,Z);
@@ -550,6 +556,21 @@ if strcmp(ST.ND,'2D')
     BF = [Bx,By,Bz];
     
 elseif strcmp(ST.ND,'3D')
+    R = sqrt(X(1)^2 + X(2)^2);
+    Z = X(3);
+    phi = atan2(X(2),X(1));
+    if phi < 0
+        phi = phi + 2*pi;
+    end
+    
+    BR = ST.B.SI.BR(R,Z,phi);
+    Bphi = ST.B.SI.Bphi(R,Z,phi);
+    BZ = ST.B.SI.BZ(R,Z,phi);
+    
+    Bx = BR*cos(phi) - Bphi*sin(phi);
+    By = BR*sin(phi) + Bphi*cos(phi);
+    Bz = BZ;
+    BF = [Bx,By,Bz];
     
 else
     error('Use 2D or 3D');
@@ -613,6 +634,8 @@ else
 end
 
 end
+
+% LEAP-FROG PARTICLE PUSHER
 
 function PP = particlePusherLeapfrog(ST)
 % Relativistic particle pusher.
@@ -786,7 +809,7 @@ for ii=2:ST.params.numIt
     
     R(ii,:) = X(ii,:) + m*cross(v(ii,:),B)/(q*sum(B.^2));
     
-    disp(['Iteration ' num2str(ii)])
+%     disp(['Iteration ' num2str(ii)])
 end
 
 X = X*ST.norm.l;
@@ -822,6 +845,8 @@ title(PP.method,'Interpreter','latex','FontSize',16)
 
 PP.v = PP.v*ST.params.c;
 end
+
+% MATLAB PARTICLE PUSHER
 
 function PP = particlePusherMatlab(ST)
 % Function to advance in time the particle's trajectory using Matlab
@@ -969,6 +994,36 @@ Bx = BR*cos(phi) - Bphi*sin(phi);
 By = BR*sin(phi) + Bphi*cos(phi);
 Bz = BZ;
 BF = [Bx,By,Bz];
+end
+
+% POST-PROCESSING
+
+function P = PoincarePlots(PP)
+X = PP.X;
+
+R = sqrt(X(:,1).^2 + X(:,2).^2);
+Z = X(:,3);
+
+if isfield(PP,'R')
+    Rgc = sqrt(PP.R(:,1).^2 + PP.R(:,2).^2);
+    Zgc = PP.R(:,3);
+end
+
+zeta = atan2(X(:,2),X(:,1));
+locs = find(abs(diff(zeta)) > 6);
+
+figure
+plot(R,X(:,3),'k',R(locs),Z(locs),'r.','MarkerSize',15)
+if isfield(PP,'R')
+    hold on
+    plot(Rgc,Zgc,'g','LineWidth',2)
+    hold off
+end
+axis equal
+xlabel('R [m]','Interpreter','latex','FontSize',16)
+ylabel('Z [m]','Interpreter','latex','FontSize',16)
+title('Poincare plot','Interpreter','latex','FontSize',16)
+
 end
 
 function DI = DiegosInvariants(ST)
