@@ -8,8 +8,8 @@ function ST = particleOrbits(pathToBField,ND,res,timeStepParams,tracerParams,xo,
 % field. The parameters of the magnetic field are hard-coded in the
 % functions 'analyticalB' and 'DiegosInvariant'.
 % ST = particleOrbits('some_VMEC_file.dat','2D',[150,150],[1E4,1E-2,10],[2,7.2938E3],[6,0,1],[0.03,80]);
-% ST = particleOrbits('','2D',[],[1E4,1E-2,10],[2,7.2938E3],[6,0,1],[0.03,80]);
-% ST = particleOrbits('PADUA.dat','2D',[],[1E4,1E-2,10],[2,7.2938E3],[6,0,1],[0.03,80]);
+% ST = particleOrbits('','2D',[],[1E4,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.04,80]);
+% ST = particleOrbits('CHEBYSHEV.dat','2D',[50,50],[1E4,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.04,80]);
 
 narginchk(7,8);
 
@@ -55,11 +55,11 @@ end
 % Initial position and velocity of tracer, in SI units
 ST.params.Xo = xo; % Initial position
 ST.params.vo_params = vo_params; % vo_params = [velocity magnitude, pitch angle]
-% [ST.params.vo, ST.params.vpar, ST.params.vperp] = initializeVelocity(ST);
+[ST.params.vo, ST.params.vpar, ST.params.vperp] = initializeVelocity(ST);
 
-ST.params.vo = 1E6*[-0.036189197304708, 3.075808124547131, 8.451315543332191];
-ST.params.vpar = -3.076026563028068E6;
-ST.params.vperp = -8.451313523562223E6;
+% ST.params.vo = 1E7*[-0.002449618114251   0.208217539711322   1.180942065102119];
+% ST.params.vpar = -2.082319487310763E6;
+% ST.params.vperp = -1.180942065102119E7;
 
 % Particle's parameters
 ST.params.q = tracerParams(1)*ST.params.qe; %alpha-particle
@@ -443,6 +443,15 @@ if strcmp(ST.ND,'2D')
     
     SI.Bphi = chebfun2(B.Bphi,[Zmin Zmax Rmin Rmax]);
     
+    figure
+    subplot(1,3,1)
+    plot(SI.BR)
+    subplot(1,3,2)
+    plot(SI.Bphi)
+    subplot(1,3,3)
+    plot(SI.BZ)
+    colormap(jet)
+    
 elseif strcmp(ST.ND,'3D')
     SI = calculatescatteredInterpolant(ST,B);
 else
@@ -776,6 +785,8 @@ for ii=2:ST.params.numIt
     
     
     R(ii,:) = X(ii,:) + m*cross(v(ii,:),B)/(q*sum(B.^2));
+    
+    disp(['Iteration ' num2str(ii)])
 end
 
 X = X*ST.norm.l;
