@@ -147,31 +147,83 @@ B.fileType = ST.fileType;
 data = load(ST.pathToBField);
 
 switch ST.fileType
-    case 'SIESTA'
-        B.NR = ST.res(1);
-        B.Nphi = ST.res(2);
-        B.NZ = ST.res(3);
+    case 'RAW' % This option changes quite frequently
         
-        B.R = data(:,1);        
-        B.phi = data(:,3);
-        B.Z = data(:,2);
+        B.R = data(:,1);
+        B.Z = data(:,3);
         
-        B.Ro = [B.R(1), B.Z(1)]; % This defines the position         
-        
-        B.R = reshape(B.R,B.NR,B.Nphi,B.NZ);
-        B.phi = reshape(B.phi,B.NR,B.Nphi,B.NZ);
-        B.Z = reshape(B.Z,B.NR,B.Nphi,B.NZ);
+%         B.Ro = [B.R(1), B.Z(1)]; % This defines the position
         
         B.BR = data(:,4);
-        B.BR = reshape(B.BR,B.NR,B.Nphi,B.NZ);
-        B.Bphi = data(:,6);
-        B.Bphi = reshape(B.Bphi,B.NR,B.Nphi,B.NZ);
-        B.BZ = data(:,5);
-        B.BZ = reshape(B.BZ,B.NR,B.Nphi,B.NZ);
+        B.Bphi = data(:,5); % minus sign
+        B.BZ = data(:,6);
         
         B.B = sqrt(B.BR.^2 + B.BZ.^2 + B.Bphi.^2);
         
-        B.Bo = mean(mean(mean(B.B)));
+    case 'SIESTA'
+        if strcmp(ST.ND,'2D')
+            NR = ST.res(1);
+            Nphi = ST.res(2);
+            NZ = ST.res(3);
+            
+            R = data(:,1);
+            Z = data(:,2);
+            
+            B.Ro = [R(1), Z(1)]; % This defines the position
+            
+            R = reshape(R,NR,Nphi,NZ);
+            Z = reshape(Z,NR,Nphi,NZ);
+            
+            BR = data(:,4);
+            BR = reshape(BR,NR,Nphi,NZ);
+            Bphi = data(:,6);
+            Bphi = reshape(Bphi,NR,Nphi,NZ);
+            BZ = data(:,5);
+            BZ = reshape(BZ,NR,Nphi,NZ);
+            
+            
+            B.NR = NR;
+            B.NZ = NZ;
+            
+            B.R = squeeze(R(:,1,:));
+            B.Z = squeeze(Z(:,1,:));
+            
+            B.BR = squeeze(BR(:,1,:));
+            B.Bphi = squeeze(Bphi(:,1,:));
+            B.BZ = squeeze(BZ(:,1,:));
+            
+            B.B = sqrt(BR.^2 + BZ.^2 + Bphi.^2);
+            
+            B.Bo = mean(mean(mean(B.B)));
+            
+        elseif strcmp(ST.ND,'3D')
+            B.NR = ST.res(1);
+            B.Nphi = ST.res(2);
+            B.NZ = ST.res(3);
+            
+            B.R = data(:,1);
+            B.phi = data(:,3);
+            B.Z = data(:,2);
+            
+            B.Ro = [B.R(1), B.Z(1)]; % This defines the position
+            
+            B.R = reshape(B.R,B.NR,B.Nphi,B.NZ);
+            B.phi = reshape(B.phi,B.NR,B.Nphi,B.NZ);
+            B.Z = reshape(B.Z,B.NR,B.Nphi,B.NZ);
+            
+            B.BR = data(:,4);
+            B.BR = reshape(B.BR,B.NR,B.Nphi,B.NZ);
+            B.Bphi = data(:,6);
+            B.Bphi = reshape(B.Bphi,B.NR,B.Nphi,B.NZ);
+            B.BZ = data(:,5);
+            B.BZ = reshape(B.BZ,B.NR,B.Nphi,B.NZ);
+            
+            B.B = sqrt(B.BR.^2 + B.BZ.^2 + B.Bphi.^2);
+            
+            B.Bo = mean(mean(mean(B.B)));
+        else
+            error('Please use 2D or 3D fields');
+        end
         
     case 'VMEC'
         
@@ -186,7 +238,7 @@ switch ST.fileType
             
             B.BR = data(:,5);
             B.BR = reshape(B.BR,B.NR,B.NZ);
-            B.Bphi = data(:,6);
+            B.Bphi = - data(:,6); % minus sign
             B.Bphi = reshape(B.Bphi,B.NR,B.NZ);
             B.BZ = data(:,7);
             B.BZ = reshape(B.BZ,B.NR,B.NZ);
@@ -269,7 +321,9 @@ if ST.opt
     plotLoadedMagneticField(B)
 end
 
-B.SI = calculateChebyshevInterpolant(ST,B);
+% B.SI = calculateChebyshevInterpolant(ST,B);
+
+B.SI = calculatescatteredInterpolant(ST,B);
 
 B.R = [];
 B.Z = [];
@@ -285,142 +339,162 @@ end
 
 function plotLoadedMagneticField(B)
 
-if strcmp(B.fileType,'SIESTA')
-    
-    figure
-    subplot(2,2,1)
-    surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.BR(:,1,:)),'LineStyle','none')
-    view([0,90])
-    axis equal
-    box on
-    colorbar
-    title('$B^R$ [T]','Interpreter','latex','FontSize',16)
-    xlabel('R [m]','Interpreter','latex','FontSize',16)
-    ylabel('Z [m]','Interpreter','latex','FontSize',16)
-    
-    subplot(2,2,2)
-    surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.BZ(:,1,:)),'LineStyle','none')
-    view([0,90])
-    axis equal
-    box on
-    colorbar
-    title('$B^Z$ [T]','Interpreter','latex','FontSize',16)
-    xlabel('R [m]','Interpreter','latex','FontSize',16)
-    ylabel('Z [m]','Interpreter','latex','FontSize',16)
-    
-    subplot(2,2,3)
-    surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.Bphi(:,1,:)),'LineStyle','none')
-    view([0,90])
-    axis equal
-    box on
-    colorbar
-    title('$B^\phi$ [T]','Interpreter','latex','FontSize',16)
-    xlabel('R [m]','Interpreter','latex','FontSize',16)
-    ylabel('Z [m]','Interpreter','latex','FontSize',16)
-    
-    try
-        subplot(2,2,4)
-        surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.P(:,1,:)),'LineStyle','none')
+switch B.fileType
+    case 'RAW'
+        S = 2*ones(numel(B.BR),1);
+        
+        figure
+        subplot(1,4,1)      
+        C = B.BR/max(abs(B.BR));
+        scatter3(B.R,B.Z,B.BR,S,C)
+        view([0,90])
+        axis equal
+        box on
+        title('$B^R$ [T]','Interpreter','latex','FontSize',16)
+        xlabel('R [m]','Interpreter','latex','FontSize',16)
+        ylabel('Z [m]','Interpreter','latex','FontSize',16)
+        
+        subplot(1,4,2)
+        C = B.Bphi/max(abs(B.Bphi));
+        scatter3(B.R,B.Z,B.Bphi,S,C)
+        view([0,90])
+        axis equal
+        box on
+        title('$B^\phi$ [T]','Interpreter','latex','FontSize',16)
+        xlabel('R [m]','Interpreter','latex','FontSize',16)
+        ylabel('Z [m]','Interpreter','latex','FontSize',16)
+        
+        subplot(1,4,3)
+        C = B.BZ/max(abs(B.BZ));
+        scatter3(B.R,B.Z,B.BZ,S,C)
+        view([0,90])
+        axis equal
+        box on
+        title('$B^Z$ [T]','Interpreter','latex','FontSize',16)
+        xlabel('R [m]','Interpreter','latex','FontSize',16)
+        ylabel('Z [m]','Interpreter','latex','FontSize',16)
+        
+        subplot(1,4,4)
+        C = B.B/max(abs(B.B));
+        scatter3(B.R,B.Z,B.B,S,C)
+        view([0,90])
+        axis equal
+        box on
+        title('$B$ [T]','Interpreter','latex','FontSize',16)
+        xlabel('R [m]','Interpreter','latex','FontSize',16)
+        ylabel('Z [m]','Interpreter','latex','FontSize',16)
+        
+        colormap(jet)
+    case 'SIESTA'
+        figure
+        subplot(2,2,1)
+        surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.BR(:,1,:)),'LineStyle','none')
         view([0,90])
         axis equal
         box on
         colorbar
-        title('$P(R,Z)$','Interpreter','latex','FontSize',16)
+        title('$B^R$ [T]','Interpreter','latex','FontSize',16)
         xlabel('R [m]','Interpreter','latex','FontSize',16)
         ylabel('Z [m]','Interpreter','latex','FontSize',16)
-    catch
-        subplot(2,2,4)
-        surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.B(:,1,:)),'LineStyle','none')
+        
+        subplot(2,2,2)
+        surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.BZ(:,1,:)),'LineStyle','none')
         view([0,90])
         axis equal
         box on
         colorbar
-        title('$B(R,Z)$','Interpreter','latex','FontSize',16)
+        title('$B^Z$ [T]','Interpreter','latex','FontSize',16)
         xlabel('R [m]','Interpreter','latex','FontSize',16)
         ylabel('Z [m]','Interpreter','latex','FontSize',16)
-    end
-    
-    colormap(jet)
-    
-%     figure
-%     subplot(1,3,1)
-%     scatter3(B.R,B.Z,B.BR,'k.')
-%     axis square
-%     box on
-%     title('$B^R$ [T]','Interpreter','latex','FontSize',16)
-%     xlabel('R [m]','Interpreter','latex','FontSize',16)
-%     ylabel('Z [m]','Interpreter','latex','FontSize',16)
-%     
-%     subplot(1,3,2)
-%     scatter3(B.R,B.Z,B.Bphi,'k.')
-%     axis square
-%     box on
-%     title('$B^\phi$ [T]','Interpreter','latex','FontSize',16)
-%     xlabel('R [m]','Interpreter','latex','FontSize',16)
-%     ylabel('Z [m]','Interpreter','latex','FontSize',16)
-%     
-%     subplot(1,3,3)
-%     scatter3(B.R,B.Z,B.BZ,'k.')
-%     axis square
-%     box on
-%     title('$B^Z$ [T]','Interpreter','latex','FontSize',16)
-%     xlabel('R [m]','Interpreter','latex','FontSize',16)
-%     ylabel('Z [m]','Interpreter','latex','FontSize',16)
-else
-    figure
-    subplot(2,2,1)
-    surfc(B.R(:,:,1),B.Z(:,:,1),B.BR(:,:,1),'LineStyle','none')
-    view([0,90])
-    axis equal
-    box on
-    colorbar
-    title('$B^R$ [T]','Interpreter','latex','FontSize',16)
-    xlabel('R [m]','Interpreter','latex','FontSize',16)
-    ylabel('Z [m]','Interpreter','latex','FontSize',16)
-    
-    subplot(2,2,2)
-    surfc(B.R(:,:,1),B.Z(:,:,1),B.BZ(:,:,1),'LineStyle','none')
-    view([0,90])
-    axis equal
-    box on
-    colorbar
-    title('$B^Z$ [T]','Interpreter','latex','FontSize',16)
-    xlabel('R [m]','Interpreter','latex','FontSize',16)
-    ylabel('Z [m]','Interpreter','latex','FontSize',16)
-    
-    subplot(2,2,3)
-    surfc(B.R(:,:,1),B.Z(:,:,1),B.Bphi(:,:,1),'LineStyle','none')
-    view([0,90])
-    axis equal
-    box on
-    colorbar
-    title('$B^\phi$ [T]','Interpreter','latex','FontSize',16)
-    xlabel('R [m]','Interpreter','latex','FontSize',16)
-    ylabel('Z [m]','Interpreter','latex','FontSize',16)
-    
-    try
-        subplot(2,2,4)
-        surfc(B.R(:,:,1),B.Z(:,:,1),B.P(:,:,1),'LineStyle','none')
+        
+        subplot(2,2,3)
+        surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.Bphi(:,1,:)),'LineStyle','none')
         view([0,90])
         axis equal
         box on
         colorbar
-        title('$P(R,Z)$','Interpreter','latex','FontSize',16)
+        title('$B^\phi$ [T]','Interpreter','latex','FontSize',16)
         xlabel('R [m]','Interpreter','latex','FontSize',16)
         ylabel('Z [m]','Interpreter','latex','FontSize',16)
-    catch
-        subplot(2,2,4)
-        surfc(B.R(:,:,1),B.Z(:,:,1),B.B(:,:,1),'LineStyle','none')
+        
+        try
+            subplot(2,2,4)
+            surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.P(:,1,:)),'LineStyle','none')
+            view([0,90])
+            axis equal
+            box on
+            colorbar
+            title('$P(R,Z)$','Interpreter','latex','FontSize',16)
+            xlabel('R [m]','Interpreter','latex','FontSize',16)
+            ylabel('Z [m]','Interpreter','latex','FontSize',16)
+        catch
+            subplot(2,2,4)
+            surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.B(:,1,:)),'LineStyle','none')
+            view([0,90])
+            axis equal
+            box on
+            colorbar
+            title('$B(R,Z)$','Interpreter','latex','FontSize',16)
+            xlabel('R [m]','Interpreter','latex','FontSize',16)
+            ylabel('Z [m]','Interpreter','latex','FontSize',16)
+        end
+        
+        colormap(jet)
+    otherwise
+        figure
+        subplot(2,2,1)
+        surfc(B.R(:,:,1),B.Z(:,:,1),B.BR(:,:,1),'LineStyle','none')
         view([0,90])
         axis equal
         box on
         colorbar
-        title('$B(R,Z)$','Interpreter','latex','FontSize',16)
+        title('$B^R$ [T]','Interpreter','latex','FontSize',16)
         xlabel('R [m]','Interpreter','latex','FontSize',16)
         ylabel('Z [m]','Interpreter','latex','FontSize',16)
-    end
-    
-    colormap(jet)
+        
+        subplot(2,2,2)
+        surfc(B.R(:,:,1),B.Z(:,:,1),B.BZ(:,:,1),'LineStyle','none')
+        view([0,90])
+        axis equal
+        box on
+        colorbar
+        title('$B^Z$ [T]','Interpreter','latex','FontSize',16)
+        xlabel('R [m]','Interpreter','latex','FontSize',16)
+        ylabel('Z [m]','Interpreter','latex','FontSize',16)
+        
+        subplot(2,2,3)
+        surfc(B.R(:,:,1),B.Z(:,:,1),B.Bphi(:,:,1),'LineStyle','none')
+        view([0,90])
+        axis equal
+        box on
+        colorbar
+        title('$B^\phi$ [T]','Interpreter','latex','FontSize',16)
+        xlabel('R [m]','Interpreter','latex','FontSize',16)
+        ylabel('Z [m]','Interpreter','latex','FontSize',16)
+        
+        try
+            subplot(2,2,4)
+            surfc(B.R(:,:,1),B.Z(:,:,1),B.P(:,:,1),'LineStyle','none')
+            view([0,90])
+            axis equal
+            box on
+            colorbar
+            title('$P(R,Z)$','Interpreter','latex','FontSize',16)
+            xlabel('R [m]','Interpreter','latex','FontSize',16)
+            ylabel('Z [m]','Interpreter','latex','FontSize',16)
+        catch
+            subplot(2,2,4)
+            surfc(B.R(:,:,1),B.Z(:,:,1),B.B(:,:,1),'LineStyle','none')
+            view([0,90])
+            axis equal
+            box on
+            colorbar
+            title('$B(R,Z)$','Interpreter','latex','FontSize',16)
+            xlabel('R [m]','Interpreter','latex','FontSize',16)
+            ylabel('Z [m]','Interpreter','latex','FontSize',16)
+        end
+        
+        colormap(jet)
 end
 
 end
@@ -1023,7 +1097,7 @@ try
 catch
     hold on
     plot(R,X(:,3),'k')
-    if isfield(PP,'R')
+    if isfield(ST.PP,'R')
         plot(Rgc,Zgc,'g','LineWidth',2)
     end
     hold off
