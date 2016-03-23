@@ -4,17 +4,23 @@ function ST = particleOrbits(pathToBField,fileType,ND,res,timeStepParams,tracerP
 % the speed of light in vacuum.
 %
 % EXAMPLES:
-% ST = particleOrbits('','','2D',[],[1E3,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
+% USING ANALYTICAL MAGNETIC FIELD
+% ST = particleOrbits('','','2D',[],[1E6,1E-1,1],[-1,1],[6,0,-1],[.99,0]);
+% USING TABULATED FIELDS OF THE ANALYTICAL MAGNETIC FIELD
+% ST = particleOrbits('fields/CHEBYSHEV.dat','VMEC','2D',[60,60],[1E3,1.16E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
+% USING XPAND FILES OF ITER FIELDS
 % ST = particleOrbits('fields/ITER2D.dat','XPANDER','2D',[150,150],[1E3,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
 % ST = particleOrbits('fields/ITER3D.dat','XPANDER','3D',[150,100,150],[2E5,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
 % ST = particleOrbits('fields/ITER3D.dat','XPANDER','3D',[150,100,150],[1E5,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.1,70]);
-% ST = particleOrbits('fields/CHEBYSHEV.dat','VMEC','2D',[60,60],[1E3,1.16E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
+% USING VMEC FILE OF ITER FIELDS
 % ST = particleOrbits('fields/VMEC2D.dat','VMEC','2D',[150,150],[1E3,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
-% ST = particleOrbits('fields/SIESTA.txt','SIESTA','3D',[100,99,149],[5E4,1E-2,1],[2,7.2938E3],[1.6,0,-0.5],[-0.03,0]);
+% USING SIESTA FILES
+% ST = particleOrbits('fields/SIESTA.txt','SIESTA','2D',[100,99,149],[5E5,1E-2,10],[-1,1],[1.6,0,-0.5],[0.99,0]);
+% ST = particleOrbits('fields/SIESTA_2.txt','SIESTA','3D',[100,99,149],[5E5,1E-2,10],[-1,1],[1.6,0,-0.5],[0.99,30]);
 
 narginchk(8,9);
 
-% close all
+close all
 
 ST = struct;
 % Script parameters
@@ -139,6 +145,20 @@ end
 
 end
 
+function b = unitParallelVector(ST,X)
+% initial condition of an electron drifting parallel to the local magnetic
+% field.
+
+if ST.analytical
+    B = analyticalB(X);
+    b = B/sqrt(sum(B.^2));
+else
+    B = interpMagField(ST,X);
+    b = B/sqrt(sum(B.^2));
+end
+
+end
+
 function B = loadMagneticField(ST)
 % All quantities in SI units
 B = struct;
@@ -175,12 +195,12 @@ switch ST.fileType
             Z = reshape(Z,NR,Nphi,NZ);
             
             BR = data(:,4);
-            BR = reshape(BR,NR,Nphi,NZ);
-            Bphi = data(:,6);
-            Bphi = reshape(Bphi,NR,Nphi,NZ);
             BZ = data(:,5);
-            BZ = reshape(BZ,NR,Nphi,NZ);
+            Bphi = data(:,6);
             
+            BR = reshape(BR,NR,Nphi,NZ);
+            Bphi = reshape(Bphi,NR,Nphi,NZ);
+            BZ = reshape(BZ,NR,Nphi,NZ);
             
             B.NR = NR;
             B.NZ = NZ;
@@ -201,23 +221,42 @@ switch ST.fileType
             B.Nphi = ST.res(2);
             B.NZ = ST.res(3);
             
-            B.R = data(:,1);
-            B.Z = data(:,2);
-            B.phi = data(:,3);
+            R = data(:,1);
+            Z = data(:,2);
+%             phi = data(:,3);
+            phi = ((0:1:B.Nphi-1) + 0.5)*(2*pi/B.Nphi);
             
-            B.Ro = [B.R(1), B.Z(1)]; % This defines the position
+            B.Ro = [R(1), Z(1)]; % This defines the position
             
-            B.R = reshape(B.R,B.NR,B.Nphi,B.NZ);
-            B.phi = reshape(B.phi,B.NR,B.Nphi,B.NZ);
-            B.Z = reshape(B.Z,B.NR,B.Nphi,B.NZ);
+            R = reshape(R,B.NR,B.Nphi,B.NZ);
+%             phi = reshape(phi,B.NR,B.Nphi,B.NZ);
+            Z = reshape(Z,B.NR,B.Nphi,B.NZ);
             
-            B.BR = data(:,4);
-            B.BZ = data(:,5);
-            B.Bphi = data(:,6);
+            BR = data(:,4);
+            BZ = data(:,5);
+            Bphi = data(:,6);
             
-            B.BR = reshape(B.BR,B.NR,B.Nphi,B.NZ);
-            B.Bphi = reshape(B.Bphi,B.NR,B.Nphi,B.NZ);
-            B.BZ = reshape(B.BZ,B.NR,B.Nphi,B.NZ);
+            BR = reshape(BR,B.NR,B.Nphi,B.NZ);
+            Bphi = reshape(Bphi,B.NR,B.Nphi,B.NZ);
+            BZ = reshape(BZ,B.NR,B.Nphi,B.NZ);
+            
+            B.R = zeros(B.NR,B.NZ,B.Nphi);
+            B.phi = zeros(B.NR,B.NZ,B.Nphi);
+            B.Z = zeros(B.NR,B.NZ,B.Nphi);
+            B.BR = zeros(B.NR,B.NZ,B.Nphi);
+            B.Bphi = zeros(B.NR,B.NZ,B.Nphi);
+            B.BZ = zeros(B.NR,B.NZ,B.Nphi);
+            
+            for iphi=1:B.Nphi
+                B.R(:,:,iphi) = squeeze(R(:,iphi,:));
+%                 B.phi(:,:,iphi) = squeeze(phi(:,iphi,:));
+                B.phi(:,:,iphi) = phi(iphi);
+                B.Z(:,:,iphi) = squeeze(Z(:,iphi,:));
+                
+                B.BR(:,:,iphi) = squeeze(BR(:,iphi,:));
+                B.Bphi(:,:,iphi) = squeeze(Bphi(:,iphi,:));
+                B.BZ(:,:,iphi) = squeeze(BZ(:,iphi,:));
+            end
             
             B.B = sqrt(B.BR.^2 + B.BZ.^2 + B.Bphi.^2);
             
@@ -318,9 +357,9 @@ B.B = sqrt(B.BR.^2 + B.BZ.^2 + B.Bphi.^2);
 %     B.Bo = max(max(max(B.B)));
 B.Bo = mean(mean(mean(B.B)));
 
-% if ST.opt
-%     plotLoadedMagneticField(B)
-% end
+if ST.opt
+    plotLoadedMagneticField(B)
+end
 
 % B.SI = calculateChebyshevInterpolant(ST,B);
 
@@ -386,61 +425,61 @@ switch B.fileType
         ylabel('Z [m]','Interpreter','latex','FontSize',16)
         
         colormap(jet)
-    case 'SIESTA'
-        figure
-        subplot(2,2,1)
-        surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.BR(:,1,:)),'LineStyle','none')
-        view([0,90])
-        axis equal
-        box on
-        colorbar
-        title('$B^R$ [T]','Interpreter','latex','FontSize',16)
-        xlabel('R [m]','Interpreter','latex','FontSize',16)
-        ylabel('Z [m]','Interpreter','latex','FontSize',16)
-        
-        subplot(2,2,2)
-        surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.BZ(:,1,:)),'LineStyle','none')
-        view([0,90])
-        axis equal
-        box on
-        colorbar
-        title('$B^Z$ [T]','Interpreter','latex','FontSize',16)
-        xlabel('R [m]','Interpreter','latex','FontSize',16)
-        ylabel('Z [m]','Interpreter','latex','FontSize',16)
-        
-        subplot(2,2,3)
-        surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.Bphi(:,1,:)),'LineStyle','none')
-        view([0,90])
-        axis equal
-        box on
-        colorbar
-        title('$B^\phi$ [T]','Interpreter','latex','FontSize',16)
-        xlabel('R [m]','Interpreter','latex','FontSize',16)
-        ylabel('Z [m]','Interpreter','latex','FontSize',16)
-        
-        try
-            subplot(2,2,4)
-            surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.P(:,1,:)),'LineStyle','none')
-            view([0,90])
-            axis equal
-            box on
-            colorbar
-            title('$P(R,Z)$','Interpreter','latex','FontSize',16)
-            xlabel('R [m]','Interpreter','latex','FontSize',16)
-            ylabel('Z [m]','Interpreter','latex','FontSize',16)
-        catch
-            subplot(2,2,4)
-            surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.B(:,1,:)),'LineStyle','none')
-            view([0,90])
-            axis equal
-            box on
-            colorbar
-            title('$B(R,Z)$','Interpreter','latex','FontSize',16)
-            xlabel('R [m]','Interpreter','latex','FontSize',16)
-            ylabel('Z [m]','Interpreter','latex','FontSize',16)
-        end
-        
-        colormap(jet)
+%     case 'SIESTA'
+%         figure
+%         subplot(2,2,1)
+%         surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.BR(:,1,:)),'LineStyle','none')
+%         view([0,90])
+%         axis equal
+%         box on
+%         colorbar
+%         title('$B^R$ [T]','Interpreter','latex','FontSize',16)
+%         xlabel('R [m]','Interpreter','latex','FontSize',16)
+%         ylabel('Z [m]','Interpreter','latex','FontSize',16)
+%         
+%         subplot(2,2,2)
+%         surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.BZ(:,1,:)),'LineStyle','none')
+%         view([0,90])
+%         axis equal
+%         box on
+%         colorbar
+%         title('$B^Z$ [T]','Interpreter','latex','FontSize',16)
+%         xlabel('R [m]','Interpreter','latex','FontSize',16)
+%         ylabel('Z [m]','Interpreter','latex','FontSize',16)
+%         
+%         subplot(2,2,3)
+%         surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.Bphi(:,1,:)),'LineStyle','none')
+%         view([0,90])
+%         axis equal
+%         box on
+%         colorbar
+%         title('$B^\phi$ [T]','Interpreter','latex','FontSize',16)
+%         xlabel('R [m]','Interpreter','latex','FontSize',16)
+%         ylabel('Z [m]','Interpreter','latex','FontSize',16)
+%         
+%         try
+%             subplot(2,2,4)
+%             surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.P(:,1,:)),'LineStyle','none')
+%             view([0,90])
+%             axis equal
+%             box on
+%             colorbar
+%             title('$P(R,Z)$','Interpreter','latex','FontSize',16)
+%             xlabel('R [m]','Interpreter','latex','FontSize',16)
+%             ylabel('Z [m]','Interpreter','latex','FontSize',16)
+%         catch
+%             subplot(2,2,4)
+%             surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.B(:,1,:)),'LineStyle','none')
+%             view([0,90])
+%             axis equal
+%             box on
+%             colorbar
+%             title('$B(R,Z)$','Interpreter','latex','FontSize',16)
+%             xlabel('R [m]','Interpreter','latex','FontSize',16)
+%             ylabel('Z [m]','Interpreter','latex','FontSize',16)
+%         end
+%         
+%         colormap(jet)
     otherwise
         figure
         subplot(2,2,1)
@@ -582,20 +621,20 @@ elseif strcmp(ST.ND,'3D')
 
     DATA = cat(3,B.BR(:,:,end),B.BR,B.BR(:,:,1));
     DATA = reshape(DATA,[numel(DATA) 1]);
-%     SI.BR = scatteredInterpolant(R,Z,phi,DATA);
-    SI.BR = scatteredInterpolant(R,Z,phi,DATA,'nearest','nearest');
+    SI.BR = scatteredInterpolant(R,Z,phi,DATA);
+%     SI.BR = scatteredInterpolant(R,Z,phi,DATA,'nearest','nearest');
     clear DATA
     
     DATA = cat(3,B.BZ(:,:,end),B.BZ,B.BZ(:,:,1));
     DATA = reshape(DATA,[numel(DATA) 1]);
-%     SI.BZ = scatteredInterpolant(R,Z,phi,DATA);
-    SI.BZ = scatteredInterpolant(R,Z,phi,DATA,'nearest','nearest');
+    SI.BZ = scatteredInterpolant(R,Z,phi,DATA);
+%     SI.BZ = scatteredInterpolant(R,Z,phi,DATA,'nearest','nearest');
     clear DATA
     
     DATA = cat(3,B.Bphi(:,:,end),B.Bphi,B.Bphi(:,:,1));
     DATA = reshape(DATA,[numel(DATA) 1]);
-%     SI.Bphi = scatteredInterpolant(R,Z,phi,DATA);
-    SI.Bphi = scatteredInterpolant(R,Z,phi,DATA,'nearest','nearest');
+    SI.Bphi = scatteredInterpolant(R,Z,phi,DATA);
+%     SI.Bphi = scatteredInterpolant(R,Z,phi,DATA,'nearest','nearest');
     clear DATA
     
 else
@@ -813,6 +852,7 @@ end
 function PP = particlePusherLeapfrogMod(ST)
 % Relativistic particle pusher.
 % Vay, J.-L. 2008, PoP 15, 056701.
+disp('Initializing particle pusher...')
 
 PP = struct;
 
@@ -825,6 +865,8 @@ R = zeros(ST.params.numIt,3);
 
 k = zeros(1,ST.params.numIt); % Curvature
 T = zeros(1,ST.params.numIt); % Torsion
+vpar = zeros(1,ST.params.numIt); % parallel velocity
+vperp = zeros(1,ST.params.numIt); % perpendicular velocity
 
 % Normalization
 X(1,:) = ST.params.Xo/ST.norm.l;
@@ -839,11 +881,25 @@ end
 dt = ST.params.dt*ST.norm.wc;
 E = ST.E/(ST.Bo*ST.params.c);
 
-
 % initial velocity at time level t = 0
 u(1,:) = v(1,:)/sqrt(1 - sum(v(1,:).^2));
 v(1,:) = u(1,:)/sqrt(1 + sum(u(1,:).^2));
 R(1,:) = X(1,:) + m*cross(v(1,:),B)/(q*sum(B.^2));
+
+
+% % % % % % % % % % % % % % % % % % 
+b = B/sqrt(sum(B.^2));
+vpar(1) = v(1,:)*b';
+vperp(1) = sqrt( v(1,:)*v(1,:)' - vpar(1)^2 );
+
+% Curvature and torsion
+acc = q*cross(v(1,:),B)/sqrt(1 + sum(u(1,:).^2)); % acceleration
+aux = sum( cross(v(1,:),acc).^2 );
+k(1) = sqrt( aux )/sqrt( sum(v(1,:).^2) )^3;
+dacc = q*cross(acc,B)/sqrt(1 + sum(u(1,:).^2)); % d(acc)/dt
+T(1) = det([v(1,:); acc; dacc])/aux;
+% Curvature and torsion
+% % % % % % % % % % % % % % % % % % 
 
 % initial velocity
 DT = 0.5*dt;
@@ -889,15 +945,17 @@ for ii=2:ST.params.numIt
     v(ii,:) = u(ii,:)/sqrt(1 + sum(u(ii,:).^2));
     R(ii,:) = X(ii,:) + m*cross(v(ii,:),B)/(q*sum(B.^2));
     
-    % Curvature and torsion: 
-    acc = q*cross(v(ii,:),B)/sqrt(1 + sum(u(ii,:).^2));
+    b = B/sqrt(sum(B.^2));
+    vpar(ii) = v(ii,:)*b';
+    vperp(ii) = sqrt( v(ii,:)*v(ii,:)' - vpar(ii)^2 );
+    
+    % Curvature and torsion
+    acc = q*cross(v(ii,:),B)/sqrt(1 + sum(u(ii,:).^2)); % acceleration
     aux = sum( cross(v(ii,:),acc).^2 );
-    
     k(ii) = sqrt( aux )/sqrt( sum(v(ii,:).^2) )^3;
-    
-    dacc = q*cross(acc,B)/sqrt(1 + sum(u(ii,:).^2));
-    
+    dacc = q*cross(acc,B)/sqrt(1 + sum(u(ii,:).^2)); % d(acc)/dt
     T(ii) = det([v(ii,:); acc; dacc])/aux;
+    % Curvature and torsion
     
     %     disp(['Iteration ' num2str(ii)])
 end
@@ -906,7 +964,7 @@ time = ST.time/(2*pi/ST.params.wc);
 
 % Relative error in energy conservation
 EK = 1./sqrt(1-sum(v.^2,2));
-ERR = 100*(EK(1) - EK)./EK(1);
+ERR = [0; 100*(EK(2) - EK(2:end))./EK(2)];
 % Relative error in energy conservation
 
 % Cylindrical coordinates
@@ -917,13 +975,19 @@ phi(phi < 0) = phi(phi < 0) + 2*pi;
 % Cylindrical coordinates
 
 figure
-subplot(2,1,1)
+subplot(3,1,1)
+plot(time(ST.params.inds), EK(ST.params.inds))
+box on
+xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+ylabel('Kinetic energy [$m_e c^2$]','Interpreter','latex','FontSize',16)
+title(PP.method,'Interpreter','latex','FontSize',16)
+subplot(3,1,2)
 plot(time(ST.params.inds), ERR(ST.params.inds))
 box on
 xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
 ylabel('Energy conservation [\%]','Interpreter','latex','FontSize',16)
 title(PP.method,'Interpreter','latex','FontSize',16)
-subplot(2,1,2)
+subplot(3,1,3)
 plot(phi(ST.params.inds), ERR(ST.params.inds))
 box on
 xlabel('Azimuthal angle $\phi$ [rad]','Interpreter','latex','FontSize',16)
@@ -931,11 +995,38 @@ ylabel('Energy conservation [\%]','Interpreter','latex','FontSize',16)
 title(PP.method,'Interpreter','latex','FontSize',16)
 
 
+figure
+subplot(3,1,1)
+plot(time(ST.params.inds), vpar(ST.params.inds))
+box on
+grid on
+xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+ylabel('$v_\parallel$ [c]','Interpreter','latex','FontSize',16)
+title(PP.method,'Interpreter','latex','FontSize',16)
+subplot(3,1,2)
+plot(time(ST.params.inds), vperp(ST.params.inds))
+box on
+grid on
+xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+ylabel('$v_\perp$ [c]','Interpreter','latex','FontSize',16)
+title(PP.method,'Interpreter','latex','FontSize',16)
+v_tot = sqrt(vpar.^2 +vperp.^2);
+subplot(3,1,3)
+plot(time(ST.params.inds), v_tot(ST.params.inds))
+box on
+grid on
+xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+ylabel('$v$ [c]','Interpreter','latex','FontSize',16)
+title(PP.method,'Interpreter','latex','FontSize',16)
+
 
 % Return position and velocity with SI units
 PP.X = X*ST.norm.l;
 PP.R = R*ST.norm.l;
 PP.v = v*ST.params.c;
+
+PP.vpar = vpar;
+PP.vperp = vperp;
 
 PP.k = k/ST.norm.l; % curvature
 PP.T = T/ST.norm.l; % curvature
@@ -944,12 +1035,14 @@ figure
 subplot(2,1,1)
 plot(time(ST.params.inds), k(ST.params.inds))
 box on
+grid on
 xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
 ylabel('Curvature $\kappa(t)$','Interpreter','latex','FontSize',16)
 title(PP.method,'Interpreter','latex','FontSize',16)
 subplot(2,1,2)
 plot(time(ST.params.inds), T(ST.params.inds),time(ST.params.inds),0*time(ST.params.inds),'k--')
 box on
+grid on
 xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
 ylabel('Torsion $\tau(t)$','Interpreter','latex','FontSize',16)
 title(PP.method,'Interpreter','latex','FontSize',16)
@@ -965,6 +1058,7 @@ ylabel('Y','Interpreter','latex','FontSize',16)
 zlabel('Z','Interpreter','latex','FontSize',16)
 title(PP.method,'Interpreter','latex','FontSize',16)
 
+disp('Particle pusher: done!')
 end
 
 % MATLAB PARTICLE PUSHER
@@ -1135,13 +1229,18 @@ locs = find(abs(diff(zeta)) > 6);
 
 figure
 plot(R(locs),Z(locs),'r.','MarkerSize',15)
+hold on
+if isfield(ST.PP,'R')
+    plot(Rgc(locs),Zgc(locs),'k.','MarkerSize',15)
+end
+hold off
 try 
     pol_angle = atan2(Z - ST.B.Ro(2),R - ST.B.Ro(1));
     locs = find(abs(diff(pol_angle)) > 6);
     hold on
     plot(R(locs(1):locs(2)),Z(locs(1):locs(2)),'k')
     if isfield(ST.PP,'R')
-        plot(Rgc(locs(1):locs(2)),Zgc(locs(1):locs(2)),'g','LineWidth',2)
+        plot(Rgc(locs(1):locs(2)),Zgc(locs(1):locs(2)),'g')
     end
     hold off
 catch
