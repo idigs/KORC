@@ -14,7 +14,7 @@ function ST = particleOrbits(pathToBField,fileType,ND,res,timeStepParams,tracerP
 
 narginchk(8,9);
 
-close all
+% close all
 
 ST = struct;
 % Script parameters
@@ -202,8 +202,8 @@ switch ST.fileType
             B.NZ = ST.res(3);
             
             B.R = data(:,1);
-            B.phi = data(:,3);
             B.Z = data(:,2);
+            B.phi = data(:,3);
             
             B.Ro = [B.R(1), B.Z(1)]; % This defines the position
             
@@ -212,10 +212,11 @@ switch ST.fileType
             B.Z = reshape(B.Z,B.NR,B.Nphi,B.NZ);
             
             B.BR = data(:,4);
-            B.BR = reshape(B.BR,B.NR,B.Nphi,B.NZ);
-            B.Bphi = data(:,6);
-            B.Bphi = reshape(B.Bphi,B.NR,B.Nphi,B.NZ);
             B.BZ = data(:,5);
+            B.Bphi = data(:,6);
+            
+            B.BR = reshape(B.BR,B.NR,B.Nphi,B.NZ);
+            B.Bphi = reshape(B.Bphi,B.NR,B.Nphi,B.NZ);
             B.BZ = reshape(B.BZ,B.NR,B.Nphi,B.NZ);
             
             B.B = sqrt(B.BR.^2 + B.BZ.^2 + B.Bphi.^2);
@@ -317,9 +318,9 @@ B.B = sqrt(B.BR.^2 + B.BZ.^2 + B.Bphi.^2);
 %     B.Bo = max(max(max(B.B)));
 B.Bo = mean(mean(mean(B.B)));
 
-if ST.opt
-    plotLoadedMagneticField(B)
-end
+% if ST.opt
+%     plotLoadedMagneticField(B)
+% end
 
 % B.SI = calculateChebyshevInterpolant(ST,B);
 
@@ -581,17 +582,20 @@ elseif strcmp(ST.ND,'3D')
 
     DATA = cat(3,B.BR(:,:,end),B.BR,B.BR(:,:,1));
     DATA = reshape(DATA,[numel(DATA) 1]);
-    SI.BR = scatteredInterpolant(R,Z,phi,DATA);
+%     SI.BR = scatteredInterpolant(R,Z,phi,DATA);
+    SI.BR = scatteredInterpolant(R,Z,phi,DATA,'nearest','nearest');
     clear DATA
     
     DATA = cat(3,B.BZ(:,:,end),B.BZ,B.BZ(:,:,1));
     DATA = reshape(DATA,[numel(DATA) 1]);
-    SI.BZ = scatteredInterpolant(R,Z,phi,DATA);
+%     SI.BZ = scatteredInterpolant(R,Z,phi,DATA);
+    SI.BZ = scatteredInterpolant(R,Z,phi,DATA,'nearest','nearest');
     clear DATA
     
     DATA = cat(3,B.Bphi(:,:,end),B.Bphi,B.Bphi(:,:,1));
     DATA = reshape(DATA,[numel(DATA) 1]);
-    SI.Bphi = scatteredInterpolant(R,Z,phi,DATA);
+%     SI.Bphi = scatteredInterpolant(R,Z,phi,DATA);
+    SI.Bphi = scatteredInterpolant(R,Z,phi,DATA,'nearest','nearest');
     clear DATA
     
 else
@@ -819,6 +823,9 @@ v = zeros(ST.params.numIt,3);
 u = zeros(ST.params.numIt,3);
 R = zeros(ST.params.numIt,3);
 
+k = zeros(1,ST.params.numIt); % Curvature
+T = zeros(1,ST.params.numIt); % Torsion
+
 % Normalization
 X(1,:) = ST.params.Xo/ST.norm.l;
 v(1,:) = ST.params.vo/ST.params.c;
@@ -882,27 +889,70 @@ for ii=2:ST.params.numIt
     v(ii,:) = u(ii,:)/sqrt(1 + sum(u(ii,:).^2));
     R(ii,:) = X(ii,:) + m*cross(v(ii,:),B)/(q*sum(B.^2));
     
+    % Curvature and torsion: 
+    acc = q*cross(v(ii,:),B)/sqrt(1 + sum(u(ii,:).^2));
+    aux = sum( cross(v(ii,:),acc).^2 );
+    
+    k(ii) = sqrt( aux )/sqrt( sum(v(ii,:).^2) )^3;
+    
+    dacc = q*cross(acc,B)/sqrt(1 + sum(u(ii,:).^2));
+    
+    T(ii) = det([v(ii,:); acc; dacc])/aux;
+    
     %     disp(['Iteration ' num2str(ii)])
 end
+
+time = ST.time/(2*pi/ST.params.wc);
 
 % Relative error in energy conservation
 EK = 1./sqrt(1-sum(v.^2,2));
 ERR = 100*(EK(1) - EK)./EK(1);
+% Relative error in energy conservation
 
-time = ST.time/(2*pi/ST.params.wc);
+% Cylindrical coordinates
+phi = atan2(X(:,2),X(:,1));
+phi(phi < 0) = phi(phi < 0) + 2*pi;
+% locs = [1;find(abs(diff(phi)) > 6);numel(phi)];
+
+% Cylindrical coordinates
 
 figure
+subplot(2,1,1)
 plot(time(ST.params.inds), ERR(ST.params.inds))
 box on
 xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
 ylabel('Energy conservation [\%]','Interpreter','latex','FontSize',16)
 title(PP.method,'Interpreter','latex','FontSize',16)
+subplot(2,1,2)
+plot(phi(ST.params.inds), ERR(ST.params.inds))
+box on
+xlabel('Azimuthal angle $\phi$ [rad]','Interpreter','latex','FontSize',16)
+ylabel('Energy conservation [\%]','Interpreter','latex','FontSize',16)
+title(PP.method,'Interpreter','latex','FontSize',16)
+
 
 
 % Return position and velocity with SI units
 PP.X = X*ST.norm.l;
 PP.R = R*ST.norm.l;
 PP.v = v*ST.params.c;
+
+PP.k = k/ST.norm.l; % curvature
+PP.T = T/ST.norm.l; % curvature
+
+figure
+subplot(2,1,1)
+plot(time(ST.params.inds), k(ST.params.inds))
+box on
+xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+ylabel('Curvature $\kappa(t)$','Interpreter','latex','FontSize',16)
+title(PP.method,'Interpreter','latex','FontSize',16)
+subplot(2,1,2)
+plot(time(ST.params.inds), T(ST.params.inds),time(ST.params.inds),0*time(ST.params.inds),'k--')
+box on
+xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+ylabel('Torsion $\tau(t)$','Interpreter','latex','FontSize',16)
+title(PP.method,'Interpreter','latex','FontSize',16)
 
 figure
 plot3(PP.X(ST.params.inds,1),PP.X(ST.params.inds,2),PP.X(ST.params.inds,3),'b')
