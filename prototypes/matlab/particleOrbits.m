@@ -1244,6 +1244,7 @@ end
 hold off
 try 
     pol_angle = atan2(Z - ST.B.Ro(2),R - ST.B.Ro(1));
+%     pol_angle(pol_angle<0) = pol_angle(pol_angle<0) + 2*pi;
     locs = find(abs(diff(pol_angle)) > 6);
     hold on
     plot(R(locs(1):locs(2)),Z(locs(1):locs(2)),'k')
