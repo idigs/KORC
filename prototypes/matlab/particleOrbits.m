@@ -868,6 +868,8 @@ T = zeros(1,ST.params.numIt); % Torsion
 vpar = zeros(1,ST.params.numIt); % parallel velocity
 vperp = zeros(1,ST.params.numIt); % perpendicular velocity
 
+EK = zeros(1,ST.params.numIt);
+
 % Normalization
 X(1,:) = ST.params.Xo/ST.norm.l;
 v(1,:) = ST.params.vo/ST.params.c;
@@ -899,6 +901,8 @@ k(1) = sqrt( aux )/sqrt( sum(v(1,:).^2) )^3;
 dacc = q*cross(acc,B)/sqrt(1 + sum(u(1,:).^2)); % d(acc)/dt
 T(1) = det([v(1,:); acc; dacc])/aux;
 % Curvature and torsion
+
+EK(1) = sqrt(1 + sum(u(1,:).^2));
 % % % % % % % % % % % % % % % % % % 
 
 % initial velocity
@@ -941,6 +945,8 @@ for ii=2:ST.params.numIt
     U = s*(up + sum(up.*t)*t + cross(up,t));
     V = U/sqrt(1 + sum(U.^2));
     
+    EK(ii) = sqrt(1 + sum(U.^2));
+    
     u(ii,:) = U - 0.5*a*( E + cross(V,B) );
     v(ii,:) = u(ii,:)/sqrt(1 + sum(u(ii,:).^2));
     R(ii,:) = X(ii,:) + m*cross(v(ii,:),B)/(q*sum(B.^2));
@@ -963,8 +969,9 @@ end
 time = ST.time/(2*pi/ST.params.wc);
 
 % Relative error in energy conservation
-EK = 1./sqrt(1-sum(v.^2,2));
-ERR = [0; 100*(EK(2) - EK(2:end))./EK(2)];
+% EK = 1./sqrt(1-sum(v.^2,2));
+% ERR = [0; 100*(EK(2) - EK(2:end))./EK(2)];
+ERR = [0, 100*(EK(2) - EK(2:end))./EK(2)];
 % Relative error in energy conservation
 
 % Cylindrical coordinates
