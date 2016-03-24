@@ -702,9 +702,9 @@ function B = analyticalB(X,opt)
 narginchk(1,2);
 
 % Parameters of the analytical magnetic field
-Bo = 5;
-a = 2;% 0.6;% Minor radius in meters.
-Ro = 6.0; % Major radius in meters.
+Bo = 3;
+a = 1;% 0.6;% Minor radius in meters.
+Ro = 2.0; % Major radius in meters.
 qa = 10; % Safety factor at the separatrix (r=a)
 co = 0.5; % Extra parameter
 lamb = a/co;
@@ -950,10 +950,10 @@ for ii=2:ST.params.numIt
     vperp(ii) = sqrt( v(ii,:)*v(ii,:)' - vpar(ii)^2 );
     
     % Curvature and torsion
-    acc = q*cross(v(ii,:),B)/sqrt(1 + sum(u(ii,:).^2)); % acceleration
+    acc = (q/m)*cross(v(ii,:),B)/sqrt(1 + sum(u(ii,:).^2)); % acceleration
     aux = sum( cross(v(ii,:),acc).^2 );
     k(ii) = sqrt( aux )/sqrt( sum(v(ii,:).^2) )^3;
-    dacc = q*cross(acc,B)/sqrt(1 + sum(u(ii,:).^2)); % d(acc)/dt
+    dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(u(ii,:).^2)); % d(acc)/dt
     T(ii) = det([v(ii,:); acc; dacc])/aux;
     % Curvature and torsion
     
@@ -1053,6 +1053,7 @@ hold on
 plot3(PP.R(ST.params.inds,1),PP.R(ST.params.inds,2),PP.R(ST.params.inds,3),'r')
 hold off
 axis equal
+box on
 xlabel('X','Interpreter','latex','FontSize',16)
 ylabel('Y','Interpreter','latex','FontSize',16)
 zlabel('Z','Interpreter','latex','FontSize',16)
