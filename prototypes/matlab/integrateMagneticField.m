@@ -27,9 +27,9 @@ B.SI = calculatescatteredInterpolant(B);
 
 P = figure;
 
-Ros = linspace(1,1.823,numInitCond);
+Ros = [1.358];%linspace(1,1.823,numInitCond);
 phio = pi;
-Zos = -0.1;%linspace(-1,1,numInitCond);
+Zos = 0;%linspace(-1,1,numInitCond);
 
 for ii=1:numel(Ros)
     
@@ -267,6 +267,25 @@ title('$B^\phi$ [T]','Interpreter','latex','FontSize',16)
 xlabel('R [m]','Interpreter','latex','FontSize',16)
 ylabel('Z [m]','Interpreter','latex','FontSize',16)
 colormap(jet)
+
+data = zeros(1,6);
+fileID = fopen([name '.txt'],'w');
+for ir=1:B.NR
+    for iz=1:B.NZ
+        data(1) = B.R(iz,ir);
+        data(2) = 0;
+        data(3) = B.Z(iz,ir);
+        
+        data(4) = B.BR(iz,ir);
+        data(5) = B.Bphi(iz,ir);
+        data(6) = B.BZ(iz,ir);
+        
+        fprintf(fileID,'%3.7f\t %3.7f\t %3.7f\t %3.7f\t %3.7f\t %3.7f\n',data);
+    end
+end
+fclose(fileID);
+disp(['File: ``' name '.txt`` generated!'])
+
 end
 
 function SI = calculatescatteredInterpolant(B)

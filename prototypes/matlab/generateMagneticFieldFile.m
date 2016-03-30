@@ -11,7 +11,7 @@ narginchk(3,3)
 
 B = analyticalB([],'initialize');
 
-offset = 2;
+offset = 0.2;
 
 Rmin = (B.Ro - B.a) - offset;
 Rmax = (B.Ro + B.a) + offset;
@@ -88,10 +88,10 @@ function [B,P] = analyticalB(X,opt)
 narginchk(1,2);
 
 % Parameters of the analytical magnetic field
-Bo = 5;
-a = 2;% 0.6;% Minor radius in meters.
-Ro = 6.0; % Major radius in meters.
-qa = 10; % Safety factor at the separatrix (r=a)
+Bo = 3;
+a = 1;% 0.6;% Minor radius in meters.
+Ro = 2.0; % Major radius in meters.
+qa = 5; % Safety factor at the separatrix (r=a)
 co = 0.5; % Extra parameter
 lamb = a/co;
 Bpo = (a/Ro)*(Bo/qa)*(1-co^2)/co;

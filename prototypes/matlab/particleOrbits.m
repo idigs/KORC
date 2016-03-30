@@ -5,7 +5,7 @@ function ST = particleOrbits(pathToBField,fileType,ND,res,timeStepParams,tracerP
 %
 % EXAMPLES:
 % USING ANALYTICAL MAGNETIC FIELD
-% ST = particleOrbits('','','2D',[],[1E6,1E-1,1],[-1,1],[6,0,-1],[.99,0]);
+% ST = particleOrbits('','','2D',[],[1E6,1E-2,10],[-1,1],[2,0,0],[.99,0]);
 % USING TABULATED FIELDS OF THE ANALYTICAL MAGNETIC FIELD
 % ST = particleOrbits('fields/CHEBYSHEV.dat','VMEC','2D',[60,60],[1E3,1.16E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
 % USING XPAND FILES OF ITER FIELDS
@@ -17,6 +17,10 @@ function ST = particleOrbits(pathToBField,fileType,ND,res,timeStepParams,tracerP
 % USING SIESTA FILES
 % ST = particleOrbits('fields/SIESTA.txt','SIESTA','2D',[100,99,149],[5E5,1E-2,10],[-1,1],[1.6,0,-0.5],[0.99,0]);
 % ST = particleOrbits('fields/SIESTA_2.txt','SIESTA','3D',[100,99,149],[5E5,1E-2,10],[-1,1],[1.6,0,-0.5],[0.99,30]);
+% name='fields/bfield_tracing/d3d_bfield_tracing-3E-3.dat';
+% ST = particleOrbits(name,'SIESTA','3D',[100,79,149],[1E7,1E-2,1],[-1,1],[1.5,0,-0.5],[0.99,30]);
+% USING RAW FILES
+% ST = particleOrbits('jfit_165365_1400.txt','RAW','2D',[],[1E5,1E-2,10],[-1,1],[1.82,0,-0.4928],[0.99,70]);
 
 narginchk(8,9);
 
@@ -175,7 +179,7 @@ switch ST.fileType
 %         B.Ro = [B.R(1), B.Z(1)]; % This defines the position
         
         B.BR = data(:,4);
-        B.Bphi = data(:,5); % minus sign
+        B.Bphi = - data(:,5); % minus sign
         B.BZ = data(:,6);
         
         B.B = sqrt(B.BR.^2 + B.BZ.^2 + B.Bphi.^2);
@@ -705,7 +709,7 @@ narginchk(1,2);
 Bo = 3;
 a = 1;% 0.6;% Minor radius in meters.
 Ro = 2.0; % Major radius in meters.
-qa = 10; % Safety factor at the separatrix (r=a)
+qa = 5; % Safety factor at the separatrix (r=a)
 co = 0.5; % Extra parameter
 lamb = a/co;
 Bpo = (a/Ro)*(Bo/qa)*(1-co^2)/co;
@@ -1040,14 +1044,14 @@ PP.T = T/ST.norm.l; % curvature
 
 figure
 subplot(2,1,1)
-plot(time(ST.params.inds), k(ST.params.inds))
+plot(time(ST.params.inds), PP.k(ST.params.inds))
 box on
 grid on
 xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
 ylabel('Curvature $\kappa(t)$','Interpreter','latex','FontSize',16)
 title(PP.method,'Interpreter','latex','FontSize',16)
 subplot(2,1,2)
-plot(time(ST.params.inds), T(ST.params.inds),time(ST.params.inds),0*time(ST.params.inds),'k--')
+plot(time(ST.params.inds), PP.T(ST.params.inds),time(ST.params.inds),0*time(ST.params.inds),'k--')
 box on
 grid on
 xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
@@ -1098,7 +1102,7 @@ E = ST.E/(ST.Bo*ST.params.c);
 u(1,:) = v(1,:)/sqrt(1 - sum(v(1,:).^2));
 v(1,:) = u(1,:)/sqrt(1 + sum(u(1,:).^2));
 
-options = odeset('RelTol',1E-5,'AbsTol',1E-10);%,'Stats','on','OutputFcn',@odeplot)
+options = odeset('RelTol',1E-6,'AbsTol',1E-10);%,'Stats','on','OutputFcn',@odeplot)
 % options = odeset('RelTol',1E-3,'AbsTol',1E-6);%,'Stats','on','OutputFcn',@odeplot)
 
 tspan = ST.time*ST.norm.wc;
