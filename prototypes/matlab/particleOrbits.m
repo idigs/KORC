@@ -707,7 +707,7 @@ narginchk(1,2);
 
 % Parameters of the analytical magnetic field
 Bo = 3;
-a = 1;% 0.6;% Minor radius in meters.
+a = 1;% Minor radius in meters.
 Ro = 2.0; % Major radius in meters.
 qa = 5; % Safety factor at the separatrix (r=a)
 co = 0.5; % Extra parameter
@@ -871,6 +871,7 @@ k = zeros(1,ST.params.numIt); % Curvature
 T = zeros(1,ST.params.numIt); % Torsion
 vpar = zeros(1,ST.params.numIt); % parallel velocity
 vperp = zeros(1,ST.params.numIt); % perpendicular velocity
+mu = zeros(1,ST.params.numIt); % instantaneous magnetic moment
 
 EK = zeros(1,ST.params.numIt);
 
@@ -889,14 +890,16 @@ E = ST.E/(ST.Bo*ST.params.c);
 
 % initial velocity at time level t = 0
 u(1,:) = v(1,:)/sqrt(1 - sum(v(1,:).^2));
-v(1,:) = u(1,:)/sqrt(1 + sum(u(1,:).^2));
+gamma = sqrt(1 + sum(u(1,:).^2));
+v(1,:) = u(1,:)/gamma;
 R(1,:) = X(1,:) + m*cross(v(1,:),B)/(q*sum(B.^2));
 
-
 % % % % % % % % % % % % % % % % % % 
-b = B/sqrt(sum(B.^2));
+B_mag = sqrt(sum(B.^2));
+b = B/B_mag;
 vpar(1) = v(1,:)*b';
 vperp(1) = sqrt( v(1,:)*v(1,:)' - vpar(1)^2 );
+mu(1) = gamma*m*vperp(1)^2/(2*B_mag);
 
 % Curvature and torsion
 acc = q*cross(v(1,:),B)/sqrt(1 + sum(u(1,:).^2)); % acceleration
@@ -952,12 +955,16 @@ for ii=2:ST.params.numIt
     EK(ii) = sqrt(1 + sum(U.^2));
     
     u(ii,:) = U - 0.5*a*( E + cross(V,B) );
-    v(ii,:) = u(ii,:)/sqrt(1 + sum(u(ii,:).^2));
+    gamma = sqrt(1 + sum(u(ii,:).^2));
+    v(ii,:) = u(ii,:)/gamma;
     R(ii,:) = X(ii,:) + m*cross(v(ii,:),B)/(q*sum(B.^2));
     
-    b = B/sqrt(sum(B.^2));
+    B_mag = sqrt(sum(B.^2));
+    b = B/B_mag;
     vpar(ii) = v(ii,:)*b';
     vperp(ii) = sqrt( v(ii,:)*v(ii,:)' - vpar(ii)^2 );
+    mu(ii) = gamma*m*vperp(ii)^2/(2*B_mag);
+
     
     % Curvature and torsion
     acc = (q/m)*cross(v(ii,:),B)/sqrt(1 + sum(u(ii,:).^2)); % acceleration
@@ -975,34 +982,43 @@ time = ST.time/(2*pi/ST.params.wc);
 % Relative error in energy conservation
 % EK = 1./sqrt(1-sum(v.^2,2));
 % ERR = [0; 100*(EK(2) - EK(2:end))./EK(2)];
-ERR = [0, 100*(EK(2) - EK(2:end))./EK(2)];
+ERR_EK = [0, 100*(EK(2) - EK(2:end))./EK(2)];
+ERR_mu = 100*(mu(1) - mu)./mu(1);
 % Relative error in energy conservation
 
 % Cylindrical coordinates
 phi = atan2(X(:,2),X(:,1));
 phi(phi < 0) = phi(phi < 0) + 2*pi;
 % locs = [1;find(abs(diff(phi)) > 6);numel(phi)];
-
 % Cylindrical coordinates
 
+x = linspace(min(time),max(time),10);
+y = zeros(1,10);
+
 figure
-subplot(3,1,1)
+subplot(4,1,1)
 plot(time(ST.params.inds), EK(ST.params.inds))
 box on
 xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-ylabel('Kinetic energy [$m_e c^2$]','Interpreter','latex','FontSize',16)
+ylabel('$\gamma m c^2$ [$m_e c^2$]','Interpreter','latex','FontSize',16)
 title(PP.method,'Interpreter','latex','FontSize',16)
-subplot(3,1,2)
-plot(time(ST.params.inds), ERR(ST.params.inds))
+subplot(4,1,2)
+plot(time(ST.params.inds), ERR_EK(ST.params.inds),x,y,'k--')
 box on
 xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-ylabel('Energy conservation [\%]','Interpreter','latex','FontSize',16)
+ylabel('Error in $\gamma m c^2$ [\%]','Interpreter','latex','FontSize',16)
 title(PP.method,'Interpreter','latex','FontSize',16)
-subplot(3,1,3)
-plot(phi(ST.params.inds), ERR(ST.params.inds))
+subplot(4,1,3)
+plot(time(ST.params.inds), mu(ST.params.inds))
 box on
-xlabel('Azimuthal angle $\phi$ [rad]','Interpreter','latex','FontSize',16)
-ylabel('Energy conservation [\%]','Interpreter','latex','FontSize',16)
+xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+ylabel('$\mu$ [$c^2 m_o/B_o$]','Interpreter','latex','FontSize',16)
+title(PP.method,'Interpreter','latex','FontSize',16)
+subplot(4,1,4)
+plot(time(ST.params.inds), ERR_mu(ST.params.inds),x,y,'k--')
+box on
+xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+ylabel('Error in $\mu$ [\%]','Interpreter','latex','FontSize',16)
 title(PP.method,'Interpreter','latex','FontSize',16)
 
 
@@ -1246,24 +1262,24 @@ if isfield(ST.PP,'R')
     plot(Rgc(locs),Zgc(locs),'k.','MarkerSize',15)
 end
 hold off
-try 
-    pol_angle = atan2(Z - ST.B.Ro(2),R - ST.B.Ro(1));
-%     pol_angle(pol_angle<0) = pol_angle(pol_angle<0) + 2*pi;
-    locs = find(abs(diff(pol_angle)) > 6);
-    hold on
-    plot(R(locs(1):locs(2)),Z(locs(1):locs(2)),'k')
-    if isfield(ST.PP,'R')
-        plot(Rgc(locs(1):locs(2)),Zgc(locs(1):locs(2)),'g')
-    end
-    hold off
-catch
+% try 
+%     pol_angle = atan2(Z - ST.B.Ro(2),R - ST.B.Ro(1));
+% %     pol_angle(pol_angle<0) = pol_angle(pol_angle<0) + 2*pi;
+%     locs = find(abs(diff(pol_angle)) > 6);
+%     hold on
+%     plot(R(locs(1):locs(2)),Z(locs(1):locs(2)),'k')
+%     if isfield(ST.PP,'R')
+%         plot(Rgc(locs(1):locs(2)),Zgc(locs(1):locs(2)),'g')
+%     end
+%     hold off
+% catch
     hold on
     plot(R,X(:,3),'k')
     if isfield(ST.PP,'R')
         plot(Rgc,Zgc,'g','LineWidth',2)
     end
     hold off
-end
+% end
 axis equal
 xlabel('R [m]','Interpreter','latex','FontSize',16)
 ylabel('Z [m]','Interpreter','latex','FontSize',16)
@@ -1311,9 +1327,11 @@ DI = dzeta.*( 1 + eta.*cos(theta) ).^2 - wo.*psi/(Ro*Bo);
 
 ERR = 100*(DI(1) - DI)./DI(1);
 
+time = ST.time/(2*pi/ST.norm.wc);
+
 figure
 subplot(2,1,1)
-plot(ST.time(ST.params.inds),DI)
+plot(time(ST.params.inds),DI)
 xlabel('Time $t$ [$\tau_c$]','Interpreter','latex','FontSize',16)
 ylabel('Invariant','Interpreter','latex','FontSize',16)
 title(ST.PP.method,'Interpreter','latex','FontSize',16)
