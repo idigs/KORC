@@ -75,8 +75,10 @@ ST.params.m = tracerParams(2)*ST.params.me; % alpha-particle
 ST.params.wc = sqrt(1 - sum(ST.params.vo.^2)/ST.params.c^2)*abs(ST.params.q)*ST.Bo/ST.params.m;
 ST.params.rL = ST.params.vperp/ST.params.wc; % Larmor radius of particle
 
-disp(['Cyclotron frequency ' num2str(ST.params.wc) ' Hz'])
-disp(['Larmor radius ' num2str(ST.params.rL) ' m'])
+if ST.opt
+    disp(['Cyclotron frequency ' num2str(ST.params.wc) ' Hz'])
+    disp(['Larmor radius ' num2str(ST.params.rL) ' m'])
+end
 
 % Normalisation parameters
 ST.norm.q = abs(ST.params.q);
@@ -100,7 +102,7 @@ ST.PP = particlePusherLeapfrogMod(ST);
 % ST.PP = particlePusherMatlab(ST);
 
 
-PoincarePlots(ST);
+% PoincarePlots(ST);
 % DiegosInvariants(ST);
 
 munlock
@@ -120,10 +122,35 @@ vperp = v*sin(pitchAngle);
 [b,a] = unitVectors(ST);
 vo = vpar*b + vperp*a;
 
-disp(['Parallel velocity: ' num2str(vpar/ST.params.c)])
-disp(['Perpendicular velocity: ' num2str(vperp/ST.params.c)])
-
+if ST.opt
+    disp(['Parallel velocity: ' num2str(vpar/ST.params.c)])
+    disp(['Perpendicular velocity: ' num2str(vperp/ST.params.c)])
 end
+end
+
+% function [b,a] = unitVectors(ST)
+% % initial condition of an electron drifting parallel to the local magnetic
+% % field.
+% 
+% if ST.analytical
+%     B = analyticalB(ST.params.Xo);
+%     b = B/sqrt(sum(B.^2));
+% else
+%     B = interpMagField(ST,ST.params.Xo);
+%     b = B/sqrt(sum(B.^2));
+% end
+% 
+% az = -( b(1) + b(2) )/b(3);
+% if isfinite(az)
+%     a = [1,1,az]/( 2 + az^2 );
+%     a = a/sqrt(sum(a.^2));
+% else
+%     ay = -b(1)/b(2);
+%     a = [1,ay,0];
+%     a = a/sqrt(sum(a.^2));
+% end
+% 
+% end
 
 function [b,a] = unitVectors(ST)
 % initial condition of an electron drifting parallel to the local magnetic
@@ -137,15 +164,16 @@ else
     b = B/sqrt(sum(B.^2));
 end
 
-az = -( b(1) + b(2) )/b(3);
-if isfinite(az)
-    a = [1,1,az]/( 2 + az^2 );
-    a = a/sqrt(sum(a.^2));
-else
-    ay = -b(1)/b(2);
-    a = [1,ay,0];
-    a = a/sqrt(sum(a.^2));
-end
+az = 0.9*rand;
+
+c1 = b(1)^2 + b(2)^2;
+c2 = 2*b(1)*b(3)*az;
+c3 = (b(3)^2 + b(2)^2)*az^2 -b(2)^2;
+
+ax = (-c2 - sqrt(c2^2 - 4*c1*c3))/(2*c1);
+ay = sqrt(1 - az^2 - ax^2);
+
+a = [ax, ay, az];
 
 end
 
@@ -549,7 +577,9 @@ function SI = calculateChebyshevInterpolant(ST,B)
 % Cylindrical coordinates
 % R = radius, phi = azimuthal angle, Z = z coordinate
 % calculate interpolant of the field B
-disp('Calculating chebfun2 interpolant...')
+if ST.opt
+    disp('Calculating chebfun2 interpolant...')
+end
 SI = struct;
 
 if strcmp(ST.ND,'2D')   
@@ -578,7 +608,9 @@ if strcmp(ST.ND,'2D')
             colormap(jet)
         end
         
-        disp('chebfun2 interpolant: done!')
+        if ST.opt
+            disp('chebfun2 interpolant: done!')
+        end
     elseif mean(diff(B.R(:,1))) == 0 % uniform grid
         SI = calculatescatteredInterpolant(ST,B);
     end
@@ -594,8 +626,10 @@ function SI = calculatescatteredInterpolant(ST,B)
 % Cylindrical coordinates
 % R = radius, phi = azimuthal angle, Z = z coordinate
 % calculate interpolant of the field B
-disp('*** Uniform grid for the magnetic field detected! ***')
-disp('Switching to scattered interpolant...')
+if ST.opt
+    disp('*** Uniform grid for the magnetic field detected! ***')
+    disp('Switching to scattered interpolant...')
+end
 SI = struct;
 
 
@@ -647,7 +681,9 @@ else
     error('Use 2D or 3D');
 end
 
-disp('Scattered interpolant: done!')
+if ST.opt
+    disp('Scattered interpolant: done!')
+end
 end
 
 % MODELS FOR MAGNETIC FIELD
@@ -862,7 +898,9 @@ end
 function PP = particlePusherLeapfrogMod(ST)
 % Relativistic particle pusher.
 % Vay, J.-L. 2008, PoP 15, 056701.
-disp('Initializing particle pusher...')
+if ST.opt
+    disp('Initializing particle pusher...')
+end
 
 PP = struct;
 
@@ -1095,7 +1133,9 @@ if ST.opt
     title(PP.method,'Interpreter','latex','FontSize',16)
 end
 
-disp('Particle pusher: done!')
+if ST.opt
+    disp('Particle pusher: done!')
+end
 end
 
 % MATLAB PARTICLE PUSHER
