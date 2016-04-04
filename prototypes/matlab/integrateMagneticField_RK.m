@@ -69,8 +69,8 @@ for ii=1:numel(Ros)
     locs = find(abs(diff(phi)) > 6);
     figure(P)
     hold on
-    plot(R,Z,'k.','MarkerSize',6)
-    plot(R(locs),Z(locs),'g.','MarkerSize',6)
+%     plot(R,Z,'r.','MarkerSize',6)
+    plot(R(locs),Z(locs),'b.','MarkerSize',2)
     hold off
 end
 

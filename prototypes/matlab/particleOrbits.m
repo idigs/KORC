@@ -567,14 +567,16 @@ if strcmp(ST.ND,'2D')
         
         SI.Bphi = chebfun2(B.Bphi,[Zmin Zmax Rmin Rmax]);
         
-        figure
-        subplot(1,3,1)
-        plot(SI.BR)
-        subplot(1,3,2)
-        plot(SI.Bphi)
-        subplot(1,3,3)
-        plot(SI.BZ)
-        colormap(jet)
+        if ST.opt
+            figure
+            subplot(1,3,1)
+            plot(SI.BR)
+            subplot(1,3,2)
+            plot(SI.Bphi)
+            subplot(1,3,3)
+            plot(SI.BZ)
+            colormap(jet)
+        end
         
         disp('chebfun2 interpolant: done!')
     elseif mean(diff(B.R(:,1))) == 0 % uniform grid
@@ -707,8 +709,8 @@ narginchk(1,2);
 
 % Parameters of the analytical magnetic field
 Bo = 3;
-a = 1;% Minor radius in meters.
-Ro = 2.0; % Major radius in meters.
+a = 0.5;% Minor radius in meters.
+Ro = 1.6; % Major radius in meters.
 qa = 5; % Safety factor at the separatrix (r=a)
 co = 0.5; % Extra parameter
 lamb = a/co;
@@ -833,22 +835,26 @@ PP.v = v;
 PP.EK = 1./sqrt(1-sum(PP.v.^2,2));
 PP.ERR = 100*(PP.EK(1) - PP.EK)./PP.EK(1);
 
-figure
-plot3(PP.X(ST.params.inds,1),PP.X(ST.params.inds,2),PP.X(ST.params.inds,3))
-axis equal
-xlabel('X','Interpreter','latex','FontSize',16)
-ylabel('Y','Interpreter','latex','FontSize',16)
-zlabel('Z','Interpreter','latex','FontSize',16)
-title(PP.method,'Interpreter','latex','FontSize',16)
+if ST.opt
+    figure
+    plot3(PP.X(ST.params.inds,1),PP.X(ST.params.inds,2),PP.X(ST.params.inds,3))
+    axis equal
+    xlabel('X','Interpreter','latex','FontSize',16)
+    ylabel('Y','Interpreter','latex','FontSize',16)
+    zlabel('Z','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+end
 
 time = ST.time/(2*pi/ST.params.wc);
 
-figure
-plot(time(ST.params.inds), PP.ERR(ST.params.inds))
-box on
-xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-ylabel('Energy conservation [\%]','Interpreter','latex','FontSize',16)
-title(PP.method,'Interpreter','latex','FontSize',16)
+if ST.opt
+    figure
+    plot(time(ST.params.inds), PP.ERR(ST.params.inds))
+    box on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('Energy conservation [\%]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+end
 
 PP.v = PP.v*ST.params.c;
 end
@@ -892,7 +898,7 @@ E = ST.E/(ST.Bo*ST.params.c);
 u(1,:) = v(1,:)/sqrt(1 - sum(v(1,:).^2));
 gamma = sqrt(1 + sum(u(1,:).^2));
 v(1,:) = u(1,:)/gamma;
-R(1,:) = X(1,:) + m*cross(v(1,:),B)/(q*sum(B.^2));
+R(1,:) = X(1,:) + gamma*m*cross(v(1,:),B)/(q*sum(B.^2));
 
 % % % % % % % % % % % % % % % % % % 
 B_mag = sqrt(sum(B.^2));
@@ -957,7 +963,7 @@ for ii=2:ST.params.numIt
     u(ii,:) = U - 0.5*a*( E + cross(V,B) );
     gamma = sqrt(1 + sum(u(ii,:).^2));
     v(ii,:) = u(ii,:)/gamma;
-    R(ii,:) = X(ii,:) + m*cross(v(ii,:),B)/(q*sum(B.^2));
+    R(ii,:) = X(ii,:) + gamma*m*cross(v(ii,:),B)/(q*sum(B.^2));
     
     B_mag = sqrt(sum(B.^2));
     b = B/B_mag;
@@ -995,57 +1001,58 @@ phi(phi < 0) = phi(phi < 0) + 2*pi;
 x = linspace(min(time),max(time),10);
 y = zeros(1,10);
 
-figure
-subplot(4,1,1)
-plot(time(ST.params.inds), EK(ST.params.inds))
-box on
-xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-ylabel('$\gamma m c^2$ [$m_e c^2$]','Interpreter','latex','FontSize',16)
-title(PP.method,'Interpreter','latex','FontSize',16)
-subplot(4,1,2)
-plot(time(ST.params.inds), ERR_EK(ST.params.inds),x,y,'k--')
-box on
-xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-ylabel('Error in $\gamma m c^2$ [\%]','Interpreter','latex','FontSize',16)
-title(PP.method,'Interpreter','latex','FontSize',16)
-subplot(4,1,3)
-plot(time(ST.params.inds), mu(ST.params.inds))
-box on
-xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-ylabel('$\mu$ [$c^2 m_o/B_o$]','Interpreter','latex','FontSize',16)
-title(PP.method,'Interpreter','latex','FontSize',16)
-subplot(4,1,4)
-plot(time(ST.params.inds), ERR_mu(ST.params.inds),x,y,'k--')
-box on
-xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-ylabel('Error in $\mu$ [\%]','Interpreter','latex','FontSize',16)
-title(PP.method,'Interpreter','latex','FontSize',16)
-
-
-figure
-subplot(3,1,1)
-plot(time(ST.params.inds), vpar(ST.params.inds))
-box on
-grid on
-xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-ylabel('$v_\parallel$ [c]','Interpreter','latex','FontSize',16)
-title(PP.method,'Interpreter','latex','FontSize',16)
-subplot(3,1,2)
-plot(time(ST.params.inds), vperp(ST.params.inds))
-box on
-grid on
-xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-ylabel('$v_\perp$ [c]','Interpreter','latex','FontSize',16)
-title(PP.method,'Interpreter','latex','FontSize',16)
-v_tot = sqrt(vpar.^2 +vperp.^2);
-subplot(3,1,3)
-plot(time(ST.params.inds), v_tot(ST.params.inds))
-box on
-grid on
-xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-ylabel('$v$ [c]','Interpreter','latex','FontSize',16)
-title(PP.method,'Interpreter','latex','FontSize',16)
-
+if ST.opt
+    figure
+    subplot(4,1,1)
+    plot(time(ST.params.inds), EK(ST.params.inds))
+    box on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$\gamma m c^2$ [$m_e c^2$]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    subplot(4,1,2)
+    plot(time(ST.params.inds), ERR_EK(ST.params.inds),x,y,'k--')
+    box on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('Error in $\gamma m c^2$ [\%]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    subplot(4,1,3)
+    plot(time(ST.params.inds), mu(ST.params.inds))
+    box on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$\mu$ [$c^2 m_o/B_o$]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    subplot(4,1,4)
+    plot(time(ST.params.inds), ERR_mu(ST.params.inds),x,y,'k--')
+    box on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('Error in $\mu$ [\%]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    
+    
+    figure
+    subplot(3,1,1)
+    plot(time(ST.params.inds), vpar(ST.params.inds))
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$v_\parallel$ [c]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    subplot(3,1,2)
+    plot(time(ST.params.inds), vperp(ST.params.inds))
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$v_\perp$ [c]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    v_tot = sqrt(vpar.^2 +vperp.^2);
+    subplot(3,1,3)
+    plot(time(ST.params.inds), v_tot(ST.params.inds))
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$v$ [c]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+end
 
 % Return position and velocity with SI units
 PP.X = X*ST.norm.l;
@@ -1058,33 +1065,35 @@ PP.vperp = vperp;
 PP.k = k/ST.norm.l; % curvature
 PP.T = T/ST.norm.l; % curvature
 
-figure
-subplot(2,1,1)
-plot(time(ST.params.inds), PP.k(ST.params.inds))
-box on
-grid on
-xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-ylabel('Curvature $\kappa(t)$','Interpreter','latex','FontSize',16)
-title(PP.method,'Interpreter','latex','FontSize',16)
-subplot(2,1,2)
-plot(time(ST.params.inds), PP.T(ST.params.inds),time(ST.params.inds),0*time(ST.params.inds),'k--')
-box on
-grid on
-xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-ylabel('Torsion $\tau(t)$','Interpreter','latex','FontSize',16)
-title(PP.method,'Interpreter','latex','FontSize',16)
-
-figure
-plot3(PP.X(ST.params.inds,1),PP.X(ST.params.inds,2),PP.X(ST.params.inds,3),'b')
-hold on
-plot3(PP.R(ST.params.inds,1),PP.R(ST.params.inds,2),PP.R(ST.params.inds,3),'r')
-hold off
-axis equal
-box on
-xlabel('X','Interpreter','latex','FontSize',16)
-ylabel('Y','Interpreter','latex','FontSize',16)
-zlabel('Z','Interpreter','latex','FontSize',16)
-title(PP.method,'Interpreter','latex','FontSize',16)
+if ST.opt
+    figure
+    subplot(2,1,1)
+    plot(time(ST.params.inds), PP.k(ST.params.inds))
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('Curvature $\kappa(t)$','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    subplot(2,1,2)
+    plot(time(ST.params.inds), PP.T(ST.params.inds),time(ST.params.inds),0*time(ST.params.inds),'k--')
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('Torsion $\tau(t)$','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    
+    figure
+    plot3(PP.X(ST.params.inds,1),PP.X(ST.params.inds,2),PP.X(ST.params.inds,3),'b')
+    hold on
+    plot3(PP.R(ST.params.inds,1),PP.R(ST.params.inds,2),PP.R(ST.params.inds,3),'r')
+    hold off
+    axis equal
+    box on
+    xlabel('X','Interpreter','latex','FontSize',16)
+    ylabel('Y','Interpreter','latex','FontSize',16)
+    zlabel('Z','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+end
 
 disp('Particle pusher: done!')
 end
@@ -1148,22 +1157,25 @@ PP.v = v;
 PP.EK = 1./sqrt(1-sum(PP.v.^2,2));
 PP.ERR = 100*(PP.EK(1) - PP.EK)./PP.EK(1);
 
-figure
-plot3(PP.X(ST.params.inds,1),PP.X(ST.params.inds,2),PP.X(ST.params.inds,3))
-axis equal
-xlabel('X','Interpreter','latex','FontSize',16)
-ylabel('Y','Interpreter','latex','FontSize',16)
-zlabel('Z','Interpreter','latex','FontSize',16)
-title(PP.method,'Interpreter','latex','FontSize',16)
-
-time = ST.time/(2*pi/ST.params.wc);
-
-figure
-plot(time(ST.params.inds), PP.ERR(ST.params.inds))
-box on
-xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-ylabel('Energy conservation [\%]','Interpreter','latex','FontSize',16)
-title(PP.method,'Interpreter','latex','FontSize',16)
+if ST.opt
+    figure
+    plot3(PP.X(ST.params.inds,1),PP.X(ST.params.inds,2),PP.X(ST.params.inds,3))
+    axis equal
+    xlabel('X','Interpreter','latex','FontSize',16)
+    ylabel('Y','Interpreter','latex','FontSize',16)
+    zlabel('Z','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    
+    
+    time = ST.time/(2*pi/ST.params.wc);
+    
+    figure
+    plot(time(ST.params.inds), PP.ERR(ST.params.inds))
+    box on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('Energy conservation [\%]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+end
 
 PP.v = PP.v*ST.params.c;
 
@@ -1253,6 +1265,7 @@ if isfield(ST.PP,'R')
 end
 
 zeta = atan2(X(:,2),X(:,1));
+zeta(zeta<0) = zeta(zeta<0) + 2*pi;
 locs = find(abs(diff(zeta)) > 6);
 
 figure
