@@ -15,7 +15,7 @@ vo = sqrt( 1 - (me*c^2/(Eo*qe))^2 );
 
 cadence = 20;
 
-xo = [1.35,1.85];
+xo = [1.1,1.35,1.5,1.7,1.85,2.1];
 for jj=1:numel(xo)
     h = figure;
     hh = figure;
@@ -25,7 +25,7 @@ for jj=1:numel(xo)
     strLegend = cell(1,numAngles);
     
     for ii=1:numAngles
-        ST = particleOrbits('','','2D',[],[1E6,1E-2,cadence],[-1,1],[xo(jj),0,0],[vo,pitchAngle(ii)],false);
+        ST = particleOrbits('','','2D',[],[2E3,1E-2,cadence],[-1,1],[xo(jj),0,0],[vo,pitchAngle(ii)],false);
         
         zeta = atan2(ST.PP.X(:,2),ST.PP.X(:,1));
         zeta(zeta<0) = zeta(zeta<0) + 2*pi;
@@ -102,6 +102,7 @@ for jj=1:numel(xo)
     ylabel('$\kappa(R)$','Interpreter','latex','FontSize',16)
     set(legend(strLegend),'Interpreter','latex','Location','southwest','FontSize',14)
     savefig(h,['pitchAngleDependency/xo_' num2str(xo(jj)) '_k_vs_R.fig'])
+    close(h)
     
     figure(hh)
     box on; grid on
@@ -109,6 +110,7 @@ for jj=1:numel(xo)
     ylabel('$\kappa(\theta_{v_\perp/v_\parallel})$','Interpreter','latex','FontSize',16)
     set(legend(strLegend),'Interpreter','latex','Location','southwest','FontSize',14)
     savefig(hh,['pitchAngleDependency/xo_' num2str(xo(jj)) '_k_vs_pitch.fig'])
+    close(hh)
     
     figure(tvsR)
     box on; grid on
@@ -116,6 +118,7 @@ for jj=1:numel(xo)
     ylabel('$\theta_{v_\perp/v_\parallel}$ [rad]','Interpreter','latex','FontSize',16)
     set(legend(strLegend),'Interpreter','latex','Location','southwest','FontSize',14)
     savefig(tvsR,['pitchAngleDependency/xo_' num2str(xo(jj)) '_pitch_vs_R.fig'])
+    close(tvsR)
 
     figure(kvsRt)
     box on; grid on
@@ -124,6 +127,7 @@ for jj=1:numel(xo)
     zlabel('$\kappa(\theta_{v_\perp/v_\parallel})$','Interpreter','latex','FontSize',16)
     set(legend(strLegend),'Interpreter','latex','Location','southwest','FontSize',14)
     savefig(kvsRt,['pitchAngleDependency/xo_' num2str(xo(jj)) '_k_vs_R_pitch.fig'])    
+    close(kvsRt)
     
     figure(ff)
     box on; grid on
@@ -132,6 +136,7 @@ for jj=1:numel(xo)
     zlabel('$\kappa(\theta)$','Interpreter','latex','FontSize',16)
     set(legend(strLegend),'Interpreter','latex','Location','southwest','FontSize',14)
     savefig(ff,['pitchAngleDependency/xo_' num2str(xo(jj)) '_k_vs_R_theta.fig']) 
+    close(ff)
 end
 
 
