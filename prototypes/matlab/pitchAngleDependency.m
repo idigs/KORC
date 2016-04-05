@@ -3,6 +3,9 @@ function pitchAngleDependency(numAngles)
 % Initial pitch angles used in the diagnostic, in degrees.
 pitchAngle = linspace(0,80,numAngles);
 
+Ro = 1.6;
+a = 0.5;
+
 % Energy of electron, in eV.
 Eo = 3E6;
 c = 2.9979E8; % Speed of light, in m/s
@@ -12,13 +15,15 @@ vo = sqrt( 1 - (me*c^2/(Eo*qe))^2 );
 
 cadence = 20;
 
-h = figure;
-hh = figure;
-tvsR = figure;
-strLegend = cell(1,numAngles);
-
 xo = [1.35,1.85];
 for jj=1:numel(xo)
+    h = figure;
+    hh = figure;
+    tvsR = figure;
+    kvsRt = figure;
+    ff = figure;
+    strLegend = cell(1,numAngles);
+    
     for ii=1:numAngles
         ST = particleOrbits('','','2D',[],[1E6,1E-2,cadence],[-1,1],[xo(jj),0,0],[vo,pitchAngle(ii)],false);
         
@@ -31,7 +36,11 @@ for jj=1:numel(xo)
         
         time = ST.time/(2*pi/ST.params.wc);
         
-        theta = atan2(ST.PP.vperp,ST.PP.vpar);
+        theta_pitch = atan2(ST.PP.vperp,ST.PP.vpar);
+        
+        theta = atan2(Z,R-Ro);
+        theta(theta<0) = theta(theta<0) + 2*pi;
+        
         
         figure(h)
         hold on
@@ -40,14 +49,23 @@ for jj=1:numel(xo)
         
         figure(hh)
         hold on
-        plot(theta(ST.params.inds),ST.PP.k(ST.params.inds),'.','MarkerSize',2)
+        plot(theta_pitch(ST.params.inds),ST.PP.k(ST.params.inds),'.','MarkerSize',2)
         hold off
         
         figure(tvsR)
         hold on
-        plot(R(ST.params.inds),theta(ST.params.inds),'.','MarkerSize',2)
+        plot(R(ST.params.inds),theta_pitch(ST.params.inds),'.','MarkerSize',2)
         hold off
         
+        figure(kvsRt)
+        hold on
+        plot3(R(ST.params.inds),theta_pitch(ST.params.inds),ST.PP.k(ST.params.inds),'.','MarkerSize',2)
+        hold off
+        
+        figure(ff)
+        hold on
+        plot3(R(ST.params.inds),theta(ST.params.inds),ST.PP.k(ST.params.inds),'.','MarkerSize',2)
+        hold off
         
         g = figure;
         subplot(3,1,1)
@@ -58,7 +76,7 @@ for jj=1:numel(xo)
         ylabel('Curvature $\kappa(t)$','Interpreter','latex','FontSize',16)
         
         subplot(3,1,2)
-        plot(theta(ST.params.inds), ST.PP.k(ST.params.inds),'.','MarkerSize',2)
+        plot(theta_pitch(ST.params.inds), ST.PP.k(ST.params.inds),'.','MarkerSize',2)
         box on
         grid on
         xlabel('$\theta_{v_\perp/v_\parallel}$ [rad]','Interpreter','latex','FontSize',16)
@@ -77,27 +95,45 @@ for jj=1:numel(xo)
         
         disp(['Tracer No. ' num2str(ii)])
     end
+    
+    figure(h)
+    box on; grid on
+    
+    ylabel('$\kappa(R)$','Interpreter','latex','FontSize',16)
+    set(legend(strLegend),'Interpreter','latex','Location','southwest','FontSize',14)
+    savefig(h,['pitchAngleDependency/xo_' num2str(xo(jj)) '_k_vs_R.fig'])
+    
+    figure(hh)
+    box on; grid on
+    xlabel('$\theta_{v_\perp/v_\parallel}$ [rad]','Interpreter','latex','FontSize',16)
+    ylabel('$\kappa(\theta_{v_\perp/v_\parallel})$','Interpreter','latex','FontSize',16)
+    set(legend(strLegend),'Interpreter','latex','Location','southwest','FontSize',14)
+    savefig(hh,['pitchAngleDependency/xo_' num2str(xo(jj)) '_k_vs_pitch.fig'])
+    
+    figure(tvsR)
+    box on; grid on
+    xlabel('$R$ [m]','Interpreter','latex','FontSize',16)
+    ylabel('$\theta_{v_\perp/v_\parallel}$ [rad]','Interpreter','latex','FontSize',16)
+    set(legend(strLegend),'Interpreter','latex','Location','southwest','FontSize',14)
+    savefig(tvsR,['pitchAngleDependency/xo_' num2str(xo(jj)) '_pitch_vs_R.fig'])
+
+    figure(kvsRt)
+    box on; grid on
+    xlabel('$R$ [m]','Interpreter','latex','FontSize',16)
+    ylabel('$\theta_{v_\perp/v_\parallel}$ [rad]','Interpreter','latex','FontSize',16)
+    zlabel('$\kappa(\theta_{v_\perp/v_\parallel})$','Interpreter','latex','FontSize',16)
+    set(legend(strLegend),'Interpreter','latex','Location','southwest','FontSize',14)
+    savefig(kvsRt,['pitchAngleDependency/xo_' num2str(xo(jj)) '_k_vs_R_pitch.fig'])    
+    
+    figure(ff)
+    box on; grid on
+    xlabel('$R$ [m]','Interpreter','latex','FontSize',16)
+    ylabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
+    zlabel('$\kappa(\theta)$','Interpreter','latex','FontSize',16)
+    set(legend(strLegend),'Interpreter','latex','Location','southwest','FontSize',14)
+    savefig(ff,['pitchAngleDependency/xo_' num2str(xo(jj)) '_k_vs_R_theta.fig']) 
 end
 
-figure(h)
-box on; grid on
 
-ylabel('$\kappa(R)$','Interpreter','latex','FontSize',16)
-set(legend(strLegend),'Interpreter','latex','Location','southwest','FontSize',14)
-savefig(h,['pitchAngleDependency/xo_' num2str(xo(jj)) '_k_vs_R.fig'])
-
-figure(hh)
-box on; grid on
-xlabel('$\theta_{v_\perp/v_\parallel}$ [rad]','Interpreter','latex','FontSize',16)
-ylabel('$\kappa(\theta_{v_\perp/v_\parallel})$','Interpreter','latex','FontSize',16)
-set(legend(strLegend),'Interpreter','latex','Location','southwest','FontSize',14)
-savefig(hh,['pitchAngleDependency/xo_' num2str(xo(jj)) '_k_vs_theta.fig'])
-
-figure(tvsR)
-box on; grid on
-xlabel('$R$ [m]','Interpreter','latex','FontSize',16)
-ylabel('$\theta_{v_\perp/v_\parallel}$ [rad]','Interpreter','latex','FontSize',16)
-set(legend(strLegend),'Interpreter','latex','Location','southwest','FontSize',14)
-savefig(tvsR,['pitchAngleDependency/xo_' num2str(xo(jj)) '_theta_vs_R.fig'])
 
 end
