@@ -24,7 +24,7 @@ function ST = particleOrbits(pathToBField,fileType,ND,res,timeStepParams,tracerP
 
 narginchk(8,9);
 
-close all
+% close all
 
 ST = struct;
 % Script parameters
@@ -101,8 +101,9 @@ end
 ST.PP = particlePusherLeapfrogMod(ST);
 % ST.PP = particlePusherMatlab(ST);
 
-
-% PoincarePlots(ST);
+if ST.opt
+    PoincarePlots(ST);
+end
 % DiegosInvariants(ST);
 
 munlock
@@ -128,33 +129,11 @@ if ST.opt
 end
 end
 
-% function [b,a] = unitVectors(ST)
-% % initial condition of an electron drifting parallel to the local magnetic
-% % field.
-% 
-% if ST.analytical
-%     B = analyticalB(ST.params.Xo);
-%     b = B/sqrt(sum(B.^2));
-% else
-%     B = interpMagField(ST,ST.params.Xo);
-%     b = B/sqrt(sum(B.^2));
-% end
-% 
-% az = -( b(1) + b(2) )/b(3);
-% if isfinite(az)
-%     a = [1,1,az]/( 2 + az^2 );
-%     a = a/sqrt(sum(a.^2));
-% else
-%     ay = -b(1)/b(2);
-%     a = [1,ay,0];
-%     a = a/sqrt(sum(a.^2));
-% end
-% 
-% end
-
 function [b,a] = unitVectors(ST)
 % initial condition of an electron drifting parallel to the local magnetic
 % field.
+
+tol = 1E-10;
 
 if ST.analytical
     B = analyticalB(ST.params.Xo);
@@ -164,17 +143,46 @@ else
     b = B/sqrt(sum(B.^2));
 end
 
+rng('shuffle')
+
 if all(b)
-    az = rand;
-    
     c1 = b(1)^2 + b(2)^2;
-    c2 = 2*b(1)*b(3)*az;
-    c3 = (b(3)^2 + b(2)^2)*az^2 -b(2)^2;
     
-    ax = (-c2 - sqrt(c2^2 - 4*c1*c3))/(2*c1);
-    ay = sqrt(1 - az^2 - ax^2);
+    az = sqrt(c1)*rand;
+    
+    c2 = 2*b(1)*b(3)*az;
+    c3 = (b(2)^2 + b(3)^2)*az^2 -b(2)^2;
+    
+    ax = (-c2 + sqrt(c2^2 - 4*c1*c3))/(2*c1);
+    ay = sqrt(1 - ax^2 - az^2);
     
     a = [ax, ay, az];
+    
+    if abs(dot(a,b)) > tol      
+        ax = (-c2 - sqrt(c2^2 - 4*c1*c3))/(2*c1);
+        ay = sqrt(1 - ax^2 - az^2);
+        
+        a = [ax, ay, az];
+    end
+    
+    if abs(dot(a,b)) > tol
+        az = -az;
+        
+        c2 = 2*b(1)*b(3)*az;
+        c3 = (b(2)^2 + b(3)^2)*az^2 -b(2)^2;
+        
+        ax = (-c2 + sqrt(c2^2 - 4*c1*c3))/(2*c1);
+        ay = sqrt(1 - ax^2 - az^2);
+        
+        a = [ax, ay, az];
+        
+        if abs(dot(a,b)) > tol
+            ax = (-c2 - sqrt(c2^2 - 4*c1*c3))/(2*c1);
+            ay = sqrt(1 - ax^2 - az^2);
+            
+            a = [ax, ay, az];
+        end
+    end
 elseif b(1) == 0
     ay = rand/sqrt( 1 + (b(2)/b(3))^2 );
     az = -ay*(b(2)/b(z));
@@ -199,7 +207,12 @@ if ~isreal(a)
     error('Imaginary values in perpendicular vector to b');
 end
 
+if  abs(dot(a,b)) > tol
+    error('a.b ~= 0')
+end
 
+% figure
+% plot3([0,b(1)],[0,b(2)],[0,b(3)],'r',[0,a(1)],[0,a(2)],[0,a(3)],'b')
 
 end
 
