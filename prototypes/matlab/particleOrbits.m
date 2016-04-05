@@ -164,16 +164,42 @@ else
     b = B/sqrt(sum(B.^2));
 end
 
-az = 0.9*rand;
+if all(b)
+    az = rand;
+    
+    c1 = b(1)^2 + b(2)^2;
+    c2 = 2*b(1)*b(3)*az;
+    c3 = (b(3)^2 + b(2)^2)*az^2 -b(2)^2;
+    
+    ax = (-c2 - sqrt(c2^2 - 4*c1*c3))/(2*c1);
+    ay = sqrt(1 - az^2 - ax^2);
+    
+    a = [ax, ay, az];
+elseif b(1) == 0
+    ay = rand/sqrt( 1 + (b(2)/b(3))^2 );
+    az = -ay*(b(2)/b(z));
+    ax = sqrt( 1 - ay^2*( 1 + (b(2)/b(3))^2 ) );
+    
+    a = [ax, ay, az];
+elseif b(2) == 0
+    az = rand/sqrt( 1 + (b(3)/b(1))^2 );
+    ax = -az*(b(3)/b(1));
+    ay = sqrt( 1 - az^2*( 1 + (b(3)/b(1))^2 ) );
+    
+    a = [ax, ay, az];
+elseif b(3) == 0
+    ay = rand/sqrt( 1 + (b(2)/b(1))^2 );
+    ax = -ay*(b(2)/b(1));
+    az = sqrt( 1 - ay^2*( 1 + (b(2)/b(1))^2 ) );
+    
+    a = [ax, ay, az];
+end
 
-c1 = b(1)^2 + b(2)^2;
-c2 = 2*b(1)*b(3)*az;
-c3 = (b(3)^2 + b(2)^2)*az^2 -b(2)^2;
+if ~isreal(a)
+    error('Imaginary values in perpendicular vector to b');
+end
 
-ax = (-c2 - sqrt(c2^2 - 4*c1*c3))/(2*c1);
-ay = sqrt(1 - az^2 - ax^2);
 
-a = [ax, ay, az];
 
 end
 

@@ -8,8 +8,8 @@ Ro = 1.6;
 radius = a*rand(1,numTracers);
 angle = 2*pi*rand(1,numTracers);
 
-min_angle = 45; % in degrees
-max_angle = 45.5; % in degrees
+min_angle = 1; % in degrees
+max_angle = 3; % in degrees
 angleo = min_angle + (max_angle - min_angle)*rand(1,numTracers); % initial azimuthal angle
 
 xo = (Ro + sqrt(radius).*cos(angle)).*cos(angleo*pi/180);
@@ -29,7 +29,7 @@ RZ = zeros(2,numTracers);
 k = zeros(1,numTracers);
 
 for ii=1:numTracers
-    ST = particleOrbits('','','2D',[],[1E4,1E-2,1],[-1,1],[xo(ii),yo(ii),zo(ii)],[0.99,85],false);
+    ST = particleOrbits('','','2D',[],[1E3,1E-2,1],[-1,1],[xo(ii),yo(ii),zo(ii)],[0.99,1],false);
     
     zeta = atan2(ST.PP.X(:,2),ST.PP.X(:,1));
     zeta(zeta<0) = zeta(zeta<0) + 2*pi;
