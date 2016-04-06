@@ -1,4 +1,4 @@
-function ST = particleOrbits(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,vo_params,opt)
+function ST = particleOrbits_ProductionRuns(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,vo_params,opt)
 % Here ro and vo are the initial position and velocity of the particle.
 % The components of the initial velocity must be entered as fractions of
 % the speed of light in vacuum.

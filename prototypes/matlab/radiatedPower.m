@@ -2,19 +2,22 @@ function radiatedPower(numTracers,poolsize)
 
 close all
 
+% Number of time iterations for calculating electrons' orbits
+numTimeIt = 1E5;
+
+% Initial pitch angle
+pitcho = [10,20,50];
+
 % Energy of electron, in eV.
-Eo = 3E6;
+Eo = [3E6,30E6];
 c = 2.9979E8; % Speed of light, in m/s
 qe = 1.602176E-19; % Electron charge, in Coulombs
 me = 9.109382E-31; % Electron mass, in kg.
-vo = sqrt( 1 - (me*c^2/(Eo*qe))^2 );
 
 % Minor and major of analytical toroidal magnetic field
 a = 0.5;
 Ro = 1.6;
 
-% Uniform distribution of points in the torus defined by the flux surfaces
-% of the analytical magnetic field.
 [xo,yo,zo] = torusmap(a,Ro,rand(3,numTracers));
 
 h = figure;
@@ -23,109 +26,119 @@ axis equal
 xlabel('X','Interpreter','latex','FontSize',16)
 ylabel('Y','Interpreter','latex','FontSize',16)
 zlabel('Z','Interpreter','latex','FontSize',16)
-savefig(h,'initial_distribution_tracers.fig')
+savefig(h,'poloidal_plane_figures/initial_distribution_tracers.fig')
+close(h)
 
-RZ = cell(1,numTracers);
-k = cell(1,numTracers);
-ko = zeros(1,numTracers);
-pitch = cell(1,numTracers);
-
-poolobj = gcp('nocreate');
-if isempty(poolobj)
-    poolobj = parpool(poolsize);
-end
-
-parfor ii=1:numTracers
-    try
-        
-        ST = particleOrbits_ProductionRuns('','','2D',[],[1E6,1E-2,10],[-1,1],[xo(ii),yo(ii),zo(ii)],[vo,50],false);
-        
-        close all
-        
-        zeta = atan2(ST.PP.X(:,2),ST.PP.X(:,1));
-        zeta(zeta<0) = zeta(zeta<0) + 2*pi;
-        locs = find(abs(diff(zeta)) > 6);
-        
-        R = sqrt(ST.PP.X(locs,1).^2 + ST.PP.X(locs,2).^2);
-        Z = ST.PP.X(locs,3);
-        
-        pitch{ii} = atan2(ST.PP.vperp(locs),ST.PP.vpar(locs));
-        
-        RZ{ii} = [R, Z];
-        k{ii} = ST.PP.k(locs);
-        ko(ii) = ST.PP.k(1);
-        
-    catch
-        disp('Exception!')
-    end
+for ee=1:numel(Eo)
+    % Uniform distribution of points in the torus defined by the flux surfaces
+    % of the analytical magnetic field.
+    vo = sqrt( 1 - (me*c^2/(Eo(ee)*qe))^2 );
     
-    disp(['Tracer No. ' num2str(ii)])
-    
-    
-end
-
-
-Ro = sqrt(xo.^2 + yo.^2); % initial radial coordinate
-
-
-for ii=2:numTracers
-    k_max_previous = max(k{ii-1});
-    k_max_current = max(k{ii});
-    if k_max_previous < k_max_current
-        k_max = k_max_current;
-    else
-        k_max = k_max_previous;
+    for pp=1:numel(pitcho)
+        
+        RZ = cell(1,numTracers);
+        k = cell(1,numTracers);
+        T = cell(1,numTracers);
+        ko = zeros(1,numTracers);
+        pitch = cell(1,numTracers);
+        
+        poolobj = gcp('nocreate');
+        if isempty(poolobj)
+            poolobj = parpool(poolsize);
+        end
+        
+        local_pitcho = pitcho(pp);
+        
+        parfor pii=1:numTracers
+            try
+                ST = ...
+                    particleOrbits_ProductionRuns('','','2D',[],[numTimeIt,1E-2,10],[-1,1],[xo(pii),yo(pii),zo(pii)],[vo,local_pitcho],false);
+               
+                zeta = atan2(ST.PP.X(:,2),ST.PP.X(:,1));
+                zeta(zeta<0) = zeta(zeta<0) + 2*pi;
+                locs = find(abs(diff(zeta)) > 6);
+                
+                R = sqrt(ST.PP.X(locs,1).^2 + ST.PP.X(locs,2).^2);
+                Z = ST.PP.X(locs,3);
+                
+                pitch{pii} = atan2(ST.PP.vperp(locs),ST.PP.vpar(locs));
+                
+                RZ{pii} = [R, Z];
+                k{pii} = ST.PP.k(locs);
+                T{pii} = ST.PP.T(locs);
+                ko(pii) = ST.PP.k(1);
+            catch
+                disp('Exception!')
+            end
+            disp(['Energy No.' num2str(ee) ' Pitch No.' num2str(pp) ' Tracer No. ' num2str(pii)])
+        end
+        
+        filename = ['poloidal_plane_figures/var_Eo_' num2str(Eo(ee)) ...
+            '_po_' num2str(pitcho(pp)) '.mat'];
+        save(filename,'RZ','k','T','ko')
+        
+        Ro = sqrt(xo.^2 + yo.^2); % initial radial coordinate
+        
+        for ii=2:numTracers
+            k_max_previous = max(k{ii-1});
+            k_max_current = max(k{ii});
+            if k_max_previous < k_max_current
+                k_max = k_max_current;
+            else
+                k_max = k_max_previous;
+            end
+        end
+        
+        h = figure;
+        subplot(2,1,1)
+        hold on
+        for ii=1:numTracers
+            C = k{ii}/k_max;
+            scatter3(RZ{ii}(:,1),RZ{ii}(:,2),k{ii},6,C)
+        end
+        hold off
+        box on; axis on; grid on
+        xlabel('R','Interpreter','latex','FontSize',16)
+        ylabel('Z','Interpreter','latex','FontSize',16)
+        zlabel('$\kappa(R,Z)$','Interpreter','latex','FontSize',16)
+        
+        subplot(2,1,2)
+        C = ko/max(ko);
+        scatter3(Ro,zo,ko,6,C)
+        box on; axis on; grid on
+        xlabel('R','Interpreter','latex','FontSize',16)
+        ylabel('Z','Interpreter','latex','FontSize',16)
+        zlabel('$\kappa_o$','Interpreter','latex','FontSize',16)
+        colormap(jet)
+        savefig(h,['poloidal_plane_figures/curvature_Eo_' num2str(Eo(ee)) '_po_' num2str(pitcho(pp)) '.fig'])
+        close(h)
+        
+        for ii=2:numTracers
+            pitch_max_previous = max(pitch{ii-1});
+            pitch_max_current = max(pitch{ii});
+            if pitch_max_previous < pitch_max_current
+                pitch_max = pitch_max_current;
+            else
+                pitch_max = pitch_max_previous;
+            end
+        end
+        
+        g = figure;
+        hold on
+        for ii=1:numTracers
+            C = pitch{ii}/pitch_max;
+            scatter3(RZ{ii}(:,1),RZ{ii}(:,2),pitch{ii},6,C)
+        end
+        hold off
+        box on; axis on; grid on
+        xlabel('R','Interpreter','latex','FontSize',16)
+        ylabel('Z','Interpreter','latex','FontSize',16)
+        zlabel('$\theta_{v_\perp/v_\parallel}$ [rad]','Interpreter','latex','FontSize',16)
+        colormap(jet)
+        savefig(g,['poloidal_plane_figures/pitch_Eo_' num2str(Eo(ee)) '_po_' num2str(pitcho(pp)) '.fig'])
+        close(g)
     end
 end
-
-h = figure;
-subplot(2,1,1)
-hold on
-for ii=1:numTracers
-    C = k{ii}.^2/k_max^2;
-    scatter3(RZ{ii}(:,1),RZ{ii}(:,2),k{ii}.^2,6,C)
-end
-hold off
-box on
-axis on
-xlabel('R','Interpreter','latex','FontSize',16)
-ylabel('Z','Interpreter','latex','FontSize',16)
-zlabel('$\kappa^2(R,Z)$','Interpreter','latex','FontSize',16)
-
-subplot(2,1,2)
-C = ko.^2/max(ko)^2;
-scatter3(Ro,zo,ko,6,C)
-box on
-axis on
-xlabel('R','Interpreter','latex','FontSize',16)
-ylabel('Z','Interpreter','latex','FontSize',16)
-zlabel('$\kappa_o$','Interpreter','latex','FontSize',16)
-colormap(jet)
-% colorbar
-
-for ii=2:numTracers
-    pitch_max_previous = max(pitch{ii-1});
-    pitch_max_current = max(pitch{ii});
-    if pitch_max_previous < pitch_max_current
-        pitch_max = pitch_max_current;
-    else
-        pitch_max = pitch_max_previous;
-    end
-end
-
-g = figure;
-hold on
-for ii=1:numTracers
-    C = pitch{ii}/pitch_max;
-    scatter3(RZ{ii}(:,1),RZ{ii}(:,2),pitch{ii},6,C)
-end
-hold off
-box on
-axis on
-xlabel('R','Interpreter','latex','FontSize',16)
-ylabel('Z','Interpreter','latex','FontSize',16)
-zlabel('$\theta_{v_\perp/v_\parallel}$','Interpreter','latex','FontSize',16)
-colormap(jet)
 
 delete(poolobj);
 
