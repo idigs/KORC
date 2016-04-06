@@ -24,7 +24,7 @@ for jj=1:numel(xo)
     strLegend = cell(1,numAngles);
     
     for ii=1:numAngles
-        ST = particleOrbits('','','2D',[],[2E6,1E-2,cadence],[-1,1],[xo(jj),0,0],[vo,pitchAngle(ii)],false);
+        ST = particleOrbits('','','2D',[],[E6,1E-2,cadence],[-1,1],[xo(jj),0,0],[vo,pitchAngle(ii)],false);
         
         zeta = atan2(ST.PP.X(:,2),ST.PP.X(:,1));
         zeta(zeta<0) = zeta(zeta<0) + 2*pi;

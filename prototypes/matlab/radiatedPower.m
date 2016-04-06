@@ -38,27 +38,30 @@ end
 parfor ii=1:numTracers
     try
         
-    ST = particleOrbits('','','2D',[],[1E6,1E-2,10],[-1,1],[xo(ii),yo(ii),zo(ii)],[vo,50],false);
-    
-    close all
-    
-    zeta = atan2(ST.PP.X(:,2),ST.PP.X(:,1));
-    zeta(zeta<0) = zeta(zeta<0) + 2*pi;
-    locs = find(abs(diff(zeta)) > 6);
-    
-    R = sqrt(ST.PP.X(locs,1).^2 + ST.PP.X(locs,2).^2);
-    Z = ST.PP.X(locs,3);
-    
-    pitch{ii} = atan2(ST.PP.vperp(locs),ST.PP.vpar(locs));
-    
-    RZ{ii} = [R, Z];
-    k{ii} = ST.PP.k(locs);
-    ko(ii) = ST.PP.k(1);
+        ST = particleOrbits_ProductionRuns('','','2D',[],[1E6,1E-2,10],[-1,1],[xo(ii),yo(ii),zo(ii)],[vo,50],false);
+        
+        close all
+        
+        zeta = atan2(ST.PP.X(:,2),ST.PP.X(:,1));
+        zeta(zeta<0) = zeta(zeta<0) + 2*pi;
+        locs = find(abs(diff(zeta)) > 6);
+        
+        R = sqrt(ST.PP.X(locs,1).^2 + ST.PP.X(locs,2).^2);
+        Z = ST.PP.X(locs,3);
+        
+        pitch{ii} = atan2(ST.PP.vperp(locs),ST.PP.vpar(locs));
+        
+        RZ{ii} = [R, Z];
+        k{ii} = ST.PP.k(locs);
+        ko(ii) = ST.PP.k(1);
+        
     catch
         disp('Exception!')
     end
-
+    
     disp(['Tracer No. ' num2str(ii)])
+    
+    
 end
 
 

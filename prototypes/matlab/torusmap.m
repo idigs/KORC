@@ -44,7 +44,4 @@ theta = (2*pi)*v(2,:);
 x = cos(theta).*rho;
 y = sin(theta).*rho;
 z = r*s.*(2*v(3,:)-1);
-
-% xyz = [x; y; z];s
-
 end % torusmap 
