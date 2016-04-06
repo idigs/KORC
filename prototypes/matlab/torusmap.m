@@ -1,4 +1,4 @@
-function xyz = torusmap(r, R, v)
+function [x,y,z] = torusmap(r, R, v)
 % xyz = torusmap(r, R, v)
 % INPUTS:
 % R large radius, r, cross section radius of the torus
@@ -45,6 +45,6 @@ x = cos(theta).*rho;
 y = sin(theta).*rho;
 z = r*s.*(2*v(3,:)-1);
 
-xyz = [x; y; z];
+% xyz = [x; y; z];s
 
 end % torusmap 
