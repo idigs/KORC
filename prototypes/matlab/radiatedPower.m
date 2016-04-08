@@ -1,6 +1,7 @@
 function radiatedPower(numTracers,poolsize)
 
 close all
+folder = 'poloidal_plane_figures_2';
 
 % Number of time iterations for calculating electrons' orbits
 numTimeIt = 1E6;
@@ -27,7 +28,7 @@ axis equal
 xlabel('X','Interpreter','latex','FontSize',16)
 ylabel('Y','Interpreter','latex','FontSize',16)
 zlabel('Z','Interpreter','latex','FontSize',16)
-savefig(h,'poloidal_plane_figures/initial_distribution_tracers.fig')
+savefig(h,[folder '/initial_distribution_tracers.fig'])
 close(h)
 
 for ee=1:numel(Eo)
@@ -58,15 +59,8 @@ for ee=1:numel(Eo)
             try
                 ST = ...
                     particleOrbits_ProductionRuns('','','2D',[],[numTimeIt,1E-2,cadence],[-1,1],[xo(pii),yo(pii),zo(pii)],[vo,local_pitcho],false);
-               
-                zeta = atan2(ST.PP.X(:,2),ST.PP.X(:,1));
-                zeta(zeta<0) = zeta(zeta<0) + 2*pi;
-                locs = find(abs(diff(zeta)) > 6);
-                
-                R = sqrt(ST.PP.X(locs,1).^2 + ST.PP.X(locs,2).^2);
-                Z = ST.PP.X(locs,3);
-                
-                pitch{pii} = atan2(ST.PP.vperp(locs),ST.PP.vpar(locs));
+
+                pitch{pii} = ST.PP.POINCARE.pitch;
                 
                 RZ{pii} = [ST.PP.POINCARE.R, ST.PP.POINCARE.Z];
                 k{pii} = ST.PP.POINCARE.k;
@@ -74,7 +68,7 @@ for ee=1:numel(Eo)
                 ko(pii) = ST.PP.k(1);
                 
                 EK{pii} = ST.PP.EK;
-                mu{pii} = ST.PP.mu);
+                mu{pii} = ST.PP.mu;
                 angularMomentum{pii} = ST.PP.angularMomentum;
                 
             catch
@@ -83,7 +77,7 @@ for ee=1:numel(Eo)
             disp(['Energy No.' num2str(ee) ' Pitch No.' num2str(pp) ' Tracer No. ' num2str(pii)])
         end
         
-        filename = ['poloidal_plane_figures/var_Eo_' num2str(Eo(ee)) ...
+        filename = [folder '/var_Eo_' num2str(Eo(ee)) ...
             '_po_' num2str(pitcho(pp)) '.mat'];
         save(filename,'RZ','k','T','ko','EK','mu','angularMomentum','pitch')
         
@@ -120,7 +114,7 @@ for ee=1:numel(Eo)
         ylabel('Z','Interpreter','latex','FontSize',16)
         zlabel('$\kappa_o$','Interpreter','latex','FontSize',16)
         colormap(jet)
-        savefig(h,['poloidal_plane_figures/curvature_Eo_' num2str(Eo(ee)) '_po_' num2str(pitcho(pp)) '.fig'])
+        savefig(h,[folder '/curvature_Eo_' num2str(Eo(ee)) '_po_' num2str(pitcho(pp)) '.fig'])
         close(h)
         
         for ii=2:numTracers
@@ -145,7 +139,7 @@ for ee=1:numel(Eo)
         ylabel('Z','Interpreter','latex','FontSize',16)
         zlabel('$\theta_{v_\perp/v_\parallel}$ [rad]','Interpreter','latex','FontSize',16)
         colormap(jet)
-        savefig(g,['poloidal_plane_figures/pitch_Eo_' num2str(Eo(ee)) '_po_' num2str(pitcho(pp)) '.fig'])
+        savefig(g,[folder '/pitch_Eo_' num2str(Eo(ee)) '_po_' num2str(pitcho(pp)) '.fig'])
         close(g)
     end
 end
