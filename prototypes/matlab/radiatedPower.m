@@ -3,13 +3,14 @@ function radiatedPower(numTracers,poolsize)
 close all
 
 % Number of time iterations for calculating electrons' orbits
-numTimeIt = 1E5;
+numTimeIt = 1E6;
+cadence = 2E4;
 
 % Initial pitch angle
 pitcho = [10,20,50];
 
 % Energy of electron, in eV.
-Eo = [3E6,30E6];
+Eo = [3E6];
 c = 2.9979E8; % Speed of light, in m/s
 qe = 1.602176E-19; % Electron charge, in Coulombs
 me = 9.109382E-31; % Electron mass, in kg.
@@ -42,6 +43,10 @@ for ee=1:numel(Eo)
         ko = zeros(1,numTracers);
         pitch = cell(1,numTracers);
         
+        EK = cell(1,numTracers);
+        angularMomentum = cell(1,numTracers);
+        mu = cell(1,numTracers);
+        
         poolobj = gcp('nocreate');
         if isempty(poolobj)
             poolobj = parpool(poolsize);
@@ -52,7 +57,7 @@ for ee=1:numel(Eo)
         parfor pii=1:numTracers
             try
                 ST = ...
-                    particleOrbits_ProductionRuns('','','2D',[],[numTimeIt,1E-2,10],[-1,1],[xo(pii),yo(pii),zo(pii)],[vo,local_pitcho],false);
+                    particleOrbits_ProductionRuns('','','2D',[],[numTimeIt,1E-2,cadence],[-1,1],[xo(pii),yo(pii),zo(pii)],[vo,local_pitcho],false);
                
                 zeta = atan2(ST.PP.X(:,2),ST.PP.X(:,1));
                 zeta(zeta<0) = zeta(zeta<0) + 2*pi;
@@ -63,10 +68,15 @@ for ee=1:numel(Eo)
                 
                 pitch{pii} = atan2(ST.PP.vperp(locs),ST.PP.vpar(locs));
                 
-                RZ{pii} = [R, Z];
-                k{pii} = ST.PP.k(locs);
-                T{pii} = ST.PP.T(locs);
+                RZ{pii} = [ST.PP.POINCARE.R, ST.PP.POINCARE.Z];
+                k{pii} = ST.PP.POINCARE.k;
+                T{pii} = ST.PP.POINCARE.T;
                 ko(pii) = ST.PP.k(1);
+                
+                EK{pii} = ST.PP.EK;
+                mu{pii} = ST.PP.mu);
+                angularMomentum{pii} = ST.PP.angularMomentum;
+                
             catch
                 disp('Exception!')
             end
@@ -75,7 +85,7 @@ for ee=1:numel(Eo)
         
         filename = ['poloidal_plane_figures/var_Eo_' num2str(Eo(ee)) ...
             '_po_' num2str(pitcho(pp)) '.mat'];
-        save(filename,'RZ','k','T','ko')
+        save(filename,'RZ','k','T','ko','EK','mu','angularMomentum','pitch')
         
         Ro = sqrt(xo.^2 + yo.^2); % initial radial coordinate
         

@@ -24,7 +24,7 @@ function ST = particleOrbits_ProductionRuns(pathToBField,fileType,ND,res,timeSte
 
 narginchk(8,9);
 
-% close all
+% % % close all
 
 ST = struct;
 % Script parameters
@@ -92,19 +92,20 @@ ST.params.numIt = timeStepParams(1);
 ST.params.dt = timeStepParams(2)*(2*pi/ST.params.wc);
 ST.params.cadence = timeStepParams(3);
 ST.params.inds = 1:ST.params.cadence:ST.params.numIt;
+ST.params.numSnapshots = numel(ST.params.inds);
 
-ST.time = zeros(ST.params.numIt,1);
-for ii=1:ST.params.numIt
-    ST.time(ii) = (ii-1)*ST.params.dt;
+ST.time = zeros(ST.params.numSnapshots,1);
+for ii=1:ST.params.numSnapshots
+    ST.time(ii) = (ii-1)*ST.params.dt*ST.params.cadence;
 end
 
 ST.PP = particlePusherLeapfrogMod(ST);
 % ST.PP = particlePusherMatlab(ST);
 
-if ST.opt
-    PoincarePlots(ST);
-end
-% DiegosInvariants(ST);
+% if ST.opt
+%     PoincarePlots(ST);
+% end
+ST.PP.angularMomentum = DiegosInvariants(ST);
 
 munlock
 
@@ -945,18 +946,25 @@ PP = struct;
 
 PP.method = 'Leapfrog';
 
-X = zeros(ST.params.numIt,3); % (it,ii), ii=x,y,z
-v = zeros(ST.params.numIt,3);
-u = zeros(ST.params.numIt,3);
-% R = zeros(ST.params.numIt,3);
+X = zeros(ST.params.numSnapshots,3); % (it,ii), ii=x,y,z
+v = zeros(ST.params.numSnapshots,3);
+u = zeros(ST.params.numSnapshots,3);
+R = zeros(ST.params.numSnapshots,3);
 
-k = zeros(1,ST.params.numIt); % Curvature
-T = zeros(1,ST.params.numIt); % Torsion
-vpar = zeros(1,ST.params.numIt); % parallel velocity
-vperp = zeros(1,ST.params.numIt); % perpendicular velocity
-% mu = zeros(1,ST.params.numIt); % instantaneous magnetic moment
+POINCARE = struct;
+POINCARE.R = [];
+POINCARE.Z = [];
+POINCARE.k = [];
+POINCARE.T = [];
+POINCARE.pitch = [];
 
-% EK = zeros(1,ST.params.numIt);
+
+k = zeros(1,ST.params.numSnapshots); % Curvature
+T = zeros(1,ST.params.numSnapshots); % Torsion
+vpar = zeros(1,ST.params.numSnapshots); % parallel velocity
+vperp = zeros(1,ST.params.numSnapshots); % perpendicular velocity
+mu = zeros(1,ST.params.numSnapshots); % instantaneous magnetic moment
+EK = zeros(1,ST.params.numSnapshots); % kinetic energy
 
 % Normalization
 X(1,:) = ST.params.Xo/ST.norm.l;
@@ -975,14 +983,14 @@ E = ST.E/(ST.Bo*ST.params.c);
 u(1,:) = v(1,:)/sqrt(1 - sum(v(1,:).^2));
 gamma = sqrt(1 + sum(u(1,:).^2));
 v(1,:) = u(1,:)/gamma;
-% R(1,:) = X(1,:) + gamma*m*cross(v(1,:),B)/(q*sum(B.^2));
+R(1,:) = X(1,:) + gamma*m*cross(v(1,:),B)/(q*sum(B.^2));
 
 % % % % % % % % % % % % % % % % % % 
 B_mag = sqrt(sum(B.^2));
 b = B/B_mag;
 vpar(1) = v(1,:)*b';
 vperp(1) = sqrt( v(1,:)*v(1,:)' - vpar(1)^2 );
-% mu(1) = gamma*m*vperp(1)^2/(2*B_mag);
+mu(1) = gamma*m*vperp(1)^2/(2*B_mag);
 
 % Curvature and torsion
 acc = q*cross(v(1,:),B)/sqrt(1 + sum(u(1,:).^2)); % acceleration
@@ -992,7 +1000,7 @@ dacc = q*cross(acc,B)/sqrt(1 + sum(u(1,:).^2)); % d(acc)/dt
 T(1) = det([v(1,:); acc; dacc])/aux;
 % Curvature and torsion
 
-% EK(1) = sqrt(1 + sum(u(1,:).^2));
+EK(1) = sqrt(1 + sum(u(1,:).^2));
 % % % % % % % % % % % % % % % % % % 
 
 % initial velocity
@@ -1014,40 +1022,81 @@ V = U/sqrt(1 + sum(U.^2));
 
 a = q*dt/m;
 
-for ii=2:ST.params.numIt
+for ii=2:ST.params.numSnapshots
     
-    X(ii,:) = X(ii-1,:) + dt*V;
-    if ST.analytical
-        B = analyticalB(X(ii,:)*ST.norm.l)/ST.Bo;
-    else
-        B = interpMagField(ST,X(ii,:)*ST.norm.l)/ST.Bo;
+    XX = X(ii-1,:) + dt*V;
+    
+    for jj=1:ST.params.cadence-1
+        zeta_previous = atan2(XX(2),XX(1));
+        if zeta_previous < 0 
+            zeta_previous = zeta_previous + 2*pi;
+        end
+        
+        XX = XX + dt*V;
+        
+        zeta_current = atan2(XX(2),XX(1));
+        if zeta_current < 0
+            zeta_current = zeta_current + 2*pi;
+        end
+                
+        if ST.analytical
+            B = analyticalB(XX*ST.norm.l)/ST.Bo;
+        else
+            B = interpMagField(ST,XX*ST.norm.l)/ST.Bo;
+        end
+        
+        tau = 0.5*q*dt*B/m;
+        up = U + a*(E + 0.5*cross(V,B));
+        gammap = sqrt(1 + sum(up.^2));
+        sigma = gammap^2 - sum(tau.^2);
+        us = sum(up.*tau); % variable 'u^*' in paper
+        gam = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(sum(tau.^2) + sum(us.^2))) );
+        t = tau/gam;
+        s = 1/(1+sum(t.^2)); % variable 's' in paper
+        
+        U = s*(up + sum(up.*t)*t + cross(up,t));
+        V = U/sqrt(1 + sum(U.^2));
+        
+        if abs(zeta_previous - zeta_current) > 6
+
+            POINCARE.R = [POINCARE.R; sqrt(XX(1).^2 + XX(2).^2)];
+            POINCARE.Z = [POINCARE.Z; XX(3)];
+            
+            u_p = U - 0.5*a*( E + cross(V,B) );
+            gamma_p = sqrt(1 + sum(u_p.^2));
+            v_p = u_p/gamma_p;
+            
+            B_mag = sqrt(sum(B.^2));
+            b = B/B_mag;
+            Vpar = v_p*b';
+            Vperp = sqrt( v_p*v_p' - Vpar^2 );            
+            
+            % Curvature and torsion
+            acc = (q/m)*cross(v_p,B)/sqrt(1 + sum(u_p.^2)); % acceleration
+            aux = sum( cross(v_p,acc).^2 );
+            dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(u_p.^2)); % d(acc)/dt
+            % Curvature and torsion
+            
+            POINCARE.k = [POINCARE.k; sqrt( aux )/sqrt( sum(v_p.^2) )^3];
+            POINCARE.T = [POINCARE.T; det([v_p; acc; dacc])/aux];
+            POINCARE.pitch = [POINCARE.pitch; atan2(Vperp,Vpar)];
+        end
     end
     
-    tau = 0.5*q*dt*B/m;
-    up = U + a*(E + 0.5*cross(V,B));
-    gammap = sqrt(1 + sum(up.^2));
-    sigma = gammap^2 - sum(tau.^2);
-    us = sum(up.*tau); % variable 'u^*' in paper
-    gam = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(sum(tau.^2) + sum(us.^2))) );
-    t = tau/gam;
-    s = 1/(1+sum(t.^2)); % variable 's' in paper
-    
-    U = s*(up + sum(up.*t)*t + cross(up,t));
-    V = U/sqrt(1 + sum(U.^2));
-    
-    % EK(ii) = sqrt(1 + sum(U.^2));
+    X(ii,:) = XX;
+    EK(ii) = sqrt(1 + sum(U.^2));
     
     u(ii,:) = U - 0.5*a*( E + cross(V,B) );
     gamma = sqrt(1 + sum(u(ii,:).^2));
     v(ii,:) = u(ii,:)/gamma;
-%     R(ii,:) = X(ii,:) + gamma*m*cross(v(ii,:),B)/(q*sum(B.^2));
+    R(ii,:) = X(ii,:) + gamma*m*cross(v(ii,:),B)/(q*sum(B.^2));
     
     B_mag = sqrt(sum(B.^2));
     b = B/B_mag;
     vpar(ii) = v(ii,:)*b';
     vperp(ii) = sqrt( v(ii,:)*v(ii,:)' - vpar(ii)^2 );
-%     mu(ii) = gamma*m*vperp(ii)^2/(2*B_mag);
-
+    mu(ii) = gamma*m*vperp(ii)^2/(2*B_mag);
+    
     
     % Curvature and torsion
     acc = (q/m)*cross(v(ii,:),B)/sqrt(1 + sum(u(ii,:).^2)); % acceleration
@@ -1056,8 +1105,6 @@ for ii=2:ST.params.numIt
     dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(u(ii,:).^2)); % d(acc)/dt
     T(ii) = det([v(ii,:); acc; dacc])/aux;
     % Curvature and torsion
-    
-    %     disp(['Iteration ' num2str(ii)])
 end
 
 time = ST.time/(2*pi/ST.params.wc);
@@ -1070,8 +1117,8 @@ time = ST.time/(2*pi/ST.params.wc);
 % Relative error in energy conservation
 
 % Cylindrical coordinates
-phi = atan2(X(:,2),X(:,1));
-phi(phi < 0) = phi(phi < 0) + 2*pi;
+% phi = atan2(X(:,2),X(:,1));
+% phi(phi < 0) = phi(phi < 0) + 2*pi;
 % locs = [1;find(abs(diff(phi)) > 6);numel(phi)];
 % Cylindrical coordinates
 
@@ -1108,14 +1155,14 @@ if ST.opt
     
     figure
     subplot(3,1,1)
-    plot(time(ST.params.inds), vpar(ST.params.inds))
+    plot(time, vpar)
     box on
     grid on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
     ylabel('$v_\parallel$ [c]','Interpreter','latex','FontSize',16)
     title(PP.method,'Interpreter','latex','FontSize',16)
     subplot(3,1,2)
-    plot(time(ST.params.inds), vperp(ST.params.inds))
+    plot(time, vperp)
     box on
     grid on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
@@ -1123,7 +1170,7 @@ if ST.opt
     title(PP.method,'Interpreter','latex','FontSize',16)
     v_tot = sqrt(vpar.^2 +vperp.^2);
     subplot(3,1,3)
-    plot(time(ST.params.inds), v_tot(ST.params.inds))
+    plot(time, v_tot)
     box on
     grid on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
@@ -1133,7 +1180,7 @@ end
 
 % Return position and velocity with SI units
 PP.X = X*ST.norm.l;
-% PP.R = R*ST.norm.l;
+PP.R = R*ST.norm.l;
 PP.v = v*ST.params.c;
 
 PP.vpar = vpar;
@@ -1142,17 +1189,28 @@ PP.vperp = vperp;
 PP.k = k/ST.norm.l; % curvature
 PP.T = T/ST.norm.l; % curvature
 
+PP.EK = EK;
+PP.mu = mu;
+
+POINCARE.R = POINCARE.R*ST.norm.l;
+POINCARE.Z = POINCARE.Z*ST.norm.l;
+POINCARE.k = POINCARE.k/ST.norm.l;
+POINCARE.T = POINCARE.T/ST.norm.l;
+
+PP.POINCARE = POINCARE;
+
+
 if ST.opt
     figure
     subplot(2,1,1)
-    plot(time(ST.params.inds), PP.k(ST.params.inds))
+    plot(time, PP.k)
     box on
     grid on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
     ylabel('Curvature $\kappa(t)$','Interpreter','latex','FontSize',16)
     title(PP.method,'Interpreter','latex','FontSize',16)
     subplot(2,1,2)
-    plot(time(ST.params.inds), PP.T(ST.params.inds),time(ST.params.inds),0*time(ST.params.inds),'k--')
+    plot(time, PP.T,time,0*time,'k--')
     box on
     grid on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
@@ -1160,9 +1218,9 @@ if ST.opt
     title(PP.method,'Interpreter','latex','FontSize',16)
     
     figure
-    plot3(PP.X(ST.params.inds,1),PP.X(ST.params.inds,2),PP.X(ST.params.inds,3),'b')
+    plot3(PP.X(:,1),PP.X(:,2),PP.X(:,3),'b')
     hold on
-    plot3(PP.R(ST.params.inds,1),PP.R(ST.params.inds,2),PP.R(ST.params.inds,3),'r')
+    plot3(PP.R(:,1),PP.R(:,2),PP.R(:,3),'r')
     hold off
     axis equal
     box on
@@ -1249,7 +1307,7 @@ if ST.opt
     time = ST.time/(2*pi/ST.params.wc);
     
     figure
-    plot(time(ST.params.inds), PP.ERR(ST.params.inds))
+    plot(time, PP.ERR)
     box on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
     ylabel('Energy conservation [\%]','Interpreter','latex','FontSize',16)
@@ -1398,38 +1456,37 @@ v = 1E2*ST.PP.v;
 
 % Toroidal coordinates
 % r = radius, theta = poloidal angle, phi = toroidal angle
-r = sqrt( (sqrt(X(ST.params.inds,1).^2 + X(ST.params.inds,2).^2) - Ro).^2 + ...
-    X(ST.params.inds,3).^2 );
-theta = atan2(X(ST.params.inds,3),sqrt(X(ST.params.inds,1).^2 + X(ST.params.inds,2).^2) - Ro);
+r = sqrt( (sqrt(X(:,1).^2 + X(:,2).^2) - Ro).^2 + X(:,3).^2 );
+theta = atan2(X(:,3),sqrt(X(:,1).^2 + X(:,2).^2) - Ro);
 theta(theta<0) = theta(theta<0) + 2*pi;
-zeta = atan2(X(ST.params.inds,1),X(ST.params.inds,2));
+zeta = atan2(X(:,1),X(:,2));
 zeta(zeta<0) = zeta(zeta<0) + 2*pi;
 % Toroidal coordinates
 
-gamma = 1./sqrt(1 - sum(v(ST.params.inds,:).^2,2)/c^2);
+gamma = 1./sqrt(1 - sum(v.^2,2)/c^2);
 
 eta = r./Ro;
 psi = 0.5*lamb*Bpo*log(1 + r.^2/lamb^2);
 wo = q*Bo./(m*c*gamma);
 
 dzeta = ...
-    (X(ST.params.inds,2).*v(ST.params.inds,1) - X(ST.params.inds,1).*v(ST.params.inds,2))./( sum(X(ST.params.inds,1:2).^2,2) );
+    (X(:,2).*v(:,1) - X(:,1).*v(:,2))./( sum(X(:,1:2).^2,2) );
 
 DI = dzeta.*( 1 + eta.*cos(theta) ).^2 - wo.*psi/(Ro*Bo);
 
-ERR = 100*(DI(1) - DI)./DI(1);
-
-time = ST.time/(2*pi/ST.norm.wc);
-
-figure
-subplot(2,1,1)
-plot(time(ST.params.inds),DI)
-xlabel('Time $t$ [$\tau_c$]','Interpreter','latex','FontSize',16)
-ylabel('Invariant','Interpreter','latex','FontSize',16)
-title(ST.PP.method,'Interpreter','latex','FontSize',16)
-subplot(2,1,2)
-plot(ST.time(ST.params.inds),ERR)
-xlabel('Time $t$ [$\tau_c$]','Interpreter','latex','FontSize',16)
-ylabel('Relative error [\%]','Interpreter','latex','FontSize',16)
+% ERR = 100*(DI(1) - DI)./DI(1);
+% 
+% time = ST.time/(2*pi/ST.norm.wc);
+% 
+% figure
+% subplot(2,1,1)
+% plot(time(:),DI)
+% xlabel('Time $t$ [$\tau_c$]','Interpreter','latex','FontSize',16)
+% ylabel('Invariant','Interpreter','latex','FontSize',16)
+% title(ST.PP.method,'Interpreter','latex','FontSize',16)
+% subplot(2,1,2)
+% plot(ST.time(:),ERR)
+% xlabel('Time $t$ [$\tau_c$]','Interpreter','latex','FontSize',16)
+% ylabel('Relative error [\%]','Interpreter','latex','FontSize',16)
 end
 
