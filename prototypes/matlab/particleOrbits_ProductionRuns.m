@@ -24,7 +24,7 @@ function ST = particleOrbits_ProductionRuns(pathToBField,fileType,ND,res,timeSte
 
 narginchk(8,9);
 
-% % % close all
+close all
 
 ST = struct;
 % Script parameters

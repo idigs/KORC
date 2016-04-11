@@ -14,7 +14,7 @@ ST.filename = filename; % name of file containing the relevant data
 
 ST.data = loadData(ST);
 
-statistics(ST,{'k','pitch','angularMomentum'});
+ST.stats = statistics(ST,{'k','pitch','angularMomentum'});
 
 
 % EXAMPLES
@@ -25,12 +25,22 @@ end
 function data = loadData(ST)
 disp('Loading data...')
 
-NR = 40;
-NZ = 40;
+% Fundamental constants
+Eo = 3E6; % MeV
+c = 2.9979E8; % Speed of light, in m/s
+qe = 1.602176E-19; % Electron charge, in Coulombs
+me = 9.109382E-31; % Electron mass, in kg.
+vo = sqrt( 1 - (me*c^2/(Eo*qe))^2 );
+gamma = 1/sqrt(1 - vo^2);
+K = 8.987E9; % In Nm^2/C^2
+% Fundamental constants
+
+NR = 60;
+NZ = 60;
 
 data = struct;
 
-pitch = [50];
+pitch = [10];
 RZ = [];
 k = [];
 for pp=1:numel(pitch)
@@ -86,9 +96,10 @@ for ii = 1:numel(k)
     
 end
 
+polPlane = (2*K*qe^2*gamma^4*c/3)*polPlane;
 polPlane = polPlane./count;
 
-polPlane(~isfinite(polPlane)) = min(min(polPlane));
+% polPlane(~isfinite(polPlane)) = min(min(polPlane));
 
 surfc(R_nodes,Z_nodes,polPlane,'LineStyle','none')
 colormap(jet)
@@ -104,41 +115,94 @@ data.Z_nodes = Z_nodes;
 disp('Data loaded!')
 end
 
-function statistics(ST,listOfParams)
+function stats = statistics(ST,listOfParams)
 disp('Starting statistical analysis')
 
+% Fundamental constants
+Eo = 3E6; % MeV
+c = 2.9979E8; % Speed of light, in m/s
+qe = 1.602176E-19; % Electron charge, in Coulombs
+me = 9.109382E-31; % Electron mass, in kg.
+vo = sqrt( 1 - (me*c^2/(Eo*qe))^2 );
+gamma = 1/sqrt(1 - vo^2);
+K = 8.987E9; % In Nm^2/C^2
+% Fundamental constants
+
+cadence = 2E4;
+DT = 1E-2;
 numTracers = numel(ST.data.raw.timeSeries);
 
 numBins = 50;
+stats = struct;
 
 for pp =1:numel(listOfParams)
     numSnapshots = numel(ST.data.raw.timeSeries{1}.(listOfParams{pp}));
     param = zeros(numTracers,numSnapshots);
     
-    for ii=1:numTracers
-        param(ii,:) = ST.data.raw.timeSeries{ii}.(listOfParams{pp});
+    if strcmp(listOfParams{pp},'k')
+        for ii=1:numTracers
+            param(ii,:) = (2*K*qe^2*gamma^4*c/3)*ST.data.raw.timeSeries{ii}.(listOfParams{pp}).^2;
+        end
+    elseif strcmp(listOfParams{pp},'pitch')
+        for ii=1:numTracers
+            param(ii,:) = 180*ST.data.raw.timeSeries{ii}.(listOfParams{pp})/pi;
+        end
+    else
+        for ii=1:numTracers
+            param(ii,:) = ST.data.raw.timeSeries{ii}.(listOfParams{pp});
+        end
     end
     
     min_val = min(min(param));
     max_val = max(max(param));
     edges = linspace(min_val, max_val,numBins);
     
+    stats.pdfs.(listOfParams{pp}).vals = zeros(numBins-1,numSnapshots);
+    stats.pdfs.(listOfParams{pp}).edges = edges;
+    
+    Dbin = mean(diff(stats.pdfs.(listOfParams{pp}).edges));
+    
     f = figure;
     hold on
     for it=1:numSnapshots
         [h,~] = histcounts(param(:,it),edges);
-        plot3(edges(1:numBins-1),it*ones(1,numBins-1),h,'k')
+        h = h/(Dbin*sum(h));
+        stats.pdfs.(listOfParams{pp}).vals(:,it) = h;
+        plot3(edges(1:numBins-1),DT*cadence*it*ones(1,numBins-1),h,'k')
     end
     hold off
     xlim([min_val, max_val])
-    ylim([1, numSnapshots])
+    ylim([1, DT*cadence*numSnapshots])
     box on; grid on
     xlabel([listOfParams{pp} '(t)'],'Interpreter','latex','FontSize',16)
-    ylabel('Time $t$','Interpreter','latex','FontSize',16)
+    ylabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
     zlabel('Number of $e^{-}$','Interpreter','latex','FontSize',16)
     
-    
+    if strcmp(listOfParams{pp},'k')
+        rp = zeros(1,numSnapshots); % instantaneous radiated power
+        rp_pdfs = zeros(1,numSnapshots); % instantaneous radiated power (using pdfs)
+        
+        Dbin = mean(diff(stats.pdfs.(listOfParams{pp}).edges));
+        P = stats.pdfs.(listOfParams{pp}).edges(1:numBins-1) + 0.5*Dbin;
+        
+        for it=1:numSnapshots
+            rp(it) = mean(param(:,it)); 
+            rp_pdfs(it) = ...
+                Dbin*sum( P.*stats.pdfs.(listOfParams{pp}).vals(:,it)' );
+        end
+        
+        figure
+        plot(DT*cadence*(1:1:numSnapshots),rp,'k',DT*cadence*(1:1:numSnapshots),rp_pdfs,'r')
+        grid on; box on
+        xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+        ylabel('Total radiated power []','Interpreter','latex','FontSize',16)
+        
+    end
 end
+
+
+
+
 
 disp('Statistics done!')
 end
