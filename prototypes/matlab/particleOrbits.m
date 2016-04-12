@@ -784,12 +784,12 @@ narginchk(1,2);
 
 % Parameters of the analytical magnetic field
 Bo = 3;
-a = 0.5;% Minor radius in meters.
+a = 0.1;% Minor radius in meters.
 Ro = 1.6; % Major radius in meters.
 qa = 5; % Safety factor at the separatrix (r=a)
-co = 0.5; % Extra parameter
+co = 0.1; % Extra parameter
 lamb = a/co;
-Bpo = (a/Ro)*(Bo/qa)*(1-co^2)/co;
+Bpo = (a/Ro)*(Bo/qa)*(1+co^2)/co;
 % Parameters of the analytical magnetic field
 
 if nargin == 2

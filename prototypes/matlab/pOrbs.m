@@ -1,26 +1,26 @@
-function ST = particleOrbits_ProductionRuns(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,vo_params,opt)
+function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,vo_params,opt)
 % Here ro and vo are the initial position and velocity of the particle.
 % The components of the initial velocity must be entered as fractions of
 % the speed of light in vacuum.
 %
 % EXAMPLES:
 % USING ANALYTICAL MAGNETIC FIELD
-% ST = particleOrbits('','','2D',[],[1E6,1E-2,10],[-1,1],[2,0,0],[.99,0]);
+% ST = pOrbs('','','2D',[],[2E6,1E-2,10],[-1,1],[1.8,0,0],[0.99,0],true);
 % USING TABULATED FIELDS OF THE ANALYTICAL MAGNETIC FIELD
-% ST = particleOrbits('fields/CHEBYSHEV.dat','VMEC','2D',[60,60],[1E3,1.16E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
+% ST = pOrbs('fields/CHEBYSHEV.dat','VMEC','2D',[60,60],[1E3,1.16E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
 % USING XPAND FILES OF ITER FIELDS
-% ST = particleOrbits('fields/ITER2D.dat','XPANDER','2D',[150,150],[1E3,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
-% ST = particleOrbits('fields/ITER3D.dat','XPANDER','3D',[150,100,150],[2E5,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
-% ST = particleOrbits('fields/ITER3D.dat','XPANDER','3D',[150,100,150],[1E5,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.1,70]);
+% ST = pOrbs('fields/ITER2D.dat','XPANDER','2D',[150,150],[1E3,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
+% ST = pOrbs('fields/ITER3D.dat','XPANDER','3D',[150,100,150],[2E5,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
+% ST = pOrbs('fields/ITER3D.dat','XPANDER','3D',[150,100,150],[1E5,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.1,70]);
 % USING VMEC FILE OF ITER FIELDS
-% ST = particleOrbits('fields/VMEC2D.dat','VMEC','2D',[150,150],[1E3,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
+% ST = pOrbs('fields/VMEC2D.dat','VMEC','2D',[150,150],[1E3,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
 % USING SIESTA FILES
-% ST = particleOrbits('fields/SIESTA.txt','SIESTA','2D',[100,99,149],[5E5,1E-2,10],[-1,1],[1.6,0,-0.5],[0.99,0]);
-% ST = particleOrbits('fields/SIESTA_2.txt','SIESTA','3D',[100,99,149],[5E5,1E-2,10],[-1,1],[1.6,0,-0.5],[0.99,30]);
+% ST = pOrbs('fields/SIESTA.txt','SIESTA','2D',[100,99,149],[5E5,1E-2,10],[-1,1],[1.6,0,-0.5],[0.99,0]);
+% ST = pOrbs('fields/SIESTA_2.txt','SIESTA','3D',[100,99,149],[5E5,1E-2,10],[-1,1],[1.6,0,-0.5],[0.99,30]);
 % name='fields/bfield_tracing/d3d_bfield_tracing-3E-3.dat';
-% ST = particleOrbits(name,'SIESTA','3D',[100,79,149],[1E7,1E-2,1],[-1,1],[1.5,0,-0.5],[0.99,30]);
+% ST = pOrbs(name,'SIESTA','3D',[100,79,149],[1E7,1E-2,1],[-1,1],[1.5,0,-0.5],[0.99,30]);
 % USING RAW FILES
-% ST = particleOrbits('jfit_165365_1400.txt','RAW','2D',[],[1E5,1E-2,10],[-1,1],[1.82,0,-0.4928],[0.99,70]);
+% ST = pOrbs('jfit_165365_1400.txt','RAW','2D',[],[1E5,1E-2,10],[-1,1],[1.82,0,-0.4928],[0.99,70]);
 
 narginchk(8,9);
 
@@ -99,12 +99,12 @@ for ii=1:ST.params.numSnapshots
     ST.time(ii) = (ii-1)*ST.params.dt*ST.params.cadence;
 end
 
-ST.PP = particlePusherLeapfrogMod(ST);
+ST.PP = particlePusherLeapfrog(ST);
 % ST.PP = particlePusherMatlab(ST);
 
-% if ST.opt
-%     PoincarePlots(ST);
-% end
+if ST.opt
+    PoincarePlots(ST);
+end
 ST.PP.angularMomentum = DiegosInvariants(ST);
 
 munlock
@@ -839,105 +839,6 @@ end
 function PP = particlePusherLeapfrog(ST)
 % Relativistic particle pusher.
 % Vay, J.-L. 2008, PoP 15, 056701.
-
-PP = struct;
-
-PP.method = 'Leapfrog';
-
-X = zeros(ST.params.numIt,3); % (it,ii), ii=X,y,z
-v = zeros(ST.params.numIt,3);
-u = zeros(ST.params.numIt,3);
-
-% Normalization
-X(1,:) = ST.params.Xo/ST.norm.l;
-v(1,:) = ST.params.vo/ST.params.c;
-q = ST.params.q/ST.norm.q;
-m = ST.params.m/ST.norm.m;
-if ST.analytical
-    B = analyticalB(X(1,:)*ST.norm.l)/ST.Bo;
-else
-    B = interpMagField(ST,X(1,:)*ST.norm.l)/ST.Bo;
-end
-dt = ST.params.dt*ST.norm.wc;
-E = ST.E/(ST.Bo*ST.params.c);
-
-u(1,:) = v(1,:)/sqrt(1 - sum(v(1,:).^2));
-
-% initial velocity
-DT = 0.5*dt;
-a = q*(DT)/m;
-
-tau = 0.5*q*DT*B/m;
-up = u(1,:) + a*(E + 0.5*cross(v(1,:),B));
-gammap = sqrt(1 + sum(up.^2));
-sigma = gammap^2 - sum(tau.^2);
-us = sum(up.*tau);
-gam = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(sum(tau.^2) + sum(us.^2))) );
-t = tau/gam;
-s = 1/(1+sum(t.^2));
-
-u(1,:) = s*(up + sum(up.*t)*t + cross(up,t));
-v(1,:) = u(1,:)/sqrt(1 + sum(u(1,:).^2));
-% initial velocity
-
-a = q*dt/m;
-
-for ii=2:ST.params.numIt
-    X(ii,:) = X(ii-1,:) + dt*v(ii-1,:);
-    if ST.analytical
-        B = analyticalB(X(ii,:)*ST.norm.l)/ST.Bo;
-    else
-        B = interpMagField(ST,X(ii,:)*ST.norm.l)/ST.Bo;
-    end
-    
-    tau = 0.5*q*dt*B/m;
-    up = u(ii-1,:) + a*(E + 0.5*cross(v(ii-1,:),B));
-    gammap = sqrt(1 + sum(up.^2));
-    sigma = gammap^2 - sum(tau.^2);
-    us = sum(up.*tau); % variable 'u^*' in paper
-    gam = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(sum(tau.^2) + sum(us.^2))) );
-    t = tau/gam;
-    s = 1/(1+sum(t.^2)); % variable 's' in paper
-    
-    u(ii,:) = s*(up + sum(up.*t)*t + cross(up,t));
-    v(ii,:) = u(ii,:)/sqrt(1 + sum(u(ii,:).^2));
-end
-
-X = X*ST.norm.l;
-
-PP.X = X;
-PP.v = v;
-
-PP.EK = 1./sqrt(1-sum(PP.v.^2,2));
-PP.ERR = 100*(PP.EK(1) - PP.EK)./PP.EK(1);
-
-if ST.opt
-    figure
-    plot3(PP.X(ST.params.inds,1),PP.X(ST.params.inds,2),PP.X(ST.params.inds,3))
-    axis equal
-    xlabel('X','Interpreter','latex','FontSize',16)
-    ylabel('Y','Interpreter','latex','FontSize',16)
-    zlabel('Z','Interpreter','latex','FontSize',16)
-    title(PP.method,'Interpreter','latex','FontSize',16)
-end
-
-time = ST.time/(2*pi/ST.params.wc);
-
-if ST.opt
-    figure
-    plot(time(ST.params.inds), PP.ERR(ST.params.inds))
-    box on
-    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-    ylabel('Energy conservation [\%]','Interpreter','latex','FontSize',16)
-    title(PP.method,'Interpreter','latex','FontSize',16)
-end
-
-PP.v = PP.v*ST.params.c;
-end
-
-function PP = particlePusherLeapfrogMod(ST)
-% Relativistic particle pusher.
-% Vay, J.-L. 2008, PoP 15, 056701.
 if ST.opt
     disp('Initializing particle pusher...')
 end
@@ -999,16 +900,16 @@ k(1) = sqrt( aux )/sqrt( sum(v(1,:).^2) )^3;
 dacc = q*cross(acc,B)/sqrt(1 + sum(u(1,:).^2)); % d(acc)/dt
 T(1) = det([v(1,:); acc; dacc])/aux;
 % Curvature and torsion
-
-EK(1) = sqrt(1 + sum(u(1,:).^2));
 % % % % % % % % % % % % % % % % % % 
 
 % initial velocity
 DT = 0.5*dt;
 a = q*(DT)/m;
 
+U_half_step = u(1,:) + 0.5*a*(E + cross(v(1,:),B));
+
 tau = 0.5*q*DT*B/m;
-up = u(1,:) + a*(E + 0.5*cross(v(1,:),B));
+up = U_half_step + 0.5*a*E;
 gammap = sqrt(1 + sum(up.^2));
 sigma = gammap^2 - sum(tau.^2);
 us = sum(up.*tau);
@@ -1018,35 +919,37 @@ s = 1/(1+sum(t.^2));
 
 U = s*(up + sum(up.*t)*t + cross(up,t));
 V = U/sqrt(1 + sum(U.^2));
+
+EK(1) = sqrt(1 + sum(U.^2));
 % initial velocity
 
 a = q*dt/m;
 
-for ii=2:ST.params.numSnapshots
+if ST.params.cadence == 1
     
-    XX = X(ii-1,:) + dt*V;
-    
-    for jj=1:ST.params.cadence-1
-        zeta_previous = atan2(XX(2),XX(1));
-        if zeta_previous < 0 
+    for ii=2:ST.params.numSnapshots
+        zeta_previous = atan2(X(ii-1,2),X(ii-1,1));
+        if zeta_previous < 0
             zeta_previous = zeta_previous + 2*pi;
         end
         
-        XX = XX + dt*V;
+        X(ii,:) = X(ii-1,:) + dt*V;
         
-        zeta_current = atan2(XX(2),XX(1));
+        zeta_current = atan2(X(ii,2),X(ii,1));
         if zeta_current < 0
             zeta_current = zeta_current + 2*pi;
         end
-                
+        
         if ST.analytical
-            B = analyticalB(XX*ST.norm.l)/ST.Bo;
+            B = analyticalB(X(ii,:)*ST.norm.l)/ST.Bo;
         else
-            B = interpMagField(ST,XX*ST.norm.l)/ST.Bo;
+            B = interpMagField(ST,X(ii,:)*ST.norm.l)/ST.Bo;
         end
         
+        U_half_step = u(ii-1,:) + 0.5*a*(E + cross(v(ii-1,:),B));
+        
         tau = 0.5*q*dt*B/m;
-        up = U + a*(E + 0.5*cross(V,B));
+        up = U_half_step + 0.5*a*E;
         gammap = sqrt(1 + sum(up.^2));
         sigma = gammap^2 - sum(tau.^2);
         us = sum(up.*tau); % variable 'u^*' in paper
@@ -1054,27 +957,46 @@ for ii=2:ST.params.numSnapshots
         t = tau/gam;
         s = 1/(1+sum(t.^2)); % variable 's' in paper
         
-        U = s*(up + sum(up.*t)*t + cross(up,t));
-        V = U/sqrt(1 + sum(U.^2));
+        u(ii,:) = s*(up + sum(up.*t)*t + cross(up,t));
+        
+        gamma = sqrt(1 + sum(u(ii,:).^2));
+        v(ii,:) = u(ii,:)/gamma;
+        
+        EK(ii) = gamma;
+        
+        R(ii,:) = X(ii,:) + gamma*m*cross(v(ii,:),B)/(q*sum(B.^2));
+        
+        B_mag = sqrt(sum(B.^2));
+        b = B/B_mag;
+        vpar(ii) = v(ii,:)*b';
+        vperp(ii) = sqrt( v(ii,:)*v(ii,:)' - vpar(ii)^2 );
+        mu(ii) = gamma*m*vperp(ii)^2/(2*B_mag);
+        
+        % Curvature and torsion
+        acc = (q/m)*cross(v(ii,:),B)/sqrt(1 + sum(u(ii,:).^2)); % acceleration
+        aux = sum( cross(v(ii,:),acc).^2 );
+        k(ii) = sqrt( aux )/sqrt( sum(v(ii,:).^2) )^3;
+        dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(u(ii,:).^2)); % d(acc)/dt
+        T(ii) = det([v(ii,:); acc; dacc])/aux;
+        % Curvature and torsion
         
         if abs(zeta_previous - zeta_current) > 6
-
-            POINCARE.R = [POINCARE.R; sqrt(XX(1).^2 + XX(2).^2)];
-            POINCARE.Z = [POINCARE.Z; XX(3)];
             
-            u_p = U - 0.5*a*( E + cross(V,B) );
-            gamma_p = sqrt(1 + sum(u_p.^2));
-            v_p = u_p/gamma_p;
+            POINCARE.R = [POINCARE.R; sqrt(X(ii,1).^2 + X(ii,2).^2)];
+            POINCARE.Z = [POINCARE.Z; X(ii,3)];
+            
+            gamma_p = sqrt(1 + sum(U_half_step.^2));
+            v_p = U_half_step/gamma_p;
             
             B_mag = sqrt(sum(B.^2));
             b = B/B_mag;
             Vpar = v_p*b';
-            Vperp = sqrt( v_p*v_p' - Vpar^2 );            
+            Vperp = sqrt( v_p*v_p' - Vpar^2 );
             
             % Curvature and torsion
-            acc = (q/m)*cross(v_p,B)/sqrt(1 + sum(u_p.^2)); % acceleration
+            acc = (q/m)*cross(v_p,B)/sqrt(1 + sum(U_half_step.^2)); % acceleration
             aux = sum( cross(v_p,acc).^2 );
-            dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(u_p.^2)); % d(acc)/dt
+            dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(U_half_step.^2)); % d(acc)/dt
             % Curvature and torsion
             
             POINCARE.k = [POINCARE.k; sqrt( aux )/sqrt( sum(v_p.^2) )^3];
@@ -1083,74 +1005,131 @@ for ii=2:ST.params.numSnapshots
         end
     end
     
-    X(ii,:) = XX;
-    EK(ii) = sqrt(1 + sum(U.^2));
+else
     
-    u(ii,:) = U - 0.5*a*( E + cross(V,B) );
-    gamma = sqrt(1 + sum(u(ii,:).^2));
-    v(ii,:) = u(ii,:)/gamma;
-    R(ii,:) = X(ii,:) + gamma*m*cross(v(ii,:),B)/(q*sum(B.^2));
+    XX = X(1,:); % initializing the XX variable
+       
+    for ii=2:ST.params.numSnapshots
+        for jj=1:ST.params.cadence
+            zeta_previous = atan2(XX(2),XX(1));
+            if zeta_previous < 0
+                zeta_previous = zeta_previous + 2*pi;
+            end
+            
+            XX = XX + dt*V;
+            
+            zeta_current = atan2(XX(2),XX(1));
+            if zeta_current < 0
+                zeta_current = zeta_current + 2*pi;
+            end
+            
+            if ST.analytical
+                B = analyticalB(XX*ST.norm.l)/ST.Bo;
+            else
+                B = interpMagField(ST,XX*ST.norm.l)/ST.Bo;
+            end
+            
+            U_half_step = U + 0.5*a*(E + cross(V,B));
+            
+            tau = 0.5*q*dt*B/m;
+            up = U_half_step + 0.5*a*E;
+            gammap = sqrt(1 + sum(up.^2));
+            sigma = gammap^2 - sum(tau.^2);
+            us = sum(up.*tau); % variable 'u^*' in paper
+            gam = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(sum(tau.^2) + sum(us.^2))) );
+            t = tau/gam;
+            s = 1/(1+sum(t.^2)); % variable 's' in paper
+            
+            U = s*(up + sum(up.*t)*t + cross(up,t));
+            V = U/sqrt(1 + sum(U.^2));
+            
+            if abs(zeta_previous - zeta_current) > 6
+                
+                POINCARE.R = [POINCARE.R; sqrt(XX(1).^2 + XX(2).^2)];
+                POINCARE.Z = [POINCARE.Z; XX(3)];
+                
+                gamma_p = sqrt(1 + sum(U_half_step.^2));
+                v_p = U_half_step/gamma_p;
+                
+                B_mag = sqrt(sum(B.^2));
+                b = B/B_mag;
+                Vpar = v_p*b';
+                Vperp = sqrt( v_p*v_p' - Vpar^2 );
+                
+                % Curvature and torsion
+                acc = (q/m)*cross(v_p,B)/sqrt(1 + sum(U_half_step.^2)); % acceleration
+                aux = sum( cross(v_p,acc).^2 );
+                dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(U_half_step.^2)); % d(acc)/dt
+                % Curvature and torsion
+                
+                POINCARE.k = [POINCARE.k; sqrt( aux )/sqrt( sum(v_p.^2) )^3];
+                POINCARE.T = [POINCARE.T; det([v_p; acc; dacc])/aux];
+                POINCARE.pitch = [POINCARE.pitch; atan2(Vperp,Vpar)];
+            end
+        end
+        
+        X(ii,:) = XX;
+        u(ii,:) = U;
+
+        gamma = sqrt(1 + sum(u(ii,:).^2));
+        EK(ii) = gamma;
+        v(ii,:) = u(ii,:)/gamma;
+        R(ii,:) = X(ii,:) + gamma*m*cross(v(ii,:),B)/(q*sum(B.^2));
+        
+        B_mag = sqrt(sum(B.^2));
+        b = B/B_mag;
+        vpar(ii) = v(ii,:)*b';
+        vperp(ii) = sqrt( v(ii,:)*v(ii,:)' - vpar(ii)^2 );
+        mu(ii) = gamma*m*vperp(ii)^2/(2*B_mag);
+
+        % Curvature and torsion
+        acc = (q/m)*cross(v(ii,:),B)/sqrt(1 + sum(u(ii,:).^2)); % acceleration
+        aux = sum( cross(v(ii,:),acc).^2 );
+        k(ii) = sqrt( aux )/sqrt( sum(v(ii,:).^2) )^3;
+        dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(u(ii,:).^2)); % d(acc)/dt
+        T(ii) = det([v(ii,:); acc; dacc])/aux;
+        % Curvature and torsion
+    end
     
-    B_mag = sqrt(sum(B.^2));
-    b = B/B_mag;
-    vpar(ii) = v(ii,:)*b';
-    vperp(ii) = sqrt( v(ii,:)*v(ii,:)' - vpar(ii)^2 );
-    mu(ii) = gamma*m*vperp(ii)^2/(2*B_mag);
-    
-    
-    % Curvature and torsion
-    acc = (q/m)*cross(v(ii,:),B)/sqrt(1 + sum(u(ii,:).^2)); % acceleration
-    aux = sum( cross(v(ii,:),acc).^2 );
-    k(ii) = sqrt( aux )/sqrt( sum(v(ii,:).^2) )^3;
-    dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(u(ii,:).^2)); % d(acc)/dt
-    T(ii) = det([v(ii,:); acc; dacc])/aux;
-    % Curvature and torsion
 end
 
-time = ST.time/(2*pi/ST.params.wc);
-
-% Relative error in energy conservation
-% EK = 1./sqrt(1-sum(v.^2,2));
-% ERR = [0; 100*(EK(2) - EK(2:end))./EK(2)];
-% ERR_EK = [0, 100*(EK(2) - EK(2:end))./EK(2)];
-% ERR_mu = 100*(mu(1) - mu)./mu(1);
-% Relative error in energy conservation
-
-% Cylindrical coordinates
-% phi = atan2(X(:,2),X(:,1));
-% phi(phi < 0) = phi(phi < 0) + 2*pi;
-% locs = [1;find(abs(diff(phi)) > 6);numel(phi)];
-% Cylindrical coordinates
-
-x = linspace(min(time),max(time),10);
-y = zeros(1,10);
-
 if ST.opt
-%     figure
-%     subplot(4,1,1)
-%     plot(time(ST.params.inds), EK(ST.params.inds))
-%     box on
-%     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-%     ylabel('$\gamma m c^2$ [$m_e c^2$]','Interpreter','latex','FontSize',16)
-%     title(PP.method,'Interpreter','latex','FontSize',16)
-%     subplot(4,1,2)
-%     plot(time(ST.params.inds), ERR_EK(ST.params.inds),x,y,'k--')
-%     box on
-%     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-%     ylabel('Error in $\gamma m c^2$ [\%]','Interpreter','latex','FontSize',16)
-%     title(PP.method,'Interpreter','latex','FontSize',16)
-%     subplot(4,1,3)
-%     plot(time(ST.params.inds), mu(ST.params.inds))
-%     box on
-%     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-%     ylabel('$\mu$ [$c^2 m_o/B_o$]','Interpreter','latex','FontSize',16)
-%     title(PP.method,'Interpreter','latex','FontSize',16)
-%     subplot(4,1,4)
-%     plot(time(ST.params.inds), ERR_mu(ST.params.inds),x,y,'k--')
-%     box on
-%     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-%     ylabel('Error in $\mu$ [\%]','Interpreter','latex','FontSize',16)
-%     title(PP.method,'Interpreter','latex','FontSize',16)
+    
+    time = ST.time/(2*pi/ST.params.wc);
+    
+    % Relative error in energy conservation
+    ERR_EK = 100*(EK(1) - EK)./EK(1);
+    ERR_mu = 100*(mu(1) - mu)./mu(1);
+    % Relative error in energy conservation
+    
+    x = linspace(min(time),max(time),10);
+    y = zeros(1,10);
+    
+    figure
+    subplot(4,1,1)
+    plot(time, EK)
+    box on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$\gamma m c^2$ [$m_e c^2$]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    subplot(4,1,2)
+    plot(time, ERR_EK,x,y,'k--')
+    box on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('Error in $\gamma m c^2$ [\%]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    subplot(4,1,3)
+    plot(time, mu)
+    box on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$\mu$ [$c^2 m_o/B_o$]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    subplot(4,1,4)
+    plot(time, ERR_mu,x,y,'k--')
+    box on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('Error in $\mu$ [\%]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
     
     
     figure
