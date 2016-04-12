@@ -902,7 +902,7 @@ T(1) = det([v(1,:); acc; dacc])/aux;
 % Curvature and torsion
 % % % % % % % % % % % % % % % % % % 
 
-% initial velocity
+% initial half-step for velocity
 DT = 0.5*dt;
 a = q*(DT)/m;
 
@@ -921,11 +921,13 @@ U = s*(up + sum(up.*t)*t + cross(up,t));
 V = U/sqrt(1 + sum(U.^2));
 
 EK(1) = sqrt(1 + sum(U.^2));
-% initial velocity
+% initial half-step for velocity
 
 a = q*dt/m;
 
 if ST.params.cadence == 1
+    u(1,:) = U;
+    v(1,:) = V;
     
     for ii=2:ST.params.numSnapshots
         zeta_previous = atan2(X(ii-1,2),X(ii-1,1));
@@ -933,7 +935,7 @@ if ST.params.cadence == 1
             zeta_previous = zeta_previous + 2*pi;
         end
         
-        X(ii,:) = X(ii-1,:) + dt*V;
+        X(ii,:) = X(ii-1,:) + dt*v(ii-1,:);
         
         zeta_current = atan2(X(ii,2),X(ii,1));
         if zeta_current < 0
