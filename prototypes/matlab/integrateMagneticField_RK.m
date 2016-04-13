@@ -1,6 +1,7 @@
 function integrateMagneticField_RK(pathToBField,fileType,ND,res,timeStepParams,numInitCond)
 % name='fields/bfield_tracing/d3d_bfield_tracing-3E-3.dat';
 % integrateMagneticField_RK(name,'SIESTA','3D',[100,79,149],[1E4,1E-2],10)
+% ST = pOrbs('','','2D',[],[4E5,1E-2,10],[-1,1],[2.1,0,0],[0.99,0],true);
 
 narginchk(6,6);
 
@@ -26,7 +27,6 @@ else
     ST.fileType = fileType;
 end
 
-
 if ST.analytical
     B = analyticalB([1,1,1],'initialize');
 else
@@ -35,9 +35,9 @@ end
 
 P = figure;
 
-Ros = linspace(1.1,1.6,numInitCond);
+Ros = linspace(1.61,2.1,numInitCond);
 phio = 0;
-Zos = 0;%linspace(-1,1,numInitCond);
+Zos = 0; % linspace(-1,1,numInitCond);
 
 for ii=1:numel(Ros)
     
@@ -49,7 +49,7 @@ for ii=1:numel(Ros)
     
     R(1) = Ros(ii);
     phi(1) = phio;
-    Z(1) = Zos;%Zos(ii);
+    Z(1) = Zos; % Zos(ii);
     
     options = odeset('RelTol',1E-6,'AbsTol',1E-10);
     
@@ -57,7 +57,7 @@ for ii=1:numel(Ros)
     y0 = [R(1), phi(1), Z(1)];    
     
     if ST.analytical
-        [~,y] = ode45(@(t,y) eqnsOfMotion1(t,y),tspan,y0,options);  % RK4
+        [s,y] = ode45(@(s,y) eqnsOfMotion1(s,y),tspan,y0,options);  % RK4
     else
         [~,y] = ode45(@(t,y) eqnsOfMotion2(t,y,B),tspan,y0,options);  % RK4
     end
@@ -72,17 +72,73 @@ for ii=1:numel(Ros)
 %     plot(R,Z,'r.','MarkerSize',6)
     plot(R(locs),Z(locs),'b.','MarkerSize',2)
     hold off
+    
+    if ST.analytical
+        disp('Toroidal coordinate system')
+        % Cylindrical to Cartesian
+        x = R.*cos(phi);
+        y = R.*sin(phi);
+        z = Z;
+        
+        h = figure;
+        subplot(3,1,1)
+        plot3(x,y,z,'b')
+        axis equal
+        box on; grid on
+        xlabel('$X$ [m]','Interpreter','latex','FontSize',16)
+        ylabel('$Y$ [m]','Interpreter','latex','FontSize',16)
+        zlabel('$Z$ [m]','Interpreter','latex','FontSize',16)
+        
+        tmp = sqrt(x.^2 + y.^2) - B.Ro;
+        r = sqrt( tmp.^2 + z.^2 );
+        eta = r/B.Ro;
+        zeta = pi/2 - phi;
+        zeta(zeta<0) = zeta(zeta<0) + 2*pi;
+        theta = atan2(Z,R - B.Ro);
+        theta(theta<0) = theta(theta<0) + 2*pi;
+        
+        Bp = B.Bpo*(r/B.lamb)./( 1 + (r/B.lamb).^2 );
+        Dtheta = [0;mod(diff(theta),2*pi)];
+        zeta_theory = zeta(1) + cumsum( (B.Bo./Bp).*(eta./(1 + eta.*cos(theta))).*Dtheta );
+        zeta_theory = mod(zeta_theory,2*pi);
+        
+        figure(h)
+        subplot(3,1,2)
+        plot(theta,zeta,'r.',theta,zeta_theory,'b.')
+        axis([0 2*pi 0 2*pi])
+        xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
+        ylabel('$\zeta$ [rad]','Interpreter','latex','FontSize',16)
+        
+        
+        % Theoretical curvature of the analytical magnetic field
+        k = abs( B.Bo*Bp.*eta.*sin(theta)./(sqrt( B.Bo^2 + Bp.^2 ).*(1 + eta.*cos(theta)).^2 ));
+        
+        figure(h)
+        subplot(3,1,3)
+        plot(theta,k,'k.')
+        xlim([0 2*pi])
+        xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
+        ylabel('$\kappa(\theta)$','Interpreter','latex','FontSize',16)
+        % Theoretical curvature of the analytical magnetic field
+        
+        % Numerical curvature of the analytical magnetic field
+        
+        
+        % Numerical curvature of the analytical magnetic field
+        
+    end
+    
 end
 
 figure(P)
 axis equal
-xlabel('R [m]','Interpreter','latex','FontSize',16)
-ylabel('Z [m]','Interpreter','latex','FontSize',16)
+xlabel('$R$ [m]','Interpreter','latex','FontSize',16)
+ylabel('$Z$ [m]','Interpreter','latex','FontSize',16)
 title('Poincare plot','Interpreter','latex','FontSize',16)
 
 end
 
-function B = analyticalB(X,opt)
+function B = analyticalB(Y,opt)
 % Analytical magnetic field
 % X is a vector X(1)=x, X(2)=y, X(3)=z.
 
@@ -90,12 +146,12 @@ narginchk(1,2);
 
 % Parameters of the analytical magnetic field
 Bo = 3;
-a = 1;% 0.6;% Minor radius in meters.
-Ro = 2.0; % Major radius in meters.
+a = 0.5;% Minor radius in meters.
+Ro = 1.6; % Major radius in meters.
 qa = 5; % Safety factor at the separatrix (r=a)
 co = 0.5; % Extra parameter
 lamb = a/co;
-Bpo = (a/Ro)*(Bo/qa)*(1-co^2)/co;
+Bpo = (a/Ro)*(Bo/qa)*(1+co^2)/co;
 % Parameters of the analytical magnetic field
 
 if nargin == 2
@@ -111,6 +167,9 @@ if nargin == 2
     elseif strcmp(opt,'normalize')
     end
 else
+%     y0 = [R(1), phi(1), Z(1)]; 
+    X = [Y(1)*cos(Y(2)),Y(1)*sin(Y(2)),Y(3)];    
+    
     % Toroidal coordinates
     % r = radius, theta = poloidal angle, zeta = toroidal angle
     r = sqrt( (sqrt(X(1)^2 + X(2)^2) - Ro)^2 + X(3)^2 );
@@ -328,7 +387,6 @@ B.P = [];
 
 end
 
-
 function SI = calculateScatteredInterpolant(B)
 % Cylindrical coordinates
 % R = radius, phi = azimuthal angle, Z = z coordinate
@@ -389,31 +447,26 @@ end
 disp('Scattered interpolant: done!')
 end
 
+function dyds = eqnsOfMotion1(s,y)
+% The equation of motion is: dy/ds = b, where 'y' is the position vector
+% 's' is the length of the orbit, and b is the unitary magnetic field
+% vector (B = |B| b).
+% y(1) = R;
+% y(2) = phi;
+% y(3) = Z;
 
-function dydt = eqnsOfMotion1(t,y)
-% Lorentz Force
-% y(1) = x;
-% y(2) = y;
-% y(3) = z;
-% y(4) = ux;
-% y(5) = uy;
-% y(6) = uz;
-B = analyticalB(y(1:3));
+B = analyticalB(y);
+B = B/sqrt(sum(B.^2));
 
-dydt = zeros(6,1);
+dyds = zeros(3,1);
 
-dydt(1) = y(4)/gamma; % x component of dx/dt = v
-dydt(2) = y(5)/gamma; % y component of dx/dt = v
-dydt(3) = y(6)/gamma; % y component of dx/dt = v
-
-dydt(4) = (q/m)*(E(1) + (y(5)*B(3) - y(6)*B(2))/gamma );
-dydt(5) = (q/m)*(E(2) + (y(6)*B(1) - y(4)*B(3))/gamma );
-dydt(6) = (q/m)*(E(3) + (y(4)*B(2) - y(5)*B(1))/gamma );
-
+dyds(1) = B(1);
+dyds(2) = B(2)/y(1);
+dyds(3) = B(3);
 end
 
 function dydt = eqnsOfMotion2(t,y,B_ST)
-% Lorentz Force
+% dydt = B;
 % y(1) = R;
 % y(2) = phi;
 % y(3) = Z;
