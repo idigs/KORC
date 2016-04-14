@@ -5,7 +5,7 @@ function integrateMagneticField_RK(pathToBField,fileType,ND,res,timeStepParams,n
 
 narginchk(6,6);
 
-close all
+% close all
 
 % Plasma parameters and physical constants, all in SI units
 ST.params = struct;
@@ -17,7 +17,7 @@ ST.params.qe = 1.602176E-19; % Electron charge
 ST.params.me = 9.109382E-31; % Electron mass
 
 numIt = timeStepParams(1);
-DT = timeStepParams(2);
+DS = timeStepParams(2);
 
 if strcmp(pathToBField,'')
     ST.analytical = true;
@@ -35,7 +35,7 @@ end
 
 P = figure;
 
-Ros = linspace(1.61,2.1,numInitCond);
+Ros = [1.7,2.1];%linspace(1.6,2.1,numInitCond);
 phio = 0;
 Zos = 0; % linspace(-1,1,numInitCond);
 
@@ -53,7 +53,7 @@ for ii=1:numel(Ros)
     
     options = odeset('RelTol',1E-6,'AbsTol',1E-10);
     
-    tspan = (0:1:numIt)*DT;
+    tspan = (0:1:numIt)*DS;
     y0 = [R(1), phi(1), Z(1)];    
     
     if ST.analytical
@@ -111,17 +111,53 @@ for ii=1:numel(Ros)
         
         
         % Theoretical curvature of the analytical magnetic field
-        k = abs( B.Bo*Bp.*eta.*sin(theta)./(sqrt( B.Bo^2 + Bp.^2 ).*(1 + eta.*cos(theta)).^2 ));
+        % components of magnetic field in toroidal
+        % coordinates
+        B_theta = Bp./(1 + eta.*cos(theta));
+        B_zeta = B.Bo./( 1 + eta.*cos(theta) );
+        B_r = zeros(size(B_theta));
+        
+        % c*dR/dt = B
+        
+        % A = c*d^2R/dt^2 = d(B)/dt
+        A_r = -B_theta - eta.*cos(theta).*(B_zeta).^2./( B_theta.*(1 + eta.*cos(theta)) );
+        A_theta = Bp.*eta.*sin(theta)./(1 + eta.*cos(theta)).^2 + ...
+            eta.*sin(theta).*(B_zeta).^2./( B_theta.*(1 + eta.*cos(theta)) );
+        A_zeta = 2*B.Bo.*eta.*sin(theta)./(1 + eta.*cos(theta)).^2 - ...
+            2*eta.*B_zeta.*sin(theta)./(1 + eta.*cos(theta));
+        
+        dRdt = sqrt( B_r.^2 + B_theta.^2 + B_zeta.^2 );
+        k = zeros(size(dRdt));
+        for jj=1:numel(k)
+            A = [B_r(jj),B_theta(jj),B_zeta(jj)];
+            D = [A_r(jj),A_theta(jj),A_zeta(jj)];
+            k(jj) = abs( sqrt(sum(cross(A,D).^2)) )./dRdt(jj)^3;
+        end
         
         figure(h)
         subplot(3,1,3)
-        plot(theta,k,'k.')
+        plot(theta,k/max(k),'k.')
         xlim([0 2*pi])
         xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
         ylabel('$\kappa(\theta)$','Interpreter','latex','FontSize',16)
         % Theoretical curvature of the analytical magnetic field
         
         % Numerical curvature of the analytical magnetic field
+        dRds = [diff(x,1,1),diff(y,1,1),diff(z,1,1)]/DS;
+        dRds(1,:) = [];
+        
+        ddRdss = [diff(x,2,1),diff(y,2,1),diff(z,2,1)]/DS^2;
+        
+        k_numerical = sqrt(sum(cross(dRds,ddRdss).^2,2))./sqrt(sum(dRds.^2,2)).^3;
+        
+        figure(h)
+        subplot(3,1,3)
+        hold on
+        plot(theta(3:end),k_numerical/max(k_numerical),'r.')
+        hold off
+        xlim([0 2*pi])
+        xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
+        ylabel('$\kappa(\theta)$','Interpreter','latex','FontSize',16)
         
         
         % Numerical curvature of the analytical magnetic field
