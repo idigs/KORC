@@ -35,7 +35,7 @@ end
 
 P = figure;
 
-Ros = [1.7,2.1];%linspace(1.6,2.1,numInitCond);
+Ros = linspace(1.6,2.1,numInitCond);
 % Ros = linspace(1.2,1.6,numInitCond);
 phio = 0;
 Zos = 0; % linspace(-1,1,numInitCond);
@@ -123,11 +123,16 @@ for ii=1:numel(Ros)
         % c*dR/dt = B
         
         % A = c*d^2R/dt^2 = d(B)/dt
-        A_r = -B_theta - eta.*cos(theta).*(B_zeta).^2./( B_theta.*(1 + eta.*cos(theta)) );
-        A_theta = Bp.*eta.*sin(theta)./(1 + eta.*cos(theta)).^2 + ...
-            eta.*sin(theta).*(B_zeta).^2./( B_theta.*(1 + eta.*cos(theta)) );
-        A_zeta = 2*B.Bo.*eta.*sin(theta)./(1 + eta.*cos(theta)).^2 - ...
-            2*eta.*B_zeta.*sin(theta)./(1 + eta.*cos(theta));
+%         A_r = -B_theta - eta.*cos(theta).*(B_zeta).^2./( B_theta.*(1 + eta.*cos(theta)) );
+%         A_theta = Bp.*eta.*sin(theta)./(1 + eta.*cos(theta)).^2 + ...
+%             eta.*sin(theta).*(B_zeta).^2./( B_theta.*(1 + eta.*cos(theta)) );
+%         A_zeta = 2*B.Bo.*eta.*sin(theta)./(1 + eta.*cos(theta)).^2 - ...
+%             2*eta.*B_zeta.*sin(theta)./(1 + eta.*cos(theta));
+        A_r = -(B.Bo.*Bp + B.Bo^3./Bp).*eta.*sin(theta)./(1 + eta.*cos(theta)).^3;
+        A_theta = -B_theta.*B_zeta - ...
+            B_zeta.^2.*B.Bo.*eta.*cos(theta)./( Bp.*(1 + eta.*cos(theta)) );
+        A_zeta = B_theta.^2 + ...
+            B_theta.*B_zeta.*B.Bo.*eta.*cos(theta)./( Bp.*(1 + eta.*cos(theta)) );
         
         dRdt = sqrt( B_r.^2 + B_theta.^2 + B_zeta.^2 );
         k = zeros(size(dRdt));
@@ -139,7 +144,7 @@ for ii=1:numel(Ros)
         
         figure(h)
         subplot(3,1,3)
-        plot(R,k/max(k),'k.')
+        plot(theta,k/max(k),'k.')
         xlim([0 2*pi])
         xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
         ylabel('$\kappa(\theta)$','Interpreter','latex','FontSize',16)
@@ -156,8 +161,8 @@ for ii=1:numel(Ros)
         figure(h)
         subplot(3,1,3)
         hold on
-        %         plot(theta(3:end),k_numerical/max(k_numerical),'r.')
-        plot(theta(3:end),k_numerical,'r.')
+        plot(theta(3:end),k_numerical/max(k_numerical),'r.')
+%         plot(theta(3:end),k_numerical,'r.')
         hold off
         xlim([0 2*pi])
         xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
