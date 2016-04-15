@@ -5,7 +5,7 @@ function integrateMagneticField_RK(pathToBField,fileType,ND,res,timeStepParams,n
 
 narginchk(6,6);
 
-% close all
+close all
 
 % Plasma parameters and physical constants, all in SI units
 ST.params = struct;
@@ -36,6 +36,7 @@ end
 P = figure;
 
 Ros = [1.7,2.1];%linspace(1.6,2.1,numInitCond);
+% Ros = linspace(1.2,1.6,numInitCond);
 phio = 0;
 Zos = 0; % linspace(-1,1,numInitCond);
 
@@ -54,7 +55,7 @@ for ii=1:numel(Ros)
     options = odeset('RelTol',1E-6,'AbsTol',1E-10);
     
     tspan = (0:1:numIt)*DS;
-    y0 = [R(1), phi(1), Z(1)];    
+    y0 = [R(1), phi(1), Z(1)];
     
     if ST.analytical
         [s,y] = ode45(@(s,y) eqnsOfMotion1(s,y),tspan,y0,options);  % RK4
@@ -69,16 +70,18 @@ for ii=1:numel(Ros)
     locs = find(abs(diff(phi)) > 6);
     figure(P)
     hold on
-%     plot(R,Z,'r.','MarkerSize',6)
+    %     plot(R,Z,'r.','MarkerSize',6)
     plot(R(locs),Z(locs),'b.','MarkerSize',2)
     hold off
     
+    
+    % Cylindrical to Cartesian
+    x = R.*cos(phi);
+    y = R.*sin(phi);
+    z = Z;
+    
     if ST.analytical
         disp('Toroidal coordinate system')
-        % Cylindrical to Cartesian
-        x = R.*cos(phi);
-        y = R.*sin(phi);
-        z = Z;
         
         h = figure;
         subplot(3,1,1)
@@ -136,7 +139,7 @@ for ii=1:numel(Ros)
         
         figure(h)
         subplot(3,1,3)
-        plot(theta,k/max(k),'k.')
+        plot(R,k/max(k),'k.')
         xlim([0 2*pi])
         xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
         ylabel('$\kappa(\theta)$','Interpreter','latex','FontSize',16)
@@ -153,13 +156,45 @@ for ii=1:numel(Ros)
         figure(h)
         subplot(3,1,3)
         hold on
-        plot(theta(3:end),k_numerical/max(k_numerical),'r.')
+        %         plot(theta(3:end),k_numerical/max(k_numerical),'r.')
+        plot(theta(3:end),k_numerical,'r.')
         hold off
         xlim([0 2*pi])
         xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
         ylabel('$\kappa(\theta)$','Interpreter','latex','FontSize',16)
+        % Numerical curvature of the analytical magnetic field
         
+    else
         
+        h = figure;
+        subplot(2,1,1)
+        plot3(x,y,z,'b')
+        axis equal
+        box on; grid on
+        xlabel('$X$ [m]','Interpreter','latex','FontSize',16)
+        ylabel('$Y$ [m]','Interpreter','latex','FontSize',16)
+        zlabel('$Z$ [m]','Interpreter','latex','FontSize',16)
+        
+        % Numerical curvature of the analytical magnetic field
+        dRds = [diff(x,1,1),diff(y,1,1),diff(z,1,1)]/DS;
+        dRds(1,:) = [];
+        
+        ddRdss = [diff(x,2,1),diff(y,2,1),diff(z,2,1)]/DS^2;
+        
+        k_numerical = sqrt(sum(cross(dRds,ddRdss).^2,2))./sqrt(sum(dRds.^2,2)).^3;
+        
+        theta = atan2(Z,R - 1.654);
+        theta(theta<0) = theta(theta<0) + 2*pi;
+        
+        figure(h)
+        subplot(2,1,2)
+        hold on
+%         plot(theta(3:end),k_numerical/max(k_numerical),'r.')
+        plot(theta(3:end),k_numerical,'r.')
+        hold off
+        xlim([0 2*pi])
+        xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
+        ylabel('$\kappa(\theta)$','Interpreter','latex','FontSize',16)
         % Numerical curvature of the analytical magnetic field
         
     end
@@ -203,8 +238,8 @@ if nargin == 2
     elseif strcmp(opt,'normalize')
     end
 else
-%     y0 = [R(1), phi(1), Z(1)]; 
-    X = [Y(1)*cos(Y(2)),Y(1)*sin(Y(2)),Y(3)];    
+    %     y0 = [R(1), phi(1), Z(1)];
+    X = [Y(1)*cos(Y(2)),Y(1)*sin(Y(2)),Y(3)];
     
     % Toroidal coordinates
     % r = radius, theta = poloidal angle, zeta = toroidal angle
@@ -262,7 +297,7 @@ switch fileType
         
         B.BR = data(:,4);
         B.Bphi = - data(:,5); % minus sign
-        B.BZ = data(:,6);        
+        B.BZ = data(:,6);
     case 'SIESTA'
         if strcmp(ND,'2D')
             NR = res(1);
@@ -291,7 +326,7 @@ switch fileType
             
             B.BR = squeeze(BR(:,1,:));
             B.Bphi = squeeze(Bphi(:,1,:));
-            B.BZ = squeeze(BZ(:,1,:));            
+            B.BZ = squeeze(BZ(:,1,:));
         elseif strcmp(ND,'3D')
             B.NR = res(1);
             B.Nphi = res(2);
@@ -299,7 +334,7 @@ switch fileType
             
             R = data(:,1);
             Z = data(:,2);
-            phi = ((0:1:B.Nphi-1) + 0.5)*(2*pi/B.Nphi);            
+            phi = ((0:1:B.Nphi-1) + 0.5)*(2*pi/B.Nphi);
             R = reshape(R,B.NR,B.Nphi,B.NZ);
             Z = reshape(Z,B.NR,B.Nphi,B.NZ);
             
@@ -449,7 +484,7 @@ if strcmp(B.ND,'2D')
     clear DATA
     
 elseif strcmp(B.ND,'3D')
-
+    
     R = cat(3,B.R(:,:,end),B.R,B.R(:,:,1));
     Z = cat(3,B.Z(:,:,end),B.Z,B.Z(:,:,1));
     phi = cat(3,B.phi(:,:,end)-2*pi,B.phi,2*pi+B.phi(:,:,1));
@@ -457,23 +492,23 @@ elseif strcmp(B.ND,'3D')
     R = reshape(R,[numel(R) 1]);
     Z = reshape(Z,[numel(Z) 1]);
     phi = reshape(phi,[numel(phi) 1]);
-
+    
     DATA = cat(3,B.BR(:,:,end),B.BR,B.BR(:,:,1));
     DATA = reshape(DATA,[numel(DATA) 1]);
     SI.BR = scatteredInterpolant(R,Z,phi,DATA);
-%     SI.BR = scatteredInterpolant(R,Z,phi,DATA,'nearest','nearest');
+    %     SI.BR = scatteredInterpolant(R,Z,phi,DATA,'nearest','nearest');
     clear DATA
     
     DATA = cat(3,B.BZ(:,:,end),B.BZ,B.BZ(:,:,1));
     DATA = reshape(DATA,[numel(DATA) 1]);
     SI.BZ = scatteredInterpolant(R,Z,phi,DATA);
-%     SI.BZ = scatteredInterpolant(R,Z,phi,DATA,'nearest','nearest');
+    %     SI.BZ = scatteredInterpolant(R,Z,phi,DATA,'nearest','nearest');
     clear DATA
     
     DATA = cat(3,B.Bphi(:,:,end),B.Bphi,B.Bphi(:,:,1));
     DATA = reshape(DATA,[numel(DATA) 1]);
     SI.Bphi = scatteredInterpolant(R,Z,phi,DATA);
-%     SI.Bphi = scatteredInterpolant(R,Z,phi,DATA,'nearest','nearest');
+    %     SI.Bphi = scatteredInterpolant(R,Z,phi,DATA,'nearest','nearest');
     clear DATA
     
 else

@@ -1,7 +1,46 @@
 function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,vo_params,opt)
-% Here ro and vo are the initial position and velocity of the particle.
-% The components of the initial velocity must be entered as fractions of
-% the speed of light in vacuum.
+% Script to calculate particle orbits using either a relativistic modified
+% leapfrog method or Matlab ODEs solvers.
+%
+% INPUT PARAMETERS' DESCRIPTION
+% + pathToBField: absolute path to data files containing the magnetic
+% field, for example, pathToBField='/home/Documents/jfit_165365_1400.txt'.
+%
+% + fileType: flag indicating the type of data file used in the simulation,
+% different data files have different ways of presenting the data within
+% the file. Its values can be: VMEC, XPANDER, SIESTA, or RAW (hard coded).
+%
+% + ND: dimensionality of the magnetic field, 2D for axisymmetric magnetic
+% field, 3D for non-axisymmetric magnetic field.
+%
+% + res: a three-element vector specifying the dimensions along each coordinate
+% of the magnetic field. For example, for a 3D XPANDER magnetic field 
+% res = [NR,NPHI,NZ], where NR, NPHI and NZ are the number of nodes along
+% the R, PHI, and Z axis (in cylindrical coordinates).
+%
+%  + timeStepParams: a three-element vector with parameters for controlling
+%  the time integration of the particles' orbit. Here, 
+% timeStepParams = [number_of_time_steps, time_step, cadence], where 
+% 'time_step' is a time step in units of the particle gyro-period.
+%
+% + tracerParams: a two-element vector containing the charge of the
+% particle in units of the absolute value of the electron charge and the 
+% mass of the particle in terms of the electron mass, that is, 
+% tracerParams=[charge,mass]. For example, for an electron tracerParams=[-1,-1]
+%
+% + xo: a three-dimensional vector in Cartesian coordinates specifying the
+% initial position of the particle to be evolved in space and time.
+%
+% + vo_params: a two-dimensional vector containing the initial particle's
+% velocity, in units of the speed of light, and the initial pitch angle.
+% For example, for a particle initially streaming anti-parallel to the
+% local magnetic field with a velocity of 0.5 the speed of light, 
+% vo_params=[-0.5,0].
+%
+% + opt: (optional) logical flag specifying whether figures should be
+% generated along the simulation. If opt=false, there will be no figures
+% generated. All the information of the simulation will be stored in the
+% matlab structure 'ST'.
 %
 % EXAMPLES:
 % USING ANALYTICAL MAGNETIC FIELD
@@ -24,7 +63,7 @@ function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,
 
 narginchk(8,9);
 
-% close all
+close all
 
 ST = struct;
 % Script parameters
@@ -100,7 +139,10 @@ for ii=1:ST.params.numSnapshots
 end
 
 ST.PP = particlePusherLeapfrog(ST);
-% ST.PP = particlePusherMatlab(ST);
+
+% Particle pusher using matlab ODEs solvers
+% ST.PP = particlePusherMatlab(ST); % (Un)comment this line as required
+% Particle pusher using matlab ODEs solvers
 
 if ST.opt
     PoincarePlots(ST);

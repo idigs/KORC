@@ -1,26 +1,36 @@
 function radiatedPower(numTracers,poolsize)
+% Matlab script to push 'numTracers' particles using the analytical magnetic
+% field with minor radius 'a' and major radius 'Ro'. 'poolsize' number of
+% matlab workers are used to evolve 'poolsize' number of particles at the
+% same time.
+% This script uses parallel calls to the matlab function pOrbs.m for
+% pushing individual particles with the parameters given below.
 
 close all
-folder = 'poloidal_plane_figures_3';
 
+% % % % % % CONTROL PARAMETERS % % % % % % 
+% Folder where the matlab script will save the figures of the diagnostics.
+folder = 'poloidal_plane_figures_3'; 
 % Number of time iterations for calculating electrons' orbits
 numTimeIt = 1E6;
 cadence = 2E4;
-
 % Initial pitch angle
 pitcho = [10,20,50];
-
 % Energy of electron, in eV.
-Eo = [3E6];
+Eo = [1E6,3E6,30E6];
+% Minor and major of analytical toroidal magnetic field. NOTE: THIS MUST BE
+% CONSISTENT WITH THE PARAMETERS OF THE MAGNETIC FIELD IN pOrbs.m.
+a = 0.5;
+Ro = 1.6;
+% Uniformly random distribution of initial positions in a torus of minor
+% radius 'a' and major radius 'Ro'.
+[xo,yo,zo] = torusmap(a,Ro,rand(3,numTracers));
+% % % % % % CONTROL PARAMETERS % % % % % % 
+
+% Physical constants
 c = 2.9979E8; % Speed of light, in m/s
 qe = 1.602176E-19; % Electron charge, in Coulombs
 me = 9.109382E-31; % Electron mass, in kg.
-
-% Minor and major of analytical toroidal magnetic field
-a = 0.5;
-Ro = 1.6;
-
-[xo,yo,zo] = torusmap(a,Ro,rand(3,numTracers));
 
 h = figure;
 plot3(xo,yo,zo,'k.','MarkerSize',6)
