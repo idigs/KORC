@@ -35,7 +35,7 @@ end
 
 P = figure;
 
-Ros = linspace(1.6,2.1,numInitCond);
+Ros = linspace(1.61,2.1,numInitCond);
 % Ros = linspace(1.2,1.6,numInitCond);
 phio = 0;
 Zos = 0; % linspace(-1,1,numInitCond);
@@ -55,22 +55,23 @@ for ii=1:numel(Ros)
     options = odeset('RelTol',1E-6,'AbsTol',1E-10);
     
     tspan = (0:1:numIt)*DS;
-    y0 = [R(1), phi(1), Z(1)];
+    yo = [R(1), phi(1), Z(1)];
+    xo = [Ros(ii)-B.Ro,0,0];
     
     if ST.analytical
-        [s,y] = ode45(@(s,y) eqnsOfMotion1(s,y),tspan,y0,options);  % RK4
+        [s,Y] = ode45(@(s,y) eqnsOfMotion1(s,y),tspan,yo,options);  % RK4
+        [t,X] = ode45(@(t,x) eqnsOfMotion3(t,x),tspan,xo,options);  % RK4
     else
-        [~,y] = ode45(@(t,y) eqnsOfMotion2(t,y,B),tspan,y0,options);  % RK4
+        [~,Y] = ode45(@(t,y) eqnsOfMotion2(t,y,B),tspan,yo,options);  % RK4
     end
     
-    R = y(:,1);
-    phi = mod(y(:,2),2*pi);
-    Z = y(:,3);
+    R = Y(:,1);
+    phi = mod(Y(:,2),2*pi);
+    Z = Y(:,3);
     
     locs = find(abs(diff(phi)) > 6);
     figure(P)
     hold on
-    %     plot(R,Z,'r.','MarkerSize',6)
     plot(R(locs),Z(locs),'b.','MarkerSize',2)
     hold off
     
@@ -120,14 +121,7 @@ for ii=1:numel(Ros)
         B_zeta = B.Bo./( 1 + eta.*cos(theta) );
         B_r = zeros(size(B_theta));
         
-        % c*dR/dt = B
-        
-        % A = c*d^2R/dt^2 = d(B)/dt
-%         A_r = -B_theta - eta.*cos(theta).*(B_zeta).^2./( B_theta.*(1 + eta.*cos(theta)) );
-%         A_theta = Bp.*eta.*sin(theta)./(1 + eta.*cos(theta)).^2 + ...
-%             eta.*sin(theta).*(B_zeta).^2./( B_theta.*(1 + eta.*cos(theta)) );
-%         A_zeta = 2*B.Bo.*eta.*sin(theta)./(1 + eta.*cos(theta)).^2 - ...
-%             2*eta.*B_zeta.*sin(theta)./(1 + eta.*cos(theta));
+        % Note that c*dR/dt = B and A = c*d^2R/dt^2 = d(B)/dt
         A_r = -(B.Bo.*Bp + B.Bo^3./Bp).*eta.*sin(theta)./(1 + eta.*cos(theta)).^3;
         A_theta = -B_theta.*B_zeta - ...
             B_zeta.^2.*B.Bo.*eta.*cos(theta)./( Bp.*(1 + eta.*cos(theta)) );
@@ -139,7 +133,7 @@ for ii=1:numel(Ros)
         for jj=1:numel(k)
             A = [B_r(jj),B_theta(jj),B_zeta(jj)];
             D = [A_r(jj),A_theta(jj),A_zeta(jj)];
-            k(jj) = abs( sqrt(sum(cross(A,D).^2)) )./dRdt(jj)^3;
+            k(jj) = abs( sqrt(sum(cross(A,D).^2)) )/dRdt(jj)^3;
         end
         
         figure(h)
@@ -162,7 +156,38 @@ for ii=1:numel(Ros)
         subplot(3,1,3)
         hold on
         plot(theta(3:end),k_numerical/max(k_numerical),'r.')
-%         plot(theta(3:end),k_numerical,'r.')
+        hold off
+        xlim([0 2*pi])
+        xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
+        ylabel('$\kappa(\theta)$','Interpreter','latex','FontSize',16)
+        % Numerical curvature of the analytical magnetic field
+        
+        % Toroidal to Cartesian
+        xx = ( B.Ro + X(:,1).*cos(mod(X(:,2),2*pi)) ).*sin(mod(X(:,3),2*pi));
+        yy = ( B.Ro + X(:,1).*cos(mod(X(:,2),2*pi)) ).*cos(mod(X(:,3),2*pi));
+        zz = X(:,1).*sin(mod(X(:,2),2*pi));
+        
+        figure(h)
+        subplot(3,1,2)
+        hold on
+        plot(mod(X(:,2),2*pi),mod(X(:,3),2*pi),'k.')
+        hold off
+        axis([0 2*pi 0 2*pi])
+        xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
+        ylabel('$\zeta$ [rad]','Interpreter','latex','FontSize',16)
+        
+        % Numerical curvature of the analytical magnetic field
+        dRds = [diff(xx,1,1),diff(yy,1,1),diff(zz,1,1)]/DS;
+        dRds(1,:) = [];
+        
+        ddRdss = [diff(xx,2,1),diff(yy,2,1),diff(zz,2,1)]/DS^2;
+        
+        k_numerical = sqrt(sum(cross(dRds,ddRdss).^2,2))./sqrt(sum(dRds.^2,2)).^3;
+        
+        figure(h)
+        subplot(3,1,3)
+        hold on
+        plot(mod(X(3:end,2),2*pi),k_numerical/max(k_numerical),'g.')
         hold off
         xlim([0 2*pi])
         xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
@@ -194,8 +219,7 @@ for ii=1:numel(Ros)
         figure(h)
         subplot(2,1,2)
         hold on
-%         plot(theta(3:end),k_numerical/max(k_numerical),'r.')
-        plot(theta(3:end),k_numerical,'r.')
+        plot(theta(3:end),k_numerical/max(k_numerical),'r.')
         hold off
         xlim([0 2*pi])
         xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
@@ -283,6 +307,54 @@ else
     B = [Bx*cos(phi) + By*sin(phi),...
         By*cos(phi) - Bx*sin(phi),...
         Bz];
+end
+
+end
+
+function B = analytical_B_toroidal(X,opt)
+% Contravariant components of the analytical magnetic field
+% X is a vector with toroidal components X(1)=r, X(2)=theta, X(3)=zeta.
+
+narginchk(1,2);
+
+% Parameters of the analytical magnetic field
+Bo = 3;
+a = 0.5;% Minor radius in meters.
+Ro = 1.6; % Major radius in meters.
+qa = 5; % Safety factor at the separatrix (r=a)
+co = 0.5; % Extra parameter
+lamb = a/co;
+Bpo = (a/Ro)*(Bo/qa)*(1+co^2)/co;
+% Parameters of the analytical magnetic field
+
+if nargin == 2
+    if strcmp(opt,'initialize')
+        B = struct;
+        B.Bo = Bo;
+        B.a = a;% 0.6;% Minor radius in meters.
+        B.Ro = Ro; % Major radius in meters.
+        B.qa = qa; % Safety factor at the separatrix (r=a)
+        B.co = co; % Extra parameter
+        B.lamb = lamb;
+        B.Bpo = Bpo;
+    elseif strcmp(opt,'normalize')
+    end
+else   
+    r = X(1);
+    theta = mod(X(2),2*pi);
+    zeta = mod(X(3),2*pi);
+    
+    eta = r/Ro;
+    
+    % Poloidal magnetic field
+    Bp = Bpo*(r/lamb)/( 1 + (r/lamb)^2 );
+    B_theta = Bp/( r*( 1 + eta*cos(theta) ) );
+    
+    % Toroidal magnetic field
+    B_zeta = Bo/( Ro*( 1 + eta*cos(theta) ).^2 );
+    
+    B = [0, B_theta, B_zeta];
+
 end
 
 end
@@ -532,7 +604,7 @@ function dyds = eqnsOfMotion1(s,y)
 % y(3) = Z;
 
 B = analyticalB(y);
-B = B/sqrt(sum(B.^2));
+% B = B/sqrt(sum(B.^2));
 
 dyds = zeros(3,1);
 
@@ -554,6 +626,23 @@ dydt = zeros(3,1);
 dydt(1) = B(1);
 dydt(2) = B(2)/y(1);
 dydt(3) = B(3);
+end
+
+function dxdt = eqnsOfMotion3(t,x)
+% d(zeta)/dt = B_zeta
+% d(theta)/dt = B_theta
+
+x(2) = mod(x(2),2*pi);
+x(3) = mod(x(3),2*pi);
+
+B = analytical_B_toroidal(x);
+
+dxdt = zeros(3,1);
+
+dxdt(1) = 0;
+dxdt(2) = B(2);
+dxdt(3) = B(3);
+
 end
 
 function BF = interpMagField(B_ST,X)
