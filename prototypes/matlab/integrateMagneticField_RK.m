@@ -56,7 +56,7 @@ for ii=1:numel(Ros)
     
     tspan = (0:1:numIt)*DS;
     yo = [R(1), phi(1), Z(1)];
-    xo = [Ros(ii)-B.Ro,0,0];
+    xo = [Ros(ii)-B.Ro,0,pi/2];
     
     if ST.analytical
         [s,Y] = ode45(@(s,y) eqnsOfMotion1(s,y),tspan,yo,options);  % RK4
@@ -629,6 +629,7 @@ dydt(3) = B(3);
 end
 
 function dxdt = eqnsOfMotion3(t,x)
+% x(1)=r, x(2)=theta, x(3)=zeta
 % d(zeta)/dt = B_zeta
 % d(theta)/dt = B_theta
 
@@ -636,6 +637,7 @@ x(2) = mod(x(2),2*pi);
 x(3) = mod(x(3),2*pi);
 
 B = analytical_B_toroidal(x);
+% B = B/sqrt(sum(B.^2));
 
 dxdt = zeros(3,1);
 
