@@ -50,7 +50,13 @@ function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,
 % USING XPAND FILES OF ITER FIELDS
 % ST = pOrbs('fields/ITER2D.dat','XPANDER','2D',[150,150],[1E3,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
 % ST = pOrbs('fields/ITER3D.dat','XPANDER','3D',[150,100,150],[2E5,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
-% ST = pOrbs('fields/ITER3D.dat','XPANDER','3D',[150,100,150],[1E5,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.1,70]);
+% name = 'fields/xpand_iter3D_sc4_bet015_I87_hi_acc.dat';
+% vo = 0.703270028800058;
+% pitcho = 25.75;
+% xo = 8.057345096062335;
+% yo = -0.580890901345939;
+% zo = 0.024044261000000;
+% ST = pOrbs(name,'XPANDER','3D',[150,100,150],[5E6,1E-2,50],[-1,1],[xo,yo,zo],[vo,pitcho]);
 % USING VMEC FILE OF ITER FIELDS
 % ST = pOrbs('fields/VMEC2D.dat','VMEC','2D',[150,150],[1E3,1E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
 % USING SIESTA FILES
@@ -147,7 +153,7 @@ ST.PP = particlePusherLeapfrog(ST);
 if ST.opt
     PoincarePlots(ST);
 end
-ST.PP.angularMomentum = DiegosInvariants(ST);
+% ST.PP.angularMomentum = DiegosInvariants(ST);
 
 munlock
 
