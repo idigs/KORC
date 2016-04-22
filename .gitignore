@@ -1,28 +1,23 @@
 # Compiled Object files
-*.slo
-*.lo
 *.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
 
 # Fortran module files
 *.mod
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+# Temporary files
+*~
 
-# Executables
-*.exe
-*.out
-*.app
+# Matlab figures/structures
+*.fig
+*.mat
+
+# Figures
+*.jpg
+*.png
+*.eps
+
+# PDF files
+*.pdf
+
+# Data files (binaries and text files)
+*.dat
