@@ -23,7 +23,7 @@ ifeq ($(UNAME), Linux)
 	FC = mpif90
 
 	FCDEFINEFLAGS =# -DHDF5_FLOAT	-DHDF5_SINGLE_FILE
-	FCFLAGS =	-fopenmp	-g
+	FCFLAGS =	-std=f95	-ffixed-line-length-none	-fopenmp	-g
 
 	HDF_INSTALL =# ../HDF5
 
@@ -63,5 +63,5 @@ info:
 
 clean:
 	@echo	"CLEANING COMPILATION..."
-	rm -f $(BINARIES)
+	rm -f $(BINARIES) KORC-FO *.mod
 
