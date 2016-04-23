@@ -8,7 +8,9 @@ use omp_lib
 
 implicit none
 
+type (KORC_PARAMS) :: params
 
+write(6,*) F_PI
 
 
 end
