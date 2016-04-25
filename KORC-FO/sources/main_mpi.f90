@@ -1,8 +1,8 @@
 module main_mpi
 
 use mpi
-use types
-use structures
+use korc_types
+! use structures
 
 implicit none
 
