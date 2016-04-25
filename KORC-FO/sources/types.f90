@@ -23,20 +23,49 @@ use constants
 implicit none
 
 TYPE KORC_PARAMS
-	CHARACTER(LEN=500) :: path_to_outputs
+	CHARACTER(LEN=100) :: path_to_outputs
 	INTEGER :: numberOfCores
 	LOGICAL :: restart
 	INTEGER :: t_steps
 	REAL :: DT
-	CHARACTER(LEN=500) :: magnetic_field_model
+	CHARACTER(LEN=100) :: magnetic_field_model
 	INTEGER :: output_cadence
 	INTEGER :: num_species
 END TYPE KORC_PARAMS
 
-!TYPE, EXTENDS (KORC_PARAMS) MPI_KORC_PARAMS
-
-!END TYPE MPI_KORC_PARAMS
-
 contains
+
+subroutine load_korc_params(path_to_input,params)
+	implicit none
+	CHARACTER(15), INTENT(IN) :: path_to_input
+	TYPE (KORC_PARAMS), INTENT(OUT) :: params
+
+	CHARACTER(LEN=100) :: path_to_outputs
+	INTEGER :: numberOfCores
+	LOGICAL :: restart
+	INTEGER :: t_steps
+	REAL :: DT
+	CHARACTER(LEN=100) :: magnetic_field_model
+	INTEGER :: output_cadence
+	INTEGER :: num_species
+
+	NAMELIST /input_parameters/ path_to_outputs,numberOfCores,restart,&
+			t_steps,DT,magnetic_field_model,output_cadence,num_species
+	
+	open(unit=101,file=path_to_input,status='OLD',form='formatted')
+	read(101,nml=input_parameters)
+	close(101)
+	
+	params%path_to_outputs = TRIM(path_to_outputs)
+	params%numberOfCores = numberOfCores
+	params%restart = restart
+	params%t_steps = t_steps
+	params%DT = DT
+	params%magnetic_field_model = TRIM(magnetic_field_model)
+	params%output_cadence = output_cadence
+	params%num_species = num_species
+
+
+end subroutine load_korc_params
 
 end module korc_types
