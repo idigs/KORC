@@ -5,8 +5,8 @@ UNAME	:=	$(shell uname)
 ifeq ($(UNAME), Darwin)
 	FC = mpif90
 
-	FCDEFINEFLAGS =
-	FCFLAGS =   -J modules/ -fopenmp    -g
+	FCDEFINEFLAGS = -DWITH_MPI
+	FCFLAGS =   -J modules/ -fopenmp    -g  -cpp
 
 	HDF_INSTALL =# ../HDF5
 
@@ -36,7 +36,7 @@ ifeq ($(UNAME), Linux)
 	OMP_LIB_FLAGS =	-lgomp
 endif
 
-BINARIES = types.o  initialize.o    main_mpi.o  main.o
+BINARIES = types.o  initialize.o    finalize.o  main_mpi.o  main.o
 
 all: KORC-FO
 
@@ -45,6 +45,9 @@ types.o: sources/types.f90
 
 initialize.o: sources/initialize.f90
 	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    sources/initialize.f90  $(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)
+
+finalize.o: sources/finalize.f90
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    sources/finalize.f90  $(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)
 
 main_mpi.o: sources/main_mpi.f90
 	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	sources/main_mpi.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)
