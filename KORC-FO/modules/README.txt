@@ -1,1 +1,0 @@
-Folder containing the compiled modules of KORC-FO
