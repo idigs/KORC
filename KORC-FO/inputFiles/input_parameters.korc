@@ -1,0 +1,8 @@
+&input_parameters
+	restart = .FALSE.
+	t_steps = 1000000
+	DT = 0.01
+	magnetic_field_model = 'ANALYTIC'
+	output_cadence = 10
+	num_species = 2
+/

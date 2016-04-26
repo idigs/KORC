@@ -1,6 +1,6 @@
 module structures
 
-use types
+use korc_types
 
 implicit none
 

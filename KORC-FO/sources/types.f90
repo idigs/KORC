@@ -1,7 +1,9 @@
 module constants
 implicit none
 
-	REAL, PARAMETER, PUBLIC :: C_E = 1.602176E-19 !Electron charge in C (absolute value)
+    INTEGER, PARAMETER :: MAX_STRING_LENGTH = 1000 ! This value can be changed, beware of truncation errors
+
+	REAL, PARAMETER :: C_E = 1.602176E-19 !Electron charge in C (absolute value)
 	REAL, PARAMETER :: C_ME = 9.109382E-31 !Electron mass in kg
 	REAL, PARAMETER :: C_MP = 1.672621E-27 !Proton mass in kg
 	REAL, PARAMETER :: C_U = 1.660538E-27 !Atomic mass unit in kg
@@ -23,49 +25,20 @@ use constants
 implicit none
 
 TYPE KORC_PARAMS
-	CHARACTER(LEN=100) :: path_to_outputs
-	INTEGER :: numberOfCores
+    
+	CHARACTER(MAX_STRING_LENGTH) :: path_to_inputs
+	CHARACTER(MAX_STRING_LENGTH) :: path_to_outputs
+	INTEGER :: num_omp_threads
+    INTEGER :: num_mpi_processes
 	LOGICAL :: restart
 	INTEGER :: t_steps
 	REAL :: DT
-	CHARACTER(LEN=100) :: magnetic_field_model
+	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
 	INTEGER :: output_cadence
 	INTEGER :: num_species
+
 END TYPE KORC_PARAMS
 
 contains
-
-subroutine load_korc_params(path_to_input,params)
-	implicit none
-	CHARACTER(15), INTENT(IN) :: path_to_input
-	TYPE (KORC_PARAMS), INTENT(OUT) :: params
-
-	CHARACTER(LEN=100) :: path_to_outputs
-	INTEGER :: numberOfCores
-	LOGICAL :: restart
-	INTEGER :: t_steps
-	REAL :: DT
-	CHARACTER(LEN=100) :: magnetic_field_model
-	INTEGER :: output_cadence
-	INTEGER :: num_species
-
-	NAMELIST /input_parameters/ path_to_outputs,numberOfCores,restart,&
-			t_steps,DT,magnetic_field_model,output_cadence,num_species
-	
-	open(unit=101,file=path_to_input,status='OLD',form='formatted')
-	read(101,nml=input_parameters)
-	close(101)
-	
-	params%path_to_outputs = TRIM(path_to_outputs)
-	params%numberOfCores = numberOfCores
-	params%restart = restart
-	params%t_steps = t_steps
-	params%DT = DT
-	params%magnetic_field_model = TRIM(magnetic_field_model)
-	params%output_cadence = output_cadence
-	params%num_species = num_species
-
-
-end subroutine load_korc_params
 
 end module korc_types
