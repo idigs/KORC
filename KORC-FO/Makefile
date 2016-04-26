@@ -2,11 +2,16 @@
 
 UNAME	:=	$(shell uname)
 
+SRC=./src
+OBJ=./obj
+MOD=./mod
+BIN=./bin
+
 ifeq ($(UNAME), Darwin)
 	FC = mpif90
 
 	FCDEFINEFLAGS = -DWITH_MPI
-	FCFLAGS =   -J modules/ -fopenmp    -g  -cpp
+	FCFLAGS =   -J$(MOD) -fopenmp    -g  -cpp
 
 	HDF_INSTALL =# ../HDF5
 
@@ -23,7 +28,7 @@ ifeq ($(UNAME), Linux)
 	FC = mpif90
 
 	FCDEFINEFLAGS =#-DHDF5_FLOAT	-DHDF5_SINGLE_FILE
-	FCFLAGS =-fopenmp    -g
+	FCFLAGS =-J$(MOD)	-fopenmp    -g -fopenmp    -g  -cpp
 
 	HDF_INSTALL =# ../HDF5
 
@@ -36,28 +41,28 @@ ifeq ($(UNAME), Linux)
 	OMP_LIB_FLAGS =	-lgomp
 endif
 
-BINARIES = types.o  initialize.o    finalize.o  main_mpi.o  main.o
+BINARIES = $(addprefix $(OBJ)/, types.o  initialize.o    finalize.o  main_mpi.o  main.o)
 
 all: KORC-FO
 
-types.o: sources/types.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    sources/types.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)
+$(OBJ)/types.o: $(SRC)/types.f90
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $(SRC)/types.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
 
-initialize.o: sources/initialize.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    sources/initialize.f90  $(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)
+$(OBJ)/initialize.o: $(SRC)/initialize.f90
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $(SRC)/initialize.f90  $(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
 
-finalize.o: sources/finalize.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    sources/finalize.f90  $(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)
+$(OBJ)/finalize.o: $(SRC)/finalize.f90
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $(SRC)/finalize.f90  $(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
 
-main_mpi.o: sources/main_mpi.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	sources/main_mpi.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)
+$(OBJ)/main_mpi.o: $(SRC)/main_mpi.f90
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/main_mpi.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
 
-main.o: sources/main.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	sources/main.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)
+$(OBJ)/main.o: $(SRC)/main.f90
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/main.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
 
 
 KORC-FO: $(BINARIES)
-	$(FC)	$(FCFLAGS)  $(BINARIES)	-o	KORC-FO	$(LIB_FLAGS)	$(LIBSHDF)	$(LIB)	$(OMP_LIB_FLAGS)
+	$(FC)	$(FCFLAGS)  $(BINARIES)	-o	$(BIN)/KORC-FO	$(LIB_FLAGS)	$(LIBSHDF)	$(LIB)	$(OMP_LIB_FLAGS)
 
 
 info:
@@ -67,5 +72,5 @@ info:
 
 clean:
 	@echo	"CLEANING COMPILATION..."
-	rm -f $(BINARIES) KORC-FO modules/*.mod
+	rm -f $(BINARIES) $(MOD)/*.mod
 
