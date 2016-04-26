@@ -5,16 +5,12 @@
 	num_species = 2
 /
 
-&species1
-    q = -1 ! Electric charge
-    m = 1, ! In units of electron mass
+&magnetic_field_parameters
+	magnetic_field_model = 'ANALYTICAL'
 /
 
-&species2
-    q = 1 ! Electric charge
-    m = 1836.2, ! In units of electron mass
-/
-
-&magnetic_field
-
+&plasma_species
+	ppp = 300, 100 ! Number of particles per process (mpi)
+    q = -1, 1 ! Electric charge
+    m = 1, 1836.2 ! In units of electron mass
 /

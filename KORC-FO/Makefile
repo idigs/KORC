@@ -28,7 +28,7 @@ ifeq ($(UNAME), Linux)
 	FC = mpif90
 
 	FCDEFINEFLAGS =#-DHDF5_FLOAT	-DHDF5_SINGLE_FILE
-	FCFLAGS =-J$(MOD)	-fopenmp    -g -fopenmp    -g  -cpp
+	FCFLAGS =-J$(MOD)	-fopenmp	-g
 
 	HDF_INSTALL =# ../HDF5
 
@@ -41,7 +41,7 @@ ifeq ($(UNAME), Linux)
 	OMP_LIB_FLAGS =	-lgomp
 endif
 
-BINARIES = $(addprefix $(OBJ)/, types.o  initialize.o    finalize.o  main_mpi.o  main.o)
+BINARIES = $(addprefix $(OBJ)/, types.o  main_mpi.o	initialize.o    finalize.o  units.o		fields.o	main.o)
 
 all: KORC-FO
 
@@ -56,6 +56,12 @@ $(OBJ)/finalize.o: $(SRC)/finalize.f90
 
 $(OBJ)/main_mpi.o: $(SRC)/main_mpi.f90
 	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/main_mpi.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
+
+$(OBJ)/fields.o: $(SRC)/fields.f90
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/fields.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
+
+$(OBJ)/units.o: $(SRC)/units.f90
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/units.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
 
 $(OBJ)/main.o: $(SRC)/main.f90
 	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/main.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
