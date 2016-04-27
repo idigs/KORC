@@ -28,13 +28,13 @@ subroutine load_korc_params(params)
 	TYPE (KORC_PARAMS), INTENT(INOUT) :: params
 	LOGICAL :: restart ! Not used, yet.
 	INTEGER :: t_steps
-	REAL :: DT
+	REAL(rp) :: DT
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
 	INTEGER :: output_cadence
 	INTEGER :: num_species
 
-	NAMELIST /input_parameters/ t_steps,DT,output_cadence,num_species
-	NAMELIST /magnetic_field_parameters/	magnetic_field_model
+	NAMELIST /input_parameters/ magnetic_field_model,t_steps,DT,&
+				output_cadence,num_species
 	
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=input_parameters)
@@ -45,12 +45,7 @@ subroutine load_korc_params(params)
 	params%DT = DT
 	params%output_cadence = output_cadence
 	params%num_species = num_species
-
-	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-	read(default_unit_open,nml=magnetic_field_parameters)
-	close(default_unit_open)
-
-	params%magnetic_field_model = TRIM(magnetic_field_model)
+	params%magnetic_field_model = TRIM(magnetic_field_model)	
 end subroutine load_korc_params
 
 
@@ -69,7 +64,7 @@ subroutine initialize_particles(params,ptcls)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: ptcls
-	REAL, DIMENSION(:), ALLOCATABLE :: ppp, q, m
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: ppp, q, m
 	INTEGER :: ii ! Iterator
 
 	NAMELIST /plasma_species/ ppp, q, m
@@ -110,6 +105,8 @@ subroutine initialize_communications(params)
 !$OMP END PARALLEL
 
 	call initialize_mpi(params)
+
+	call initialization_sanity_check(params) 
 end subroutine initialize_communications
 
 

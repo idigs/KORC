@@ -10,9 +10,9 @@ implicit none
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE :: ptcls
 	INTEGER :: ii ! Iterator(s)
 
-	do ii=1,SIZE(ptcls)
+!	do ii=1,SIZE(ptcls)
 
-	end do
+!	end do
 
 	
 end subroutine compute_charcs_plasma_params

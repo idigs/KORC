@@ -3,10 +3,12 @@
 	DT = 0.01
 	output_cadence = 10
 	num_species = 2
+	magnetic_field_model = 'ANALYTICAL'
 /
 
 &magnetic_field_parameters
 	magnetic_field_model = 'ANALYTICAL'
+	dim = 0, 0, 0 ! Number of grid nodes along R, PHI and Z
 /
 
 &plasma_species

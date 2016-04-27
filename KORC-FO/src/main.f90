@@ -18,10 +18,9 @@ implicit none
 	! INITIALIZATION STAGE
 	call initialize_korc_parameters(params) ! Initialize korc parameters
 	call initialize_particles(params,ptcls) ! Initialize particles
-	call initialization_sanity_check(params) ! Prints on the screen check-ups
+
 	call compute_charcs_plasma_params(ptcls,cp)
 	! END OF INITIALIZATION STAGE
-
 
 
 	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
