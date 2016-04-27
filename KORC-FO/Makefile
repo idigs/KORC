@@ -41,7 +41,7 @@ ifeq ($(UNAME), Linux)
 	OMP_LIB_FLAGS =	-lgomp
 endif
 
-BINARIES = $(addprefix $(OBJ)/, types.o  main_mpi.o	initialize.o    finalize.o  units.o		fields.o	main.o)
+BINARIES = $(addprefix $(OBJ)/, types.o  main_mpi.o	initialize.o    finalize.o  units.o		emf.o	main.o)
 
 all: KORC-FO
 
@@ -57,8 +57,8 @@ $(OBJ)/finalize.o: $(SRC)/finalize.f90
 $(OBJ)/main_mpi.o: $(SRC)/main_mpi.f90
 	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/main_mpi.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
 
-$(OBJ)/fields.o: $(SRC)/fields.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/fields.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
+$(OBJ)/emf.o: $(SRC)/emf.f90
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/emf.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
 
 $(OBJ)/units.o: $(SRC)/units.f90
 	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/units.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@

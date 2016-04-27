@@ -5,22 +5,28 @@ use main_mpi
 use initialize
 use finalize
 use units
-use fields
+use emf
 
 implicit none
 
 	TYPE(KORC_PARAMS) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE :: ptcls
 	TYPE(CHARCS_PARAMS) :: cp
+	TYPE(FIELDS) :: EB
 
 	call initialize_communications(params)
 
 	! INITIALIZATION STAGE
 	call initialize_korc_parameters(params) ! Initialize korc parameters
+
 	call initialize_particles(params,ptcls) ! Initialize particles
 
-	call compute_charcs_plasma_params(ptcls,cp)
+	call initialize_fields(params,EB)
+
+	call compute_charcs_plasma_params(ptcls,EB,cp)
 	! END OF INITIALIZATION STAGE
+
+!	write(6,*) params%num_snapshots
 
 
 	! *** *** *** *** *** ***   *** *** *** *** *** *** ***

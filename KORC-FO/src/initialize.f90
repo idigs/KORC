@@ -4,10 +4,12 @@ use main_mpi
 use omp_lib
 implicit none
 
-INTEGER, PRIVATE :: str_length
-CHARACTER(MAX_STRING_LENGTH), PRIVATE :: aux_str
-contains
+	INTEGER, PRIVATE :: str_length
+	CHARACTER(MAX_STRING_LENGTH), PRIVATE :: aux_str
+	PRIVATE :: set_paths, load_korc_params, initialization_sanity_check
+	PUBLIC :: initialize_korc_parameters, initialize_particles, initialize_fields
 
+contains
 
 subroutine set_paths(params)
 	implicit none
@@ -42,8 +44,9 @@ subroutine load_korc_params(params)
 
 	! params%restart = restart
 	params%t_steps = t_steps
-	params%DT = DT
 	params%output_cadence = output_cadence
+	params%num_snapshots = t_steps/output_cadence
+	params%DT = DT
 	params%num_species = num_species
 	params%magnetic_field_model = TRIM(magnetic_field_model)	
 end subroutine load_korc_params
@@ -64,10 +67,15 @@ subroutine initialize_particles(params,ptcls)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: ptcls
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: ppp, q, m
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: ppp, q, m, Eo, Ro, Zo
+	LOGICAL, DIMENSION(:), ALLOCATABLE :: runaway
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: Vo
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Xo
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: angle, radius ! temporary vars
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: r ! temporary var
 	INTEGER :: ii ! Iterator
 
-	NAMELIST /plasma_species/ ppp, q, m
+	NAMELIST /plasma_species/ ppp, q, m, Eo, runaway, Ro, Zo, r
 
 	! Allocate array containing variables of particles for each species
 	ALLOCATE(ptcls(params%num_species))
@@ -75,24 +83,78 @@ subroutine initialize_particles(params,ptcls)
 	ALLOCATE(ppp(params%num_species))
 	ALLOCATE(q(params%num_species))
 	ALLOCATE(m(params%num_species))
+	ALLOCATE(Eo(params%num_species))
+	ALLOCATE(runaway(params%num_species))
+	ALLOCATE(Ro(params%num_species))
+	ALLOCATE(Zo(params%num_species))
+
+	ALLOCATE(r(params%num_species))
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=plasma_species)
 	close(default_unit_open)
 
 	do ii=1,params%num_species
-		ptcls(ii)%q = q(ii)
-		ptcls(ii)%m = m(ii)
+		ptcls(ii)%Eo = Eo(ii)
+		ptcls(ii)%runaway = runaway(ii)
+		ptcls(ii)%q = q(ii)*C_E
+		ptcls(ii)%m = m(ii)*C_ME
 		ptcls(ii)%ppp = ppp(ii)
-		ALLOCATE(ptcls(ii)%vars%X(3,ptcls(ii)%ppp))
-		ALLOCATE(ptcls(ii)%vars%V(3,ptcls(ii)%ppp))
-		ALLOCATE(ptcls(ii)%vars%gamma(ptcls(ii)%ppp))
-		ALLOCATE(ptcls(ii)%vars%eta(ptcls(ii)%ppp))
+		ALLOCATE( ptcls(ii)%vars%X(3,ptcls(ii)%ppp,params%num_snapshots) )
+		ALLOCATE( ptcls(ii)%vars%V(3,ptcls(ii)%ppp,params%num_snapshots) )
+		ALLOCATE( ptcls(ii)%vars%Rgc(3,ptcls(ii)%ppp,params%num_snapshots) )
+		ALLOCATE( ptcls(ii)%vars%gamma(ptcls(ii)%ppp,params%num_snapshots) )
+		ALLOCATE( ptcls(ii)%vars%eta(ptcls(ii)%ppp,params%num_snapshots) )
+
+		ALLOCATE( Xo(3,ptcls(ii)%ppp) )
+		ALLOCATE( Vo(ptcls(ii)%ppp) )
+		
+		ALLOCATE( angle(ptcls(ii)%ppp) )
+		ALLOCATE( radius(ptcls(ii)%ppp) )
+
+		! Initial condition of uniformly distributed particles on a disk in the xz-plane
+		! A unique velocity direction
+		call RANDOM_SEED()
+		call RANDOM_NUMBER(angle)
+		angle = 2*C_PI*angle
+
+		call RANDOM_SEED()
+		call RANDOM_NUMBER(radius)
+		radius = r(ii)*radius
+		
+		Xo(1,:) = radius*cos(angle)
+		Xo(2,:) = 0.0_rp
+		Xo(3,:) = radius*sin(angle)
+
+		ptcls(ii)%vars%X(1,:,1) = Xo(1,:)
+		ptcls(ii)%vars%X(2,:,1) = Xo(2,:)
+		ptcls(ii)%vars%X(3,:,1) = Xo(3,:)
+
+		ptcls(ii)%vars%gamma(:,1) = ptcls(ii)%Eo*C_E/(ptcls(ii)%m*C_C**2)
+
+		Vo = C_C*sqrt( 1 - 1/(ptcls(ii)%vars%gamma(:,1)**2) )
+
+		ptcls(ii)%vars%V(1,:,1) = 0.0_rp
+		ptcls(ii)%vars%V(2,:,1) = -Vo
+		ptcls(ii)%vars%V(3,:,1) = 0.0_rp
+
+		write(6,*) ptcls(ii)%vars%V(:,:,1) !ptcls(ii)%vars%gamma(:,1)
+
+		DEALLOCATE(angle)
+		DEALLOCATE(radius)
+		DEALLOCATE(Xo)
+		DEALLOCATE(Vo)
 	end do
 
+	DEALLOCATE(ppp)
 	DEALLOCATE(q)
 	DEALLOCATE(m)
-	DEALLOCATE(ppp)
+	DEALLOCATE(Eo)
+	DEALLOCATE(runaway)
+	DEALLOCATE(Ro)
+	DEALLOCATE(Zo)
+
+	DEALLOCATE(r)
 end subroutine initialize_particles
 
 
@@ -126,6 +188,39 @@ subroutine initialization_sanity_check(params)
 !$OMP END PARALLEL
 
 end subroutine initialization_sanity_check
+
+
+subroutine initialize_fields(params,EB)
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(FIELDS), INTENT(OUT) :: EB
+	REAL(rp) :: Bo
+	REAL(rp) :: minor_radius
+	REAL(rp) :: major_radius
+	REAL(rp) :: q_factor_at_separatrix
+	REAL(rp) :: free_param
+
+	NAMELIST /analytic_mag_field_params/ Bo,minor_radius,major_radius,&
+			q_factor_at_separatrix,free_param
+
+	if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
+!		write(6,'("* * * Using analytical magnetic field * * *")')
+		open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
+		read(default_unit_open,nml=analytic_mag_field_params)
+		close(default_unit_open)
+
+		EB%AB%Bo = Bo
+		EB%AB%a = minor_radius
+		EB%AB%Ro = major_radius
+		EB%AB%qa = q_factor_at_separatrix
+		EB%AB%co = free_param
+		EB%AB%lambda = EB%AB%a / EB%AB%co
+		EB%AB%Bpo = (EB%AB%a/EB%AB%Ro)*(EB%AB%Bo/EB%AB%qa)*(1+EB%AB%co**2)/EB%AB%co;
+
+		EB%Bo = EB%AB%Bo
+	else
+		! Load data file containing magnetic field
+	end if
+end subroutine initialize_fields
 
 
 end module initialize

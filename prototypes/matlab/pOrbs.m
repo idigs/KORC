@@ -153,7 +153,7 @@ ST.PP = particlePusherLeapfrog(ST);
 if ST.opt
     PoincarePlots(ST);
 end
-% ST.PP.angularMomentum = DiegosInvariants(ST);
+ST.PP.angularMomentum = DiegosInvariants(ST);
 
 munlock
 

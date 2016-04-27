@@ -23,41 +23,68 @@ end subroutine show_consts
 end module constants
 
 
+
 module korc_types
 use constants
 implicit none
 
-TYPE KORC_MPI
+! * * * * * * * * * * * * * * * * * * * * !
+! * * * Basic korc array structures * * * !
+! * * * * * * * * * * * * * * * * * * * * !
+
+TYPE, PRIVATE :: V_FIELD_3D
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: R
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: PHI
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: Z
+END TYPE V_FIELD_3D
+
+TYPE, PRIVATE :: V_FIELD_2D
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: R
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: PHI
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Z
+END TYPE V_FIELD_2D
+
+! * * * * * * * * * * * * * * * * * * * * !
+! * * * Basic korc array structures * * * !
+! * * * * * * * * * * * * * * * * * * * * !
+
+TYPE, PRIVATE :: KORC_MPI
     INTEGER :: nmpi ! Number of MPI processes
 	INTEGER :: rank ! Rank in WORLD COMMON communicator
 	INTEGER :: rank_topo ! Rank in mpi_topo communicator
 	INTEGER :: mpi_topo ! MPI communicator for certain topology
 END TYPE KORC_MPI
 
-TYPE KORC_PARAMS 
+
+TYPE, PUBLIC :: KORC_PARAMS
 	CHARACTER(MAX_STRING_LENGTH) :: path_to_inputs
 	CHARACTER(MAX_STRING_LENGTH) :: path_to_outputs
 	INTEGER :: num_omp_threads
 	LOGICAL :: restart
 	INTEGER :: t_steps
+	INTEGER :: output_cadence
+	INTEGER :: num_snapshots
 	REAL(rp) :: DT
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
-	INTEGER :: output_cadence
 	INTEGER :: num_species
 
 	TYPE(KORC_MPI) :: mpi_params
 END TYPE KORC_PARAMS
 
 
-TYPE PARTICLES
-    REAL(rp), DIMENSION(:,:), ALLOCATABLE :: X ! Position (Cartesian)
-    REAL(rp), DIMENSION(:,:), ALLOCATABLE :: V ! Velocity
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: gamma ! Gamma relativistic
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: eta ! Pitch angle
+TYPE, PRIVATE :: PARTICLES
+    REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: X ! Position (Cartesian) dim(X) = (3,num_particles,num_outputs)
+    REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: V ! Velocity
+    REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: Rgc ! Guiding-center position (Cartesian)
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: gamma ! Gamma relativistic
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: eta ! Pitch angle
 END TYPE PARTICLES
 
-TYPE SPECIES
+
+TYPE, PUBLIC :: SPECIES
 	TYPE(PARTICLES) :: vars
+	LOGICAL :: runaway
+	REAL(rp) :: Eo
 	REAL(rp) :: wc
 	REAL(rp) :: q
 	REAL(rp) :: m
@@ -66,7 +93,7 @@ TYPE SPECIES
 END TYPE SPECIES
 
 
-TYPE CHARCS_PARAMS
+TYPE, PUBLIC :: CHARCS_PARAMS
 	REAL(rp) :: time;
 	REAL(rp) :: velocity;
 	REAL(rp) :: length;
@@ -80,23 +107,24 @@ TYPE CHARCS_PARAMS
 END TYPE CHARCS_PARAMS
 
 
-TYPE VEC_FIELD_3D
-	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: R
-	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: PHI
-	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: Z
-END TYPE VEC_FIELD_3D
+TYPE, PRIVATE :: A_FIELD
+	REAL(rp) :: Bo
+	REAL(rp) :: a
+	REAL(rp) :: Ro
+	REAL(rp) :: qa
+	REAL(rp) :: co
+	REAL(rp) :: lambda
+	REAL(rp) :: Bpo
+END TYPE A_FIELD
 
-TYPE VEC_FIELD_2D
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: R
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: PHI
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Z
-END TYPE VEC_FIELD_2D
 
-TYPE EMF
-	TYPE(VEC_FIELD_3D) :: E
-	TYPE(VEC_FIELD_3D) :: B
+TYPE, PUBLIC :: FIELDS
+	TYPE(A_FIELD) :: AB
+	TYPE(V_FIELD_3D) :: E
+	TYPE(V_FIELD_3D) :: B
+	REAL(rp) :: Bo ! Characteristic magnetic field
 	INTEGER, DIMENSION(3) :: dim ! dim(NR, NPHI, NZ)
-END TYPE EMF
+END TYPE FIELDS
 
 contains
 
