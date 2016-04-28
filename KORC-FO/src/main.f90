@@ -30,7 +30,7 @@ implicit none
 	call define_time_step(cpp,params)
 	! END OF INITIALIZATION STAGE
 
-	write(6,'("Time step: ",F10.5)') params%dt
+	write(6,'("Time step: ",1E10.5)') params%dt
 
 	call normalize_variables(params,ptcls,EB,cpp)
 
@@ -40,10 +40,11 @@ implicit none
 	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
 
 	! First particle push
+!	call advance_particles_velocity(params,EB,ptcls,0.5_rp*params%dt)
 
 	do it=1,params%t_steps
-		! Advance particles
-		! Save outputs when mod(it,params%num_snapshots) = 0
+!		call advance_particles_position(params,EB,ptcls,params%dt)
+!		call advance_particles_velocity(params,EB,ptcls,params%dt)
 	end do
 
 

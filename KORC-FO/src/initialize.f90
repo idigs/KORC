@@ -103,11 +103,12 @@ subroutine initialize_particles(params,ptcls)
 		ptcls(ii)%q = q(ii)*C_E
 		ptcls(ii)%m = m(ii)*C_ME
 		ptcls(ii)%ppp = ppp(ii)
-		ALLOCATE( ptcls(ii)%vars%X(3,ptcls(ii)%ppp,params%num_snapshots) )
-		ALLOCATE( ptcls(ii)%vars%V(3,ptcls(ii)%ppp,params%num_snapshots) )
-		ALLOCATE( ptcls(ii)%vars%Rgc(3,ptcls(ii)%ppp,params%num_snapshots) )
-		ALLOCATE( ptcls(ii)%vars%gamma(ptcls(ii)%ppp,params%num_snapshots) )
-		ALLOCATE( ptcls(ii)%vars%eta(ptcls(ii)%ppp,params%num_snapshots) )
+		ALLOCATE( ptcls(ii)%vars%X(3,ptcls(ii)%ppp) )
+		ALLOCATE( ptcls(ii)%vars%V(3,ptcls(ii)%ppp) )
+		ALLOCATE( ptcls(ii)%vars%Rgc(3,ptcls(ii)%ppp) )
+		ALLOCATE( ptcls(ii)%vars%Y(3,ptcls(ii)%ppp) )
+		ALLOCATE( ptcls(ii)%vars%gamma(ptcls(ii)%ppp) )
+		ALLOCATE( ptcls(ii)%vars%eta(ptcls(ii)%ppp) )
 
 		ALLOCATE( Xo(3,ptcls(ii)%ppp) )
 		ALLOCATE( Vo(ptcls(ii)%ppp) )
@@ -136,22 +137,22 @@ subroutine initialize_particles(params,ptcls)
 		Xo(2,:) = 0.0_rp
 		Xo(3,:) = Zo(ii) + sqrt(radius)*sin(angle)
 
-		ptcls(ii)%vars%X(1,:,1) = Xo(1,:)
-		ptcls(ii)%vars%X(2,:,1) = Xo(2,:)
-		ptcls(ii)%vars%X(3,:,1) = Xo(3,:)
+		ptcls(ii)%vars%X(1,:) = Xo(1,:)
+		ptcls(ii)%vars%X(2,:) = Xo(2,:)
+		ptcls(ii)%vars%X(3,:) = Xo(3,:)
 
-		ptcls(ii)%vars%gamma(:,1) = ptcls(ii)%Eo*C_E/(ptcls(ii)%m*C_C**2)
+		ptcls(ii)%vars%gamma(:) = ptcls(ii)%Eo*C_E/(ptcls(ii)%m*C_C**2)
 
-		Vo = C_C*sqrt( 1 - 1/(ptcls(ii)%vars%gamma(:,1)**2) )
+		Vo = C_C*sqrt( 1 - 1/(ptcls(ii)%vars%gamma(:)**2) )
 
-		ptcls(ii)%vars%V(1,:,1) = 0.0_rp
-		ptcls(ii)%vars%V(2,:,1) = -Vo
-		ptcls(ii)%vars%V(3,:,1) = 0.0_rp
+		ptcls(ii)%vars%V(1,:) = 0.0_rp
+		ptcls(ii)%vars%V(2,:) = -Vo
+		ptcls(ii)%vars%V(3,:) = 0.0_rp
 
 !		open(unit=default_unit_write,file=TRIM(params%path_to_outputs),status='UNKNOWN',form='formatted')
-!		write(default_unit_write,'(F10.4,F10.4,F10.4)') ptcls(ii)%vars%X(:,:,1)
+!		write(default_unit_write,'(F10.4,F10.4,F10.4)') ptcls(ii)%vars%X(:,:)
 !		close(default_unit_write)
-!		write(6,*) ptcls(ii)%vars%X(3,:,1) !ptcls(ii)%vars%gamma(:,1)
+!		write(6,*) ptcls(ii)%vars%X(3,:) !ptcls(ii)%vars%gamma(:,1)
 
 		DEALLOCATE(angle)
 		DEALLOCATE(radius)
