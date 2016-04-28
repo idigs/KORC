@@ -40,11 +40,12 @@ implicit none
 	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
 
 	! First particle push
-!	call advance_particles_velocity(params,EB,ptcls,0.5_rp*params%dt)
+	call advance_particles_velocity(params,EB,ptcls,0.5_rp*params%dt)
 
 	do it=1,params%t_steps
 !		call advance_particles_position(params,EB,ptcls,params%dt)
-!		call advance_particles_velocity(params,EB,ptcls,params%dt)
+		call advance_particles_velocity(params,EB,ptcls,params%dt)
+		write(6,*) modulo(it,params%output_cadence)
 	end do
 
 

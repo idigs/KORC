@@ -42,7 +42,7 @@ subroutine advance_particles_velocity(params,EB,ptcls,dt)
 implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(FIELDS), INTENT(IN) :: EB
-	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: ptcls
+	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: ptcls
 	REAL(rp), INTENT(IN) :: dt
 
 	
@@ -53,7 +53,7 @@ subroutine advance_particles_position(params,EB,ptcls,dt)
 implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(FIELDS), INTENT(IN) :: EB
-	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: ptcls
+	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: ptcls
 	REAL(rp), INTENT(IN) :: dt
 	INTEGER :: ii,pp ! Iterator(s)
 
