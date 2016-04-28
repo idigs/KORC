@@ -41,10 +41,11 @@ end subroutine cart_to_tor
 subroutine advance_particles_velocity(params,EB,ptcls,dt)
 implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
+    TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: ptcls
 	TYPE(FIELDS), INTENT(IN) :: EB
-	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: ptcls
 	REAL(rp), INTENT(IN) :: dt
 
+	
 	
 end subroutine advance_particles_velocity
 
@@ -57,16 +58,15 @@ implicit none
 	REAL(rp), INTENT(IN) :: dt
 	INTEGER :: ii,pp ! Iterator(s)
 
-
-do ii = 1,params%num_species
+    do ii = 1,params%num_species
 !$OMP PARALLEL PRIVATE(pp) SHARED(ptcls,dt,params,ii)
-!$OMP DO
+ !$OMP DO
 	do pp = 1,ptcls(ii)%ppp
-		write(6,'("Something")')
+		ptcls(ii)%vars%X(:,pp) = ptcls(ii)%vars%X(:,pp) + dt*ptcls(ii)%vars%V(:,pp)
 	end do
-!$OMP END DO
-!$OMP END PARALLEL
-end do
+ !$OMP END DO
+ !$OMP END PARALLEL
+ end do
 
 
 	
