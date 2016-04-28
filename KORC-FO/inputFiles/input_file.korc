@@ -4,6 +4,7 @@
 	output_cadence = 10
 	num_species = 2
 	magnetic_field_model = 'ANALYTICAL'
+	pic_algorithm = 1 ! 1 = Leapfrog, 2 = RK4, 3 = some other
 /
 
 &magnetic_field_parameters

@@ -35,9 +35,10 @@ subroutine load_korc_params(params)
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
 	INTEGER :: output_cadence
 	INTEGER :: num_species
+	INTEGER :: pic_algorithm
 
 	NAMELIST /input_parameters/ magnetic_field_model,t_steps,dt,&
-				output_cadence,num_species
+				output_cadence,num_species,pic_algorithm
 	
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=input_parameters)
@@ -49,7 +50,8 @@ subroutine load_korc_params(params)
 	params%num_snapshots = t_steps/output_cadence
 	params%dt = dt
 	params%num_species = num_species
-	params%magnetic_field_model = TRIM(magnetic_field_model)	
+	params%magnetic_field_model = TRIM(magnetic_field_model)
+	params%pic_algorithm = pic_algorithm
 end subroutine load_korc_params
 
 

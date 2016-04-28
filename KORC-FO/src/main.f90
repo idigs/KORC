@@ -28,9 +28,12 @@ implicit none
 	call compute_charcs_plasma_params(ptcls,EB,cpp)
 
 	call define_time_step(cpp,params)
+	! END OF INITIALIZATION STAGE
+
+	write(6,'("Time step: ",F10.5)') params%dt
 
 	call normalize_variables(params,ptcls,EB,cpp)
-	! END OF INITIALIZATION STAGE
+
 
 	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
 	! *** BEYOND THIS POINT VARIABLES ARE DIMENSIONLESS ***
