@@ -4,6 +4,7 @@ implicit none
 	INTEGER, PARAMETER :: sp = kind(1.0) ! Single precision kind
 	INTEGER, PARAMETER :: MAX_STRING_LENGTH = 1000 ! This value can be changed, beware of truncation errors
 	INTEGER, PARAMETER :: default_unit_open = 101
+	INTEGER, PARAMETER :: default_unit_write = 201
 
 	REAL(rp), PARAMETER :: C_E = 1.602176E-19_rp !Electron charge in C (absolute value)
 	REAL(rp), PARAMETER :: C_ME = 9.109382E-31_rp !Electron mass in kg
@@ -64,7 +65,7 @@ TYPE, PUBLIC :: KORC_PARAMS
 	INTEGER :: t_steps
 	INTEGER :: output_cadence
 	INTEGER :: num_snapshots
-	REAL(rp) :: DT
+	REAL(rp) :: dt
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
 	INTEGER :: num_species
 

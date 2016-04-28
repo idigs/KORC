@@ -1,6 +1,7 @@
 module initialize
 use korc_types
 use main_mpi
+use external_subroutines
 use omp_lib
 implicit none
 
@@ -30,12 +31,12 @@ subroutine load_korc_params(params)
 	TYPE (KORC_PARAMS), INTENT(INOUT) :: params
 	LOGICAL :: restart ! Not used, yet.
 	INTEGER :: t_steps
-	REAL(rp) :: DT
+	REAL(rp) :: dt
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
 	INTEGER :: output_cadence
 	INTEGER :: num_species
 
-	NAMELIST /input_parameters/ magnetic_field_model,t_steps,DT,&
+	NAMELIST /input_parameters/ magnetic_field_model,t_steps,dt,&
 				output_cadence,num_species
 	
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
@@ -46,7 +47,7 @@ subroutine load_korc_params(params)
 	params%t_steps = t_steps
 	params%output_cadence = output_cadence
 	params%num_snapshots = t_steps/output_cadence
-	params%DT = DT
+	params%dt = dt
 	params%num_species = num_species
 	params%magnetic_field_model = TRIM(magnetic_field_model)	
 end subroutine load_korc_params
@@ -112,19 +113,26 @@ subroutine initialize_particles(params,ptcls)
 		ALLOCATE( angle(ptcls(ii)%ppp) )
 		ALLOCATE( radius(ptcls(ii)%ppp) )
 
+		! Initialize to zero
+		ptcls(ii)%vars%X = 0.0_rp
+		ptcls(ii)%vars%V = 0.0_rp
+		ptcls(ii)%vars%Rgc = 0.0_rp
+		ptcls(ii)%vars%gamma = 0.0_rp
+		ptcls(ii)%vars%eta = 0.0_rp
+
 		! Initial condition of uniformly distributed particles on a disk in the xz-plane
 		! A unique velocity direction
-		call RANDOM_SEED()
+		call init_random_seed()
 		call RANDOM_NUMBER(angle)
 		angle = 2*C_PI*angle
 
-		call RANDOM_SEED()
+		call init_random_seed()
 		call RANDOM_NUMBER(radius)
 		radius = r(ii)*radius
 		
-		Xo(1,:) = radius*cos(angle)
+		Xo(1,:) = Ro(ii) + sqrt(radius)*cos(angle)
 		Xo(2,:) = 0.0_rp
-		Xo(3,:) = radius*sin(angle)
+		Xo(3,:) = Zo(ii) + sqrt(radius)*sin(angle)
 
 		ptcls(ii)%vars%X(1,:,1) = Xo(1,:)
 		ptcls(ii)%vars%X(2,:,1) = Xo(2,:)
@@ -138,7 +146,10 @@ subroutine initialize_particles(params,ptcls)
 		ptcls(ii)%vars%V(2,:,1) = -Vo
 		ptcls(ii)%vars%V(3,:,1) = 0.0_rp
 
-		write(6,*) ptcls(ii)%vars%V(:,:,1) !ptcls(ii)%vars%gamma(:,1)
+!		open(unit=default_unit_write,file=TRIM(params%path_to_outputs),status='UNKNOWN',form='formatted')
+!		write(default_unit_write,'(F10.4,F10.4,F10.4)') ptcls(ii)%vars%X(:,:,1)
+!		close(default_unit_write)
+!		write(6,*) ptcls(ii)%vars%X(3,:,1) !ptcls(ii)%vars%gamma(:,1)
 
 		DEALLOCATE(angle)
 		DEALLOCATE(radius)
