@@ -5,7 +5,7 @@ use external_subroutines
 use omp_lib
 implicit none
 
-	INTEGER, PRIVATE :: str_length
+	INTEGER(ip), PRIVATE :: str_length
 	CHARACTER(MAX_STRING_LENGTH), PRIVATE :: aux_str
 	PRIVATE :: set_paths, load_korc_params, initialization_sanity_check
 	PUBLIC :: initialize_korc_parameters, initialize_particles, initialize_fields
@@ -14,7 +14,7 @@ contains
 
 subroutine set_paths(params)
 	implicit none
-	INTEGER :: argn
+	INTEGER(ip) :: argn
 	TYPE(KORC_PARAMS), INTENT(OUT) :: params
 
 	argn = command_argument_count()
@@ -30,12 +30,12 @@ subroutine load_korc_params(params)
 	implicit none
 	TYPE (KORC_PARAMS), INTENT(INOUT) :: params
 	LOGICAL :: restart ! Not used, yet.
-	INTEGER :: t_steps
+	INTEGER(ip) :: t_steps
 	REAL(rp) :: dt
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
-	INTEGER :: output_cadence
-	INTEGER :: num_species
-	INTEGER :: pic_algorithm
+	INTEGER(ip) :: output_cadence
+	INTEGER(ip) :: num_species
+	INTEGER(ip) :: pic_algorithm
 
 	NAMELIST /input_parameters/ magnetic_field_model,t_steps,dt,&
 				output_cadence,num_species,pic_algorithm
@@ -76,7 +76,7 @@ subroutine initialize_particles(params,ptcls)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Xo
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: angle, radius ! temporary vars
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: r ! temporary var
-	INTEGER :: ii ! Iterator
+	INTEGER(ip) :: ii ! Iterator
 
 	NAMELIST /plasma_species/ ppp, q, m, Eo, runaway, Ro, Zo, r
 
@@ -107,7 +107,8 @@ subroutine initialize_particles(params,ptcls)
 		ALLOCATE( ptcls(ii)%vars%V(3,ptcls(ii)%ppp) )
 		ALLOCATE( ptcls(ii)%vars%Rgc(3,ptcls(ii)%ppp) )
 		ALLOCATE( ptcls(ii)%vars%Y(3,ptcls(ii)%ppp) )
-		ALLOCATE( ptcls(ii)%vars%F(3,ptcls(ii)%ppp) )
+		ALLOCATE( ptcls(ii)%vars%E(3,ptcls(ii)%ppp) )
+		ALLOCATE( ptcls(ii)%vars%B(3,ptcls(ii)%ppp) )
 		ALLOCATE( ptcls(ii)%vars%gamma(ptcls(ii)%ppp) )
 		ALLOCATE( ptcls(ii)%vars%eta(ptcls(ii)%ppp) )
 
@@ -122,7 +123,8 @@ subroutine initialize_particles(params,ptcls)
 		ptcls(ii)%vars%V = 0.0_rp
 		ptcls(ii)%vars%Rgc = 0.0_rp
 		ptcls(ii)%vars%Y = 0.0_rp
-		ptcls(ii)%vars%F = 0.0_rp
+		ptcls(ii)%vars%E = 0.0_rp
+		ptcls(ii)%vars%B = 0.0_rp
 		ptcls(ii)%vars%gamma = 0.0_rp
 		ptcls(ii)%vars%eta = 0.0_rp
 

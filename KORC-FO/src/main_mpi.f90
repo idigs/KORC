@@ -13,7 +13,7 @@ subroutine initialize_mpi(params)
 	INTEGER, DIMENSION(:), ALLOCATABLE :: DIMS
 	LOGICAL :: REORDER
 	LOGICAL, DIMENSION(:), ALLOCATABLE :: PERIODS
-	INTEGER :: ii ! Iterator
+	INTEGER(ip) :: ii ! Iterator
 
 	call MPI_INIT(ierr)
 	if (ierr .NE. MPI_SUCCESS) then

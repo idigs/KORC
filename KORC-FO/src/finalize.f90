@@ -16,14 +16,15 @@ subroutine deallocate_variables(params,ptcls)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: ptcls
-	INTEGER :: ii ! Iterator
+	INTEGER(ip) :: ii ! Iterator
 
 	do ii=1,params%num_species
 		DEALLOCATE(ptcls(ii)%vars%X)
 		DEALLOCATE(ptcls(ii)%vars%V)
 		DEALLOCATE(ptcls(ii)%vars%Rgc)
 		DEALLOCATE(ptcls(ii)%vars%Y)
-		DEALLOCATE(ptcls(ii)%vars%F)
+		DEALLOCATE(ptcls(ii)%vars%E)
+		DEALLOCATE(ptcls(ii)%vars%B)
 		DEALLOCATE(ptcls(ii)%vars%gamma)
 		DEALLOCATE(ptcls(ii)%vars%eta)
 	end do

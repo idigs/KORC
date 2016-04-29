@@ -28,7 +28,7 @@ ifeq ($(UNAME), Linux)
 	FC = mpif90
 
 	FCDEFINEFLAGS =#-DHDF5_FLOAT	-DHDF5_SINGLE_FILE
-	FCFLAGS =-J$(MOD)	-fopenmp	-g
+	FCFLAGS =-J$(MOD)	-fopenmp	-O2
 
 	HDF_INSTALL =# ../HDF5
 

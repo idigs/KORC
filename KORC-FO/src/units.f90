@@ -11,8 +11,8 @@ implicit none
 	TYPE(CHARCS_PARAMS), INTENT(OUT) :: cpp
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: ptcls
 	TYPE(FIELDS), INTENT(IN) :: EB
-	INTEGER :: ii ! Iterator(s)
-	INTEGER :: ind
+	INTEGER(ip) :: ii ! Iterator(s)
+	INTEGER(ip) :: ind
 	REAL(rp), DIMENSION(SIZE(ptcls)) :: wc
 
 	! To be defined:
@@ -54,7 +54,7 @@ implicit none
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: ptcls
 	TYPE(FIELDS), INTENT(INOUT) :: EB
 	TYPE(CHARCS_PARAMS), INTENT(IN) :: cpp
-	INTEGER :: ii ! Iterator(s)
+	INTEGER(ip) :: ii ! Iterator(s)
 
 !	Normalize params variables
 	params%dt = params%dt/cpp%time

@@ -12,6 +12,15 @@ PUBLIC :: advance_particles_position, advance_particles_velocity
 
 contains
 
+function cross(a,b)
+	REAL(rp), DIMENSION(3), INTENT(IN) :: a,b
+	REAL(rp), DIMENSION(3) :: cross
+
+	cross(:) = 0.0_rp
+
+end function cross
+
+
 subroutine cart_to_cyl(X,Xcyl)
 implicit none
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: X ! X(1,:) = x, X(2,:) = y, X(3,:) = z
@@ -30,20 +39,32 @@ implicit none
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: X ! X(1,:) = x, X(2,:) = y, X(3,:) = z
 	REAL(rp), INTENT(IN) :: Ro
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: Xtor ! Xtor(1,:) = r, Xtor(2,:) = theta, Xtor(3,:) = zeta
+	INTEGER(ip) :: pp ! Iterator(s)
+	INTEGER(ip) :: ss
 
-    Xtor(1,:) = sqrt( (sqrt(X(1,:)**2 + X(2,:)**2) - Ro)**2 + X(3,:)**2 );
-    Xtor(2,:) = atan2(X(3,:), sqrt(X(1,:)**2 + X(2,:)**2) - Ro);
-	Xtor(2,:) = modulo(Xtor(2,:),2.0_rp*C_PI)
-    Xtor(3,:) = atan2(X(1,:),X(2,:));
-	Xtor(3,:) = modulo(Xtor(3,:),2.0_rp*C_PI)
+	ss = SIZE(X,2)
+
+!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(X,Xtor)
+!$OMP DO
+	do pp=1,ss
+		Xtor(1,pp) = sqrt( (sqrt(X(1,pp)**2 + X(2,pp)**2) - Ro)**2 + X(3,pp)**2 )
+		Xtor(2,pp) = atan2(X(3,pp), sqrt(X(1,pp)**2 + X(2,pp)**2) - Ro)
+		Xtor(2,pp) = modulo(Xtor(2,pp),2.0_rp*C_PI)
+		Xtor(3,pp) = atan2(X(1,pp),X(2,pp))
+		Xtor(3,pp) = modulo(Xtor(3,pp),2.0_rp*C_PI)
+	end do
+!$OMP END DO
+!$OMP END PARALLEL
 
 end subroutine cart_to_tor
 
 
-subroutine interp_field(X,F)
+subroutine interp_field(prtcls,EB)
 implicit none
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: X ! X(1,:) = x, X(2,:) = y, X(3,:) = z
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(OUT) :: F ! X(1,:) = x, X(2,:) = y, X(3,:) = z
+	TYPE(PARTICLES), INTENT(INOUT) :: prtcls
+	TYPE(FIELDS), INTENT(IN) :: EB
+	INTEGER(ip) ii,pp ! Iterator(s)
+	INTEGER(ip) :: ss
 
 end subroutine interp_field
 
@@ -51,22 +72,13 @@ end subroutine interp_field
 subroutine interp_analytical_field(prtcls,EB)
 implicit none
 	TYPE(PARTICLES), INTENT(INOUT) :: prtcls
-!    TYPE(SPECIES), INTENT(INOUT) :: spp
 	TYPE(FIELDS), INTENT(IN) :: EB
-	INTEGER ii,pp ! Iterators
 
 	call cart_to_tor(prtcls%X, EB%AB%Ro, prtcls%Y)
-!	write(6,'(F15.6,F15.6,F15.6)') prtcls%Y
 
-!$OMP PARALLEL PRIVATE(pp) SHARED(prtcls,EB)
-!OMP DO
-	do pp=1,SIZE(prtcls%X,2)
-		ii = ii + 1
-	end do
-!OMP END DO
-!$OMP END PARALLEL
-
+	call analytical_magnetic_field(EB,prtcls%Y,prtcls%B)
 end subroutine interp_analytical_field
+
 
 subroutine advance_particles_velocity(params,EB,spp,dt)
 implicit none
@@ -74,19 +86,47 @@ implicit none
 	TYPE(FIELDS), INTENT(IN) :: EB
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
 	REAL(rp), INTENT(IN) :: dt
-	INTEGER :: ii,pp ! Iterator(s)
+	REAL(rp) :: a, gammap, sigma, us, gamma, s
+	REAL(rp), DIMENSION(3) :: U, U_half_step, tau, up, t
+	INTEGER(ip) :: ii,pp ! Iterator(s)
 
 
 	do ii = 1,params%num_species
 		if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
 			call interp_analytical_field(spp(ii)%vars, EB)
-!			write(6,*) spp(ii)
+!			write(6,'(F15.6,F15.6,F15.6)') spp(ii)%vars%B
 		else
-!			call interp_field(spp(ii), EB)
+			call interp_field(spp(ii)%vars, EB)
 		end if
 
+	a = spp(ii)%q*dt/spp(ii)%m
+
+!$OMP PARALLEL FIRSTPRIVATE(a,dt) PRIVATE(pp,U,U_half_step,tau,up,gammap,sigma,us,gamma,t,s) SHARED(spp)
+!$OMP DO
+		do pp=1,spp(ii)%ppp
+			U = spp(ii)%vars%gamma(pp)*spp(ii)%vars%V(:,pp)
+			U_half_step = U + &
+					0.5_rp*a*( spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)) )
+            
+			tau = 0.5_rp*dt*spp(ii)%q*spp(ii)%vars%B(:,pp)/spp(ii)%m
+			up = U_half_step + 0.5_rp*a*spp(ii)%vars%E(:,pp)
+			gammap = sqrt( 1.0_rp + sum(up**2) )
+			sigma = gammap**2 - sum(tau**2)
+			us = sum(up*tau) ! variable 'u^*' in Vay, J.-L. PoP (2008)
+			gamma = sqrt(0.5_rp)*sqrt( sigma + sqrt( sigma**2 + 4.0_rp*(sum(tau**2) + us**2) ) )
+			t = tau/gamma
+			s = 1.0_rp/(1.0_rp + sum(t**2)) ! variable 's' in Vay, J.-L. PoP (2008)
+            
+            U = s*( up + sum(up*t)*t + cross(up,t) )
+            spp(ii)%vars%V(:,pp) = U/sqrt(1 + sum(U**2));
+
+			spp(ii)%vars%gamma(pp) = gamma
+		end do
+!$OMP END DO
+!$OMP END PARALLEL
+
 	end do
-	
+
 end subroutine advance_particles_velocity
 
 
@@ -96,7 +136,7 @@ implicit none
 	TYPE(FIELDS), INTENT(IN) :: EB
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
 	REAL(rp), INTENT(IN) :: dt
-	INTEGER :: ii,pp ! Iterator(s)
+	INTEGER(ip) :: ii,pp ! Iterator(s)
 
     do ii = 1,params%num_species
 !$OMP PARALLEL PRIVATE(pp) SHARED(spp,dt,params,ii)
@@ -107,9 +147,6 @@ implicit none
 !$OMP END DO
 !$OMP END PARALLEL
 	end do
-
-
-	
 end subroutine advance_particles_position
 
 

@@ -14,7 +14,8 @@ implicit none
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE :: spp
 	TYPE(CHARCS_PARAMS) :: cpp
 	TYPE(FIELDS) :: EB
-	INTEGER :: it ! Iterator(s)
+	INTEGER(ip) :: it ! Iterator(s)
+	REAL(rp) :: t1, t2
 
 	call initialize_communications(params)
 
@@ -40,7 +41,9 @@ implicit none
 	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
 
 	! First particle push
-!	call advance_particles_velocity(params,EB,spp,0.5_rp*params%dt)
+	call advance_particles_velocity(params,EB,spp,0.5_rp*params%dt)
+
+	t1 = MPI_WTIME()
 
 	do it=1,params%t_steps
 		call advance_particles_position(params,EB,spp,params%dt)
@@ -49,7 +52,9 @@ implicit none
             write(6,'("Saving variables... ")') 
         end if
 	end do
-
+	
+	t2 = MPI_WTIME()
+	write(6,*) t2 - t1
 
 	! DEALLOCATION OF VARIABLES
 	call deallocate_variables(params,spp)
