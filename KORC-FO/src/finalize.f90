@@ -23,6 +23,7 @@ subroutine deallocate_variables(params,ptcls)
 		DEALLOCATE(ptcls(ii)%vars%V)
 		DEALLOCATE(ptcls(ii)%vars%Rgc)
 		DEALLOCATE(ptcls(ii)%vars%Y)
+		DEALLOCATE(ptcls(ii)%vars%F)
 		DEALLOCATE(ptcls(ii)%vars%gamma)
 		DEALLOCATE(ptcls(ii)%vars%eta)
 	end do

@@ -107,6 +107,7 @@ subroutine initialize_particles(params,ptcls)
 		ALLOCATE( ptcls(ii)%vars%V(3,ptcls(ii)%ppp) )
 		ALLOCATE( ptcls(ii)%vars%Rgc(3,ptcls(ii)%ppp) )
 		ALLOCATE( ptcls(ii)%vars%Y(3,ptcls(ii)%ppp) )
+		ALLOCATE( ptcls(ii)%vars%F(3,ptcls(ii)%ppp) )
 		ALLOCATE( ptcls(ii)%vars%gamma(ptcls(ii)%ppp) )
 		ALLOCATE( ptcls(ii)%vars%eta(ptcls(ii)%ppp) )
 
@@ -120,6 +121,8 @@ subroutine initialize_particles(params,ptcls)
 		ptcls(ii)%vars%X = 0.0_rp
 		ptcls(ii)%vars%V = 0.0_rp
 		ptcls(ii)%vars%Rgc = 0.0_rp
+		ptcls(ii)%vars%Y = 0.0_rp
+		ptcls(ii)%vars%F = 0.0_rp
 		ptcls(ii)%vars%gamma = 0.0_rp
 		ptcls(ii)%vars%eta = 0.0_rp
 

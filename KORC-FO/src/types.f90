@@ -74,11 +74,12 @@ TYPE, PUBLIC :: KORC_PARAMS
 END TYPE KORC_PARAMS
 
 
-TYPE, PRIVATE :: PARTICLES
+TYPE, PUBLIC :: PARTICLES
     REAL(rp), DIMENSION(:,:), ALLOCATABLE :: X ! Position (Cartesian) dim(X) = (3,num_particles)
     REAL(rp), DIMENSION(:,:), ALLOCATABLE :: V ! Velocity
     REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Rgc ! Guiding-center position (Cartesian)
     REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Y ! Position in alternative coordinate system, i.e. cylindrical or toroidal coordinates.
+    REAL(rp), DIMENSION(:,:), ALLOCATABLE :: F ! Auxiliar vector for fields interpolations
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: gamma ! Gamma relativistic
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: eta ! Pitch angle
 END TYPE PARTICLES
