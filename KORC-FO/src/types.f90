@@ -1,7 +1,11 @@
 module constants
 implicit none
 	INTEGER, PARAMETER :: ip = SELECTED_INT_KIND(10) !
+#ifdef DOUBLE_PRECISION
 	INTEGER(ip), PARAMETER :: rp = KIND(0.d0) ! Double precision kind
+#else
+	INTEGER(ip), PARAMETER :: rp = KIND(1.0) ! Double precision kind
+#endif
 	INTEGER(ip), PARAMETER :: sp = kind(1.0) ! Single precision kind
 	INTEGER(ip), PARAMETER :: MAX_STRING_LENGTH = 1000_ip ! This value can be changed, beware of truncation errors
 	INTEGER(ip), PARAMETER :: default_unit_open = 101_ip
@@ -84,6 +88,9 @@ TYPE, PUBLIC :: PARTICLES
     REAL(rp), DIMENSION(:,:), ALLOCATABLE :: B ! Auxiliar vector for fields interpolations
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: gamma ! Gamma relativistic
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: eta ! Pitch angle
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: mu ! Instantaneous magnetic moment
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: kappa ! Curvature
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: tau ! Torsion
 END TYPE PARTICLES
 
 

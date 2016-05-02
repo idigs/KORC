@@ -1,7 +1,7 @@
 &input_parameters
-	t_steps = 10
+	t_steps = 1000000
 	dt = 0.02 ! Time step as fraction of non-relativistic gyro-period
-	output_cadence = 5
+	output_cadence = 10
 	num_species = 2
 	magnetic_field_model = 'ANALYTICAL'
 	pic_algorithm = 1 ! 1 = Leapfrog, 2 = RK4, 3 = some other
@@ -18,8 +18,8 @@
 	Zo = 0.0, 0.0 !
 	r = 0.2, 0.25 !
 	Eo = 3.0E6, 3.0E6 ! Initial energy in eV
-	ppp = 2, 2 ! Number of particles per process (mpi)
-    q = 1.0, -1.0 ! Electric charge
+	ppp = 50, 50 ! Number of particles per process (mpi)
+    q = -1.0, -1.0 ! Electric charge
     m = 1.0, 1.0 ! In units of electron mass
 /
 

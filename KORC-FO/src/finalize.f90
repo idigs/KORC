@@ -27,6 +27,9 @@ subroutine deallocate_variables(params,ptcls)
 		DEALLOCATE(ptcls(ii)%vars%B)
 		DEALLOCATE(ptcls(ii)%vars%gamma)
 		DEALLOCATE(ptcls(ii)%vars%eta)
+		DEALLOCATE(ptcls(ii)%vars%mu)
+		DEALLOCATE(ptcls(ii)%vars%kappa)
+		DEALLOCATE(ptcls(ii)%vars%tau)
 	end do
 
 	DEALLOCATE(ptcls)

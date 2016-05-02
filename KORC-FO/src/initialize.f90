@@ -111,6 +111,9 @@ subroutine initialize_particles(params,ptcls)
 		ALLOCATE( ptcls(ii)%vars%B(3,ptcls(ii)%ppp) )
 		ALLOCATE( ptcls(ii)%vars%gamma(ptcls(ii)%ppp) )
 		ALLOCATE( ptcls(ii)%vars%eta(ptcls(ii)%ppp) )
+		ALLOCATE( ptcls(ii)%vars%mu(ptcls(ii)%ppp) )
+		ALLOCATE( ptcls(ii)%vars%kappa(ptcls(ii)%ppp) )
+		ALLOCATE( ptcls(ii)%vars%tau(ptcls(ii)%ppp) )
 
 		ALLOCATE( Xo(3,ptcls(ii)%ppp) )
 		ALLOCATE( Vo(ptcls(ii)%ppp) )
@@ -127,6 +130,9 @@ subroutine initialize_particles(params,ptcls)
 		ptcls(ii)%vars%B = 0.0_rp
 		ptcls(ii)%vars%gamma = 0.0_rp
 		ptcls(ii)%vars%eta = 0.0_rp
+		ptcls(ii)%vars%mu = 0.0_rp
+		ptcls(ii)%vars%kappa = 0.0_rp
+		ptcls(ii)%vars%tau = 0.0_rp
 
 		! Initial condition of uniformly distributed particles on a disk in the xz-plane
 		! A unique velocity direction

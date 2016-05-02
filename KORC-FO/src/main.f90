@@ -7,6 +7,7 @@ use pic
 use main_mpi
 use initialize
 use finalize
+use output_HDF5
 
 implicit none
 
@@ -29,6 +30,8 @@ implicit none
 	call compute_charcs_plasma_params(spp,EB,cpp)
 
 	call define_time_step(cpp,params)
+
+	call initialize_HDF5()
 	! END OF INITIALIZATION STAGE
 
 	write(6,'("Time step: ",1E10.5)') params%dt
@@ -44,6 +47,7 @@ implicit none
 	call advance_particles_velocity(params,EB,spp,0.5_rp*params%dt)
 
 	open(unit=default_unit_write,file=TRIM(params%path_to_outputs),status='UNKNOWN',form='formatted')
+!	open(unit=202,file='./outputFiles/position.dat',status='UNKNOWN',form='formatted')
 
 	t1 = MPI_WTIME()
 
@@ -53,7 +57,9 @@ implicit none
 		if ( modulo(it,params%output_cadence) .EQ. 0 ) then
 !            write(6,'("Saving variables... ",I15)') it/params%output_cadence
 			if (params%mpi_params%rank_topo .EQ. 0) then
-				write(default_unit_write,'(F15.5,F15.5,F15.5)') spp(1)%vars%Rgc(:,1)*cpp%length
+!				write(default_unit_write,'(F15.5,F15.5,F15.5)') spp(1)%vars%kappa(1)/cpp%length
+				write(default_unit_write,'(F15.12)') spp(1)%vars%gamma(1)
+!				write(202,'(F15.5,F15.5,F15.5)') spp(1)%vars%X(:,1)*cpp%length
 			end if
         end if
 	end do
@@ -62,10 +68,13 @@ implicit none
 	write(6,*) t2 - t1
 
 	close(default_unit_write)
+!	close(202)
 
 	! DEALLOCATION OF VARIABLES
 	call deallocate_variables(params,spp)
 	! DEALLOCATION OF VARIABLES
+
+	call finalize_HDF5()
 
 	call finalize_communications(params)
 

@@ -87,8 +87,10 @@ implicit none
 	TYPE(FIELDS), INTENT(IN) :: EB
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
 	REAL(rp), INTENT(IN) :: dt
-	REAL(rp) :: a, gammap, sigma, us, gamma, s
-	REAL(rp), DIMENSION(3) :: U, U_half_step, tau, up, t
+	REAL(rp) :: a, gammap, sigma, us, gamma, s, gamma_hs
+	REAL(rp), DIMENSION(3) :: U, U_hs, V_hs, tau, up, t
+	REAL(rp), DIMENSION(3) :: acc, dacc, b_unit ! variables for diagnostics
+	REAL(rp) :: B, vxa, vpar, vperp ! variables for diagnostics
 	INTEGER(ip) :: ii,pp ! Iterator(s)
 
 
@@ -102,49 +104,56 @@ implicit none
 
 	a = spp(ii)%q*dt/spp(ii)%m
 
-!$OMP PARALLEL FIRSTPRIVATE(a,dt) PRIVATE(pp,U,U_half_step,tau,up,gammap,sigma,us,gamma,t,s) SHARED(spp)
+!$OMP PARALLEL FIRSTPRIVATE(a,dt)&
+!$OMP& PRIVATE(pp,U,U_hs,V_hs,gamma_hs,tau,up,gammap,sigma,us,gamma,t,s,&
+!$OMP& acc,dacc,b_unit,B,vpar,vperp,vxa)&
+!$OMP& SHARED(spp)
 !$OMP DO
 		do pp=1,spp(ii)%ppp
 			U = spp(ii)%vars%gamma(pp)*spp(ii)%vars%V(:,pp)
-			U_half_step = U + &
+			U_hs = U + &
 					0.5_rp*a*( spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)) )
             
 			tau = 0.5_rp*dt*spp(ii)%q*spp(ii)%vars%B(:,pp)/spp(ii)%m
-			up = U_half_step + 0.5_rp*a*spp(ii)%vars%E(:,pp)
+			up = U_hs + 0.5_rp*a*spp(ii)%vars%E(:,pp)
 			gammap = sqrt( 1.0_rp + sum(up**2) )
 			sigma = gammap**2 - sum(tau**2)
 			us = sum(up*tau) ! variable 'u^*' in Vay, J.-L. PoP (2008)
-			gamma = sqrt(0.5_rp)*sqrt( sigma + sqrt( sigma**2 + 4.0_rp*(sum(tau**2) + us**2) ) )
+			gamma = sqrt( 0.5_rp*(sigma + sqrt( sigma**2 + 4.0_rp*(sum(tau**2) + us**2) )) )
 			t = tau/gamma
 			s = 1.0_rp/(1.0_rp + sum(t**2)) ! variable 's' in Vay, J.-L. PoP (2008)
 
-!			write(6,'("Debuggin list:")') 
-!			write(6,*) dt
-!			write(6,*) spp(ii)%q
-!			write(6,*) spp(ii)%vars%B(:,pp)
-!			write(6,*) spp(ii)%m
-			
-!			write(6,*) U
-!			write(6,*) U_half_step
-!			write(6,*) tau
-!			write(6,*) up
-!			write(6,*) gammap
-!			write(6,*) sigma
-!			write(6,*) us
-!			write(6,*) gamma
-!			write(6,*) t
-!			write(6,*) s
-            
             U = s*( up + sum(up*t)*t + cross(up,t) )
-            spp(ii)%vars%V(:,pp) = U/sqrt(1 + sum(U**2));
+!            spp(ii)%vars%V(:,pp) = U/sqrt(1 + sum(U**2))
+            spp(ii)%vars%V(:,pp) = U/gamma
 
 			spp(ii)%vars%gamma(pp) = gamma
 
+!			write(6,'("Debuggin list:")') 
+!			write(6,*) spp(ii)%q
+
+			! Temporary quantities at half time step
+			gamma_hs = sqrt( 1.0_rp + sum(U_hs**2) )
+			V_hs = U_hs/gamma_hs
+
 			! Instantaneous guiding center
-!			spp(ii)%vars%Rgc(:,pp) = spp(ii)%vars%X(:,pp) + &
-!			spp(ii)%vars%gamma(pp)*spp(ii)%m*cross(U_half_step,spp(ii)%vars%B(:,pp))/(spp(ii)%q*sum(spp(ii)%vars%B(:,pp)**2))
+			spp(ii)%vars%Rgc(:,pp) = spp(ii)%vars%X(:,pp)&
+			+ gamma*spp(ii)%m*cross(V_hs, spp(ii)%vars%B(:,pp))&
+			/( spp(ii)%q*sum(spp(ii)%vars%B(:,pp)**2) )
+        
+			B = sqrt( sum(spp(ii)%vars%B(:,pp)**2) )
+			b_unit = spp(ii)%vars%B(:,pp)/B
+			vpar = DOT_PRODUCT(spp(ii)%vars%V(:,pp), b_unit)
+			vperp = sqrt( DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)) - vpar**2 )
+			spp(ii)%vars%mu(pp) = 0.5_rp*gamma*spp(ii)%m*vperp**2/B
 
 			! Curvature and torsion
+			acc = ( spp(ii)%q/spp(ii)%m )*cross(V_hs,spp(ii)%vars%B(:,pp))/gamma_hs
+			vxa = sum( cross(V_hs,acc)**2 )
+			spp(ii)%vars%kappa(pp) = sqrt( vxa )/( sqrt( sum(V_hs**2) )**3 )
+			dacc = ( spp(ii)%q/spp(ii)%m )*cross(acc,spp(ii)%vars%B(:,pp))/gamma_hs
+			spp(ii)%vars%tau(pp) = DOT_PRODUCT(V_hs,cross(acc, dacc))/vxa
+
 		end do
 !$OMP END DO
 !$OMP END PARALLEL
