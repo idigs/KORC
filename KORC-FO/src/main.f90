@@ -53,7 +53,7 @@ implicit none
 		if ( modulo(it,params%output_cadence) .EQ. 0 ) then
 !            write(6,'("Saving variables... ",I15)') it/params%output_cadence
 			if (params%mpi_params%rank_topo .EQ. 0) then
-				write(default_unit_write,'(F15.5,F15.5,F15.5)') spp(1)%vars%X(:,1)*cpp%length
+				write(default_unit_write,'(F15.5,F15.5,F15.5)') spp(1)%vars%Rgc(:,1)*cpp%length
 			end if
         end if
 	end do

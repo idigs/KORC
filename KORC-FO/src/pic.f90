@@ -139,6 +139,12 @@ implicit none
             spp(ii)%vars%V(:,pp) = U/sqrt(1 + sum(U**2));
 
 			spp(ii)%vars%gamma(pp) = gamma
+
+			! Instantaneous guiding center
+!			spp(ii)%vars%Rgc(:,pp) = spp(ii)%vars%X(:,pp) + &
+!			spp(ii)%vars%gamma(pp)*spp(ii)%m*cross(U_half_step,spp(ii)%vars%B(:,pp))/(spp(ii)%q*sum(spp(ii)%vars%B(:,pp)**2))
+
+			! Curvature and torsion
 		end do
 !$OMP END DO
 !$OMP END PARALLEL

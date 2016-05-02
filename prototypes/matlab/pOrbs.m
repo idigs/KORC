@@ -1003,18 +1003,19 @@ if ST.params.cadence == 1
         gammap = sqrt(1 + sum(up.^2));
         sigma = gammap^2 - sum(tau.^2);
         us = sum(up.*tau); % variable 'u^*' in paper
-        gam = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(sum(tau.^2) + sum(us.^2))) );
-        t = tau/gam;
+        gamma = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(sum(tau.^2) + sum(us.^2))) );
+        t = tau/gamma;
         s = 1/(1+sum(t.^2)); % variable 's' in paper
         
         u(ii,:) = s*(up + sum(up.*t)*t + cross(up,t));
-        
-        gamma = sqrt(1 + sum(u(ii,:).^2));
         v(ii,:) = u(ii,:)/gamma;
-        
         EK(ii) = gamma;
         
-        R(ii,:) = X(ii,:) + gamma*m*cross(v(ii,:),B)/(q*sum(B.^2));
+        
+        gamma_half_step = sqrt(1 + sum(U_half_step.^2));
+        v_half_step = U_half_step/gamma_half_step;
+        
+        R(ii,:) = X(ii,:) + gamma*m*cross(v_half_step,B)/(q*sum(B.^2));
         
         B_mag = sqrt(sum(B.^2));
         b = B/B_mag;
@@ -1023,11 +1024,11 @@ if ST.params.cadence == 1
         mu(ii) = gamma*m*vperp(ii)^2/(2*B_mag);
         
         % Curvature and torsion
-        acc = (q/m)*cross(v(ii,:),B)/sqrt(1 + sum(u(ii,:).^2)); % acceleration
-        aux = sum( cross(v(ii,:),acc).^2 );
-        k(ii) = sqrt( aux )/sqrt( sum(v(ii,:).^2) )^3;
-        dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(u(ii,:).^2)); % d(acc)/dt
-        T(ii) = det([v(ii,:); acc; dacc])/aux;
+        acc = (q/m)*cross(v_half_step,B)/sqrt(1 + sum(U_half_step.^2)); % acceleration
+        aux = sum( cross(v_half_step,acc).^2 );
+        k(ii) = sqrt( aux )/sqrt( sum(v_half_step.^2) )^3;
+        dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(U_half_step.^2)); % d(acc)/dt
+        T(ii) = det([v_half_step; acc; dacc])/aux;
         % Curvature and torsion
         
         if abs(zeta_previous - zeta_current) > 6
@@ -1086,8 +1087,8 @@ else
             gammap = sqrt(1 + sum(up.^2));
             sigma = gammap^2 - sum(tau.^2);
             us = sum(up.*tau); % variable 'u^*' in paper
-            gam = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(sum(tau.^2) + sum(us.^2))) );
-            t = tau/gam;
+            gamma = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(sum(tau.^2) + sum(us.^2))) );
+            t = tau/gamma;
             s = 1/(1+sum(t.^2)); % variable 's' in paper
             
             U = s*(up + sum(up.*t)*t + cross(up,t));
@@ -1120,11 +1121,13 @@ else
         
         X(ii,:) = XX;
         u(ii,:) = U;
-
-        gamma = sqrt(1 + sum(u(ii,:).^2));
-        EK(ii) = gamma;
         v(ii,:) = u(ii,:)/gamma;
-        R(ii,:) = X(ii,:) + gamma*m*cross(v(ii,:),B)/(q*sum(B.^2));
+        EK(ii) = gamma;
+        
+        gamma_half_step = sqrt(1 + sum(U_half_step.^2));
+        v_half_step = U_half_step/gamma_half_step;
+        
+        R(ii,:) = X(ii,:) + gamma*m*cross(v_half_step,B)/(q*sum(B.^2));
         
         B_mag = sqrt(sum(B.^2));
         b = B/B_mag;
@@ -1133,11 +1136,11 @@ else
         mu(ii) = gamma*m*vperp(ii)^2/(2*B_mag);
 
         % Curvature and torsion
-        acc = (q/m)*cross(v(ii,:),B)/sqrt(1 + sum(u(ii,:).^2)); % acceleration
-        aux = sum( cross(v(ii,:),acc).^2 );
-        k(ii) = sqrt( aux )/sqrt( sum(v(ii,:).^2) )^3;
-        dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(u(ii,:).^2)); % d(acc)/dt
-        T(ii) = det([v(ii,:); acc; dacc])/aux;
+        acc = (q/m)*cross(v_half_step,B)/sqrt(1 + sum(U_half_step.^2)); % acceleration
+        aux = sum( cross(v_half_step,acc).^2 );
+        k(ii) = sqrt( aux )/sqrt( sum(v_half_step.^2) )^3;
+        dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(U_half_step.^2)); % d(acc)/dt
+        T(ii) = det([v_half_step; acc; dacc])/aux;
         % Curvature and torsion
     end
     
