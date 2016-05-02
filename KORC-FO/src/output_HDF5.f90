@@ -12,6 +12,7 @@ implicit none
 end subroutine initialize_HDF5
 
 subroutine finalize_HDF5()
+use HDF5
 implicit none
 	INTEGER :: error  ! Error flag
 !	call h5close_f(error)
