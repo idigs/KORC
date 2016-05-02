@@ -6,14 +6,14 @@ implicit none
 !	PRIVATE :: 
 contains
 
-subroutine compute_charcs_plasma_params(ptcls,EB,cpp)
+subroutine compute_charcs_plasma_params(spp,EB,cpp)
 implicit none
-	TYPE(CHARCS_PARAMS), INTENT(OUT) :: cpp
-	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: ptcls
+	TYPE(CHARCS_PARAMS), INTENT(INOUT) :: cpp
+	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
 	TYPE(FIELDS), INTENT(IN) :: EB
 	INTEGER(ip) :: ii ! Iterator(s)
 	INTEGER(ip) :: ind
-	REAL(rp), DIMENSION(SIZE(ptcls)) :: wc
+	REAL(rp), DIMENSION(SIZE(spp)) :: wc
 
 	! To be defined:
 	! REAL(rp) :: density;
@@ -24,12 +24,12 @@ implicit none
 	cpp%velocity = C_C
 	cpp%magnetic_field = EB%Bo
 
-	wc = ( abs(ptcls(:)%q)/ptcls(:)%m )*cpp%magnetic_field
+	wc = ( abs(spp(:)%q)/spp(:)%m )*cpp%magnetic_field
 	ind = maxloc(wc,1) ! Index to maximum cyclotron frequency
 
 	cpp%time = 2*C_PI/wc(ind)
-	cpp%mass = ptcls(ind)%m
-	cpp%charge = abs(ptcls(ind)%q)
+	cpp%mass = spp(ind)%m
+	cpp%charge = abs(spp(ind)%q)
 	cpp%length = cpp%velocity*cpp%time
 
 !	write(6,*) cpp
@@ -48,10 +48,10 @@ implicit none
 end subroutine define_time_step
 
 
-subroutine normalize_variables(params,ptcls,EB,cpp)
+subroutine normalize_variables(params,spp,EB,cpp)
 implicit none
 	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
-	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: ptcls
+	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
 	TYPE(FIELDS), INTENT(INOUT) :: EB
 	TYPE(CHARCS_PARAMS), INTENT(IN) :: cpp
 	INTEGER(ip) :: ii ! Iterator(s)
@@ -60,12 +60,12 @@ implicit none
 	params%dt = params%dt/cpp%time
 
 !	Normalize particle variables
-	do ii=1,size(ptcls)
-		ptcls(ii)%q = ptcls(ii)%q/cpp%charge
-		ptcls(ii)%m = ptcls(ii)%q/cpp%mass
-		ptcls(ii)%vars%X = ptcls(ii)%vars%X/cpp%length
-		ptcls(ii)%vars%V = ptcls(ii)%vars%V/cpp%velocity
-		ptcls(ii)%vars%Rgc = ptcls(ii)%vars%Rgc/cpp%length
+	do ii=1,size(spp)
+		spp(ii)%q = spp(ii)%q/cpp%charge
+		spp(ii)%m = spp(ii)%m/cpp%mass
+		spp(ii)%vars%X = spp(ii)%vars%X/cpp%length
+		spp(ii)%vars%V = spp(ii)%vars%V/cpp%velocity
+		spp(ii)%vars%Rgc = spp(ii)%vars%Rgc/cpp%length
 	end do
 
 !	Normalize electromagnetic fields

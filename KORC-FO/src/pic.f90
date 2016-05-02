@@ -7,7 +7,7 @@ implicit none
 
 !REAL(rp), DIMENSION(3), PRIVATE :: B, Y
 
-PRIVATE :: cart_to_cyl, cart_to_tor, interp_field
+PRIVATE :: cart_to_cyl, cart_to_tor, interp_field, cross
 PUBLIC :: advance_particles_position, advance_particles_velocity
 
 contains
@@ -16,8 +16,9 @@ function cross(a,b)
 	REAL(rp), DIMENSION(3), INTENT(IN) :: a,b
 	REAL(rp), DIMENSION(3) :: cross
 
-	cross(:) = 0.0_rp
-
+	cross(1) = a(2)*b(3) - a(3)*b(2)
+	cross(2) = a(3)*b(1) - a(1)*b(3)
+	cross(3) = a(1)*b(2) - a(2)*b(1)
 end function cross
 
 
@@ -116,6 +117,23 @@ implicit none
 			gamma = sqrt(0.5_rp)*sqrt( sigma + sqrt( sigma**2 + 4.0_rp*(sum(tau**2) + us**2) ) )
 			t = tau/gamma
 			s = 1.0_rp/(1.0_rp + sum(t**2)) ! variable 's' in Vay, J.-L. PoP (2008)
+
+!			write(6,'("Debuggin list:")') 
+!			write(6,*) dt
+!			write(6,*) spp(ii)%q
+!			write(6,*) spp(ii)%vars%B(:,pp)
+!			write(6,*) spp(ii)%m
+			
+!			write(6,*) U
+!			write(6,*) U_half_step
+!			write(6,*) tau
+!			write(6,*) up
+!			write(6,*) gammap
+!			write(6,*) sigma
+!			write(6,*) us
+!			write(6,*) gamma
+!			write(6,*) t
+!			write(6,*) s
             
             U = s*( up + sum(up*t)*t + cross(up,t) )
             spp(ii)%vars%V(:,pp) = U/sqrt(1 + sum(U**2));

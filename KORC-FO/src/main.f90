@@ -43,18 +43,25 @@ implicit none
 	! First particle push
 	call advance_particles_velocity(params,EB,spp,0.5_rp*params%dt)
 
+	open(unit=default_unit_write,file=TRIM(params%path_to_outputs),status='UNKNOWN',form='formatted')
+
 	t1 = MPI_WTIME()
 
 	do it=1,params%t_steps
 		call advance_particles_position(params,EB,spp,params%dt)
 		call advance_particles_velocity(params,EB,spp,params%dt)
 		if ( modulo(it,params%output_cadence) .EQ. 0 ) then
-            write(6,'("Saving variables... ")') 
+!            write(6,'("Saving variables... ",I15)') it/params%output_cadence
+			if (params%mpi_params%rank_topo .EQ. 0) then
+				write(default_unit_write,'(F15.5,F15.5,F15.5)') spp(1)%vars%X(:,1)*cpp%length
+			end if
         end if
 	end do
 	
 	t2 = MPI_WTIME()
 	write(6,*) t2 - t1
+
+	close(default_unit_write)
 
 	! DEALLOCATION OF VARIABLES
 	call deallocate_variables(params,spp)
