@@ -2,14 +2,14 @@ module constants
 implicit none
 	INTEGER, PARAMETER :: ip = SELECTED_INT_KIND(10) !
 #ifdef DOUBLE_PRECISION
-	INTEGER(ip), PARAMETER :: rp = KIND(0.d0) ! Double precision kind
+	INTEGER, PARAMETER :: rp = KIND(0.d0) ! Double precision kind
 #else
-	INTEGER(ip), PARAMETER :: rp = KIND(1.0) ! Double precision kind
+	INTEGER, PARAMETER :: rp = KIND(1.0) ! Double precision kind
 #endif
-	INTEGER(ip), PARAMETER :: sp = kind(1.0) ! Single precision kind
-	INTEGER(ip), PARAMETER :: MAX_STRING_LENGTH = 1000_ip ! This value can be changed, beware of truncation errors
-	INTEGER(ip), PARAMETER :: default_unit_open = 101_ip
-	INTEGER(ip), PARAMETER :: default_unit_write = 201_ip
+	INTEGER, PARAMETER :: sp = kind(1.0) ! Single precision kind
+	INTEGER, PARAMETER :: MAX_STRING_LENGTH = 1000_ip ! This value can be changed, beware of truncation errors
+	INTEGER, PARAMETER :: default_unit_open = 101_ip
+	INTEGER, PARAMETER :: default_unit_write = 201_ip
 
 	REAL(rp), PARAMETER :: C_E = 1.602176E-19_rp !Electron charge in C (absolute value)
 	REAL(rp), PARAMETER :: C_ME = 9.109382E-31_rp !Electron mass in kg
@@ -65,15 +65,15 @@ END TYPE KORC_MPI
 TYPE, PUBLIC :: KORC_PARAMS
 	CHARACTER(MAX_STRING_LENGTH) :: path_to_inputs
 	CHARACTER(MAX_STRING_LENGTH) :: path_to_outputs
-	INTEGER(ip) :: num_omp_threads
+	INTEGER :: num_omp_threads
 	LOGICAL :: restart
 	INTEGER(ip) :: t_steps
 	INTEGER(ip) :: output_cadence
 	INTEGER(ip) :: num_snapshots
 	REAL(rp) :: dt
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
-	INTEGER(ip) :: num_species
-	INTEGER(ip) :: pic_algorithm
+	INTEGER :: num_species
+	INTEGER :: pic_algorithm
 
 	TYPE(KORC_MPI) :: mpi_params
 END TYPE KORC_PARAMS
@@ -101,7 +101,7 @@ TYPE, PUBLIC :: SPECIES
 	REAL(rp) :: wc
 	REAL(rp) :: q
 	REAL(rp) :: m
-	INTEGER(ip) :: ppp
+	INTEGER :: ppp
 	! Here go the parameters for collisions, replenishment, weighting... 
 END TYPE SPECIES
 
@@ -136,7 +136,7 @@ TYPE, PUBLIC :: FIELDS
 	TYPE(V_FIELD_3D) :: E
 	TYPE(V_FIELD_3D) :: B
 	REAL(rp) :: Bo ! Characteristic magnetic field
-	INTEGER(ip), DIMENSION(3) :: dim ! dim(NR, NPHI, NZ)
+	INTEGER, DIMENSION(3) :: dim ! dim(NR, NPHI, NZ)
 END TYPE FIELDS
 
 contains

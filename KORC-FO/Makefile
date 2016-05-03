@@ -15,7 +15,7 @@ ifeq ($(UNAME), Darwin)
 
 	HDF5_INSTALL =../HDF5
 
-	INCLUDE_HDF5	=-I$(HDF5_INSTALL)/include
+	INCLUDES_HDF5	=-I$(HDF5_INSTALL)/include
 	INCLUDES =
 	EXTLIB	=-L$(HDF5_INSTALL)/lib
 	LIBSHDF5	=$(EXTLIB)  $(HDF5_INSTALL)/lib/libhdf5_fortran.a   $(HDF5_INSTALL)/lib/libhdf5_hl.a    $(HDF5_INSTALL)/lib/libhdf5.a
@@ -32,10 +32,10 @@ ifeq ($(UNAME), Linux)
 
 	HDF5_INSTALL =../HDF5
 
-	INCLUDE_HDF5	=-I$(HDF5_INSTALL)/include
+	INCLUDES_HDF5	=-I$(HDF5_INSTALL)/include
 	INCLUDES =
 	EXTLIB	=-L$(HDF5_INSTALL)/lib
-	LIBSHDF5	=$(EXTLIB)  $(HDF5_INSTALL)/lib/libhdf5_fortran.a   $(HDF5_INSTALL)/lib/libhdf5_hl.a    $(HDF5_INSTALL)/lib/libhdf5.a
+	LIBSHDF5	=$(EXTLIB)	$(HDF5_INSTALL)/lib/libhdf5hl_fortran.a	$(HDF5_INSTALL)/lib/libhdf5_fortran.a	$(HDF5_INSTALL)/lib/libhdf5_hl.a	$(HDF5_INSTALL)/lib/libhdf5.a
 	LIB_FLAGS =
 	LIB	= -lm   -lz -ldl
 	OMP_LIB_FLAGS =	-lgomp
@@ -46,34 +46,34 @@ BINARIES = $(addprefix $(OBJ)/, types.o	main_mpi.o	external_subroutines.o	initia
 all: KORC-FO
 
 $(OBJ)/types.o: $(SRC)/types.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $(SRC)/types.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $(SRC)/types.f90		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
 $(OBJ)/external_subroutines.o: $(SRC)/external_subroutines.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $(SRC)/external_subroutines.f90  $(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $(SRC)/external_subroutines.f90  $(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
 $(OBJ)/initialize.o: $(SRC)/initialize.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $(SRC)/initialize.f90  $(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $(SRC)/initialize.f90  $(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
 $(OBJ)/finalize.o: $(SRC)/finalize.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $(SRC)/finalize.f90  $(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $(SRC)/finalize.f90  $(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
 $(OBJ)/main_mpi.o: $(SRC)/main_mpi.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/main_mpi.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/main_mpi.f90		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
 $(OBJ)/output_HDF5.o: $(SRC)/output_HDF5.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $(SRC)/output_HDF5.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $(SRC)/output_HDF5.f90		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
 $(OBJ)/pic.o: $(SRC)/pic.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/pic.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/pic.f90		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
 $(OBJ)/emf.o: $(SRC)/emf.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/emf.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/emf.f90		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
 $(OBJ)/units.o: $(SRC)/units.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/units.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/units.f90		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
 $(OBJ)/main.o: $(SRC)/main.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/main.f90		$(INCLUDES)	$(INCLUDE_HDF5)	$(LIB_FLAGS)	-o	$@
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/main.f90		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
 
 KORC-FO: $(BINARIES)

@@ -11,8 +11,7 @@ implicit none
 	TYPE(CHARCS_PARAMS), INTENT(INOUT) :: cpp
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
 	TYPE(FIELDS), INTENT(IN) :: EB
-	INTEGER(ip) :: ii ! Iterator(s)
-	INTEGER(ip) :: ind
+	INTEGER :: ind
 	REAL(rp), DIMENSION(SIZE(spp)) :: wc
 
 	! To be defined:
@@ -27,12 +26,10 @@ implicit none
 	wc = ( abs(spp(:)%q)/spp(:)%m )*cpp%magnetic_field
 	ind = maxloc(wc,1) ! Index to maximum cyclotron frequency
 
-	cpp%time = 2*C_PI/wc(ind)
+	cpp%time = 2_rp*C_PI/wc(ind)
 	cpp%mass = spp(ind)%m
 	cpp%charge = abs(spp(ind)%q)
 	cpp%length = cpp%velocity*cpp%time
-
-!	write(6,*) cpp
 end subroutine compute_charcs_plasma_params
 
 subroutine define_time_step(cpp,params)
@@ -44,7 +41,6 @@ implicit none
 !	are included.
 
 	params%dt = params%dt*cpp%time
-
 end subroutine define_time_step
 
 
@@ -54,7 +50,7 @@ implicit none
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
 	TYPE(FIELDS), INTENT(INOUT) :: EB
 	TYPE(CHARCS_PARAMS), INTENT(IN) :: cpp
-	INTEGER(ip) :: ii ! Iterator(s)
+	INTEGER :: ii ! Iterator(s)
 
 !	Normalize params variables
 	params%dt = params%dt/cpp%time

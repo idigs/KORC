@@ -5,8 +5,6 @@ use external_subroutines
 use omp_lib
 implicit none
 
-	INTEGER(ip), PRIVATE :: str_length
-	CHARACTER(MAX_STRING_LENGTH), PRIVATE :: aux_str
 	PRIVATE :: set_paths, load_korc_params, initialization_sanity_check
 	PUBLIC :: initialize_korc_parameters, initialize_particles, initialize_fields
 
@@ -14,15 +12,12 @@ contains
 
 subroutine set_paths(params)
 	implicit none
-	INTEGER(ip) :: argn
+	INTEGER :: argn
 	TYPE(KORC_PARAMS), INTENT(OUT) :: params
 
 	argn = command_argument_count()
 	call get_command_argument(1,params%path_to_inputs)
 	call get_command_argument(2,params%path_to_outputs)
-	! write(6,*) argn
-	! write(6,*) TRIM(params%path_to_inputs), LEN(params%path_to_inputs)
-	! write(6,*) TRIM(params%path_to_outputs), LEN(params%path_to_outputs)
 end subroutine set_paths
 
 
@@ -34,8 +29,8 @@ subroutine load_korc_params(params)
 	REAL(rp) :: dt
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
 	INTEGER(ip) :: output_cadence
-	INTEGER(ip) :: num_species
-	INTEGER(ip) :: pic_algorithm
+	INTEGER :: num_species
+	INTEGER :: pic_algorithm
 
 	NAMELIST /input_parameters/ magnetic_field_model,t_steps,dt,&
 				output_cadence,num_species,pic_algorithm
@@ -76,7 +71,7 @@ subroutine initialize_particles(params,ptcls)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Xo
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: angle, radius ! temporary vars
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: r ! temporary var
-	INTEGER(ip) :: ii ! Iterator
+	INTEGER :: ii ! Iterator
 
 	NAMELIST /plasma_species/ ppp, q, m, Eo, runaway, Ro, Zo, r
 
@@ -211,7 +206,6 @@ subroutine initialization_sanity_check(params)
 !$OMP PARALLEL
 	write(6,'("MPI: ",I2," OMP thread: ", I2)') params%mpi_params%rank_topo, OMP_GET_THREAD_NUM()
 !$OMP END PARALLEL
-
 end subroutine initialization_sanity_check
 
 

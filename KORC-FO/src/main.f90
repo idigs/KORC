@@ -16,11 +16,11 @@ implicit none
 	TYPE(CHARCS_PARAMS) :: cpp
 	TYPE(FIELDS) :: EB
 	INTEGER(ip) :: it ! Iterator(s)
-	REAL(rp) :: t1, t2
+	REAL(rp) :: t1, t2 ! variables for timing the simulation
 
 	call initialize_communications(params)
 
-	! INITIALIZATION STAGE
+	! * * * INITIALIZATION STAGE * * *
 	call initialize_korc_parameters(params) ! Initialize korc parameters
 
 	call initialize_particles(params,spp) ! Initialize particles
@@ -32,12 +32,11 @@ implicit none
 	call define_time_step(cpp,params)
 
 	call initialize_HDF5()
-	! END OF INITIALIZATION STAGE
-
-	write(6,'("Time step: ",1E10.5)') params%dt
+	! * * * INITIALIZATION STAGE * * *
 
 	call normalize_variables(params,spp,EB,cpp)
 
+	call save_simulation_parameters(params,spp,EB,cpp)
 
 	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
 	! *** BEYOND THIS POINT VARIABLES ARE DIMENSIONLESS ***
@@ -46,7 +45,7 @@ implicit none
 	! First particle push
 	call advance_particles_velocity(params,EB,spp,0.5_rp*params%dt)
 
-	open(unit=default_unit_write,file=TRIM(params%path_to_outputs),status='UNKNOWN',form='formatted')
+!	open(unit=default_unit_write,file=TRIM(params%path_to_outputs),status='UNKNOWN',form='formatted')
 !	open(unit=202,file='./outputFiles/position.dat',status='UNKNOWN',form='formatted')
 
 	t1 = MPI_WTIME()
@@ -58,7 +57,7 @@ implicit none
 !            write(6,'("Saving variables... ",I15)') it/params%output_cadence
 			if (params%mpi_params%rank_topo .EQ. 0) then
 !				write(default_unit_write,'(F15.5,F15.5,F15.5)') spp(1)%vars%kappa(1)/cpp%length
-				write(default_unit_write,'(F15.12)') spp(1)%vars%gamma(1)
+!				write(default_unit_write,'(F15.12)') spp(1)%vars%gamma(1)
 !				write(202,'(F15.5,F15.5,F15.5)') spp(1)%vars%X(:,1)*cpp%length
 			end if
         end if
@@ -70,12 +69,13 @@ implicit none
 	close(default_unit_write)
 !	close(202)
 
-	! DEALLOCATION OF VARIABLES
-	call deallocate_variables(params,spp)
-	! DEALLOCATION OF VARIABLES
-
+	! * * * FINALIZING SIMULATION * * * 
 	call finalize_HDF5()
 
+	! DEALLOCATION OF VARIABLES
+	call deallocate_variables(params,spp)
+
 	call finalize_communications(params)
+	! * * * FINALIZING SIMULATION * * * 
 
 end program main

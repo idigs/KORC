@@ -31,7 +31,6 @@ implicit none
     Xcyl(2,:) = atan2(X(2,:), X(1,:))
     Xcyl(2,:) = modulo(Xcyl(2,:), 2.0_rp*C_PI)
     Xcyl(3,:) = X(3,:)
-
 end subroutine cart_to_cyl
 
 
@@ -40,8 +39,8 @@ implicit none
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: X ! X(1,:) = x, X(2,:) = y, X(3,:) = z
 	REAL(rp), INTENT(IN) :: Ro
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: Xtor ! Xtor(1,:) = r, Xtor(2,:) = theta, Xtor(3,:) = zeta
-	INTEGER(ip) :: pp ! Iterator(s)
-	INTEGER(ip) :: ss
+	INTEGER :: pp ! Iterator(s)
+	INTEGER :: ss
 
 	ss = SIZE(X,2)
 
@@ -56,7 +55,6 @@ implicit none
 	end do
 !$OMP END DO
 !$OMP END PARALLEL
-
 end subroutine cart_to_tor
 
 
@@ -64,8 +62,8 @@ subroutine interp_field(prtcls,EB)
 implicit none
 	TYPE(PARTICLES), INTENT(INOUT) :: prtcls
 	TYPE(FIELDS), INTENT(IN) :: EB
-	INTEGER(ip) ii,pp ! Iterator(s)
-	INTEGER(ip) :: ss
+	INTEGER ii,pp ! Iterator(s)
+	INTEGER :: ss
 
 end subroutine interp_field
 
@@ -91,7 +89,7 @@ implicit none
 	REAL(rp), DIMENSION(3) :: U, U_hs, V_hs, tau, up, t
 	REAL(rp), DIMENSION(3) :: acc, dacc, b_unit ! variables for diagnostics
 	REAL(rp) :: B, vxa, vpar, vperp ! variables for diagnostics
-	INTEGER(ip) :: ii,pp ! Iterator(s)
+	INTEGER :: ii,pp ! Iterator(s)
 
 
 	do ii = 1,params%num_species
@@ -159,7 +157,6 @@ implicit none
 !$OMP END PARALLEL
 
 	end do
-
 end subroutine advance_particles_velocity
 
 
@@ -169,7 +166,7 @@ implicit none
 	TYPE(FIELDS), INTENT(IN) :: EB
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
 	REAL(rp), INTENT(IN) :: dt
-	INTEGER(ip) :: ii,pp ! Iterator(s)
+	INTEGER :: ii,pp ! Iterator(s)
 
     do ii = 1,params%num_species
 !$OMP PARALLEL PRIVATE(pp) SHARED(spp,dt,params,ii)
