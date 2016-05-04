@@ -337,8 +337,6 @@ implicit none
 		call h5fclose_f(h5file_id, h5error)
 	end if
 
-	call MPI_BARRIER(params%mpi_params%rank_topo, mpierror)
-
 end subroutine save_simulation_parameters
 
 end module korc_HDF5

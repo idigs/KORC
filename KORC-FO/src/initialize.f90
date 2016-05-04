@@ -198,15 +198,16 @@ subroutine initialization_sanity_check(params)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	INTEGER :: ierr
+	LOGICAL :: flag = .FALSE.
 
-	if (params%mpi_params%rank_topo .EQ. 0) then
+	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'("* * * SANITY CHECK * * *")')
 	end if
 
-	call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+	call MPI_INITIALIZED(flag, ierr)
 
 !$OMP PARALLEL
-	write(6,'("MPI: ",I2," OMP thread: ", I2)') params%mpi_params%rank_topo, OMP_GET_THREAD_NUM()
+	write(6,'("MPI: ",I2," OMP thread: ", I2, " Initialized: ",l)') params%mpi_params%rank_topo, OMP_GET_THREAD_NUM(), flag
 !$OMP END PARALLEL
 end subroutine initialization_sanity_check
 

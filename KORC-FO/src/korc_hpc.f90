@@ -69,15 +69,12 @@ end subroutine initialize_mpi
 subroutine finalize_mpi(params)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	LOGICAL :: flag
+	LOGICAL :: flag = .FALSE.
 	INTEGER :: mpierr
 
-	flag = .FALSE.
-	write(6,'("MPI: ",I2," Flag 1 ",l)') params%mpi_params%rank, flag
-	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 	call MPI_FINALIZE(mpierr)
 	call MPI_FINALIZED(flag, mpierr)
-	write(6,'("MPI: ",I2," Flag 2 ",l)') params%mpi_params%rank, flag
+	write(6,'("MPI: ",I2," FINALIZED: ",l)') params%mpi_params%rank, flag
 end subroutine finalize_mpi
 
 end module korc_hpc
