@@ -1,8 +1,10 @@
 module initialize
+
 use korc_types
-use main_mpi
+use korc_hpc
+use constants
 use external_subroutines
-use omp_lib
+
 implicit none
 
 	PRIVATE :: set_paths, load_korc_params, initialization_sanity_check
@@ -65,12 +67,17 @@ subroutine initialize_particles(params,ptcls)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: ptcls
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: ppp, q, m, Eo, Ro, Zo
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: ppp
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: q
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: m
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: Eo
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: Ro
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zo
 	LOGICAL, DIMENSION(:), ALLOCATABLE :: runaway
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Vo
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Xo
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: angle, radius ! temporary vars
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: r ! temporary var
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: r ! temporary variable
 	INTEGER :: ii ! Iterator
 
 	NAMELIST /plasma_species/ ppp, q, m, Eo, runaway, Ro, Zo, r
@@ -155,11 +162,6 @@ subroutine initialize_particles(params,ptcls)
 		ptcls(ii)%vars%V(2,:) = -Vo
 		ptcls(ii)%vars%V(3,:) = 0.0_rp
 
-!		open(unit=default_unit_write,file=TRIM(params%path_to_outputs),status='UNKNOWN',form='formatted')
-!		write(default_unit_write,'(F10.4,F10.4,F10.4)') ptcls(ii)%vars%X(:,:)
-!		close(default_unit_write)
-!		write(6,*) ptcls(ii)%vars%X(3,:) !ptcls(ii)%vars%gamma(:,1)
-
 		DEALLOCATE(angle)
 		DEALLOCATE(radius)
 		DEALLOCATE(Xo)
@@ -222,7 +224,6 @@ subroutine initialize_fields(params,EB)
 			q_factor_at_separatrix,free_param
 
 	if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
-!		write(6,'("* * * Using analytical magnetic field * * *")')
 		open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 		read(default_unit_open,nml=analytic_mag_field_params)
 		close(default_unit_open)

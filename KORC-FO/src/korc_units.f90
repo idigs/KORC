@@ -1,9 +1,12 @@
-module units
+module korc_units
+
 use korc_types
+use constants
+
 implicit none
 
-	PUBLIC :: compute_charcs_plasma_params
-!	PRIVATE :: 
+	PUBLIC :: compute_charcs_plasma_params, define_time_step, normalize_variables
+
 contains
 
 subroutine compute_charcs_plasma_params(spp,EB,cpp)
@@ -32,6 +35,7 @@ implicit none
 	cpp%length = cpp%velocity*cpp%time
 end subroutine compute_charcs_plasma_params
 
+
 subroutine define_time_step(cpp,params)
 implicit none
 	TYPE(KORC_PARAMS), INTENT(OUT) :: params
@@ -39,8 +43,8 @@ implicit none
 
 ! 	This definition will be changed as more species and electromagnetic fields
 !	are included.
-
 	params%dt = params%dt*cpp%time
+
 end subroutine define_time_step
 
 
@@ -83,4 +87,4 @@ implicit none
 !		.
 end subroutine normalize_variables
 
-end module units
+end module korc_units

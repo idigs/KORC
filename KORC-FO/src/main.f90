@@ -1,13 +1,13 @@
 program main
 
 use korc_types
-use units
+use korc_units
+use korc_hpc
+use korc_HDF5
 use emf
 use pic
-use main_mpi
 use initialize
 use finalize
-use output_HDF5
 
 implicit none
 
@@ -56,7 +56,6 @@ implicit none
 		if ( modulo(it,params%output_cadence) .EQ. 0 ) then
 !            write(6,'("Saving variables... ",I15)') it/params%output_cadence
 			if (params%mpi_params%rank_topo .EQ. 0) then
-!				write(default_unit_write,'(F15.5,F15.5,F15.5)') spp(1)%vars%kappa(1)/cpp%length
 !				write(default_unit_write,'(F15.12)') spp(1)%vars%gamma(1)
 !				write(202,'(F15.5,F15.5,F15.5)') spp(1)%vars%X(:,1)*cpp%length
 			end if

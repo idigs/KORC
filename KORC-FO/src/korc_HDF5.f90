@@ -1,6 +1,8 @@
-module output_HDF5
+module korc_HDF5
+
 use korc_types
 use HDF5
+
 implicit none
 	PRIVATE :: isave_to_hdf5, rsave_to_hdf5
 	PUBLIC :: initialize_HDF5, finalize_HDF5, save_simulation_parameters
@@ -27,10 +29,17 @@ implicit none
 	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: idata
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: attr
 	CHARACTER(4) :: aname = "Type"
-	INTEGER(HID_T) :: dset_id, dspace_id, aspace_id, attr_id, atype_id
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims, adims
-	INTEGER :: rank, arank
-	INTEGER(SIZE_T) :: tmplen, attrlen
+	INTEGER(HID_T) :: dset_id
+	INTEGER(HID_T) :: dspace_id
+	INTEGER(HID_T) :: aspace_id
+	INTEGER(HID_T) :: attr_id
+	INTEGER(HID_T) :: atype_id
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: adims
+	INTEGER :: rank
+	INTEGER :: arank
+	INTEGER(SIZE_T) :: tmplen
+	INTEGER(SIZE_T) :: attrlen
 	INTEGER :: h5error
 	INTEGER :: rr,dd ! Iterators
 
@@ -86,10 +95,17 @@ implicit none
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: rdata
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: attr
 	CHARACTER(4) :: aname = "Type"
-	INTEGER(HID_T) :: dset_id, dspace_id, aspace_id, attr_id, atype_id
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims, adims
-	INTEGER :: rank, arank
-	INTEGER(SIZE_T) :: tmplen, attrlen
+	INTEGER(HID_T) :: dset_id
+	INTEGER(HID_T) :: dspace_id
+	INTEGER(HID_T) :: aspace_id
+	INTEGER(HID_T) :: attr_id
+	INTEGER(HID_T) :: atype_id
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: adims
+	INTEGER :: rank
+	INTEGER :: arank
+	INTEGER(SIZE_T) :: tmplen
+	INTEGER(SIZE_T) :: attrlen
 	INTEGER :: h5error
 	INTEGER :: rr,dd ! Iterators
 
@@ -143,13 +159,17 @@ implicit none
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
 	TYPE(CHARCS_PARAMS), INTENT(IN) :: cpp
 	TYPE(FIELDS), INTENT(IN) :: EB
-	CHARACTER(MAX_STRING_LENGTH) :: filename, gname, dset
-	INTEGER(HID_T) :: h5file_id, group_id
+	CHARACTER(MAX_STRING_LENGTH) :: filename
+	CHARACTER(MAX_STRING_LENGTH) :: gname
+	CHARACTER(MAX_STRING_LENGTH) :: dset
+	INTEGER(HID_T) :: h5file_id
+	INTEGER(HID_T) :: group_id
 	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: rdata
 	INTEGER, DIMENSION(:), ALLOCATABLE :: idata
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: attr_data
-	INTEGER :: h5error, mpierror
+	INTEGER :: h5error
+	INTEGER :: mpierror
 
 	if (params%mpi_params%rank_topo .EQ. 0) then
 		filename = TRIM(params%path_to_outputs) // "simulation_parameters.h5"
@@ -203,7 +223,6 @@ implicit none
 		DEALLOCATE(idata)
 		DEALLOCATE(attr_data)
 
-
 		call h5gclose_f(group_id, h5error)
 
 
@@ -225,4 +244,4 @@ implicit none
 
 end subroutine save_simulation_parameters
 
-end module output_HDF5
+end module korc_HDF5

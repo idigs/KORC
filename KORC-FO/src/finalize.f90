@@ -1,6 +1,7 @@
 module finalize
+
 use korc_types
-use main_mpi
+use korc_hpc
 
 implicit none
 

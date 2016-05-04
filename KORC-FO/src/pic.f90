@@ -1,11 +1,11 @@
 module pic
-use korc_types
-use emf
-use main_mpi
-use omp_lib
-implicit none
 
-!REAL(rp), DIMENSION(3), PRIVATE :: B, Y
+use korc_types
+use korc_hpc
+use constants
+use emf
+
+implicit none
 
 PRIVATE :: cart_to_cyl, cart_to_tor, interp_field, cross
 PUBLIC :: advance_particles_position, advance_particles_velocity
@@ -13,7 +13,8 @@ PUBLIC :: advance_particles_position, advance_particles_velocity
 contains
 
 function cross(a,b)
-	REAL(rp), DIMENSION(3), INTENT(IN) :: a,b
+	REAL(rp), DIMENSION(3), INTENT(IN) :: a
+	REAL(rp), DIMENSION(3), INTENT(IN) :: b
 	REAL(rp), DIMENSION(3) :: cross
 
 	cross(1) = a(2)*b(3) - a(3)*b(2)
@@ -39,8 +40,7 @@ implicit none
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: X ! X(1,:) = x, X(2,:) = y, X(3,:) = z
 	REAL(rp), INTENT(IN) :: Ro
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: Xtor ! Xtor(1,:) = r, Xtor(2,:) = theta, Xtor(3,:) = zeta
-	INTEGER :: pp ! Iterator(s)
-	INTEGER :: ss
+	INTEGER :: pp, ss ! Iterators
 
 	ss = SIZE(X,2)
 
@@ -62,8 +62,7 @@ subroutine interp_field(prtcls,EB)
 implicit none
 	TYPE(PARTICLES), INTENT(INOUT) :: prtcls
 	TYPE(FIELDS), INTENT(IN) :: EB
-	INTEGER ii,pp ! Iterator(s)
-	INTEGER :: ss
+	INTEGER :: ii, pp, ss ! Iterators
 
 end subroutine interp_field
 
@@ -85,17 +84,18 @@ implicit none
 	TYPE(FIELDS), INTENT(IN) :: EB
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
 	REAL(rp), INTENT(IN) :: dt
-	REAL(rp) :: a, gammap, sigma, us, gamma, s, gamma_hs
-	REAL(rp), DIMENSION(3) :: U, U_hs, V_hs, tau, up, t
+	REAL(rp) :: a, gammap, sigma, us, gamma, s ! variables of leapfrog of Vay, J.-L. PoP (2008)
+	REAL(rp), DIMENSION(3) :: U, tau, up, t ! variables of leapfrog of Vay, J.-L. PoP (2008)
+	REAL(rp) :: gamma_hs
+	REAL(rp), DIMENSION(3) :: U_hs, V_hs
 	REAL(rp), DIMENSION(3) :: acc, dacc, b_unit ! variables for diagnostics
 	REAL(rp) :: B, vxa, vpar, vperp ! variables for diagnostics
-	INTEGER :: ii,pp ! Iterator(s)
+	INTEGER :: ii, pp ! Iterators
 
 
 	do ii = 1,params%num_species
 		if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
 			call interp_analytical_field(spp(ii)%vars, EB)
-!			write(6,'(F15.6,F15.6,F15.6)') spp(ii)%vars%B
 		else
 			call interp_field(spp(ii)%vars, EB)
 		end if
@@ -122,7 +122,6 @@ implicit none
 			s = 1.0_rp/(1.0_rp + sum(t**2)) ! variable 's' in Vay, J.-L. PoP (2008)
 
             U = s*( up + sum(up*t)*t + cross(up,t) )
-!            spp(ii)%vars%V(:,pp) = U/sqrt(1 + sum(U**2))
             spp(ii)%vars%V(:,pp) = U/gamma
 
 			spp(ii)%vars%gamma(pp) = gamma
@@ -166,7 +165,7 @@ implicit none
 	TYPE(FIELDS), INTENT(IN) :: EB
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
 	REAL(rp), INTENT(IN) :: dt
-	INTEGER :: ii,pp ! Iterator(s)
+	INTEGER :: ii, pp ! Iterators
 
     do ii = 1,params%num_species
 !$OMP PARALLEL PRIVATE(pp) SHARED(spp,dt,params,ii)

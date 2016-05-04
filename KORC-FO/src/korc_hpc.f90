@@ -1,6 +1,9 @@
-module main_mpi
+module korc_hpc
+
 use korc_types
+use omp_lib
 use mpi
+
 implicit none
 
 contains
@@ -71,4 +74,4 @@ subroutine finalize_mpi(params)
 	call MPI_FINALIZE(mpierr)
 end subroutine finalize_mpi
 
-end module main_mpi
+end module korc_hpc

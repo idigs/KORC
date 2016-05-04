@@ -1,38 +1,25 @@
-module constants
-implicit none
-	INTEGER, PARAMETER :: ip = SELECTED_INT_KIND(10) !
-#ifdef DOUBLE_PRECISION
-	INTEGER, PARAMETER :: rp = KIND(0.d0) ! Double precision kind
-#else
-	INTEGER, PARAMETER :: rp = KIND(1.0) ! Double precision kind
-#endif
-	INTEGER, PARAMETER :: sp = kind(1.0) ! Single precision kind
-	INTEGER, PARAMETER :: MAX_STRING_LENGTH = 1000_ip ! This value can be changed, beware of truncation errors
-	INTEGER, PARAMETER :: default_unit_open = 101_ip
-	INTEGER, PARAMETER :: default_unit_write = 201_ip
-
-	REAL(rp), PARAMETER :: C_E = 1.602176E-19_rp !Electron charge in C (absolute value)
-	REAL(rp), PARAMETER :: C_ME = 9.109382E-31_rp !Electron mass in kg
-	REAL(rp), PARAMETER :: C_MP = 1.672621E-27_rp !Proton mass in kg
-	REAL(rp), PARAMETER :: C_U = 1.660538E-27_rp !Atomic mass unit in kg
-	REAL(rp), PARAMETER :: C_KB = 1.380650E-23_rp !Boltzmann constant in Joules/Kelvin
-	REAL(rp), PARAMETER :: C_EPSILON = 8.854E-12_rp !Vacuum permittivity in C^2/(N*m^2)
-	REAL(rp), PARAMETER :: C_C = 299792458.0_rp !Light speed in m/s
-	REAL(rp), PARAMETER :: C_PI = 4.0_rp*ATAN(1.0_rp)
-	REAL(rp), PARAMETER :: C_MU = 4.0_rp*C_PI*1E-7_rp !Vacuum permeability in N/A^2
-contains
-
-subroutine show_consts()
-	write(6,*) C_PI
-end subroutine show_consts
-
-end module constants
-
-
-
 module korc_types
-use constants
 implicit none
+
+! * * * * * * * * * * * * * * * * * * * * !
+! * * * Real and integer precisions * * * !
+! * * * * * * * * * * * * * * * * * * * * !
+
+	INTEGER, PUBLIC, PARAMETER  :: ip = SELECTED_INT_KIND(10) !
+#ifdef DOUBLE_PRECISION
+	INTEGER, PUBLIC, PARAMETER :: rp = KIND(0.d0) ! Double precision kind
+#else
+	INTEGER, PUBLIC, PARAMETER :: rp = KIND(1.0) ! Double precision kind
+#endif
+	INTEGER, PUBLIC, PARAMETER :: sp = kind(1.0) ! Single precision kind
+
+! * * * * * * * * * * * * * * * * * * * * !
+! * * * Real and integer precisions * * * !
+! * * * * * * * * * * * * * * * * * * * * !
+
+	INTEGER, PUBLIC, PARAMETER :: MAX_STRING_LENGTH = 1000 ! This value can be changed, beware of string truncation
+	INTEGER, PUBLIC, PARAMETER :: default_unit_open = 101
+	INTEGER, PUBLIC, PARAMETER :: default_unit_write = 201
 
 ! * * * * * * * * * * * * * * * * * * * * !
 ! * * * Basic korc array structures * * * !
@@ -67,13 +54,13 @@ TYPE, PUBLIC :: KORC_PARAMS
 	CHARACTER(MAX_STRING_LENGTH) :: path_to_outputs
 	INTEGER :: num_omp_threads
 	LOGICAL :: restart
+	REAL(rp) :: dt
 	INTEGER(ip) :: t_steps
 	INTEGER(ip) :: output_cadence
 	INTEGER(ip) :: num_snapshots
-	REAL(rp) :: dt
-	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
 	INTEGER :: num_species
 	INTEGER :: pic_algorithm
+	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
 
 	TYPE(KORC_MPI) :: mpi_params
 END TYPE KORC_PARAMS
@@ -107,16 +94,16 @@ END TYPE SPECIES
 
 
 TYPE, PUBLIC :: CHARCS_PARAMS
-	REAL(rp) :: time;
-	REAL(rp) :: velocity;
-	REAL(rp) :: length;
-	REAL(rp) :: mass;
-	REAL(rp) :: charge;
-	REAL(rp) :: density;
-	REAL(rp) :: electric_field;
-	REAL(rp) :: magnetic_field;
-	REAL(rp) :: pressure;
-	REAL(rp) :: temperature;
+	REAL(rp) :: time
+	REAL(rp) :: velocity
+	REAL(rp) :: length
+	REAL(rp) :: mass
+	REAL(rp) :: charge
+	REAL(rp) :: density
+	REAL(rp) :: electric_field
+	REAL(rp) :: magnetic_field
+	REAL(rp) :: pressure
+	REAL(rp) :: temperature
 END TYPE CHARCS_PARAMS
 
 
