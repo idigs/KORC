@@ -4,14 +4,27 @@ use korc_types
 use HDF5
 
 implicit none
+
+	INTEGER(HID_T), PRIVATE :: KORC_HDF5_REAL ! Real precision used in HDF5
+	INTEGER(SIZE_T), PRIVATE :: rp_hdf5 ! Size of real precision used in HDF5
+
 	PRIVATE :: isave_to_hdf5, rsave_to_hdf5
 	PUBLIC :: initialize_HDF5, finalize_HDF5, save_simulation_parameters
+
 contains
+
 
 subroutine initialize_HDF5()
 implicit none
 	INTEGER :: h5error  ! Error flag
 	call h5open_f(h5error)
+	
+#ifdef HDF5_DOUBLE_PRESICION
+	call h5tcopy_f(H5T_NATIVE_DOUBLE, KORC_HDF5_REAL, h5error)
+#elif HDF5_SINGLE_PRESICION
+	call h5tcopy_f(H5T_NATIVE_REAL, KORC_HDF5_REAL, h5error)
+#endif
+	call h5tget_size_f(KORC_HDF5_REAL, rp_hdf5, h5error)
 end subroutine initialize_HDF5
 
 
@@ -106,6 +119,7 @@ implicit none
 	INTEGER :: arank
 	INTEGER(SIZE_T) :: tmplen
 	INTEGER(SIZE_T) :: attrlen
+
 	INTEGER :: h5error
 	INTEGER :: rr,dd ! Iterators
 
@@ -118,9 +132,15 @@ implicit none
 	adims = shape(attr)
 
 	! * * * Write data to file * * *
+
 	call h5screate_simple_f(rank,dims,dspace_id,h5error)
-	call h5dcreate_f(h5file_id, TRIM(dset), H5T_NATIVE_DOUBLE, dspace_id, dset_id, h5error)
-	call h5dwrite_f(dset_id, H5T_NATIVE_DOUBLE, rdata, dims, h5error)
+	call h5dcreate_f(h5file_id, TRIM(dset), KORC_HDF5_REAL, dspace_id, dset_id, h5error)
+
+	if (rp .EQ. INT(rp_hdf5)) then
+		call h5dwrite_f(dset_id, KORC_HDF5_REAL, rdata, dims, h5error)
+	else
+		call h5dwrite_f(dset_id, KORC_HDF5_REAL, REAL(rdata,4), dims, h5error)
+	end if
 
 	! * * * Write attribute of data to file * * *
 	tmplen = 0
@@ -170,6 +190,9 @@ implicit none
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: attr_data
 	INTEGER :: h5error
 	INTEGER :: mpierror
+
+	INTEGER(SIZE_T) :: shdf5
+
 
 	if (params%mpi_params%rank_topo .EQ. 0) then
 		filename = TRIM(params%path_to_outputs) // "simulation_parameters.h5"
@@ -229,12 +252,86 @@ implicit none
 		! Plasma species group
 		gname = "plasmaSpecies"
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
+
+		ALLOCATE(rdata(params%num_species))
+		ALLOCATE(idata(params%num_species))
+		ALLOCATE(attr_data(params%num_species))
+
+		dset = TRIM(gname) // "/ppp"
+		attr_data(1) = "Particles per (mpi) process"
+		idata = spp%ppp
+		call isave_to_hdf5(h5file_id,dset,idata,attr_data)
+
+		dset = TRIM(gname) // "/q"
+		attr_data(1) = "Electric charge"
+		rdata = spp%q*cpp%charge
+		call rsave_to_hdf5(h5file_id,dset,rdata,attr_data)
+
+		dset = TRIM(gname) // "/m"
+		attr_data(1) = "Species mass in kg"
+		rdata = spp%m*cpp%mass
+		call rsave_to_hdf5(h5file_id,dset,rdata,attr_data)
+
+		dset = TRIM(gname) // "/Eo"
+		attr_data(1) = "Initial (average) energy in eV"
+		rdata = spp%Eo*cpp%energy
+		call rsave_to_hdf5(h5file_id,dset,rdata,attr_data)
+
+		dset = TRIM(gname) // "/wc"
+		attr_data(1) = "Average cyclotron frequency in Hz"
+		rdata = spp%wc/cpp%time
+		call rsave_to_hdf5(h5file_id,dset,rdata,attr_data)
+
 		call h5gclose_f(group_id, h5error)
 
+		DEALLOCATE(rdata)
+		DEALLOCATE(idata)
+		DEALLOCATE(attr_data)
 
 		! Electromagnetic fields group
-		gname = "emf"
+		gname = "electromagneticFields"
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
+
+		ALLOCATE(rdata(1))
+		ALLOCATE(idata(1))
+		ALLOCATE(attr_data(1))
+
+		dset = TRIM(gname) // "/Bo"
+		attr_data(1) = "Characteristic (toroidal) field in T"
+		rdata = EB%Bo*cpp%magnetic_field
+		call rsave_to_hdf5(h5file_id,dset,rdata,attr_data)
+
+		if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
+			dset = TRIM(gname) // "/a"
+			attr_data(1) = "Minor radius in m"
+			rdata = EB%AB%a*cpp%length
+			call rsave_to_hdf5(h5file_id,dset,rdata,attr_data)
+
+			dset = TRIM(gname) // "/Ro"
+			attr_data(1) = "Major radius in m"
+			rdata = EB%AB%Ro*cpp%length
+			call rsave_to_hdf5(h5file_id,dset,rdata,attr_data)
+
+			dset = TRIM(gname) // "/qa"
+			attr_data(1) = "Safety factor at minor radius"
+			rdata = EB%AB%qa
+			call rsave_to_hdf5(h5file_id,dset,rdata,attr_data)
+
+			dset = TRIM(gname) // "/lambda"
+			attr_data(1) = "Parameter lamda in m"
+			rdata = EB%AB%lambda*cpp%length
+			call rsave_to_hdf5(h5file_id,dset,rdata,attr_data)
+
+			dset = TRIM(gname) // "/Bpo"
+			attr_data(1) = "Poloidal magnetic field in T"
+			rdata = EB%AB%Bpo*cpp%magnetic_field
+			call rsave_to_hdf5(h5file_id,dset,rdata,attr_data)
+		end if
+
+		DEALLOCATE(rdata)
+		DEALLOCATE(idata)
+		DEALLOCATE(attr_data)
+
 		call h5gclose_f(group_id, h5error)
 
 		call h5fclose_f(h5file_id, h5error)

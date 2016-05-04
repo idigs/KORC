@@ -12,10 +12,10 @@ contains
 subroutine compute_charcs_plasma_params(spp,EB,cpp)
 implicit none
 	TYPE(CHARCS_PARAMS), INTENT(INOUT) :: cpp
-	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
+	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
 	TYPE(FIELDS), INTENT(IN) :: EB
 	INTEGER :: ind
-	REAL(rp), DIMENSION(SIZE(spp)) :: wc
+!	REAL(rp), DIMENSION(SIZE(spp)) :: wc
 
 	! To be defined:
 	! REAL(rp) :: density;
@@ -26,13 +26,14 @@ implicit none
 	cpp%velocity = C_C
 	cpp%magnetic_field = EB%Bo
 
-	wc = ( abs(spp(:)%q)/spp(:)%m )*cpp%magnetic_field
-	ind = maxloc(wc,1) ! Index to maximum cyclotron frequency
+	spp(:)%wc = ( abs(spp(:)%q)/spp(:)%m )*cpp%magnetic_field
+	ind = maxloc(spp(:)%wc,1) ! Index to maximum cyclotron frequency
 
-	cpp%time = 2_rp*C_PI/wc(ind)
+	cpp%time = 2.0_rp*C_PI/spp(ind)%wc
 	cpp%mass = spp(ind)%m
 	cpp%charge = abs(spp(ind)%q)
 	cpp%length = cpp%velocity*cpp%time
+	cpp%energy = cpp%mass*(cpp%velocity**2)
 end subroutine compute_charcs_plasma_params
 
 
@@ -63,6 +64,8 @@ implicit none
 	do ii=1,size(spp)
 		spp(ii)%q = spp(ii)%q/cpp%charge
 		spp(ii)%m = spp(ii)%m/cpp%mass
+		spp(ii)%Eo = spp(ii)%Eo/cpp%energy
+		spp(ii)%wc = spp(ii)%wc*cpp%time
 		spp(ii)%vars%X = spp(ii)%vars%X/cpp%length
 		spp(ii)%vars%V = spp(ii)%vars%V/cpp%velocity
 		spp(ii)%vars%Rgc = spp(ii)%vars%Rgc/cpp%length

@@ -6,12 +6,12 @@ implicit none
 ! * * * * * * * * * * * * * * * * * * * * !
 
 	INTEGER, PUBLIC, PARAMETER  :: ip = SELECTED_INT_KIND(10) !
+	INTEGER, PUBLIC, PARAMETER  :: idef = KIND(1) !
 #ifdef DOUBLE_PRECISION
-	INTEGER, PUBLIC, PARAMETER :: rp = KIND(0.d0) ! Double precision kind
-#else
-	INTEGER, PUBLIC, PARAMETER :: rp = KIND(1.0) ! Double precision kind
+	INTEGER, PUBLIC, PARAMETER :: rp = KIND(0.d0) ! Double precision
+#elif SINGLE_PRECISION
+	INTEGER, PUBLIC, PARAMETER :: rp = KIND(1.0) ! Single precision
 #endif
-	INTEGER, PUBLIC, PARAMETER :: sp = kind(1.0) ! Single precision kind
 
 ! * * * * * * * * * * * * * * * * * * * * !
 ! * * * Real and integer precisions * * * !
@@ -102,6 +102,7 @@ TYPE, PUBLIC :: CHARCS_PARAMS
 	REAL(rp) :: density
 	REAL(rp) :: electric_field
 	REAL(rp) :: magnetic_field
+	REAL(rp) :: energy
 	REAL(rp) :: pressure
 	REAL(rp) :: temperature
 END TYPE CHARCS_PARAMS

@@ -10,6 +10,7 @@ contains
 subroutine finalize_communications(params)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
+
 	call finalize_mpi(params)
 end subroutine finalize_communications
 
