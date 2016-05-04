@@ -36,11 +36,13 @@ implicit none
 
 	call normalize_variables(params,spp,EB,cpp)
 
-	call save_simulation_parameters(params,spp,EB,cpp)
+	call save_simulation_parameters(params,cpp,spp,EB)
 
 	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
 	! *** BEYOND THIS POINT VARIABLES ARE DIMENSIONLESS ***
 	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
+
+! write(6,*) RANGE(INT(1,8)), RANGE(INT(1,4))
 
 	! First particle push
 	call advance_particles_velocity(params,EB,spp,0.5_rp*params%dt)
@@ -51,9 +53,8 @@ implicit none
 		call advance_particles_position(params,EB,spp,params%dt)
 		call advance_particles_velocity(params,EB,spp,params%dt)
 		if ( modulo(it,params%output_cadence) .EQ. 0 ) then
-			if (params%mpi_params%rank_topo .EQ. 0) then
-!				write(default_unit_write,'(F15.12)') spp(1)%vars%gamma(1)
-			end if
+			call save_simulation_outputs(params,cpp,spp,EB,it)
+!			write(default_unit_write,'(F15.12)') spp(1)%vars%gamma(1)
         end if
 	end do
 	

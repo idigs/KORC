@@ -5,7 +5,7 @@ implicit none
 ! * * * Real and integer precisions * * * !
 ! * * * * * * * * * * * * * * * * * * * * !
 
-	INTEGER, PUBLIC, PARAMETER  :: ip = SELECTED_INT_KIND(10) !
+	INTEGER, PUBLIC, PARAMETER  :: ip = KIND(INT(1,8)) ! SELECTED_INT_KIND(10) !
 	INTEGER, PUBLIC, PARAMETER  :: idef = KIND(1) !
 #ifdef DOUBLE_PRECISION
 	INTEGER, PUBLIC, PARAMETER :: rp = KIND(0.d0) ! Double precision

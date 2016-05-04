@@ -1,5 +1,5 @@
 &input_parameters
-	t_steps = 10000
+	t_steps = 20
 	dt = 0.02 ! Time step as fraction of non-relativistic gyro-period
 	output_cadence = 10
 	num_species = 2
