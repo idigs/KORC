@@ -142,6 +142,7 @@ implicit none
 			b_unit = spp(ii)%vars%B(:,pp)/B
 			vpar = DOT_PRODUCT(spp(ii)%vars%V(:,pp), b_unit)
 			vperp = sqrt( DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)) - vpar**2 )
+            spp(ii)%vars%eta(pp) = 180*modulo(atan2(vperp,vpar), 2.0_rp*C_PI)/C_PI
 			spp(ii)%vars%mu(pp) = 0.5_rp*gamma*spp(ii)%m*vperp**2/B
 
 			! Curvature and torsion

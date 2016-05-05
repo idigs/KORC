@@ -11,7 +11,7 @@ ifeq ($(UNAME), Darwin)
 	FC = mpif90
 
 	FCDEFINEFLAGS =-DDOUBLE_PRECISION	-DHDF5_SINGLE_PRESICION
-	FCFLAGS =-cpp   -J$(MOD) -fopenmp    -g -fbacktrace
+	FCFLAGS =-cpp   -J$(MOD) -fopenmp    -O3
 
 	HDF5_INSTALL =../HDF5
 
