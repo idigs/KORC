@@ -84,10 +84,10 @@ KORC-FO: $(BINARIES)
 
 
 info:
-	@echo	"COMPILING FOR: "$(UNAME)
-	@echo	"COMPILING..."
+	@echo	"COMPILING KORC-KO FOR: "$(UNAME)
+	@echo	"STARTING COMPILATION..."
 
 clean:
-	@echo	"CLEANING COMPILATION..."
+	@echo	"CLEANING..."
 	rm -f $(BINARIES) $(MOD)/*.mod
 
