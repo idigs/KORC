@@ -306,7 +306,7 @@ implicit none
 		call h5fcreate_f(TRIM(filename), H5F_ACC_TRUNC_F, h5file_id, h5error)
 
 		! Simulation parameters group
-		gname = "parameters"
+		gname = "simulation"
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
 		ALLOCATE(attr_array(1))		
@@ -350,7 +350,7 @@ implicit none
 
 
 		! Plasma species group
-		gname = "plasmaSpecies"
+		gname = "species"
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
 		ALLOCATE(rdata(params%num_species))
@@ -390,7 +390,7 @@ implicit none
 		DEALLOCATE(attr_array)
 
 		! Electromagnetic fields group
-		gname = "electromagneticFields"
+		gname = "fields"
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
 		dset = TRIM(gname) // "/Bo"
@@ -418,6 +418,49 @@ implicit none
 			attr = "Poloidal magnetic field in T"
         		call rsave_to_hdf5(h5file_id,dset,EB%AB%Bpo*cpp%magnetic_field,attr)
 		end if
+
+		call h5gclose_f(group_id, h5error)
+
+
+		! Characteristic scales
+		gname = "scales"
+		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
+
+		dset = TRIM(gname) // "/t"
+		attr = "Characteristic time in secs"
+		call rsave_to_hdf5(h5file_id,dset,cpp%time,attr)
+
+		dset = TRIM(gname) // "/m"
+		attr = "Characteristic mass in kg"
+		call rsave_to_hdf5(h5file_id,dset,cpp%mass,attr)
+
+		dset = TRIM(gname) // "/q"
+		attr = "Characteristic charge in Coulombs"
+		call rsave_to_hdf5(h5file_id,dset,cpp%charge,attr)
+
+		dset = TRIM(gname) // "/l"
+		attr = "Characteristic length in m"
+		call rsave_to_hdf5(h5file_id,dset,cpp%length,attr)
+
+		dset = TRIM(gname) // "/K"
+		attr = "Characteristic kinetic energy in J"
+		call rsave_to_hdf5(h5file_id,dset,cpp%energy,attr)
+
+		dset = TRIM(gname) // "/n"
+		attr = "Characteristic plasma density in m^-3"
+		call rsave_to_hdf5(h5file_id,dset,cpp%density,attr)
+
+		dset = TRIM(gname) // "/E"
+		attr = "Characteristic electric field in V/m"
+		call rsave_to_hdf5(h5file_id,dset,cpp%electric_field,attr)
+
+		dset = TRIM(gname) // "/P"
+		attr = "Characteristic pressure in Pa"
+		call rsave_to_hdf5(h5file_id,dset,cpp%pressure,attr)
+
+		dset = TRIM(gname) // "/T"
+		attr = "Characteristic plasma temperature"
+		call rsave_to_hdf5(h5file_id,dset,cpp%temperature,attr)
 
 		call h5gclose_f(group_id, h5error)
 

@@ -15,13 +15,6 @@ implicit none
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
 	TYPE(FIELDS), INTENT(IN) :: EB
 	INTEGER :: ind
-!	REAL(rp), DIMENSION(SIZE(spp)) :: wc
-
-	! To be defined:
-	! REAL(rp) :: density;
-	! REAL(rp) :: electric_field;
-	! REAL(rp) :: pressure;
-	! REAL(rp) :: temperature;
 
 	cpp%velocity = C_C
 	cpp%magnetic_field = EB%Bo
@@ -34,6 +27,11 @@ implicit none
 	cpp%charge = abs(spp(ind)%q)
 	cpp%length = cpp%velocity*cpp%time
 	cpp%energy = cpp%mass*(cpp%velocity**2)
+
+	cpp%density = 0.0_rp
+	cpp%electric_field = 0.0_rp
+	cpp%pressure = 0.0_rp
+	cpp%temperature = 0.0_rp
 end subroutine compute_charcs_plasma_params
 
 
