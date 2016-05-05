@@ -29,12 +29,17 @@ end
 function data = loadData(ST)
 data = struct;
 
-dataCell = {};
-
 for ss=1:ST.params.simulation.num_species
-    for ff=1:ST.params.simulation.nmpi
-        
+    data.(['sp' num2str(ss)]) = struct;
+    for ff=1:ST.params.simulation.nmpi 
+        filename = [ST.path 'file_' num2str(ff-1) '.h5'];
+        for ii=1:ST.params.simulation.num_snapshots
+            position = ...
+                ['/' num2str(ii*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)];
+            h5disp(filename,position,'min')
+            % y = h5read(filename)
+        end
     end
-    
 end
+
 end
