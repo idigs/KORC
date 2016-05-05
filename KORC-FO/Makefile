@@ -10,8 +10,8 @@ BIN=./bin
 ifeq ($(UNAME), Darwin)
 	FC = mpif90
 
-	FCDEFINEFLAGS =-DDOUBLE_PRECISION	-DHDF5_DOUBLE_PRESICION
-	FCFLAGS =-cpp   -J$(MOD) -fopenmp    -O2
+	FCDEFINEFLAGS =-DDOUBLE_PRECISION	-DHDF5_SINGLE_PRESICION
+	FCFLAGS =-cpp   -J$(MOD) -fopenmp    -g -fbacktrace
 
 	HDF5_INSTALL =../HDF5
 
@@ -84,8 +84,7 @@ KORC-FO: $(BINARIES)
 
 
 info:
-#	@echo	"Compiling the code for MacOS"
-	@echo	$(UNAME)
+	@echo	"COMPILING FOR: "$(UNAME)
 	@echo	"COMPILING..."
 
 clean:
