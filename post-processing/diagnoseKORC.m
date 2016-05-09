@@ -8,6 +8,8 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
+ST.PD = pitchAngleDiagnostic(ST,30);
+
 end
 
 function params = loadSimulationParameters(ST)
@@ -29,17 +31,127 @@ end
 function data = loadData(ST)
 data = struct;
 
-for ss=1:ST.params.simulation.num_species
-    data.(['sp' num2str(ss)]) = struct;
-    for ff=1:ST.params.simulation.nmpi 
-        filename = [ST.path 'file_' num2str(ff-1) '.h5'];
+% list = {'X'};%,'V','Rgc'};
+% 
+% for ll=1:length(list)
+%     disp(['Loading ' list{ll}])
+%     for ss=1:ST.params.simulation.num_species
+%         tnp = double(ST.params.species.ppp(ss)*ST.params.simulation.nmpi);
+%         
+%         data.(['sp' num2str(ss)]).(list{ll}) = ...
+%             zeros(3,tnp,ST.params.simulation.num_snapshots);
+%         
+%         for ff=1:ST.params.simulation.nmpi
+%             filename = [ST.path 'file_' num2str(ff-1) '.h5'];
+%             indi = (ff - 1)*double(ST.params.species.ppp(ss)) + 1;
+%             indf = ff*double(ST.params.species.ppp(ss));
+%             for ii=1:ST.params.simulation.num_snapshots
+%                 dataset = ...
+%                     ['/' num2str(ii*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
+%                     '/' list{ll}];
+%                 
+%                 data.(['sp' num2str(ss)]).(list{ll})(:,indi:indf,ii) = ...
+%                     h5read(filename, dataset);
+%             end
+%             
+%         end
+%         
+%     end
+% end
+
+
+list = {'eta','gamma'};%,'mu','kappa','tau'};
+
+for ll=1:length(list)
+    for ss=1:ST.params.simulation.num_species
+        tnp = double(ST.params.species.ppp(ss)*ST.params.simulation.nmpi);
+        
+        data.(['sp' num2str(ss)]).(list{ll}) = ...
+            zeros(tnp,ST.params.simulation.num_snapshots);
+        
         for ii=1:ST.params.simulation.num_snapshots
-            position = ...
-                ['/' num2str(ii*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)];
-            h5disp(filename,position,'min')
-            % y = h5read(filename)
+            disp(['Loading: ' list{ll} ' Snapshot: ' num2str(ii)])
+            
+            for ff=1:ST.params.simulation.nmpi
+                
+                filename = [ST.path 'file_' num2str(ff-1) '.h5'];
+                indi = (ff - 1)*double(ST.params.species.ppp(ss)) + 1;
+                indf = ff*double(ST.params.species.ppp(ss));
+                
+                dataset = ...
+                    ['/' num2str(ii*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
+                    '/' list{ll}];
+                
+                data.(['sp' num2str(ss)]).(list{ll})(indi:indf,ii) = ...
+                    h5read(filename, dataset);
+            end
+            
         end
+        
     end
 end
+
+end
+
+function PD = pitchAngleDiagnostic(ST,numBins)
+PD = struct;
+
+tmp = [];
+
+for ss=1:ST.params.simulation.num_species
+    tmp = [tmp;ST.data.(['sp' num2str(ss)]).eta];
+end
+
+minVal = min(min( tmp ));
+maxVal = max(max( tmp ));
+vals = linspace(minVal,maxVal,numBins);
+
+f = zeros(numBins,ST.params.simulation.num_snapshots);
+
+
+for ii=1:ST.params.simulation.num_snapshots
+    [f(:,ii),~] = hist(tmp(:,ii),vals);
+end
+
+cad = ST.params.simulation.output_cadence;
+time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
+tmax = max(time);
+tmin = min(time);
+
+figure
+surf(time,vals,f,'LineStyle','none')
+axis([tmin tmax minVal maxVal])
+xlabel('Time (s)','Interpreter','latex','FontSize',16)
+ylabel('Pitch angle $\theta$ (degrees)','Interpreter','latex','FontSize',16)
+colormap(jet)
+
+% for ss=1:ST.params.simulation.num_species
+%     f = zeros(numBins,ST.params.simulation.num_snapshots);
+%     
+%     minVal = min(min( ST.data.(['sp' num2str(ss)]).eta ));
+%     maxVal = max(max( ST.data.(['sp' num2str(ss)]).eta ));
+%     vals = linspace(minVal,maxVal,numBins);
+%     
+%     for ii=1:ST.params.simulation.num_snapshots
+%         [f(:,ii),~] = hist(ST.data.(['sp' num2str(ss)]).eta(:,ii),vals);
+%     end
+%     
+% %     figure
+% %     surf(f(:,1:10:end),'LineStyle','none')
+% %     colormap(jet)
+% %     %     h = figure;
+% %     %     for ii=1:ST.params.simulation.num_snapshots
+% %     %         figure(h)
+% %     %         hold on
+% %     %         plot3(vals,double(ii)*ones(size(vals)),f(:,ii),'k')
+% %     %         hold off
+% %     
+% %     %     end
+% %     PD.(['sp' num2str(ss)]).f = f;
+% %     PD.(['sp' num2str(ss)]).vals = vals;
+%     
+% end
+
+
 
 end

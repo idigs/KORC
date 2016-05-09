@@ -385,6 +385,7 @@ implicit none
 
 		call h5gclose_f(group_id, h5error)
 
+
 		DEALLOCATE(rdata)
 		DEALLOCATE(idata)
 		DEALLOCATE(attr_array)
@@ -463,6 +464,11 @@ implicit none
 		call rsave_to_hdf5(h5file_id,dset,cpp%temperature,attr)
 
 		call h5gclose_f(group_id, h5error)
+
+
+
+		
+
 
 		call h5fclose_f(h5file_id, h5error)
 	end if
