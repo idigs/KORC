@@ -105,7 +105,7 @@ implicit none
 !$OMP PARALLEL FIRSTPRIVATE(a,dt)&
 !$OMP& PRIVATE(pp,U,U_hs,V_hs,gamma_hs,tau,up,gammap,sigma,us,gamma,t,s,&
 !$OMP& acc,dacc,b_unit,B,vpar,vperp,vxa)&
-!$OMP& SHARED(spp)
+!$OMP& SHARED(ii,spp)
 !$OMP DO
 		do pp=1,spp(ii)%ppp
 			U = spp(ii)%vars%gamma(pp)*spp(ii)%vars%V(:,pp)
@@ -169,7 +169,7 @@ implicit none
 	INTEGER :: ii, pp ! Iterators
 
     do ii = 1,params%num_species
-!$OMP PARALLEL PRIVATE(pp) SHARED(spp,dt,params,ii)
+!$OMP PARALLEL PRIVATE(pp) SHARED(ii,spp,dt,params)
 !$OMP DO
 	do pp = 1,spp(ii)%ppp
 		spp(ii)%vars%X(:,pp) = spp(ii)%vars%X(:,pp) + dt*spp(ii)%vars%V(:,pp)
