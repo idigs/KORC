@@ -31,33 +31,33 @@ end
 function data = loadData(ST)
 data = struct;
 
-% list = {'X'};%,'V','Rgc'};
-% 
-% for ll=1:length(list)
-%     disp(['Loading ' list{ll}])
-%     for ss=1:ST.params.simulation.num_species
-%         tnp = double(ST.params.species.ppp(ss)*ST.params.simulation.nmpi);
-%         
-%         data.(['sp' num2str(ss)]).(list{ll}) = ...
-%             zeros(3,tnp,ST.params.simulation.num_snapshots);
-%         
-%         for ff=1:ST.params.simulation.nmpi
-%             filename = [ST.path 'file_' num2str(ff-1) '.h5'];
-%             indi = (ff - 1)*double(ST.params.species.ppp(ss)) + 1;
-%             indf = ff*double(ST.params.species.ppp(ss));
-%             for ii=1:ST.params.simulation.num_snapshots
-%                 dataset = ...
-%                     ['/' num2str(ii*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
-%                     '/' list{ll}];
-%                 
-%                 data.(['sp' num2str(ss)]).(list{ll})(:,indi:indf,ii) = ...
-%                     h5read(filename, dataset);
-%             end
-%             
-%         end
-%         
-%     end
-% end
+list = {'X'};%,'V','Rgc'};
+
+for ll=1:length(list)
+    disp(['Loading ' list{ll}])
+    for ss=1:ST.params.simulation.num_species
+        tnp = double(ST.params.species.ppp(ss)*ST.params.simulation.nmpi);
+        
+        data.(['sp' num2str(ss)]).(list{ll}) = ...
+            zeros(3,tnp,ST.params.simulation.num_snapshots);
+        
+        for ff=1:ST.params.simulation.nmpi
+            filename = [ST.path 'file_' num2str(ff-1) '.h5'];
+            indi = (ff - 1)*double(ST.params.species.ppp(ss)) + 1;
+            indf = ff*double(ST.params.species.ppp(ss));
+            for ii=1:ST.params.simulation.num_snapshots
+                dataset = ...
+                    ['/' num2str(ii*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
+                    '/' list{ll}];
+                
+                data.(['sp' num2str(ss)]).(list{ll})(:,indi:indf,ii) = ...
+                    h5read(filename, dataset);
+            end
+            
+        end
+        
+    end
+end
 
 
 list = {'eta','gamma'};%,'mu','kappa','tau'};

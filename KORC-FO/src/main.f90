@@ -4,8 +4,8 @@ use korc_types
 use korc_units
 use korc_hpc
 use korc_HDF5
-use emf
-use pic
+use korc_fields
+use korc_ppusher
 use initialize
 use finalize
 
@@ -51,6 +51,7 @@ implicit none
 		call advance_particles_position(params,EB,spp,params%dt)
 		call advance_particles_velocity(params,EB,spp,params%dt)
 		if ( modulo(it,params%output_cadence) .EQ. 0 ) then
+			write(6,'("Saving snapshot: ",I15)') it/params%output_cadence
 			call save_simulation_outputs(params,cpp,spp,EB,it)
         end if
 	end do

@@ -27,7 +27,7 @@ endif
 ifeq ($(UNAME), Linux)
 	FC = mpif90
 
-	FCDEFINEFLAGS =-DDOUBLE_PRECISION	-DHDF5_SINGLE_PRESICION
+	FCDEFINEFLAGS =-DDOUBLE_PRECISION	-DHDF5_DOUBLE_PRESICION
 	FCFLAGS =-cpp	-J$(MOD)	-fopenmp	-O3
 
 	HDF5_INSTALL =../HDF5
@@ -41,7 +41,7 @@ ifeq ($(UNAME), Linux)
 	OMP_LIB_FLAGS =	-lgomp
 endif
 
-BINARIES = $(addprefix $(OBJ)/, korc_types.o    constants.o korc_hpc.o  external_subroutines.o	initialize.o    finalize.o	korc_units.o    emf.o	pic.o	korc_HDF5.o	main.o)
+BINARIES = $(addprefix $(OBJ)/, korc_types.o    constants.o korc_hpc.o  external_subroutines.o	initialize.o    finalize.o	korc_units.o    korc_fields.o	korc_coords.o	korc_interp.o	korc_ppusher.o	korc_HDF5.o	main.o)
 
 all: KORC-FO
 
@@ -66,11 +66,17 @@ $(OBJ)/korc_hpc.o: $(SRC)/korc_hpc.f90
 $(OBJ)/korc_HDF5.o: $(SRC)/korc_HDF5.f90
 	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $(SRC)/korc_HDF5.f90		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
-$(OBJ)/pic.o: $(SRC)/pic.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/pic.f90		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
+$(OBJ)/korc_fields.o: $(SRC)/korc_fields.f90
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/korc_fields.f90		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
-$(OBJ)/emf.o: $(SRC)/emf.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/emf.f90		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
+$(OBJ)/korc_interp.o: $(SRC)/korc_interp.f90
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/korc_interp.f90		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
+
+$(OBJ)/korc_coords.o: $(SRC)/korc_coords.f90
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/korc_coords.f90		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
+
+$(OBJ)/korc_ppusher.o: $(SRC)/korc_ppusher.f90
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/korc_ppusher.f90		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
 $(OBJ)/korc_units.o: $(SRC)/korc_units.f90
 	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$(SRC)/korc_units.f90		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
