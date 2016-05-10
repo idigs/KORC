@@ -23,9 +23,9 @@ implicit none
 	! * * * INITIALIZATION STAGE * * *
 	call initialize_korc_parameters(params) ! Initialize korc parameters
 
-	call initialize_particles(params,spp) ! Initialize particles
-
 	call initialize_fields(params,EB)
+
+	call initialize_particles(params,EB,spp) ! Initialize particles
 
 	call compute_charcs_plasma_params(spp,EB,cpp)
 
@@ -41,6 +41,9 @@ implicit none
 	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
 	! *** BEYOND THIS POINT VARIABLES ARE DIMENSIONLESS ***
 	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
+
+	! Save initial condition
+	call save_simulation_outputs(params,cpp,spp,EB,0_ip)
 
 	! First particle push
 	call advance_particles_velocity(params,EB,spp,0.5_rp*params%dt)

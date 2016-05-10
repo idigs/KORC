@@ -41,7 +41,7 @@ ifeq ($(UNAME), Linux)
 	OMP_LIB_FLAGS =	-lgomp
 endif
 
-BINARIES = $(addprefix $(OBJ)/, korc_types.o    constants.o korc_hpc.o  external_subroutines.o	initialize.o    finalize.o	korc_units.o    korc_fields.o	korc_coords.o	korc_interp.o	korc_ppusher.o	korc_HDF5.o	main.o)
+BINARIES = $(addprefix $(OBJ)/, korc_types.o    constants.o korc_hpc.o  rnd_numbers.o	korc_fields.o	korc_coords.o	korc_interp.o	initialize.o    finalize.o	korc_units.o   korc_ppusher.o	korc_HDF5.o	main.o)
 
 all: KORC-FO
 
@@ -51,8 +51,8 @@ $(OBJ)/korc_types.o: $(SRC)/korc_types.f90
 $(OBJ)/constants.o: $(SRC)/constants.f90
 	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $(SRC)/constants.f90		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
-$(OBJ)/external_subroutines.o: $(SRC)/external_subroutines.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $(SRC)/external_subroutines.f90  $(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
+$(OBJ)/rnd_numbers.o: $(SRC)/rnd_numbers.f90
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $(SRC)/rnd_numbers.f90  $(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
 $(OBJ)/initialize.o: $(SRC)/initialize.f90
 	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $(SRC)/initialize.f90  $(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@

@@ -3,11 +3,12 @@ module initialize
 use korc_types
 use korc_hpc
 use constants
-use external_subroutines
+use korc_interp
+use rnd_numbers
 
 implicit none
 
-	PRIVATE :: set_paths, load_korc_params, initialization_sanity_check
+	PRIVATE :: set_paths, load_korc_params, initialization_sanity_check, unitVectors
 	PUBLIC :: initialize_korc_parameters, initialize_particles, initialize_fields
 
 contains
@@ -62,25 +63,34 @@ subroutine initialize_korc_parameters(params)
 end subroutine initialize_korc_parameters
 
 
-subroutine initialize_particles(params,ptcls) 
-	use korc_types
+! * * * * * * * * * * * *  * * * * * * * * * * * * * !
+! * * * SUBROUTINES FOR INITIALIZING PARTICLES * * * !
+! * * * * * * * * * * * *  * * * * * * * * * * * * * !
+
+subroutine initialize_particles(params,EB,ptcls) 
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(FIELDS), INTENT(IN) :: EB
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: ptcls
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: ppp
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: q
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: m
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Eo
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: etao
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Ro
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zo
 	LOGICAL, DIMENSION(:), ALLOCATABLE :: runaway
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Vo
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: Vpar
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: Vperp
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: b
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: a
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Xo
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: angle, radius ! temporary vars
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: r ! temporary variable
-	INTEGER :: ii ! Iterator
+	INTEGER :: ii,jj ! Iterator
 
-	NAMELIST /plasma_species/ ppp, q, m, Eo, runaway, Ro, Zo, r
+	NAMELIST /plasma_species/ ppp, q, m, Eo, etao, runaway, Ro, Zo, r
 
 	! Allocate array containing variables of particles for each species
 	ALLOCATE(ptcls(params%num_species))
@@ -89,6 +99,7 @@ subroutine initialize_particles(params,ptcls)
 	ALLOCATE(q(params%num_species))
 	ALLOCATE(m(params%num_species))
 	ALLOCATE(Eo(params%num_species))
+	ALLOCATE(etao(params%num_species))
 	ALLOCATE(runaway(params%num_species))
 	ALLOCATE(Ro(params%num_species))
 	ALLOCATE(Zo(params%num_species))
@@ -101,6 +112,7 @@ subroutine initialize_particles(params,ptcls)
 
 	do ii=1,params%num_species
 		ptcls(ii)%Eo = Eo(ii)
+		ptcls(ii)%etao = etao(ii)
 		ptcls(ii)%runaway = runaway(ii)
 		ptcls(ii)%q = q(ii)*C_E
 		ptcls(ii)%m = m(ii)*C_ME
@@ -119,6 +131,10 @@ subroutine initialize_particles(params,ptcls)
 
 		ALLOCATE( Xo(3,ptcls(ii)%ppp) )
 		ALLOCATE( Vo(ptcls(ii)%ppp) )
+		ALLOCATE( Vpar(ptcls(ii)%ppp) )
+		ALLOCATE( Vperp(ptcls(ii)%ppp) )
+		ALLOCATE( b(3,ptcls(ii)%ppp) )
+		ALLOCATE( a(3,ptcls(ii)%ppp) )
 		
 		ALLOCATE( angle(ptcls(ii)%ppp) )
 		ALLOCATE( radius(ptcls(ii)%ppp) )
@@ -142,6 +158,7 @@ subroutine initialize_particles(params,ptcls)
 		call RANDOM_NUMBER(angle)
 		angle = 2*C_PI*angle
 
+		! Uniform distribution on a disk at a fixed azimuthal angle		
 		call init_random_seed()
 		call RANDOM_NUMBER(radius)
 		radius = r(ii)*radius
@@ -154,24 +171,37 @@ subroutine initialize_particles(params,ptcls)
 		ptcls(ii)%vars%X(2,:) = Xo(2,:)
 		ptcls(ii)%vars%X(3,:) = Xo(3,:)
 
+		! Monoenergetic distribution
 		ptcls(ii)%vars%gamma(:) = ptcls(ii)%Eo*C_E/(ptcls(ii)%m*C_C**2)
 
-		Vo = C_C*sqrt( 1 - 1/(ptcls(ii)%vars%gamma(:)**2) )
+		Vo = C_C*sqrt( 1.0_rp - 1.0_rp/(ptcls(ii)%vars%gamma(:)**2) )
+		Vpar = Vo*cos( C_PI*ptcls(ii)%etao/180_rp )
+		Vperp = Vo*sin( C_PI*ptcls(ii)%etao/180_rp )
+
+		call unitVectors(Xo,EB,b,a)
 
 		ptcls(ii)%vars%V(1,:) = 0.0_rp
 		ptcls(ii)%vars%V(2,:) = -Vo
 		ptcls(ii)%vars%V(3,:) = 0.0_rp
+!		do jj=1,ptcls(ii)%ppp
+!			ptcls(ii)%vars%V(:,jj) = Vpar(jj)*b(:,jj) + Vperp*a(:,jj)
+!		end do
 
 		DEALLOCATE(angle)
 		DEALLOCATE(radius)
 		DEALLOCATE(Xo)
 		DEALLOCATE(Vo)
+		DEALLOCATE(Vpar)
+		DEALLOCATE(Vperp)
+		DEALLOCATE(b)
+		DEALLOCATE(a)
 	end do
 
 	DEALLOCATE(ppp)
 	DEALLOCATE(q)
 	DEALLOCATE(m)
 	DEALLOCATE(Eo)
+	DEALLOCATE(etao)
 	DEALLOCATE(runaway)
 	DEALLOCATE(Ro)
 	DEALLOCATE(Zo)
@@ -179,6 +209,9 @@ subroutine initialize_particles(params,ptcls)
 	DEALLOCATE(r)
 end subroutine initialize_particles
 
+! * * * * * * * * * * * *  * * * * * * * * * * * * * !
+! * * * SUBROUTINES FOR INITIALIZING PARTICLES * * * !
+! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
 subroutine initialize_communications(params)
 	implicit none
@@ -213,6 +246,7 @@ end subroutine initialization_sanity_check
 
 
 subroutine initialize_fields(params,EB)
+	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(FIELDS), INTENT(OUT) :: EB
 	REAL(rp) :: Bo

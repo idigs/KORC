@@ -378,6 +378,11 @@ implicit none
 		rdata = spp%Eo*cpp%energy
 		call rsave_1d_array_to_hdf5(h5file_id,dset,rdata,attr_array)
 
+		dset = TRIM(gname) // "/etao"
+		attr_array(1) = "Initial pitch angle in degrees"
+		rdata = spp%etao
+		call rsave_1d_array_to_hdf5(h5file_id,dset,rdata,attr_array)
+
 		dset = TRIM(gname) // "/wc"
 		attr_array(1) = "Average cyclotron frequency in Hz"
 		rdata = spp%wc/cpp%time

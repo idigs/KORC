@@ -119,7 +119,7 @@ tmax = max(time);
 tmin = min(time);
 
 figure
-surf(time,vals,f,'LineStyle','none')
+surf(time,vals,log10(f),'LineStyle','none')
 axis([tmin tmax minVal maxVal])
 xlabel('Time (s)','Interpreter','latex','FontSize',16)
 ylabel('Pitch angle $\theta$ (degrees)','Interpreter','latex','FontSize',16)

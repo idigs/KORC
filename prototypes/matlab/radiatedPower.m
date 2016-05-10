@@ -10,14 +10,14 @@ close all
 
 % % % % % % CONTROL PARAMETERS % % % % % % 
 % Folder where the matlab script will save the figures of the diagnostics.
-folder = 'poloidal_plane_figures_3'; 
+folder = 'SCREAM3'; 
 % Number of time iterations for calculating electrons' orbits
-numTimeIt = 1E6;
+numTimeIt = 1E4;
 cadence = 2E4;
 % Initial pitch angle
-pitcho = [10,20,50];
+pitcho = [20];
 % Energy of electron, in eV.
-Eo = [1E6,3E6,30E6];
+Eo = [3E6];
 % Minor and major of analytical toroidal magnetic field. NOTE: THIS MUST BE
 % CONSISTENT WITH THE PARAMETERS OF THE MAGNETIC FIELD IN pOrbs.m.
 a = 0.5;
@@ -54,6 +54,8 @@ for ee=1:numel(Eo)
         T = cell(1,numTracers);
         ko = zeros(1,numTracers);
         pitch = cell(1,numTracers);
+        Xf = zeros(3,numTracers);
+        kf = zeros(1,numTracers);
         
         poolobj = gcp('nocreate');
         if isempty(poolobj)
@@ -73,6 +75,9 @@ for ee=1:numel(Eo)
                 ko(pii) = ST.PP.k(1);
                 pitch{pii} = ST.PP.POINCARE.pitch;
                 
+                Xf(:,pii) = ST.PP.X(end,:);
+                kf(pii) = ST.PP.k;
+                
                 timeSeries{pii} = struct;
                 timeSeries{pii}.k = ST.PP.k;
                 timeSeries{pii}.pitch = atan2(ST.PP.vperp,ST.PP.vpar);
@@ -87,68 +92,68 @@ for ee=1:numel(Eo)
 
         filename = [folder '/var_Eo_' num2str(Eo(ee)) ...
             '_po_' num2str(pitcho(pp)) '.mat'];
-        save(filename,'RZ','k','T','ko','pitch','timeSeries')
+        save(filename,'RZ','k','T','ko','pitch','timeSeries','Xf','kf')
         
-        Ro = sqrt(xo.^2 + yo.^2); % initial radial coordinate
-        
-        for ii=2:numTracers
-            k_max_previous = max(k{ii-1});
-            k_max_current = max(k{ii});
-            if k_max_previous < k_max_current
-                k_max = k_max_current;
-            else
-                k_max = k_max_previous;
-            end
-        end
-        
-        h = figure;
-        subplot(2,1,1)
-        hold on
-        for ii=1:numTracers
-            C = k{ii}/k_max;
-            scatter3(RZ{ii}(:,1),RZ{ii}(:,2),k{ii},6,C)
-        end
-        hold off
-        box on; axis on; grid on
-        xlabel('R','Interpreter','latex','FontSize',16)
-        ylabel('Z','Interpreter','latex','FontSize',16)
-        zlabel('$\kappa(R,Z)$','Interpreter','latex','FontSize',16)
-        
-        subplot(2,1,2)
-        C = ko/max(ko);
-        scatter3(Ro,zo,ko,6,C)
-        box on; axis on; grid on
-        xlabel('R','Interpreter','latex','FontSize',16)
-        ylabel('Z','Interpreter','latex','FontSize',16)
-        zlabel('$\kappa_o$','Interpreter','latex','FontSize',16)
-        colormap(jet)
-        savefig(h,[folder '/curvature_Eo_' num2str(Eo(ee)) '_po_' num2str(pitcho(pp)) '.fig'])
-        close(h)
-        
-        for ii=2:numTracers
-            pitch_max_previous = max(pitch{ii-1});
-            pitch_max_current = max(pitch{ii});
-            if pitch_max_previous < pitch_max_current
-                pitch_max = pitch_max_current;
-            else
-                pitch_max = pitch_max_previous;
-            end
-        end
-        
-        g = figure;
-        hold on
-        for ii=1:numTracers
-            C = pitch{ii}/pitch_max;
-            scatter3(RZ{ii}(:,1),RZ{ii}(:,2),pitch{ii},6,C)
-        end
-        hold off
-        box on; axis on; grid on
-        xlabel('R','Interpreter','latex','FontSize',16)
-        ylabel('Z','Interpreter','latex','FontSize',16)
-        zlabel('$\theta_{v_\perp/v_\parallel}$ [rad]','Interpreter','latex','FontSize',16)
-        colormap(jet)
-        savefig(g,[folder '/pitch_Eo_' num2str(Eo(ee)) '_po_' num2str(pitcho(pp)) '.fig'])
-        close(g)
+%         Ro = sqrt(xo.^2 + yo.^2); % initial radial coordinate
+%         
+%         for ii=2:numTracers
+%             k_max_previous = max(k{ii-1});
+%             k_max_current = max(k{ii});
+%             if k_max_previous < k_max_current
+%                 k_max = k_max_current;
+%             else
+%                 k_max = k_max_previous;
+%             end
+%         end
+%         
+%         h = figure;
+%         subplot(2,1,1)
+%         hold on
+%         for ii=1:numTracers
+%             C = k{ii}/k_max;
+%             scatter3(RZ{ii}(:,1),RZ{ii}(:,2),k{ii},6,C)
+%         end
+%         hold off
+%         box on; axis on; grid on
+%         xlabel('R','Interpreter','latex','FontSize',16)
+%         ylabel('Z','Interpreter','latex','FontSize',16)
+%         zlabel('$\kappa(R,Z)$','Interpreter','latex','FontSize',16)
+%         
+%         subplot(2,1,2)
+%         C = ko/max(ko);
+%         scatter3(Ro,zo,ko,6,C)
+%         box on; axis on; grid on
+%         xlabel('R','Interpreter','latex','FontSize',16)
+%         ylabel('Z','Interpreter','latex','FontSize',16)
+%         zlabel('$\kappa_o$','Interpreter','latex','FontSize',16)
+%         colormap(jet)
+%         savefig(h,[folder '/curvature_Eo_' num2str(Eo(ee)) '_po_' num2str(pitcho(pp)) '.fig'])
+%         close(h)
+%         
+%         for ii=2:numTracers
+%             pitch_max_previous = max(pitch{ii-1});
+%             pitch_max_current = max(pitch{ii});
+%             if pitch_max_previous < pitch_max_current
+%                 pitch_max = pitch_max_current;
+%             else
+%                 pitch_max = pitch_max_previous;
+%             end
+%         end
+%         
+%         g = figure;
+%         hold on
+%         for ii=1:numTracers
+%             C = pitch{ii}/pitch_max;
+%             scatter3(RZ{ii}(:,1),RZ{ii}(:,2),pitch{ii},6,C)
+%         end
+%         hold off
+%         box on; axis on; grid on
+%         xlabel('R','Interpreter','latex','FontSize',16)
+%         ylabel('Z','Interpreter','latex','FontSize',16)
+%         zlabel('$\theta_{v_\perp/v_\parallel}$ [rad]','Interpreter','latex','FontSize',16)
+%         colormap(jet)
+%         savefig(g,[folder '/pitch_Eo_' num2str(Eo(ee)) '_po_' num2str(pitcho(pp)) '.fig'])
+%         close(g)
     end
 end
 
