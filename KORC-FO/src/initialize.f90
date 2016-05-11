@@ -178,14 +178,15 @@ subroutine initialize_particles(params,EB,ptcls)
 		Vpar = Vo*cos( C_PI*ptcls(ii)%etao/180_rp )
 		Vperp = Vo*sin( C_PI*ptcls(ii)%etao/180_rp )
 
-		call unitVectors(Xo,EB,b,a)
+!		ptcls(ii)%vars%V(1,:) = 0.0_rp
+!		ptcls(ii)%vars%V(2,:) = -Vo
+!		ptcls(ii)%vars%V(3,:) = 0.0_rp
 
-		ptcls(ii)%vars%V(1,:) = 0.0_rp
-		ptcls(ii)%vars%V(2,:) = -Vo
-		ptcls(ii)%vars%V(3,:) = 0.0_rp
-!		do jj=1,ptcls(ii)%ppp
-!			ptcls(ii)%vars%V(:,jj) = Vpar(jj)*b(:,jj) + Vperp*a(:,jj)
-!		end do
+		call unitVectors(Xo,EB,b,a)
+!		write(6,'(F15.10,F15.10,F15.10)') a
+		do jj=1,ptcls(ii)%ppp
+			ptcls(ii)%vars%V(:,jj) = Vpar(jj)*b(:,jj) + Vperp*a(:,jj)
+		end do
 
 		DEALLOCATE(angle)
 		DEALLOCATE(radius)

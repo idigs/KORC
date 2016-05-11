@@ -12,7 +12,7 @@ implicit none
 #elif SINGLE_PRECISION
 	INTEGER, PUBLIC, PARAMETER :: rp = KIND(1.0) ! Single precision
 #endif
-	REAL(rp), PUBLIC, PARAMETER :: korc_zero = 1.0E-15
+	REAL(rp), PUBLIC, PARAMETER :: korc_zero = 1.0E-10
 
 ! * * * * * * * * * * * * * * * * * * * * !
 ! * * * Real and integer precisions * * * !

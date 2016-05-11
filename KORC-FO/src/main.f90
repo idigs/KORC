@@ -42,13 +42,15 @@ implicit none
 	! *** BEYOND THIS POINT VARIABLES ARE DIMENSIONLESS ***
 	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
 
+	call advance_particles_velocity(params,EB,spp,0.0_rp)
+
 	! Save initial condition
 	call save_simulation_outputs(params,cpp,spp,EB,0_ip)
 
-	! First particle push
-	call advance_particles_velocity(params,EB,spp,0.5_rp*params%dt)
-
 	t1 = MPI_WTIME()
+
+	! Initial half-time particle push
+	call advance_particles_velocity(params,EB,spp,0.5_rp*params%dt)
 
 	do it=1,params%t_steps
 		call advance_particles_position(params,EB,spp,params%dt)

@@ -1,7 +1,7 @@
 &input_parameters
-	t_steps = 120000 ! 1200000000 for 1 ms
+	t_steps = 12000000 ! 1200000000 for 1 ms
 	dt = 0.07 ! Time step as fraction of non-relativistic gyro-period
-	output_cadence = 700 ! 1400 for saving each 100 gyro-periods
+	output_cadence = 2800 ! 1400 for saving each 100 gyro-periods
 	num_species = 2
 	magnetic_field_model = 'ANALYTICAL'
 	pic_algorithm = 1 ! 1 = Leapfrog, 2 = RK4, 3 = some other
@@ -18,8 +18,8 @@
 	Zo = 0.0, 0.0 !
 	r = 0.2, 0.2 !
 	Eo = 3.0E6, 3.0E6 ! Initial energy in eV
-	etao = 10, 20 ! Initial pitch angle
-	ppp = 1024, 1024 ! Number of particles per process (mpi)
+	etao = 20, 20 ! Initial pitch angle
+	ppp = 256, 256 ! Number of particles per process (mpi)
     q = -1.0, -1.0 ! Electric charge
     m = 1.0, 1.0 ! In units of electron mass
 /
