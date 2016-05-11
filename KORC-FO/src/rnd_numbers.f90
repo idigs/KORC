@@ -7,11 +7,13 @@ implicit none
 contains
 
 subroutine init_random_seed()
-use iso_fortran_env, only: int64
+!use iso_fortran_env, only: int64
 implicit none
-	integer, allocatable :: seed(:)
-	integer :: i, n, un, istat, dt(8), pid
-	integer(int64) :: t
+	INTEGER, allocatable :: seed(:)
+	INTEGER(8), DIMENSION(8) :: dt
+	INTEGER(8) :: i, un, istat, pid
+	INTEGER(4) :: n
+	INTEGER(8) :: t
 		      
 	call random_seed(size = n)
 	allocate(seed(n))
@@ -28,11 +30,12 @@ implicit none
 		call system_clock(t)
 	if (t == 0) then
 		call date_and_time(values=dt)
-		t = (dt(1) - 1970) * 365_int64 * 24 * 60 * 60 * 1000 &
-			+ dt(2) * 31_int64 * 24 * 60 * 60 * 1000 &
-			+ dt(3) * 24_int64 * 60 * 60 * 1000 &
-			+ dt(5) * 60 * 60 * 1000 &
-			+ dt(6) * 60 * 1000 + dt(7) * 1000 &
+		t = (dt(1) - 1970_8) * 365_8 * 24_8 * 60_8 * 60_8 * 1000_8 &
+			+ dt(2) * 31_8 * 24_8 * 60_8 * 60_8 * 1000_8 &
+			+ dt(3) * 24_8 * 60_8 * 60_8 * 1000_8 &
+			+ dt(5) * 60_8 * 60_8 * 1000_8 &
+			+ dt(6) * 60_8 * 1000_8 &
+			+ dt(7) * 1000_8 &
 			+ dt(8)
 	end if
 		pid = getpid()
@@ -47,15 +50,15 @@ implicit none
 	! This simple PRNG might not be good enough for real work, but is
 	! sufficient for seeding a better PRNG.
 	function lcg(s)
-	integer :: lcg
-	integer(int64) :: s
+	INTEGER :: lcg
+	INTEGER(8) :: s
 	if (s == 0) then
-		s = 104729
+		s = 104729_8
 	else
-		s = mod(s, 4294967296_int64)
+		s = mod(s, 4294967296_8)
 	end if
-	s = mod(s * 279470273_int64, 4294967291_int64)
-	lcg = int(mod(s, int(huge(0), int64)), kind(0))
+	s = mod(s * 279470273_8, 4294967291_8)
+	lcg = int(mod(s, int(huge(0), 8)), kind(0))
 	end function lcg
 
 end subroutine init_random_seed

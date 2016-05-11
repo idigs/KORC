@@ -1,5 +1,5 @@
 &input_parameters
-	t_steps = 12000000 ! 1200000000 for 1 ms
+	t_steps = 120000 ! 1200000000 for 1 ms
 	dt = 0.07 ! Time step as fraction of non-relativistic gyro-period
 	output_cadence = 2800 ! 1400 for saving each 100 gyro-periods
 	num_species = 2

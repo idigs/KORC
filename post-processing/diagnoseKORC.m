@@ -8,7 +8,7 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
 ST.PD = pitchAngleDiagnostic(ST,30);
 
