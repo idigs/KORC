@@ -11,18 +11,18 @@ subroutine init_random_seed()
 implicit none
 	INTEGER, allocatable :: seed(:)
 	INTEGER(8), DIMENSION(8) :: dt
-	INTEGER(8) :: i, un, istat, pid
+	INTEGER(8) :: i, istat, pid
 	INTEGER(4) :: n
 	INTEGER(8) :: t
 		      
 	call random_seed(size = n)
 	allocate(seed(n))
 	! First try if the OS provides a random number generator
-	open(newunit=un, file="/dev/urandom", access="stream", &
+	open(default_unit_open, file="/dev/urandom", access="stream", &
 	form="unformatted", action="read", status="old", iostat=istat)
 	if (istat == 0) then
-		read(un) seed
-		close(un)
+		read(default_unit_open) seed
+		close(default_unit_open)
 	else
 		! Fallback to XOR:ing the current time and pid. The PID is
 		! useful in case one launches multiple instances of the same
