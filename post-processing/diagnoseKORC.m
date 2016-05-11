@@ -8,6 +8,8 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
+energyConservation(ST);
+
 ST.PD = pitchAngleDiagnostic(ST,30);
 
 end
@@ -93,6 +95,16 @@ end
 
 end
 
+function energyConservation(ST)
+
+try
+    
+catch
+    
+end
+
+end
+
 function PD = pitchAngleDiagnostic(ST,numBins)
 PD = struct;
 
@@ -125,32 +137,6 @@ xlabel('Time (s)','Interpreter','latex','FontSize',16)
 ylabel('Pitch angle $\theta$ (degrees)','Interpreter','latex','FontSize',16)
 colormap(jet)
 
-% for ss=1:ST.params.simulation.num_species
-%     f = zeros(numBins,ST.params.simulation.num_snapshots);
-%     
-%     minVal = min(min( ST.data.(['sp' num2str(ss)]).eta ));
-%     maxVal = max(max( ST.data.(['sp' num2str(ss)]).eta ));
-%     vals = linspace(minVal,maxVal,numBins);
-%     
-%     for ii=1:ST.params.simulation.num_snapshots
-%         [f(:,ii),~] = hist(ST.data.(['sp' num2str(ss)]).eta(:,ii),vals);
-%     end
-%     
-% %     figure
-% %     surf(f(:,1:10:end),'LineStyle','none')
-% %     colormap(jet)
-% %     %     h = figure;
-% %     %     for ii=1:ST.params.simulation.num_snapshots
-% %     %         figure(h)
-% %     %         hold on
-% %     %         plot3(vals,double(ii)*ones(size(vals)),f(:,ii),'k')
-% %     %         hold off
-% %     
-% %     %     end
-% %     PD.(['sp' num2str(ss)]).f = f;
-% %     PD.(['sp' num2str(ss)]).vals = vals;
-%     
-% end
 
 
 
