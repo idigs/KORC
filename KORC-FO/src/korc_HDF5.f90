@@ -359,7 +359,6 @@ implicit none
 
 		dset = TRIM(gname) // "/ppp"
 		attr_array(1) = "Particles per (mpi) process"
-		attr_array(2) = "A second attribute"
 		idata = spp%ppp
 		call isave_1d_array_to_hdf5(h5file_id,dset,idata,attr_array)
 

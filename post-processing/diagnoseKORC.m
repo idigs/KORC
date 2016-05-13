@@ -8,7 +8,7 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
 ST.PD = pitchAngleDiagnostic(ST,30);
 
@@ -97,10 +97,29 @@ end
 
 function energyConservation(ST)
 
+err = zeros(ST.params.simulation.num_snapshots,ST.params.simulation.num_species);
+
+cad = ST.params.simulation.output_cadence;
+time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
+
+h=figure;
+
 try
-    
+    for ss=1:ST.params.simulation.num_species
+        tmp = zeros(size(ST.data.(['sp' num2str(ss)]).gamma));
+        for ii=1:ST.params.species.ppp(ss)
+            tmp(ii,:) = ...
+                100*( ST.data.(['sp' num2str(ss)]).gamma(ii,1) - ...
+                ST.data.(['sp' num2str(ss)]).gamma(ii,:) )./ST.data.(['sp' num2str(ss)]).gamma(ii,1);
+        end
+        err(:,ss) = mean(tmp,1);
+        figure(h)
+        hold on
+        plot(time,err(:,ss))
+        hold off
+    end
 catch
-    
+    error('Something went wrong: energyConservation')
 end
 
 end
