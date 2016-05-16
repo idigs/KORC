@@ -87,7 +87,7 @@ $(OBJ)/main.o: $(SRC)/main.f90
 
 
 KORC-FO: $(BINARIES)
-	$(FC)	$(FCFLAGS)  $(BINARIES)	-o	$(BIN)/KORC-FO_	$(LIB_FLAGS)	$(LIBSHDF5)	$(LIB)	$(OMP_LIB_FLAGS)
+	$(FC)	$(FCFLAGS)  $(BINARIES)	-o	$(BIN)/KORC-FO	$(LIB_FLAGS)	$(LIBSHDF5)	$(LIB)	$(OMP_LIB_FLAGS)
 
 
 info:

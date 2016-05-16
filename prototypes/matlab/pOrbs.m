@@ -868,7 +868,9 @@ else
     % Toroidal coordinates
     
     % Poloidal magnetic field
-    Bp = Bpo*(r/lamb)/( 1 + (r/lamb)^2 );
+    % Minus sign = TEXTOR
+    % Plus sign = default
+    Bp = - Bpo*(r/lamb)/( 1 + (r/lamb)^2 );
     
     eta = r/Ro;
     Br = 1/( 1 + eta*cos(theta) );

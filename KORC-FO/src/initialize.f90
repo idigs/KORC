@@ -240,8 +240,9 @@ subroutine initialization_sanity_check(params)
 
 	call MPI_INITIALIZED(flag, ierr)
 
-!$OMP PARALLEL
-	write(6,'("MPI: ",I2," OMP thread: ", I2, " Initialized: ",l)') params%mpi_params%rank_topo, OMP_GET_THREAD_NUM(), flag
+!$OMP PARALLEL SHARED(params) PRIVATE(ierr, flag)
+        write(6,'("MPI: ",I3," OMP/of: ",I3," / ",I3," Procs: ",I3," Init: ",l1)') &
+        params%mpi_params%rank_topo,OMP_GET_THREAD_NUM(),OMP_GET_NUM_THREADS(),OMP_GET_NUM_PROCS(),flag
 !$OMP END PARALLEL
 end subroutine initialization_sanity_check
 
