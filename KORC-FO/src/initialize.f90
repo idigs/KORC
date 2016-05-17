@@ -31,12 +31,13 @@ subroutine load_korc_params(params)
 	INTEGER(ip) :: t_steps
 	REAL(rp) :: dt
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
+	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
 	INTEGER(ip) :: output_cadence
 	INTEGER :: num_species
 	INTEGER :: pic_algorithm
 
-	NAMELIST /input_parameters/ magnetic_field_model,t_steps,dt,&
-				output_cadence,num_species,pic_algorithm
+	NAMELIST /input_parameters/ magnetic_field_model,magnetic_field_filename,&
+			t_steps,dt,output_cadence,num_species,pic_algorithm
 	
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=input_parameters)
@@ -49,6 +50,7 @@ subroutine load_korc_params(params)
 	params%dt = dt
 	params%num_species = num_species
 	params%magnetic_field_model = TRIM(magnetic_field_model)
+	params%magnetic_field_filename = TRIM(magnetic_field_filename)
 	params%pic_algorithm = pic_algorithm
 end subroutine load_korc_params
 
@@ -231,6 +233,7 @@ end subroutine initialize_communications
 subroutine initialization_sanity_check(params)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	CHARACTER(MAX_STRING_LENGTH) :: env_variable
 	INTEGER :: ierr
 	LOGICAL :: flag = .FALSE.
 
@@ -239,6 +242,11 @@ subroutine initialization_sanity_check(params)
 	end if
 
 	call MPI_INITIALIZED(flag, ierr)
+
+	call GET_ENVIRONMENT_VARIABLE("OMP_PLACES",env_variable)
+!	call GET_ENVIRONMENT_VARIABLE("GOMP_CPU_AFFINITY",env_variable)
+	write(6,*) TRIM(env_variable)
+
 
 !$OMP PARALLEL SHARED(params) PRIVATE(ierr, flag)
         write(6,'("MPI: ",I3," OMP/of: ",I3," / ",I3," Procs: ",I3," Init: ",l1)') &
@@ -274,8 +282,10 @@ subroutine initialize_fields(params,EB)
 		EB%AB%Bpo = (EB%AB%a/EB%AB%Ro)*(EB%AB%Bo/EB%AB%qa)*(1+EB%AB%co**2)/EB%AB%co;
 
 		EB%Bo = EB%AB%Bo
-	else
+	else if (params%magnetic_field_model .EQ. 'EXTERNAL') then
 		! Load data file containing magnetic field
+	else
+		call korc_abort()
 	end if
 end subroutine initialize_fields
 

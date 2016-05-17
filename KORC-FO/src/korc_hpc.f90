@@ -8,6 +8,15 @@ implicit none
 
 contains
 
+
+subroutine korc_abort()
+	implicit none
+	INTEGER :: mpierr
+
+	call MPI_ABORT(MPI_COMM_WORLD, -2000, mpierr)
+end subroutine korc_abort
+
+
 subroutine initialize_mpi(params)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(INOUT) :: params

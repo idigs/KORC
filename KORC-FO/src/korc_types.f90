@@ -62,6 +62,7 @@ TYPE, PUBLIC :: KORC_PARAMS
 	INTEGER :: num_species
 	INTEGER :: pic_algorithm
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
+	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
 
 	TYPE(KORC_MPI) :: mpi_params
 END TYPE KORC_PARAMS

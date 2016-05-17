@@ -5,6 +5,9 @@ use korc_coords
 use korc_fields
 use rnd_numbers
 
+use EZspline_obj
+use EZspline
+
 implicit none
 
 PUBLIC :: interp_field, interp_analytical_field, unitVectors

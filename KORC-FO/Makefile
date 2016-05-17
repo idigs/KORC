@@ -32,13 +32,14 @@ ifeq ($(UNAME), Linux)
 	#	FCFLAGS =-mp    ‑Mpreprocess    -Mfree  -module $(MOD)  -O3
 
 	HDF5_INSTALL =../HDF5
+	PSPLINE_INSTALL=../pspline_lib
 
 	INCLUDES_HDF5	=-I$(HDF5_INSTALL)/include
-	INCLUDES =
+	INCLUDES =-I$(PSPLINE_INSTALL)/mod
 	EXTLIB	=-L$(HDF5_INSTALL)/lib
 	LIBSHDF5	=$(EXTLIB)	$(HDF5_INSTALL)/lib/libhdf5hl_fortran.a	$(HDF5_INSTALL)/lib/libhdf5_fortran.a	$(HDF5_INSTALL)/lib/libhdf5_hl.a	$(HDF5_INSTALL)/lib/libhdf5.a
-	LIB_FLAGS =
-	LIB	= -lm   -lz -ldl
+	LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib
+	LIB	= -lm   -lz -ldl	-lpspline
 	OMP_LIB_FLAGS =	-lgomp
 endif
 

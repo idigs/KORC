@@ -1,15 +1,15 @@
 &input_parameters
-	t_steps = 1200000000 ! 1200000000 for 1 ms
+	t_steps = 1200 ! 1200000000 for 1 ms
 	dt = 0.07 ! Time step as fraction of non-relativistic gyro-period
 	output_cadence = 1400 ! 1400 for saving each 100 gyro-periods
 	num_species = 2
-	magnetic_field_model = 'ANALYTICAL'
+	magnetic_field_model = 'ANALYTICAL'! The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
+										! For 'ANALYTICAL', the magnetic field is calculated based on
+										! the parameters given in the "analytic_mag_field_params" section.
+										! For 'EXTERNAL', the magnetic field is loaded from the file
+										! specified in "filename".
+	magnetic_field_filename = "inputFiles/ITER_3D.h5"
 	pic_algorithm = 1 ! 1 = Leapfrog, 2 = RK4, 3 = some other
-/
-
-&magnetic_field_parameters
-	magnetic_field_model = 'ANALYTICAL'
-	dim = 0, 0, 0 ! Number of grid nodes along R, PHI and Z
 /
 
 &plasma_species
