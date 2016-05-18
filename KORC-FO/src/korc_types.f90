@@ -130,6 +130,7 @@ TYPE, PUBLIC :: FIELDS
 	INTEGER, DIMENSION(3) :: dims ! dims(NR, NPHI, NZ)
 END TYPE FIELDS
 
+
 contains
 
 subroutine ALLOCATE_V_FIELD_3D(F,dims)

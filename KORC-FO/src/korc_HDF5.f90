@@ -9,18 +9,130 @@ implicit none
 	INTEGER(SIZE_T), PRIVATE :: rp_hdf5 ! Size of real precision used in HDF5
 
 	PRIVATE :: isave_1d_array_to_hdf5, rsave_1d_array_to_hdf5, rsave_2d_array_to_hdf5,&
-                isave_to_hdf5, rsave_to_hdf5, rload_2d_array_from_hdf5
+                isave_to_hdf5, rsave_to_hdf5, rload_from_hdf5, rload_2d_array_from_hdf5,&
+				iload_from_hdf5
 	PUBLIC :: initialize_HDF5, finalize_HDF5, save_simulation_parameters,&
                 load_field_data_from_hdf5
 
 contains
 
 
+subroutine initialize_HDF5()
+implicit none
+	INTEGER :: h5error  ! Error flag
+	call h5open_f(h5error)
+	
+#ifdef HDF5_DOUBLE_PRESICION
+	call h5tcopy_f(H5T_NATIVE_DOUBLE, KORC_HDF5_REAL, h5error)
+#elif HDF5_SINGLE_PRESICION
+	call h5tcopy_f(H5T_NATIVE_REAL, KORC_HDF5_REAL, h5error)
+#endif
+	call h5tget_size_f(KORC_HDF5_REAL, rp_hdf5, h5error)
+end subroutine initialize_HDF5
+
+
+subroutine finalize_HDF5()
+implicit none
+	INTEGER :: h5error  ! Error flag
+	call h5close_f(h5error)
+end subroutine finalize_HDF5
+
+
+subroutine iload_from_hdf5(h5file_id,dset,rdatum,attr)
+implicit none
+	INTEGER(HID_T), INTENT(IN) :: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
+	INTEGER, INTENT(OUT) :: rdatum
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, INTENT(IN) :: attr
+	CHARACTER(4) :: aname = "Info"
+	INTEGER(HID_T) :: dset_id
+	INTEGER(HID_T) :: dspace_id
+	INTEGER(HID_T) :: aspace_id
+	INTEGER(HID_T) :: attr_id
+	INTEGER(HID_T) :: atype_id
+	INTEGER(HSIZE_T), DIMENSION(1) :: dims = (/1/)
+	INTEGER(HSIZE_T), DIMENSION(1) :: adims = (/1/)
+	INTEGER :: rank = 1
+	INTEGER :: arank = 1
+	INTEGER(SIZE_T) :: tmplen
+	INTEGER(SIZE_T) :: attrlen
+	INTEGER :: h5error
+
+	! * * * Read datum from file * * *
+
+	call h5dopen_f(h5file_id, TRIM(dset), dset_id, h5error)
+	if (h5error .EQ. -1) then
+		write(6,'("ERROR: Something went wrong in: h5dopen_f:rload_from_hdf5")')
+	end if
+
+	call h5dread_f(dset_id, H5T_NATIVE_INTEGER, rdatum, dims, h5error)
+
+	if (h5error .EQ. -1) then
+		write(6,'("ERROR: Something went wrong in: h5dread_f:rload_from_hdf5")')
+	end if
+
+	call h5dclose_f(dset_id, h5error)
+
+	if (PRESENT(attr)) then
+		! * * * Read attribute from file * * *
+
+		! * * * Read attribute from file * * *
+	end if
+
+	! * * * Read datum from file * * *
+end subroutine iload_from_hdf5
+
+
+subroutine rload_from_hdf5(h5file_id,dset,rdatum,attr)
+implicit none
+	INTEGER(HID_T), INTENT(IN) :: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
+	REAL, INTENT(OUT) :: rdatum
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, INTENT(IN) :: attr
+	CHARACTER(4) :: aname = "Info"
+	INTEGER(HID_T) :: dset_id
+	INTEGER(HID_T) :: dspace_id
+	INTEGER(HID_T) :: aspace_id
+	INTEGER(HID_T) :: attr_id
+	INTEGER(HID_T) :: atype_id
+	INTEGER(HSIZE_T), DIMENSION(1) :: dims = (/1/)
+	INTEGER(HSIZE_T), DIMENSION(1) :: adims = (/1/)
+	INTEGER :: rank = 1
+	INTEGER :: arank = 1
+	INTEGER(SIZE_T) :: tmplen
+	INTEGER(SIZE_T) :: attrlen
+	INTEGER :: h5error
+
+	! * * * Read datum from file * * *
+
+	call h5dopen_f(h5file_id, TRIM(dset), dset_id, h5error)
+	if (h5error .EQ. -1) then
+		write(6,'("ERROR: Something went wrong in: h5dopen_f:rload_from_hdf5")')
+	end if
+
+	call h5dread_f(dset_id, H5T_NATIVE_DOUBLE, rdatum, dims, h5error)
+
+	if (h5error .EQ. -1) then
+		write(6,'("ERROR: Something went wrong in: h5dread_f:rload_from_hdf5")')
+	end if
+
+	call h5dclose_f(dset_id, h5error)
+
+	if (PRESENT(attr)) then
+		! * * * Read attribute from file * * *
+
+		! * * * Read attribute from file * * *
+	end if
+
+	! * * * Read datum from file * * *
+end subroutine rload_from_hdf5
+
+
 subroutine rload_2d_array_from_hdf5(h5file_id,dset,rdata,attr)
 implicit none
 	INTEGER(HID_T), INTENT(IN) :: h5file_id
 	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: rdata
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(OUT) :: rdata
 	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: attr
 	CHARACTER(4) :: aname = "Info"
 	INTEGER(HID_T) :: dset_id
@@ -62,28 +174,6 @@ implicit none
 
 	DEALLOCATE(dims)
 end subroutine rload_2d_array_from_hdf5
-
-
-
-subroutine initialize_HDF5()
-implicit none
-	INTEGER :: h5error  ! Error flag
-	call h5open_f(h5error)
-	
-#ifdef HDF5_DOUBLE_PRESICION
-	call h5tcopy_f(H5T_NATIVE_DOUBLE, KORC_HDF5_REAL, h5error)
-#elif HDF5_SINGLE_PRESICION
-	call h5tcopy_f(H5T_NATIVE_REAL, KORC_HDF5_REAL, h5error)
-#endif
-	call h5tget_size_f(KORC_HDF5_REAL, rp_hdf5, h5error)
-end subroutine initialize_HDF5
-
-
-subroutine finalize_HDF5()
-implicit none
-	INTEGER :: h5error  ! Error flag
-	call h5close_f(h5error)
-end subroutine finalize_HDF5
 
 
 subroutine isave_to_hdf5(h5file_id,dset,idata,attr)
@@ -566,11 +656,6 @@ implicit none
 
 		call h5gclose_f(group_id, h5error)
 
-
-
-		
-
-
 		call h5fclose_f(h5file_id, h5error)
 	end if
 
@@ -666,8 +751,6 @@ subroutine load_field_data_from_hdf5(params,EB)
 	INTEGER :: h5error
     INTEGER :: ii
 
-
-
 end subroutine load_field_data_from_hdf5
 
 
@@ -683,11 +766,33 @@ subroutine load_dim_data_from_hdf5(params,EB)
 	INTEGER(HID_T) :: subgroup_id
 	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
 	INTEGER :: h5error
+	REAL :: rdatum
     INTEGER :: ii
 
-    EB%dims = (/4,7,2/)
+!    EB%dims = (/4,7,2/)
+
+	filename = '/home/l8c/Documents/KORC/KORC-FO/outputFiles/simulation_parameters.h5' ! TRIM(params%magnetic_field_filename)
+	call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
+
+!	dset = "NR"
+!	call rload_from_hdf5(h5file_id,dset,rdatum)
+!	write(6,'("The datum is: ",F10.5)') rdatum
+!	EB%dims(1) = INT(rdatum)
+
+	dset = "simulation/num_species"
+	call iload_from_hdf5(h5file_id,dset,ii)
+	write(6,'("The datum is: ",I10)') ii
+
+!	dset = "/NPHI"
+!	call rload_from_hdf5(h5file_id,dset,rdatum)
+!	EB%dims(2) = INT(rdatum)
+
+!	dset = "/NZ"
+!	call rload_from_hdf5(h5file_id,dset,rdatum)
+!	EB%dims(3) = INT(rdatum)
 
 
+	call h5fclose_f(h5file_id, h5error)
 end subroutine load_dim_data_from_hdf5
 
 end module korc_HDF5

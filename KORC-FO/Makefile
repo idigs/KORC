@@ -28,8 +28,8 @@ endif
 ifeq ($(UNAME), Linux)
 	FC = mpif90
 
-	FCDEFINEFLAGS =-DDOUBLE_PRECISION	-DHDF5_DOUBLE_PRESICION
-	FCFLAGS =-cpp	-J$(MOD)	-fopenmp	-O3
+	FCDEFINEFLAGS =-DDOUBLE_PRECISION	-DHDF5_DOUBLE_PRESICION	-UH5_DEBUG_API
+	FCFLAGS =-cpp	-J$(MOD)	-fopenmp	-g
 	#	FCFLAGS =-mp    ‑Mpreprocess    -Mfree  -module $(MOD)  -O3
 
 	HDF5_INSTALL =../HDF5

@@ -286,7 +286,7 @@ subroutine initialize_fields(params,EB)
 	else if (params%magnetic_field_model .EQ. 'EXTERNAL') then
         call load_dim_data_from_hdf5(params,EB)
 
-!        write(6,*) EB%dims
+		write(6,*) EB%dims
 
         call ALLOCATE_V_FIELD_3D(EB%B,EB%dims)
 
