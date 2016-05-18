@@ -242,16 +242,14 @@ subroutine initialization_sanity_check(params)
 		write(6,'("* * * SANITY CHECK * * *")')
 	end if
 
-	call MPI_INITIALIZED(flag, ierr)
-
 	call GET_ENVIRONMENT_VARIABLE("OMP_PLACES",env_variable)
 !	call GET_ENVIRONMENT_VARIABLE("GOMP_CPU_AFFINITY",env_variable)
 	write(6,*) TRIM(env_variable)
 
-
 !$OMP PARALLEL SHARED(params) PRIVATE(ierr, flag)
-        write(6,'("MPI: ",I3," OMP/of: ",I3," / ",I3," Procs: ",I3," Init: ",l1)') &
-        params%mpi_params%rank_topo,OMP_GET_THREAD_NUM(),OMP_GET_NUM_THREADS(),OMP_GET_NUM_PROCS(),flag
+	call MPI_INITIALIZED(flag, ierr)
+	write(6,'("MPI: ",I3," OMP/of: ",I3," / ",I3," Procs: ",I3," Init: ",l1)') &
+	params%mpi_params%rank_topo,OMP_GET_THREAD_NUM(),OMP_GET_NUM_THREADS(),OMP_GET_NUM_PROCS(),flag
 !$OMP END PARALLEL
 end subroutine initialization_sanity_check
 
@@ -284,11 +282,9 @@ subroutine initialize_fields(params,EB)
 
 		EB%Bo = EB%AB%Bo
 	else if (params%magnetic_field_model .EQ. 'EXTERNAL') then
-        call load_dim_data_from_hdf5(params,EB)
+        call load_dim_data_from_hdf5(params,EB%dims)
 
-		write(6,*) EB%dims
-
-        call ALLOCATE_V_FIELD_3D(EB%B,EB%dims)
+        call ALLOCATE_FIELDS(EB)
 
         call load_field_data_from_hdf5(params,EB)
 

@@ -1,15 +1,15 @@
 program main
 
-use korc_types
-use korc_units
-use korc_hpc
-use korc_HDF5
-use korc_fields
-use korc_ppusher
-use initialize
-use finalize
+	use korc_types
+	use korc_units
+	use korc_hpc
+	use korc_HDF5
+	use korc_fields
+	use korc_ppusher
+	use initialize
+	use finalize
 
-implicit none
+	implicit none
 
 	TYPE(KORC_PARAMS) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE :: spp
@@ -21,6 +21,8 @@ implicit none
 	call initialize_communications(params)
 
 	! * * * INITIALIZATION STAGE * * *
+	call initialize_HDF5()
+
 	call initialize_korc_parameters(params) ! Initialize korc parameters
 
 	call initialize_fields(params,EB)
@@ -30,8 +32,6 @@ implicit none
 	call compute_charcs_plasma_params(spp,EB,cpp)
 
 	call define_time_step(cpp,params)
-
-	call initialize_HDF5()
 	! * * * INITIALIZATION STAGE * * *
 
 	call normalize_variables(params,spp,EB,cpp)

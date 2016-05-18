@@ -1,5 +1,5 @@
 module korc_types
-implicit none
+	implicit none
 
 ! * * * * * * * * * * * * * * * * * * * * !
 ! * * * Real and integer precisions * * * !
@@ -122,16 +122,53 @@ TYPE, PRIVATE :: A_FIELD
 END TYPE A_FIELD
 
 
+TYPE, PRIVATE :: MESH
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: R
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: PHI
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: Z
+END TYPE MESH
+
+
 TYPE, PUBLIC :: FIELDS
 	TYPE(A_FIELD) :: AB
 	TYPE(V_FIELD_3D) :: E
 	TYPE(V_FIELD_3D) :: B
+	TYPE(MESH) :: X
 	REAL(rp) :: Bo ! Characteristic magnetic field
 	INTEGER, DIMENSION(3) :: dims ! dims(NR, NPHI, NZ)
 END TYPE FIELDS
 
 
+PUBLIC :: ALLOCATE_FIELDS, DEALLOCATE_FIELDS
+PRIVATE :: ALLOCATE_V_FIELD_3D, DEALLOCATE_V_FIELD_3D
+
 contains
+
+subroutine ALLOCATE_FIELDS(F)
+    implicit none
+	TYPE(FIELDS), INTENT(INOUT) :: F
+
+	call ALLOCATE_V_FIELD_3D(F%B,F%dims)
+!	call ALLOCATE_V_FIELD_3D(F%E,F%dims)	
+    
+	ALLOCATE(F%X%R(F%dims(1)))
+	ALLOCATE(F%X%PHI(F%dims(2)))
+	ALLOCATE(F%X%Z(F%dims(3)))
+end subroutine ALLOCATE_FIELDS
+
+
+subroutine DEALLOCATE_FIELDS(F)
+    implicit none
+	TYPE(FIELDS), INTENT(INOUT) :: F
+
+	call DEALLOCATE_V_FIELD_3D(F%B)
+!	call DEALLOCATE_V_FIELD_3D(F%E)	
+    
+	DEALLOCATE(F%X%R)
+	DEALLOCATE(F%X%PHI)
+	DEALLOCATE(F%X%Z)
+end subroutine DEALLOCATE_FIELDS
+
 
 subroutine ALLOCATE_V_FIELD_3D(F,dims)
     implicit none
@@ -152,5 +189,7 @@ subroutine DEALLOCATE_V_FIELD_3D(F)
     DEALLOCATE(F%PHI)
     DEALLOCATE(F%Z)
 end subroutine DEALLOCATE_V_FIELD_3D
+
+
 
 end module korc_types

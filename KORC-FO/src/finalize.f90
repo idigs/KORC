@@ -1,11 +1,11 @@
 module finalize
 
-use korc_types
-use korc_hpc
+	use korc_types
+	use korc_hpc
 
-implicit none
+	implicit none
 
-contains
+	contains
 
 subroutine finalize_communications(params)
 	implicit none
@@ -39,7 +39,7 @@ subroutine deallocate_variables(params,EB,spp)
 	DEALLOCATE(spp)
 
     if (params%magnetic_field_model .EQ. 'EXTERNAL') then
-        call DEALLOCATE_V_FIELD_3D(EB%B)
+        call DEALLOCATE_FIELDS(EB)
     end if
 end subroutine deallocate_variables
 
