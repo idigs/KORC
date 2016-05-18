@@ -8,6 +8,11 @@ module korc_HDF5
 	INTEGER(HID_T), PRIVATE :: KORC_HDF5_REAL ! Real precision used in HDF5
 	INTEGER(SIZE_T), PRIVATE :: rp_hdf5 ! Size of real precision used in HDF5
 
+
+	INTERFACE load_from_hdf5
+	  module procedure iload_from_hdf5, rload_from_hdf5
+	END INTERFACE
+
 	INTERFACE rload_array_from_hdf5
 	  module procedure rload_1d_array_from_hdf5, rload_3d_array_from_hdf5
 	END INTERFACE
@@ -16,9 +21,11 @@ module korc_HDF5
 	  module procedure isave_to_hdf5, rsave_to_hdf5
 	END INTERFACE
 
-	PRIVATE :: isave_1d_array_to_hdf5, rsave_1d_array_to_hdf5, rsave_2d_array_to_hdf5,&
-                isave_to_hdf5, rsave_to_hdf5, rload_from_hdf5, rload_1d_array_from_hdf5,&
-				iload_from_hdf5, rload_3d_array_from_hdf5, rload_array_from_hdf5
+	PRIVATE :: save_to_hdf5,isave_to_hdf5, rsave_to_hdf5, isave_1d_array_to_hdf5,&
+				rsave_1d_array_to_hdf5, rsave_2d_array_to_hdf5,&
+				load_from_hdf5, iload_from_hdf5, rload_from_hdf5,&
+				rload_array_from_hdf5, rload_1d_array_from_hdf5, rload_3d_array_from_hdf5
+				
 	PUBLIC :: initialize_HDF5, finalize_HDF5, save_simulation_parameters,&
                 load_field_data_from_hdf5
 
@@ -825,15 +832,15 @@ subroutine load_dim_data_from_hdf5(params,field_dims)
 	end if
 
 	dset = "/NR"
-	call rload_from_hdf5(h5file_id,dset,rdatum)
+	call load_from_hdf5(h5file_id,dset,rdatum)
 	field_dims(1) = INT(rdatum)
 
 	dset = "/NPHI"
-	call rload_from_hdf5(h5file_id,dset,rdatum)
+	call load_from_hdf5(h5file_id,dset,rdatum)
 	field_dims(2) = INT(rdatum)
 
 	dset = "/NZ"
-	call rload_from_hdf5(h5file_id,dset,rdatum)
+	call load_from_hdf5(h5file_id,dset,rdatum)
 	field_dims(3) = INT(rdatum)
 
 !	dset = "simulation/num_species"
