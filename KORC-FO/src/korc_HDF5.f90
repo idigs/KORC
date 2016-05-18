@@ -9,10 +9,60 @@ implicit none
 	INTEGER(SIZE_T), PRIVATE :: rp_hdf5 ! Size of real precision used in HDF5
 
 	PRIVATE :: isave_1d_array_to_hdf5, rsave_1d_array_to_hdf5, rsave_2d_array_to_hdf5,&
-                isave_to_hdf5, rsave_to_hdf5
-	PUBLIC :: initialize_HDF5, finalize_HDF5, save_simulation_parameters
+                isave_to_hdf5, rsave_to_hdf5, rload_2d_array_from_hdf5
+	PUBLIC :: initialize_HDF5, finalize_HDF5, save_simulation_parameters,&
+                load_field_data_from_hdf5
 
 contains
+
+
+subroutine rload_2d_array_from_hdf5(h5file_id,dset,rdata,attr)
+implicit none
+	INTEGER(HID_T), INTENT(IN) :: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: rdata
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: attr
+	CHARACTER(4) :: aname = "Info"
+	INTEGER(HID_T) :: dset_id
+	INTEGER(HID_T) :: dspace_id
+	INTEGER(HID_T) :: aspace_id
+	INTEGER(HID_T) :: attr_id
+	INTEGER(HID_T) :: atype_id
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: adims
+	INTEGER :: rank
+	INTEGER :: arank
+	INTEGER(SIZE_T) :: tmplen
+	INTEGER(SIZE_T) :: attrlen
+	INTEGER :: h5error
+	INTEGER :: rr,dd ! Iterators
+
+	rank = size(shape(rdata))
+	ALLOCATE(dims(rank))
+	dims = shape(rdata)
+
+	! * * * Write data to file * * *
+
+	call h5screate_simple_f(rank,dims,dspace_id,h5error)
+	call h5dcreate_f(h5file_id, TRIM(dset), KORC_HDF5_REAL, dspace_id, dset_id, h5error)
+
+	if (rp .EQ. INT(rp_hdf5)) then
+		call h5dwrite_f(dset_id, KORC_HDF5_REAL, rdata, dims, h5error)
+	else
+		call h5dwrite_f(dset_id, KORC_HDF5_REAL, REAL(rdata,4), dims, h5error)
+	end if
+
+	if (PRESENT(attr)) then
+		! * * * Write attribute of data to file * * *
+	end if
+
+	call h5sclose_f(dspace_id, h5error)
+	call h5dclose_f(dset_id, h5error)
+	! * * * Write data to file * * *
+
+	DEALLOCATE(dims)
+end subroutine rload_2d_array_from_hdf5
+
 
 
 subroutine initialize_HDF5()
@@ -275,6 +325,54 @@ implicit none
 end subroutine rsave_1d_array_to_hdf5
 
 
+subroutine rsave_2d_array_to_hdf5(h5file_id,dset,rdata,attr)
+implicit none
+	INTEGER(HID_T), INTENT(IN) :: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: rdata
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: attr
+	CHARACTER(4) :: aname = "Info"
+	INTEGER(HID_T) :: dset_id
+	INTEGER(HID_T) :: dspace_id
+	INTEGER(HID_T) :: aspace_id
+	INTEGER(HID_T) :: attr_id
+	INTEGER(HID_T) :: atype_id
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: adims
+	INTEGER :: rank
+	INTEGER :: arank
+	INTEGER(SIZE_T) :: tmplen
+	INTEGER(SIZE_T) :: attrlen
+	INTEGER :: h5error
+	INTEGER :: rr,dd ! Iterators
+
+	rank = size(shape(rdata))
+	ALLOCATE(dims(rank))
+	dims = shape(rdata)
+
+	! * * * Write data to file * * *
+
+	call h5screate_simple_f(rank,dims,dspace_id,h5error)
+	call h5dcreate_f(h5file_id, TRIM(dset), KORC_HDF5_REAL, dspace_id, dset_id, h5error)
+
+	if (rp .EQ. INT(rp_hdf5)) then
+		call h5dwrite_f(dset_id, KORC_HDF5_REAL, rdata, dims, h5error)
+	else
+		call h5dwrite_f(dset_id, KORC_HDF5_REAL, REAL(rdata,4), dims, h5error)
+	end if
+
+	if (PRESENT(attr)) then
+		! * * * Write attribute of data to file * * *
+	end if
+
+	call h5sclose_f(dspace_id, h5error)
+	call h5dclose_f(dset_id, h5error)
+	! * * * Write data to file * * *
+
+	DEALLOCATE(dims)
+end subroutine rsave_2d_array_to_hdf5
+
+
 subroutine save_simulation_parameters(params,cpp,spp,EB)
 implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
@@ -292,7 +390,6 @@ implicit none
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: attr_array
 	CHARACTER(MAX_STRING_LENGTH) :: attr
 	INTEGER :: h5error
-	INTEGER :: mpierror
 	CHARACTER(19) :: tmp_str
 
 	write(tmp_str,'(I18)') params%mpi_params%rank
@@ -480,55 +577,6 @@ implicit none
 end subroutine save_simulation_parameters
 
 
-
-subroutine rsave_2d_array_to_hdf5(h5file_id,dset,rdata,attr)
-implicit none
-	INTEGER(HID_T), INTENT(IN) :: h5file_id
-	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: rdata
-	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: attr
-	CHARACTER(4) :: aname = "Info"
-	INTEGER(HID_T) :: dset_id
-	INTEGER(HID_T) :: dspace_id
-	INTEGER(HID_T) :: aspace_id
-	INTEGER(HID_T) :: attr_id
-	INTEGER(HID_T) :: atype_id
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: adims
-	INTEGER :: rank
-	INTEGER :: arank
-	INTEGER(SIZE_T) :: tmplen
-	INTEGER(SIZE_T) :: attrlen
-	INTEGER :: h5error
-	INTEGER :: rr,dd ! Iterators
-
-	rank = size(shape(rdata))
-	ALLOCATE(dims(rank))
-	dims = shape(rdata)
-
-	! * * * Write data to file * * *
-
-	call h5screate_simple_f(rank,dims,dspace_id,h5error)
-	call h5dcreate_f(h5file_id, TRIM(dset), KORC_HDF5_REAL, dspace_id, dset_id, h5error)
-
-	if (rp .EQ. INT(rp_hdf5)) then
-		call h5dwrite_f(dset_id, KORC_HDF5_REAL, rdata, dims, h5error)
-	else
-		call h5dwrite_f(dset_id, KORC_HDF5_REAL, REAL(rdata,4), dims, h5error)
-	end if
-
-	if (PRESENT(attr)) then
-		! * * * Write attribute of data to file * * *
-	end if
-
-	call h5sclose_f(dspace_id, h5error)
-	call h5dclose_f(dset_id, h5error)
-	! * * * Write data to file * * *
-
-	DEALLOCATE(dims)
-end subroutine rsave_2d_array_to_hdf5
-
-
 subroutine save_simulation_outputs(params,cpp,spp,EB,it)
 implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
@@ -549,7 +597,6 @@ implicit none
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: attr_array
 	CHARACTER(MAX_STRING_LENGTH) :: attr
 	INTEGER :: h5error
-	INTEGER :: mpierror
 	CHARACTER(19) :: tmp_str
     INTEGER :: ii
 
@@ -602,5 +649,45 @@ implicit none
 
 	call h5fclose_f(h5file_id, h5error)
 end subroutine save_simulation_outputs
+
+
+subroutine load_field_data_from_hdf5(params,EB)
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(FIELDS), INTENT(INOUT) :: EB
+	CHARACTER(MAX_STRING_LENGTH) :: filename
+	CHARACTER(MAX_STRING_LENGTH) :: gname
+	CHARACTER(MAX_STRING_LENGTH) :: subgname
+	CHARACTER(MAX_STRING_LENGTH) :: dset
+	INTEGER(HID_T) :: h5file_id
+	INTEGER(HID_T) :: group_id
+	INTEGER(HID_T) :: subgroup_id
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
+!	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: rdata
+	INTEGER :: h5error
+    INTEGER :: ii
+
+
+
+end subroutine load_field_data_from_hdf5
+
+
+subroutine load_dim_data_from_hdf5(params,EB)
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(FIELDS), INTENT(INOUT) :: EB
+	CHARACTER(MAX_STRING_LENGTH) :: filename
+	CHARACTER(MAX_STRING_LENGTH) :: gname
+	CHARACTER(MAX_STRING_LENGTH) :: subgname
+	CHARACTER(MAX_STRING_LENGTH) :: dset
+	INTEGER(HID_T) :: h5file_id
+	INTEGER(HID_T) :: group_id
+	INTEGER(HID_T) :: subgroup_id
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
+	INTEGER :: h5error
+    INTEGER :: ii
+
+    EB%dims = (/4,7,2/)
+
+
+end subroutine load_dim_data_from_hdf5
 
 end module korc_HDF5

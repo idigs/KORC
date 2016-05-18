@@ -127,9 +127,29 @@ TYPE, PUBLIC :: FIELDS
 	TYPE(V_FIELD_3D) :: E
 	TYPE(V_FIELD_3D) :: B
 	REAL(rp) :: Bo ! Characteristic magnetic field
-	INTEGER, DIMENSION(3) :: dim ! dim(NR, NPHI, NZ)
+	INTEGER, DIMENSION(3) :: dims ! dims(NR, NPHI, NZ)
 END TYPE FIELDS
 
 contains
+
+subroutine ALLOCATE_V_FIELD_3D(F,dims)
+    implicit none
+	TYPE(V_FIELD_3D), INTENT(INOUT) :: F
+	INTEGER, DIMENSION(3), INTENT(IN) :: dims
+    
+    ALLOCATE(F%R(dims(1),dims(2),dims(3)))
+    ALLOCATE(F%PHI(dims(1),dims(2),dims(3)))
+    ALLOCATE(F%Z(dims(1),dims(2),dims(3)))
+end subroutine ALLOCATE_V_FIELD_3D
+
+
+subroutine DEALLOCATE_V_FIELD_3D(F)
+    implicit none
+	TYPE(V_FIELD_3D), INTENT(INOUT) :: F
+    
+    DEALLOCATE(F%R)
+    DEALLOCATE(F%PHI)
+    DEALLOCATE(F%Z)
+end subroutine DEALLOCATE_V_FIELD_3D
 
 end module korc_types

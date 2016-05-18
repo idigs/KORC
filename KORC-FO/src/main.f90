@@ -68,7 +68,7 @@ implicit none
 	call finalize_HDF5()
 
 	! DEALLOCATION OF VARIABLES
-	call deallocate_variables(params,spp)
+	call deallocate_variables(params,EB,spp)
 
 	call finalize_communications(params)
 	! * * * FINALIZING SIMULATION * * * 

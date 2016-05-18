@@ -1,8 +1,9 @@
 module initialize
 
 use korc_types
-use korc_hpc
 use constants
+use korc_hpc
+use korc_HDF5
 use korc_interp
 use rnd_numbers
 
@@ -283,6 +284,15 @@ subroutine initialize_fields(params,EB)
 
 		EB%Bo = EB%AB%Bo
 	else if (params%magnetic_field_model .EQ. 'EXTERNAL') then
+        call load_dim_data_from_hdf5(params,EB)
+
+!        write(6,*) EB%dims
+
+        call ALLOCATE_V_FIELD_3D(EB%B,EB%dims)
+
+        call load_field_data_from_hdf5(params,EB)
+
+		call korc_abort()
 		! Load data file containing magnetic field
 	else
 		call korc_abort()

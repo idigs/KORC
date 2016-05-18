@@ -14,13 +14,14 @@ ifeq ($(UNAME), Darwin)
 	FCFLAGS =-cpp   -J$(MOD) -fopenmp    -O3
 
 	HDF5_INSTALL =../HDF5
+	PSPLINE_INSTALL=../pspline_lib
 
 	INCLUDES_HDF5	=-I$(HDF5_INSTALL)/include
-	INCLUDES =
+	INCLUDES =-I$(PSPLINE_INSTALL)/mod
 	EXTLIB	=-L$(HDF5_INSTALL)/lib
 	LIBSHDF5	=$(EXTLIB)  $(HDF5_INSTALL)/lib/libhdf5_fortran.a   $(HDF5_INSTALL)/lib/libhdf5_hl.a    $(HDF5_INSTALL)/lib/libhdf5.a
-	LIB_FLAGS =
-	LIB	= -lm   -lz -ldl
+	LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib
+	LIB	= -lm   -lz -ldl	-lpspline
 	OMP_LIB_FLAGS =	-lgomp
 endif
 
@@ -43,7 +44,7 @@ ifeq ($(UNAME), Linux)
 	OMP_LIB_FLAGS =	-lgomp
 endif
 
-BINARIES = $(addprefix $(OBJ)/, korc_types.o    constants.o korc_hpc.o  rnd_numbers.o	korc_fields.o	korc_coords.o	korc_interp.o	initialize.o    finalize.o	korc_units.o   korc_ppusher.o	korc_HDF5.o	main.o)
+BINARIES = $(addprefix $(OBJ)/, korc_types.o    korc_HDF5.o    constants.o korc_hpc.o  rnd_numbers.o	korc_fields.o	korc_coords.o	korc_interp.o	initialize.o    finalize.o	korc_units.o   korc_ppusher.o	main.o)
 
 all: KORC-FO
 
