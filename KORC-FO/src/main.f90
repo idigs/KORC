@@ -56,7 +56,6 @@ program main
 	call advance_particles_velocity(params,EB,spp,0.5_rp*params%dt)
 
 	do it=1,params%t_steps
-		write(6,'("Iteration: ",I15)') it
 		call advance_particles_position(params,EB,spp,params%dt)
 		call advance_particles_velocity(params,EB,spp,params%dt)
 		if ( modulo(it,params%output_cadence) .EQ. 0 ) then

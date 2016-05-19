@@ -168,8 +168,8 @@ subroutine initialize_particles(params,EB,ptcls)
 		call RANDOM_NUMBER(radius)
 		radius = r(ii)*radius
 		
-		Xo(1,:) = 0.0_rp ! Ro(ii) + sqrt(radius)*cos(angle)
-		Xo(2,:) = Ro(ii) + sqrt(radius)*cos(angle) ! 0.0_rp
+		Xo(1,:) = Ro(ii) + sqrt(radius)*cos(angle)
+		Xo(2,:) = 0.0_rp
 		Xo(3,:) = Zo(ii) + sqrt(radius)*sin(angle)
 
 		ptcls(ii)%vars%X(1,:) = Xo(1,:)
@@ -187,7 +187,7 @@ subroutine initialize_particles(params,EB,ptcls)
 !		ptcls(ii)%vars%V(2,:) = -Vo
 !		ptcls(ii)%vars%V(3,:) = 0.0_rp
 
-		call unitVectors(Xo,EB,b,a)
+		call unitVectors(params,Xo,EB,b,a)
 !		write(6,'(F15.10,F15.10,F15.10)') a
 		do jj=1,ptcls(ii)%ppp
 			ptcls(ii)%vars%V(:,jj) = Vpar(jj)*b(:,jj) + Vperp*a(:,jj)

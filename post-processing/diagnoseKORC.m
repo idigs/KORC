@@ -8,7 +8,7 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
 ST.PD = pitchAngleDiagnostic(ST,30);
 
@@ -62,7 +62,7 @@ for ll=1:length(list)
 end
 
 
-list = {'eta','gamma'};%,'mu','kappa','tau'};
+list = {'eta'};%,'gamma'};%,'mu','kappa','tau'};
 
 for ll=1:length(list)
     for ss=1:ST.params.simulation.num_species
@@ -150,13 +150,14 @@ tmax = max(time);
 tmin = min(time);
 
 figure
-surf(time,vals,log10(f),'LineStyle','none')
+% surf(time,vals,log10(f),'LineStyle','none')
+surf(time,vals,f,'LineStyle','none')
 axis([tmin tmax minVal maxVal])
 xlabel('Time (s)','Interpreter','latex','FontSize',16)
 ylabel('Pitch angle $\theta$ (degrees)','Interpreter','latex','FontSize',16)
 colormap(jet)
 
-
-
-
+PD.f = f;
+PD.vals = vals;
 end
+
