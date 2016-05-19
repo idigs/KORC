@@ -1,17 +1,17 @@
 module korc_ppusher
 
-use korc_types
-use constants
-use korc_fields
-use korc_interp
-use korc_hpc
+    use korc_types
+    use constants
+    use korc_fields
+    use korc_interp
+    use korc_hpc
 
-implicit none
+    implicit none
 
-PRIVATE :: cross
-PUBLIC :: advance_particles_position, advance_particles_velocity
+    PRIVATE :: cross
+    PUBLIC :: advance_particles_position, advance_particles_velocity
 
-contains
+    contains
 
 function cross(a,b)
 	REAL(rp), DIMENSION(3), INTENT(IN) :: a
@@ -23,8 +23,9 @@ function cross(a,b)
 	cross(3) = a(1)*b(2) - a(2)*b(1)
 end function cross
 
+
 subroutine advance_particles_velocity(params,EB,spp,dt)
-implicit none
+    implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(FIELDS), INTENT(IN) :: EB
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
@@ -106,7 +107,7 @@ end subroutine advance_particles_velocity
 
 
 subroutine advance_particles_position(params,EB,spp,dt)
-implicit none
+    implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(FIELDS), INTENT(IN) :: EB
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp

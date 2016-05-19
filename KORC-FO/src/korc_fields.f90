@@ -1,11 +1,11 @@
 module korc_fields
-use korc_types
-implicit none
+    use korc_types
+    implicit none
 
-contains
+    contains
 
 subroutine analytical_magnetic_field(EB,Y,B)
-implicit none
+    implicit none
 	TYPE(FIELDS), INTENT(IN) :: EB
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz

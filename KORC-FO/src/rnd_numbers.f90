@@ -1,14 +1,14 @@
 module rnd_numbers
 
-use korc_types
+    use korc_types
 
-implicit none
+    implicit none
 
-contains
+    contains
 
 subroutine init_random_seed()
 !use iso_fortran_env, only: int64
-implicit none
+    implicit none
 	INTEGER, allocatable :: seed(:)
 	INTEGER(8), DIMENSION(8) :: dt
 	INTEGER(8) :: i, istat, pid

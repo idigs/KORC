@@ -1,12 +1,12 @@
 module korc_hpc
 
-use korc_types
-use omp_lib
-use mpi
+    use korc_types
+    use omp_lib
+    use mpi
 
-implicit none
+    implicit none
 
-contains
+    contains
 
 
 subroutine korc_abort()
@@ -21,9 +21,9 @@ subroutine initialize_mpi(params)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
 	INTEGER :: mpierr
-	INTEGER :: NDIMS
+	INTEGER, PARAMETER :: NDIMS = 1
 	INTEGER, DIMENSION(:), ALLOCATABLE :: DIMS
-	LOGICAL :: REORDER
+	LOGICAL, PARAMETER :: REORDER = .FALSE.
 	LOGICAL, DIMENSION(:), ALLOCATABLE :: PERIODS
 	INTEGER :: ii ! Iterator
 
@@ -40,8 +40,8 @@ subroutine initialize_mpi(params)
 	end if
 
 	! * * * Here a Cartesian topology for MPI is created * * * !
-	NDIMS = 1
-	REORDER = .FALSE.
+!	NDIMS = 1
+!	REORDER = .FALSE.
 	ALLOCATE(DIMS(NDIMS))
 	ALLOCATE(PERIODS(NDIMS))
 	! This loop isn't necessary but helps to do things more general in the future

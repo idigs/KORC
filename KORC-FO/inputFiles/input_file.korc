@@ -8,7 +8,7 @@
 										! the parameters given in the "analytic_mag_field_params" section.
 										! For 'EXTERNAL', the magnetic field is loaded from the file
 										! specified in "filename".
-	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/ITER_3D.h5"
+	magnetic_field_filename = "/Users/Leopo/Documents/MATLAB/KORK/KORC-FO/inputFiles/ITER_3D.h5"
 	pic_algorithm = 1 ! 1 = Leapfrog, 2 = RK4, 3 = some other
 /
 

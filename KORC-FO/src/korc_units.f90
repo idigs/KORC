@@ -1,16 +1,16 @@
 module korc_units
 
-use korc_types
-use constants
+    use korc_types
+    use constants
 
-implicit none
+    implicit none
 
 	PUBLIC :: compute_charcs_plasma_params, define_time_step, normalize_variables
 
-contains
+    contains
 
 subroutine compute_charcs_plasma_params(spp,EB,cpp)
-implicit none
+    implicit none
 	TYPE(CHARCS_PARAMS), INTENT(INOUT) :: cpp
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
 	TYPE(FIELDS), INTENT(IN) :: EB
@@ -36,7 +36,7 @@ end subroutine compute_charcs_plasma_params
 
 
 subroutine define_time_step(cpp,params)
-implicit none
+    implicit none
 	TYPE(KORC_PARAMS), INTENT(OUT) :: params
 	TYPE(CHARCS_PARAMS), INTENT(IN) :: cpp
 
@@ -48,7 +48,7 @@ end subroutine define_time_step
 
 
 subroutine normalize_variables(params,spp,EB,cpp)
-implicit none
+    implicit none
 	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
 	TYPE(FIELDS), INTENT(INOUT) :: EB

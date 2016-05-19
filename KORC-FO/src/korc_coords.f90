@@ -1,14 +1,16 @@
 module korc_coords
-use korc_types
-use constants
-implicit none
 
-PUBLIC :: cart_to_cyl, cart_to_tor
+    use korc_types
+    use constants
 
-contains
+    implicit none
+
+    PUBLIC :: cart_to_cyl, cart_to_tor
+
+    contains
 
 subroutine cart_to_cyl(X,Xcyl)
-implicit none
+    implicit none
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: X ! X(1,:) = x, X(2,:) = y, X(3,:) = z
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(OUT) :: Xcyl ! Xcyl(1,:) = R, Xcyl(2,:) = phi, Xcyl(3,:) = Z
 
@@ -20,7 +22,7 @@ end subroutine cart_to_cyl
 
 
 subroutine cart_to_tor(X,Ro,Xtor)
-implicit none
+    implicit none
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: X ! X(1,:) = x, X(2,:) = y, X(3,:) = z
 	REAL(rp), INTENT(IN) :: Ro
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: Xtor ! Xtor(1,:) = r, Xtor(2,:) = theta, Xtor(3,:) = zeta

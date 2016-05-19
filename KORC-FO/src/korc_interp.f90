@@ -1,21 +1,21 @@
 module korc_interp
 
-use korc_types
-use korc_coords
-use korc_fields
-use rnd_numbers
+    use korc_types
+    use korc_coords
+    use korc_fields
+    use rnd_numbers
 
-use EZspline_obj
-use EZspline
+    use EZspline_obj
+    use EZspline
 
-implicit none
+    implicit none
 
-PUBLIC :: interp_field, interp_analytical_field, unitVectors
+    PUBLIC :: interp_field, interp_analytical_field, unitVectors
 
-contains
+    contains
 
 subroutine unitVectors(Xo,EB,par,perp)
-implicit none
+    implicit none
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Xo
 	TYPE(FIELDS), INTENT(IN) :: EB
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: par
@@ -101,7 +101,7 @@ end subroutine unitVectors
 
 
 subroutine interp_field(prtcls,EB)
-implicit none
+    implicit none
 	TYPE(PARTICLES), INTENT(INOUT) :: prtcls
 	TYPE(FIELDS), INTENT(IN) :: EB
 	INTEGER :: ii, pp, ss ! Iterators
@@ -110,7 +110,7 @@ end subroutine interp_field
 
 
 subroutine interp_analytical_field(prtcls,EB)
-implicit none
+    implicit none
 	TYPE(PARTICLES), INTENT(INOUT) :: prtcls
 	TYPE(FIELDS), INTENT(IN) :: EB
 

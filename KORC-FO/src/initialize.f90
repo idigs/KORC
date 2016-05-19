@@ -1,18 +1,18 @@
 module initialize
 
-use korc_types
-use constants
-use korc_hpc
-use korc_HDF5
-use korc_interp
-use rnd_numbers
+    use korc_types
+    use constants
+    use korc_hpc
+    use korc_HDF5
+    use korc_interp
+    use rnd_numbers
 
-implicit none
+    implicit none
 
 	PRIVATE :: set_paths, load_korc_params, initialization_sanity_check, unitVectors
 	PUBLIC :: initialize_korc_parameters, initialize_particles, initialize_fields
 
-contains
+    contains
 
 subroutine set_paths(params)
 	implicit none
