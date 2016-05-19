@@ -22,6 +22,10 @@ module korc_types
 	INTEGER, PUBLIC, PARAMETER :: default_unit_open = 101
 	INTEGER, PUBLIC, PARAMETER :: default_unit_write = 201
 
+TYPE, PUBLIC :: KORC_STRING
+	CHARACTER(MAX_STRING_LENGTH) :: str
+END TYPE KORC_STRING
+
 ! * * * * * * * * * * * * * * * * * * * * !
 ! * * * Basic korc array structures * * * !
 ! * * * * * * * * * * * * * * * * * * * * !
@@ -189,7 +193,6 @@ subroutine DEALLOCATE_V_FIELD_3D(F)
     DEALLOCATE(F%PHI)
     DEALLOCATE(F%Z)
 end subroutine DEALLOCATE_V_FIELD_3D
-
 
 
 end module korc_types

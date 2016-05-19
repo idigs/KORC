@@ -6,6 +6,7 @@ program main
 	use korc_HDF5
 	use korc_fields
 	use korc_ppusher
+	use korc_interp
 	use initialize
 	use finalize
 
@@ -32,9 +33,11 @@ program main
 	call compute_charcs_plasma_params(spp,EB,cpp)
 
 	call define_time_step(cpp,params)
-	! * * * INITIALIZATION STAGE * * *
 
 	call normalize_variables(params,spp,EB,cpp)
+
+	call initialize_interpolant(params,EB)
+	! * * * INITIALIZATION STAGE * * *
 
 	call save_simulation_parameters(params,cpp,spp,EB)
 
@@ -53,6 +56,7 @@ program main
 	call advance_particles_velocity(params,EB,spp,0.5_rp*params%dt)
 
 	do it=1,params%t_steps
+		write(6,'("Iteration: ",I15)') it
 		call advance_particles_position(params,EB,spp,params%dt)
 		call advance_particles_velocity(params,EB,spp,params%dt)
 		if ( modulo(it,params%output_cadence) .EQ. 0 ) then
@@ -66,6 +70,8 @@ program main
 
 	! * * * FINALIZING SIMULATION * * * 
 	call finalize_HDF5()
+
+	call finalize_interpolant()
 
 	! DEALLOCATION OF VARIABLES
 	call deallocate_variables(params,EB,spp)

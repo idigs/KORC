@@ -9,15 +9,15 @@ module korc_units
 
     contains
 
-subroutine compute_charcs_plasma_params(spp,EB,cpp)
+subroutine compute_charcs_plasma_params(spp,F,cpp)
     implicit none
 	TYPE(CHARCS_PARAMS), INTENT(INOUT) :: cpp
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
-	TYPE(FIELDS), INTENT(IN) :: EB
+	TYPE(FIELDS), INTENT(IN) :: F
 	INTEGER :: ind
 
 	cpp%velocity = C_C
-	cpp%magnetic_field = EB%Bo
+	cpp%magnetic_field = F%Bo
 
 	spp(:)%wc = ( abs(spp(:)%q)/spp(:)%m )*cpp%magnetic_field
 	ind = maxloc(spp(:)%wc,1) ! Index to maximum cyclotron frequency
@@ -47,11 +47,11 @@ subroutine define_time_step(cpp,params)
 end subroutine define_time_step
 
 
-subroutine normalize_variables(params,spp,EB,cpp)
+subroutine normalize_variables(params,spp,F,cpp)
     implicit none
 	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
-	TYPE(FIELDS), INTENT(INOUT) :: EB
+	TYPE(FIELDS), INTENT(INOUT) :: F
 	TYPE(CHARCS_PARAMS), INTENT(IN) :: cpp
 	INTEGER :: ii ! Iterator(s)
 
@@ -71,15 +71,23 @@ subroutine normalize_variables(params,spp,EB,cpp)
 
 !	Normalize electromagnetic fields
 	if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
-		EB%AB%Bo = EB%AB%Bo/cpp%magnetic_field
-		EB%AB%a = EB%AB%a/cpp%length
-		EB%AB%Ro = EB%AB%Ro/cpp%length
-		EB%AB%lambda = EB%AB%lambda/cpp%length
-		EB%AB%Bpo = EB%AB%Bpo/cpp%magnetic_field
+		F%Bo = F%Bo/cpp%magnetic_field
 
-		EB%Bo = EB%Bo/cpp%magnetic_field
+		F%AB%Bo = F%AB%Bo/cpp%magnetic_field
+		F%AB%a = F%AB%a/cpp%length
+		F%AB%Ro = F%AB%Ro/cpp%length
+		F%AB%lambda = F%AB%lambda/cpp%length
+		F%AB%Bpo = F%AB%Bpo/cpp%magnetic_field
 	else
-		! Normalize data structures EB%E and EB%B
+		F%Bo = F%Bo/cpp%magnetic_field
+
+		F%B%R = F%B%R/cpp%magnetic_field
+		F%B%PHI = F%B%PHI/cpp%magnetic_field
+		F%B%Z = F%B%Z/cpp%magnetic_field
+
+		F%X%R = F%X%R/cpp%length
+		! Nothing to do for the PHI component
+		F%X%Z = F%X%Z/cpp%length
 	end if
 
 !	Normalize other variables

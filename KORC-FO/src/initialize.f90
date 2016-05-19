@@ -9,6 +9,8 @@ module initialize
 
     implicit none
 
+	
+
 	PRIVATE :: set_paths, load_korc_params, initialization_sanity_check, unitVectors
 	PUBLIC :: initialize_korc_parameters, initialize_particles, initialize_fields
 
@@ -166,8 +168,8 @@ subroutine initialize_particles(params,EB,ptcls)
 		call RANDOM_NUMBER(radius)
 		radius = r(ii)*radius
 		
-		Xo(1,:) = Ro(ii) + sqrt(radius)*cos(angle)
-		Xo(2,:) = 0.0_rp
+		Xo(1,:) = 0.0_rp ! Ro(ii) + sqrt(radius)*cos(angle)
+		Xo(2,:) = Ro(ii) + sqrt(radius)*cos(angle) ! 0.0_rp
 		Xo(3,:) = Zo(ii) + sqrt(radius)*sin(angle)
 
 		ptcls(ii)%vars%X(1,:) = Xo(1,:)
@@ -258,6 +260,7 @@ subroutine initialize_fields(params,EB)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(FIELDS), INTENT(OUT) :: EB
+	TYPE(KORC_STRING) :: field
 	REAL(rp) :: Bo
 	REAL(rp) :: minor_radius
 	REAL(rp) :: major_radius
@@ -268,6 +271,7 @@ subroutine initialize_fields(params,EB)
 			q_factor_at_separatrix,free_param
 
 	if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
+		! Load the parameters of the analytical magnetic field
 		open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 		read(default_unit_open,nml=analytic_mag_field_params)
 		close(default_unit_open)
@@ -282,14 +286,16 @@ subroutine initialize_fields(params,EB)
 
 		EB%Bo = EB%AB%Bo
 	else if (params%magnetic_field_model .EQ. 'EXTERNAL') then
+		! Load the magnetic field from an external HDF5 file
         call load_dim_data_from_hdf5(params,EB%dims)
 
         call ALLOCATE_FIELDS(EB)
 
         call load_field_data_from_hdf5(params,EB)
 
-		call korc_abort()
-		! Load data file containing magnetic field
+		field%str = 'B'
+
+		call mean_F_field(EB,EB%Bo,field)
 	else
 		call korc_abort()
 	end if
