@@ -454,7 +454,7 @@ switch ST.fileType
                     B.Z(:,iz,iphi) = data(indi:indf,3);
                     
                     B.BR(:,iz,iphi) = data(indi:indf,4);
-                    B.Bphi(:,iz,iphi) = data(indi:indf,5);
+                    B.Bphi(:,iz,iphi) = - data(indi:indf,5);
                     B.BZ(:,iz,iphi) = data(indi:indf,6);
                     
                     B.P(:,iz,iphi) = data(indi:indf,7);

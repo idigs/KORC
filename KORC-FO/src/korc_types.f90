@@ -94,6 +94,7 @@ TYPE, PUBLIC :: SPECIES
 	REAL(rp) :: gammao
 	REAL(rp) :: etao
 	REAL(rp) :: wc
+	REAL(rp) :: wc_r
 	REAL(rp) :: q
 	REAL(rp) :: m
 	INTEGER :: ppp
@@ -103,6 +104,7 @@ END TYPE SPECIES
 
 TYPE, PUBLIC :: CHARCS_PARAMS
 	REAL(rp) :: time
+	REAL(rp) :: time_r
 	REAL(rp) :: velocity
 	REAL(rp) :: length
 	REAL(rp) :: mass

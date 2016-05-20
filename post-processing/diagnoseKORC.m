@@ -8,13 +8,27 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
-ST.PD = pitchAngleDiagnostic(ST,30);
+ST.PD = pitchAngleDiagnostic(ST,180);
 
-X = squeeze(ST.data.sp2.X(:,2,:))*ST.params.scales.l;
-figure;plot3(X(1,:),X(2,:),X(3,:))
-axis equal
+
+sp = 'sp2'
+
+R = ST.params.scales.l*squeeze( sqrt( ST.data.(sp).X(1,:,:).^2 + ST.data.(sp).X(2,:,:).^2 ) );
+
+[V,I] = max(R');
+[~,II] = max(V);
+
+X = squeeze(ST.data.(sp).X(:,II,:))*ST.params.scales.l;
+R = sqrt( X(1,:).^2 + X(2,:).^2 );
+Z = X(3,:);
+figure;plot(R,Z);axis equal
+
+X = squeeze(ST.data.(sp).Rgc(:,II,:))*ST.params.scales.l;
+R = sqrt( X(1,:).^2 + X(2,:).^2 );
+Z = X(3,:);
+hold on;plot(R,Z);hold off
 
 end
 
@@ -37,7 +51,7 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {'X'};%,'V','Rgc'};
+list = {'X','Rgc'};%,'V','Rgc'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -66,9 +80,10 @@ for ll=1:length(list)
 end
 
 
-list = {'eta','gamma'};%,'mu','kappa','tau'};
+list = {'eta'};%,'gamma'};%,'mu','kappa','tau'};
 
 for ll=1:length(list)
+    disp(['Loading ' list{ll}])
     for ss=1:ST.params.simulation.num_species
         tnp = double(ST.params.species.ppp(ss)*ST.params.simulation.nmpi);
         
@@ -76,7 +91,7 @@ for ll=1:length(list)
             zeros(tnp,ST.params.simulation.num_snapshots);
         
         for ii=1:ST.params.simulation.num_snapshots
-            disp(['Loading: ' list{ll} ' Snapshot: ' num2str((ii-1))])
+            % disp(['Loading: ' list{ll} ' Snapshot: ' num2str((ii-1))])
             
             for ff=1:ST.params.simulation.nmpi
                 

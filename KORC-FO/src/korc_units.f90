@@ -20,14 +20,18 @@ subroutine compute_charcs_plasma_params(spp,F,cpp)
 	cpp%magnetic_field = F%Bo
 
 	! Non-relativistic cyclotron frequency
-	! spp(:)%wc = ( abs(spp(:)%q)/spp(:)%m )*cpp%magnetic_field
+	spp(:)%wc = ( abs(spp(:)%q)/spp(:)%m )*cpp%magnetic_field
 
 	! Relativistic cyclotron frequency
-	spp(:)%wc =  abs(spp(:)%q)*cpp%magnetic_field/( spp(:)%gammao*spp(:)%m )
+	spp(:)%wc_r =  abs(spp(:)%q)*cpp%magnetic_field/( spp(:)%gammao*spp(:)%m )
+
 
 	ind = maxloc(spp(:)%wc,1) ! Index to maximum cyclotron frequency
-
 	cpp%time = 2.0_rp*C_PI/spp(ind)%wc
+
+	ind = maxloc(spp(:)%wc_r,1) ! Index to maximum relativistic cyclotron frequency
+	cpp%time_r = 2.0_rp*C_PI/spp(ind)%wc_r
+
 	cpp%mass = spp(ind)%m
 	cpp%charge = abs(spp(ind)%q)
 	cpp%length = cpp%velocity*cpp%time
@@ -48,7 +52,7 @@ subroutine define_time_step(cpp,params)
 ! 	This definition will be changed as more species and electromagnetic fields
 !	are included.
 
-	params%dt = params%dt*cpp%time
+	params%dt = params%dt*cpp%time_r
 
 end subroutine define_time_step
 
