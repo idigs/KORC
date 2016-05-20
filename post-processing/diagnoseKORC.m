@@ -8,9 +8,13 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
 ST.PD = pitchAngleDiagnostic(ST,30);
+
+X = squeeze(ST.data.sp2.X(:,2,:))*ST.params.scales.l;
+figure;plot3(X(1,:),X(2,:),X(3,:))
+axis equal
 
 end
 
@@ -49,7 +53,7 @@ for ll=1:length(list)
             indf = ff*double(ST.params.species.ppp(ss));
             for ii=1:ST.params.simulation.num_snapshots
                 dataset = ...
-                    ['/' num2str(ii*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
+                    ['/' num2str((ii-1)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
                     '/' list{ll}];
                 
                 data.(['sp' num2str(ss)]).(list{ll})(:,indi:indf,ii) = ...
@@ -62,7 +66,7 @@ for ll=1:length(list)
 end
 
 
-list = {'eta'};%,'gamma'};%,'mu','kappa','tau'};
+list = {'eta','gamma'};%,'mu','kappa','tau'};
 
 for ll=1:length(list)
     for ss=1:ST.params.simulation.num_species
@@ -72,7 +76,7 @@ for ll=1:length(list)
             zeros(tnp,ST.params.simulation.num_snapshots);
         
         for ii=1:ST.params.simulation.num_snapshots
-            disp(['Loading: ' list{ll} ' Snapshot: ' num2str(ii)])
+            disp(['Loading: ' list{ll} ' Snapshot: ' num2str((ii-1))])
             
             for ff=1:ST.params.simulation.nmpi
                 
@@ -81,7 +85,7 @@ for ll=1:length(list)
                 indf = ff*double(ST.params.species.ppp(ss));
                 
                 dataset = ...
-                    ['/' num2str(ii*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
+                    ['/' num2str((ii-1)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
                     '/' list{ll}];
                 
                 data.(['sp' num2str(ss)]).(list{ll})(indi:indf,ii) = ...
@@ -150,8 +154,8 @@ tmax = max(time);
 tmin = min(time);
 
 figure
-% surf(time,vals,log10(f),'LineStyle','none')
-surf(time,vals,f,'LineStyle','none')
+surf(time,vals,log10(f),'LineStyle','none')
+% surf(time,vals,f,'LineStyle','none')
 axis([tmin tmax minVal maxVal])
 xlabel('Time (s)','Interpreter','latex','FontSize',16)
 ylabel('Pitch angle $\theta$ (degrees)','Interpreter','latex','FontSize',16)

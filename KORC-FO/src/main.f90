@@ -70,7 +70,7 @@ program main
 	! * * * FINALIZING SIMULATION * * * 
 	call finalize_HDF5()
 
-	call finalize_interpolant()
+	call finalize_interpolant(params)
 
 	! DEALLOCATION OF VARIABLES
 	call deallocate_variables(params,EB,spp)

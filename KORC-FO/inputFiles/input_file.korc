@@ -1,5 +1,5 @@
 &input_parameters
-	t_steps = 1200000 ! 1200000000 for 1 ms
+	t_steps = 1000000 ! 1200000000 for 1 ms
 	dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
 	output_cadence = 50 ! 1400 for saving each 100 gyro-periods
 	num_species = 2
@@ -17,17 +17,17 @@
 	Ro = 6.6, 6.6 !
 	Zo = 0.0, 0.0 !
 	r = 0.5, 0.5 !
-	Eo = 30.0E6, 30.0E6 ! Initial energy in eV
+	Eo = 3.0E6, 3.0E6 ! Initial energy in eV
 	etao = 1.0, 1.0 ! Initial pitch angle
-	ppp = 2, 2 ! Number of particles per process (mpi)
+	ppp = 64, 64 ! Number of particles per process (mpi)
     q = -1.0, -1.0 ! Electric charge
     m = 1.0, 1.0 ! In units of electron mass
 /
 
 &analytic_mag_field_params
-	Bo = 3.0 ! In Teslas
-	minor_radius = 0.5 ! Minor radius in meters.
-	major_radius = 1.6 ! Major radius in meters.
+	Bo = 5.42 ! In Teslas
+	minor_radius = 1.0 ! Minor radius in meters.
+	major_radius = 6.5 ! Major radius in meters.
 	q_factor_at_separatrix = 5 ! Safety factor at the separatrix (r=a)
 	free_param = 0.5 ! defined as the ratio minor_radius/lambda
 /

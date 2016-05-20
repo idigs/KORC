@@ -46,67 +46,75 @@ subroutine initialize_interpolant(params,F)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(FIELDS), INTENT(IN) :: F
 
-	interp%NR = F%dims(1)
-	interp%NPHI = F%dims(2)
-	interp%NZ = F%dims(3)
+	if (params%magnetic_field_model .EQ. 'EXTERNAL') then
+		interp%NR = F%dims(1)
+		interp%NPHI = F%dims(2)
+		interp%NZ = F%dims(3)
 
-	write(6,'("* * * * * * * * * *  * * * * * * * * * *")')
-	write(6,'("* * * * INITIALIZING INTERPOLANT * * * *")')
+		write(6,'("* * * * * * * * * *  * * * * * * * * * *")')
+		write(6,'("* * * * INITIALIZING INTERPOLANT * * * *")')
 
-	write(6,'("Initializing R component of interpolant...")')
-	call EZspline_init(interp%R, interp%NR, interp%NPHI, interp%NZ,&
-						interp%BCSR, interp%BCSPHI, interp%BCSZ, ezerr)
-  	call EZspline_error(ezerr)
+		write(6,'("Initializing R component of interpolant...")')
+		call EZspline_init(interp%R, interp%NR, interp%NPHI, interp%NZ,&
+							interp%BCSR, interp%BCSPHI, interp%BCSZ, ezerr)
+	  	call EZspline_error(ezerr)
 
-	interp%R%x1 = F%X%R
-!	interp%R%x2 = F%X%PHI
-	interp%R%x3 = F%X%Z
+		interp%R%x1 = F%X%R
+	!	interp%R%x2 = F%X%PHI
+		interp%R%x3 = F%X%Z
 
-	call EZspline_setup(interp%R, F%B%R, ezerr)
-	call EZspline_error(ezerr)
+		call EZspline_setup(interp%R, F%B%R, ezerr)
+		call EZspline_error(ezerr)
 
-	write(6,'("Initializing PHI component of interpolant...")')
-	call EZspline_init(interp%PHI, interp%NR, interp%NPHI, interp%NZ,&
-						interp%BCSR, interp%BCSPHI, interp%BCSZ, ezerr)
-  	call EZspline_error(ezerr)
+		write(6,'("Initializing PHI component of interpolant...")')
+		call EZspline_init(interp%PHI, interp%NR, interp%NPHI, interp%NZ,&
+							interp%BCSR, interp%BCSPHI, interp%BCSZ, ezerr)
+	  	call EZspline_error(ezerr)
 
-	interp%PHI%x1 = F%X%R
-!	interp%PHI%x2 = F%X%PHI
-	interp%PHI%x3 = F%X%Z
+		interp%PHI%x1 = F%X%R
+	!	interp%PHI%x2 = F%X%PHI
+		interp%PHI%x3 = F%X%Z
 
-	call EZspline_setup(interp%PHI, F%B%PHI, ezerr)
-	call EZspline_error(ezerr)
+		call EZspline_setup(interp%PHI, F%B%PHI, ezerr)
+		call EZspline_error(ezerr)
 
-	write(6,'("Initializing Z component of interpolant...")')
-	call EZspline_init(interp%Z, interp%NR, interp%NPHI, interp%NZ,&
-						interp%BCSR, interp%BCSPHI, interp%BCSZ, ezerr)
-  	call EZspline_error(ezerr)
+		write(6,'("Initializing Z component of interpolant...")')
+		call EZspline_init(interp%Z, interp%NR, interp%NPHI, interp%NZ,&
+							interp%BCSR, interp%BCSPHI, interp%BCSZ, ezerr)
+	  	call EZspline_error(ezerr)
 
-	interp%Z%x1 = F%X%R
-!	interp%Z%x2 = F%X%PHI
-	interp%Z%x3 = F%X%Z
+		interp%Z%x1 = F%X%R
+	!	interp%Z%x2 = F%X%PHI
+		interp%Z%x3 = F%X%Z
 
-	call EZspline_setup(interp%Z, F%B%Z, ezerr)
-	call EZspline_error(ezerr)
+		call EZspline_setup(interp%Z, F%B%Z, ezerr)
+		call EZspline_error(ezerr)
 
 
-	write(6,'("* * * * INTERPOLANT  INITIALIZED * * * *")')
-	write(6,'("* * * * * * * * * *  * * * * * * * * * *")')	
+		write(6,'("* * * * INTERPOLANT  INITIALIZED * * * *")')
+		write(6,'("* * * * * * * * * *  * * * * * * * * * *")')	
+	else
+		write(6,'("* * * * * * * * * * * * * * * * * * * * * * * *")')
+		write(6,'("* * * * USING ANALYTICAL MAGNETIC FIELD * * * *")')
+		write(6,'("* * * * * * * * * * * * * * * * * * * * * * * *")')
+	end if
 
 end subroutine initialize_interpolant
 
 
-subroutine finalize_interpolant()
+subroutine finalize_interpolant(params)
 	implicit none
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	if (params%magnetic_field_model .EQ. 'EXTERNAL') then
+		call Ezspline_free(interp%R, ezerr)
+		call EZspline_error(ezerr)
 
-	call Ezspline_free(interp%R, ezerr)
-	call EZspline_error(ezerr)
+		call Ezspline_free(interp%PHI, ezerr)
+		call EZspline_error(ezerr)
 
-	call Ezspline_free(interp%PHI, ezerr)
-	call EZspline_error(ezerr)
-
-	call Ezspline_free(interp%Z, ezerr)
-	call EZspline_error(ezerr)
+		call Ezspline_free(interp%Z, ezerr)
+		call EZspline_error(ezerr)
+	end if
 end subroutine finalize_interpolant
 
 
@@ -202,8 +210,8 @@ subroutine interp_magnetic_field(Y,B)
 	ss = size(Y,2)
 
 	ALLOCATE(F(3,ss))
-!	write(6,'(F20.12,F20.12,F20.12)') Y
-!	write(6,*) shape(Y), shape(B), shape(F)
+!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(interp,F,Y,B)
+!$OMP DO
 	do pp=1,ss
 		call EZspline_interp(interp%R, Y(1,pp), Y(2,pp), Y(3,pp), F(1,pp), ezerr)
 		call EZspline_error(ezerr)
@@ -218,8 +226,8 @@ subroutine interp_magnetic_field(Y,B)
 		B(2,pp) = F(1,pp)*sin(Y(2,pp)) + F(2,pp)*cos(Y(2,pp))
 		B(3,pp) = F(3,pp)
 	end do
-!	write(6,'(F15.9,F15.9,F15.9)') B
-	
+!$OMP END DO
+!$OMP END PARALLEL
 	DEALLOCATE(F)
 end subroutine interp_magnetic_field
 

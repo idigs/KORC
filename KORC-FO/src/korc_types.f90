@@ -12,7 +12,7 @@ module korc_types
 #elif SINGLE_PRECISION
 	INTEGER, PUBLIC, PARAMETER :: rp = KIND(1.0) ! Single precision
 #endif
-	REAL(rp), PUBLIC, PARAMETER :: korc_zero = 1.0E-10
+	REAL(rp), PUBLIC, PARAMETER :: korc_zero = 1.0E-12
 
 ! * * * * * * * * * * * * * * * * * * * * !
 ! * * * Real and integer precisions * * * !
@@ -91,6 +91,7 @@ TYPE, PUBLIC :: SPECIES
 	TYPE(PARTICLES) :: vars
 	LOGICAL :: runaway
 	REAL(rp) :: Eo
+	REAL(rp) :: gammao
 	REAL(rp) :: etao
 	REAL(rp) :: wc
 	REAL(rp) :: q

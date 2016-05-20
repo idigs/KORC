@@ -122,6 +122,9 @@ subroutine initialize_particles(params,EB,ptcls)
 		ptcls(ii)%q = q(ii)*C_E
 		ptcls(ii)%m = m(ii)*C_ME
 		ptcls(ii)%ppp = ppp(ii)
+
+		ptcls(ii)%gammao =  ptcls(ii)%Eo*C_E/(ptcls(ii)%m*C_C**2)
+
 		ALLOCATE( ptcls(ii)%vars%X(3,ptcls(ii)%ppp) )
 		ALLOCATE( ptcls(ii)%vars%V(3,ptcls(ii)%ppp) )
 		ALLOCATE( ptcls(ii)%vars%Rgc(3,ptcls(ii)%ppp) )
@@ -292,6 +295,10 @@ subroutine initialize_fields(params,EB)
         call ALLOCATE_FIELDS(EB)
 
         call load_field_data_from_hdf5(params,EB)
+
+		open(unit=default_unit_write,file='/home/l8c/Documents/KORC/KORC-FO/slice.dat',status='UNKNOWN',form='formatted')
+		write(default_unit_write,'(150(F15.10))') EB%B%R(:,1,:)
+		close(default_unit_write)	
 
 		field%str = 'B'
 

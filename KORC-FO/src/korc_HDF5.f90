@@ -779,6 +779,10 @@ subroutine save_simulation_parameters(params,cpp,spp,EB)
 		attr_array(1) = "Initial (average) energy in eV"
 		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%Eo*cpp%energy,attr_array)
 
+		dset = TRIM(gname) // "/gammao"
+		attr_array(1) = "Initial relativistic gamma."
+		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%gammao,attr_array)
+
 		dset = TRIM(gname) // "/etao"
 		attr_array(1) = "Initial pitch angle in degrees"
 		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%etao,attr_array)
