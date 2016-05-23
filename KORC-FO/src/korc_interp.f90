@@ -215,6 +215,9 @@ subroutine interp_magnetic_field(Y,B)
 	do pp=1,ss
 		call EZspline_interp(interp%R, Y(1,pp), Y(2,pp), Y(3,pp), F(1,pp), ezerr)
 		call EZspline_error(ezerr)
+!		if (ezerr .NE. 0) then
+!			write(6,'("ezerr value: ",I15)') ezerr ! 97 outside interpolation domain
+!		end if
 
 		call EZspline_interp(interp%PHI, Y(1,pp), Y(2,pp), Y(3,pp), F(2,pp), ezerr)
 		call EZspline_error(ezerr)

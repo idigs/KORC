@@ -13,12 +13,15 @@ ST.data = loadData(ST);
 ST.PD = pitchAngleDiagnostic(ST,180);
 
 
-sp = 'sp2'
+sp = 'sp1'
 
 R = ST.params.scales.l*squeeze( sqrt( ST.data.(sp).X(1,:,:).^2 + ST.data.(sp).X(2,:,:).^2 ) );
 
 [V,I] = max(R');
 [~,II] = max(V);
+
+% [V,I] = min(R');
+% [~,II] = min(V);
 
 X = squeeze(ST.data.(sp).X(:,II,:))*ST.params.scales.l;
 R = sqrt( X(1,:).^2 + X(2,:).^2 );
@@ -45,6 +48,9 @@ for ii=1:length(info.Groups)
             h5read(info.Filename,['/' name '/' subname]);
     end
 end
+
+% params.simulation.num_snapshots = 3828;
+% params.simulation.t_steps = 19140000;
 
 end
 

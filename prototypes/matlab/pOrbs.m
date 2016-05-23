@@ -93,6 +93,7 @@ end
 % Plasma parameters and physical constants, all in SI units
 ST.params = struct;
 ST.params.kB = 1.38E-23; % Boltzmann constant
+ST.params.Kc = 8.987E9; % Coulomb constant in N*m^2/C^2
 ST.params.mu0 = (4E-7)*pi; % Magnetic permeability
 ST.params.ep = 8.854E-12;% Electric permitivity
 ST.params.c = 2.9979E8; % Speed of light
@@ -129,6 +130,7 @@ end
 ST.norm.q = abs(ST.params.q);
 ST.norm.m = ST.params.m;
 ST.norm.wc = ST.norm.q*ST.Bo/ST.norm.m;
+ST.norm.t = 1/ST.norm.wc;
 ST.norm.l = ST.params.c/ST.norm.wc;
 % Normalisation parameters
 
@@ -917,6 +919,8 @@ vperp = zeros(1,ST.params.numSnapshots); % perpendicular velocity
 mu = zeros(1,ST.params.numSnapshots); % instantaneous magnetic moment
 EK = zeros(1,ST.params.numSnapshots); % kinetic energy
 
+P = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
+
 % Normalization
 X(1,:) = ST.params.Xo/ST.norm.l;
 v(1,:) = ST.params.vo/ST.params.c;
@@ -929,6 +933,9 @@ else
 end
 dt = ST.params.dt*ST.norm.wc;
 E = ST.E/(ST.Bo*ST.params.c);
+
+Kc = ST.params.Kc/(ST.norm.m*ST.norm.l^3/(ST.norm.q^2*ST.norm.t^2));
+% Normalization
 
 % initial velocity at time level t = 0
 u(1,:) = v(1,:)/sqrt(1 - sum(v(1,:).^2));
@@ -1121,15 +1128,42 @@ else
             end
         end
         
-        X(ii,:) = XX;
-        u(ii,:) = U;
-        v(ii,:) = u(ii,:)/gamma;
-        EK(ii) = gamma;
+        X(ii,:) = XX; % Time level n+1/2
+        u(ii,:) = U; % Time level n+1
+        v(ii,:) = u(ii,:)/gamma; % Time level n+1
+        EK(ii) = gamma; % Time level n+1
         
         gamma_half_step = sqrt(1 + sum(U_half_step.^2));
         v_half_step = U_half_step/gamma_half_step;
         
         R(ii,:) = X(ii,:) + gamma*m*cross(v_half_step,B)/(q*sum(B.^2));
+        
+%         B_mag = sqrt(sum(B.^2));
+%         b = B/B_mag;
+%         vpar(ii) = v(ii,:)*b';
+%         vperp(ii) = sqrt( v(ii,:)*v(ii,:)' - vpar(ii)^2 );
+%         mu(ii) = gamma*m*vperp(ii)^2/(2*B_mag);
+% 
+%         % Curvature and torsion
+%         acc = (q/m)*cross(v_half_step,B)/sqrt(1 + sum(U_half_step.^2)); % acceleration
+%         aux = sum( cross(v_half_step,acc).^2 );
+%         k(ii) = sqrt( aux )/sqrt( sum(v_half_step.^2) )^3;
+%         dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(U_half_step.^2)); % d(acc)/dt
+%         T(ii) = det([v_half_step; acc; dacc])/aux;
+%         % Curvature and torsion
+%         
+%         % Synchroton radiated power
+%         P(ii) = (2/3)*( Kc*q^2*gamma_half_step*sum(v_half_step.^2)^2*k(ii) );
+%         % Synchroton radiated power
+        
+        % Calculating the position and magnetic field at the time level n+1
+        X_hs = X(ii,:) + 0.5*dt*v(ii,:);
+        
+        if ST.analytical
+            B = analyticalB(X_hs*ST.norm.l)/ST.Bo;
+        else
+            B = interpMagField(ST,X_hs*ST.norm.l)/ST.Bo;
+        end
         
         B_mag = sqrt(sum(B.^2));
         b = B/B_mag;
@@ -1137,16 +1171,25 @@ else
         vperp(ii) = sqrt( v(ii,:)*v(ii,:)' - vpar(ii)^2 );
         mu(ii) = gamma*m*vperp(ii)^2/(2*B_mag);
 
-        % Curvature and torsion
-        acc = (q/m)*cross(v_half_step,B)/sqrt(1 + sum(U_half_step.^2)); % acceleration
-        aux = sum( cross(v_half_step,acc).^2 );
-        k(ii) = sqrt( aux )/sqrt( sum(v_half_step.^2) )^3;
-        dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(U_half_step.^2)); % d(acc)/dt
-        T(ii) = det([v_half_step; acc; dacc])/aux;
-        % Curvature and torsion
+%         % Curvature and torsion
+%         acc = (q/m)*cross(v(ii,:),B)/sqrt(1 + sum(u(ii,:).^2)); % acceleration
+%         aux = sum( cross(v(ii,:),acc).^2 );
+%         k(ii) = sqrt( aux )/sqrt( sum(v(ii,:).^2) )^3;
+%         dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(u(ii,:).^2)); % d(acc)/dt
+%         T(ii) = det([v(ii,:); acc; dacc])/aux;
+%         % Curvature and torsion
+
+        vmag = sqrt( sum(v(ii,:).^2) );
+        aux =  cross(v(ii,:),E) + v(ii,:)*sum(v(ii,:).*B) - B*vmag^2;
+        k(ii) = abs(q)*sqrt( sum(aux.^2) )/(gamma*m*vmag^3);
+        
+        % Synchroton radiated power
+        P(ii) = (2/3)*( Kc*q^2*gamma^4*vmag^4*k(ii)^2 );
+        % Synchroton radiated power
     end
-    
 end
+
+
 
 if ST.opt
     
@@ -1223,6 +1266,8 @@ PP.vperp = vperp;
 PP.k = k/ST.norm.l; % curvature
 PP.T = T/ST.norm.l; % curvature
 
+PP.P = P*(ST.norm.m*ST.norm.l*ST.params.c/(ST.norm.t^2));
+
 PP.EK = EK;
 PP.mu = mu;
 
@@ -1262,6 +1307,22 @@ if ST.opt
     ylabel('Y','Interpreter','latex','FontSize',16)
     zlabel('Z','Interpreter','latex','FontSize',16)
     title(PP.method,'Interpreter','latex','FontSize',16)
+    
+    figure
+%     subplot(2,1,1)
+    plot(time, PP.P/(ST.params.m*ST.params.c^2))
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('Synchroton power loss','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+%     subplot(2,1,1)
+%     plot(time, PP.P)
+%     box on
+%     grid on
+%     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+%     ylabel('Synchroton power loss','Interpreter','latex','FontSize',16)
+%     title(PP.method,'Interpreter','latex','FontSize',16)
 end
 
 if ST.opt
