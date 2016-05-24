@@ -53,11 +53,11 @@ program main
 	t1 = MPI_WTIME()
 
 	! Initial half-time particle push
-	call advance_particles_velocity(params,EB,spp,0.5_rp*params%dt)
+	call advance_particles_position(params,EB,spp,0.5_rp*params%dt)
 
 	do it=1,params%t_steps
-		call advance_particles_position(params,EB,spp,params%dt)
 		call advance_particles_velocity(params,EB,spp,params%dt)
+		call advance_particles_position(params,EB,spp,params%dt)
 		if ( modulo(it,params%output_cadence) .EQ. 0 ) then
 			write(6,'("Saving snapshot: ",I15)') it/params%output_cadence
 			call save_simulation_outputs(params,cpp,spp,EB,it)

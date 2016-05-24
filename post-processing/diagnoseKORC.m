@@ -8,7 +8,7 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
 ST.PD = pitchAngleDiagnostic(ST,180);
 
@@ -86,7 +86,7 @@ for ll=1:length(list)
 end
 
 
-list = {'eta'};%,'gamma'};%,'mu','kappa','tau'};
+list = {'eta','gamma'};%,'mu','kappa','tau'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])

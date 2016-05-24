@@ -942,6 +942,8 @@ u(1,:) = v(1,:)/sqrt(1 - sum(v(1,:).^2));
 gamma = sqrt(1 + sum(u(1,:).^2));
 v(1,:) = u(1,:)/gamma;
 R(1,:) = X(1,:) + gamma*m*cross(v(1,:),B)/(q*sum(B.^2));
+EK(1) = gamma;
+
 
 % % % % % % % % % % % % % % % % % % 
 B_mag = sqrt(sum(B.^2));
@@ -951,34 +953,22 @@ vperp(1) = sqrt( v(1,:)*v(1,:)' - vpar(1)^2 );
 mu(1) = gamma*m*vperp(1)^2/(2*B_mag);
 
 % Curvature and torsion
-acc = q*cross(v(1,:),B)/sqrt(1 + sum(u(1,:).^2)); % acceleration
-aux = sum( cross(v(1,:),acc).^2 );
-k(1) = sqrt( aux )/sqrt( sum(v(1,:).^2) )^3;
-dacc = q*cross(acc,B)/sqrt(1 + sum(u(1,:).^2)); % d(acc)/dt
-T(1) = det([v(1,:); acc; dacc])/aux;
+vmag = sqrt( sum(v(1,:).^2) );
+aux =  cross(v(1,:),E) + v(1,:)*sum(v(1,:).*B) - B*vmag^2;
+k(1) = abs(q)*sqrt( sum(aux.^2) )/(gamma*m*vmag^3);
 % Curvature and torsion
+
+% Synchroton radiated power
+P(1) = (2/3)*( Kc*q^2*gamma^4*vmag^4*k(1)^2 );
+% Synchroton radiated power
 % % % % % % % % % % % % % % % % % % 
 
-% initial half-step for velocity
+% initial half-step for position
 DT = 0.5*dt;
-a = q*(DT)/m;
-
-U_half_step = u(1,:) + 0.5*a*(E + cross(v(1,:),B));
-
-tau = 0.5*q*DT*B/m;
-up = U_half_step + 0.5*a*E;
-gammap = sqrt(1 + sum(up.^2));
-sigma = gammap^2 - sum(tau.^2);
-us = sum(up.*tau);
-gam = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(sum(tau.^2) + sum(us.^2))) );
-t = tau/gam;
-s = 1/(1+sum(t.^2));
-
-U = s*(up + sum(up.*t)*t + cross(up,t));
-V = U/sqrt(1 + sum(U.^2));
-
-EK(1) = sqrt(1 + sum(U.^2));
-% initial half-step for velocity
+V = v(1,:);
+U = u(1,:);
+XX = X(1,:) + DT*V;
+% initial half-step for position
 
 a = q*dt/m;
 
@@ -1066,23 +1056,10 @@ if ST.params.cadence == 1
     end
     
 else
-    
-    XX = X(1,:); % initializing the XX variable
        
     for ii=2:ST.params.numSnapshots
         for jj=1:ST.params.cadence
-            zeta_previous = atan2(XX(2),XX(1));
-            if zeta_previous < 0
-                zeta_previous = zeta_previous + 2*pi;
-            end
-            
-            XX = XX + dt*V;
-            
-            zeta_current = atan2(XX(2),XX(1));
-            if zeta_current < 0
-                zeta_current = zeta_current + 2*pi;
-            end
-            
+                        
             if ST.analytical
                 B = analyticalB(XX*ST.norm.l)/ST.Bo;
             else
@@ -1097,11 +1074,46 @@ else
             sigma = gammap^2 - sum(tau.^2);
             us = sum(up.*tau); % variable 'u^*' in paper
             gamma = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(sum(tau.^2) + sum(us.^2))) );
+            % % % % % % % % % % % % % % % 
+            % Radiation losses operator
+            X_hs = XX + 0.5*dt*V;
+                        
+            if ST.analytical
+                B = analyticalB(X_hs*ST.norm.l)/ST.Bo;
+            else
+                B = interpMagField(ST,X_hs*ST.norm.l)/ST.Bo;
+            end
+            
+            vmag = sqrt( sum(V.^2) );
+            aux =  cross(V,E) + V*sum(V.*B) - B*vmag^2;
+            curv = abs(q)*sqrt( sum(aux.^2) )/(gamma*m*vmag^3);
+            
+            % Synchroton radiated power
+            Psyn = (2/3)*( Kc*q^2*gamma^4*vmag^4*curv^2 );
+            % Synchroton radiated power
+            
+            gamma_loss = - dt*Psyn/m;
+            
+            gamma = gamma + gamma_loss;
+            % Radiation losses operator
+            % % % % % % % % % % % % % % % 
             t = tau/gamma;
             s = 1/(1+sum(t.^2)); % variable 's' in paper
             
             U = s*(up + sum(up.*t)*t + cross(up,t));
             V = U/sqrt(1 + sum(U.^2));
+            
+            zeta_previous = atan2(XX(2),XX(1));
+            if zeta_previous < 0
+                zeta_previous = zeta_previous + 2*pi;
+            end
+            
+            XX = XX + dt*V;
+            
+            zeta_current = atan2(XX(2),XX(1));
+            if zeta_current < 0
+                zeta_current = zeta_current + 2*pi;
+            end
             
             if abs(zeta_previous - zeta_current) > 6
                 
@@ -1138,24 +1150,6 @@ else
         
         R(ii,:) = X(ii,:) + gamma*m*cross(v_half_step,B)/(q*sum(B.^2));
         
-%         B_mag = sqrt(sum(B.^2));
-%         b = B/B_mag;
-%         vpar(ii) = v(ii,:)*b';
-%         vperp(ii) = sqrt( v(ii,:)*v(ii,:)' - vpar(ii)^2 );
-%         mu(ii) = gamma*m*vperp(ii)^2/(2*B_mag);
-% 
-%         % Curvature and torsion
-%         acc = (q/m)*cross(v_half_step,B)/sqrt(1 + sum(U_half_step.^2)); % acceleration
-%         aux = sum( cross(v_half_step,acc).^2 );
-%         k(ii) = sqrt( aux )/sqrt( sum(v_half_step.^2) )^3;
-%         dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(U_half_step.^2)); % d(acc)/dt
-%         T(ii) = det([v_half_step; acc; dacc])/aux;
-%         % Curvature and torsion
-%         
-%         % Synchroton radiated power
-%         P(ii) = (2/3)*( Kc*q^2*gamma_half_step*sum(v_half_step.^2)^2*k(ii) );
-%         % Synchroton radiated power
-        
         % Calculating the position and magnetic field at the time level n+1
         X_hs = X(ii,:) + 0.5*dt*v(ii,:);
         
@@ -1170,14 +1164,6 @@ else
         vpar(ii) = v(ii,:)*b';
         vperp(ii) = sqrt( v(ii,:)*v(ii,:)' - vpar(ii)^2 );
         mu(ii) = gamma*m*vperp(ii)^2/(2*B_mag);
-
-%         % Curvature and torsion
-%         acc = (q/m)*cross(v(ii,:),B)/sqrt(1 + sum(u(ii,:).^2)); % acceleration
-%         aux = sum( cross(v(ii,:),acc).^2 );
-%         k(ii) = sqrt( aux )/sqrt( sum(v(ii,:).^2) )^3;
-%         dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(u(ii,:).^2)); % d(acc)/dt
-%         T(ii) = det([v(ii,:); acc; dacc])/aux;
-%         % Curvature and torsion
 
         vmag = sqrt( sum(v(ii,:).^2) );
         aux =  cross(v(ii,:),E) + v(ii,:)*sum(v(ii,:).*B) - B*vmag^2;
