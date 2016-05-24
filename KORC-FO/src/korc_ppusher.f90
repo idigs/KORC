@@ -89,7 +89,7 @@ subroutine advance_particles_velocity(params,EB,spp,dt)
 			vpar = DOT_PRODUCT(spp(ii)%vars%V(:,pp), b_unit)
 			vperp = sqrt( DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)) - vpar**2 )
             spp(ii)%vars%eta(pp) = 180.0_rp*modulo(atan2(vperp,vpar), 2.0_rp*C_PI)/C_PI
-			spp(ii)%vars%mu(pp) = 0.5_rp*gamma*spp(ii)%m*vperp**2/B
+			spp(ii)%vars%mu(pp) = 0.5_rp*spp(ii)%m*(gamma*vperp)**2/B
 
 			! Curvature and torsion
 			acc = ( spp(ii)%q/spp(ii)%m )*cross(V_hs,spp(ii)%vars%B(:,pp))/gamma_hs

@@ -28,7 +28,7 @@ endif
 ifeq ($(UNAME), Linux)
 	FC = mpif90
 
-	FCDEFINEFLAGS =-DDOUBLE_PRECISION	-DHDF5_SINGLE_PRESICION	-UH5_DEBUG_API
+	FCDEFINEFLAGS =-DDOUBLE_PRECISION	-DHDF5_DOUBLE_PRESICION	-UH5_DEBUG_API
 	FCFLAGS =-cpp	-J$(MOD)	-fopenmp	-O2	-ffpe-trap=invalid
 	#	FCFLAGS =-mp    ‑Mpreprocess    -Mfree  -module $(MOD)  -O3
 

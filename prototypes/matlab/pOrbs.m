@@ -944,13 +944,12 @@ v(1,:) = u(1,:)/gamma;
 R(1,:) = X(1,:) + gamma*m*cross(v(1,:),B)/(q*sum(B.^2));
 EK(1) = gamma;
 
-
 % % % % % % % % % % % % % % % % % % 
 B_mag = sqrt(sum(B.^2));
 b = B/B_mag;
 vpar(1) = v(1,:)*b';
 vperp(1) = sqrt( v(1,:)*v(1,:)' - vpar(1)^2 );
-mu(1) = gamma*m*vperp(1)^2/(2*B_mag);
+mu(1) = m*gamma^2*vperp(1)^2/(2*B_mag);
 
 % Curvature and torsion
 vmag = sqrt( sum(v(1,:).^2) );
@@ -1020,7 +1019,7 @@ if ST.params.cadence == 1
         b = B/B_mag;
         vpar(ii) = v(ii,:)*b';
         vperp(ii) = sqrt( v(ii,:)*v(ii,:)' - vpar(ii)^2 );
-        mu(ii) = gamma*m*vperp(ii)^2/(2*B_mag);
+        mu(ii) = m*gamma^2*vperp(ii)^2/(2*B_mag);
         
         % Curvature and torsion
         acc = (q/m)*cross(v_half_step,B)/sqrt(1 + sum(U_half_step.^2)); % acceleration
@@ -1094,7 +1093,7 @@ else
             
             gamma_loss = - dt*Psyn/m;
             
-            gamma = gamma + gamma_loss;
+            % gamma = gamma + gamma_loss;
             % Radiation losses operator
             % % % % % % % % % % % % % % % 
             t = tau/gamma;
@@ -1163,7 +1162,7 @@ else
         b = B/B_mag;
         vpar(ii) = v(ii,:)*b';
         vperp(ii) = sqrt( v(ii,:)*v(ii,:)' - vpar(ii)^2 );
-        mu(ii) = gamma*m*vperp(ii)^2/(2*B_mag);
+        mu(ii) = m*gamma^2*vperp(ii)^2/(2*B_mag);
 
         vmag = sqrt( sum(v(ii,:).^2) );
         aux =  cross(v(ii,:),E) + v(ii,:)*sum(v(ii,:).*B) - B*vmag^2;

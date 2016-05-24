@@ -12,6 +12,7 @@ energyConservation(ST);
 
 ST.PD = pitchAngleDiagnostic(ST,180);
 
+ST.PD = magneticMomentDiagnostic(ST,180);
 
 sp = 'sp1'
 
@@ -86,7 +87,8 @@ for ll=1:length(list)
 end
 
 
-list = {'eta','gamma'};%,'mu','kappa','tau'};
+% list = {'eta','gamma'};%,'mu','kappa','tau'};
+list = {'eta','gamma','mu'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -186,3 +188,39 @@ PD.f = f;
 PD.vals = vals;
 end
 
+function PD = magneticMomentDiagnostic(ST,numBins)
+PD = struct;
+
+tmp = [];
+
+for ss=1:ST.params.simulation.num_species
+    tmp = [tmp;ST.data.(['sp' num2str(ss)]).mu];
+end
+
+minVal = min(min( tmp ));
+maxVal = max(max( tmp ));
+vals = linspace(minVal,maxVal,numBins);
+
+f = zeros(numBins,ST.params.simulation.num_snapshots);
+
+
+for ii=1:ST.params.simulation.num_snapshots
+    [f(:,ii),~] = hist(tmp(:,ii),vals);
+end
+
+cad = ST.params.simulation.output_cadence;
+time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
+tmax = max(time);
+tmin = min(time);
+
+figure
+surf(time,vals,log10(f),'LineStyle','none')
+% surf(time,vals,f,'LineStyle','none')
+axis([tmin tmax minVal maxVal])
+xlabel('Time (s)','Interpreter','latex','FontSize',16)
+ylabel('Magnetic moment $\mu$ (arbitrary units)','Interpreter','latex','FontSize',16)
+colormap(jet)
+
+PD.f = f;
+PD.vals = vals;
+end
