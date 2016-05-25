@@ -934,7 +934,7 @@ end
 dt = ST.params.dt*ST.norm.wc;
 E = ST.E/(ST.Bo*ST.params.c);
 
-Kc = ST.params.Kc/(ST.norm.m*ST.norm.l^3/(ST.norm.q^2*ST.norm.t^2));
+Kc = ST.params.Kc/(ST.norm.m*ST.norm.l*ST.params.c^2/ST.norm.q^2);
 % Normalization
 
 % initial velocity at time level t = 0
@@ -1067,22 +1067,8 @@ else
             
             U_half_step = U + 0.5*a*(E + cross(V,B));
             
-            tau = 0.5*q*dt*B/m;
-            up = U_half_step + 0.5*a*E;
-            gammap = sqrt(1 + sum(up.^2));
-            sigma = gammap^2 - sum(tau.^2);
-            us = sum(up.*tau); % variable 'u^*' in paper
-            gamma = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(sum(tau.^2) + sum(us.^2))) );
-            % % % % % % % % % % % % % % % 
-            % Radiation losses operator
-            X_hs = XX + 0.5*dt*V;
-                        
-            if ST.analytical
-                B = analyticalB(X_hs*ST.norm.l)/ST.Bo;
-            else
-                B = interpMagField(ST,X_hs*ST.norm.l)/ST.Bo;
-            end
-            
+            % % % % % % % % % % % % % % %
+            % Radiation losses operator           
             vmag = sqrt( sum(V.^2) );
             aux =  cross(V,E) + V*sum(V.*B) - B*vmag^2;
             curv = abs(q)*sqrt( sum(aux.^2) )/(gamma*m*vmag^3);
@@ -1092,8 +1078,18 @@ else
             % Synchroton radiated power
             
             gamma_loss = - dt*Psyn/m;
+            % Radiation losses operator
+            % % % % % % % % % % % % % % %
             
-            % gamma = gamma + gamma_loss;
+            tau = 0.5*q*dt*B/m;
+            up = U_half_step + 0.5*a*E;
+            gammap = sqrt(1 + sum(up.^2));
+            sigma = gammap^2 - sum(tau.^2);
+            us = sum(up.*tau); % variable 'u^*' in paper
+            gamma = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(sum(tau.^2) + sum(us.^2))) );
+            % % % % % % % % % % % % % % % 
+            % Radiation losses operator
+            gamma = gamma + gamma_loss;
             % Radiation losses operator
             % % % % % % % % % % % % % % % 
             t = tau/gamma;

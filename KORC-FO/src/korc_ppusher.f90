@@ -36,6 +36,7 @@ subroutine advance_particles_velocity(params,EB,spp,dt)
 	REAL(rp), DIMENSION(3) :: U_hs, V_hs
 	REAL(rp), DIMENSION(3) :: acc, dacc, b_unit ! variables for diagnostics
 	REAL(rp) :: B, vxa, vpar, vperp ! variables for diagnostics
+	REAL(rp) :: vmag, Psyn, gamma_loss
 	INTEGER :: ii, pp ! Iterators
 
 
@@ -50,10 +51,33 @@ subroutine advance_particles_velocity(params,EB,spp,dt)
 
 !$OMP PARALLEL FIRSTPRIVATE(a,dt)&
 !$OMP& PRIVATE(pp,U,U_hs,V_hs,gamma_hs,tau,up,gammap,sigma,us,gamma,t,s,&
-!$OMP& acc,dacc,b_unit,B,vpar,vperp,vxa)&
+!$OMP& acc,dacc,b_unit,B,vpar,vperp,vxa,vmag,Psyn,gamma_loss)&
 !$OMP& SHARED(ii,spp)
 !$OMP DO
 		do pp=1,spp(ii)%ppp
+			! Magnitude of magnetic field
+			B = sqrt( sum(spp(ii)%vars%B(:,pp)**2) )
+			! Parallel unit vector
+			b_unit = spp(ii)%vars%B(:,pp)/B
+
+            % % % % % % % % % % % % % % %
+            % Radiation losses operator           
+            vmag = sqrt( DOT_PRODUCT(spp(ii)%vars%V(:,pp), spp(ii)%vars%V(:,pp)) )
+            vxa =  cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%E(:,pp))&
+					+ spp(ii)%vars%V(:,pp)*DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp))&
+					- spp(ii)%vars%B(:,pp)*vmag**2
+            spp(ii)%vars%kappa(pp) = &
+				ABS(spp(ii)%q)*sqrt( DOT_PRODUCT(vxa,vxa) )/(spp(ii)%vars%gamma(pp)*spp(ii)%m*vmag**3);
+            
+            % Synchroton radiated power
+            Psyn = (2/3)*( Kc*q^2*gamma^4*vmag^4*curv^2 );
+            % Synchroton radiated power
+            
+            gamma_loss = - dt*Psyn/spp(ii)%m
+            % Radiation losses operator
+            % % % % % % % % % % % % % % %
+
+
 			U = spp(ii)%vars%gamma(pp)*spp(ii)%vars%V(:,pp)
 			U_hs = U + &
 					0.5_rp*a*( spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)) )
@@ -64,6 +88,9 @@ subroutine advance_particles_velocity(params,EB,spp,dt)
 			sigma = gammap**2 - sum(tau**2)
 			us = sum(up*tau) ! variable 'u^*' in Vay, J.-L. PoP (2008)
 			gamma = sqrt( 0.5_rp*(sigma + sqrt( sigma**2 + 4.0_rp*(sum(tau**2) + us**2) )) )
+
+			! Radiation losses
+
 			t = tau/gamma
 			s = 1.0_rp/(1.0_rp + sum(t**2)) ! variable 's' in Vay, J.-L. PoP (2008)
 
@@ -84,20 +111,22 @@ subroutine advance_particles_velocity(params,EB,spp,dt)
 			+ gamma*spp(ii)%m*cross(V_hs, spp(ii)%vars%B(:,pp))&
 			/( spp(ii)%q*sum(spp(ii)%vars%B(:,pp)**2) )
         
-			B = sqrt( sum(spp(ii)%vars%B(:,pp)**2) )
-			b_unit = spp(ii)%vars%B(:,pp)/B
+			! Parallel and perpendicular components of velocity
 			vpar = DOT_PRODUCT(spp(ii)%vars%V(:,pp), b_unit)
 			vperp = sqrt( DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)) - vpar**2 )
+
+			! Pitch angle
             spp(ii)%vars%eta(pp) = 180.0_rp*modulo(atan2(vperp,vpar), 2.0_rp*C_PI)/C_PI
+
+			! Magnetic moment
 			spp(ii)%vars%mu(pp) = 0.5_rp*spp(ii)%m*(gamma*vperp)**2/B
 
 			! Curvature and torsion
-			acc = ( spp(ii)%q/spp(ii)%m )*cross(V_hs,spp(ii)%vars%B(:,pp))/gamma_hs
-			vxa = sum( cross(V_hs,acc)**2 )
-			spp(ii)%vars%kappa(pp) = sqrt( vxa )/( sqrt( sum(V_hs**2) )**3 )
-			dacc = ( spp(ii)%q/spp(ii)%m )*cross(acc,spp(ii)%vars%B(:,pp))/gamma_hs
-			spp(ii)%vars%tau(pp) = DOT_PRODUCT(V_hs,cross(acc, dacc))/vxa
-
+!			acc = ( spp(ii)%q/spp(ii)%m )*cross(V_hs,spp(ii)%vars%B(:,pp))/gamma_hs
+!			vxa = sum( cross(V_hs,acc)**2 )
+!			spp(ii)%vars%kappa(pp) = sqrt( vxa )/( sqrt( sum(V_hs**2) )**3 )
+!			dacc = ( spp(ii)%q/spp(ii)%m )*cross(acc,spp(ii)%vars%B(:,pp))/gamma_hs
+!			spp(ii)%vars%tau(pp) = DOT_PRODUCT(V_hs,cross(acc, dacc))/vxa
 		end do
 !$OMP END DO
 !$OMP END PARALLEL

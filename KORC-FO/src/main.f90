@@ -58,7 +58,7 @@ program main
 	do it=1,params%t_steps
 		call advance_particles_velocity(params,EB,spp,params%dt)
 		call advance_particles_position(params,EB,spp,params%dt)
-		if ( modulo(it,params%output_cadence) .EQ. 0 ) then
+		if ( modulo(it,params%output_cadence) .EQ. 0_ip ) then
 			write(6,'("Saving snapshot: ",I15)') it/params%output_cadence
 			call save_simulation_outputs(params,cpp,spp,EB,it)
         end if
