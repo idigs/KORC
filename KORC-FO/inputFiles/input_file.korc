@@ -1,9 +1,9 @@
 &input_parameters
-	t_steps = 32000000 ! 160000000 for 1 ms
-	dt = 0.005 ! Time step as fraction of non-relativistic gyro-period
+	t_steps = 14000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
 	output_cadence = 5000 ! 1400 for saving each 100 gyro-periods
 	num_species = 3
-	magnetic_field_model = 'EXTERNAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
+	magnetic_field_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
 										! For 'ANALYTICAL', the magnetic field is calculated based on
 										! the parameters given in the "analytic_mag_field_params" section.
 										! For 'EXTERNAL', the magnetic field is loaded from the file
@@ -14,20 +14,20 @@
 
 &plasma_species
 	runaway = .FALSE., .TRUE., .FALSE. !
-	Ro = 7.0, 7.0, 7.0 !
+	Ro = 1.6, 1.6, 1.6 !
 	Zo = 0.0, 0.0, 0.0 !
-	r = 0.5, 0.5, 0.5 !
-	Eo = 50.0E6, 50.0E6, 50.0E6 ! Initial energy in eV
-	etao = 10.0 , 40.0, 70.0 ! Initial pitch angle
+	r = 0.3, 0.3, 0.3 !
+	Eo = 3.0E6, 3.0E6, 3.0E6 ! Initial energy in eV
+	etao = 10.0 , 40.0, 60.0 ! Initial pitch angle
 	ppp = 64, 64, 64 ! Number of particles per process (mpi)
     q = -1.0, -1.0, -1.0 ! Electric charge
     m = 1.0, 1.0, 1.0 ! In units of electron mass
 /
 
 &analytic_mag_field_params
-	Bo = 5.42 ! In Teslas
-	minor_radius = 1.5 ! Minor radius in meters.
-	major_radius = 6.5 ! Major radius in meters.
-	q_factor_at_separatrix = 5.0 ! Safety factor at the separatrix (r=a)
+	Bo = 3.0 ! In Teslas. ITER: 5.42 DIII-D: 3.0
+	minor_radius = 0.5 ! Minor radius in meters. ITER: 1.5 DIII-D: 0.5
+	major_radius = 1.6 ! Major radius in meters. ITER: 6.5 DIII-D: 1.6
+	q_factor_at_separatrix = 3.0 ! Safety factor at the separatrix (r=a)
 	free_param = 0.5 ! defined as the ratio minor_radius/lambda
 /

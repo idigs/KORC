@@ -34,8 +34,8 @@ subroutine advance_particles_velocity(params,EB,spp,dt)
 	REAL(rp), DIMENSION(3) :: U, tau, up, t ! variables of leapfrog of Vay, J.-L. PoP (2008)
 	REAL(rp) :: gamma_hs
 	REAL(rp), DIMENSION(3) :: U_hs, V_hs
-	REAL(rp), DIMENSION(3) :: acc, dacc, b_unit ! variables for diagnostics
-	REAL(rp) :: B, vxa, vpar, vperp ! variables for diagnostics
+	REAL(rp), DIMENSION(3) :: vxa, b_unit ! variables for diagnostics
+	REAL(rp) :: B, vpar, vperp ! variables for diagnostics
 	REAL(rp) :: vmag, Psyn, gamma_loss
 	INTEGER :: ii, pp ! Iterators
 
@@ -51,7 +51,7 @@ subroutine advance_particles_velocity(params,EB,spp,dt)
 
 !$OMP PARALLEL FIRSTPRIVATE(a,dt)&
 !$OMP& PRIVATE(pp,U,U_hs,V_hs,gamma_hs,tau,up,gammap,sigma,us,gamma,t,s,&
-!$OMP& acc,dacc,b_unit,B,vpar,vperp,vxa,vmag,Psyn,gamma_loss)&
+!$OMP& b_unit,B,vpar,vperp,vxa,vmag,Psyn,gamma_loss)&
 !$OMP& SHARED(ii,spp)
 !$OMP DO
 		do pp=1,spp(ii)%ppp
@@ -60,24 +60,21 @@ subroutine advance_particles_velocity(params,EB,spp,dt)
 			! Parallel unit vector
 			b_unit = spp(ii)%vars%B(:,pp)/B
 
-            % % % % % % % % % % % % % % %
-            % Radiation losses operator           
+			! Radiation losses operator     
             vmag = sqrt( DOT_PRODUCT(spp(ii)%vars%V(:,pp), spp(ii)%vars%V(:,pp)) )
             vxa =  cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%E(:,pp))&
 					+ spp(ii)%vars%V(:,pp)*DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp))&
 					- spp(ii)%vars%B(:,pp)*vmag**2
             spp(ii)%vars%kappa(pp) = &
-				ABS(spp(ii)%q)*sqrt( DOT_PRODUCT(vxa,vxa) )/(spp(ii)%vars%gamma(pp)*spp(ii)%m*vmag**3);
+				ABS(spp(ii)%q)*sqrt( DOT_PRODUCT(vxa,vxa) )/(spp(ii)%vars%gamma(pp)*spp(ii)%m*vmag**3)
             
-            % Synchroton radiated power
-            Psyn = (2/3)*( Kc*q^2*gamma^4*vmag^4*curv^2 );
-            % Synchroton radiated power
+            ! Synchroton radiated power
+			Psyn = (2.0_rp/3.0_rp)*( C_Ke*spp(ii)%m**2*spp(ii)%vars%gamma(pp)**4*vmag**4*spp(ii)%vars%kappa(pp)**2 )
             
-            gamma_loss = - dt*Psyn/spp(ii)%m
-            % Radiation losses operator
-            % % % % % % % % % % % % % % %
+			gamma_loss = - dt*Psyn/spp(ii)%m
+			! Radiation losses operator
 
-
+			! Here we evolve V and gamma in time.
 			U = spp(ii)%vars%gamma(pp)*spp(ii)%vars%V(:,pp)
 			U_hs = U + &
 					0.5_rp*a*( spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)) )
@@ -90,6 +87,7 @@ subroutine advance_particles_velocity(params,EB,spp,dt)
 			gamma = sqrt( 0.5_rp*(sigma + sqrt( sigma**2 + 4.0_rp*(sum(tau**2) + us**2) )) )
 
 			! Radiation losses
+			gamma = gamma + gamma_loss
 
 			t = tau/gamma
 			s = 1.0_rp/(1.0_rp + sum(t**2)) ! variable 's' in Vay, J.-L. PoP (2008)
@@ -98,9 +96,6 @@ subroutine advance_particles_velocity(params,EB,spp,dt)
             spp(ii)%vars%V(:,pp) = U/gamma
 
 			spp(ii)%vars%gamma(pp) = gamma
-
-!			write(6,'("Debuggin list:")') 
-!			write(6,*) spp(ii)%q
 
 			! Temporary quantities at half time step
 			gamma_hs = sqrt( 1.0_rp + sum(U_hs**2) )

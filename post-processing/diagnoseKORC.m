@@ -14,7 +14,7 @@ ST.PD = pitchAngleDiagnostic(ST,180);
 
 ST.PD = magneticMomentDiagnostic(ST,180);
 
-sp = 'sp1'
+sp = 'sp2'
 
 R = ST.params.scales.l*squeeze( sqrt( ST.data.(sp).X(1,:,:).^2 + ST.data.(sp).X(2,:,:).^2 ) );
 
@@ -25,6 +25,11 @@ R = ST.params.scales.l*squeeze( sqrt( ST.data.(sp).X(1,:,:).^2 + ST.data.(sp).X(
 % [~,II] = min(V);
 
 X = squeeze(ST.data.(sp).X(:,II,:))*ST.params.scales.l;
+
+figure
+plot3(X(1,:),X(2,:),X(3,:))
+axis equal; box on
+
 R = sqrt( X(1,:).^2 + X(2,:).^2 );
 Z = X(3,:);
 figure;plot(R,Z);axis equal
@@ -33,7 +38,6 @@ X = squeeze(ST.data.(sp).Rgc(:,II,:))*ST.params.scales.l;
 R = sqrt( X(1,:).^2 + X(2,:).^2 );
 Z = X(3,:);
 hold on;plot(R,Z);hold off
-
 end
 
 function params = loadSimulationParameters(ST)
@@ -148,6 +152,12 @@ try
 catch
     error('Something went wrong: energyConservation')
 end
+
+figure(h)
+box on
+grid on
+xlabel('Time (s)','Interpreter','latex','FontSize',16)
+ylabel('Energy conservation (\%)','Interpreter','latex','FontSize',16)
 
 end
 
