@@ -859,7 +859,7 @@ subroutine save_simulation_parameters(params,spp,F)
 		if (params%poloidal_flux) then
 			dset = TRIM(gname) // "/Ro"
 			attr = "Radial position of magnetic axis"
-			call save_to_hdf5(h5file_id,dset,F%Ro*params%cpp%magnetic_field,attr)
+			call save_to_hdf5(h5file_id,dset,F%Ro*params%cpp%length,attr)
 		end if
 
 		if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
