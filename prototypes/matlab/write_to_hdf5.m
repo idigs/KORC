@@ -72,6 +72,55 @@ H5D.close(datasetID);
 H5S.close(dataspaceID);
 H5F.close(fileID);
 %%
+data = load('jfit_165365_1400.mat');
+
+filename = 'DIII-D_JFIT.h5'
+
+R = squeeze(data.rg);
+Z = squeeze(data.zg);
+
+NR = numel(R);
+NZ = numel(Z);
+
+h5create(filename, '/NR', [1])
+h5write(filename, '/NR',NR)
+h5create(filename, '/NZ', [1])
+h5write(filename, '/NZ',NZ)
+h5create(filename, '/R', NR)
+h5write(filename, '/R',R)
+h5create(filename, '/Z',NZ)
+h5write(filename, '/Z',Z')
+
+h5create(filename, '/Bo', [1])
+h5write(filename, '/Bo',2.19)
+
+h5create(filename, '/Ro', [1])
+h5write(filename, '/Ro',1.695)
+
+dims = [NR,NZ];
+PSIp = zeros(dims);
+PSIp = data.psig';
+
+FPSIp = zeros(fliplr(dims));
+
+for ir=1:NR
+    for iz=1:NZ
+        FPSIp(iz,ir) = PSIp(ir,iz);
+    end
+end
+
+h5create(filename,'/PSIp',fliplr(dims));
+h5write(filename,'/PSIp',FPSIp);
+
+% fileID = H5F.open(filename,'H5F_ACC_RDWR','H5P_DEFAULT');
+% dataspaceID = H5S.create_simple(2, dims, dims);
+% dsetname = '/PSIp';
+% datasetID = H5D.create(fileID,dsetname,'H5T_NATIVE_DOUBLE',dataspaceID,'H5P_DEFAULT');
+% H5D.write(datasetID,'H5T_NATIVE_DOUBLE','H5S_ALL','H5S_ALL','H5P_DEFAULT',FPSIp);
+% H5D.close(datasetID);
+% H5S.close(dataspaceID);
+
+%%
 dims = [10,5,2];
 
 data = zeros(dims);

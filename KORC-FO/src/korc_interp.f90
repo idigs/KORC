@@ -10,7 +10,7 @@ module korc_interp
     implicit none
 
 #ifdef DOUBLE_PRECISION
-	TYPE, PRIVATE :: KORC_INTERPOLANT
+	TYPE, PRIVATE :: KORC_3DINTERPOLANT
 		TYPE(EZspline3_r8) :: R		! 3D EZspline object
 		TYPE(EZspline3_r8) :: PHI	! 3D EZspline object
 		TYPE(EZspline3_r8) :: Z		! 3D EZspline object
@@ -20,8 +20,16 @@ module korc_interp
 		INTEGER, PRIVATE, DIMENSION(2) :: BCSPHI = (/ -1, -1 /)
 		INTEGER, PRIVATE, DIMENSION(2) :: BCSZ = (/ 0, 0 /)
 	END TYPE
+
+	TYPE, PRIVATE :: KORC_2DINTERPOLANT
+		TYPE(EZspline2_r8) :: A		! 2D EZspline object
+
+		INTEGER, PRIVATE :: NR, NZ
+		INTEGER, PRIVATE, DIMENSION(2) :: BCSR = (/ 0, 0 /)
+		INTEGER, PRIVATE, DIMENSION(2) :: BCSZ = (/ 0, 0 /)
+	END TYPE
 #elif SINGLE_PRECISION
-	TYPE, PRIVATE :: KORC_INTERPOLANT
+	TYPE, PRIVATE :: KORC_3DINTERPOLANT
 		TYPE(EZspline3_r4) :: R		! 3D EZspline object
 		TYPE(EZspline3_r4) :: PHI	! 3D EZspline object
 		TYPE(EZspline3_r4) :: Z		! 3D EZspline object
@@ -31,12 +39,29 @@ module korc_interp
 		INTEGER, PRIVATE, DIMENSION(2) :: BCSPHI = (/ -1, -1 /)
 		INTEGER, PRIVATE, DIMENSION(2) :: BCSZ = (/ 0, 0 /)
 	END TYPE
+
+	TYPE, PRIVATE :: KORC_2DINTERPOLANT
+		TYPE(EZspline2_r4) :: A		! 2D EZspline object
+
+		INTEGER, PRIVATE :: NR, NZ
+		INTEGER, PRIVATE, DIMENSION(2) :: BCSR = (/ 0, 0 /)
+		INTEGER, PRIVATE, DIMENSION(2) :: BCSZ = (/ 0, 0 /)
+	END TYPE
 #endif
-	TYPE(KORC_INTERPOLANT), PRIVATE :: interp
+
+	TYPE(KORC_3DINTERPOLANT), PRIVATE :: interp3d
+	TYPE(KORC_2DINTERPOLANT), PRIVATE :: interp2d
 	INTEGER :: ezerr
 
+
+	INTERFACE interp_magnetic_field
+	  module procedure interp_3D_magnetic_field
+	END INTERFACE
+
     PUBLIC :: interp_field, interp_analytical_field, unitVectors,&
-				initialize_interpolant
+				initialize_interpolant, finalize_interpolant,&
+				interp_magnetic_field_once
+	PRIVATE :: interp_magnetic_field, interp_3D_magnetic_field
 
     contains
 
@@ -47,49 +72,66 @@ subroutine initialize_interpolant(params,F)
 	TYPE(FIELDS), INTENT(IN) :: F
 
 	if (params%magnetic_field_model .EQ. 'EXTERNAL') then
-		interp%NR = F%dims(1)
-		interp%NPHI = F%dims(2)
-		interp%NZ = F%dims(3)
 
 		write(6,'("* * * * * * * * * *  * * * * * * * * * *")')
 		write(6,'("* * * * INITIALIZING INTERPOLANT * * * *")')
+		write(6,*)
 
-		write(6,'("Initializing R component of interpolant...")')
-		call EZspline_init(interp%R, interp%NR, interp%NPHI, interp%NZ,&
-							interp%BCSR, interp%BCSPHI, interp%BCSZ, ezerr)
-	  	call EZspline_error(ezerr)
+		if (.NOT. params%poloidal_flux) then
+			interp3d%NR = F%dims(1)
+			interp3d%NPHI = F%dims(2)
+			interp3d%NZ = F%dims(3)
 
-		interp%R%x1 = F%X%R
-	!	interp%R%x2 = F%X%PHI
-		interp%R%x3 = F%X%Z
+			write(6,'("Initializing R component of interpolant...")')
+			call EZspline_init(interp3d%R, interp3d%NR, interp3d%NPHI, interp3d%NZ,&
+								interp3d%BCSR, interp3d%BCSPHI, interp3d%BCSZ, ezerr)
+		  	call EZspline_error(ezerr)
 
-		call EZspline_setup(interp%R, F%B%R, ezerr)
-		call EZspline_error(ezerr)
+			interp3d%R%x1 = F%X%R
+		!	interp3d%R%x2 = F%X%PHI
+			interp3d%R%x3 = F%X%Z
 
-		write(6,'("Initializing PHI component of interpolant...")')
-		call EZspline_init(interp%PHI, interp%NR, interp%NPHI, interp%NZ,&
-							interp%BCSR, interp%BCSPHI, interp%BCSZ, ezerr)
-	  	call EZspline_error(ezerr)
+			call EZspline_setup(interp3d%R, F%B%R, ezerr)
+			call EZspline_error(ezerr)
 
-		interp%PHI%x1 = F%X%R
-	!	interp%PHI%x2 = F%X%PHI
-		interp%PHI%x3 = F%X%Z
+			write(6,'("Initializing PHI component of interpolant...")')
+			call EZspline_init(interp3d%PHI, interp3d%NR, interp3d%NPHI, interp3d%NZ,&
+								interp3d%BCSR, interp3d%BCSPHI, interp3d%BCSZ, ezerr)
+		  	call EZspline_error(ezerr)
 
-		call EZspline_setup(interp%PHI, F%B%PHI, ezerr)
-		call EZspline_error(ezerr)
+			interp3d%PHI%x1 = F%X%R
+		!	interp3d%PHI%x2 = F%X%PHI
+			interp3d%PHI%x3 = F%X%Z
 
-		write(6,'("Initializing Z component of interpolant...")')
-		call EZspline_init(interp%Z, interp%NR, interp%NPHI, interp%NZ,&
-							interp%BCSR, interp%BCSPHI, interp%BCSZ, ezerr)
-	  	call EZspline_error(ezerr)
+			call EZspline_setup(interp3d%PHI, F%B%PHI, ezerr)
+			call EZspline_error(ezerr)
 
-		interp%Z%x1 = F%X%R
-	!	interp%Z%x2 = F%X%PHI
-		interp%Z%x3 = F%X%Z
+			write(6,'("Initializing Z component of interpolant...")')
+			call EZspline_init(interp3d%Z, interp3d%NR, interp3d%NPHI, interp3d%NZ,&
+								interp3d%BCSR, interp3d%BCSPHI, interp3d%BCSZ, ezerr)
+		  	call EZspline_error(ezerr)
 
-		call EZspline_setup(interp%Z, F%B%Z, ezerr)
-		call EZspline_error(ezerr)
+			interp3d%Z%x1 = F%X%R
+		!	interp3d%Z%x2 = F%X%PHI
+			interp3d%Z%x3 = F%X%Z
 
+			call EZspline_setup(interp3d%Z, F%B%Z, ezerr)
+			call EZspline_error(ezerr)
+		else
+			interp2d%NR = F%dims(1)
+			interp2d%NZ = F%dims(3)
+
+			write(6,'("Initializing poloidal flux interpolant...")')
+			call EZspline_init(interp2d%A, interp2d%NR, interp2d%NZ,&
+								interp2d%BCSR, interp2d%BCSZ, ezerr)
+		  	call EZspline_error(ezerr)
+
+			interp2d%A%x1 = F%X%R
+			interp2d%A%x2 = F%X%Z
+
+			call EZspline_setup(interp2d%A, F%PSIp, ezerr)
+			call EZspline_error(ezerr)
+		end if
 
 		write(6,'("* * * * INTERPOLANT  INITIALIZED * * * *")')
 		write(6,'("* * * * * * * * * *  * * * * * * * * * *")')	
@@ -98,22 +140,27 @@ subroutine initialize_interpolant(params,F)
 		write(6,'("* * * * USING ANALYTICAL MAGNETIC FIELD * * * *")')
 		write(6,'("* * * * * * * * * * * * * * * * * * * * * * * *")')
 	end if
-
 end subroutine initialize_interpolant
 
 
 subroutine finalize_interpolant(params)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
+
 	if (params%magnetic_field_model .EQ. 'EXTERNAL') then
-		call Ezspline_free(interp%R, ezerr)
-		call EZspline_error(ezerr)
+		if (.NOT. params%poloidal_flux) then
+			call Ezspline_free(interp3d%R, ezerr)
+			call EZspline_error(ezerr)
 
-		call Ezspline_free(interp%PHI, ezerr)
-		call EZspline_error(ezerr)
+			call Ezspline_free(interp3d%PHI, ezerr)
+			call EZspline_error(ezerr)
 
-		call Ezspline_free(interp%Z, ezerr)
-		call EZspline_error(ezerr)
+			call Ezspline_free(interp3d%Z, ezerr)
+			call EZspline_error(ezerr)	
+		else
+			call Ezspline_free(interp2d%A, ezerr)
+			call EZspline_error(ezerr)
+		end if
 	end if
 end subroutine finalize_interpolant
 
@@ -124,7 +171,7 @@ subroutine interp_magnetic_field_once(F,Y,B)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = R, Y(2,:) = PHI, Y(3,:) = Z
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Bcyl ! F(1,:) = FR, F(2,:) = FPHI, F(3,:) = FZ
-	TYPE(KORC_INTERPOLANT) :: tmp_interp
+	TYPE(KORC_3DINTERPOLANT) :: tmp_interp
 	INTEGER :: pp, ss
 
 	tmp_interp%NR = F%dims(1)
@@ -200,7 +247,7 @@ subroutine interp_magnetic_field_once(F,Y,B)
 end subroutine interp_magnetic_field_once
 
 
-subroutine interp_magnetic_field(Y,B)
+subroutine interp_3D_magnetic_field(Y,B)
 	implicit none
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = R, Y(2,:) = PHI, Y(3,:) = Z
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz
@@ -210,19 +257,19 @@ subroutine interp_magnetic_field(Y,B)
 	ss = size(Y,2)
 
 	ALLOCATE(F(3,ss))
-!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(interp,F,Y,B)
+!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(interp3d,F,Y,B)
 !$OMP DO
 	do pp=1,ss
-		call EZspline_interp(interp%R, Y(1,pp), Y(2,pp), Y(3,pp), F(1,pp), ezerr)
+		call EZspline_interp(interp3d%R, Y(1,pp), Y(2,pp), Y(3,pp), F(1,pp), ezerr)
 		call EZspline_error(ezerr)
 !		if (ezerr .NE. 0) then
 !			write(6,'("ezerr value: ",I15)') ezerr ! 97 outside interpolation domain
 !		end if
 
-		call EZspline_interp(interp%PHI, Y(1,pp), Y(2,pp), Y(3,pp), F(2,pp), ezerr)
+		call EZspline_interp(interp3d%PHI, Y(1,pp), Y(2,pp), Y(3,pp), F(2,pp), ezerr)
 		call EZspline_error(ezerr)
 
-		call EZspline_interp(interp%Z, Y(1,pp), Y(2,pp), Y(3,pp), F(3,pp), ezerr)
+		call EZspline_interp(interp3d%Z, Y(1,pp), Y(2,pp), Y(3,pp), F(3,pp), ezerr)
 		call EZspline_error(ezerr)
 
 		B(1,pp) = F(1,pp)*cos(Y(2,pp)) - F(2,pp)*sin(Y(2,pp))
@@ -232,38 +279,42 @@ subroutine interp_magnetic_field(Y,B)
 !$OMP END DO
 !$OMP END PARALLEL
 	DEALLOCATE(F)
-end subroutine interp_magnetic_field
+end subroutine interp_3D_magnetic_field
 
 
-subroutine interp_field(prtcls,EB)
+subroutine interp_field(prtcls,F)
     implicit none
 	TYPE(PARTICLES), INTENT(INOUT) :: prtcls
-	TYPE(FIELDS), INTENT(IN) :: EB
+	TYPE(FIELDS), INTENT(IN) :: F
 	INTEGER :: ii, pp, ss ! Iterators
 
 	call cart_to_cyl(prtcls%X, prtcls%Y)
 
-	call interp_magnetic_field(prtcls%Y,prtcls%B)
+	if (.NOT. ALLOCATED(F%PSIp)) then
+		call interp_magnetic_field(prtcls%Y,prtcls%B)
+	else
+		! something different
+	end if
 
 end subroutine interp_field
 
 
-subroutine interp_analytical_field(prtcls,EB)
+subroutine interp_analytical_field(prtcls,F)
     implicit none
 	TYPE(PARTICLES), INTENT(INOUT) :: prtcls
-	TYPE(FIELDS), INTENT(IN) :: EB
+	TYPE(FIELDS), INTENT(IN) :: F
 
-	call cart_to_tor(prtcls%X, EB%AB%Ro, prtcls%Y)
+	call cart_to_tor(prtcls%X, F%AB%Ro, prtcls%Y)
 
-	call analytical_magnetic_field(EB,prtcls%Y,prtcls%B)
+	call analytical_magnetic_field(F,prtcls%Y,prtcls%B)
 end subroutine interp_analytical_field
 
 
-subroutine unitVectors(params,Xo,EB,par,perp)
+subroutine unitVectors(params,Xo,F,par,perp)
     implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Xo
-	TYPE(FIELDS), INTENT(IN) :: EB
+	TYPE(FIELDS), INTENT(IN) :: F
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: par
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: perp
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: X
@@ -285,11 +336,11 @@ subroutine unitVectors(params,Xo,EB,par,perp)
 	call init_random_seed()
 
 	if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
-		call cart_to_tor(Xo, EB%AB%Ro, X) ! To toroidal coords
-		call analytical_magnetic_field(EB,X,B)
+		call cart_to_tor(Xo, F%AB%Ro, X) ! To toroidal coords
+		call analytical_magnetic_field(F,X,B)
 	else
 		call cart_to_cyl(Xo, X)
-		call interp_magnetic_field_once(EB,X,B)
+		call interp_magnetic_field_once(F,X,B)
 	end if
 
 	call RANDOM_NUMBER(rnd_num)

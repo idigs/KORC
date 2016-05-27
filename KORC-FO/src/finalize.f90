@@ -39,7 +39,7 @@ subroutine deallocate_variables(params,EB,spp)
 	DEALLOCATE(spp)
 
     if (params%magnetic_field_model .EQ. 'EXTERNAL') then
-        call DEALLOCATE_FIELDS(EB)
+        call DEALLOCATE_FIELDS_ARRAYS(EB)
     end if
 end subroutine deallocate_variables
 

@@ -14,7 +14,7 @@ module korc_HDF5
 	END INTERFACE
 
 	INTERFACE rload_array_from_hdf5
-	  module procedure rload_1d_array_from_hdf5, rload_3d_array_from_hdf5
+	  module procedure rload_1d_array_from_hdf5, rload_3d_array_from_hdf5, rload_2d_array_from_hdf5
 	END INTERFACE
 
 	INTERFACE save_to_hdf5
@@ -30,7 +30,8 @@ module korc_HDF5
 				rsave_1d_alloc_array_to_hdf5, isave_1d_alloc_array_to_hdf5,&
 				rsave_1d_array_to_hdf5, rsave_2d_array_to_hdf5,&
 				load_from_hdf5, iload_from_hdf5, rload_from_hdf5,&
-				rload_array_from_hdf5, rload_1d_array_from_hdf5, rload_3d_array_from_hdf5
+				rload_array_from_hdf5, rload_1d_array_from_hdf5, rload_3d_array_from_hdf5,&
+				rload_2d_array_from_hdf5
 				
 	PUBLIC :: initialize_HDF5, finalize_HDF5, save_simulation_parameters,&
                 load_field_data_from_hdf5
@@ -111,7 +112,8 @@ subroutine rload_from_hdf5(h5file_id,dset,rdatum,attr)
 	implicit none
 	INTEGER(HID_T), INTENT(IN) :: h5file_id
 	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	REAL, INTENT(OUT) :: rdatum
+	REAL(rp), INTENT(OUT) :: rdatum
+	REAL :: raw_datum
 	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, INTENT(IN) :: attr
 	CHARACTER(4) :: aname = "Info"
 	INTEGER(HID_T) :: dset_id
@@ -134,10 +136,11 @@ subroutine rload_from_hdf5(h5file_id,dset,rdatum,attr)
 		write(6,'("KORC ERROR: Something went wrong in: rload_from_hdf5 --> h5dopen_f")')
 	end if
 
-	call h5dread_f(dset_id, H5T_NATIVE_REAL, rdatum, dims, h5error)
+	call h5dread_f(dset_id, H5T_NATIVE_REAL, raw_datum, dims, h5error)
 	if (h5error .EQ. -1) then
 		write(6,'("KORC ERROR: Something went wrong in: rload_from_hdf5 --> h5dread_f")')
 	end if
+	rdatum = REAL(raw_datum,rp)
 
 	call h5dclose_f(dset_id, h5error)
 	if (h5error .EQ. -1) then
@@ -203,6 +206,57 @@ subroutine rload_1d_array_from_hdf5(h5file_id,dset,rdata,attr)
 
 	! * * * Read data from file * * *
 end subroutine rload_1d_array_from_hdf5
+
+
+subroutine rload_2d_array_from_hdf5(h5file_id,dset,rdata,attr)
+	implicit none
+	INTEGER(HID_T), INTENT(IN) :: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: rdata
+	REAL, DIMENSION(:,:), ALLOCATABLE :: raw_data
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: attr
+	CHARACTER(MAX_STRING_LENGTH) :: aname
+	INTEGER(HID_T) :: dset_id
+	INTEGER(HID_T) :: dspace_id
+	INTEGER(HID_T) :: aspace_id
+	INTEGER(HID_T) :: attr_id
+	INTEGER(HID_T) :: atype_id
+	INTEGER(HSIZE_T), DIMENSION(2) :: dims
+	INTEGER(HSIZE_T), DIMENSION(2) :: adims
+	INTEGER(SIZE_T) :: tmplen
+	INTEGER(SIZE_T) :: attrlen
+	INTEGER :: h5error
+
+	dims = shape(rdata)
+
+	ALLOCATE( raw_data(dims(1),dims(2)) )
+
+	! * * * Read data from file * * *
+
+	call h5dopen_f(h5file_id, TRIM(dset), dset_id, h5error)
+	if (h5error .EQ. -1) then
+		write(6,'("KORC ERROR: Something went wrong in: rload_from_hdf5 --> h5dopen_f")')
+	end if
+
+	call h5dread_f(dset_id, H5T_NATIVE_REAL, raw_data, dims, h5error)
+	if (h5error .EQ. -1) then
+		write(6,'("KORC ERROR: Something went wrong in: rload_from_hdf5 --> h5dread_f")')
+	end if
+	rdata = REAL(raw_data,rp)
+
+	call h5dclose_f(dset_id, h5error)
+	if (h5error .EQ. -1) then
+		write(6,'("KORC ERROR: Something went wrong in: rload_from_hdf5 --> h5dclose_f")')
+	end if
+
+	DEALLOCATE( raw_data )
+
+	if (PRESENT(attr)) then
+		! * * * Read data attribute(s) from file * * *
+	end if
+
+	! * * * Read data from file * * *
+end subroutine rload_2d_array_from_hdf5
 
 
 subroutine rload_3d_array_from_hdf5(h5file_id,dset,rdata,attr)
@@ -684,12 +738,11 @@ subroutine rsave_2d_array_to_hdf5(h5file_id,dset,rdata,attr)
 end subroutine rsave_2d_array_to_hdf5
 
 
-subroutine save_simulation_parameters(params,cpp,spp,EB)
+subroutine save_simulation_parameters(params,spp,F)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(CHARCS_PARAMS), INTENT(IN) :: cpp
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
-	TYPE(FIELDS), INTENT(IN) :: EB
+	TYPE(FIELDS), INTENT(IN) :: F
 	CHARACTER(MAX_STRING_LENGTH) :: filename
 	CHARACTER(MAX_STRING_LENGTH) :: gname
 	CHARACTER(MAX_STRING_LENGTH) :: dset
@@ -722,7 +775,7 @@ subroutine save_simulation_parameters(params,cpp,spp,EB)
 
 		dset = TRIM(gname) // "/dt"
         attr = "Time step in secs"
-		call save_to_hdf5(h5file_id,dset,params%dt*cpp%time,attr)
+		call save_to_hdf5(h5file_id,dset,params%dt*params%cpp%time,attr)
 
 		dset = TRIM(gname) // "/t_steps"
 		attr_array(1) = "Number of time steps"
@@ -769,15 +822,15 @@ subroutine save_simulation_parameters(params,cpp,spp,EB)
 
 		dset = TRIM(gname) // "/q"
 		attr_array(1) = "Electric charge"
-		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%q*cpp%charge,attr_array)
+		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%q*params%cpp%charge,attr_array)
 
 		dset = TRIM(gname) // "/m"
 		attr_array(1) = "Species mass in kg"
-		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%m*cpp%mass,attr_array)
+		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%m*params%cpp%mass,attr_array)
 
 		dset = TRIM(gname) // "/Eo"
 		attr_array(1) = "Initial (average) energy in eV"
-		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%Eo*cpp%energy,attr_array)
+		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%Eo*params%cpp%energy,attr_array)
 
 		dset = TRIM(gname) // "/gammao"
 		attr_array(1) = "Initial relativistic gamma."
@@ -789,7 +842,7 @@ subroutine save_simulation_parameters(params,cpp,spp,EB)
 
 		dset = TRIM(gname) // "/wc"
 		attr_array(1) = "Average cyclotron frequency in Hz"
-		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%wc/cpp%time,attr_array)
+		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%wc/params%cpp%time,attr_array)
 
 		call h5gclose_f(group_id, h5error)
 
@@ -801,46 +854,54 @@ subroutine save_simulation_parameters(params,cpp,spp,EB)
 
 		dset = TRIM(gname) // "/Bo"
 		attr = "Characteristic (toroidal) field in T"
-		call save_to_hdf5(h5file_id,dset,EB%Bo*cpp%magnetic_field,attr)
+		call save_to_hdf5(h5file_id,dset,F%Bo*params%cpp%magnetic_field,attr)
+
+		if (params%poloidal_flux) then
+			dset = TRIM(gname) // "/Ro"
+			attr = "Radial position of magnetic axis"
+			call save_to_hdf5(h5file_id,dset,F%Ro*params%cpp%magnetic_field,attr)
+		end if
 
 		if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
 			dset = TRIM(gname) // "/a"
 			attr = "Minor radius in m"
-        	call save_to_hdf5(h5file_id,dset,EB%AB%a*cpp%length,attr)
+        	call save_to_hdf5(h5file_id,dset,F%AB%a*params%cpp%length,attr)
 
 			dset = TRIM(gname) // "/Ro"
 			attr = "Major radius in m"
-        	call save_to_hdf5(h5file_id,dset,EB%AB%Ro*cpp%length,attr)
+        	call save_to_hdf5(h5file_id,dset,F%AB%Ro*params%cpp%length,attr)
 
 			dset = TRIM(gname) // "/qa"
 			attr = "Safety factor at minor radius"
-        	call save_to_hdf5(h5file_id,dset,EB%AB%Ro*cpp%length,attr)
+        	call save_to_hdf5(h5file_id,dset,F%AB%Ro*params%cpp%length,attr)
 
 			dset = TRIM(gname) // "/lambda"
 			attr = "Parameter lamda in m"
-        	call save_to_hdf5(h5file_id,dset,EB%AB%lambda*cpp%length,attr)
+        	call save_to_hdf5(h5file_id,dset,F%AB%lambda*params%cpp%length,attr)
 
 			dset = TRIM(gname) // "/Bpo"
 			attr = "Poloidal magnetic field in T"
-        	call save_to_hdf5(h5file_id,dset,EB%AB%Bpo*cpp%magnetic_field,attr)
+        	call save_to_hdf5(h5file_id,dset,F%AB%Bpo*params%cpp%magnetic_field,attr)
 		else if (params%magnetic_field_model .EQ. 'EXTERNAL') then
 			ALLOCATE(attr_array(1))
 
 			dset = TRIM(gname) // "/dims"
 			attr_array(1) = "Mesh dimension of the magnetic field (NR,NPHI,NZ)"
-			call isave_1d_array_to_hdf5(h5file_id,dset,EB%dims,attr_array)
+			call isave_1d_array_to_hdf5(h5file_id,dset,F%dims,attr_array)
 
 			dset = TRIM(gname) // "/R"
 			attr_array(1) = "Radial position of the magnetic field grid nodes"
-			call rsave_1d_array_to_hdf5(h5file_id,dset,EB%X%R*cpp%length,attr_array)
+			call rsave_1d_array_to_hdf5(h5file_id,dset,F%X%R*params%cpp%length,attr_array)
 
-			dset = TRIM(gname) // "/PHI"
-			attr_array(1) = "Azimuthal angle of the magnetic field grid nodes"
-			call rsave_1d_array_to_hdf5(h5file_id,dset,EB%X%PHI,attr_array)
+			if (.NOT. params%poloidal_flux) then
+				dset = TRIM(gname) // "/PHI"
+				attr_array(1) = "Azimuthal angle of the magnetic field grid nodes"
+				call rsave_1d_array_to_hdf5(h5file_id,dset,F%X%PHI,attr_array)
+			end if
 
 			dset = TRIM(gname) // "/Z"
 			attr_array(1) = "Z position of the magnetic field grid nodes"
-			call rsave_1d_array_to_hdf5(h5file_id,dset,EB%X%Z*cpp%length,attr_array)
+			call rsave_1d_array_to_hdf5(h5file_id,dset,F%X%Z*params%cpp%length,attr_array)
 
 			DEALLOCATE(attr_array)
 		end if
@@ -854,39 +915,39 @@ subroutine save_simulation_parameters(params,cpp,spp,EB)
 
 		dset = TRIM(gname) // "/t"
 		attr = "Characteristic time in secs"
-		call save_to_hdf5(h5file_id,dset,cpp%time,attr)
+		call save_to_hdf5(h5file_id,dset,params%cpp%time,attr)
 
 		dset = TRIM(gname) // "/m"
 		attr = "Characteristic mass in kg"
-		call save_to_hdf5(h5file_id,dset,cpp%mass,attr)
+		call save_to_hdf5(h5file_id,dset,params%cpp%mass,attr)
 
 		dset = TRIM(gname) // "/q"
 		attr = "Characteristic charge in Coulombs"
-		call save_to_hdf5(h5file_id,dset,cpp%charge,attr)
+		call save_to_hdf5(h5file_id,dset,params%cpp%charge,attr)
 
 		dset = TRIM(gname) // "/l"
 		attr = "Characteristic length in m"
-		call save_to_hdf5(h5file_id,dset,cpp%length,attr)
+		call save_to_hdf5(h5file_id,dset,params%cpp%length,attr)
 
 		dset = TRIM(gname) // "/K"
 		attr = "Characteristic kinetic energy in J"
-		call save_to_hdf5(h5file_id,dset,cpp%energy,attr)
+		call save_to_hdf5(h5file_id,dset,params%cpp%energy,attr)
 
 		dset = TRIM(gname) // "/n"
 		attr = "Characteristic plasma density in m^-3"
-		call save_to_hdf5(h5file_id,dset,cpp%density,attr)
+		call save_to_hdf5(h5file_id,dset,params%cpp%density,attr)
 
 		dset = TRIM(gname) // "/E"
 		attr = "Characteristic electric field in V/m"
-		call save_to_hdf5(h5file_id,dset,cpp%electric_field,attr)
+		call save_to_hdf5(h5file_id,dset,params%cpp%electric_field,attr)
 
 		dset = TRIM(gname) // "/P"
 		attr = "Characteristic pressure in Pa"
-		call save_to_hdf5(h5file_id,dset,cpp%pressure,attr)
+		call save_to_hdf5(h5file_id,dset,params%cpp%pressure,attr)
 
 		dset = TRIM(gname) // "/T"
 		attr = "Characteristic plasma temperature"
-		call save_to_hdf5(h5file_id,dset,cpp%temperature,attr)
+		call save_to_hdf5(h5file_id,dset,params%cpp%temperature,attr)
 
 		call h5gclose_f(group_id, h5error)
 
@@ -896,12 +957,11 @@ subroutine save_simulation_parameters(params,cpp,spp,EB)
 end subroutine save_simulation_parameters
 
 
-subroutine save_simulation_outputs(params,cpp,spp,EB,it)
+subroutine save_simulation_outputs(params,spp,F,it)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(CHARCS_PARAMS), INTENT(IN) :: cpp
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
-	TYPE(FIELDS), INTENT(IN) :: EB
+	TYPE(FIELDS), INTENT(IN) :: F
 	INTEGER(ip), INTENT(IN) :: it
 	CHARACTER(MAX_STRING_LENGTH) :: filename
 	CHARACTER(MAX_STRING_LENGTH) :: gname
@@ -930,7 +990,7 @@ subroutine save_simulation_outputs(params,cpp,spp,EB,it)
     
 	dset = TRIM(gname) // "/time"
 	attr = "Simulation time in secs"
-	call save_to_hdf5(h5file_id,dset,REAL(it,ip)*params%dt*cpp%time,attr)
+	call save_to_hdf5(h5file_id,dset,REAL(it,ip)*params%dt*params%cpp%time,attr)
 
     do ii=1,params%num_species
         write(tmp_str,'(I18)') ii
@@ -982,7 +1042,7 @@ subroutine load_dim_data_from_hdf5(params,field_dims)
 	INTEGER(HID_T) :: subgroup_id
 	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
 	INTEGER :: h5error
-	REAL :: rdatum
+	REAL(rp) :: rdatum
     INTEGER :: ii
 
 	filename = TRIM(params%magnetic_field_filename)
@@ -991,21 +1051,30 @@ subroutine load_dim_data_from_hdf5(params,field_dims)
 		write(6,'("KORC ERROR: Something went wrong in: load_dim_data_from_hdf5 --> h5fopen_f")')
 	end if
 
-	dset = "/NR"
-	call load_from_hdf5(h5file_id,dset,rdatum)
-	field_dims(1) = INT(rdatum)
+	if (params%poloidal_flux) then
+			dset = "/NR"
+			call load_from_hdf5(h5file_id,dset,rdatum)
+			field_dims(1) = INT(rdatum)
 
-	dset = "/NPHI"
-	call load_from_hdf5(h5file_id,dset,rdatum)
-	field_dims(2) = INT(rdatum)
+			field_dims(2) = 0
 
-	dset = "/NZ"
-	call load_from_hdf5(h5file_id,dset,rdatum)
-	field_dims(3) = INT(rdatum)
+			dset = "/NZ"
+			call load_from_hdf5(h5file_id,dset,rdatum)
+			field_dims(3) = INT(rdatum)
+	else
+			dset = "/NR"
+			call load_from_hdf5(h5file_id,dset,rdatum)
+			field_dims(1) = INT(rdatum)
 
-!	dset = "simulation/num_species"
-!	call iload_from_hdf5(h5file_id,dset,ii)
-!	write(6,'("The datum is: ",I10)') ii
+			dset = "/NPHI"
+			call load_from_hdf5(h5file_id,dset,rdatum)
+			field_dims(2) = INT(rdatum)
+
+			dset = "/NZ"
+			call load_from_hdf5(h5file_id,dset,rdatum)
+			field_dims(3) = INT(rdatum)
+	end if
+
 
 	call h5fclose_f(h5file_id, h5error)
 	if (h5error .EQ. -1) then
@@ -1014,9 +1083,9 @@ subroutine load_dim_data_from_hdf5(params,field_dims)
 end subroutine load_dim_data_from_hdf5
 
 
-subroutine load_field_data_from_hdf5(params,EB)
+subroutine load_field_data_from_hdf5(params,F)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(FIELDS), INTENT(INOUT) :: EB
+	TYPE(FIELDS), INTENT(INOUT) :: F
 	CHARACTER(MAX_STRING_LENGTH) :: filename
 	CHARACTER(MAX_STRING_LENGTH) :: gname
 	CHARACTER(MAX_STRING_LENGTH) :: subgname
@@ -1034,22 +1103,35 @@ subroutine load_field_data_from_hdf5(params,EB)
 	end if
 
 	dset = "/R"
-	call rload_array_from_hdf5(h5file_id,dset,EB%X%R)
+	call rload_array_from_hdf5(h5file_id,dset,F%X%R)
 
-	dset = "/PHI"
-	call rload_array_from_hdf5(h5file_id,dset,EB%X%PHI)
+	if (.NOT. params%poloidal_flux) then
+		dset = "/PHI"
+		call rload_array_from_hdf5(h5file_id,dset,F%X%PHI)
+	end if
 
 	dset = "/Z"
-	call rload_array_from_hdf5(h5file_id,dset,EB%X%Z)
+	call rload_array_from_hdf5(h5file_id,dset,F%X%Z)
 
-	dset = "/BR"
-	call rload_array_from_hdf5(h5file_id,dset,EB%B%R)
+	if (.NOT. params%poloidal_flux) then
+		dset = "/BR"
+		call rload_array_from_hdf5(h5file_id,dset,F%B%R)
 
-	dset = "/BPHI"
-	call rload_array_from_hdf5(h5file_id,dset,EB%B%PHI)
+		dset = "/BPHI"
+		call rload_array_from_hdf5(h5file_id,dset,F%B%PHI)
 
-	dset = "/BZ"
-	call rload_array_from_hdf5(h5file_id,dset,EB%B%Z)
+		dset = "/BZ"
+		call rload_array_from_hdf5(h5file_id,dset,F%B%Z)
+	else
+		dset = '/Bo'
+		call load_from_hdf5(h5file_id,dset,F%Bo)
+
+		dset = '/Ro'
+		call load_from_hdf5(h5file_id,dset,F%Ro)
+
+		dset = "/PSIp"
+		call rload_array_from_hdf5(h5file_id,dset,F%PSIp)
+	end if	
 
 	call h5fclose_f(h5file_id, h5error)
 	if (h5error .EQ. -1) then

@@ -54,6 +54,22 @@ TYPE, PRIVATE :: KORC_MPI
 END TYPE KORC_MPI
 
 
+TYPE, PUBLIC :: CHARCS_PARAMS
+	REAL(rp) :: time
+	REAL(rp) :: time_r
+	REAL(rp) :: velocity
+	REAL(rp) :: length
+	REAL(rp) :: mass
+	REAL(rp) :: charge
+	REAL(rp) :: density
+	REAL(rp) :: electric_field
+	REAL(rp) :: magnetic_field
+	REAL(rp) :: energy
+	REAL(rp) :: pressure
+	REAL(rp) :: temperature
+END TYPE CHARCS_PARAMS
+
+
 TYPE, PUBLIC :: KORC_PARAMS
 	CHARACTER(MAX_STRING_LENGTH) :: path_to_inputs
 	CHARACTER(MAX_STRING_LENGTH) :: path_to_outputs
@@ -66,9 +82,11 @@ TYPE, PUBLIC :: KORC_PARAMS
 	INTEGER :: num_species
 	INTEGER :: pic_algorithm
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
+	LOGICAL :: poloidal_flux
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
 
 	TYPE(KORC_MPI) :: mpi_params
+	TYPE(CHARCS_PARAMS) :: cpp
 END TYPE KORC_PARAMS
 
 
@@ -102,22 +120,6 @@ TYPE, PUBLIC :: SPECIES
 END TYPE SPECIES
 
 
-TYPE, PUBLIC :: CHARCS_PARAMS
-	REAL(rp) :: time
-	REAL(rp) :: time_r
-	REAL(rp) :: velocity
-	REAL(rp) :: length
-	REAL(rp) :: mass
-	REAL(rp) :: charge
-	REAL(rp) :: density
-	REAL(rp) :: electric_field
-	REAL(rp) :: magnetic_field
-	REAL(rp) :: energy
-	REAL(rp) :: pressure
-	REAL(rp) :: temperature
-END TYPE CHARCS_PARAMS
-
-
 TYPE, PRIVATE :: A_FIELD
 	REAL(rp) :: Bo
 	REAL(rp) :: a
@@ -140,41 +142,56 @@ TYPE, PUBLIC :: FIELDS
 	TYPE(A_FIELD) :: AB
 	TYPE(V_FIELD_3D) :: E
 	TYPE(V_FIELD_3D) :: B
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: PSIp ! Poloidal flux
 	TYPE(MESH) :: X
 	REAL(rp) :: Bo ! Characteristic magnetic field
+	REAL(rp) :: Ro ! Radial position of magnetic axis
 	INTEGER, DIMENSION(3) :: dims ! dims(NR, NPHI, NZ)
 END TYPE FIELDS
 
 
-PUBLIC :: ALLOCATE_FIELDS, DEALLOCATE_FIELDS
+PUBLIC :: ALLOCATE_FIELDS_ARRAYS, DEALLOCATE_FIELDS_ARRAYS
 PRIVATE :: ALLOCATE_V_FIELD_3D, DEALLOCATE_V_FIELD_3D
 
 contains
 
-subroutine ALLOCATE_FIELDS(F)
+subroutine ALLOCATE_FIELDS_ARRAYS(F,opt)
+    implicit none
+	TYPE(FIELDS), INTENT(INOUT) :: F
+	LOGICAL, INTENT(IN) :: opt
+
+	if (opt) then ! Using only magnetic poloidal flux
+		ALLOCATE( F%PSIp(F%dims(1), F%dims(3)) )
+
+		ALLOCATE(F%X%R(F%dims(1)))
+		ALLOCATE(F%X%Z(F%dims(3)))
+	else ! Using cylindrical components of magnetic field
+		call ALLOCATE_V_FIELD_3D(F%B,F%dims)
+	!	call ALLOCATE_V_FIELD_3D(F%E,F%dims)	
+		
+		ALLOCATE(F%X%R(F%dims(1)))
+		ALLOCATE(F%X%PHI(F%dims(2)))
+		ALLOCATE(F%X%Z(F%dims(3)))
+	end if
+end subroutine ALLOCATE_FIELDS_ARRAYS
+
+
+subroutine DEALLOCATE_FIELDS_ARRAYS(F)
     implicit none
 	TYPE(FIELDS), INTENT(INOUT) :: F
 
-	call ALLOCATE_V_FIELD_3D(F%B,F%dims)
-!	call ALLOCATE_V_FIELD_3D(F%E,F%dims)	
-    
-	ALLOCATE(F%X%R(F%dims(1)))
-	ALLOCATE(F%X%PHI(F%dims(2)))
-	ALLOCATE(F%X%Z(F%dims(3)))
-end subroutine ALLOCATE_FIELDS
+	if (ALLOCATED(F%PSIp)) DEALLOCATE(F%PSIp)
+	if (ALLOCATED(F%B%R)) DEALLOCATE(F%B%R)
+	if (ALLOCATED(F%B%PHI)) DEALLOCATE(F%B%PHI)
+	if (ALLOCATED(F%B%Z)) DEALLOCATE(F%B%Z)
+	if (ALLOCATED(F%E%R)) DEALLOCATE(F%E%R)
+	if (ALLOCATED(F%E%PHI)) DEALLOCATE(F%E%PHI)
+	if (ALLOCATED(F%E%Z)) DEALLOCATE(F%E%Z)
 
-
-subroutine DEALLOCATE_FIELDS(F)
-    implicit none
-	TYPE(FIELDS), INTENT(INOUT) :: F
-
-	call DEALLOCATE_V_FIELD_3D(F%B)
-!	call DEALLOCATE_V_FIELD_3D(F%E)	
-    
-	DEALLOCATE(F%X%R)
-	DEALLOCATE(F%X%PHI)
-	DEALLOCATE(F%X%Z)
-end subroutine DEALLOCATE_FIELDS
+	if (ALLOCATED(F%X%R)) DEALLOCATE(F%X%R)
+	if (ALLOCATED(F%X%PHI)) DEALLOCATE(F%X%PHI)
+	if (ALLOCATED(F%X%Z)) DEALLOCATE(F%X%Z)
+end subroutine DEALLOCATE_FIELDS_ARRAYS
 
 
 subroutine ALLOCATE_V_FIELD_3D(F,dims)

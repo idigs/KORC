@@ -24,6 +24,10 @@ subroutine set_paths(params)
 	argn = command_argument_count()
 	call get_command_argument(1,params%path_to_inputs)
 	call get_command_argument(2,params%path_to_outputs)
+
+	write(6,'("* * * * * PATHS * * * * *")')
+	write(6,'("The input file is:",A50)') TRIM(params%path_to_inputs)
+	write(6,'("The output folder is:",A50)') TRIM(params%path_to_outputs)
 end subroutine set_paths
 
 
@@ -34,13 +38,14 @@ subroutine load_korc_params(params)
 	INTEGER(ip) :: t_steps
 	REAL(rp) :: dt
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
+	LOGICAL :: poloidal_flux
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
 	INTEGER(ip) :: output_cadence
 	INTEGER :: num_species
 	INTEGER :: pic_algorithm
 
-	NAMELIST /input_parameters/ magnetic_field_model,magnetic_field_filename,&
-			t_steps,dt,output_cadence,num_species,pic_algorithm
+	NAMELIST /input_parameters/ magnetic_field_model,poloidal_flux,&
+			magnetic_field_filename,t_steps,dt,output_cadence,num_species,pic_algorithm
 	
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=input_parameters)
@@ -53,8 +58,22 @@ subroutine load_korc_params(params)
 	params%dt = dt
 	params%num_species = num_species
 	params%magnetic_field_model = TRIM(magnetic_field_model)
+	params%poloidal_flux = poloidal_flux
 	params%magnetic_field_filename = TRIM(magnetic_field_filename)
 	params%pic_algorithm = pic_algorithm
+
+	if (params%mpi_params%rank .EQ. 0) then
+		write(6,'("* * * * * SIMULATION PARAMETERS * * * * *")')
+		write(6,'("Number of time steps: ",I16)') params%t_steps
+		write(6,'("Output cadence: ",I16)') params%output_cadence
+		write(6,'("Number of outputs: ",I16)') params%num_snapshots
+		write(6,'("Time step in fraction of gyro-period: ",F15.10)') params%dt
+		write(6,'("Number of electron populations: ",I16)') params%num_species
+		write(6,'("Magnetic field model: ",A50)') TRIM(params%magnetic_field_model)
+		write(6,'("Using (JFIT) poloidal flux: ", L1)') params%poloidal_flux
+		write(6,'("Magnetic field model: ",A100)') TRIM(params%magnetic_field_filename)
+
+	end if	
 end subroutine load_korc_params
 
 
@@ -186,12 +205,8 @@ subroutine initialize_particles(params,EB,ptcls)
 		Vpar = Vo*cos( C_PI*ptcls(ii)%etao/180_rp )
 		Vperp = Vo*sin( C_PI*ptcls(ii)%etao/180_rp )
 
-!		ptcls(ii)%vars%V(1,:) = 0.0_rp
-!		ptcls(ii)%vars%V(2,:) = -Vo
-!		ptcls(ii)%vars%V(3,:) = 0.0_rp
-
 		call unitVectors(params,Xo,EB,b,a)
-!		write(6,'(F15.10,F15.10,F15.10)') a
+
 		do jj=1,ptcls(ii)%ppp
 			ptcls(ii)%vars%V(:,jj) = Vpar(jj)*b(:,jj) + Vperp*a(:,jj)
 		end do
@@ -292,18 +307,21 @@ subroutine initialize_fields(params,EB)
 		! Load the magnetic field from an external HDF5 file
         call load_dim_data_from_hdf5(params,EB%dims)
 
-        call ALLOCATE_FIELDS(EB)
+       	call ALLOCATE_FIELDS_ARRAYS(EB,params%poloidal_flux)
 
         call load_field_data_from_hdf5(params,EB)
 
-		open(unit=default_unit_write,file='/home/l8c/Documents/KORC/KORC-FO/slice.dat',status='UNKNOWN',form='formatted')
-		write(default_unit_write,'(150(F15.10))') EB%B%R(:,1,:)
-		close(default_unit_write)	
+!		open(unit=default_unit_write,file='/home/l8c/Documents/KORC/KORC-FO/temp_file.dat',status='UNKNOWN',form='formatted')
+!		write(default_unit_write,'(150(F15.10))') EB%B%R(:,1,:)
+!		write(default_unit_write,'(65(F15.10))') EB%PSIp
+!		close(default_unit_write)	
 
-		field%str = 'B'
-
-		call mean_F_field(EB,EB%Bo,field)
+		if (.NOT. params%poloidal_flux) then
+			field%str = 'B'
+			call mean_F_field(EB,EB%Bo,field)
+		end if
 	else
+		write(6,'("ERROR: when initializing fields!")')
 		call korc_abort()
 	end if
 end subroutine initialize_fields

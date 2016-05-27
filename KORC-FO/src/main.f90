@@ -14,7 +14,6 @@ program main
 
 	TYPE(KORC_PARAMS) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE :: spp
-	TYPE(CHARCS_PARAMS) :: cpp
 	TYPE(FIELDS) :: EB
 	INTEGER(ip) :: it ! Iterator(s)
 	REAL(rp) :: t1, t2 ! variables for timing the simulation
@@ -30,16 +29,16 @@ program main
 
 	call initialize_particles(params,EB,spp) ! Initialize particles
 
-	call compute_charcs_plasma_params(spp,EB,cpp)
+	call compute_charcs_plasma_params(params,spp,EB)
 
-	call define_time_step(cpp,params)
+	call define_time_step(params)
 
-	call normalize_variables(params,spp,EB,cpp)
+	call normalize_variables(params,spp,EB)
 
 	call initialize_interpolant(params,EB)
 	! * * * INITIALIZATION STAGE * * *
 
-	call save_simulation_parameters(params,cpp,spp,EB)
+	call save_simulation_parameters(params,spp,EB)
 
 	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
 	! *** BEYOND THIS POINT VARIABLES ARE DIMENSIONLESS ***
@@ -48,7 +47,7 @@ program main
 	call advance_particles_velocity(params,EB,spp,0.0_rp)
 
 	! Save initial condition
-	call save_simulation_outputs(params,cpp,spp,EB,0_ip)
+	call save_simulation_outputs(params,spp,EB,0_ip)
 
 	t1 = MPI_WTIME()
 
@@ -60,7 +59,7 @@ program main
 		call advance_particles_position(params,EB,spp,params%dt)
 		if ( modulo(it,params%output_cadence) .EQ. 0_ip ) then
 			write(6,'("Saving snapshot: ",I15)') it/params%output_cadence
-			call save_simulation_outputs(params,cpp,spp,EB,it)
+			call save_simulation_outputs(params,spp,EB,it)
         end if
 	end do
 	
