@@ -12,9 +12,9 @@ ST.data = loadData(ST);
 
 ST.PD = pitchAngleDiagnostic(ST,180);
 
-ST.PD = magneticMomentDiagnostic(ST,180);
+% ST.PD = magneticMomentDiagnostic(ST,180);
 
-sp = 'sp3'
+sp = 'sp1'
 
 R = ST.params.scales.l*squeeze( sqrt( ST.data.(sp).X(1,:,:).^2 + ST.data.(sp).X(2,:,:).^2 ) );
 

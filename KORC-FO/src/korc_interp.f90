@@ -119,14 +119,15 @@ subroutine initialize_interpolant(params,F)
 			interp2d%NZ = F%dims(3)
 
 !			write(6,'("Initializing poloidal flux interpolant...")')
-			call EZspline_init(interp2d%A, interp2d%NR, interp2d%NZ,&
-								interp2d%BCSR, interp2d%BCSZ, ezerr)
+			call EZspline_init(interp2d%A,interp2d%NR,interp2d%NZ,interp2d%BCSR,interp2d%BCSZ,ezerr)
 		  	call EZspline_error(ezerr)
+
+!            interp2d%A%hspline = (/2,2/)
 
 			interp2d%A%x1 = F%X%R
 			interp2d%A%x2 = F%X%Z
 
-			call EZspline_setup(interp2d%A, F%PSIp, ezerr)
+			call EZspline_setup(interp2d%A, F%PSIp, ezerr, .TRUE.)
 			call EZspline_error(ezerr)
 		end if
 
@@ -208,21 +209,21 @@ subroutine calculate_magnetic_field(Y,F,B)
 	ss = size(Y,2)
 
 	ALLOCATE(A(3,ss))
-!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(interp2d,A,Y,B,F)
+!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(interp2d,F,Y,A,B)
 !$OMP DO
 	do pp=1,ss
-		call EZspline_derivative(interp2d%A, 1, 0, Y(1,pp), Y(3,pp), A(1,pp), ezerr)
+		call EZspline_derivative(interp2d%A, 0, 1, Y(1,pp), Y(3,pp), A(1,pp), ezerr)
 		call EZspline_error(ezerr)
 		A(1,pp) = A(1,pp)/Y(1,pp)
 
 		A(2,pp) = - F%Bo*F%Ro/Y(1,pp)
 
-		call EZspline_derivative(interp2d%A, 0, 1, Y(1,pp), Y(3,pp), A(3,pp), ezerr)
+		call EZspline_derivative(interp2d%A, 1, 0, Y(1,pp), Y(3,pp), A(3,pp), ezerr)
 		call EZspline_error(ezerr)
 		A(3,pp) = -A(3,pp)/Y(1,pp)
 
-		write(6,*) A(:,pp)
-		write(6,*) Y(:,pp)
+!		call EZspline_interp(interp2d%A, Y(1,pp), Y(3,pp), A(1,pp), ezerr)
+!		call EZspline_error(ezerr)
 
 		B(1,pp) = A(1,pp)*cos(Y(2,pp)) - A(2,pp)*sin(Y(2,pp))
 		B(2,pp) = A(1,pp)*sin(Y(2,pp)) + A(2,pp)*cos(Y(2,pp))
@@ -230,6 +231,13 @@ subroutine calculate_magnetic_field(Y,F,B)
 	end do
 !$OMP END DO
 !$OMP END PARALLEL
+
+	open(unit=default_unit_write,file='/Users/Leopo/Documents/MATLAB/KORK/KORC-FO/interpolation.dat',status='UNKNOWN',form='formatted')
+    do pp=1,ss
+	        write(default_unit_write,'(F16.10,T18,F16.10,T32,F16.10)') Y(1,pp), Y(3,pp), A(2,pp)
+    end do
+    close(default_unit_write)
+    call korc_abort()
 	DEALLOCATE(A)
 end subroutine calculate_magnetic_field
 
@@ -293,7 +301,11 @@ subroutine unitVectors(params,Xo,F,par,perp)
 	else
 		call cart_to_cyl(Xo, X)
 		call initialize_interpolant(params,F)
-		call calculate_magnetic_field(X,F,B)
+        if (params%poloidal_flux) then
+            	call calculate_magnetic_field(X,F,B)
+        else
+            call interp_magnetic_field(X,B)
+        end if
 		call finalize_interpolant(params)
 	end if
 

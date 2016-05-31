@@ -1093,8 +1093,9 @@ subroutine load_field_data_from_hdf5(params,F)
 	INTEGER(HID_T) :: h5file_id
 	INTEGER(HID_T) :: group_id
 	INTEGER(HID_T) :: subgroup_id
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: A
 	INTEGER :: h5error
+    INTEGER ir, iphi, iz
 
 	filename = TRIM(params%magnetic_field_filename)
 	call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
@@ -1130,7 +1131,27 @@ subroutine load_field_data_from_hdf5(params,F)
 		call load_from_hdf5(h5file_id,dset,F%Ro)
 
 		dset = "/PSIp"
-		call rload_array_from_hdf5(h5file_id,dset,F%PSIp)
+        ALLOCATE( A(F%dims(1)*F%dims(3)) )
+		call rload_array_from_hdf5(h5file_id,dset,A)
+        do ir=1,F%dims(1)
+            do iz=1,F%dims(3)
+	            F%PSIp(ir,iz) = A(iz + (ir-1)*F%dims(3))
+            end do
+        end do
+!        open(unit=default_unit_write,file='/Users/Leopo/Documents/MATLAB/KORK/KORC-FO/A.dat',status='UNKNOWN',form='formatted')
+!        write(default_unit_write,'(F16.10)') A
+!        close(default_unit_write)
+        DEALLOCATE(A)
+
+!	    open(unit=default_unit_write,file='/Users/Leopo/Documents/MATLAB/KORK/KORC-FO/temp_file.dat',status='UNKNOWN',form='formatted')
+!        do ir=1,F%dims(1)
+!            do iz=1,F%dims(3)
+!	            write(default_unit_write,'(F16.10,T18,F16.10,T32,F16.10)') F%X%R(ir), F%X%Z(iz), F%PSIp(ir,iz)
+!            end do
+!        end do
+!        close(default_unit_write)
+!        call abort
+
 	end if	
 
 	call h5fclose_f(h5file_id, h5error)

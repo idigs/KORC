@@ -311,11 +311,6 @@ subroutine initialize_fields(params,EB)
 
         call load_field_data_from_hdf5(params,EB)
 
-!		open(unit=default_unit_write,file='/home/l8c/Documents/KORC/KORC-FO/temp_file.dat',status='UNKNOWN',form='formatted')
-!		write(default_unit_write,'(150(F15.10))') EB%B%R(:,1,:)
-!		write(default_unit_write,'(65(F15.10))') EB%PSIp
-!		close(default_unit_write)	
-
 		if (.NOT. params%poloidal_flux) then
 			field%str = 'B'
 			call mean_F_field(EB,EB%Bo,field)

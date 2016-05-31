@@ -1,4 +1,4 @@
-% name = 'fields/xpand_iter3D_sc4_bet015_I87_hi_acc.dat';
+% name = 'xpand_iter3D_sc4_bet015_I87_hi_acc.dat';
 % ST = pOrbs(name,'XPANDER','3D',[150,100,150],[1E6,1E-2,10],[-1,1],[7,0,0],[0.985384856627944,0]);
 
 filename = 'ITER_3D.h5'
@@ -76,8 +76,13 @@ data = load('jfit_165365_1400.mat');
 
 filename = 'DIII-D_JFIT.h5'
 
-R = squeeze(data.rg);
-Z = squeeze(data.zg);
+R = data.rg;%linspace(min(data.rg),max(data.rg),100);
+Z = data.zg;%linspace(min(data.zg),max(data.zg),150);
+
+%[Rq,Zq] = meshgrid(linspace(min(R),max(R),100),linspace(min(Z),max(Z),150));
+
+% Vq = interp2(data.rg,data.zg,data.psig,Rq,Zq);
+Vq = data.psig;
 
 NR = numel(R);
 NZ = numel(Z);
@@ -98,27 +103,31 @@ h5create(filename, '/Ro', [1])
 h5write(filename, '/Ro',1.695)
 
 dims = [NR,NZ];
-PSIp = zeros(dims);
-PSIp = data.psig';
-
-FPSIp = zeros(fliplr(dims));
+PSIp = zeros(NR*NZ,1);
 
 for ir=1:NR
     for iz=1:NZ
-        FPSIp(iz,ir) = PSIp(ir,iz);
+        PSIp(iz + (ir-1)*NZ) = Vq(iz,ir);
     end
 end
 
-h5create(filename,'/PSIp',fliplr(dims));
-h5write(filename,'/PSIp',FPSIp);
+h5create(filename,'/PSIp',[NR*NZ]);
+h5write(filename,'/PSIp',PSIp);
 
-% fileID = H5F.open(filename,'H5F_ACC_RDWR','H5P_DEFAULT');
-% dataspaceID = H5S.create_simple(2, dims, dims);
-% dsetname = '/PSIp';
-% datasetID = H5D.create(fileID,dsetname,'H5T_NATIVE_DOUBLE',dataspaceID,'H5P_DEFAULT');
-% H5D.write(datasetID,'H5T_NATIVE_DOUBLE','H5S_ALL','H5S_ALL','H5P_DEFAULT',FPSIp);
-% H5D.close(datasetID);
-% H5S.close(dataspaceID);
+
+% dims = [NR,NZ];
+% PSIp = Vq';
+% 
+% FPSIp = zeros(fliplr(dims));
+% 
+% for ir=1:NR
+%     for iz=1:NZ
+%         FPSIp(iz,ir) = PSIp(ir,iz);
+%     end
+% end
+% 
+% h5create(filename,'/PSIp',fliplr(dims));
+% h5write(filename,'/PSIp',FPSIp);
 
 %%
 dims = [10,5,2];
