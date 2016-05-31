@@ -36,6 +36,8 @@ program main
 	call normalize_variables(params,spp,EB)
 
 	call initialize_interpolant(params,EB)
+
+	call set_up_particles_ic(params,EB,spp)
 	! * * * INITIALIZATION STAGE * * *
 
 	call save_simulation_parameters(params,spp,EB)

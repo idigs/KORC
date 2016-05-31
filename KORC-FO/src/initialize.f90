@@ -91,33 +91,26 @@ end subroutine initialize_korc_parameters
 ! * * * SUBROUTINES FOR INITIALIZING PARTICLES * * * !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
-subroutine initialize_particles(params,EB,ptcls) 
+subroutine initialize_particles(params,F,spp) 
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(FIELDS), INTENT(IN) :: EB
-	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: ptcls
+	TYPE(FIELDS), INTENT(IN) :: F
+	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: spp
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: ppp
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: q
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: m
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Eo
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: etao
+	LOGICAL, DIMENSION(:), ALLOCATABLE :: runaway
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Ro
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zo
-	LOGICAL, DIMENSION(:), ALLOCATABLE :: runaway
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: Vo
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: Vpar
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: Vperp
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: b
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: a
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Xo
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: angle, radius ! temporary vars
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: r ! temporary variable
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: r
 	INTEGER :: ii,jj ! Iterator
 
 	NAMELIST /plasma_species/ ppp, q, m, Eo, etao, runaway, Ro, Zo, r
 
 	! Allocate array containing variables of particles for each species
-	ALLOCATE(ptcls(params%num_species))
+	ALLOCATE(spp(params%num_species))
 
 	ALLOCATE(ppp(params%num_species))
 	ALLOCATE(q(params%num_species))
@@ -135,49 +128,81 @@ subroutine initialize_particles(params,EB,ptcls)
 	close(default_unit_open)
 
 	do ii=1,params%num_species
-		ptcls(ii)%Eo = Eo(ii)
-		ptcls(ii)%etao = etao(ii)
-		ptcls(ii)%runaway = runaway(ii)
-		ptcls(ii)%q = q(ii)*C_E
-		ptcls(ii)%m = m(ii)*C_ME
-		ptcls(ii)%ppp = ppp(ii)
+		spp(ii)%Eo = Eo(ii)*C_E
+		spp(ii)%etao = etao(ii)
+		spp(ii)%runaway = runaway(ii)
+		spp(ii)%q = q(ii)*C_E
+		spp(ii)%m = m(ii)*C_ME
+		spp(ii)%ppp = ppp(ii)
 
-		ptcls(ii)%gammao =  ptcls(ii)%Eo*C_E/(ptcls(ii)%m*C_C**2)
+		spp(ii)%Ro = Ro(ii)
+		spp(ii)%Zo = Zo(ii)
+		spp(ii)%r = r(ii)
 
-		ALLOCATE( ptcls(ii)%vars%X(3,ptcls(ii)%ppp) )
-		ALLOCATE( ptcls(ii)%vars%V(3,ptcls(ii)%ppp) )
-		ALLOCATE( ptcls(ii)%vars%Rgc(3,ptcls(ii)%ppp) )
-		ALLOCATE( ptcls(ii)%vars%Y(3,ptcls(ii)%ppp) )
-		ALLOCATE( ptcls(ii)%vars%E(3,ptcls(ii)%ppp) )
-		ALLOCATE( ptcls(ii)%vars%B(3,ptcls(ii)%ppp) )
-		ALLOCATE( ptcls(ii)%vars%gamma(ptcls(ii)%ppp) )
-		ALLOCATE( ptcls(ii)%vars%eta(ptcls(ii)%ppp) )
-		ALLOCATE( ptcls(ii)%vars%mu(ptcls(ii)%ppp) )
-		ALLOCATE( ptcls(ii)%vars%kappa(ptcls(ii)%ppp) )
-		ALLOCATE( ptcls(ii)%vars%tau(ptcls(ii)%ppp) )
+		spp(ii)%gammao =  spp(ii)%Eo/(spp(ii)%m*C_C**2)
 
-		ALLOCATE( Xo(3,ptcls(ii)%ppp) )
-		ALLOCATE( Vo(ptcls(ii)%ppp) )
-		ALLOCATE( Vpar(ptcls(ii)%ppp) )
-		ALLOCATE( Vperp(ptcls(ii)%ppp) )
-		ALLOCATE( b(3,ptcls(ii)%ppp) )
-		ALLOCATE( a(3,ptcls(ii)%ppp) )
-		
-		ALLOCATE( angle(ptcls(ii)%ppp) )
-		ALLOCATE( radius(ptcls(ii)%ppp) )
+		ALLOCATE( spp(ii)%vars%X(3,spp(ii)%ppp) )
+		ALLOCATE( spp(ii)%vars%V(3,spp(ii)%ppp) )
+		ALLOCATE( spp(ii)%vars%Rgc(3,spp(ii)%ppp) )
+		ALLOCATE( spp(ii)%vars%Y(3,spp(ii)%ppp) )
+		ALLOCATE( spp(ii)%vars%E(3,spp(ii)%ppp) )
+		ALLOCATE( spp(ii)%vars%B(3,spp(ii)%ppp) )
+		ALLOCATE( spp(ii)%vars%gamma(spp(ii)%ppp) )
+		ALLOCATE( spp(ii)%vars%eta(spp(ii)%ppp) )
+		ALLOCATE( spp(ii)%vars%mu(spp(ii)%ppp) )
+		ALLOCATE( spp(ii)%vars%kappa(spp(ii)%ppp) )
+		ALLOCATE( spp(ii)%vars%tau(spp(ii)%ppp) )
 
 		! Initialize to zero
-		ptcls(ii)%vars%X = 0.0_rp
-		ptcls(ii)%vars%V = 0.0_rp
-		ptcls(ii)%vars%Rgc = 0.0_rp
-		ptcls(ii)%vars%Y = 0.0_rp
-		ptcls(ii)%vars%E = 0.0_rp
-		ptcls(ii)%vars%B = 0.0_rp
-		ptcls(ii)%vars%gamma = 0.0_rp
-		ptcls(ii)%vars%eta = 0.0_rp
-		ptcls(ii)%vars%mu = 0.0_rp
-		ptcls(ii)%vars%kappa = 0.0_rp
-		ptcls(ii)%vars%tau = 0.0_rp
+		spp(ii)%vars%X = 0.0_rp
+		spp(ii)%vars%V = 0.0_rp
+		spp(ii)%vars%Rgc = 0.0_rp
+		spp(ii)%vars%Y = 0.0_rp
+		spp(ii)%vars%E = 0.0_rp
+		spp(ii)%vars%B = 0.0_rp
+		spp(ii)%vars%gamma = 0.0_rp
+		spp(ii)%vars%eta = 0.0_rp
+		spp(ii)%vars%mu = 0.0_rp
+		spp(ii)%vars%kappa = 0.0_rp
+		spp(ii)%vars%tau = 0.0_rp
+	end do
+
+	DEALLOCATE(ppp)
+	DEALLOCATE(q)
+	DEALLOCATE(m)
+	DEALLOCATE(Eo)
+	DEALLOCATE(etao)
+	DEALLOCATE(runaway)
+	DEALLOCATE(Ro)
+	DEALLOCATE(Zo)
+	DEALLOCATE(r)
+end subroutine initialize_particles
+
+
+subroutine set_up_particles_ic(params,F,spp) 
+	implicit none
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(FIELDS), INTENT(IN) :: F
+	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: Vo
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: Vpar
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: Vperp
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: b
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: a
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Xo
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: angle, radius ! temporary vars
+	INTEGER :: ii,jj ! Iterator
+
+	do ii=1,params%num_species
+		ALLOCATE( Xo(3,spp(ii)%ppp) )
+		ALLOCATE( Vo(spp(ii)%ppp) )
+		ALLOCATE( Vpar(spp(ii)%ppp) )
+		ALLOCATE( Vperp(spp(ii)%ppp) )
+		ALLOCATE( b(3,spp(ii)%ppp) )
+		ALLOCATE( a(3,spp(ii)%ppp) )
+		
+		ALLOCATE( angle(spp(ii)%ppp) )
+		ALLOCATE( radius(spp(ii)%ppp) )
 
 		! Initial condition of uniformly distributed particles on a disk in the xz-plane
 		! A unique velocity direction
@@ -188,27 +213,26 @@ subroutine initialize_particles(params,EB,ptcls)
 		! Uniform distribution on a disk at a fixed azimuthal angle		
 		call init_random_seed()
 		call RANDOM_NUMBER(radius)
-		radius = r(ii)*radius
 		
-		Xo(1,:) = Ro(ii) + sqrt(radius)*cos(angle)
+		Xo(1,:) = spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(angle)
 		Xo(2,:) = 0.0_rp
-		Xo(3,:) = Zo(ii) + sqrt(radius)*sin(angle)
+		Xo(3,:) = spp(ii)%Zo + spp(ii)%r*sqrt(radius)*sin(angle)
 
-		ptcls(ii)%vars%X(1,:) = Xo(1,:)
-		ptcls(ii)%vars%X(2,:) = Xo(2,:)
-		ptcls(ii)%vars%X(3,:) = Xo(3,:)
+		spp(ii)%vars%X(1,:) = Xo(1,:)
+		spp(ii)%vars%X(2,:) = Xo(2,:)
+		spp(ii)%vars%X(3,:) = Xo(3,:)
 
 		! Monoenergetic distribution
-		ptcls(ii)%vars%gamma(:) = ptcls(ii)%Eo*C_E/(ptcls(ii)%m*C_C**2)
+		spp(ii)%vars%gamma(:) = spp(ii)%gammao
 
-		Vo = C_C*sqrt( 1.0_rp - 1.0_rp/(ptcls(ii)%vars%gamma(:)**2) )
-		Vpar = Vo*cos( C_PI*ptcls(ii)%etao/180_rp )
-		Vperp = Vo*sin( C_PI*ptcls(ii)%etao/180_rp )
+		Vo = sqrt( 1.0_rp - 1.0_rp/(spp(ii)%vars%gamma(:)**2) )
+		Vpar = Vo*cos( C_PI*spp(ii)%etao/180_rp )
+		Vperp = Vo*sin( C_PI*spp(ii)%etao/180_rp )
 
-		call unitVectors(params,Xo,EB,b,a)
+		call unitVectors(params,Xo,F,b,a)
 
-		do jj=1,ptcls(ii)%ppp
-			ptcls(ii)%vars%V(:,jj) = Vpar(jj)*b(:,jj) + Vperp*a(:,jj)
+		do jj=1,spp(ii)%ppp
+			spp(ii)%vars%V(:,jj) = Vpar(jj)*b(:,jj) + Vperp(jj)*a(:,jj)
 		end do
 
 		DEALLOCATE(angle)
@@ -220,18 +244,8 @@ subroutine initialize_particles(params,EB,ptcls)
 		DEALLOCATE(b)
 		DEALLOCATE(a)
 	end do
+end subroutine set_up_particles_ic
 
-	DEALLOCATE(ppp)
-	DEALLOCATE(q)
-	DEALLOCATE(m)
-	DEALLOCATE(Eo)
-	DEALLOCATE(etao)
-	DEALLOCATE(runaway)
-	DEALLOCATE(Ro)
-	DEALLOCATE(Zo)
-
-	DEALLOCATE(r)
-end subroutine initialize_particles
 
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 ! * * * SUBROUTINES FOR INITIALIZING PARTICLES * * * !
@@ -274,10 +288,10 @@ subroutine initialization_sanity_check(params)
 end subroutine initialization_sanity_check
 
 
-subroutine initialize_fields(params,EB)
+subroutine initialize_fields(params,F)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(FIELDS), INTENT(OUT) :: EB
+	TYPE(FIELDS), INTENT(OUT) :: F
 	TYPE(KORC_STRING) :: field
 	REAL(rp) :: Bo
 	REAL(rp) :: minor_radius
@@ -294,26 +308,26 @@ subroutine initialize_fields(params,EB)
 		read(default_unit_open,nml=analytic_mag_field_params)
 		close(default_unit_open)
 
-		EB%AB%Bo = Bo
-		EB%AB%a = minor_radius
-		EB%AB%Ro = major_radius
-		EB%AB%qa = q_factor_at_separatrix
-		EB%AB%co = free_param
-		EB%AB%lambda = EB%AB%a / EB%AB%co
-		EB%AB%Bpo = (EB%AB%a/EB%AB%Ro)*(EB%AB%Bo/EB%AB%qa)*(1+EB%AB%co**2)/EB%AB%co;
+		F%AB%Bo = Bo
+		F%AB%a = minor_radius
+		F%AB%Ro = major_radius
+		F%AB%qa = q_factor_at_separatrix
+		F%AB%co = free_param
+		F%AB%lambda = F%AB%a / F%AB%co
+		F%AB%Bpo = (F%AB%a/F%AB%Ro)*(F%AB%Bo/F%AB%qa)*(1+F%AB%co**2)/F%AB%co;
 
-		EB%Bo = EB%AB%Bo
+		F%Bo = F%AB%Bo
 	else if (params%magnetic_field_model .EQ. 'EXTERNAL') then
 		! Load the magnetic field from an external HDF5 file
-        call load_dim_data_from_hdf5(params,EB%dims)
+        call load_dim_data_from_hdf5(params,F%dims)
 
-       	call ALLOCATE_FIELDS_ARRAYS(EB,params%poloidal_flux)
+       	call ALLOCATE_FIELDS_ARRAYS(F,params%poloidal_flux)
 
-        call load_field_data_from_hdf5(params,EB)
+        call load_field_data_from_hdf5(params,F)
 
 		if (.NOT. params%poloidal_flux) then
 			field%str = 'B'
-			call mean_F_field(EB,EB%Bo,field)
+			call mean_F_field(F,F%Bo,field)
 		end if
 	else
 		write(6,'("ERROR: when initializing fields!")')

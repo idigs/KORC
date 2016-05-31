@@ -79,37 +79,37 @@ subroutine initialize_interpolant(params,F)
 			interp3d%NPHI = F%dims(2)
 			interp3d%NZ = F%dims(3)
 
-!			write(6,'("Initializing R component of interpolant...")')
+			! Initializing R component of interpolant
 			call EZspline_init(interp3d%R, interp3d%NR, interp3d%NPHI, interp3d%NZ,&
 								interp3d%BCSR, interp3d%BCSPHI, interp3d%BCSZ, ezerr)
 		  	call EZspline_error(ezerr)
 
 			interp3d%R%x1 = F%X%R
-		!	interp3d%R%x2 = F%X%PHI
+			! interp3d%R%x2 = F%X%PHI
 			interp3d%R%x3 = F%X%Z
 
 			call EZspline_setup(interp3d%R, F%B%R, ezerr)
 			call EZspline_error(ezerr)
 
-!			write(6,'("Initializing PHI component of interpolant...")')
+			! Initializing PHI component of interpolant
 			call EZspline_init(interp3d%PHI, interp3d%NR, interp3d%NPHI, interp3d%NZ,&
 								interp3d%BCSR, interp3d%BCSPHI, interp3d%BCSZ, ezerr)
 		  	call EZspline_error(ezerr)
 
 			interp3d%PHI%x1 = F%X%R
-		!	interp3d%PHI%x2 = F%X%PHI
+			! interp3d%PHI%x2 = F%X%PHI
 			interp3d%PHI%x3 = F%X%Z
 
 			call EZspline_setup(interp3d%PHI, F%B%PHI, ezerr)
 			call EZspline_error(ezerr)
 
-!			write(6,'("Initializing Z component of interpolant...")')
+			! Initializing Z component of interpolant
 			call EZspline_init(interp3d%Z, interp3d%NR, interp3d%NPHI, interp3d%NZ,&
 								interp3d%BCSR, interp3d%BCSPHI, interp3d%BCSZ, ezerr)
 		  	call EZspline_error(ezerr)
 
 			interp3d%Z%x1 = F%X%R
-		!	interp3d%Z%x2 = F%X%PHI
+			! interp3d%Z%x2 = F%X%PHI
 			interp3d%Z%x3 = F%X%Z
 
 			call EZspline_setup(interp3d%Z, F%B%Z, ezerr)
@@ -118,12 +118,11 @@ subroutine initialize_interpolant(params,F)
 			interp2d%NR = F%dims(1)
 			interp2d%NZ = F%dims(3)
 
-!			write(6,'("Initializing poloidal flux interpolant...")')
+			! Initializing poloidal flux interpolant
 			call EZspline_init(interp2d%A,interp2d%NR,interp2d%NZ,interp2d%BCSR,interp2d%BCSZ,ezerr)
 		  	call EZspline_error(ezerr)
 
-!            interp2d%A%hspline = (/2,2/)
-
+			! interp2d%A%hspline = (/2,2/)
 			interp2d%A%x1 = F%X%R
 			interp2d%A%x2 = F%X%Z
 
@@ -222,9 +221,6 @@ subroutine calculate_magnetic_field(Y,F,B)
 		call EZspline_error(ezerr)
 		A(3,pp) = -A(3,pp)/Y(1,pp)
 
-!		call EZspline_interp(interp2d%A, Y(1,pp), Y(3,pp), A(1,pp), ezerr)
-!		call EZspline_error(ezerr)
-
 		B(1,pp) = A(1,pp)*cos(Y(2,pp)) - A(2,pp)*sin(Y(2,pp))
 		B(2,pp) = A(1,pp)*sin(Y(2,pp)) + A(2,pp)*cos(Y(2,pp))
 		B(3,pp) = A(3,pp)
@@ -232,12 +228,12 @@ subroutine calculate_magnetic_field(Y,F,B)
 !$OMP END DO
 !$OMP END PARALLEL
 
-	open(unit=default_unit_write,file='/Users/Leopo/Documents/MATLAB/KORK/KORC-FO/interpolation.dat',status='UNKNOWN',form='formatted')
-    do pp=1,ss
-	        write(default_unit_write,'(F16.10,T18,F16.10,T32,F16.10)') Y(1,pp), Y(3,pp), A(2,pp)
-    end do
-    close(default_unit_write)
-    call korc_abort()
+!	open(unit=default_unit_write,file='/home/l8c/Documents/KORC/KORC-FO/interpolation.dat',status='UNKNOWN',form='formatted')
+!    do pp=1,ss
+!	        write(default_unit_write,'(F20.16,T22,F20.16,T44,F20.16)') Y(1,pp), Y(3,pp), A(1,pp)
+!    end do
+!    close(default_unit_write)
+!    call korc_abort()
 	DEALLOCATE(A)
 end subroutine calculate_magnetic_field
 
@@ -300,13 +296,11 @@ subroutine unitVectors(params,Xo,F,par,perp)
 		call analytical_magnetic_field(F,X,B)
 	else
 		call cart_to_cyl(Xo, X)
-		call initialize_interpolant(params,F)
         if (params%poloidal_flux) then
-            	call calculate_magnetic_field(X,F,B)
+            call calculate_magnetic_field(X,F,B)
         else
             call interp_magnetic_field(X,B)
         end if
-		call finalize_interpolant(params)
 	end if
 
 	call RANDOM_NUMBER(rnd_num)
@@ -320,16 +314,22 @@ subroutine unitVectors(params,Xo,F,par,perp)
 		
 			c2 = 2.0_rp*par(1,ii)*par(3,ii)*az
 			c3 = (par(2,ii)**2 + par(3,ii)**2)*az**2 -par(2,ii)**2
-		
+
 			ax = ( -c2 + sqrt(c2**2 - 4.0_rp*c1*c3) )/(2.0_rp*c1)
-			ay = sqrt(1.0_rp - ax**2 - az**2)
-		
+			if ( (1.0_rp - (ax**2 + az**2)) .GE. korc_zero ) then
+				ay = sqrt(1.0_rp - ax**2 - az**2)
+			else
+				ay = 0.0_rp
+			end if
 			perp(:,ii) = (/ax, ay, az/)
-		
+
 			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
 				ax = ( -c2 - sqrt(c2**2 - 4.0_rp*c1*c3) )/(2.0_rp*c1)
-				ay = sqrt(1.0_rp - ax**2 - az**2)
-				
+				if ( (1.0_rp - (ax**2 + az**2)) .GE. korc_zero ) then
+					ay = sqrt(1.0_rp - ax**2 - az**2)
+				else
+					ay = 0.0_rp
+				end if
 				perp(:,ii) = (/ax, ay, az/)
 			end if
 		
@@ -340,14 +340,20 @@ subroutine unitVectors(params,Xo,F,par,perp)
 				c3 = (par(2,ii)**2 + par(3,ii)**2)*az**2 -par(2,ii)**2
 				
 				ax = ( -c2 + sqrt(c2**2 - 4.0_rp*c1*c3) )/(2.0_rp*c1)
-				ay = sqrt(1.0_rp - ax**2 - az**2)
-				
+				if ( (1.0_rp - (ax**2 + az**2)) .GE. korc_zero ) then
+					ay = sqrt(1.0_rp - ax**2 - az**2)
+				else
+					ay = 0.0_rp
+				end if				
 				perp(:,ii) = (/ax, ay, az/)
 				
 				if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
 					ax = ( -c2 - sqrt(c2**2 - 4.0_rp*c1*c3) )/(2.0_rp*c1)
-					ay = sqrt(1.0_rp - ax**2 - az**2)
-				    
+					if ( (1.0_rp - (ax**2 + az**2)) .GE. korc_zero ) then
+						ay = sqrt(1.0_rp - ax**2 - az**2)
+					else
+						ay = 0.0_rp
+				    end if
 				    perp(:,ii) = (/ax, ay, az/)
 				end if
 			end if
@@ -359,7 +365,6 @@ subroutine unitVectors(params,Xo,F,par,perp)
 			write(6,'("Exception!")')
 		end if
 	end do
-
 
 	DEALLOCATE(X)
 	DEALLOCATE(B)

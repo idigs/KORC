@@ -75,6 +75,10 @@ subroutine normalize_variables(params,spp,F)
 		spp(ii)%vars%X = spp(ii)%vars%X/params%cpp%length
 		spp(ii)%vars%V = spp(ii)%vars%V/params%cpp%velocity
 		spp(ii)%vars%Rgc = spp(ii)%vars%Rgc/params%cpp%length
+
+		spp(ii)%Ro = spp(ii)%Ro/params%cpp%length
+		spp(ii)%Zo = spp(ii)%Zo/params%cpp%length
+		spp(ii)%r = spp(ii)%r/params%cpp%length
 	end do
 
 !	Normalize electromagnetic fields
@@ -93,7 +97,8 @@ subroutine normalize_variables(params,spp,F)
 		if (ALLOCATED(F%B%PHI)) F%B%PHI = F%B%PHI/params%cpp%magnetic_field
 		if (ALLOCATED(F%B%Z)) F%B%Z = F%B%Z/params%cpp%magnetic_field
 
-		if (ALLOCATED(F%PSIp)) F%PSIp = F%PSIp*params%cpp%length**2/params%cpp%magnetic_field
+		if (ALLOCATED(F%PSIp)) F%PSIp = &
+					F%PSIp/(params%cpp%magnetic_field*(params%cpp%length**2))
 		if (ALLOCATED(F%PSIp)) F%Ro = F%Ro/params%cpp%length
 
 		F%X%R = F%X%R/params%cpp%length

@@ -1,7 +1,7 @@
 &input_parameters
-	t_steps = 2 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	t_steps = 325000 ! 1050000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
 	dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
-	output_cadence = 1 ! 1400 for saving each 100 gyro-periods
+	output_cadence = 500 ! 1400 for saving each 100 gyro-periods
 	num_species = 1
 	magnetic_field_model = 'EXTERNAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
 										! For 'ANALYTICAL', the magnetic field is calculated based on
@@ -10,7 +10,7 @@
 										! specified in "filename".
 	poloidal_flux = .TRUE.				! .TRUE. if using JFIT poloidal flux, .FALSE. if using the
 										! cylindrical components of the magnetic field
-	magnetic_field_filename = "/Users/Leopo/Documents/MATLAB/KORK/KORC-FO/inputFiles/DIII-D_JFIT.h5"
+	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/DIII-D_JFIT.h5"
 	pic_algorithm = 1 ! 1 = Leapfrog, 2 = RK4, 3 = some other
 /
 
@@ -18,18 +18,18 @@
 	runaway = .FALSE. !
 	Ro = 1.6 !
 	Zo = 0.0 !
-	r = 0.5 !
+	r = 0.4 !
 	Eo = 3.0E6 ! Initial energy in eV
-	etao = 10.0 ! Initial pitch angle
+	etao = 5.0 ! Initial pitch angle
 	ppp = 500 ! Number of particles per process (mpi)
     q = -1.0 ! Electric charge
     m = 1.0 ! In units of electron mass
 /
 
 &analytic_mag_field_params
-	Bo = 3.0 ! In Teslas. ITER: 5.42 DIII-D: 3.0
+	Bo = 2.19 ! In Teslas. ITER: 5.42 DIII-D: 3.0
 	minor_radius = 0.5 ! Minor radius in meters. ITER: 1.5 DIII-D: 0.5
-	major_radius = 1.6 ! Major radius in meters. ITER: 6.5 DIII-D: 1.6
-	q_factor_at_separatrix = 3.0 ! Safety factor at the separatrix (r=a)
+	major_radius = 1.695 ! Major radius in meters. ITER: 6.5 DIII-D: 1.6
+	q_factor_at_separatrix = 2.0 ! Safety factor at the separatrix (r=a)
 	free_param = 0.5 ! defined as the ratio minor_radius/lambda
 /

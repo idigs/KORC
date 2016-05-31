@@ -116,6 +116,10 @@ TYPE, PUBLIC :: SPECIES
 	REAL(rp) :: q
 	REAL(rp) :: m
 	INTEGER :: ppp
+	! Parameters for initializing spatial distribution
+	REAL(rp) :: Ro
+	REAL(rp) :: Zo
+	REAL(rp) :: r
 	! Here go the parameters for collisions, replenishment, weighting... 
 END TYPE SPECIES
 

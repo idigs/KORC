@@ -1,6 +1,7 @@
 module korc_HDF5
 
 	use korc_types
+	use constants
 	use HDF5
 
 	implicit none
@@ -830,7 +831,7 @@ subroutine save_simulation_parameters(params,spp,F)
 
 		dset = TRIM(gname) // "/Eo"
 		attr_array(1) = "Initial (average) energy in eV"
-		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%Eo*params%cpp%energy,attr_array)
+		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%Eo*params%cpp%energy/C_E,attr_array)
 
 		dset = TRIM(gname) // "/gammao"
 		attr_array(1) = "Initial relativistic gamma."
@@ -843,6 +844,18 @@ subroutine save_simulation_parameters(params,spp,F)
 		dset = TRIM(gname) // "/wc"
 		attr_array(1) = "Average cyclotron frequency in Hz"
 		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%wc/params%cpp%time,attr_array)
+
+		dset = TRIM(gname) // "/Ro"
+		attr_array(1) = "Initial radial position of population"
+		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%Ro*params%cpp%length,attr_array)
+
+		dset = TRIM(gname) // "/Zo"
+		attr_array(1) = "Initial Z position of population"
+		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%Zo*params%cpp%length,attr_array)
+
+		dset = TRIM(gname) // "/r"
+		attr_array(1) = "Radius of initial spatial distribution"
+		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%r*params%cpp%length,attr_array)
 
 		call h5gclose_f(group_id, h5error)
 
@@ -940,6 +953,10 @@ subroutine save_simulation_parameters(params,spp,F)
 		dset = TRIM(gname) // "/E"
 		attr = "Characteristic electric field in V/m"
 		call save_to_hdf5(h5file_id,dset,params%cpp%electric_field,attr)
+
+		dset = TRIM(gname) // "/B"
+		attr = "Characteristic magnetic field in T"
+		call save_to_hdf5(h5file_id,dset,params%cpp%magnetic_field,attr)
 
 		dset = TRIM(gname) // "/P"
 		attr = "Characteristic pressure in Pa"
@@ -1138,19 +1155,7 @@ subroutine load_field_data_from_hdf5(params,F)
 	            F%PSIp(ir,iz) = A(iz + (ir-1)*F%dims(3))
             end do
         end do
-!        open(unit=default_unit_write,file='/Users/Leopo/Documents/MATLAB/KORK/KORC-FO/A.dat',status='UNKNOWN',form='formatted')
-!        write(default_unit_write,'(F16.10)') A
-!        close(default_unit_write)
         DEALLOCATE(A)
-
-!	    open(unit=default_unit_write,file='/Users/Leopo/Documents/MATLAB/KORK/KORC-FO/temp_file.dat',status='UNKNOWN',form='formatted')
-!        do ir=1,F%dims(1)
-!            do iz=1,F%dims(3)
-!	            write(default_unit_write,'(F16.10,T18,F16.10,T32,F16.10)') F%X%R(ir), F%X%Z(iz), F%PSIp(ir,iz)
-!            end do
-!        end do
-!        close(default_unit_write)
-!        call abort
 
 	end if	
 
