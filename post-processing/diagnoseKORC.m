@@ -8,11 +8,11 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
-ST.PD = pitchAngleDiagnostic(ST,180);
+ST.PD = pitchAngleDiagnostic(ST,50);
 
-% ST.PD = magneticMomentDiagnostic(ST,180);
+ST.PD = magneticMomentDiagnostic(ST,50);
 
 sp = 'sp1'
 
@@ -92,7 +92,7 @@ end
 
 
 % list = {'eta','gamma'};%,'mu','kappa','tau'};
-list = {'eta'};
+list = {'eta','gamma','kappa','mu'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])

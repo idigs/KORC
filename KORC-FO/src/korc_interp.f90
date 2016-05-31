@@ -251,7 +251,6 @@ subroutine interp_field(prtcls,F)
 	else
 		call calculate_magnetic_field(prtcls%Y,F,prtcls%B)
 	end if
-
 end subroutine interp_field
 
 

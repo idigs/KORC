@@ -15,10 +15,10 @@ subroutine finalize_communications(params)
 end subroutine finalize_communications
 
 
-subroutine deallocate_variables(params,EB,spp)
+subroutine deallocate_variables(params,F,spp)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(FIELDS), INTENT(INOUT) :: EB
+	TYPE(FIELDS), INTENT(INOUT) :: F
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
 	INTEGER :: ii ! Iterator
 
@@ -34,12 +34,13 @@ subroutine deallocate_variables(params,EB,spp)
 		DEALLOCATE(spp(ii)%vars%mu)
 		DEALLOCATE(spp(ii)%vars%kappa)
 		DEALLOCATE(spp(ii)%vars%tau)
+		DEALLOCATE(spp(ii)%vars%flag)
 	end do
 
 	DEALLOCATE(spp)
 
     if (params%magnetic_field_model .EQ. 'EXTERNAL') then
-        call DEALLOCATE_FIELDS_ARRAYS(EB)
+        call DEALLOCATE_FIELDS_ARRAYS(F)
     end if
 end subroutine deallocate_variables
 

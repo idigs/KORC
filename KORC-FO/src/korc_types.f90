@@ -81,6 +81,7 @@ TYPE, PUBLIC :: KORC_PARAMS
 	INTEGER(ip) :: num_snapshots
 	INTEGER :: num_species
 	INTEGER :: pic_algorithm
+	LOGICAL :: radiation_losses
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
 	LOGICAL :: poloidal_flux
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
@@ -102,6 +103,7 @@ TYPE, PUBLIC :: PARTICLES
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: mu ! Instantaneous magnetic moment
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: kappa ! Curvature
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: tau ! Torsion
+	INTEGER, DIMENSION(:), ALLOCATABLE :: flag
 END TYPE PARTICLES
 
 
@@ -116,6 +118,7 @@ TYPE, PUBLIC :: SPECIES
 	REAL(rp) :: q
 	REAL(rp) :: m
 	INTEGER :: ppp
+
 	! Parameters for initializing spatial distribution
 	REAL(rp) :: Ro
 	REAL(rp) :: Zo

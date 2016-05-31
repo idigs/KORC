@@ -32,11 +32,10 @@ subroutine advance_particles_velocity(params,EB,spp,dt)
 	REAL(rp), INTENT(IN) :: dt
 	REAL(rp) :: a, gammap, sigma, us, gamma, s ! variables of leapfrog of Vay, J.-L. PoP (2008)
 	REAL(rp), DIMENSION(3) :: U, tau, up, t ! variables of leapfrog of Vay, J.-L. PoP (2008)
-	REAL(rp) :: gamma_hs
-	REAL(rp), DIMENSION(3) :: U_hs, V_hs
-	REAL(rp), DIMENSION(3) :: vxa, b_unit ! variables for diagnostics
+	REAL(rp), DIMENSION(3) :: U_hs
+	REAL(rp), DIMENSION(3) :: vec, b_unit ! variables for diagnostics
 	REAL(rp) :: B, vpar, vperp ! variables for diagnostics
-	REAL(rp) :: vmag, Psyn, gamma_loss
+	REAL(rp) :: V, Psyn, gamma_loss
 	INTEGER :: ii, pp ! Iterators
 
 
@@ -50,78 +49,74 @@ subroutine advance_particles_velocity(params,EB,spp,dt)
 	a = spp(ii)%q*dt/spp(ii)%m
 
 !$OMP PARALLEL FIRSTPRIVATE(a,dt)&
-!$OMP& PRIVATE(pp,U,U_hs,V_hs,gamma_hs,tau,up,gammap,sigma,us,gamma,t,s,&
-!$OMP& b_unit,B,vpar,vperp,vxa,vmag,Psyn,gamma_loss)&
+!$OMP& PRIVATE(pp,U,U_hs,tau,up,gammap,sigma,us,gamma,t,s,&
+!$OMP& b_unit,B,vpar,vperp,vec,V,Psyn,gamma_loss)&
 !$OMP& SHARED(ii,spp)
 !$OMP DO
 		do pp=1,spp(ii)%ppp
-			! Magnitude of magnetic field
-			B = sqrt( sum(spp(ii)%vars%B(:,pp)**2) )
-			! Parallel unit vector
-			b_unit = spp(ii)%vars%B(:,pp)/B
+			if ( spp(ii)%vars%flag(pp) .EQ. 1_idef ) then
+				!! Magnitude of magnetic field
+				B = sqrt( sum(spp(ii)%vars%B(:,pp)**2) )
+				!! Parallel unit vector
+				b_unit = spp(ii)%vars%B(:,pp)/B
 
-			! Radiation losses operator     
-            vmag = sqrt( DOT_PRODUCT(spp(ii)%vars%V(:,pp), spp(ii)%vars%V(:,pp)) )
-            vxa =  cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%E(:,pp))&
+				!! Instantaneous guiding center
+				spp(ii)%vars%Rgc(:,pp) = spp(ii)%vars%X(:,pp)&
+				+ gamma*spp(ii)%m*cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%B(:,pp))&
+				/( spp(ii)%q*sum(spp(ii)%vars%B(:,pp)**2) )
+
+				!! Radiation losses operator     
+		        V = sqrt( DOT_PRODUCT(spp(ii)%vars%V(:,pp), spp(ii)%vars%V(:,pp)) )
+		        vec =  cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%E(:,pp))&
 					+ spp(ii)%vars%V(:,pp)*DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp))&
-					- spp(ii)%vars%B(:,pp)*vmag**2
-            spp(ii)%vars%kappa(pp) = &
-				ABS(spp(ii)%q)*sqrt( DOT_PRODUCT(vxa,vxa) )/(spp(ii)%vars%gamma(pp)*spp(ii)%m*vmag**3)
-            
-            ! Synchroton radiated power
-			Psyn = (2.0_rp/3.0_rp)*( C_Ke*spp(ii)%m**2*spp(ii)%vars%gamma(pp)**4*vmag**4*spp(ii)%vars%kappa(pp)**2 )
-            
-			gamma_loss = - dt*Psyn/spp(ii)%m
-			! Radiation losses operator
+					- spp(ii)%vars%B(:,pp)*V**2
+		        spp(ii)%vars%kappa(pp) = &
+					ABS(spp(ii)%q)*sqrt( DOT_PRODUCT(vec,vec) )/(spp(ii)%vars%gamma(pp)*spp(ii)%m*V**3)
+		        
+		        !! Synchroton radiated power
+				Psyn = (2.0_rp/3.0_rp)*C_Ke
+				Psyn = Psyn*( (spp(ii)%q*spp(ii)%vars%kappa(pp))**2 )
+				Psyn = Psyn*( (spp(ii)%vars%gamma(pp)*V)**4 )
 
-			! Here we evolve V and gamma in time.
-			U = spp(ii)%vars%gamma(pp)*spp(ii)%vars%V(:,pp)
-			U_hs = U + &
-					0.5_rp*a*( spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)) )
-            
-			tau = 0.5_rp*dt*spp(ii)%q*spp(ii)%vars%B(:,pp)/spp(ii)%m
-			up = U_hs + 0.5_rp*a*spp(ii)%vars%E(:,pp)
-			gammap = sqrt( 1.0_rp + sum(up**2) )
-			sigma = gammap**2 - sum(tau**2)
-			us = sum(up*tau) ! variable 'u^*' in Vay, J.-L. PoP (2008)
-			gamma = sqrt( 0.5_rp*(sigma + sqrt( sigma**2 + 4.0_rp*(sum(tau**2) + us**2) )) )
+				gamma_loss = - dt*Psyn/spp(ii)%m
+				!! Radiation losses operator
 
-			! Radiation losses
-			gamma = gamma + gamma_loss
+				!! Here we evolve V and gamma in time.
+				U = spp(ii)%vars%gamma(pp)*spp(ii)%vars%V(:,pp)
+				U_hs = U + &
+						0.5_rp*a*( spp(ii)%vars%E(:,pp) + &
+						cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)) )
+		        
+				tau = 0.5_rp*dt*spp(ii)%q*spp(ii)%vars%B(:,pp)/spp(ii)%m
+				up = U_hs + 0.5_rp*a*spp(ii)%vars%E(:,pp)
+				gammap = sqrt( 1.0_rp + sum(up**2) )
+				sigma = gammap**2 - sum(tau**2)
+				us = sum(up*tau) ! variable 'u^*' in Vay, J.-L. PoP (2008)
+				gamma = sqrt( 0.5_rp*(sigma + sqrt( sigma**2 + 4.0_rp*(sum(tau**2) + us**2) )) )
 
-			t = tau/gamma
-			s = 1.0_rp/(1.0_rp + sum(t**2)) ! variable 's' in Vay, J.-L. PoP (2008)
+				!! Radiation losses
+				if (params%radiation_losses) then
+					gamma = gamma + gamma_loss
+				end if
 
-            U = s*( up + sum(up*t)*t + cross(up,t) )
-            spp(ii)%vars%V(:,pp) = U/gamma
+				t = tau/gamma
+				s = 1.0_rp/(1.0_rp + sum(t**2)) ! variable 's' in Vay, J.-L. PoP (2008)
 
-			spp(ii)%vars%gamma(pp) = gamma
+		        U = s*( up + sum(up*t)*t + cross(up,t) )
+		        spp(ii)%vars%V(:,pp) = U/gamma
 
-			! Temporary quantities at half time step
-			gamma_hs = sqrt( 1.0_rp + sum(U_hs**2) )
-			V_hs = U_hs/gamma_hs
+				spp(ii)%vars%gamma(pp) = gamma
+		    
+				!! Parallel and perpendicular components of velocity
+				vpar = DOT_PRODUCT(spp(ii)%vars%V(:,pp), b_unit)
+				vperp = sqrt( DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)) - vpar**2 )
 
-			! Instantaneous guiding center
-			spp(ii)%vars%Rgc(:,pp) = spp(ii)%vars%X(:,pp)&
-			+ gamma*spp(ii)%m*cross(V_hs, spp(ii)%vars%B(:,pp))&
-			/( spp(ii)%q*sum(spp(ii)%vars%B(:,pp)**2) )
-        
-			! Parallel and perpendicular components of velocity
-			vpar = DOT_PRODUCT(spp(ii)%vars%V(:,pp), b_unit)
-			vperp = sqrt( DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)) - vpar**2 )
+				!! Pitch angle
+		        spp(ii)%vars%eta(pp) = 180.0_rp*modulo(atan2(vperp,vpar), 2.0_rp*C_PI)/C_PI
 
-			! Pitch angle
-            spp(ii)%vars%eta(pp) = 180.0_rp*modulo(atan2(vperp,vpar), 2.0_rp*C_PI)/C_PI
-
-			! Magnetic moment
-			spp(ii)%vars%mu(pp) = 0.5_rp*spp(ii)%m*(gamma*vperp)**2/B
-
-			! Curvature and torsion
-!			acc = ( spp(ii)%q/spp(ii)%m )*cross(V_hs,spp(ii)%vars%B(:,pp))/gamma_hs
-!			vxa = sum( cross(V_hs,acc)**2 )
-!			spp(ii)%vars%kappa(pp) = sqrt( vxa )/( sqrt( sum(V_hs**2) )**3 )
-!			dacc = ( spp(ii)%q/spp(ii)%m )*cross(acc,spp(ii)%vars%B(:,pp))/gamma_hs
-!			spp(ii)%vars%tau(pp) = DOT_PRODUCT(V_hs,cross(acc, dacc))/vxa
+				!! Magnetic moment
+				spp(ii)%vars%mu(pp) = 0.5_rp*spp(ii)%m*(gamma*vperp)**2/B
+			end if
 		end do
 !$OMP END DO
 !$OMP END PARALLEL

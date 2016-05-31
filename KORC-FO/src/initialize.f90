@@ -37,6 +37,7 @@ subroutine load_korc_params(params)
 	LOGICAL :: restart ! Not used, yet.
 	INTEGER(ip) :: t_steps
 	REAL(rp) :: dt
+	LOGICAL :: radiation_losses
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
 	LOGICAL :: poloidal_flux
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
@@ -45,7 +46,8 @@ subroutine load_korc_params(params)
 	INTEGER :: pic_algorithm
 
 	NAMELIST /input_parameters/ magnetic_field_model,poloidal_flux,&
-			magnetic_field_filename,t_steps,dt,output_cadence,num_species,pic_algorithm
+			magnetic_field_filename,t_steps,dt,output_cadence,num_species,&
+			pic_algorithm,radiation_losses
 	
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=input_parameters)
@@ -61,6 +63,8 @@ subroutine load_korc_params(params)
 	params%poloidal_flux = poloidal_flux
 	params%magnetic_field_filename = TRIM(magnetic_field_filename)
 	params%pic_algorithm = pic_algorithm
+	params%radiation_losses = radiation_losses
+
 
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'("* * * * * SIMULATION PARAMETERS * * * * *")')
@@ -72,7 +76,7 @@ subroutine load_korc_params(params)
 		write(6,'("Magnetic field model: ",A50)') TRIM(params%magnetic_field_model)
 		write(6,'("Using (JFIT) poloidal flux: ", L1)') params%poloidal_flux
 		write(6,'("Magnetic field model: ",A100)') TRIM(params%magnetic_field_filename)
-
+		write(6,'("Radiation losses included: ",L1)') params%radiation_losses
 	end if	
 end subroutine load_korc_params
 
@@ -152,6 +156,7 @@ subroutine initialize_particles(params,F,spp)
 		ALLOCATE( spp(ii)%vars%mu(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%kappa(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%tau(spp(ii)%ppp) )
+		ALLOCATE( spp(ii)%vars%flag(spp(ii)%ppp) )
 
 		! Initialize to zero
 		spp(ii)%vars%X = 0.0_rp
@@ -165,6 +170,7 @@ subroutine initialize_particles(params,F,spp)
 		spp(ii)%vars%mu = 0.0_rp
 		spp(ii)%vars%kappa = 0.0_rp
 		spp(ii)%vars%tau = 0.0_rp
+		spp(ii)%vars%flag = 1_idef
 	end do
 
 	DEALLOCATE(ppp)

@@ -1038,6 +1038,9 @@ subroutine save_simulation_outputs(params,spp,F,it)
 	    dset = "tau"
 	    call rsave_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%tau)
 
+		dset = "flag"
+		call isave_1d_alloc_array_to_hdf5(subgroup_id,dset, spp(ii)%vars%flag)
+
         call h5gclose_f(subgroup_id, h5error)
     end do
 
