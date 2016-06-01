@@ -196,7 +196,7 @@ subroutine set_up_particles_ic(params,F,spp)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: b
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: a
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Xo
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: angle, radius ! temporary vars
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: theta, zeta, radius ! temporary vars
 	INTEGER :: ii,jj ! Iterator
 
 	do ii=1,params%num_species
@@ -207,22 +207,27 @@ subroutine set_up_particles_ic(params,F,spp)
 		ALLOCATE( b(3,spp(ii)%ppp) )
 		ALLOCATE( a(3,spp(ii)%ppp) )
 		
-		ALLOCATE( angle(spp(ii)%ppp) )
+		ALLOCATE( theta(spp(ii)%ppp) )
+		ALLOCATE( zeta(spp(ii)%ppp) )
 		ALLOCATE( radius(spp(ii)%ppp) )
 
 		! Initial condition of uniformly distributed particles on a disk in the xz-plane
 		! A unique velocity direction
 		call init_random_seed()
-		call RANDOM_NUMBER(angle)
-		angle = 2*C_PI*angle
+		call RANDOM_NUMBER(theta)
+		theta = 2*C_PI*theta
 
-		! Uniform distribution on a disk at a fixed azimuthal angle		
+		call init_random_seed()
+		call RANDOM_NUMBER(zeta)
+		zeta = 2*C_PI*zeta
+
+		! Uniform distribution on a disk at a fixed azimuthal theta		
 		call init_random_seed()
 		call RANDOM_NUMBER(radius)
 		
-		Xo(1,:) = spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(angle)
-		Xo(2,:) = 0.0_rp
-		Xo(3,:) = spp(ii)%Zo + spp(ii)%r*sqrt(radius)*sin(angle)
+		Xo(1,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*sin(zeta)
+		Xo(2,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*cos(zeta)
+		Xo(3,:) = spp(ii)%Zo + spp(ii)%r*sqrt(radius)*sin(theta)
 
 		spp(ii)%vars%X(1,:) = Xo(1,:)
 		spp(ii)%vars%X(2,:) = Xo(2,:)
@@ -241,7 +246,8 @@ subroutine set_up_particles_ic(params,F,spp)
 			spp(ii)%vars%V(:,jj) = Vpar(jj)*b(:,jj) + Vperp(jj)*a(:,jj)
 		end do
 
-		DEALLOCATE(angle)
+		DEALLOCATE(theta)
+		DEALLOCATE(zeta)
 		DEALLOCATE(radius)
 		DEALLOCATE(Xo)
 		DEALLOCATE(Vo)

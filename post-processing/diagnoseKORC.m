@@ -10,11 +10,11 @@ ST.data = loadData(ST);
 
 % energyConservation(ST);
 
-ST.PD = pitchAngleDiagnostic(ST,150);
+ST.PD = pitchAngleDiagnostic(ST,100);
 
 ST.PD = magneticMomentDiagnostic(ST,150);
 
-sp = 'sp2'
+sp = 'sp3'
 
 R = ST.params.scales.l*squeeze( sqrt( ST.data.(sp).X(1,:,:).^2 + ST.data.(sp).X(2,:,:).^2 ) );
 
@@ -163,27 +163,37 @@ end
 
 function PD = pitchAngleDiagnostic(ST,numBins)
 PD = struct;
+N = 10;
+nbins = 50;
 
 mean_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
 std_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
 skewness_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
+kurtosis_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
 
-fx = zeros(ST.params.simulation.num_species,numBins,ST.params.simulation.num_snapshots);
-x = zeros(ST.params.simulation.num_species,numBins,ST.params.simulation.num_snapshots);
+fx = zeros(ST.params.simulation.num_species,nbins,ST.params.simulation.num_snapshots);
+x = zeros(ST.params.simulation.num_species,nbins,ST.params.simulation.num_snapshots);
 
 f_tot = zeros(numBins,ST.params.simulation.num_snapshots);
 
 data = [];
 
 for ss=1:ST.params.simulation.num_species
-    mean_f(ss,:) = mean(ST.data.(['sp' num2str(ss)]).eta,1);
-    std_f(ss,:) = std(ST.data.(['sp' num2str(ss)]).eta,0,1);
-    skewness_f(ss,:) = skewness(ST.data.(['sp' num2str(ss)]).eta,0,1);
+    tmp = cos(pi*ST.data.(['sp' num2str(ss)]).eta/180);
+    mean_f(ss,:) = mean(tmp,1);
+    std_f(ss,:) = std(tmp,0,1);
+    skewness_f(ss,:) = skewness(tmp,0,1);
+    kurtosis_f(ss,:) = kurtosis(tmp,1,1);
     
     data = [data; ST.data.(['sp' num2str(ss)]).eta];
     
     for ii=1:ST.params.simulation.num_snapshots
-        [fx(ss,:,ii),x(ss,:,ii)] = hist(data(:,ii),numBins);
+        [fx(ss,:,ii),x(ss,:,ii)] = ...
+            hist(tmp(:,ii),nbins);
+        
+        dx = mean(diff(x(ss,:,ii)));
+        fx(ss,:,ii) = fx(ss,:,ii)/(sum(fx(ss,:,ii))*dx);
+        
         x(ss,:,ii) = ( x(ss,:,ii) - mean_f(ss,ii) )/std_f(ss,ii);
         fx(ss,:,ii) = std_f(ss,ii)*fx(ss,:,ii);
     end
@@ -202,7 +212,7 @@ time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
 tmax = max(time);
 tmin = min(time);
 
-figure
+h1 = figure;
 surf(time,vals,log10(f_tot),'LineStyle','none')
 % surf(time,vals,f,'LineStyle','none')
 axis([tmin tmax minVal maxVal])
@@ -210,36 +220,98 @@ xlabel('Time (s)','Interpreter','latex','FontSize',16)
 ylabel('Pitch angle $\theta$ (degrees)','Interpreter','latex','FontSize',16)
 colormap(jet)
 
-h = figure
+h2 = figure
 for ii=1:ST.params.simulation.num_species
-    figure(h)
-    subplot(3,1,1)
+    figure(h2)
+    subplot(4,1,1)
     hold on
     plot(time,mean_f(ii,:))
     hold off
-    figure(h)
-    subplot(3,1,2)
+    figure(h2)
+    subplot(4,1,2)
     hold on
     plot(time,std_f(ii,:))
     hold off
-    figure(h)
-    subplot(3,1,3)
+    figure(h2)
+    subplot(4,1,3)
     hold on
     plot(time,skewness_f(ii,:))
     hold off
+    figure(h2)
+    subplot(4,1,4)
+    hold on
+    plot(time,kurtosis_f(ii,:))
+    hold off
 end
 
-for ii=1:ST.params.simulation.num_species
-    figure(h)
-    subplot(3,1,1)
-    box on
-    grid on
-    figure(h)
-    subplot(3,1,2)
-    box on
-    grid on
-    figure(h)
-    subplot(3,1,3)
+figure(h2)
+subplot(4,1,1)
+xlabel('Time (s)','Interpreter','latex','FontSize',16)
+ylabel('mean($\theta$)','Interpreter','latex','FontSize',16)
+box on
+grid on
+figure(h2)
+subplot(4,1,2)
+xlabel('Time (s)','Interpreter','latex','FontSize',16)
+ylabel('std($\theta$)','Interpreter','latex','FontSize',16)
+box on
+grid on
+figure(h2)
+subplot(4,1,3)
+xlabel('Time (s)','Interpreter','latex','FontSize',16)
+ylabel('skewness($\theta$)','Interpreter','latex','FontSize',16)
+box on
+grid on
+figure(h2)
+subplot(4,1,4)
+xlabel('Time (s)','Interpreter','latex','FontSize',16)
+ylabel('kurtosis($\theta$)','Interpreter','latex','FontSize',16)
+box on
+grid on
+
+
+offset = floor(double(ST.params.simulation.num_snapshots)/N);
+
+z = linspace(-4,4,100);
+fz = exp( -0.5*z.^2 )/sqrt(2*pi);
+
+h3 = figure;
+for ii=1:N
+    it = ii*offset;
+%     subplot(N,1,ii)
+    nc = floor(N/2);
+    nr = floor(N/nc);
+    subplot(nr,nc,ii)
+    plot(z,log10(fz),'k')
+    hold on
+    for ss=1:ST.params.simulation.num_species
+        figure(h3)
+        plot(x(ss,:,it),log10(fx(ss,:,it)),'o:')
+        
+        figure(h2)
+        subplot(4,1,1)
+        hold on
+        plot(time(it),mean_f(ss,it),'rs')
+        hold off
+        figure(h2)
+        subplot(4,1,2)
+        hold on
+        plot(time(it),std_f(ss,it),'rs')
+        hold off
+        figure(h2)
+        subplot(4,1,3)
+        hold on
+        plot(time(it),skewness_f(ss,it),'rs')
+        hold off
+        figure(h2)
+        subplot(4,1,4)
+        hold on
+        plot(time(it),kurtosis_f(ss,it),'rs')
+        hold off
+    end
+    figure(h3)
+    title(['Time: ' num2str(time(it))],'Interpreter','latex','FontSize',11)
+    hold off
     box on
     grid on
 end
