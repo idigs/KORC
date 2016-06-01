@@ -1,36 +1,36 @@
 &input_parameters
-	t_steps = 2 ! 10500000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	t_steps = 10500000 ! 10500000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
 	dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
 	output_cadence = 5000 ! 1400 for saving each 100 gyro-periods
-	num_species = 1
+	num_species = 3
 	radiation_losses = .FALSE.
-	magnetic_field_model = 'EXTERNAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
+	magnetic_field_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
 										! For 'ANALYTICAL', the magnetic field is calculated based on
 										! the parameters given in the "analytic_mag_field_params" section.
 										! For 'EXTERNAL', the magnetic field is loaded from the file
 										! specified in "filename".
-	poloidal_flux = .TRUE.				! .TRUE. if using JFIT poloidal flux, .FALSE. if using the
+	poloidal_flux = .FALSE.				! .TRUE. if using JFIT poloidal flux, .FALSE. if using the
 										! cylindrical components of the magnetic field
-	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/DIII-D_JFIT.h5"
+	magnetic_field_filename = "/Users/Leopo/Documents/MATLAB/KORK/KORC-FO/inputFiles/DIII-D_JFIT.h5"
 	pic_algorithm = 1 ! 1 = Leapfrog, 2 = RK4, 3 = some other
 /
 
 &plasma_species
-	runaway = .FALSE. !
-	Ro = 1.6 !
-	Zo = 0.0 !
-	r = 0.4 !
-	Eo = 3.0E6 ! Initial energy in eV
-	etao = 1.0 ! Initial pitch angle
-	ppp = 50 ! Number of particles per process (mpi)
-    q = -1.0 ! Electric charge
-    m = 1.0 ! In units of electron mass
+	runaway = .FALSE., .TRUE., .FALSE. !
+	Ro = 1.695, 1.695, 1.695 !
+	Zo = 0.0, 0.0, 0.0 !
+	r = 0.3, 0.3, 0.3 !
+	Eo = 3.0E6, 3.0E6, 3.0E6 ! Initial energy in eV
+	etao = 10.0, 30.0, 50.0  ! Initial pitch angle
+	ppp = 100, 100, 100 ! Number of particles per process (mpi)
+    q = -1.0, -1.0, -1.0 ! Electric charge
+    m = 1.0, 1.0, 1.0 ! In units of electron mass
 /
 
 &analytic_mag_field_params
-	Bo = 2.19 ! In Teslas. ITER: 5.42 DIII-D: 3.0
+	Bo = 3.0 ! In Teslas. ITER: 5.42 DIII-D: 3.0
 	minor_radius = 0.5 ! Minor radius in meters. ITER: 1.5 DIII-D: 0.5
 	major_radius = 1.695 ! Major radius in meters. ITER: 6.5 DIII-D: 1.6
-	q_factor_at_separatrix = 2.0 ! Safety factor at the separatrix (r=a)
+	q_factor_at_separatrix = 3.0 ! Safety factor at the separatrix (r=a)
 	free_param = 0.5 ! defined as the ratio minor_radius/lambda
 /

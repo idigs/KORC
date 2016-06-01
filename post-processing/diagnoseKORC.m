@@ -8,13 +8,13 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
-ST.PD = pitchAngleDiagnostic(ST,50);
+ST.PD = pitchAngleDiagnostic(ST,150);
 
-ST.PD = magneticMomentDiagnostic(ST,50);
+ST.PD = magneticMomentDiagnostic(ST,150);
 
-sp = 'sp1'
+sp = 'sp2'
 
 R = ST.params.scales.l*squeeze( sqrt( ST.data.(sp).X(1,:,:).^2 + ST.data.(sp).X(2,:,:).^2 ) );
 
@@ -164,40 +164,37 @@ end
 function PD = pitchAngleDiagnostic(ST,numBins)
 PD = struct;
 
-mean_pitch = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
-std_pitch = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
-skewness_pitch = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
+mean_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
+std_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
+skewness_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
 
-f_tot = zeros(ST.params.simulation.num_species,numBins);
+fx = zeros(ST.params.simulation.num_species,numBins,ST.params.simulation.num_snapshots);
+x = zeros(ST.params.simulation.num_species,numBins,ST.params.simulation.num_snapshots);
 
-tmp = [];
+f_tot = zeros(numBins,ST.params.simulation.num_snapshots);
+
+data = [];
 
 for ss=1:ST.params.simulation.num_species
-    mean_pitch(ss,:) = mean(ST.data.(['sp' num2str(ss)]).eta,1);
-    std_pitch(ss,:) = std(ST.data.(['sp' num2str(ss)]).eta,0,1);
-    skewness_pitch(ss,:) = skewness(ST.data.(['sp' num2str(ss)]).eta,0,1);
+    mean_f(ss,:) = mean(ST.data.(['sp' num2str(ss)]).eta,1);
+    std_f(ss,:) = std(ST.data.(['sp' num2str(ss)]).eta,0,1);
+    skewness_f(ss,:) = skewness(ST.data.(['sp' num2str(ss)]).eta,0,1);
     
-    tmp = [tmp; ST.data.(['sp' num2str(ss)]).eta];
+    data = [data; ST.data.(['sp' num2str(ss)]).eta];
     
-    aux = reshape(ST.data.(['sp' num2str(ss)]).eta,1,numel(ST.data.(['sp' num2str(ss)]).eta));
-    
-    minVal = min(min( aux ));
-    maxVal = max(max( aux ));
-    vals = linspace(minVal,maxVal,numBins);
-    
-    f_tot(ss,:) =  hist(aux,vals);
-    figure
-    plot(vals,f_tot(ss,:))
+    for ii=1:ST.params.simulation.num_snapshots
+        [fx(ss,:,ii),x(ss,:,ii)] = hist(data(:,ii),numBins);
+        x(ss,:,ii) = ( x(ss,:,ii) - mean_f(ss,ii) )/std_f(ss,ii);
+        fx(ss,:,ii) = std_f(ss,ii)*fx(ss,:,ii);
+    end
 end
 
-minVal = min(min( tmp ));
-maxVal = max(max( tmp ));
+minVal = min(min( data ));
+maxVal = max(max( data ));
 vals = linspace(minVal,maxVal,numBins);
 
-f = zeros(numBins,ST.params.simulation.num_snapshots);
-
 for ii=1:ST.params.simulation.num_snapshots
-    [f(:,ii),~] = hist(tmp(:,ii),vals);
+    [f_tot(:,ii),~] = hist(data(:,ii),vals);
 end
 
 cad = ST.params.simulation.output_cadence;
@@ -206,30 +203,48 @@ tmax = max(time);
 tmin = min(time);
 
 figure
-surf(time,vals,log10(f),'LineStyle','none')
+surf(time,vals,log10(f_tot),'LineStyle','none')
 % surf(time,vals,f,'LineStyle','none')
 axis([tmin tmax minVal maxVal])
 xlabel('Time (s)','Interpreter','latex','FontSize',16)
 ylabel('Pitch angle $\theta$ (degrees)','Interpreter','latex','FontSize',16)
 colormap(jet)
 
-figure
+h = figure
 for ii=1:ST.params.simulation.num_species
+    figure(h)
     subplot(3,1,1)
     hold on
-    plot(time,mean_pitch(ii,:))
+    plot(time,mean_f(ii,:))
     hold off
+    figure(h)
     subplot(3,1,2)
     hold on
-    plot(time,std_pitch(ii,:))
+    plot(time,std_f(ii,:))
     hold off
+    figure(h)
     subplot(3,1,3)
     hold on
-    plot(time,skewness_pitch(ii,:))
+    plot(time,skewness_f(ii,:))
     hold off
 end
 
-PD.f = f;
+for ii=1:ST.params.simulation.num_species
+    figure(h)
+    subplot(3,1,1)
+    box on
+    grid on
+    figure(h)
+    subplot(3,1,2)
+    box on
+    grid on
+    figure(h)
+    subplot(3,1,3)
+    box on
+    grid on
+end
+
+PD.f_tot = f_tot;
 PD.vals = vals;
 end
 
