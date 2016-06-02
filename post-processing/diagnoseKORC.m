@@ -14,30 +14,30 @@ ST.PD = pitchAngleDiagnostic(ST,100);
 
 ST.PD = magneticMomentDiagnostic(ST,150);
 
-sp = 'sp3'
+% sp = 'sp3'
+% 
+% R = ST.params.scales.l*squeeze( sqrt( ST.data.(sp).X(1,:,:).^2 + ST.data.(sp).X(2,:,:).^2 ) );
 
-R = ST.params.scales.l*squeeze( sqrt( ST.data.(sp).X(1,:,:).^2 + ST.data.(sp).X(2,:,:).^2 ) );
-
-[V,I] = max(R');
-[~,II] = max(V);
+% [V,I] = max(R');
+% [~,II] = max(V);
 
 % [V,I] = min(R');
 % [~,II] = min(V);
 
-X = squeeze(ST.data.(sp).X(:,II,:))*ST.params.scales.l;
-
-figure
-plot3(X(1,:),X(2,:),X(3,:))
-axis equal; box on
-
-R = sqrt( X(1,:).^2 + X(2,:).^2 );
-Z = X(3,:);
-figure;plot(R,Z);axis equal
-
-X = squeeze(ST.data.(sp).Rgc(:,II,:))*ST.params.scales.l;
-R = sqrt( X(1,:).^2 + X(2,:).^2 );
-Z = X(3,:);
-hold on;plot(R,Z);hold off
+% X = squeeze(ST.data.(sp).X(:,II,:))*ST.params.scales.l;
+% 
+% figure
+% plot3(X(1,:),X(2,:),X(3,:))
+% axis equal; box on
+% 
+% R = sqrt( X(1,:).^2 + X(2,:).^2 );
+% Z = X(3,:);
+% figure;plot(R,Z);axis equal
+% 
+% X = squeeze(ST.data.(sp).Rgc(:,II,:))*ST.params.scales.l;
+% R = sqrt( X(1,:).^2 + X(2,:).^2 );
+% Z = X(3,:);
+% hold on;plot(R,Z);hold off
 end
 
 function params = loadSimulationParameters(ST)
@@ -310,6 +310,40 @@ for ii=1:N
         hold off
     end
     figure(h3)
+    title(['Time: ' num2str(time(it))],'Interpreter','latex','FontSize',11)
+    hold off
+    box on
+    grid on
+end
+    
+ft = zeros(ST.params.simulation.num_species,nbins,N);
+t = zeros(ST.params.simulation.num_species,nbins,N);
+
+for ii=1:N
+    it = ii*offset;
+    for ss=1:ST.params.simulation.num_species
+        X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,:,it))*ST.params.scales.l;
+        theta = atan2(X(3,:), sqrt(X(1,:).^2 + X(2,:).^2) - ST.params.fields.Ro);
+        theta(theta < 0) = theta(theta < 0) + 2*pi;
+        [ft(ss,:,ii),t(ss,:,ii)] = hist(theta,nbins);
+        dt = mean(diff(t(ss,:,ii)));
+        ft(ss,:,ii) = ft(ss,:,ii)/(sum(ft(ss,:,ii))*dt);
+    end
+end
+
+
+h4 = figure;
+for ii=1:N
+    it = ii*offset;
+    nc = floor(N/2);
+    nr = floor(N/nc);
+    figure(h4)
+    subplot(nr,nc,ii)
+    hold on
+    for ss=1:ST.params.simulation.num_species
+        plot(t(ss,:,ii),ft(ss,:,ii),'o:')
+    end
+    figure(h4)
     title(['Time: ' num2str(time(it))],'Interpreter','latex','FontSize',11)
     hold off
     box on
