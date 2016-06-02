@@ -32,7 +32,7 @@ subroutine deallocate_variables(params,F,spp)
 		DEALLOCATE(spp(ii)%vars%gamma)
 		DEALLOCATE(spp(ii)%vars%eta)
 		DEALLOCATE(spp(ii)%vars%mu)
-		DEALLOCATE(spp(ii)%vars%kappa)
+		DEALLOCATE(spp(ii)%vars%Prad)
 		DEALLOCATE(spp(ii)%vars%tau)
 		DEALLOCATE(spp(ii)%vars%flag)
 	end do

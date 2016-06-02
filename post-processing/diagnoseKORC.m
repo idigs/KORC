@@ -8,7 +8,7 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
 ST.PD = pitchAngleDiagnostic(ST,100);
 
@@ -164,7 +164,7 @@ end
 function PD = pitchAngleDiagnostic(ST,numBins)
 PD = struct;
 N = 10;
-nbins = 50;
+nbins = 40;
 
 mean_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
 std_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
@@ -179,7 +179,8 @@ f_tot = zeros(numBins,ST.params.simulation.num_snapshots);
 data = [];
 
 for ss=1:ST.params.simulation.num_species
-    tmp = cos(pi*ST.data.(['sp' num2str(ss)]).eta/180);
+%     tmp = cos(pi*ST.data.(['sp' num2str(ss)]).eta/180);
+    tmp = ST.data.(['sp' num2str(ss)]).eta;
     mean_f(ss,:) = mean(tmp,1);
     std_f(ss,:) = std(tmp,0,1);
     skewness_f(ss,:) = skewness(tmp,0,1);
@@ -216,6 +217,8 @@ h1 = figure;
 surf(time,vals,log10(f_tot),'LineStyle','none')
 % surf(time,vals,f,'LineStyle','none')
 axis([tmin tmax minVal maxVal])
+box on
+axis on
 xlabel('Time (s)','Interpreter','latex','FontSize',16)
 ylabel('Pitch angle $\theta$ (degrees)','Interpreter','latex','FontSize',16)
 colormap(jet)
@@ -325,6 +328,7 @@ for ii=1:N
         X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,:,it))*ST.params.scales.l;
         theta = atan2(X(3,:), sqrt(X(1,:).^2 + X(2,:).^2) - ST.params.fields.Ro);
         theta(theta < 0) = theta(theta < 0) + 2*pi;
+        theta = (180/pi)*theta;
         [ft(ss,:,ii),t(ss,:,ii)] = hist(theta,nbins);
         dt = mean(diff(t(ss,:,ii)));
         ft(ss,:,ii) = ft(ss,:,ii)/(sum(ft(ss,:,ii))*dt);
@@ -343,9 +347,9 @@ for ii=1:N
     for ss=1:ST.params.simulation.num_species
         plot(t(ss,:,ii),ft(ss,:,ii),'o:')
     end
-    figure(h4)
-    title(['Time: ' num2str(time(it))],'Interpreter','latex','FontSize',11)
     hold off
+    title(['Time: ' num2str(time(it))],'Interpreter','latex','FontSize',11)
+    xlabel('$\theta$','Interpreter','latex','FontSize',16)
     box on
     grid on
 end

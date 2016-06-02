@@ -101,7 +101,7 @@ TYPE, PUBLIC :: PARTICLES
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: gamma ! Gamma relativistic
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: eta ! Pitch angle
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: mu ! Instantaneous magnetic moment
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: kappa ! Curvature
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: Prad ! Radiated power (in Watts)
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: tau ! Torsion
 	INTEGER, DIMENSION(:), ALLOCATABLE :: flag
 END TYPE PARTICLES

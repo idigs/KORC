@@ -108,7 +108,7 @@ subroutine normalize_variables(params,spp,F)
 
 !	Normalize other variables
 		C_Ke = &
-		C_Ke/( params%cpp%mass*params%cpp%length*params%cpp%velocity**2/params%cpp%charge**2 )
+		C_Ke/( params%cpp%mass*params%cpp%length*(params%cpp%velocity**2)/(params%cpp%charge**2) )
 !		.
 !		.
 end subroutine normalize_variables

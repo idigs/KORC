@@ -35,7 +35,7 @@ subroutine advance_particles_velocity(params,EB,spp,dt)
 	REAL(rp), DIMENSION(3) :: U_hs
 	REAL(rp), DIMENSION(3) :: vec, b_unit ! variables for diagnostics
 	REAL(rp) :: B, vpar, vperp ! variables for diagnostics
-	REAL(rp) :: V, Psyn, gamma_loss
+	REAL(rp) :: V, kappa, Psyn, gamma_loss
 	INTEGER :: ii, pp ! Iterators
 
 
@@ -50,7 +50,7 @@ subroutine advance_particles_velocity(params,EB,spp,dt)
 
 !$OMP PARALLEL FIRSTPRIVATE(a,dt)&
 !$OMP& PRIVATE(pp,U,U_hs,tau,up,gammap,sigma,us,gamma,t,s,&
-!$OMP& b_unit,B,vpar,vperp,vec,V,Psyn,gamma_loss)&
+!$OMP& b_unit,B,vpar,vperp,vec,V,kappa,Psyn,gamma_loss)&
 !$OMP& SHARED(ii,spp)
 !$OMP DO
 		do pp=1,spp(ii)%ppp
@@ -70,13 +70,15 @@ subroutine advance_particles_velocity(params,EB,spp,dt)
 		        vec =  cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%E(:,pp))&
 					+ spp(ii)%vars%V(:,pp)*DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp))&
 					- spp(ii)%vars%B(:,pp)*V**2
-		        spp(ii)%vars%kappa(pp) = &
-					ABS(spp(ii)%q)*sqrt( DOT_PRODUCT(vec,vec) )/(spp(ii)%vars%gamma(pp)*spp(ii)%m*V**3)
+		        kappa = &
+				ABS(spp(ii)%q)*sqrt( DOT_PRODUCT(vec,vec) )/(spp(ii)%vars%gamma(pp)*spp(ii)%m*V**3)
 		        
 		        !! Synchroton radiated power
 				Psyn = (2.0_rp/3.0_rp)*C_Ke
-				Psyn = Psyn*( (spp(ii)%q*spp(ii)%vars%kappa(pp))**2 )
+				Psyn = Psyn*( (spp(ii)%q*kappa)**2 )
 				Psyn = Psyn*( (spp(ii)%vars%gamma(pp)*V)**4 )
+
+				spp(ii)%vars%Prad(pp) = Psyn
 
 				gamma_loss = - dt*Psyn/spp(ii)%m
 				!! Radiation losses operator

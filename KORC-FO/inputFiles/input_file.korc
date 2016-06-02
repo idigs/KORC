@@ -1,5 +1,5 @@
 &input_parameters
-	t_steps = 5250000 ! 10500000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	t_steps = 52500 ! 10500000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
 	dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
 	output_cadence = 5000 ! 1400 for saving each 100 gyro-periods
 	num_species = 3
