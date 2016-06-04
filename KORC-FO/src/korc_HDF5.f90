@@ -814,7 +814,7 @@ subroutine save_simulation_parameters(params,spp,F)
 	call h5fcreate_f(TRIM(filename), H5F_ACC_TRUNC_F, h5file_id, h5error)
 	call h5fclose_f(h5file_id, h5error)
 
-	if (params%mpi_params%rank_topo .EQ. 0) then
+	if (params%mpi_params%rank .EQ. 0) then
 		filename = TRIM(params%path_to_outputs) // "simulation_parameters.h5"
 
 		call h5fcreate_f(TRIM(filename), H5F_ACC_TRUNC_F, h5file_id, h5error)
