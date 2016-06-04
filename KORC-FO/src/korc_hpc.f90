@@ -40,8 +40,6 @@ subroutine initialize_mpi(params)
 	end if
 
 	! * * * Here a Cartesian topology for MPI is created * * * !
-!	NDIMS = 1
-!	REORDER = .FALSE.
 	ALLOCATE(DIMS(NDIMS))
 	ALLOCATE(PERIODS(NDIMS))
 	! This loop isn't necessary but helps to do things more general in the future
@@ -50,11 +48,11 @@ subroutine initialize_mpi(params)
 		PERIODS(ii) = .TRUE.
 	end do
 
-    call MPI_CART_CREATE(MPI_COMM_WORLD, NDIMS, DIMS, PERIODS, REORDER, params%mpi_params%mpi_topo, mpierr)
-	if (mpierr .NE. MPI_SUCCESS) then
-		print *,'Error creating new MPI topology. Terminating.'
-		call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
-	end if
+!	call MPI_CART_CREATE(MPI_COMM_WORLD, NDIMS, DIMS, PERIODS, REORDER, params%mpi_params%mpi_topo, mpierr)
+!	if (mpierr .NE. MPI_SUCCESS) then
+!		print *,'Error creating new MPI topology. Terminating.'
+!		call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
+!	end if
 
 	! * * * Getting the rank of the MPI process in the WORLD COMMON communicator * * * !
 	call MPI_COMM_RANK(MPI_COMM_WORLD, params%mpi_params%rank, mpierr)
@@ -64,11 +62,11 @@ subroutine initialize_mpi(params)
 	end if	
 
 	! * * * Getting the rank of the MPI process in the new topology * * * !
-	call MPI_COMM_RANK(params%mpi_params%mpi_topo, params%mpi_params%rank_topo, mpierr)
-	if (mpierr .NE. MPI_SUCCESS) then
-		print *,'Error getting MPI rank in KORC topology. Terminating.'
-		call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
-	end if
+!	call MPI_COMM_RANK(params%mpi_params%mpi_topo, params%mpi_params%rank_topo, mpierr)
+!	if (mpierr .NE. MPI_SUCCESS) then
+!		print *,'Error getting MPI rank in KORC topology. Terminating.'
+!		call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
+!	end if
 
 	DEALLOCATE(DIMS)
 	DEALLOCATE(PERIODS)

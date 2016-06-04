@@ -1,0 +1,43 @@
+#!/bin/bash -l
+#SBATCH -p debug
+#SBATCH -N 2
+#SBATCH -n 16
+#SBATCH -c 8
+#SBATCH -t 00:30:00
+#SBATCH -L SCRATCH
+#SBATCH -o KORC-FO_%j.out 
+#SBATCH -e KORC-FO_%j.err
+
+module unload PrgEnv-intel/5.2.82
+module load PrgEnv-gnu
+module unload openmpi/1.10.2
+module load openmpi
+
+PATH_TO_SCRATCH='/global/cscratch1/sd/carbajal'
+FOLDER='cori_file'
+OUTPUT_FOLDER=${PATH_TO_SCRATCH}/${FOLDER}
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SLURM_SUBMIT_DIR/../HDF5/lib
+
+mkdir ${OUTPUT_FOLDER}
+cd $SLURM_SUBMIT_DIR
+
+echo Working directory is $SLURM_SUBMIT_DIR
+echo Running on host `hostname`
+echo Time is `date`
+echo Directory is `pwd`
+echo Using ${SLURM_CPUS_ON_NODE} processors per nodes
+echo Number of OMP threads per MPI process: ${SLURM_CPUS_PER_TASK}
+echo Number of MPI processes: ${SLURM_STEP_NUM_TASKS}
+
+export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
+mpirun bin/KORC-FO inputFiles/input_file.korc ${OUTPUT_FOLDER}/
+
+
+#for it in `seq 32`
+#do
+#export OMP_NUM_THREADS=${it}
+#srun -n ${MPI_PROCESSES} -c ${it}  bin/KORC-FO inputFiles/input_file.korc outputFiles/
+#sleep 5s
+#done
+

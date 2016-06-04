@@ -267,11 +267,11 @@ subroutine initialize_communications(params)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
 
-!$OMP PARALLEL
-	params%num_omp_threads = OMP_GET_NUM_THREADS()
-!$OMP END PARALLEL
-
 	call initialize_mpi(params)
+
+!$OMP PARALLEL SHARED(params)
+        params%num_omp_threads = OMP_GET_NUM_THREADS()
+!$OMP END PARALLEL
 
 	call initialization_sanity_check(params) 
 end subroutine initialize_communications
@@ -295,7 +295,7 @@ subroutine initialization_sanity_check(params)
 !$OMP PARALLEL SHARED(params) PRIVATE(ierr, flag)
 	call MPI_INITIALIZED(flag, ierr)
 	write(6,'("MPI: ",I3," OMP/of: ",I3," / ",I3," Procs: ",I3," Init: ",l1)') &
-	params%mpi_params%rank_topo,OMP_GET_THREAD_NUM(),OMP_GET_NUM_THREADS(),OMP_GET_NUM_PROCS(),flag
+	params%mpi_params%rank,OMP_GET_THREAD_NUM(),OMP_GET_NUM_THREADS(),OMP_GET_NUM_PROCS(),flag
 !$OMP END PARALLEL
 end subroutine initialization_sanity_check
 

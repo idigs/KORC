@@ -1,0 +1,25 @@
+#!/bin/bash -l
+#SBATCH -p debug
+#SBATCH -N 2
+#SBATCH -n 8
+#SBATCH -c 8
+#SBATCH -t 00:10:00
+#SBATCH -L project,SCRATCH
+#SBATCH -o KORC-FO_%j.out 
+#SBATCH -e KORC-FO_%j.err
+
+module unload PrgEnv-intel/5.2.82
+module load PrgEnv-gnu
+module load openmpi
+
+PATH_TO_SCRATCH='/global/cscratch1/sd/carbajal'
+FOLDER='mpirun_test'
+OUTPUT_FOLDER=${PATH_TO_SCRATCH}/${FOLDER}
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SLURM_SUBMIT_DIR/../HDF5/lib
+
+mkdir ${OUTPUT_FOLDER}
+cd $SLURM_SUBMIT_DIR
+
+export OMP_NUM_THREADS=8
+mpirun bin/KORC-FO inputFiles/input_file.korc ${OUTPUT_FOLDER}/
