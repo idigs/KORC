@@ -1,9 +1,4 @@
 #!/bin/bash -l
-# #SBATCH -p regular
-# #SBATCH --qos=normal
-# #SBATCH -N 10
-# #SBATCH -n 40
-# #SBATCH -c 8
 #SBATCH -p debug
 #SBATCH -N 2
 #SBATCH -n 8
@@ -18,6 +13,7 @@ module unload PrgEnv-intel/5.2.82
 module load PrgEnv-gnu
 module load openmpi
 
+## You might want to change the path of the outouts folder
 PATH_TO_SCRATCH='/global/cscratch1/sd/carbajal'
 FOLDER='test'
 OUTPUT_FOLDER=${PATH_TO_SCRATCH}/${FOLDER}
