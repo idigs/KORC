@@ -10,34 +10,35 @@ ST.data = loadData(ST);
 
 energyConservation(ST);
 
-ST.PD = pitchAngleDiagnostic(ST,100);
+pitchAngleDiagnostic(ST,100);
 
-ST.PD = magneticMomentDiagnostic(ST,150);
+magneticMomentDiagnostic(ST,150);
 
-% sp = 'sp3'
-% 
-% R = ST.params.scales.l*squeeze( sqrt( ST.data.(sp).X(1,:,:).^2 + ST.data.(sp).X(2,:,:).^2 ) );
 
-% [V,I] = max(R');
-% [~,II] = max(V);
 
+% % % % % % % % % % % % % 
+sp = 'sp1'
+R = squeeze( sqrt( ST.data.(sp).X(1,:,:).^2 + ST.data.(sp).X(2,:,:).^2 ) );
+
+[V,I] = max(R');
+[~,II] = max(V);
 % [V,I] = min(R');
 % [~,II] = min(V);
 
-% X = squeeze(ST.data.(sp).X(:,II,:))*ST.params.scales.l;
-% 
-% figure
-% plot3(X(1,:),X(2,:),X(3,:))
-% axis equal; box on
-% 
-% R = sqrt( X(1,:).^2 + X(2,:).^2 );
-% Z = X(3,:);
-% figure;plot(R,Z);axis equal
-% 
-% X = squeeze(ST.data.(sp).Rgc(:,II,:))*ST.params.scales.l;
-% R = sqrt( X(1,:).^2 + X(2,:).^2 );
-% Z = X(3,:);
-% hold on;plot(R,Z);hold off
+X = squeeze(ST.data.(sp).X(:,II,:));
+
+figure
+plot3(X(1,:),X(2,:),X(3,:))
+axis equal; box on
+
+R = sqrt( X(1,:).^2 + X(2,:).^2 );
+Z = X(3,:);
+figure;plot(R,Z);axis equal
+
+X = squeeze(ST.data.(sp).Rgc(:,II,:));
+R = sqrt( X(1,:).^2 + X(2,:).^2 );
+Z = X(3,:);
+hold on;plot(R,Z);hold off
 end
 
 function params = loadSimulationParameters(ST)
@@ -91,8 +92,8 @@ for ll=1:length(list)
 end
 
 
-% list = {'eta','gamma'};%,'mu','kappa','tau'};
-list = {'eta','gamma','kappa','mu'};
+% list = {'eta','gamma'};%,'mu','Prad','tau'};
+list = {'eta','gamma','mu'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -134,7 +135,7 @@ cad = ST.params.simulation.output_cadence;
 time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
 
 h=figure;
-
+set(h,'name','Energy conservation','numbertitle','off')
 try
     for ss=1:ST.params.simulation.num_species
         tmp = zeros(size(ST.data.(['sp' num2str(ss)]).gamma));
@@ -161,10 +162,9 @@ ylabel('Energy conservation (\%)','Interpreter','latex','FontSize',16)
 
 end
 
-function PD = pitchAngleDiagnostic(ST,numBins)
-PD = struct;
+function pitchAngleDiagnostic(ST,numBins)
 N = 10;
-nbins = 40;
+nbins = 30;
 
 mean_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
 std_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
@@ -179,8 +179,8 @@ f_tot = zeros(numBins,ST.params.simulation.num_snapshots);
 data = [];
 
 for ss=1:ST.params.simulation.num_species
-%     tmp = cos(pi*ST.data.(['sp' num2str(ss)]).eta/180);
-    tmp = ST.data.(['sp' num2str(ss)]).eta;
+    tmp = cos(pi*ST.data.(['sp' num2str(ss)]).eta/180);
+%     tmp = ST.data.(['sp' num2str(ss)]).eta;
     mean_f(ss,:) = mean(tmp,1);
     std_f(ss,:) = std(tmp,0,1);
     skewness_f(ss,:) = skewness(tmp,0,1);
@@ -214,6 +214,7 @@ tmax = max(time);
 tmin = min(time);
 
 h1 = figure;
+set(h1,'name','PDF time evolution','numbertitle','off')
 surf(time,vals,log10(f_tot),'LineStyle','none')
 % surf(time,vals,f,'LineStyle','none')
 axis([tmin tmax minVal maxVal])
@@ -224,6 +225,7 @@ ylabel('Pitch angle $\theta$ (degrees)','Interpreter','latex','FontSize',16)
 colormap(jet)
 
 h2 = figure
+set(h2,'name','Statistical moments','numbertitle','off')
 for ii=1:ST.params.simulation.num_species
     figure(h2)
     subplot(4,1,1)
@@ -279,6 +281,7 @@ z = linspace(-4,4,100);
 fz = exp( -0.5*z.^2 )/sqrt(2*pi);
 
 h3 = figure;
+set(h3,'name','PDF pitch angle','numbertitle','off')
 for ii=1:N
     it = ii*offset;
 %     subplot(N,1,ii)
@@ -318,14 +321,16 @@ for ii=1:N
     box on
     grid on
 end
-    
+
+
 ft = zeros(ST.params.simulation.num_species,nbins,N);
 t = zeros(ST.params.simulation.num_species,nbins,N);
 
 for ii=1:N
     it = ii*offset;
     for ss=1:ST.params.simulation.num_species
-        X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,:,it))*ST.params.scales.l;
+        I = find( any(ST.data.sp3.eta > 90, 2) == 0 );
+        X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,I,it));
         theta = atan2(X(3,:), sqrt(X(1,:).^2 + X(2,:).^2) - ST.params.fields.Ro);
         theta(theta < 0) = theta(theta < 0) + 2*pi;
         theta = (180/pi)*theta;
@@ -335,8 +340,10 @@ for ii=1:N
     end
 end
 
+barcolor = [1,0,0;0,1,0;0,0,1];
 
 h4 = figure;
+set(h4,'name','PDF poloidal angle','numbertitle','off')
 for ii=1:N
     it = ii*offset;
     nc = floor(N/2);
@@ -345,22 +352,22 @@ for ii=1:N
     subplot(nr,nc,ii)
     hold on
     for ss=1:ST.params.simulation.num_species
-        plot(t(ss,:,ii),ft(ss,:,ii),'o:')
+%         plot(t(ss,:,ii),ft(ss,:,ii),'o:')
+        bar(t(ss,:,ii),ft(ss,:,ii),'FaceColor',barcolor(ss,:))
     end
+    currentAxis = gca;
+    set(currentAxis.Children(:),'FaceAlpha',0.2);
     hold off
+    xlim([0 360])
     title(['Time: ' num2str(time(it))],'Interpreter','latex','FontSize',11)
     xlabel('$\theta$','Interpreter','latex','FontSize',16)
     box on
     grid on
 end
 
-PD.f_tot = f_tot;
-PD.vals = vals;
 end
 
-function PD = magneticMomentDiagnostic(ST,numBins)
-PD = struct;
-
+function magneticMomentDiagnostic(ST,numBins)
 tmp = [];
 
 for ss=1:ST.params.simulation.num_species
@@ -384,13 +391,17 @@ tmax = max(time);
 tmin = min(time);
 
 figure
+set(gcf,'name','Magnetic moment','numbertitle','off')
 surf(time,vals,log10(f),'LineStyle','none')
 % surf(time,vals,f,'LineStyle','none')
 axis([tmin tmax minVal maxVal])
 xlabel('Time (s)','Interpreter','latex','FontSize',16)
 ylabel('Magnetic moment $\mu$ (arbitrary units)','Interpreter','latex','FontSize',16)
 colormap(jet)
+end
 
-PD.f = f;
-PD.vals = vals;
+function poloidalPlots(ST)
+
+
+
 end

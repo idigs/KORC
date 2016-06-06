@@ -111,7 +111,12 @@ subroutine advance_particles_velocity(params,EB,spp,dt)
 		    
 				!! Parallel and perpendicular components of velocity
 				vpar = DOT_PRODUCT(spp(ii)%vars%V(:,pp), b_unit)
-				vperp = sqrt( DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)) - vpar**2 )
+				vperp =  DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)) - vpar**2
+				if ( vperp .GE. korc_zero ) then
+					vperp = sqrt( vperp )
+				else
+					vperp = 0.0_rp
+				end if
 
 				!! Pitch angle
 		        spp(ii)%vars%eta(pp) = 180.0_rp*modulo(atan2(vperp,vpar), 2.0_rp*C_PI)/C_PI

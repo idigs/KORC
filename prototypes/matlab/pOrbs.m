@@ -834,10 +834,10 @@ function B = analyticalB(X,opt)
 narginchk(1,2);
 
 % Parameters of the analytical magnetic field
-Bo = 3;
-a = 0.5;% Minor radius in meters.
-Ro = 1.6; % Major radius in meters.
-qa = 5; % Safety factor at the separatrix (r=a)
+Bo = 2.19;
+a = 0.6;% Minor radius in meters.
+Ro = 1.695; % Major radius in meters.
+qa = 3; % Safety factor at the separatrix (r=a)
 co = 0.5; % Extra parameter
 lamb = a/co;
 Bpo = (a/Ro)*(Bo/qa)*(1+co^2)/co;
@@ -872,7 +872,7 @@ else
     % Poloidal magnetic field
     % Minus sign = TEXTOR
     % Plus sign = default
-    Bp = - Bpo*(r/lamb)/( 1 + (r/lamb)^2 );
+    Bp = Bpo*(r/lamb)/( 1 + (r/lamb)^2 );
     
     eta = r/Ro;
     Br = 1/( 1 + eta*cos(theta) );
