@@ -8,37 +8,39 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
-pitchAngleDiagnostic(ST,100);
+% pitchAngleDiagnostic(ST,100);
 
-magneticMomentDiagnostic(ST,150);
+% magneticMomentDiagnostic(ST,150);
 
+% poloidalPlaneDistributions(ST,25);
 
+angularMomentum(ST);
 
-% % % % % % % % % % % % % 
-sp = 'sp1'
-R = squeeze( sqrt( ST.data.(sp).X(1,:,:).^2 + ST.data.(sp).X(2,:,:).^2 ) );
-
-[V,I] = max(R');
-[~,II] = max(V);
-% [V,I] = min(R');
-% [~,II] = min(V);
-
-X = squeeze(ST.data.(sp).X(:,II,:));
-
-figure
-plot3(X(1,:),X(2,:),X(3,:))
-axis equal; box on
-
-R = sqrt( X(1,:).^2 + X(2,:).^2 );
-Z = X(3,:);
-figure;plot(R,Z);axis equal
-
-X = squeeze(ST.data.(sp).Rgc(:,II,:));
-R = sqrt( X(1,:).^2 + X(2,:).^2 );
-Z = X(3,:);
-hold on;plot(R,Z);hold off
+% % % % % % % % % % % % % % 
+% sp = 'sp1'
+% R = squeeze( sqrt( ST.data.(sp).X(1,:,:).^2 + ST.data.(sp).X(2,:,:).^2 ) );
+% 
+% [V,I] = max(R');
+% [~,II] = max(V);
+% % [V,I] = min(R');
+% % [~,II] = min(V);
+% 
+% X = squeeze(ST.data.(sp).X(:,II,:));
+% 
+% figure
+% plot3(X(1,:),X(2,:),X(3,:))
+% axis equal; box on
+% 
+% R = sqrt( X(1,:).^2 + X(2,:).^2 );
+% Z = X(3,:);
+% figure;plot(R,Z);axis equal
+% 
+% X = squeeze(ST.data.(sp).Rgc(:,II,:));
+% R = sqrt( X(1,:).^2 + X(2,:).^2 );
+% Z = X(3,:);
+% hold on;plot(R,Z);hold off
 end
 
 function params = loadSimulationParameters(ST)
@@ -63,7 +65,7 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {'X','Rgc'};%,'V','Rgc'};
+list = {'X','V'};%,'Rgc'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -93,7 +95,7 @@ end
 
 
 % list = {'eta','gamma'};%,'mu','Prad','tau'};
-list = {'eta','gamma','mu'};
+list = {'eta','gamma','mu','Prad'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -323,14 +325,17 @@ for ii=1:N
 end
 
 
+% % Poloidal angle distribution function % %
+
 ft = zeros(ST.params.simulation.num_species,nbins,N);
 t = zeros(ST.params.simulation.num_species,nbins,N);
 
 for ii=1:N
     it = ii*offset;
     for ss=1:ST.params.simulation.num_species
-        I = find( any(ST.data.sp3.eta > 90, 2) == 0 );
-        X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,I,it));
+%         I = find( any(ST.data.sp3.eta > 90, 2) == 0 );
+%         X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,I,it));
+        X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,:,it));
         theta = atan2(X(3,:), sqrt(X(1,:).^2 + X(2,:).^2) - ST.params.fields.Ro);
         theta(theta < 0) = theta(theta < 0) + 2*pi;
         theta = (180/pi)*theta;
@@ -400,8 +405,180 @@ ylabel('Magnetic moment $\mu$ (arbitrary units)','Interpreter','latex','FontSize
 colormap(jet)
 end
 
-function poloidalPlots(ST)
+function poloidalPlaneDistributions(ST,nbins)
+N = 105;
+offset = floor(double(ST.params.simulation.num_snapshots)/N);
 
+cad = ST.params.simulation.output_cadence;
+time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
+
+m = figure;
+
+
+for ss=1:ST.params.simulation.num_species
+%     for ii=1:N
+%         it = ii*offset;
+%         
+%         R = squeeze( sqrt( ST.data.(['sp' num2str(ss)]).X(1,:,it).^2 + ...
+%             ST.data.(['sp' num2str(ss)]).X(2,:,it).^2 ) );
+%         Z = squeeze( ST.data.(['sp' num2str(ss)]).X(3,:,it) );
+%         Prad = squeeze( ST.data.(['sp' num2str(ss)]).Prad(:,it) );
+% 
+%         % Poloidal distribution of particles
+%         h = figure;
+%         subplot(3,1,1)
+%         figure(m)
+%         n = histogram2(R,Z,[nbins,nbins],'FaceColor','flat','Normalization','probability');
+%         colorbar
+%         xAxis = n.XBinEdges;
+%         dx = mean( diff(xAxis) );
+%         yAxis = n.YBinEdges;
+%         dy = mean( diff(yAxis) );
+%         axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
+%         axis equal
+%         view([0 90])
+%         colormap(jet)
+%         title(['Species: ' num2str(ss) 'Time: ' num2str(time(it))],'Interpreter','latex','FontSize',11)
+%         xlabel('$R$','Interpreter','latex','FontSize',16)
+%         ylabel('$Z$','Interpreter','latex','FontSize',16)
+%         
+%         x = ST.params.fields.Ro + ...
+%             ST.params.species.r(ss)*cos(linspace(0,2*pi,100));
+%         y = ST.params.species.r(ss)*sin(linspace(0,2*pi,100));
+%         hold on; plot3(x,y,1*ones(size(x)),'k');hold off
+%         
+%         F(ii) = getframe(gcf);
+%         
+%         
+%         % Poloidal distribution of radiated synchroton power
+% %        prad = histogram2(R,Z,[nbins,nbins],'FaceColor','flat')       
+%         prad = zeros(nbins,nbins);
+%         
+%         R = R - min(xAxis);
+%         Z = Z + abs(min(yAxis));
+%         indx = floor( (R + 0.5*dx)/dx ) + 1;
+%         indy = floor( (Z + 0.5*dy)/dy ) + 1;
+%         
+%         I = find(indx > nbins);
+%         indx(I) = indx(I) - 1;
+%         
+%         I = find(indy > nbins);
+%         indy(I) = indy(I) - 1;
+%         
+%         for jj=1:ST.params.species.ppp(ss)
+%             prad(indy(jj),indx(jj)) = prad(indx(jj),indy(jj)) + Prad(jj);
+%         end
+%         
+%         figure(h)
+%         subplot(3,1,2)
+%         surf(xAxis(1:end-1)',yAxis(1:end-1)',prad,'LineStyle','none')
+%         axis equal
+%         view([0 90])        
+%         colormap(jet)
+%         axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
+%         xlabel('$R$','Interpreter','latex','FontSize',16)
+%         ylabel('$Z$','Interpreter','latex','FontSize',16)
+%         
+%         A = n.Values'.*prad;
+% %         I = isinf(A);
+% %         A(I) = 0;
+%         
+%         figure(h)
+%         subplot(3,1,3)
+%         surf(xAxis(1:end-1)',yAxis(1:end-1)',A,'LineStyle','none')
+%         axis equal
+%         view([0 90])        
+%         colormap(jet)
+%         axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
+%         xlabel('$R$','Interpreter','latex','FontSize',16)
+%         ylabel('$Z$','Interpreter','latex','FontSize',16)
+% 
+%     end
+
+for ii=1:N
+        it = ii*offset;
+        
+        R = squeeze( sqrt( ST.data.(['sp' num2str(ss)]).X(1,:,it).^2 + ...
+            ST.data.(['sp' num2str(ss)]).X(2,:,it).^2 ) );
+        Z = squeeze( ST.data.(['sp' num2str(ss)]).X(3,:,it) );
+        Prad = squeeze( ST.data.(['sp' num2str(ss)]).Prad(:,it) );
+
+        % Poloidal distribution of particles
+        figure(m)
+        n = histogram2(R,Z,[nbins,nbins],'FaceColor','flat','Normalization','probability');
+        colorbar
+        xAxis = n.XBinEdges;
+        dx = mean( diff(xAxis) );
+        yAxis = n.YBinEdges;
+        dy = mean( diff(yAxis) );
+        axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
+        axis equal
+        view([0 90])
+        colormap(jet)
+        title(['Species: ' num2str(ss) 'Time: ' num2str(time(it))],'Interpreter','latex','FontSize',11)
+        xlabel('$R$','Interpreter','latex','FontSize',16)
+        ylabel('$Z$','Interpreter','latex','FontSize',16)
+        
+        x = ST.params.fields.Ro + ...
+            ST.params.species.r(ss)*cos(linspace(0,2*pi,100));
+        y = ST.params.species.r(ss)*sin(linspace(0,2*pi,100));
+        hold on; plot3(x,y,1*ones(size(x)),'k');hold off
+        
+        F(ii) = getframe(gcf);
+    end
+end
+
+end
+
+function angularMomentum(ST)
+c = 299792458.0;
+c = 1E2*c;
+
+cad = ST.params.simulation.output_cadence;
+time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
+
+Bo = 1E4*ST.params.fields.Bo;
+Ro = 1E2*ST.params.fields.Ro; % Major radius in meters.
+a = 1E2*ST.params.fields.a;% Minor radius in meters.
+co = 0.5; % Extra parameter
+lambda = a/co;
+Bpo = 1E4*ST.params.fields.Bpo;
+
+for ss=1:ST.params.simulation.num_species
+    m = 1E3*ST.params.species.m(ss);
+    q = 3E9*ST.params.species.q(ss);
+    AM = zeros(ST.params.species.ppp(ss),ST.params.simulation.num_snapshots);
+    for ii=1:ST.params.simulation.num_snapshots
+        X = 1E2*squeeze( ST.data.(['sp' num2str(ss)]).X(:,:,ii) );
+        V = 1E2*squeeze( ST.data.(['sp' num2str(ss)]).V(:,:,ii) );
+
+        % Toroidal coordinates
+        % r = radius, theta = poloidal angle, phi = toroidal angle
+        r = sqrt( (sqrt(X(1,:).^2 + X(2,:).^2) - Ro).^2 + X(3,:).^2 );
+        theta = atan2(X(3,:),sqrt(X(1,:).^2 + X(2,:).^2) - Ro);
+        theta(theta<0) = theta(theta<0) + 2*pi;
+        zeta = atan2(X(1,:),X(2,:));
+        zeta(zeta<0) = zeta(zeta<0) + 2*pi;
+        % Toroidal coordinates
+
+        gamma = squeeze( ST.data.(['sp' num2str(ss)]).gamma(:,ii) )';
+
+        eta = r/Ro;
+        psi = 0.5*lambda*Bpo*log(1 + r.^2/lambda^2);
+        wo = q*Bo./(m*c*gamma);
+
+        dzeta = ...
+        (X(2,:).*V(1,:) - X(1,:).*V(2,:))./( sum(X(1:2,:).^2,1) );
+
+        AM(:,ii) = dzeta.*( 1 + eta.*cos(theta) ).^2 - wo.*psi/(Ro*Bo);
+        
+    end
+    err = mean(100*(AM(:,1) - AM)./AM, 1);
+    figure
+    plot(time,err)
+    xlabel('Time $t$','Interpreter','latex','FontSize',16)
+    ylabel('Angular momentum','Interpreter','latex','FontSize',16)
+end
 
 
 end

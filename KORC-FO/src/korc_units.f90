@@ -27,10 +27,10 @@ subroutine compute_charcs_plasma_params(params,spp,F)
 
 
 	ind = maxloc(spp(:)%wc,1) ! Index to maximum cyclotron frequency
-	params%cpp%time = 2.0_rp*C_PI/spp(ind)%wc
+	params%cpp%time = 1.0_rp/spp(ind)%wc
 
 	ind = maxloc(spp(:)%wc_r,1) ! Index to maximum relativistic cyclotron frequency
-	params%cpp%time_r = 2.0_rp*C_PI/spp(ind)%wc_r
+	params%cpp%time_r = 1.0_rp/spp(ind)%wc_r
 
 	params%cpp%mass = spp(ind)%m
 	params%cpp%charge = abs(spp(ind)%q)
@@ -51,7 +51,7 @@ subroutine define_time_step(params)
 ! 	This definition will be changed as more species and electromagnetic fields
 !	are included.
 
-	params%dt = params%dt*params%cpp%time_r
+	params%dt = params%dt*(2.0_rp*C_PI*params%cpp%time_r)
 
 end subroutine define_time_step
 

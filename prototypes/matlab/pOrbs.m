@@ -111,19 +111,22 @@ else
 end
 
 % Initial position and velocity of tracer, in SI units
+
+
 ST.params.Xo = xo; % Initial position
 ST.params.vo_params = vo_params; % vo_params = [velocity magnitude, pitch angle]
 [ST.params.vo, ST.params.vpar, ST.params.vperp] = initializeVelocity(ST);
+
 
 % Particle's parameters
 ST.params.q = tracerParams(1)*ST.params.qe; %alpha-particle
 ST.params.m = tracerParams(2)*ST.params.me; % alpha-particle
 ST.params.wc = sqrt(1 - sum(ST.params.vo.^2)/ST.params.c^2)*abs(ST.params.q)*ST.Bo/ST.params.m;
-ST.params.rL = ST.params.vperp/ST.params.wc; % Larmor radius of particle
+% ST.params.rL = ST.params.vperp/ST.params.wc; % Larmor radius of particle
 
 if ST.opt
     disp(['Cyclotron frequency ' num2str(ST.params.wc) ' Hz'])
-    disp(['Larmor radius ' num2str(ST.params.rL) ' m'])
+%     disp(['Larmor radius ' num2str(ST.params.rL) ' m'])
 end
 
 % Normalisation parameters
@@ -131,7 +134,7 @@ ST.norm.q = abs(ST.params.q);
 ST.norm.m = ST.params.m;
 ST.norm.wc = ST.norm.q*ST.Bo/ST.norm.m;
 ST.norm.t = 1/ST.norm.wc;
-ST.norm.l = ST.params.c/ST.norm.wc;
+ST.norm.l = ST.params.c*ST.norm.t;
 % Normalisation parameters
 
 % Numerical parameters
@@ -155,7 +158,7 @@ ST.PP = particlePusherLeapfrog(ST);
 if ST.opt
     PoincarePlots(ST);
 end
-% ST.PP.angularMomentum = DiegosInvariants(ST);
+ST.PP.angularMomentum = DiegosInvariants(ST);
 
 munlock
 
@@ -1086,7 +1089,7 @@ else
             gammap = sqrt(1 + sum(up.^2));
             sigma = gammap^2 - sum(tau.^2);
             us = sum(up.*tau); % variable 'u^*' in paper
-            gamma = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(sum(tau.^2) + sum(us.^2))) );
+            gamma = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(sum(tau.^2) + us^2)) );
             % % % % % % % % % % % % % % % 
             % Radiation losses operator
             gamma = gamma + gamma_loss;
@@ -1174,7 +1177,7 @@ end
 
 if ST.opt
     
-    time = ST.time/(2*pi/ST.params.wc);
+    time = ST.time;%/(2*pi/ST.params.wc);
     
     % Relative error in energy conservation
     ERR_EK = 100*(EK(1) - EK)./EK(1);
@@ -1550,19 +1553,19 @@ dzeta = ...
 
 DI = dzeta.*( 1 + eta.*cos(theta) ).^2 - wo.*psi/(Ro*Bo);
 
-% ERR = 100*(DI(1) - DI)./DI(1);
-% 
-% time = ST.time/(2*pi/ST.norm.wc);
-% 
-% figure
-% subplot(2,1,1)
-% plot(time(:),DI)
-% xlabel('Time $t$ [$\tau_c$]','Interpreter','latex','FontSize',16)
-% ylabel('Invariant','Interpreter','latex','FontSize',16)
-% title(ST.PP.method,'Interpreter','latex','FontSize',16)
-% subplot(2,1,2)
-% plot(ST.time(:),ERR)
-% xlabel('Time $t$ [$\tau_c$]','Interpreter','latex','FontSize',16)
-% ylabel('Relative error [\%]','Interpreter','latex','FontSize',16)
+ERR = 100*(DI(1) - DI)./DI(1);
+
+time = ST.time/(2*pi/ST.norm.wc);
+
+figure
+subplot(2,1,1)
+plot(ST.time(:),DI)
+xlabel('Time $t$ [$\tau_c$]','Interpreter','latex','FontSize',16)
+ylabel('Invariant','Interpreter','latex','FontSize',16)
+title(ST.PP.method,'Interpreter','latex','FontSize',16)
+subplot(2,1,2)
+plot(ST.time(:),ERR)
+xlabel('Time $t$ [$\tau_c$]','Interpreter','latex','FontSize',16)
+ylabel('Relative error [\%]','Interpreter','latex','FontSize',16)
 end
 

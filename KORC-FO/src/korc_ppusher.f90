@@ -93,7 +93,8 @@ subroutine advance_particles_velocity(params,EB,spp,dt)
 				up = U_hs + 0.5_rp*a*spp(ii)%vars%E(:,pp)
 				gammap = sqrt( 1.0_rp + sum(up**2) )
 				sigma = gammap**2 - sum(tau**2)
-				us = sum(up*tau) ! variable 'u^*' in Vay, J.-L. PoP (2008)
+				! us = sum(up*tau) ! variable 'u^*' in Vay, J.-L. PoP (2008)
+				us = DOT_PRODUCT(up,tau) ! variable 'u^*' in Vay, J.-L. PoP (2008)
 				gamma = sqrt( 0.5_rp*(sigma + sqrt( sigma**2 + 4.0_rp*(sum(tau**2) + us**2) )) )
 
 				!! Radiation losses
