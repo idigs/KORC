@@ -8,39 +8,19 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
 % pitchAngleDiagnostic(ST,100);
 
-% magneticMomentDiagnostic(ST,150);
+% magneticMomentDiagnostic(ST,100);
 
 % poloidalPlaneDistributions(ST,25);
 
 angularMomentum(ST);
 
-% % % % % % % % % % % % % % 
-% sp = 'sp1'
-% R = squeeze( sqrt( ST.data.(sp).X(1,:,:).^2 + ST.data.(sp).X(2,:,:).^2 ) );
-% 
-% [V,I] = max(R');
-% [~,II] = max(V);
-% % [V,I] = min(R');
-% % [~,II] = min(V);
-% 
-% X = squeeze(ST.data.(sp).X(:,II,:));
-% 
-% figure
-% plot3(X(1,:),X(2,:),X(3,:))
-% axis equal; box on
-% 
-% R = sqrt( X(1,:).^2 + X(2,:).^2 );
-% Z = X(3,:);
-% figure;plot(R,Z);axis equal
-% 
-% X = squeeze(ST.data.(sp).Rgc(:,II,:));
-% R = sqrt( X(1,:).^2 + X(2,:).^2 );
-% Z = X(3,:);
-% hold on;plot(R,Z);hold off
+% changeOfMagneticField(ST)
+
+
 end
 
 function params = loadSimulationParameters(ST)
@@ -65,7 +45,7 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {'X','V'};%,'Rgc'};
+list = {'X','V','B'};%,'Rgc'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -181,8 +161,8 @@ f_tot = zeros(numBins,ST.params.simulation.num_snapshots);
 data = [];
 
 for ss=1:ST.params.simulation.num_species
-    tmp = cos(pi*ST.data.(['sp' num2str(ss)]).eta/180);
-%     tmp = ST.data.(['sp' num2str(ss)]).eta;
+%     tmp = cos(pi*ST.data.(['sp' num2str(ss)]).eta/180);
+    tmp = ST.data.(['sp' num2str(ss)]).eta;
     mean_f(ss,:) = mean(tmp,1);
     std_f(ss,:) = std(tmp,0,1);
     skewness_f(ss,:) = skewness(tmp,0,1);
@@ -379,14 +359,14 @@ for ss=1:ST.params.simulation.num_species
     tmp = [tmp;ST.data.(['sp' num2str(ss)]).mu];
 end
 
-minVal = min(min( tmp ));
-maxVal = max(max( tmp ));
-vals = linspace(minVal,maxVal,numBins);
 
 f = zeros(numBins,ST.params.simulation.num_snapshots);
 
-
-for ii=1:ST.params.simulation.num_snapshots
+for ii=2:ST.params.simulation.num_snapshots
+    tmp(:,ii) = 100*(tmp(:,1) - tmp(:,ii))./tmp(:,1);
+    minVal = min(min( tmp(:,ii) ));
+    maxVal = max(max( tmp(:,ii) ));
+    vals = linspace(-100,100,numBins);
     [f(:,ii),~] = hist(tmp(:,ii),vals);
 end
 
@@ -397,105 +377,26 @@ tmin = min(time);
 
 figure
 set(gcf,'name','Magnetic moment','numbertitle','off')
-surf(time,vals,log10(f),'LineStyle','none')
+surf(time(2:end),vals,f(:,2:end),'LineStyle','none')
 % surf(time,vals,f,'LineStyle','none')
-axis([tmin tmax minVal maxVal])
+% axis([tmin tmax minVal maxVal])
 xlabel('Time (s)','Interpreter','latex','FontSize',16)
 ylabel('Magnetic moment $\mu$ (arbitrary units)','Interpreter','latex','FontSize',16)
 colormap(jet)
 end
 
 function poloidalPlaneDistributions(ST,nbins)
-N = 105;
+N = 3;
 offset = floor(double(ST.params.simulation.num_snapshots)/N);
 
 cad = ST.params.simulation.output_cadence;
 time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
 
-m = figure;
+% m = figure;
 
 
 for ss=1:ST.params.simulation.num_species
-%     for ii=1:N
-%         it = ii*offset;
-%         
-%         R = squeeze( sqrt( ST.data.(['sp' num2str(ss)]).X(1,:,it).^2 + ...
-%             ST.data.(['sp' num2str(ss)]).X(2,:,it).^2 ) );
-%         Z = squeeze( ST.data.(['sp' num2str(ss)]).X(3,:,it) );
-%         Prad = squeeze( ST.data.(['sp' num2str(ss)]).Prad(:,it) );
-% 
-%         % Poloidal distribution of particles
-%         h = figure;
-%         subplot(3,1,1)
-%         figure(m)
-%         n = histogram2(R,Z,[nbins,nbins],'FaceColor','flat','Normalization','probability');
-%         colorbar
-%         xAxis = n.XBinEdges;
-%         dx = mean( diff(xAxis) );
-%         yAxis = n.YBinEdges;
-%         dy = mean( diff(yAxis) );
-%         axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
-%         axis equal
-%         view([0 90])
-%         colormap(jet)
-%         title(['Species: ' num2str(ss) 'Time: ' num2str(time(it))],'Interpreter','latex','FontSize',11)
-%         xlabel('$R$','Interpreter','latex','FontSize',16)
-%         ylabel('$Z$','Interpreter','latex','FontSize',16)
-%         
-%         x = ST.params.fields.Ro + ...
-%             ST.params.species.r(ss)*cos(linspace(0,2*pi,100));
-%         y = ST.params.species.r(ss)*sin(linspace(0,2*pi,100));
-%         hold on; plot3(x,y,1*ones(size(x)),'k');hold off
-%         
-%         F(ii) = getframe(gcf);
-%         
-%         
-%         % Poloidal distribution of radiated synchroton power
-% %        prad = histogram2(R,Z,[nbins,nbins],'FaceColor','flat')       
-%         prad = zeros(nbins,nbins);
-%         
-%         R = R - min(xAxis);
-%         Z = Z + abs(min(yAxis));
-%         indx = floor( (R + 0.5*dx)/dx ) + 1;
-%         indy = floor( (Z + 0.5*dy)/dy ) + 1;
-%         
-%         I = find(indx > nbins);
-%         indx(I) = indx(I) - 1;
-%         
-%         I = find(indy > nbins);
-%         indy(I) = indy(I) - 1;
-%         
-%         for jj=1:ST.params.species.ppp(ss)
-%             prad(indy(jj),indx(jj)) = prad(indx(jj),indy(jj)) + Prad(jj);
-%         end
-%         
-%         figure(h)
-%         subplot(3,1,2)
-%         surf(xAxis(1:end-1)',yAxis(1:end-1)',prad,'LineStyle','none')
-%         axis equal
-%         view([0 90])        
-%         colormap(jet)
-%         axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
-%         xlabel('$R$','Interpreter','latex','FontSize',16)
-%         ylabel('$Z$','Interpreter','latex','FontSize',16)
-%         
-%         A = n.Values'.*prad;
-% %         I = isinf(A);
-% %         A(I) = 0;
-%         
-%         figure(h)
-%         subplot(3,1,3)
-%         surf(xAxis(1:end-1)',yAxis(1:end-1)',A,'LineStyle','none')
-%         axis equal
-%         view([0 90])        
-%         colormap(jet)
-%         axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
-%         xlabel('$R$','Interpreter','latex','FontSize',16)
-%         ylabel('$Z$','Interpreter','latex','FontSize',16)
-% 
-%     end
-
-for ii=1:N
+    for ii=1:N
         it = ii*offset;
         
         R = squeeze( sqrt( ST.data.(['sp' num2str(ss)]).X(1,:,it).^2 + ...
@@ -504,7 +405,8 @@ for ii=1:N
         Prad = squeeze( ST.data.(['sp' num2str(ss)]).Prad(:,it) );
 
         % Poloidal distribution of particles
-        figure(m)
+        h = figure;
+        subplot(3,1,1)
         n = histogram2(R,Z,[nbins,nbins],'FaceColor','flat','Normalization','probability');
         colorbar
         xAxis = n.XBinEdges;
@@ -524,8 +426,83 @@ for ii=1:N
         y = ST.params.species.r(ss)*sin(linspace(0,2*pi,100));
         hold on; plot3(x,y,1*ones(size(x)),'k');hold off
         
-        F(ii) = getframe(gcf);
+        
+        % Poloidal distribution of radiated synchroton power
+%        prad = histogram2(R,Z,[nbins,nbins],'FaceColor','flat')       
+        prad = zeros(nbins,nbins);
+        
+        R = R - min(xAxis);
+        Z = Z + abs(min(yAxis));
+        indx = floor( (R + 0.5*dx)/dx ) + 1;
+        indy = floor( (Z + 0.5*dy)/dy ) + 1;
+        
+        I = find(indx > nbins);
+        indx(I) = indx(I) - 1;
+        
+        I = find(indy > nbins);
+        indy(I) = indy(I) - 1;
+        
+        for jj=1:ST.params.species.ppp(ss)
+            prad(indy(jj),indx(jj)) = prad(indx(jj),indy(jj)) + Prad(jj);
+        end
+        
+        figure(h)
+        subplot(3,1,2)
+        surf(xAxis(1:end-1)',yAxis(1:end-1)',prad,'LineStyle','none')
+        axis equal
+        view([0 90])        
+        colormap(jet)
+        axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
+        xlabel('$R$','Interpreter','latex','FontSize',16)
+        ylabel('$Z$','Interpreter','latex','FontSize',16)
+        
+        A = n.Values'.*prad;
+%         I = isinf(A);
+%         A(I) = 0;
+        
+        figure(h)
+        subplot(3,1,3)
+        surf(xAxis(1:end-1)',yAxis(1:end-1)',A,'LineStyle','none')
+        axis equal
+        view([0 90])        
+        colormap(jet)
+        axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
+        xlabel('$R$','Interpreter','latex','FontSize',16)
+        ylabel('$Z$','Interpreter','latex','FontSize',16)
+
     end
+
+% for ii=1:N
+%     it = ii*offset;
+%     
+%     R = squeeze( sqrt( ST.data.(['sp' num2str(ss)]).X(1,:,it).^2 + ...
+%         ST.data.(['sp' num2str(ss)]).X(2,:,it).^2 ) );
+%     Z = squeeze( ST.data.(['sp' num2str(ss)]).X(3,:,it) );
+%     Prad = squeeze( ST.data.(['sp' num2str(ss)]).Prad(:,it) );
+%     
+%     % Poloidal distribution of particles
+%     figure(m)
+%     n = histogram2(R,Z,[nbins,nbins],'FaceColor','flat','Normalization','probability');
+%     colorbar
+%     xAxis = n.XBinEdges;
+%     dx = mean( diff(xAxis) );
+%     yAxis = n.YBinEdges;
+%     dy = mean( diff(yAxis) );
+%     axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
+%     axis equal
+%     view([0 90])
+%     colormap(jet)
+%     title(['Species: ' num2str(ss) 'Time: ' num2str(time(it))],'Interpreter','latex','FontSize',11)
+%     xlabel('$R$','Interpreter','latex','FontSize',16)
+%     ylabel('$Z$','Interpreter','latex','FontSize',16)
+%     
+%     x = ST.params.fields.Ro + ...
+%         ST.params.species.r(ss)*cos(linspace(0,2*pi,100));
+%     y = ST.params.species.r(ss)*sin(linspace(0,2*pi,100));
+%     hold on; plot3(x,y,1*ones(size(x)),'k');hold off
+%     
+%     F(ii) = getframe(gcf);
+% end
 end
 
 end
@@ -547,7 +524,7 @@ Bpo = 1E4*ST.params.fields.Bpo;
 for ss=1:ST.params.simulation.num_species
     m = 1E3*ST.params.species.m(ss);
     q = 3E9*ST.params.species.q(ss);
-    AM = zeros(ST.params.species.ppp(ss),ST.params.simulation.num_snapshots);
+    AM = zeros(1,ST.params.simulation.num_snapshots);
     for ii=1:ST.params.simulation.num_snapshots
         X = 1E2*squeeze( ST.data.(['sp' num2str(ss)]).X(:,:,ii) );
         V = 1E2*squeeze( ST.data.(['sp' num2str(ss)]).V(:,:,ii) );
@@ -570,15 +547,26 @@ for ss=1:ST.params.simulation.num_species
         dzeta = ...
         (X(2,:).*V(1,:) - X(1,:).*V(2,:))./( sum(X(1:2,:).^2,1) );
 
-        AM(:,ii) = dzeta.*( 1 + eta.*cos(theta) ).^2 - wo.*psi/(Ro*Bo);
+        AM(ii) = mean(dzeta.*( 1 + eta.*cos(theta) ).^2 - wo.*psi/(Ro*Bo));
         
     end
-    err = mean(100*(AM(:,1) - AM)./AM, 1);
+    err = 100*(AM(1) - AM)./AM(1);
     figure
     plot(time,err)
     xlabel('Time $t$','Interpreter','latex','FontSize',16)
     ylabel('Angular momentum','Interpreter','latex','FontSize',16)
 end
 
+
+end
+
+function changeOfMagneticField(ST)
+
+for ss=1:ST.params.simulation.num_species
+    m = ST.params.species.m(ss);
+    q = ST.params.species.q(ss);
+    gamma = ST.data.(['sp' num2str(ss)]).gamma(:,1); % initial relativistic factor
+    
+end
 
 end

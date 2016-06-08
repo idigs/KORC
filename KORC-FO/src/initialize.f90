@@ -71,7 +71,7 @@ subroutine load_korc_params(params)
 		write(6,'("Number of time steps: ",I16)') params%t_steps
 		write(6,'("Output cadence: ",I16)') params%output_cadence
 		write(6,'("Number of outputs: ",I16)') params%num_snapshots
-		write(6,'("Time step in fraction of gyro-period: ",F15.10)') params%dt
+		write(6,'("Time step in fraction of relativistic gyro-period: ",F15.10)') params%dt
 		write(6,'("Number of electron populations: ",I16)') params%num_species
 		write(6,'("Magnetic field model: ",A50)') TRIM(params%magnetic_field_model)
 		write(6,'("Using (JFIT) poloidal flux: ", L1)') params%poloidal_flux
