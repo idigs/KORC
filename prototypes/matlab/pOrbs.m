@@ -69,7 +69,7 @@ function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,
 
 narginchk(8,9);
 
-close all
+% close all
 
 ST = struct;
 % Script parameters
@@ -111,12 +111,9 @@ else
 end
 
 % Initial position and velocity of tracer, in SI units
-
-
 ST.params.Xo = xo; % Initial position
 ST.params.vo_params = vo_params; % vo_params = [velocity magnitude, pitch angle]
 [ST.params.vo, ST.params.vpar, ST.params.vperp] = initializeVelocity(ST);
-
 
 % Particle's parameters
 ST.params.q = tracerParams(1)*ST.params.qe; %alpha-particle
@@ -1092,7 +1089,7 @@ else
             gamma = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(sum(tau.^2) + us^2)) );
             % % % % % % % % % % % % % % % 
             % Radiation losses operator
-            gamma = gamma + gamma_loss;
+%             gamma = gamma + gamma_loss;
             % Radiation losses operator
             % % % % % % % % % % % % % % % 
             t = tau/gamma;

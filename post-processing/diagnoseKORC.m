@@ -8,15 +8,15 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
-% pitchAngleDiagnostic(ST,100);
+pitchAngleDiagnostic(ST,100);
 
 % magneticMomentDiagnostic(ST,100);
 
 % poloidalPlaneDistributions(ST,25);
 
-angularMomentum(ST);
+% angularMomentum(ST);
 
 % changeOfMagneticField(ST)
 
@@ -45,7 +45,7 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {'X','V','B'};%,'Rgc'};
+list = {'X','V'};%,'Rgc'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -112,6 +112,8 @@ end
 function energyConservation(ST)
 
 err = zeros(ST.params.simulation.num_snapshots,ST.params.simulation.num_species);
+maxerr = zeros(ST.params.simulation.num_snapshots,ST.params.simulation.num_species);
+minerr = zeros(ST.params.simulation.num_snapshots,ST.params.simulation.num_species);
 
 cad = ST.params.simulation.output_cadence;
 time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
@@ -127,20 +129,20 @@ try
                 ST.data.(['sp' num2str(ss)]).gamma(ii,:) )./ST.data.(['sp' num2str(ss)]).gamma(ii,1);
         end
         err(:,ss) = mean(tmp,1);
+        maxerr(:,ss) = max(tmp,[],1);
+        minerr(:,ss) = min(tmp,[],1);
         figure(h)
-        hold on
-        plot(time,err(:,ss))
-        hold off
+        subplot(double(ST.params.simulation.num_species),1,double(ss))
+        plot(time,err(:,ss),'k-',time,minerr(:,ss),'r:',time,maxerr(:,ss),'r:')
+        box on
+        grid on
+        xlabel('Time (s)','Interpreter','latex','FontSize',16)
+        ylabel('Energy conservation (\%)','Interpreter','latex','FontSize',16)
     end
 catch
     error('Something went wrong: energyConservation')
 end
 
-figure(h)
-box on
-grid on
-xlabel('Time (s)','Interpreter','latex','FontSize',16)
-ylabel('Energy conservation (\%)','Interpreter','latex','FontSize',16)
 
 end
 
@@ -148,21 +150,29 @@ function pitchAngleDiagnostic(ST,numBins)
 N = 10;
 nbins = 30;
 
+cad = ST.params.simulation.output_cadence;
+time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
+tmax = max(time);
+tmin = min(time);
+
 mean_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
 std_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
 skewness_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
 kurtosis_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
 
 fx = zeros(ST.params.simulation.num_species,nbins,ST.params.simulation.num_snapshots);
-x = zeros(ST.params.simulation.num_species,nbins,ST.params.simulation.num_snapshots);
+x = zeros(ST.params.simulation.num_species,nbins);
 
 f_tot = zeros(numBins,ST.params.simulation.num_snapshots);
 
 data = [];
 
+h1 = figure;
+set(h1,'name','PDF time evolution','numbertitle','off')
 for ss=1:ST.params.simulation.num_species
 %     tmp = cos(pi*ST.data.(['sp' num2str(ss)]).eta/180);
     tmp = ST.data.(['sp' num2str(ss)]).eta;
+    
     mean_f(ss,:) = mean(tmp,1);
     std_f(ss,:) = std(tmp,0,1);
     skewness_f(ss,:) = skewness(tmp,0,1);
@@ -170,16 +180,23 @@ for ss=1:ST.params.simulation.num_species
     
     data = [data; ST.data.(['sp' num2str(ss)]).eta];
     
+    
+    minVal = min(min( data ));
+    maxVal = max(max( data ));
+    x(ss,:) = linspace(minVal,maxVal,nbins);
+    
     for ii=1:ST.params.simulation.num_snapshots
-        [fx(ss,:,ii),x(ss,:,ii)] = ...
-            hist(tmp(:,ii),nbins);
-        
-        dx = mean(diff(x(ss,:,ii)));
-        fx(ss,:,ii) = fx(ss,:,ii)/(sum(fx(ss,:,ii))*dx);
-        
-        x(ss,:,ii) = ( x(ss,:,ii) - mean_f(ss,ii) )/std_f(ss,ii);
-        fx(ss,:,ii) = std_f(ss,ii)*fx(ss,:,ii);
+        [fx(ss,:,ii),~] = hist(tmp(:,ii),x(ss,:));
     end
+    
+    subplot(double(ST.params.simulation.num_species),1,double(ss))
+    surf(time,squeeze(x(ss,:)),log10(squeeze(fx(ss,:,:))),'LineStyle','none')
+    axis([tmin tmax minVal maxVal])
+    box on
+    axis on
+    xlabel('Time (s)','Interpreter','latex','FontSize',16)
+    ylabel('Pitch angle $\theta$ (degrees)','Interpreter','latex','FontSize',16)
+    colormap(jet)
 end
 
 minVal = min(min( data ));
@@ -190,21 +207,17 @@ for ii=1:ST.params.simulation.num_snapshots
     [f_tot(:,ii),~] = hist(data(:,ii),vals);
 end
 
-cad = ST.params.simulation.output_cadence;
-time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
-tmax = max(time);
-tmin = min(time);
 
-h1 = figure;
-set(h1,'name','PDF time evolution','numbertitle','off')
-surf(time,vals,log10(f_tot),'LineStyle','none')
-% surf(time,vals,f,'LineStyle','none')
-axis([tmin tmax minVal maxVal])
-box on
-axis on
-xlabel('Time (s)','Interpreter','latex','FontSize',16)
-ylabel('Pitch angle $\theta$ (degrees)','Interpreter','latex','FontSize',16)
-colormap(jet)
+% h1 = figure;
+% set(h1,'name','PDF time evolution','numbertitle','off')
+% surf(time,vals,log10(f_tot),'LineStyle','none')
+% % surf(time,vals,f,'LineStyle','none')
+% axis([tmin tmax minVal maxVal])
+% box on
+% axis on
+% xlabel('Time (s)','Interpreter','latex','FontSize',16)
+% ylabel('Pitch angle $\theta$ (degrees)','Interpreter','latex','FontSize',16)
+% colormap(jet)
 
 h2 = figure
 set(h2,'name','Statistical moments','numbertitle','off')
@@ -266,15 +279,18 @@ h3 = figure;
 set(h3,'name','PDF pitch angle','numbertitle','off')
 for ii=1:N
     it = ii*offset;
-%     subplot(N,1,ii)
     nc = floor(N/2);
     nr = floor(N/nc);
     subplot(nr,nc,ii)
     plot(z,log10(fz),'k')
     hold on
     for ss=1:ST.params.simulation.num_species
+        dx = mean(diff(x(ss,:)));
+        xAxis = ( x(ss,:) - mean_f(ss,it) )/std_f(ss,it);
+        f = std_f(ss,it)*fx(ss,:,it)/(sum(fx(ss,:,it))*dx);
+        
         figure(h3)
-        plot(x(ss,:,it),log10(fx(ss,:,it)),'o:')
+        plot(xAxis,log10(f),'o:')
         
         figure(h2)
         subplot(4,1,1)
@@ -366,7 +382,7 @@ for ii=2:ST.params.simulation.num_snapshots
     tmp(:,ii) = 100*(tmp(:,1) - tmp(:,ii))./tmp(:,1);
     minVal = min(min( tmp(:,ii) ));
     maxVal = max(max( tmp(:,ii) ));
-    vals = linspace(-100,100,numBins);
+    vals = linspace(0,20,numBins);
     [f(:,ii),~] = hist(tmp(:,ii),vals);
 end
 
@@ -521,10 +537,17 @@ co = 0.5; % Extra parameter
 lambda = a/co;
 Bpo = 1E4*ST.params.fields.Bpo;
 
+h = figure;
+set(h,'name','Angular momentum conservation','numbertitle','off')
 for ss=1:ST.params.simulation.num_species
     m = 1E3*ST.params.species.m(ss);
     q = 3E9*ST.params.species.q(ss);
-    AM = zeros(1,ST.params.simulation.num_snapshots);
+    
+    invariant = ...
+        zeros(ST.params.species.ppp(ss)*ST.params.simulation.nmpi,ST.params.simulation.num_snapshots);
+    err = zeros(1,ST.params.simulation.num_snapshots);
+    minerr = zeros(1,ST.params.simulation.num_snapshots);
+    maxerr = zeros(1,ST.params.simulation.num_snapshots);
     for ii=1:ST.params.simulation.num_snapshots
         X = 1E2*squeeze( ST.data.(['sp' num2str(ss)]).X(:,:,ii) );
         V = 1E2*squeeze( ST.data.(['sp' num2str(ss)]).V(:,:,ii) );
@@ -546,15 +569,21 @@ for ss=1:ST.params.simulation.num_species
 
         dzeta = ...
         (X(2,:).*V(1,:) - X(1,:).*V(2,:))./( sum(X(1:2,:).^2,1) );
-
-        AM(ii) = mean(dzeta.*( 1 + eta.*cos(theta) ).^2 - wo.*psi/(Ro*Bo));
-        
+    
+        invariant(:,ii) = dzeta.*( 1 + eta.*cos(theta) ).^2 - wo.*psi/(Ro*Bo);
+        tmp_vec = 100*(invariant(:,1) - invariant(:,ii))./invariant(:,1);
+        err(ii) = mean( tmp_vec );
+        minerr(ii) = min( tmp_vec );
+        maxerr(ii) = max( tmp_vec );
     end
-    err = 100*(AM(1) - AM)./AM(1);
-    figure
-    plot(time,err)
-    xlabel('Time $t$','Interpreter','latex','FontSize',16)
-    ylabel('Angular momentum','Interpreter','latex','FontSize',16)
+    
+    figure(h)
+    subplot(double(ST.params.simulation.num_species),1,double(ss))
+    plot(time,err,'k-',time,minerr,'r:',time,maxerr,'r:')
+    box on
+    grid on
+    xlabel('Time (s)','Interpreter','latex','FontSize',12)
+    ylabel('Angular momentum conservation (\%)','Interpreter','latex','FontSize',12)
 end
 
 

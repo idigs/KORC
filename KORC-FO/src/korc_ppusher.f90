@@ -66,7 +66,7 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 				    /( spp(ii)%q*sum(spp(ii)%vars%B(:,pp)**2) )
                 end if
 
-                if (params%radiation_losses) then
+                if (params%radiation_losses .OR. bool) then
 				    !! Radiation losses operator     
 		            V = sqrt( DOT_PRODUCT(spp(ii)%vars%V(:,pp), spp(ii)%vars%V(:,pp)) )
 		            vec =  cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%E(:,pp))&

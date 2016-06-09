@@ -46,7 +46,7 @@ program main
 	! *** BEYOND THIS POINT VARIABLES ARE DIMENSIONLESS ***
 	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
 
-	call advance_particles_velocity(params,EB,spp,0.0_rp,.FALSE.)
+	call advance_particles_velocity(params,EB,spp,0.0_rp,.TRUE.)
 
 	! Save initial condition
 	call save_simulation_outputs(params,spp,EB,0_ip)

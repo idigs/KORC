@@ -23,20 +23,18 @@ module korc_HDF5
 	END INTERFACE
 
 !	INTERFACE save_2d_array_to_hdf5
-!		module procedure rsave_2d_array_to_hdf5, rsave_2d_alloc_array_to_hdf5
+!		module procedure rsave_2d_array_to_hdf5
 !	END INTERFACE
 
 !	INTERFACE save_1d_array_to_hdf5
-!		module procedure isave_1d_array_to_hdf5, isave_1d_alloc_array_to_hdf5,&
-!							rsave_1d_array_to_hdf5,rsave_1d_alloc_array_to_hdf5
+!		module procedure isave_1d_array_to_hdf5, rsave_1d_array_to_hdf5
 !	END INTERFACE
 
 	PRIVATE :: save_to_hdf5,isave_to_hdf5, rsave_to_hdf5, isave_1d_array_to_hdf5,&
-				rsave_1d_alloc_array_to_hdf5, isave_1d_alloc_array_to_hdf5,&
-				rsave_1d_array_to_hdf5, rsave_2d_array_to_hdf5,rsave_2d_alloc_array_to_hdf5,&
-				load_from_hdf5, iload_from_hdf5, rload_from_hdf5,&
-				rload_array_from_hdf5, rload_1d_array_from_hdf5, rload_3d_array_from_hdf5,&
-				rload_2d_array_from_hdf5
+				rsave_1d_array_to_hdf5,&
+				rsave_2d_array_to_hdf5,load_from_hdf5,iload_from_hdf5,&
+				rload_from_hdf5,rload_array_from_hdf5,rload_1d_array_from_hdf5,&
+				rload_3d_array_from_hdf5,rload_2d_array_from_hdf5
 				
 	PUBLIC :: initialize_HDF5, finalize_HDF5, save_simulation_parameters,&
                 load_field_data_from_hdf5
@@ -360,74 +358,6 @@ subroutine isave_to_hdf5(h5file_id,dset,idata,attr)
 end subroutine isave_to_hdf5
 
 
-subroutine isave_1d_alloc_array_to_hdf5(h5file_id,dset,idata,attr)
-	implicit none
-	INTEGER(HID_T), INTENT(IN) :: h5file_id
-	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: idata
-	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: attr
-	CHARACTER(4) :: aname = "Info"
-	INTEGER(HID_T) :: dset_id
-	INTEGER(HID_T) :: dspace_id
-	INTEGER(HID_T) :: aspace_id
-	INTEGER(HID_T) :: attr_id
-	INTEGER(HID_T) :: atype_id
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: adims
-	INTEGER :: rank
-	INTEGER :: arank
-	INTEGER(SIZE_T) :: tmplen
-	INTEGER(SIZE_T) :: attrlen
-	INTEGER :: h5error
-	INTEGER :: rr,dd ! Iterators
-
-	rank = size(shape(idata))
-	ALLOCATE(dims(rank))
-	dims = shape(idata)
-
-	! * * * Write data to file * * *
-	call h5screate_simple_f(rank,dims,dspace_id,h5error)
-	call h5dcreate_f(h5file_id, TRIM(dset), H5T_NATIVE_INTEGER, dspace_id, dset_id, h5error)
-	call h5dwrite_f(dset_id, H5T_NATIVE_INTEGER, idata, dims, h5error)
-
-	if (PRESENT(attr)) then
-		arank = size(shape(attr))
-		ALLOCATE(adims(arank))
-		adims = shape(attr)
-
-		! * * * Write attribute of data to file * * *
-		tmplen = 0
-		attrlen = 0
-		do rr=1,arank
-			do dd=1,adims(rr)
-				tmplen = LEN_TRIM(attr(dd))
-				if ( tmplen .GT. attrlen) then
-					attrlen = tmplen
-				end if
-			end do
-		end do
-
-		call h5screate_simple_f(arank,adims,aspace_id,h5error)
-		call h5tcopy_f(H5T_NATIVE_CHARACTER, atype_id, h5error)
-		call h5tset_size_f(atype_id, attrlen, h5error)
-		call h5acreate_f(dset_id, aname, atype_id, aspace_id, attr_id, h5error)
-		call h5awrite_f(attr_id, atype_id, attr, adims, h5error)
-
-		call h5aclose_f(attr_id, h5error)
-		call h5sclose_f(aspace_id, h5error)
-		! * * * Write attribute of data to file * * *
-
-		DEALLOCATE(adims)
-	end if
-
-	call h5sclose_f(dspace_id, h5error)
-	call h5dclose_f(dset_id, h5error)
-	! * * * Write data to file * * *
-
-	DEALLOCATE(dims)
-end subroutine isave_1d_alloc_array_to_hdf5
-
-
 subroutine isave_1d_array_to_hdf5(h5file_id,dset,idata,attr)
 	implicit none
 	INTEGER(HID_T), INTENT(IN) :: h5file_id
@@ -545,80 +475,6 @@ subroutine rsave_to_hdf5(h5file_id,dset,rdata,attr)
 	call h5dclose_f(dset_id, h5error)
 	! * * * Write data to file * * *
 end subroutine rsave_to_hdf5
-
-
-subroutine rsave_1d_alloc_array_to_hdf5(h5file_id,dset,rdata,attr)
-	implicit none
-	INTEGER(HID_T), INTENT(IN) :: h5file_id
-	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: rdata
-	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: attr
-	CHARACTER(4) :: aname = "Info"
-	INTEGER(HID_T) :: dset_id
-	INTEGER(HID_T) :: dspace_id
-	INTEGER(HID_T) :: aspace_id
-	INTEGER(HID_T) :: attr_id
-	INTEGER(HID_T) :: atype_id
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: adims
-	INTEGER :: rank
-	INTEGER :: arank
-	INTEGER(SIZE_T) :: tmplen
-	INTEGER(SIZE_T) :: attrlen
-	INTEGER :: h5error
-	INTEGER :: rr,dd ! Iterators
-
-	rank = size(shape(rdata))
-	ALLOCATE(dims(rank))
-	dims = shape(rdata)
-
-	! * * * Write data to file * * *
-
-	call h5screate_simple_f(rank,dims,dspace_id,h5error)
-	call h5dcreate_f(h5file_id, TRIM(dset), KORC_HDF5_REAL, dspace_id, dset_id, h5error)
-
-	if (rp .EQ. INT(rp_hdf5)) then
-		call h5dwrite_f(dset_id, KORC_HDF5_REAL, rdata, dims, h5error)
-	else
-		call h5dwrite_f(dset_id, KORC_HDF5_REAL, REAL(rdata,4), dims, h5error)
-	end if
-
-	if (PRESENT(attr)) then
-		arank = size(shape(attr))
-		ALLOCATE(adims(arank))
-		adims = shape(attr)
-
-		! * * * Write attribute of data to file * * *
-		tmplen = 0
-		attrlen = 0
-		do rr=1,arank
-			do dd=1,adims(rr)
-				tmplen = LEN_TRIM(attr(dd))
-				if ( tmplen .GT. attrlen) then
-					attrlen = tmplen
-				end if
-			end do
-		end do
-
-		call h5screate_simple_f(arank,adims,aspace_id,h5error)
-		call h5tcopy_f(H5T_NATIVE_CHARACTER, atype_id, h5error)
-		call h5tset_size_f(atype_id, attrlen, h5error)
-		call h5acreate_f(dset_id, aname, atype_id, aspace_id, attr_id, h5error)
-		call h5awrite_f(attr_id, atype_id, attr, adims, h5error)
-
-		call h5aclose_f(attr_id, h5error)
-		call h5sclose_f(aspace_id, h5error)
-		! * * * Write attribute of data to file * * *
-
-		DEALLOCATE(adims)
-	end if
-
-	call h5sclose_f(dspace_id, h5error)
-	call h5dclose_f(dset_id, h5error)
-	! * * * Write data to file * * *
-
-	DEALLOCATE(dims)
-end subroutine rsave_1d_alloc_array_to_hdf5
 
 
 subroutine rsave_1d_array_to_hdf5(h5file_id,dset,rdata,attr)
@@ -741,54 +597,6 @@ subroutine rsave_2d_array_to_hdf5(h5file_id,dset,rdata,attr)
 
 	DEALLOCATE(dims)
 end subroutine rsave_2d_array_to_hdf5
-
-
-subroutine rsave_2d_alloc_array_to_hdf5(h5file_id,dset,rdata,attr)
-	implicit none
-	INTEGER(HID_T), INTENT(IN) :: h5file_id
-	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: rdata
-	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: attr
-	CHARACTER(4) :: aname = "Info"
-	INTEGER(HID_T) :: dset_id
-	INTEGER(HID_T) :: dspace_id
-	INTEGER(HID_T) :: aspace_id
-	INTEGER(HID_T) :: attr_id
-	INTEGER(HID_T) :: atype_id
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: adims
-	INTEGER :: rank
-	INTEGER :: arank
-	INTEGER(SIZE_T) :: tmplen
-	INTEGER(SIZE_T) :: attrlen
-	INTEGER :: h5error
-	INTEGER :: rr,dd ! Iterators
-
-	rank = size(shape(rdata))
-	ALLOCATE(dims(rank))
-	dims = shape(rdata)
-
-	! * * * Write data to file * * *
-
-	call h5screate_simple_f(rank,dims,dspace_id,h5error)
-	call h5dcreate_f(h5file_id, TRIM(dset), KORC_HDF5_REAL, dspace_id, dset_id, h5error)
-
-	if (rp .EQ. INT(rp_hdf5)) then
-		call h5dwrite_f(dset_id, KORC_HDF5_REAL, rdata, dims, h5error)
-	else
-		call h5dwrite_f(dset_id, KORC_HDF5_REAL, REAL(rdata,4), dims, h5error)
-	end if
-
-	if (PRESENT(attr)) then
-		! * * * Write attribute of data to file * * *
-	end if
-
-	call h5sclose_f(dspace_id, h5error)
-	call h5dclose_f(dset_id, h5error)
-	! * * * Write data to file * * *
-
-	DEALLOCATE(dims)
-end subroutine rsave_2d_alloc_array_to_hdf5
 
 
 subroutine save_simulation_parameters(params,spp,F)
@@ -1075,9 +883,9 @@ subroutine save_simulation_outputs(params,spp,F,it)
 		units = params%cpp%velocity
 	    call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%V)
 
-	    dset = "Rgc"
-		units = params%cpp%length
-	    call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%Rgc)
+!	    dset = "Rgc"
+!		units = params%cpp%length
+!	    call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%Rgc)
 
 	    dset = "gamma"
 	    call rsave_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%gamma)
@@ -1093,15 +901,15 @@ subroutine save_simulation_outputs(params,spp,F,it)
 		units = params%cpp%mass*(params%cpp%velocity**3)/params%cpp%length
 	    call rsave_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%Prad)
 
-	    dset = "tau"
-	    call rsave_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%tau)
+!	    dset = "tau"
+!	    call rsave_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%tau)
 
 		dset = "flag"
-		call isave_1d_alloc_array_to_hdf5(subgroup_id,dset, spp(ii)%vars%flag)
+		call isave_1d_array_to_hdf5(subgroup_id,dset, spp(ii)%vars%flag)
 
-	    dset = "B"
-		units = params%cpp%magnetic_field
-	    call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%B)
+!	    dset = "B"
+!		units = params%cpp%magnetic_field
+!	    call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%B)
 
         call h5gclose_f(subgroup_id, h5error)
     end do
