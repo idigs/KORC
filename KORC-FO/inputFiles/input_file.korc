@@ -1,9 +1,9 @@
 &input_parameters
-	t_steps = 2750000 ! 1050000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	t_steps = 27500000 ! 1050000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
 	dt = 0.025 ! Time step as fraction of non-relativistic gyro-period
 	output_cadence = 125000 ! 1400 for saving each 100 gyro-periods
 	num_species = 3
-	radiation_losses = .FALSE.
+	radiation_losses = .TRUE.
 	magnetic_field_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
 										! For 'ANALYTICAL', the magnetic field is calculated based on
 										! the parameters given in the "analytic_mag_field_params" section.
@@ -21,14 +21,15 @@
 	Zo = 0.0, 0.0, 0.0 !
 	r = 0.4, 0.4, 0.4 !
 	Eo = 5.0E6, 10.0E6, 50.0E6 ! Initial energy in eV
-	etao = 70.0, 70.0, 70.0  ! Initial pitch angle
-	ppp = 50, 50, 50 ! Number of particles per process (mpi)
+	etao = 170.0, 170.0, 170.0  ! Initial pitch angle
+	ppp = 10, 10, 10 ! Number of particles per process (mpi)
     q = -1.0, -1.0, -1.0 ! Electric charge
     m = 1.0, 1.0, 1.0 ! In units of electron mass
 /
 
 &analytic_mag_field_params
 	Bo = 2.19 ! In Teslas. ITER: 5.42 DIII-D: 2.19
+	Eo = 1.0 ! In V/m
 	minor_radius = 0.6 ! Minor radius in meters. ITER: 1.5 DIII-D: 0.5
 	major_radius = 1.695 ! Major radius in meters. ITER: 6.5 DIII-D: 1.6
 	q_factor_at_separatrix = 3.0 ! Safety factor at the separatrix (r=a)

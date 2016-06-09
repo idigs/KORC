@@ -8,15 +8,15 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
 pitchAngleDiagnostic(ST,100);
 
-% magneticMomentDiagnostic(ST,100);
+magneticMomentDiagnostic(ST,100);
 
-% poloidalPlaneDistributions(ST,25);
+poloidalPlaneDistributions(ST,25);
 
-% angularMomentum(ST);
+angularMomentum(ST);
 
 % changeOfMagneticField(ST)
 
@@ -118,8 +118,9 @@ minerr = zeros(ST.params.simulation.num_snapshots,ST.params.simulation.num_speci
 cad = ST.params.simulation.output_cadence;
 time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
 
-h=figure;
-set(h,'name','Energy conservation','numbertitle','off')
+h1 = figure;
+h2 = figure;
+set(h1,'name','Energy conservation','numbertitle','off')
 try
     for ss=1:ST.params.simulation.num_species
         tmp = zeros(size(ST.data.(['sp' num2str(ss)]).gamma));
@@ -131,13 +132,22 @@ try
         err(:,ss) = mean(tmp,1);
         maxerr(:,ss) = max(tmp,[],1);
         minerr(:,ss) = min(tmp,[],1);
-        figure(h)
+        figure(h1)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
         plot(time,err(:,ss),'k-',time,minerr(:,ss),'r:',time,maxerr(:,ss),'r:')
         box on
         grid on
         xlabel('Time (s)','Interpreter','latex','FontSize',16)
         ylabel('Energy conservation (\%)','Interpreter','latex','FontSize',16)
+        
+        figure(h2)
+        subplot(double(ST.params.simulation.num_species),1,double(ss))
+        Erel = (299792458.0)^2*ST.params.species.m(ss)*mean(ST.data.(['sp' num2str(ss)]).gamma,1)/abs(ST.params.species.q(ss));
+        plot(time,Erel)
+        box on
+        grid on
+        xlabel('Time (s)','Interpreter','latex','FontSize',16)
+        ylabel('$\langle \gamma m_0 c^2 \rangle$','Interpreter','latex','FontSize',16)
     end
 catch
     error('Something went wrong: energyConservation')

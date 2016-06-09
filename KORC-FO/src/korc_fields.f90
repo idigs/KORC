@@ -36,6 +36,32 @@ subroutine analytical_magnetic_field(F,Y,B)
 end subroutine analytical_magnetic_field
 
 
+subroutine analytical_electric_field(F,Y,E)
+    implicit none
+	TYPE(FIELDS), INTENT(IN) :: F
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: E ! E(1,:) = Ex, E(2,:) = Ey, E(3,:) = Ez
+	REAL(rp) :: Ezeta, eta
+	INTEGER(ip) pp ! Iterator(s)
+	INTEGER(ip) :: ss
+
+	ss = SIZE(Y,2)
+
+!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,Ezeta,eta) SHARED(F,Y,E)
+!$OMP DO
+	do pp=1,ss
+		eta = Y(1,pp)/F%AB%Ro		
+		Ezeta = F%AB%Eo/( 1.0_rp + eta*cos(Y(2,pp)) )
+
+		E(1,pp) = Ezeta*cos(Y(3,pp))
+		E(2,pp) = -Ezeta*sin(Y(3,pp))
+		E(3,pp) = 0.0_rp
+	end do
+!$OMP END DO
+!$OMP END PARALLEL
+end subroutine analytical_electric_field
+
+
 subroutine mean_F_field(F,Fo,op_field)
 	implicit none
 	TYPE(FIELDS), INTENT(IN) :: F

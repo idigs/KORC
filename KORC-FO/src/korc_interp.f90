@@ -262,6 +262,8 @@ subroutine interp_analytical_field(prtcls,F)
 	call cart_to_tor(prtcls%X, F%AB%Ro, prtcls%Y)
 
 	call analytical_magnetic_field(F,prtcls%Y,prtcls%B)
+
+	call analytical_electric_field(F,prtcls%Y,prtcls%E)
 end subroutine interp_analytical_field
 
 

@@ -135,6 +135,8 @@ TYPE, PRIVATE :: A_FIELD
 	REAL(rp) :: co
 	REAL(rp) :: lambda
 	REAL(rp) :: Bpo
+
+	REAL(rp) :: Eo
 END TYPE A_FIELD
 
 
@@ -152,6 +154,7 @@ TYPE, PUBLIC :: FIELDS
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: PSIp ! Poloidal flux
 	TYPE(MESH) :: X
 	REAL(rp) :: Bo ! Characteristic magnetic field
+	REAL(rp) :: Eo ! Characteristic electric field
 	REAL(rp) :: Ro ! Radial position of magnetic axis
 	INTEGER, DIMENSION(3) :: dims ! dims(NR, NPHI, NZ)
 END TYPE FIELDS

@@ -311,8 +311,10 @@ subroutine initialize_fields(params,F)
 	REAL(rp) :: q_factor_at_separatrix
 	REAL(rp) :: free_param
 
+	REAL(rp) :: Eo
+
 	NAMELIST /analytic_mag_field_params/ Bo,minor_radius,major_radius,&
-			q_factor_at_separatrix,free_param
+			q_factor_at_separatrix,free_param, Eo
 
 	if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
 		! Load the parameters of the analytical magnetic field
@@ -328,6 +330,9 @@ subroutine initialize_fields(params,F)
 		F%AB%lambda = F%AB%a / F%AB%co
 		F%AB%Bpo = (F%AB%a/F%AB%Ro)*(F%AB%Bo/F%AB%qa)*(1+F%AB%co**2)/F%AB%co;
 
+		F%AB%Eo = Eo
+
+		F%Eo = F%AB%Eo
 		F%Bo = F%AB%Bo
 	else if (params%magnetic_field_model .EQ. 'EXTERNAL') then
 		! Load the magnetic field from an external HDF5 file

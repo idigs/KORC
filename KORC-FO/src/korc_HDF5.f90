@@ -726,7 +726,7 @@ subroutine save_simulation_parameters(params,spp,F)
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
 		dset = TRIM(gname) // "/Bo"
-		attr = "Characteristic (toroidal) field in T"
+		attr = "Toroidal field at the magnetic axis in T"
 		call save_to_hdf5(h5file_id,dset,F%Bo*params%cpp%magnetic_field,attr)
 
 		if (params%poloidal_flux) then
@@ -755,6 +755,14 @@ subroutine save_simulation_parameters(params,spp,F)
 			dset = TRIM(gname) // "/Bpo"
 			attr = "Poloidal magnetic field in T"
         	call save_to_hdf5(h5file_id,dset,F%AB%Bpo*params%cpp%magnetic_field,attr)
+
+			dset = TRIM(gname) // "/co"
+			attr = "Free parameter"
+        	call save_to_hdf5(h5file_id,dset,F%AB%co,attr)
+
+			dset = TRIM(gname) // "/Eo"
+			attr = "Electric field at the magnetic axis in V/m"
+			call save_to_hdf5(h5file_id,dset,F%AB%Eo*params%cpp%electric_field,attr)
 		else if (params%magnetic_field_model .EQ. 'EXTERNAL') then
 			ALLOCATE(attr_array(1))
 
@@ -801,6 +809,10 @@ subroutine save_simulation_parameters(params,spp,F)
 		dset = TRIM(gname) // "/l"
 		attr = "Characteristic length in m"
 		call save_to_hdf5(h5file_id,dset,params%cpp%length,attr)
+
+		dset = TRIM(gname) // "/v"
+		attr = "Characteristic velocity in m"
+		call save_to_hdf5(h5file_id,dset,params%cpp%velocity,attr)
 
 		dset = TRIM(gname) // "/K"
 		attr = "Characteristic kinetic energy in J"

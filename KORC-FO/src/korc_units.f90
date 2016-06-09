@@ -36,9 +36,9 @@ subroutine compute_charcs_plasma_params(params,spp,F)
 	params%cpp%charge = abs(spp(ind)%q)
 	params%cpp%length = params%cpp%velocity*params%cpp%time
 	params%cpp%energy = params%cpp%mass*(params%cpp%velocity**2)
+	params%cpp%electric_field = params%cpp%velocity*params%cpp%magnetic_field
 
 	params%cpp%density = 0.0_rp
-	params%cpp%electric_field = 0.0_rp
 	params%cpp%pressure = 0.0_rp
 	params%cpp%temperature = 0.0_rp
 end subroutine compute_charcs_plasma_params
@@ -90,6 +90,8 @@ subroutine normalize_variables(params,spp,F)
 		F%AB%Ro = F%AB%Ro/params%cpp%length
 		F%AB%lambda = F%AB%lambda/params%cpp%length
 		F%AB%Bpo = F%AB%Bpo/params%cpp%magnetic_field
+
+		F%AB%Eo = F%AB%Eo/params%cpp%electric_field
 	else
 		F%Bo = F%Bo/params%cpp%magnetic_field
 
