@@ -24,11 +24,12 @@ function cross(a,b)
 end function cross
 
 
-subroutine advance_particles_velocity(params,EB,spp,dt)
+subroutine advance_particles_velocity(params,EB,spp,dt,bool)
     implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(FIELDS), INTENT(IN) :: EB
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
+    LOGICAL, INTENT(IN) :: bool
 	REAL(rp), INTENT(IN) :: dt
 	REAL(rp) :: a, gammap, sigma, us, gamma, s ! variables of leapfrog of Vay, J.-L. PoP (2008)
 	REAL(rp), DIMENSION(3) :: U, tau, up, t ! variables of leapfrog of Vay, J.-L. PoP (2008)
@@ -48,7 +49,7 @@ subroutine advance_particles_velocity(params,EB,spp,dt)
 
 	a = spp(ii)%q*dt/spp(ii)%m
 
-!$OMP PARALLEL FIRSTPRIVATE(a,dt)&
+!$OMP PARALLEL FIRSTPRIVATE(a,dt,bool)&
 !$OMP& PRIVATE(pp,U,U_hs,tau,up,gammap,sigma,us,gamma,t,s,&
 !$OMP& b_unit,B,vpar,vperp,vec,V,kappa,Psyn,gamma_loss)&
 !$OMP& SHARED(ii,spp)
@@ -57,31 +58,33 @@ subroutine advance_particles_velocity(params,EB,spp,dt)
 			if ( spp(ii)%vars%flag(pp) .EQ. 1_idef ) then
 				!! Magnitude of magnetic field
 				B = sqrt( sum(spp(ii)%vars%B(:,pp)**2) )
-				!! Parallel unit vector
-				b_unit = spp(ii)%vars%B(:,pp)/B
 
-				!! Instantaneous guiding center
-				spp(ii)%vars%Rgc(:,pp) = spp(ii)%vars%X(:,pp)&
-				+ gamma*spp(ii)%m*cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%B(:,pp))&
-				/( spp(ii)%q*sum(spp(ii)%vars%B(:,pp)**2) )
+                if (bool) then
+				    !! Instantaneous guiding center
+				    spp(ii)%vars%Rgc(:,pp) = spp(ii)%vars%X(:,pp)&
+				    + gamma*spp(ii)%m*cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%B(:,pp))&
+				    /( spp(ii)%q*sum(spp(ii)%vars%B(:,pp)**2) )
+                end if
 
-				!! Radiation losses operator     
-		        V = sqrt( DOT_PRODUCT(spp(ii)%vars%V(:,pp), spp(ii)%vars%V(:,pp)) )
-		        vec =  cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%E(:,pp))&
-					+ spp(ii)%vars%V(:,pp)*DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp))&
-					- spp(ii)%vars%B(:,pp)*V**2
-		        kappa = &
-				ABS(spp(ii)%q)*sqrt( DOT_PRODUCT(vec,vec) )/(spp(ii)%vars%gamma(pp)*spp(ii)%m*V**3)
-		        
-		        !! Synchroton radiated power
-				Psyn = (2.0_rp/3.0_rp)*C_Ke
-				Psyn = Psyn*( (spp(ii)%q*kappa)**2 )
-				Psyn = Psyn*( (spp(ii)%vars%gamma(pp)*V)**4 )
+                if (params%radiation_losses) then
+				    !! Radiation losses operator     
+		            V = sqrt( DOT_PRODUCT(spp(ii)%vars%V(:,pp), spp(ii)%vars%V(:,pp)) )
+		            vec =  cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%E(:,pp))&
+					    + spp(ii)%vars%V(:,pp)*DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp))&
+					    - spp(ii)%vars%B(:,pp)*V**2
+		            kappa = &
+				    ABS(spp(ii)%q)*sqrt( DOT_PRODUCT(vec,vec) )/(spp(ii)%vars%gamma(pp)*spp(ii)%m*V**3)
+		            
+		            !! Synchroton radiated power
+				    Psyn = (2.0_rp/3.0_rp)*C_Ke
+				    Psyn = Psyn*( (spp(ii)%q*kappa)**2 )
+				    Psyn = Psyn*( (spp(ii)%vars%gamma(pp)*V)**4 )
 
-				spp(ii)%vars%Prad(pp) = Psyn
+				    spp(ii)%vars%Prad(pp) = Psyn
 
-				gamma_loss = - dt*Psyn/spp(ii)%m
-				!! Radiation losses operator
+				    gamma_loss = - dt*Psyn/spp(ii)%m
+				    !! Radiation losses operator
+                end if
 
 				!! Here we evolve V and gamma in time.
 				U = spp(ii)%vars%gamma(pp)*spp(ii)%vars%V(:,pp)
@@ -110,20 +113,25 @@ subroutine advance_particles_velocity(params,EB,spp,dt)
 
 				spp(ii)%vars%gamma(pp) = gamma
 		    
-				!! Parallel and perpendicular components of velocity
-				vpar = DOT_PRODUCT(spp(ii)%vars%V(:,pp), b_unit)
-				vperp =  DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)) - vpar**2
-				if ( vperp .GE. korc_zero ) then
-					vperp = sqrt( vperp )
-				else
-					vperp = 0.0_rp
-				end if
+                if (bool) then
+				    !! Parallel unit vector
+				    b_unit = spp(ii)%vars%B(:,pp)/B
 
-				!! Pitch angle
-		        spp(ii)%vars%eta(pp) = 180.0_rp*modulo(atan2(vperp,vpar), 2.0_rp*C_PI)/C_PI
+				    !! Parallel and perpendicular components of velocity
+				    vpar = DOT_PRODUCT(spp(ii)%vars%V(:,pp), b_unit)
+				    vperp =  DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)) - vpar**2
+				    if ( vperp .GE. korc_zero ) then
+					    vperp = sqrt( vperp )
+				    else
+					    vperp = 0.0_rp
+				    end if
 
-				!! Magnetic moment
-				spp(ii)%vars%mu(pp) = 0.5_rp*spp(ii)%m*(gamma*vperp)**2/B
+				    !! Pitch angle
+		            spp(ii)%vars%eta(pp) = 180.0_rp*modulo(atan2(vperp,vpar), 2.0_rp*C_PI)/C_PI
+
+				    !! Magnetic moment
+				    spp(ii)%vars%mu(pp) = 0.5_rp*spp(ii)%m*(gamma*vperp)**2/B
+                end if
 			end if
 		end do
 !$OMP END DO
@@ -145,7 +153,10 @@ subroutine advance_particles_position(params,EB,spp,dt)
 !$OMP PARALLEL PRIVATE(pp) SHARED(ii,spp,dt,params)
 !$OMP DO
 	do pp = 1,spp(ii)%ppp
-		spp(ii)%vars%X(:,pp) = spp(ii)%vars%X(:,pp) + dt*spp(ii)%vars%V(:,pp)
+        if ( spp(ii)%vars%flag(pp) .EQ. 1_idef ) then
+		    spp(ii)%vars%X(:,pp) = spp(ii)%vars%X(:,pp)&
+                                    + dt*spp(ii)%vars%V(:,pp)
+        end if
 	end do
 !$OMP END DO
 !$OMP END PARALLEL
