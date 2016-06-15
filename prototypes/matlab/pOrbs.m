@@ -69,7 +69,7 @@ function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,
 
 narginchk(8,9);
 
-% close all
+close all
 
 ST = struct;
 % Script parameters
@@ -886,6 +886,42 @@ end
 
 end
 
+function E = analyticalE(X)
+% Analytical magnetic field
+% X is a vector X(1)=x, X(2)=y, X(3)=z.
+
+narginchk(1,2);
+
+% Parameters of the analytical magnetic field
+Eo = 2.0;
+Ro = 1.695; % Major radius in meters.
+% Parameters of the analytical magnetic field
+
+% Toroidal coordinates
+% r = radius, theta = poloidal angle, zeta = toroidal angle
+r = sqrt( (sqrt(X(1)^2 + X(2)^2) - Ro)^2 + X(3)^2 );
+theta = atan2(X(3),sqrt(X(1)^2 + X(2)^2) - Ro);
+if theta < 0
+    theta = theta + 2*pi;
+end
+zeta = atan2(X(1),X(2));
+if zeta < 0
+    zeta = zeta + 2*pi;
+end
+% Toroidal coordinates
+
+% Poloidal magnetic field
+eta = r/Ro;
+Ezeta = Eo/( 1 + eta*cos(theta) );
+
+Ex = Ezeta*cos(zeta);
+Ey = -Ezeta*sin(zeta);
+Ez = 0;
+
+E = [Ex,Ey,Ez];
+
+end
+
 % LEAP-FROG PARTICLE PUSHER
 
 function PP = particlePusherLeapfrog(ST)
@@ -921,6 +957,9 @@ EK = zeros(1,ST.params.numSnapshots); % kinetic energy
 
 P = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 
+W2 = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
+W3 = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
+
 % Normalization
 X(1,:) = ST.params.Xo/ST.norm.l;
 v(1,:) = ST.params.vo/ST.params.c;
@@ -932,7 +971,7 @@ else
     B = interpMagField(ST,X(1,:)*ST.norm.l)/ST.Bo;
 end
 dt = ST.params.dt*ST.norm.wc;
-E = ST.E/(ST.Bo*ST.params.c);
+E = analyticalE(X(1,:)*ST.norm.l)/(ST.Bo*ST.params.c);
 
 Kc = ST.params.Kc/(ST.norm.m*ST.norm.l*ST.params.c^2/ST.norm.q^2);
 % Normalization
@@ -990,6 +1029,7 @@ if ST.params.cadence == 1
         
         if ST.analytical
             B = analyticalB(X(ii,:)*ST.norm.l)/ST.Bo;
+            E = analyticalE(X(ii,:)*ST.norm.l)/(ST.Bo*ST.params.c);
         else
             B = interpMagField(ST,X(ii,:)*ST.norm.l)/ST.Bo;
         end
@@ -1061,6 +1101,7 @@ else
                         
             if ST.analytical
                 B = analyticalB(XX*ST.norm.l)/ST.Bo;
+                E = analyticalE(XX*ST.norm.l)/(ST.Bo*ST.params.c);
             else
                 B = interpMagField(ST,XX*ST.norm.l)/ST.Bo;
             end
@@ -1145,28 +1186,22 @@ else
         
         R(ii,:) = X(ii,:) + gamma*m*cross(v_half_step,B)/(q*sum(B.^2));
         
-        % Calculating the position and magnetic field at the time level n+1
-        X_hs = X(ii,:) + 0.5*dt*v(ii,:);
-        
-        if ST.analytical
-            B = analyticalB(X_hs*ST.norm.l)/ST.Bo;
-        else
-            B = interpMagField(ST,X_hs*ST.norm.l)/ST.Bo;
-        end
-        
         B_mag = sqrt(sum(B.^2));
         b = B/B_mag;
         vpar(ii) = v(ii,:)*b';
         vperp(ii) = sqrt( v(ii,:)*v(ii,:)' - vpar(ii)^2 );
         mu(ii) = m*gamma^2*vperp(ii)^2/(2*B_mag);
 
-        vmag = sqrt( sum(v(ii,:).^2) );
-        aux =  cross(v(ii,:),E) + v(ii,:)*sum(v(ii,:).*B) - B*vmag^2;
-        k(ii) = abs(q)*sqrt( sum(aux.^2) )/(gamma*m*vmag^3);
+        k(ii) = curv;
         
         % Synchroton radiated power
-        P(ii) = (2/3)*( Kc*q^2*gamma^4*vmag^4*k(ii)^2 );
+        P(ii) = Psyn;
         % Synchroton radiated power
+        
+        W2(ii) = sum(E.^2) + sum(cross(v_half_step,B).*E);
+        W3(ii) = gamma_half_step^2*( sum(E.*v_half_step)^2 -...
+                sum((E + cross(v_half_step,B)).^2) );
+        
     end
 end
 
