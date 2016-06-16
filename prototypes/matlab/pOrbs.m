@@ -957,6 +957,10 @@ EK = zeros(1,ST.params.numSnapshots); % kinetic energy
 
 P = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 
+fL = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
+f2 = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
+f3 = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
+
 W2 = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 W3 = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 
@@ -967,13 +971,16 @@ q = ST.params.q/ST.norm.q;
 m = ST.params.m/ST.norm.m;
 if ST.analytical
     B = analyticalB(X(1,:)*ST.norm.l)/ST.Bo;
+    E = analyticalE(X(1,:)*ST.norm.l)/(ST.Bo*ST.params.c);
 else
     B = interpMagField(ST,X(1,:)*ST.norm.l)/ST.Bo;
+    E = [0,0,0];
 end
 dt = ST.params.dt*ST.norm.wc;
-E = analyticalE(X(1,:)*ST.norm.l)/(ST.Bo*ST.params.c);
 
 Kc = ST.params.Kc/(ST.norm.m*ST.norm.l*ST.params.c^2/ST.norm.q^2);
+
+ep = ST.params.ep*(ST.norm.m^2*ST.params.c^3/(ST.norm.q^3*ST.Bo));
 % Normalization
 
 % initial velocity at time level t = 0
@@ -1001,6 +1008,18 @@ P(1) = (2/3)*( Kc*q^2*gamma^4*vmag^4*k(1)^2 );
 % Synchroton radiated power
 % % % % % % % % % % % % % % % % % % 
 
+vfL = q*( E + cross(v(1,:),B) );
+
+vf2 = (q^4/(6*pi*ep*m^2))*( sum(E.*v(1,:))*E + cross(E,B) + ...
+    cross(B,cross(B,v(1,:))) );
+
+vf3 = ( gamma^2*q^4/(6*pi*ep*m^2) )*( sum(E.*v(1,:)).^2 - ...
+    sum(vfL.^2)/q^2)*v(1,:);
+
+fL(1) = sqrt( sum(vfL.^2) );
+f2(1) = sqrt( sum(vf2.^2) );
+f3(1) = sqrt( sum(vf3.^2) );
+
 % initial half-step for position
 DT = 0.5*dt;
 V = v(1,:);
@@ -1010,69 +1029,65 @@ XX = X(1,:) + DT*V;
 
 a = q*dt/m;
 
-if ST.params.cadence == 1
-    u(1,:) = U;
-    v(1,:) = V;
-    
-    for ii=2:ST.params.numSnapshots
-        zeta_previous = atan2(X(ii-1,2),X(ii-1,1));
-        if zeta_previous < 0
-            zeta_previous = zeta_previous + 2*pi;
-        end
-        
-        X(ii,:) = X(ii-1,:) + dt*v(ii-1,:);
-        
-        zeta_current = atan2(X(ii,2),X(ii,1));
-        if zeta_current < 0
-            zeta_current = zeta_current + 2*pi;
-        end
+for ii=2:ST.params.numSnapshots
+    for jj=1:ST.params.cadence
         
         if ST.analytical
-            B = analyticalB(X(ii,:)*ST.norm.l)/ST.Bo;
-            E = analyticalE(X(ii,:)*ST.norm.l)/(ST.Bo*ST.params.c);
+            B = analyticalB(XX*ST.norm.l)/ST.Bo;
+            E = analyticalE(XX*ST.norm.l)/(ST.Bo*ST.params.c);
         else
-            B = interpMagField(ST,X(ii,:)*ST.norm.l)/ST.Bo;
+            B = interpMagField(ST,XX*ST.norm.l)/ST.Bo;
         end
         
-        U_half_step = u(ii-1,:) + 0.5*a*(E + cross(v(ii-1,:),B));
+        U_half_step = U + 0.5*a*(E + cross(V,B));
+        
+        % % % % % % % % % % % % % % %
+        % Radiation losses operator
+        vmag = sqrt( sum(V.^2) );
+        aux =  cross(V,E) + V*sum(V.*B) - B*vmag^2;
+        curv = abs(q)*sqrt( sum(aux.^2) )/(gamma*m*vmag^3);
+        
+        % Synchroton radiated power
+        Psyn = (2/3)*( Kc*q^2*gamma^4*vmag^4*curv^2 );
+        % Synchroton radiated power
+        
+        gamma_loss = - dt*Psyn/m;
+        % Radiation losses operator
+        % % % % % % % % % % % % % % %
         
         tau = 0.5*q*dt*B/m;
         up = U_half_step + 0.5*a*E;
         gammap = sqrt(1 + sum(up.^2));
         sigma = gammap^2 - sum(tau.^2);
         us = sum(up.*tau); % variable 'u^*' in paper
-        gamma = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(sum(tau.^2) + sum(us.^2))) );
+        gamma = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(sum(tau.^2) + us^2)) );
+        % % % % % % % % % % % % % % %
+        % Radiation losses operator
+        %             gamma = gamma + gamma_loss;
+        % Radiation losses operator
+        % % % % % % % % % % % % % % %
         t = tau/gamma;
         s = 1/(1+sum(t.^2)); % variable 's' in paper
         
-        u(ii,:) = s*(up + sum(up.*t)*t + cross(up,t));
-        v(ii,:) = u(ii,:)/gamma;
-        EK(ii) = gamma;
+        U = s*(up + sum(up.*t)*t + cross(up,t));
+        V = U/sqrt(1 + sum(U.^2));
         
+        zeta_previous = atan2(XX(2),XX(1));
+        if zeta_previous < 0
+            zeta_previous = zeta_previous + 2*pi;
+        end
         
-        gamma_half_step = sqrt(1 + sum(U_half_step.^2));
-        v_half_step = U_half_step/gamma_half_step;
+        XX = XX + dt*V;
         
-        R(ii,:) = X(ii,:) + gamma*m*cross(v_half_step,B)/(q*sum(B.^2));
-        
-        B_mag = sqrt(sum(B.^2));
-        b = B/B_mag;
-        vpar(ii) = v(ii,:)*b';
-        vperp(ii) = sqrt( v(ii,:)*v(ii,:)' - vpar(ii)^2 );
-        mu(ii) = m*gamma^2*vperp(ii)^2/(2*B_mag);
-        
-        % Curvature and torsion
-        acc = (q/m)*cross(v_half_step,B)/sqrt(1 + sum(U_half_step.^2)); % acceleration
-        aux = sum( cross(v_half_step,acc).^2 );
-        k(ii) = sqrt( aux )/sqrt( sum(v_half_step.^2) )^3;
-        dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(U_half_step.^2)); % d(acc)/dt
-        T(ii) = det([v_half_step; acc; dacc])/aux;
-        % Curvature and torsion
+        zeta_current = atan2(XX(2),XX(1));
+        if zeta_current < 0
+            zeta_current = zeta_current + 2*pi;
+        end
         
         if abs(zeta_previous - zeta_current) > 6
             
-            POINCARE.R = [POINCARE.R; sqrt(X(ii,1).^2 + X(ii,2).^2)];
-            POINCARE.Z = [POINCARE.Z; X(ii,3)];
+            POINCARE.R = [POINCARE.R; sqrt(XX(1).^2 + XX(2).^2)];
+            POINCARE.Z = [POINCARE.Z; XX(3)];
             
             gamma_p = sqrt(1 + sum(U_half_step.^2));
             v_p = U_half_step/gamma_p;
@@ -1094,116 +1109,46 @@ if ST.params.cadence == 1
         end
     end
     
-else
-       
-    for ii=2:ST.params.numSnapshots
-        for jj=1:ST.params.cadence
-                        
-            if ST.analytical
-                B = analyticalB(XX*ST.norm.l)/ST.Bo;
-                E = analyticalE(XX*ST.norm.l)/(ST.Bo*ST.params.c);
-            else
-                B = interpMagField(ST,XX*ST.norm.l)/ST.Bo;
-            end
-            
-            U_half_step = U + 0.5*a*(E + cross(V,B));
-            
-            % % % % % % % % % % % % % % %
-            % Radiation losses operator           
-            vmag = sqrt( sum(V.^2) );
-            aux =  cross(V,E) + V*sum(V.*B) - B*vmag^2;
-            curv = abs(q)*sqrt( sum(aux.^2) )/(gamma*m*vmag^3);
-            
-            % Synchroton radiated power
-            Psyn = (2/3)*( Kc*q^2*gamma^4*vmag^4*curv^2 );
-            % Synchroton radiated power
-            
-            gamma_loss = - dt*Psyn/m;
-            % Radiation losses operator
-            % % % % % % % % % % % % % % %
-            
-            tau = 0.5*q*dt*B/m;
-            up = U_half_step + 0.5*a*E;
-            gammap = sqrt(1 + sum(up.^2));
-            sigma = gammap^2 - sum(tau.^2);
-            us = sum(up.*tau); % variable 'u^*' in paper
-            gamma = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(sum(tau.^2) + us^2)) );
-            % % % % % % % % % % % % % % % 
-            % Radiation losses operator
-%             gamma = gamma + gamma_loss;
-            % Radiation losses operator
-            % % % % % % % % % % % % % % % 
-            t = tau/gamma;
-            s = 1/(1+sum(t.^2)); % variable 's' in paper
-            
-            U = s*(up + sum(up.*t)*t + cross(up,t));
-            V = U/sqrt(1 + sum(U.^2));
-            
-            zeta_previous = atan2(XX(2),XX(1));
-            if zeta_previous < 0
-                zeta_previous = zeta_previous + 2*pi;
-            end
-            
-            XX = XX + dt*V;
-            
-            zeta_current = atan2(XX(2),XX(1));
-            if zeta_current < 0
-                zeta_current = zeta_current + 2*pi;
-            end
-            
-            if abs(zeta_previous - zeta_current) > 6
-                
-                POINCARE.R = [POINCARE.R; sqrt(XX(1).^2 + XX(2).^2)];
-                POINCARE.Z = [POINCARE.Z; XX(3)];
-                
-                gamma_p = sqrt(1 + sum(U_half_step.^2));
-                v_p = U_half_step/gamma_p;
-                
-                B_mag = sqrt(sum(B.^2));
-                b = B/B_mag;
-                Vpar = v_p*b';
-                Vperp = sqrt( v_p*v_p' - Vpar^2 );
-                
-                % Curvature and torsion
-                acc = (q/m)*cross(v_p,B)/sqrt(1 + sum(U_half_step.^2)); % acceleration
-                aux = sum( cross(v_p,acc).^2 );
-                dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(U_half_step.^2)); % d(acc)/dt
-                % Curvature and torsion
-                
-                POINCARE.k = [POINCARE.k; sqrt( aux )/sqrt( sum(v_p.^2) )^3];
-                POINCARE.T = [POINCARE.T; det([v_p; acc; dacc])/aux];
-                POINCARE.pitch = [POINCARE.pitch; atan2(Vperp,Vpar)];
-            end
-        end
-        
-        X(ii,:) = XX; % Time level n+1/2
-        u(ii,:) = U; % Time level n+1
-        v(ii,:) = u(ii,:)/gamma; % Time level n+1
-        EK(ii) = gamma; % Time level n+1
-        
-        gamma_half_step = sqrt(1 + sum(U_half_step.^2));
-        v_half_step = U_half_step/gamma_half_step;
-        
-        R(ii,:) = X(ii,:) + gamma*m*cross(v_half_step,B)/(q*sum(B.^2));
-        
-        B_mag = sqrt(sum(B.^2));
-        b = B/B_mag;
-        vpar(ii) = v(ii,:)*b';
-        vperp(ii) = sqrt( v(ii,:)*v(ii,:)' - vpar(ii)^2 );
-        mu(ii) = m*gamma^2*vperp(ii)^2/(2*B_mag);
-
-        k(ii) = curv;
-        
-        % Synchroton radiated power
-        P(ii) = Psyn;
-        % Synchroton radiated power
-        
-        W2(ii) = sum(E.^2) + sum(cross(v_half_step,B).*E);
-        W3(ii) = gamma_half_step^2*( sum(E.*v_half_step)^2 -...
-                sum((E + cross(v_half_step,B)).^2) );
-        
-    end
+    X(ii,:) = XX; % Time level n+1/2
+    u(ii,:) = U; % Time level n+1
+    v(ii,:) = u(ii,:)/gamma; % Time level n+1
+    EK(ii) = gamma; % Time level n+1
+    
+    gamma_half_step = sqrt(1 + sum(U_half_step.^2));
+    v_half_step = U_half_step/gamma_half_step;
+    
+    R(ii,:) = X(ii,:) + gamma*m*cross(v_half_step,B)/(q*sum(B.^2));
+    
+    B_mag = sqrt(sum(B.^2));
+    b = B/B_mag;
+    vpar(ii) = v(ii,:)*b';
+    vperp(ii) = sqrt( v(ii,:)*v(ii,:)' - vpar(ii)^2 );
+    mu(ii) = m*gamma^2*vperp(ii)^2/(2*B_mag);
+    
+    k(ii) = curv;
+    
+    % Synchroton radiated power
+    P(ii) = Psyn;
+    % Synchroton radiated power
+    
+    vfL = q*( E + cross(v_half_step,B) );
+    
+    vf2 = (q^4/(6*pi*ep*m^2))*( sum(E.*v_half_step)*E + cross(E,B) + ...
+        cross(B,cross(B,v_half_step)) );
+    
+    vf3 = ( gamma_half_step^2*q^4/(6*pi*ep*m^2) )*( sum(E.*v_half_step).^2 - ...
+        sum(vfL.^2)/q^2)*v_half_step;
+    
+    fL(ii) = sqrt( sum(vfL.^2) );
+    f2(ii) = sqrt( sum(vf2.^2) );
+    f3(ii) = sqrt( sum(vf3.^2) );
+    
+    W2(ii) = sum(E.^2) + sum(cross(v_half_step,B).*E);
+    W3(ii) = gamma_half_step^2*( sum(E.*v_half_step)^2 -...
+        sum((E + cross(v_half_step,B)).^2) );
+    
 end
+
 
 
 
@@ -1332,13 +1277,34 @@ if ST.opt
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
     ylabel('Synchroton power loss','Interpreter','latex','FontSize',16)
     title(PP.method,'Interpreter','latex','FontSize',16)
-%     subplot(2,1,1)
-%     plot(time, PP.P)
-%     box on
-%     grid on
-%     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-%     ylabel('Synchroton power loss','Interpreter','latex','FontSize',16)
-%     title(PP.method,'Interpreter','latex','FontSize',16)
+    %     subplot(2,1,1)
+    %     plot(time, PP.P)
+    %     box on
+    %     grid on
+    %     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    %     ylabel('Synchroton power loss','Interpreter','latex','FontSize',16)
+    %     title(PP.method,'Interpreter','latex','FontSize',16)
+    
+    figure
+    subplot(3,1,1)
+    plot(time, fL)
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$|F_L |$','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    subplot(3,1,2)
+    plot(time, f2)
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$|f_2 |$','Interpreter','latex','FontSize',16)
+    subplot(3,1,3)
+    plot(time, f3)
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$|f_3 |$','Interpreter','latex','FontSize',16)
 end
 
 if ST.opt
