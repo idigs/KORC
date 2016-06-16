@@ -44,7 +44,7 @@ function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,
 %
 % EXAMPLES:
 % USING ANALYTICAL MAGNETIC FIELD
-% ST = pOrbs('','','2D',[],[2E6,1E-2,10],[-1,1],[1.8,0,0],[0.99,0],true);
+% ST = pOrbs('','','2D',[],[1E6,1E-2,10],[-1,1],[2.0,0,0],[0.99,170],true);
 % USING TABULATED FIELDS OF THE ANALYTICAL MAGNETIC FIELD
 % ST = pOrbs('fields/CHEBYSHEV.dat','VMEC','2D',[60,60],[1E3,1.16E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
 % USING XPAND FILES OF ITER FIELDS
@@ -961,8 +961,8 @@ fL = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 f2 = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 f3 = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 
-W2 = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
-W3 = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
+WL = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
+WR = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 
 % Normalization
 X(1,:) = ST.params.Xo/ST.norm.l;
@@ -977,9 +977,6 @@ else
     E = [0,0,0];
 end
 dt = ST.params.dt*ST.norm.wc;
-
-Kc = ST.params.Kc/(ST.norm.m*ST.norm.l*ST.params.c^2/ST.norm.q^2);
-
 ep = ST.params.ep*(ST.norm.m^2*ST.params.c^3/(ST.norm.q^3*ST.Bo));
 % Normalization
 
@@ -991,7 +988,7 @@ R(1,:) = X(1,:) + gamma*m*cross(v(1,:),B)/(q*sum(B.^2));
 EK(1) = gamma;
 
 % % % % % % % % % % % % % % % % % % 
-B_mag = sqrt(sum(B.^2));
+B_mag = sqrt(B*B');
 b = B/B_mag;
 vpar(1) = v(1,:)*b';
 vperp(1) = sqrt( v(1,:)*v(1,:)' - vpar(1)^2 );
@@ -1004,21 +1001,20 @@ k(1) = abs(q)*sqrt( sum(aux.^2) )/(gamma*m*vmag^3);
 % Curvature and torsion
 
 % Synchroton radiated power
-P(1) = (2/3)*( Kc*q^2*gamma^4*vmag^4*k(1)^2 );
+P(1) = 0.0;
 % Synchroton radiated power
 % % % % % % % % % % % % % % % % % % 
 
-vfL = q*( E + cross(v(1,:),B) );
-
-vf2 = (q^4/(6*pi*ep*m^2))*( sum(E.*v(1,:))*E + cross(E,B) + ...
+% % % Leap-frog scheme for the radiation damping force % % %
+F2 = ( q^3/(6*pi*ep*m^2) )*( (E*v(1,:)')*E + cross(E,B) +...
     cross(B,cross(B,v(1,:))) );
+vec = E + cross(v(1,:),B);
+F3 = ( gamma^2*q^3/(6*pi*ep*m^2) )*( (E*v(1,:)')^2 - vec*vec' )*v(1,:);
+% % % Leap-frog scheme for the radiation damping force % % %
 
-vf3 = ( gamma^2*q^4/(6*pi*ep*m^2) )*( sum(E.*v(1,:)).^2 - ...
-    sum(vfL.^2)/q^2)*v(1,:);
-
-fL(1) = sqrt( sum(vfL.^2) );
-f2(1) = sqrt( sum(vf2.^2) );
-f3(1) = sqrt( sum(vf3.^2) );
+fL(1) = abs(q)*sqrt( vec*vec' );
+f2(1) = abs(q)*sqrt( F2*F2' );
+f3(1) = abs(q)*sqrt( F3*F3' );
 
 % initial half-step for position
 DT = 0.5*dt;
@@ -1039,38 +1035,31 @@ for ii=2:ST.params.numSnapshots
             B = interpMagField(ST,XX*ST.norm.l)/ST.Bo;
         end
         
-        U_half_step = U + 0.5*a*(E + cross(V,B));
+        U_R = U;
+        U_L = U;
+        
+        % % % Leap-frog scheme for Lorentz force % % %
+        U_hs = U_L + 0.5*a*(E + cross(V,B));
         
         % % % % % % % % % % % % % % %
         % Radiation losses operator
-        vmag = sqrt( sum(V.^2) );
-        aux =  cross(V,E) + V*sum(V.*B) - B*vmag^2;
-        curv = abs(q)*sqrt( sum(aux.^2) )/(gamma*m*vmag^3);
-        
-        % Synchroton radiated power
-        Psyn = (2/3)*( Kc*q^2*gamma^4*vmag^4*curv^2 );
-        % Synchroton radiated power
-        
-        gamma_loss = - dt*Psyn/m;
+        vmag = sqrt( V*V' );
+        aux =  cross(V,E) + V*(V*B') - B*vmag^2;
+        curv = abs(q)*sqrt( aux*aux' )/(gamma*m*vmag^3);
         % Radiation losses operator
         % % % % % % % % % % % % % % %
         
         tau = 0.5*q*dt*B/m;
-        up = U_half_step + 0.5*a*E;
-        gammap = sqrt(1 + sum(up.^2));
-        sigma = gammap^2 - sum(tau.^2);
-        us = sum(up.*tau); % variable 'u^*' in paper
-        gamma = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(sum(tau.^2) + us^2)) );
-        % % % % % % % % % % % % % % %
-        % Radiation losses operator
-        %             gamma = gamma + gamma_loss;
-        % Radiation losses operator
-        % % % % % % % % % % % % % % %
+        up = U_hs + 0.5*a*E;
+        gammap = sqrt(1 + up*up');
+        sigma = gammap^2 - tau*tau';
+        us = up*tau'; % variable 'u^*' in paper
+        gamma = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(tau*tau' + us^2)) );
         t = tau/gamma;
-        s = 1/(1+sum(t.^2)); % variable 's' in paper
+        s = 1/(1 + t*t'); % variable 's' in paper
         
-        U = s*(up + sum(up.*t)*t + cross(up,t));
-        V = U/sqrt(1 + sum(U.^2));
+        U_L = s*(up + (up*t')*t + cross(up,t));
+        V = U_L/gamma;
         
         zeta_previous = atan2(XX(2),XX(1));
         if zeta_previous < 0
@@ -1078,6 +1067,25 @@ for ii=2:ST.params.numSnapshots
         end
         
         XX = XX + dt*V;
+        % % % Leap-frog scheme for Lorentz force % % %
+        
+        % % % Leap-frog scheme for the radiation damping force % % %
+        U_eff = 0.5*(U_L + U);
+        gamma_eff = sqrt(1 + U_eff*U_eff');
+        V_eff = U_eff/gamma_eff;
+        
+        F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
+            cross(B,cross(B,V_eff)) );
+        vec = E + cross(V_eff,B);
+        F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
+        
+        U_R = U_R + a*( F2 + F3 );
+        
+        U = U_L + U_R - U;
+        gamma = sqrt( 1 + U*U' );
+        V = U/gamma;
+        % % % Leap-frog scheme for the radiation damping force % % %
+        
         
         zeta_current = atan2(XX(2),XX(1));
         if zeta_current < 0
@@ -1089,37 +1097,27 @@ for ii=2:ST.params.numSnapshots
             POINCARE.R = [POINCARE.R; sqrt(XX(1).^2 + XX(2).^2)];
             POINCARE.Z = [POINCARE.Z; XX(3)];
             
-            gamma_p = sqrt(1 + sum(U_half_step.^2));
-            v_p = U_half_step/gamma_p;
+            b = B/sqrt(B*B');
+            Vpar = V*b';
+            Vperp = sqrt( V*V' - Vpar^2 );
             
-            B_mag = sqrt(sum(B.^2));
-            b = B/B_mag;
-            Vpar = v_p*b';
-            Vperp = sqrt( v_p*v_p' - Vpar^2 );
-            
-            % Curvature and torsion
-            acc = (q/m)*cross(v_p,B)/sqrt(1 + sum(U_half_step.^2)); % acceleration
-            aux = sum( cross(v_p,acc).^2 );
-            dacc = (q/m)*cross(acc,B)/sqrt(1 + sum(U_half_step.^2)); % d(acc)/dt
-            % Curvature and torsion
-            
-            POINCARE.k = [POINCARE.k; sqrt( aux )/sqrt( sum(v_p.^2) )^3];
-            POINCARE.T = [POINCARE.T; det([v_p; acc; dacc])/aux];
+            POINCARE.k = [POINCARE.k; curv];
+            POINCARE.T = [POINCARE.T; 0.0];
             POINCARE.pitch = [POINCARE.pitch; atan2(Vperp,Vpar)];
         end
     end
     
     X(ii,:) = XX; % Time level n+1/2
     u(ii,:) = U; % Time level n+1
-    v(ii,:) = u(ii,:)/gamma; % Time level n+1
+    v(ii,:) = V; % Time level n+1
     EK(ii) = gamma; % Time level n+1
     
-    gamma_half_step = sqrt(1 + sum(U_half_step.^2));
-    v_half_step = U_half_step/gamma_half_step;
+    gamma_half_step = sqrt(1 + U_hs*U_hs');
+    v_half_step = U_hs/gamma_half_step;
     
-    R(ii,:) = X(ii,:) + gamma*m*cross(v_half_step,B)/(q*sum(B.^2));
+    R(ii,:) = X(ii,:) + gamma*m*cross(v_half_step,B)/(q*(B*B'));
     
-    B_mag = sqrt(sum(B.^2));
+    B_mag = sqrt(B*B');
     b = B/B_mag;
     vpar(ii) = v(ii,:)*b';
     vperp(ii) = sqrt( v(ii,:)*v(ii,:)' - vpar(ii)^2 );
@@ -1128,23 +1126,20 @@ for ii=2:ST.params.numSnapshots
     k(ii) = curv;
     
     % Synchroton radiated power
-    P(ii) = Psyn;
+    P(ii) = 0.0;
     % Synchroton radiated power
     
-    vfL = q*( E + cross(v_half_step,B) );
+    fL(ii) = abs(q)*sqrt( vec*vec' );
+    f2(ii) = abs(q)*sqrt( F2*F2' );
+    f3(ii) = abs(q)*sqrt( F3*F3' );
     
-    vf2 = (q^4/(6*pi*ep*m^2))*( sum(E.*v_half_step)*E + cross(E,B) + ...
-        cross(B,cross(B,v_half_step)) );
+    F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
+        cross(B,cross(B,V_eff)) );
+    vec = E + cross(V_eff,B);
+    F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
     
-    vf3 = ( gamma_half_step^2*q^4/(6*pi*ep*m^2) )*( sum(E.*v_half_step).^2 - ...
-        sum(vfL.^2)/q^2)*v_half_step;
-    
-    fL(ii) = sqrt( sum(vfL.^2) );
-    f2(ii) = sqrt( sum(vf2.^2) );
-    f3(ii) = sqrt( sum(vf3.^2) );
-    
-    W2(ii) = sum(E.^2) + sum(cross(v_half_step,B).*E);
-    W3(ii) = gamma_half_step^2*( sum(E.*v_half_step)^2 -...
+    WL(ii) = q*(E*V_eff');
+    WR(ii) = gamma_half_step^2*( sum(E.*v_half_step)^2 -...
         sum((E + cross(v_half_step,B)).^2) );
     
 end
@@ -1153,7 +1148,6 @@ end
 
 
 if ST.opt
-    
     time = ST.time;%/(2*pi/ST.params.wc);
     
     % Relative error in energy conservation
