@@ -16,7 +16,7 @@ energyConservation(ST);
 
 % poloidalPlaneDistributions(ST,25);
 
-angularMomentum(ST);
+% angularMomentum(ST);
 
 % changeOfMagneticField(ST)
 
@@ -127,7 +127,7 @@ set(h3,'name','Radiated power','numbertitle','off')
 try
     for ss=1:ST.params.simulation.num_species
         tmp = zeros(size(ST.data.(['sp' num2str(ss)]).gamma));
-        for ii=1:ST.params.species.ppp(ss)
+        for ii=1:ST.params.species.ppp(ss)*ST.params.simulation.nmpi
             tmp(ii,:) = ...
                 100*( ST.data.(['sp' num2str(ss)]).gamma(ii,1) - ...
                 ST.data.(['sp' num2str(ss)]).gamma(ii,:) )./ST.data.(['sp' num2str(ss)]).gamma(ii,1);
@@ -154,8 +154,10 @@ try
         
         figure(h3)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
-        Prad = abs(mean(ST.data.(['sp' num2str(ss)]).Prad,1));
-        plot(time,Prad)
+        Prad = mean(abs(ST.data.(['sp' num2str(ss)]).Prad),1);
+        minPrad = min( abs(ST.data.(['sp' num2str(ss)]).Prad), [], 1 );
+        maxPrad = max( abs(ST.data.(['sp' num2str(ss)]).Prad), [], 1 );
+        plot(time,Prad,'k',time,minPrad,'r:',time,maxPrad,'r:')
         box on
         grid on
         xlabel('Time (s)','Interpreter','latex','FontSize',16)
