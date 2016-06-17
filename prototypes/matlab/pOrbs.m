@@ -955,8 +955,6 @@ vperp = zeros(1,ST.params.numSnapshots); % perpendicular velocity
 mu = zeros(1,ST.params.numSnapshots); % instantaneous magnetic moment
 EK = zeros(1,ST.params.numSnapshots); % kinetic energy
 
-P = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
-
 fL = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 f2 = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 f3 = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
@@ -1060,13 +1058,6 @@ for ii=2:ST.params.numSnapshots
         
         U_L = s*(up + (up*t')*t + cross(up,t));
         V = U_L/gamma;
-        
-        zeta_previous = atan2(XX(2),XX(1));
-        if zeta_previous < 0
-            zeta_previous = zeta_previous + 2*pi;
-        end
-        
-        XX = XX + dt*V;
         % % % Leap-frog scheme for Lorentz force % % %
         
         % % % Leap-frog scheme for the radiation damping force % % %
@@ -1084,8 +1075,16 @@ for ii=2:ST.params.numSnapshots
         U = U_L + U_R - U;
         gamma = sqrt( 1 + U*U' );
         V = U/gamma;
+        
+%         U = U_L;
+%         V = U_L/gamma;
         % % % Leap-frog scheme for the radiation damping force % % %
         
+        zeta_previous = atan2(XX(2),XX(1));
+        if zeta_previous < 0
+            zeta_previous = zeta_previous + 2*pi;
+        end
+        XX = XX + dt*V;
         
         zeta_current = atan2(XX(2),XX(1));
         if zeta_current < 0
@@ -1125,10 +1124,6 @@ for ii=2:ST.params.numSnapshots
     
     k(ii) = curv;
     
-    % Synchroton radiated power
-    P(ii) = 0.0;
-    % Synchroton radiated power
-    
     fL(ii) = abs(q)*sqrt( vec*vec' );
     f2(ii) = abs(q)*sqrt( F2*F2' );
     f3(ii) = abs(q)*sqrt( F3*F3' );
@@ -1139,8 +1134,8 @@ for ii=2:ST.params.numSnapshots
     F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
     
     WL(ii) = q*(E*V_eff');
-    WR(ii) = gamma_half_step^2*( sum(E.*v_half_step)^2 -...
-        sum((E + cross(v_half_step,B)).^2) );
+    WR(ii) = ( q^4/(6*pi*ep*m^2) )*( E*E' + cross(V_eff,B)*E' +...
+        gamma_eff^2*( (E*V_eff')^2 - vec*vec' ) );
     
 end
 
@@ -1264,22 +1259,6 @@ if ST.opt
     title(PP.method,'Interpreter','latex','FontSize',16)
     
     figure
-%     subplot(2,1,1)
-    plot(time, PP.P/(ST.params.m*ST.params.c^2))
-    box on
-    grid on
-    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-    ylabel('Synchroton power loss','Interpreter','latex','FontSize',16)
-    title(PP.method,'Interpreter','latex','FontSize',16)
-    %     subplot(2,1,1)
-    %     plot(time, PP.P)
-    %     box on
-    %     grid on
-    %     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-    %     ylabel('Synchroton power loss','Interpreter','latex','FontSize',16)
-    %     title(PP.method,'Interpreter','latex','FontSize',16)
-    
-    figure
     subplot(3,1,1)
     plot(time, fL)
     box on
@@ -1299,6 +1278,21 @@ if ST.opt
     grid on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
     ylabel('$|f_3 |$','Interpreter','latex','FontSize',16)
+    
+    figure
+    subplot(2,1,1)
+    plot(time, WL)
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$|W_L |$','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    subplot(2,1,2)
+    plot(time, WR)
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$|W_R |$','Interpreter','latex','FontSize',16)
 end
 
 if ST.opt

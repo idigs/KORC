@@ -155,7 +155,6 @@ subroutine initialize_particles(params,F,spp)
 		ALLOCATE( spp(ii)%vars%eta(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%mu(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%Prad(spp(ii)%ppp) )
-		ALLOCATE( spp(ii)%vars%tau(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%flag(spp(ii)%ppp) )
 
 		! Initialize to zero
@@ -169,7 +168,6 @@ subroutine initialize_particles(params,F,spp)
 		spp(ii)%vars%eta = 0.0_rp
 		spp(ii)%vars%mu = 0.0_rp
 		spp(ii)%vars%Prad = 0.0_rp
-		spp(ii)%vars%tau = 0.0_rp
 		spp(ii)%vars%flag = 1_idef
 	end do
 

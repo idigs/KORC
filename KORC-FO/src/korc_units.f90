@@ -17,13 +17,13 @@ subroutine compute_charcs_plasma_params(params,spp,F)
 	INTEGER :: ind
 
 	params%cpp%velocity = C_C
-	params%cpp%magnetic_field = F%Bo
+	params%cpp%Bo = F%Bo
 
 	! Non-relativistic cyclotron frequency
-	spp(:)%wc = ( abs(spp(:)%q)/spp(:)%m )*params%cpp%magnetic_field
+	spp(:)%wc = ( abs(spp(:)%q)/spp(:)%m )*params%cpp%Bo
 
 	! Relativistic cyclotron frequency
-	spp(:)%wc_r =  abs(spp(:)%q)*params%cpp%magnetic_field/( spp(:)%gammao*spp(:)%m )
+	spp(:)%wc_r =  abs(spp(:)%q)*params%cpp%Bo/( spp(:)%gammao*spp(:)%m )
 
 
 	ind = maxloc(spp(:)%wc,1) ! Index to maximum cyclotron frequency
@@ -36,7 +36,7 @@ subroutine compute_charcs_plasma_params(params,spp,F)
 	params%cpp%charge = abs(spp(ind)%q)
 	params%cpp%length = params%cpp%velocity*params%cpp%time
 	params%cpp%energy = params%cpp%mass*(params%cpp%velocity**2)
-	params%cpp%electric_field = params%cpp%velocity*params%cpp%magnetic_field
+	params%cpp%Eo = params%cpp%velocity*params%cpp%Bo
 
 	params%cpp%density = 0.0_rp
 	params%cpp%pressure = 0.0_rp
@@ -83,24 +83,24 @@ subroutine normalize_variables(params,spp,F)
 
 !	Normalize electromagnetic fields
 	if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
-		F%Bo = F%Bo/params%cpp%magnetic_field
+		F%Bo = F%Bo/params%cpp%Bo
 
-		F%AB%Bo = F%AB%Bo/params%cpp%magnetic_field
+		F%AB%Bo = F%AB%Bo/params%cpp%Bo
 		F%AB%a = F%AB%a/params%cpp%length
 		F%AB%Ro = F%AB%Ro/params%cpp%length
 		F%AB%lambda = F%AB%lambda/params%cpp%length
-		F%AB%Bpo = F%AB%Bpo/params%cpp%magnetic_field
+		F%AB%Bpo = F%AB%Bpo/params%cpp%Bo
 
-		F%AB%Eo = F%AB%Eo/params%cpp%electric_field
+		F%AB%Eo = F%AB%Eo/params%cpp%Eo
 	else
-		F%Bo = F%Bo/params%cpp%magnetic_field
+		F%Bo = F%Bo/params%cpp%Bo
 
-		if (ALLOCATED(F%B%R)) F%B%R = F%B%R/params%cpp%magnetic_field
-		if (ALLOCATED(F%B%PHI)) F%B%PHI = F%B%PHI/params%cpp%magnetic_field
-		if (ALLOCATED(F%B%Z)) F%B%Z = F%B%Z/params%cpp%magnetic_field
+		if (ALLOCATED(F%B%R)) F%B%R = F%B%R/params%cpp%Bo
+		if (ALLOCATED(F%B%PHI)) F%B%PHI = F%B%PHI/params%cpp%Bo
+		if (ALLOCATED(F%B%Z)) F%B%Z = F%B%Z/params%cpp%Bo
 
 		if (ALLOCATED(F%PSIp)) F%PSIp = &
-					F%PSIp/(params%cpp%magnetic_field*(params%cpp%length**2))
+					F%PSIp/(params%cpp%Bo*(params%cpp%length**2))
 		if (ALLOCATED(F%PSIp)) F%Ro = F%Ro/params%cpp%length
 
 		F%X%R = F%X%R/params%cpp%length
@@ -109,8 +109,6 @@ subroutine normalize_variables(params,spp,F)
 	end if
 
 !	Normalize other variables
-		C_Ke = &
-		C_Ke/( params%cpp%mass*params%cpp%length*(params%cpp%velocity**2)/(params%cpp%charge**2) )
 !		.
 !		.
 end subroutine normalize_variables

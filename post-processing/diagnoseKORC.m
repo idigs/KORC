@@ -10,11 +10,11 @@ ST.data = loadData(ST);
 
 energyConservation(ST);
 
-pitchAngleDiagnostic(ST,100);
+% pitchAngleDiagnostic(ST,100);
 
-magneticMomentDiagnostic(ST,100);
+% magneticMomentDiagnostic(ST,100);
 
-poloidalPlaneDistributions(ST,25);
+% poloidalPlaneDistributions(ST,25);
 
 angularMomentum(ST);
 
@@ -120,7 +120,10 @@ time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
 
 h1 = figure;
 h2 = figure;
+h3 = figure;
 set(h1,'name','Energy conservation','numbertitle','off')
+set(h2,'name','Relativistic energy','numbertitle','off')
+set(h3,'name','Radiated power','numbertitle','off')
 try
     for ss=1:ST.params.simulation.num_species
         tmp = zeros(size(ST.data.(['sp' num2str(ss)]).gamma));
@@ -148,6 +151,15 @@ try
         grid on
         xlabel('Time (s)','Interpreter','latex','FontSize',16)
         ylabel('$\langle \gamma m_0 c^2 \rangle$','Interpreter','latex','FontSize',16)
+        
+        figure(h3)
+        subplot(double(ST.params.simulation.num_species),1,double(ss))
+        Prad = abs(mean(ST.data.(['sp' num2str(ss)]).Prad,1));
+        plot(time,Prad)
+        box on
+        grid on
+        xlabel('Time (s)','Interpreter','latex','FontSize',16)
+        ylabel('$\langle P_{rad} \rangle$','Interpreter','latex','FontSize',16)
     end
 catch
     error('Something went wrong: energyConservation')

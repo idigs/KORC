@@ -12,7 +12,7 @@ module constants
 	REAL(rp), PARAMETER :: C_KB = 1.380650E-23_rp !Boltzmann constant in Joules/Kelvin
 	REAL(rp), PARAMETER :: C_C = 299792458.0_rp !Light speed in m/s
 	REAL(rp), PARAMETER :: C_MU = 4.0_rp*C_PI*1E-7_rp !Vacuum permeability in N/A^2
-	REAL(rp), PARAMETER :: C_EPSILON = 1.0_rp/(C_MU*C_C**2)!8.854E-12_rp !Vacuum permittivity in C^2/(N*m^2)
-	REAL(rp) :: C_Ke = 1.0_rp/(4.0_rp*C_PI*C_EPSILON) ! Coulomb constant in N*m^2/C^2
+	REAL(rp), PARAMETER :: C_E0 = 1.0_rp/(C_MU*C_C**2) !8.854E-12_rp !Vacuum permittivity in C^2/(N*m^2)
+	REAL(rp), PARAMETER :: C_Ke = 1.0_rp/(4.0_rp*C_PI*C_E0) ! Coulomb constant in N*m^2/C^2
 
 end module constants

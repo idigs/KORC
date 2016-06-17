@@ -665,6 +665,14 @@ subroutine save_simulation_parameters(params,spp,F)
 		attr = "Number of mpi processes"
 		call save_to_hdf5(h5file_id,dset,params%mpi_params%nmpi,attr)
 
+		dset = TRIM(gname) // "/rad_loss"
+		attr = "Radiation losses included in simulation"
+		if(params%radiation_losses) then
+			call save_to_hdf5(h5file_id,dset,1_idef,attr)
+		else
+			call save_to_hdf5(h5file_id,dset,0_idef,attr)
+		end if
+
 		DEALLOCATE(idata)
 		DEALLOCATE(attr_array)
 
@@ -727,7 +735,7 @@ subroutine save_simulation_parameters(params,spp,F)
 
 		dset = TRIM(gname) // "/Bo"
 		attr = "Toroidal field at the magnetic axis in T"
-		call save_to_hdf5(h5file_id,dset,F%Bo*params%cpp%magnetic_field,attr)
+		call save_to_hdf5(h5file_id,dset,F%Bo*params%cpp%Bo,attr)
 
 		if (params%poloidal_flux) then
 			dset = TRIM(gname) // "/Ro"
@@ -754,7 +762,7 @@ subroutine save_simulation_parameters(params,spp,F)
 
 			dset = TRIM(gname) // "/Bpo"
 			attr = "Poloidal magnetic field in T"
-        	call save_to_hdf5(h5file_id,dset,F%AB%Bpo*params%cpp%magnetic_field,attr)
+        	call save_to_hdf5(h5file_id,dset,F%AB%Bpo*params%cpp%Bo,attr)
 
 			dset = TRIM(gname) // "/co"
 			attr = "Free parameter"
@@ -762,7 +770,7 @@ subroutine save_simulation_parameters(params,spp,F)
 
 			dset = TRIM(gname) // "/Eo"
 			attr = "Electric field at the magnetic axis in V/m"
-			call save_to_hdf5(h5file_id,dset,F%AB%Eo*params%cpp%electric_field,attr)
+			call save_to_hdf5(h5file_id,dset,F%AB%Eo*params%cpp%Eo,attr)
 		else if (params%magnetic_field_model .EQ. 'EXTERNAL') then
 			ALLOCATE(attr_array(1))
 
@@ -824,11 +832,11 @@ subroutine save_simulation_parameters(params,spp,F)
 
 		dset = TRIM(gname) // "/E"
 		attr = "Characteristic electric field in V/m"
-		call save_to_hdf5(h5file_id,dset,params%cpp%electric_field,attr)
+		call save_to_hdf5(h5file_id,dset,params%cpp%Eo,attr)
 
 		dset = TRIM(gname) // "/B"
 		attr = "Characteristic magnetic field in T"
-		call save_to_hdf5(h5file_id,dset,params%cpp%magnetic_field,attr)
+		call save_to_hdf5(h5file_id,dset,params%cpp%Bo,attr)
 
 		dset = TRIM(gname) // "/P"
 		attr = "Characteristic pressure in Pa"
@@ -906,21 +914,18 @@ subroutine save_simulation_outputs(params,spp,F,it)
 	    call rsave_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%eta)
 
 	    dset = "mu"
-		units = params%cpp%mass*(params%cpp%velocity**2)/params%cpp%magnetic_field
+		units = params%cpp%mass*(params%cpp%velocity**2)/params%cpp%Bo
 	    call rsave_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%mu)
 
 	    dset = "Prad"
 		units = params%cpp%mass*(params%cpp%velocity**3)/params%cpp%length
 	    call rsave_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%Prad)
 
-!	    dset = "tau"
-!	    call rsave_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%tau)
-
 		dset = "flag"
 		call isave_1d_array_to_hdf5(subgroup_id,dset, spp(ii)%vars%flag)
 
 !	    dset = "B"
-!		units = params%cpp%magnetic_field
+!		units = params%cpp%Bo
 !	    call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%B)
 
         call h5gclose_f(subgroup_id, h5error)

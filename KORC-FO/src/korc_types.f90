@@ -62,8 +62,8 @@ TYPE, PUBLIC :: CHARCS_PARAMS
 	REAL(rp) :: mass
 	REAL(rp) :: charge
 	REAL(rp) :: density
-	REAL(rp) :: electric_field
-	REAL(rp) :: magnetic_field
+	REAL(rp) :: Eo ! Characteristic electric field
+	REAL(rp) :: Bo ! Characteristic magnetic field
 	REAL(rp) :: energy
 	REAL(rp) :: pressure
 	REAL(rp) :: temperature
@@ -102,7 +102,6 @@ TYPE, PUBLIC :: PARTICLES
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: eta ! Pitch angle
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: mu ! Instantaneous magnetic moment
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Prad ! Radiated power (in Watts)
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: tau ! Torsion
 	INTEGER, DIMENSION(:), ALLOCATABLE :: flag
 END TYPE PARTICLES
 

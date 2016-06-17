@@ -31,14 +31,20 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
     LOGICAL, INTENT(IN) :: bool
 	REAL(rp), INTENT(IN) :: dt
+	REAL(rp) :: B, vpar, vperp, tmp ! diagnostics and temporary variables
+	REAL(rp) :: Prad, gamma_os
 	REAL(rp) :: a, gammap, sigma, us, gamma, s ! variables of leapfrog of Vay, J.-L. PoP (2008)
-	REAL(rp), DIMENSION(3) :: U, tau, up, t ! variables of leapfrog of Vay, J.-L. PoP (2008)
-	REAL(rp), DIMENSION(3) :: U_hs
-	REAL(rp), DIMENSION(3) :: vec, b_unit ! variables for diagnostics
-	REAL(rp) :: B, vpar, vperp ! variables for diagnostics
-	REAL(rp) :: V, kappa, Psyn, gamma_loss
+	REAL(rp), DIMENSION(3) :: U_L, U_hs, tau, up, t
+	REAL(rp), DIMENSION(3) :: U, U_R, U_os, V_os, F1, F2, F3
+	REAL(rp), DIMENSION(3) :: vec, b_unit ! diagnostics and temporary variables
+	REAL(rp) :: Ke, E0 ! Dimensionless physical quantities
 	INTEGER :: ii, pp ! Iterators
 
+
+!	Ke = &
+!	C_Ke/( params%cpp%mass*params%cpp%length*(params%cpp%velocity**2)/(params%cpp%charge**2) )
+	E0 = &
+	C_E0*(params%cpp%mass**2*params%cpp%velocity**3)/(params%cpp%charge**3*params%cpp%Bo)
 
 	do ii = 1,params%num_species
 		if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
@@ -49,68 +55,72 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 
 	a = spp(ii)%q*dt/spp(ii)%m
 
-!$OMP PARALLEL FIRSTPRIVATE(a,dt,bool)&
-!$OMP& PRIVATE(pp,U,U_hs,tau,up,gammap,sigma,us,gamma,t,s,&
-!$OMP& b_unit,B,vpar,vperp,vec,V,kappa,Psyn,gamma_loss)&
+!$OMP PARALLEL FIRSTPRIVATE(a,dt,E0,bool)&
+!$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gammap,sigma,us,gamma,t,s,&
+!$OMP& U_R,U_os,V_os,gamma_os,&
+!$OMP& tmp,b_unit,B,vpar,vperp,vec,Prad)&
 !$OMP& SHARED(ii,spp)
 !$OMP DO
 		do pp=1,spp(ii)%ppp
 			if ( spp(ii)%vars%flag(pp) .EQ. 1_idef ) then
+				
+				U = spp(ii)%vars%gamma(pp)*spp(ii)%vars%V(:,pp)
+
 				!! Magnitude of magnetic field
-				B = sqrt( sum(spp(ii)%vars%B(:,pp)**2) )
+				B = sqrt( DOT_PRODUCT(spp(ii)%vars%B(:,pp),spp(ii)%vars%B(:,pp)) )
 
                 if (bool) then
 				    !! Instantaneous guiding center
 				    spp(ii)%vars%Rgc(:,pp) = spp(ii)%vars%X(:,pp)&
 				    + gamma*spp(ii)%m*cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%B(:,pp))&
-				    /( spp(ii)%q*sum(spp(ii)%vars%B(:,pp)**2) )
+				    /( spp(ii)%q*B**2 )
                 end if
 
-                if (params%radiation_losses .OR. bool) then
-				    !! Radiation losses operator     
-		            V = sqrt( DOT_PRODUCT(spp(ii)%vars%V(:,pp), spp(ii)%vars%V(:,pp)) )
-		            vec =  cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%E(:,pp))&
-					    + spp(ii)%vars%V(:,pp)*DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp))&
-					    - spp(ii)%vars%B(:,pp)*V**2
-		            kappa = &
-				    ABS(spp(ii)%q)*sqrt( DOT_PRODUCT(vec,vec) )/(spp(ii)%vars%gamma(pp)*spp(ii)%m*V**3)
-		            
-		            !! Synchroton radiated power
-				    Psyn = (2.0_rp/3.0_rp)*C_Ke
-				    Psyn = Psyn*( (spp(ii)%q*kappa)**2 )
-				    Psyn = Psyn*( (spp(ii)%vars%gamma(pp)*V)**4 )
-
-				    spp(ii)%vars%Prad(pp) = Psyn
-
-				    gamma_loss = - dt*Psyn/spp(ii)%m
-				    !! Radiation losses operator
-                end if
-
-				!! Here we evolve V and gamma in time.
-				U = spp(ii)%vars%gamma(pp)*spp(ii)%vars%V(:,pp)
-				U_hs = U + &
+				! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
+				U_L = U
+				U_hs = U_L + &
 						0.5_rp*a*( spp(ii)%vars%E(:,pp) + &
-						cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)) )
-		        
+						cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)) )		        
 				tau = 0.5_rp*dt*spp(ii)%q*spp(ii)%vars%B(:,pp)/spp(ii)%m
 				up = U_hs + 0.5_rp*a*spp(ii)%vars%E(:,pp)
-				gammap = sqrt( 1.0_rp + sum(up**2) )
-				sigma = gammap**2 - sum(tau**2)
-				! us = sum(up*tau) ! variable 'u^*' in Vay, J.-L. PoP (2008)
+				gammap = sqrt( 1.0_rp + DOT_PRODUCT(up,up) )
+				sigma = gammap**2 - DOT_PRODUCT(tau,tau)
 				us = DOT_PRODUCT(up,tau) ! variable 'u^*' in Vay, J.-L. PoP (2008)
-				gamma = sqrt( 0.5_rp*(sigma + sqrt( sigma**2 + 4.0_rp*(sum(tau**2) + us**2) )) )
+				gamma = sqrt( 0.5_rp*(sigma + &
+						sqrt( sigma**2 + 4.0_rp*(DOT_PRODUCT(tau,tau) + us**2) )) )
+				t = tau/gamma
+				s = 1.0_rp/(1.0_rp + DOT_PRODUCT(t,t)) ! variable 's' in Vay, J.-L. PoP (2008)
+		        U_L = s*( up + DOT_PRODUCT(up,t)*t + cross(up,t) )
+				! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
 
-				!! Radiation losses
-				if (params%radiation_losses) then
-					gamma = gamma + gamma_loss
+                if (params%radiation_losses) then
+					! ! ! LEAP-FROG SCHEME FOR THE RADIATION DAMPING FORCE ! ! !
+					U_R = U
+
+					U_os = 0.5_rp*(U_L + U)
+					gamma_os = sqrt(1.0_rp + DOT_PRODUCT(U_os,U_os))
+					V_os = U_os/gamma_os
+
+					tmp = (spp(ii)%q**3)/( 6.0_rp*C_PI*E0*(spp(ii)%m**2) )
+
+					F2 = tmp*( DOT_PRODUCT(spp(ii)%vars%E(:,pp),V_os)*spp(ii)%vars%E(:,pp) + &
+						cross(spp(ii)%vars%E(:,pp),spp(ii)%vars%B(:,pp)) + &
+						cross(spp(ii)%vars%B(:,pp),cross(spp(ii)%vars%B(:,pp),V_os)) )
+		    		vec = spp(ii)%vars%E(:,pp) + cross(V_os,spp(ii)%vars%B(:,pp))
+		    		F3 = ( tmp*(gamma_os**2) )*( DOT_PRODUCT(spp(ii)%vars%E(:,pp),V_os)**2 - &
+						DOT_PRODUCT(vec,vec) )*V_os
+		    
+		    		U_R = U_R + a*( F2 + F3 )
+		    
+					U = U_L + U_R - U
+					gamma = sqrt( 1.0_rp + DOT_PRODUCT(U,U) )
+					! ! ! LEAP-FROG SCHEME FOR THE RADIATION DAMPING FORCE ! ! !
+				else
+					U = U_L
 				end if
 
-				t = tau/gamma
-				s = 1.0_rp/(1.0_rp + sum(t**2)) ! variable 's' in Vay, J.-L. PoP (2008)
 
-		        U = s*( up + sum(up*t)*t + cross(up,t) )
 		        spp(ii)%vars%V(:,pp) = U/gamma
-
 				spp(ii)%vars%gamma(pp) = gamma
 		    
                 if (bool) then
@@ -131,6 +141,18 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 
 				    !! Magnetic moment
 				    spp(ii)%vars%mu(pp) = 0.5_rp*spp(ii)%m*(gamma*vperp)**2/B
+
+					!! Radiated power
+					tmp = (spp(ii)%q**4)/( 6.0_rp*C_PI*E0*(spp(ii)%m**2) )
+
+					vec = spp(ii)%vars%E(:,pp) + &
+					cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp))
+
+					spp(ii)%vars%Prad(pp) = &
+					tmp*( DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%E(:,pp)) + &
+					DOT_PRODUCT(cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)),spp(ii)%vars%E(:,pp)) +&
+					spp(ii)%vars%gamma(pp)**2*( DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%V(:,pp))**2 -&
+					DOT_PRODUCT(vec,vec) ) )
                 end if
 			end if
 		end do
