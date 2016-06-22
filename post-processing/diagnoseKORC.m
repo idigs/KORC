@@ -16,7 +16,7 @@ energyConservation(ST);
 
 % poloidalPlaneDistributions(ST,25);
 
-% angularMomentum(ST);
+angularMomentum(ST);
 
 % changeOfMagneticField(ST)
 
@@ -141,7 +141,7 @@ try
         box on
         grid on
         xlabel('Time (s)','Interpreter','latex','FontSize',16)
-        ylabel('Energy conservation (\%)','Interpreter','latex','FontSize',16)
+        ylabel('$\Delta E/E_0$ (\%)','Interpreter','latex','FontSize',16)
         
         figure(h2)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
@@ -244,7 +244,7 @@ end
 % colormap(jet)
 
 h2 = figure
-set(h2,'name','Statistical moments','numbertitle','off')
+set(h2,'name','Statistical moments pitch angle','numbertitle','off')
 for ii=1:ST.params.simulation.num_species
     figure(h2)
     subplot(4,1,1)
@@ -572,6 +572,7 @@ for ss=1:ST.params.simulation.num_species
     err = zeros(1,ST.params.simulation.num_snapshots);
     minerr = zeros(1,ST.params.simulation.num_snapshots);
     maxerr = zeros(1,ST.params.simulation.num_snapshots);
+    
     for ii=1:ST.params.simulation.num_snapshots
         X = 1E2*squeeze( ST.data.(['sp' num2str(ss)]).X(:,:,ii) );
         V = 1E2*squeeze( ST.data.(['sp' num2str(ss)]).V(:,:,ii) );

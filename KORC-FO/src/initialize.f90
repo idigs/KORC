@@ -323,14 +323,13 @@ subroutine initialize_fields(params,F)
 		F%AB%Bo = Bo
 		F%AB%a = minor_radius
 		F%AB%Ro = major_radius
+		F%Ro = major_radius
 		F%AB%qa = q_factor_at_separatrix
 		F%AB%co = free_param
 		F%AB%lambda = F%AB%a / F%AB%co
 		F%AB%Bpo = (F%AB%a/F%AB%Ro)*(F%AB%Bo/F%AB%qa)*(1+F%AB%co**2)/F%AB%co;
 
-		F%AB%Eo = Eo
-
-		F%Eo = F%AB%Eo
+		F%Eo = Eo
 		F%Bo = F%AB%Bo
 	else if (params%magnetic_field_model .EQ. 'EXTERNAL') then
 		! Load the magnetic field from an external HDF5 file

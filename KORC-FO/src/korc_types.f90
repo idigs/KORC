@@ -134,8 +134,6 @@ TYPE, PRIVATE :: A_FIELD
 	REAL(rp) :: co
 	REAL(rp) :: lambda
 	REAL(rp) :: Bpo
-
-	REAL(rp) :: Eo
 END TYPE A_FIELD
 
 

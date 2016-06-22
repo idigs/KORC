@@ -88,10 +88,11 @@ subroutine normalize_variables(params,spp,F)
 		F%AB%Bo = F%AB%Bo/params%cpp%Bo
 		F%AB%a = F%AB%a/params%cpp%length
 		F%AB%Ro = F%AB%Ro/params%cpp%length
+		F%Ro = F%Ro/params%cpp%length
 		F%AB%lambda = F%AB%lambda/params%cpp%length
 		F%AB%Bpo = F%AB%Bpo/params%cpp%Bo
 
-		F%AB%Eo = F%AB%Eo/params%cpp%Eo
+		F%Eo = F%Eo/params%cpp%Eo
 	else
 		F%Bo = F%Bo/params%cpp%Bo
 

@@ -750,11 +750,11 @@ subroutine save_simulation_parameters(params,spp,F)
 
 			dset = TRIM(gname) // "/Ro"
 			attr = "Major radius in m"
-        	call save_to_hdf5(h5file_id,dset,F%AB%Ro*params%cpp%length,attr)
+        	call save_to_hdf5(h5file_id,dset,F%Ro*params%cpp%length,attr)
 
 			dset = TRIM(gname) // "/qa"
 			attr = "Safety factor at minor radius"
-        	call save_to_hdf5(h5file_id,dset,F%AB%Ro*params%cpp%length,attr)
+        	call save_to_hdf5(h5file_id,dset,F%AB%qa,attr)
 
 			dset = TRIM(gname) // "/lambda"
 			attr = "Parameter lamda in m"
@@ -770,7 +770,7 @@ subroutine save_simulation_parameters(params,spp,F)
 
 			dset = TRIM(gname) // "/Eo"
 			attr = "Electric field at the magnetic axis in V/m"
-			call save_to_hdf5(h5file_id,dset,F%AB%Eo*params%cpp%Eo,attr)
+			call save_to_hdf5(h5file_id,dset,F%Eo*params%cpp%Eo,attr)
 		else if (params%magnetic_field_model .EQ. 'EXTERNAL') then
 			ALLOCATE(attr_array(1))
 
