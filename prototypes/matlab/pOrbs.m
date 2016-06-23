@@ -1,4 +1,4 @@
-function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,vo_params,opt)
+function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,vo,opt)
 % Script to calculate particle orbits using either a relativistic modified
 % leapfrog method or Matlab ODEs solvers.
 %
@@ -112,7 +112,8 @@ end
 
 % Initial position and velocity of tracer, in SI units
 ST.params.Xo = xo; % Initial position
-ST.params.vo_params = vo_params; % vo_params = [velocity magnitude, pitch angle]
+vo(1) = sqrt(1 - (ST.params.me*ST.params.c^2/(vo(1)*ST.params.qe))^2);
+ST.params.vo_params = vo; % vo_params = [velocity magnitude, pitch angle]
 [ST.params.vo, ST.params.vpar, ST.params.vperp] = initializeVelocity(ST);
 
 % Particle's parameters
@@ -155,7 +156,7 @@ ST.PP = particlePusherLeapfrog(ST);
 if ST.opt
     PoincarePlots(ST);
 end
-ST.PP.angularMomentum = DiegosInvariants(ST);
+% ST.PP.angularMomentum = DiegosInvariants(ST);
 
 munlock
 
@@ -1008,6 +1009,11 @@ F2 = ( q^3/(6*pi*ep*m^2) )*( (E*v(1,:)')*E + cross(E,B) +...
     cross(B,cross(B,v(1,:))) );
 vec = E + cross(v(1,:),B);
 F3 = ( gamma^2*q^3/(6*pi*ep*m^2) )*( (E*v(1,:)')^2 - vec*vec' )*v(1,:);
+
+
+WL(1) = q*(E*v(1,:)');
+WR(1) = ( q^4/(6*pi*ep*m^2) )*( E*E' + cross(v(1,:),B)*E' +...
+    gamma^2*( (E*v(1,:)')^2 - vec*vec' ) );
 % % % Leap-frog scheme for the radiation damping force % % %
 
 fL(1) = abs(q)*sqrt( vec*vec' );
@@ -1280,19 +1286,26 @@ if ST.opt
     ylabel('$|f_3 |$','Interpreter','latex','FontSize',16)
     
     figure
-    subplot(2,1,1)
+    subplot(3,1,1)
     plot(time, WL)
     box on
     grid on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-    ylabel('$|W_L |$','Interpreter','latex','FontSize',16)
+    ylabel('$|W_L|$','Interpreter','latex','FontSize',16)
     title(PP.method,'Interpreter','latex','FontSize',16)
-    subplot(2,1,2)
+    subplot(3,1,2)
     plot(time, WR)
     box on
     grid on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-    ylabel('$|W_R |$','Interpreter','latex','FontSize',16)
+    ylabel('$|W_R|$','Interpreter','latex','FontSize',16)
+    subplot(3,1,3)
+    plot(time, abs(WR./WL))
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$|W_R/W_L|$','Interpreter','latex','FontSize',16)
+    disp(['Mean value: ' num2str(mean(WR./WL))])
 end
 
 if ST.opt

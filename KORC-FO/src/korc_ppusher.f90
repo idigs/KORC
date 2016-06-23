@@ -153,6 +153,8 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 					DOT_PRODUCT(cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)),spp(ii)%vars%E(:,pp)) +&
 					spp(ii)%vars%gamma(pp)**2*( DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%V(:,pp))**2 -&
 					DOT_PRODUCT(vec,vec) ) )
+
+                    spp(ii)%vars%Pin(pp) =  spp(ii)%q*DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%V(:,pp))
                 end if
 			end if
 		end do

@@ -57,8 +57,6 @@ program main
 	call advance_particles_position(params,EB,spp,0.5_rp*params%dt)
 
 	do it=1,params%t_steps
-!		call advance_particles_velocity(params,EB,spp,params%dt,.FALSE.)
-!		call advance_particles_position(params,EB,spp,params%dt)
 		if ( modulo(it,params%output_cadence) .EQ. 0_ip ) then
             call advance_particles_velocity(params,EB,spp,params%dt,.TRUE.)
 		    call advance_particles_position(params,EB,spp,params%dt)

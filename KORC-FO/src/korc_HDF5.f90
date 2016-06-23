@@ -921,6 +921,10 @@ subroutine save_simulation_outputs(params,spp,F,it)
 		units = params%cpp%mass*(params%cpp%velocity**3)/params%cpp%length
 	    call rsave_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%Prad)
 
+	    dset = "Pin"
+		units = params%cpp%mass*(params%cpp%velocity**3)/params%cpp%length
+	    call rsave_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%Pin)
+
 		dset = "flag"
 		call isave_1d_array_to_hdf5(subgroup_id,dset, spp(ii)%vars%flag)
 

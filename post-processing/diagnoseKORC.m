@@ -16,7 +16,7 @@ energyConservation(ST);
 
 % poloidalPlaneDistributions(ST,25);
 
-angularMomentum(ST);
+% angularMomentum(ST);
 
 % changeOfMagneticField(ST)
 
@@ -75,7 +75,7 @@ end
 
 
 % list = {'eta','gamma'};%,'mu','Prad','tau'};
-list = {'eta','gamma','mu','Prad'};
+list = {'eta','gamma','mu','Prad','Pin'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -121,9 +121,13 @@ time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
 h1 = figure;
 h2 = figure;
 h3 = figure;
+h4 = figure;
+h5 = figure;
 set(h1,'name','Energy conservation','numbertitle','off')
-set(h2,'name','Relativistic energy','numbertitle','off')
+% set(h2,'name','Relativistic energy','numbertitle','off')
 set(h3,'name','Radiated power','numbertitle','off')
+set(h4,'name','Input power','numbertitle','off')
+set(h5,'name','Energy gain/loss','numbertitle','off')
 try
     for ss=1:ST.params.simulation.num_species
         tmp = zeros(size(ST.data.(['sp' num2str(ss)]).gamma));
@@ -143,14 +147,14 @@ try
         xlabel('Time (s)','Interpreter','latex','FontSize',16)
         ylabel('$\Delta E/E_0$ (\%)','Interpreter','latex','FontSize',16)
         
-        figure(h2)
-        subplot(double(ST.params.simulation.num_species),1,double(ss))
-        Erel = (299792458.0)^2*ST.params.species.m(ss)*mean(ST.data.(['sp' num2str(ss)]).gamma,1)/abs(ST.params.species.q(ss));
-        plot(time,Erel)
-        box on
-        grid on
-        xlabel('Time (s)','Interpreter','latex','FontSize',16)
-        ylabel('$\langle \gamma m_0 c^2 \rangle$','Interpreter','latex','FontSize',16)
+%         figure(h2)
+%         subplot(double(ST.params.simulation.num_species),1,double(ss))
+%         Erel = (299792458.0)^2*ST.params.species.m(ss)*mean(ST.data.(['sp' num2str(ss)]).gamma,1)/abs(ST.params.species.q(ss));
+%         plot(time,Erel)
+%         box on
+%         grid on
+%         xlabel('Time (s)','Interpreter','latex','FontSize',16)
+%         ylabel('$\langle \gamma m_0 c^2 \rangle$','Interpreter','latex','FontSize',16)
         
         figure(h3)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
@@ -162,6 +166,25 @@ try
         grid on
         xlabel('Time (s)','Interpreter','latex','FontSize',16)
         ylabel('$\langle P_{rad} \rangle$','Interpreter','latex','FontSize',16)
+        
+        figure(h4)
+        subplot(double(ST.params.simulation.num_species),1,double(ss))
+        Pin = mean(abs(ST.data.(['sp' num2str(ss)]).Pin),1);
+        minPin = min( abs(ST.data.(['sp' num2str(ss)]).Pin), [], 1 );
+        maxPin = max( abs(ST.data.(['sp' num2str(ss)]).Pin), [], 1 );
+        plot(time,Pin,'k',time,minPin,'r:',time,maxPin,'r:')
+        box on
+        grid on
+        xlabel('Time (s)','Interpreter','latex','FontSize',16)
+        ylabel('$\langle P_{in} \rangle$','Interpreter','latex','FontSize',16)
+        
+        figure(h5)
+        subplot(double(ST.params.simulation.num_species),1,double(ss))
+        plot(time,Prad./Pin,'k')
+        box on
+        grid on
+        xlabel('Time (s)','Interpreter','latex','FontSize',16)
+        ylabel('$\langle P_{rad} \rangle / \langle P_{in} \rangle$','Interpreter','latex','FontSize',16)
     end
 catch
     error('Something went wrong: energyConservation')
