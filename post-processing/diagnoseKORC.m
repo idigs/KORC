@@ -8,13 +8,13 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
 % pitchAngleDiagnostic(ST,100);
 
 % magneticMomentDiagnostic(ST,100);
 
-% poloidalPlaneDistributions(ST,25);
+poloidalPlaneDistributions(ST,25);
 
 % angularMomentum(ST);
 
@@ -388,7 +388,7 @@ for ii=1:N
     end
 end
 
-barcolor = [1,0,0;0,1,0;0,0,1];
+barcolor = [1,0,0;0,1,0;0,0,1;0.5,0.5,1.0;1.0,0.2,0.2];
 
 h4 = figure;
 set(h4,'name','PDF poloidal angle','numbertitle','off')

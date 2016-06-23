@@ -45,7 +45,7 @@ subroutine analytical_electric_field(F,Y,E)
 	INTEGER(ip) pp ! Iterator(s)
 	INTEGER(ip) :: ss
 
-	if (F%Eo > 0) then
+	if (abs(F%Eo) > 0) then
 		ss = SIZE(Y,2)
 !$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,Ezeta,eta) SHARED(F,Y,E)
 !$OMP DO

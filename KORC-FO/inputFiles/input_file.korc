@@ -1,7 +1,7 @@
 &input_parameters
-	t_steps = 250000 ! 1050000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	t_steps = 32000 ! 1050000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
     dt = 0.025 ! Time step as fraction of non-relativistic gyro-period
-    output_cadence = 1250 ! 1400 for saving each 100 gyro-periods
+    output_cadence = 160 ! 1400 for saving each 100 gyro-periods
 	num_species = 5
 	radiation_losses = .TRUE.
 	magnetic_field_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
@@ -28,7 +28,7 @@
 /
 
 &analytic_mag_field_params
-	Eo = 2.0 ! In V/m
+	Eo = -2.0 ! In V/m
 	Bo = 2.19 ! In Teslas. ITER: 5.42 DIII-D: 2.19
 	minor_radius = 0.6 ! Minor radius in meters. ITER: 1.5 DIII-D: 0.5
 	major_radius = 1.695 ! Major radius in meters. ITER: 6.5 DIII-D: 1.6
