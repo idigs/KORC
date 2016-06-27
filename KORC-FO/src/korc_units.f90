@@ -114,7 +114,8 @@ subroutine normalize_variables(params,spp,F,cparams)
 	cparams%Te = cparams%Te/params%cpp%temperature ! Background electron temperature in eV
 	cparams%ne = cparams%ne/params%cpp%density! Background electron density in 1/m^3
 	if (ALLOCATED(cparams%nj)) cparams%nj = cparams%nj/params%cpp%density
-!		.
+	cparams%rD = cparams%rD/params%cpp%length
+	cparams%re = cparams%re/params%cpp%length
 !		.
 end subroutine normalize_variables
 

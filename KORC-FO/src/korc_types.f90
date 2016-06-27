@@ -163,6 +163,9 @@ TYPE, PUBLIC :: COLLISION_PARAMS
 	REAL(rp) :: ne! Background electron density in 1/m^3
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zj ! Atomic number of each impurity: Z=1 for D, Z=10 for Ne
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: nj ! Impurity densities
+
+	REAL(rp) :: rD ! Debye length
+	REAL(rp) :: re ! Classical electron radius
 END TYPE COLLISION_PARAMS
 
 

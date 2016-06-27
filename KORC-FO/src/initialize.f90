@@ -381,6 +381,10 @@ subroutine initialize_collision_params(params,cparams)
 	cparams%Zj = Zj
 	cparams%nj = nj
 
+	cparams%rD = SQRT( C_E0*cparams%Te/(cparams%ne*C_E**2) )
+	cparams%re = C_E**2/( 4.0_rp*C_PI*C_E0*C_ME*C_C**2 )
+
+
 	DEALLOCATE(Zj)
 	DEALLOCATE(nj)
 end subroutine initialize_collision_params

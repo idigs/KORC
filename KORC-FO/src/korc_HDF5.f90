@@ -883,6 +883,16 @@ subroutine save_simulation_parameters(params,spp,F,cparams)
 		units = params%cpp%density
 		call rsave_1d_array_to_hdf5(h5file_id,dset,units*cparams%nj,attr_array)
 
+		dset = TRIM(gname) // "/rD"
+		attr = "Debye length in m"
+		units = params%cpp%length
+		call save_to_hdf5(h5file_id,dset,units*cparams%rD,attr)
+
+		dset = TRIM(gname) // "/re"
+		attr = "Classical electron radius in m"
+		units = params%cpp%length
+		call save_to_hdf5(h5file_id,dset,units*cparams%re,attr)
+
 		call h5gclose_f(group_id, h5error)
 
 		DEALLOCATE(attr_array)
