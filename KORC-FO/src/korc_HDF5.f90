@@ -599,11 +599,12 @@ subroutine rsave_2d_array_to_hdf5(h5file_id,dset,rdata,attr)
 end subroutine rsave_2d_array_to_hdf5
 
 
-subroutine save_simulation_parameters(params,spp,F)
+subroutine save_simulation_parameters(params,spp,F,cparams)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
 	TYPE(FIELDS), INTENT(IN) :: F
+	TYPE(COLLISION_PARAMS), INTENT(IN) :: cparams
 	CHARACTER(MAX_STRING_LENGTH) :: filename
 	CHARACTER(MAX_STRING_LENGTH) :: gname
 	CHARACTER(MAX_STRING_LENGTH) :: dset
@@ -616,6 +617,7 @@ subroutine save_simulation_parameters(params,spp,F)
 	CHARACTER(MAX_STRING_LENGTH) :: attr
 	INTEGER :: h5error
 	CHARACTER(19) :: tmp_str
+	REAL(rp) :: units
 
 	write(tmp_str,'(I18)') params%mpi_params%rank
 	filename = TRIM(params%path_to_outputs) // "file_" // TRIM(ADJUSTL(tmp_str)) // ".h5"
@@ -660,6 +662,10 @@ subroutine save_simulation_parameters(params,spp,F)
 		dset = TRIM(gname) // "/num_species"
 		attr = "Number of particle species"
 		call save_to_hdf5(h5file_id,dset,params%num_species,attr)
+
+		dset = TRIM(gname) // "/num_impurity_species"
+		attr = "Number of impurity species"
+		call save_to_hdf5(h5file_id,dset,params%num_impurity_species,attr)
 
 		dset = TRIM(gname) // "/nmpi"
 		attr = "Number of mpi processes"
@@ -843,10 +849,43 @@ subroutine save_simulation_parameters(params,spp,F)
 		call save_to_hdf5(h5file_id,dset,params%cpp%pressure,attr)
 
 		dset = TRIM(gname) // "/T"
-		attr = "Characteristic plasma temperature"
+		attr = "Characteristic plasma temperature in J"
 		call save_to_hdf5(h5file_id,dset,params%cpp%temperature,attr)
 
 		call h5gclose_f(group_id, h5error)
+
+		! Collision parameters
+		gname = "collision_params"
+		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
+
+		ALLOCATE(attr_array(params%num_impurity_species))
+
+		dset = TRIM(gname) // "/num_impurity_species"
+		attr = "Number of impurity species"
+		call save_to_hdf5(h5file_id,dset,params%num_impurity_species,attr)
+
+		dset = TRIM(gname) // "/Te"
+		attr = "Background electron temperature in eV"
+		units = params%cpp%temperature/C_E
+		call save_to_hdf5(h5file_id,dset,units*cparams%Te,attr)
+
+		dset = TRIM(gname) // "/ne"
+		attr = "Background electron density in m^-3"
+		units = params%cpp%density
+		call save_to_hdf5(h5file_id,dset,units*cparams%ne,attr)
+
+		dset = TRIM(gname) // "/Zj"
+		attr_array(1) = "Atomic Number"
+		call rsave_1d_array_to_hdf5(h5file_id,dset,cparams%Zj,attr_array)
+
+		dset = TRIM(gname) // "/nj"
+		attr_array(1) = "Density of impurities in m^-3"
+		units = params%cpp%density
+		call rsave_1d_array_to_hdf5(h5file_id,dset,units*cparams%nj,attr_array)
+
+		call h5gclose_f(group_id, h5error)
+
+		DEALLOCATE(attr_array)
 
 		call h5fclose_f(h5file_id, h5error)
 	end if

@@ -44,7 +44,7 @@ function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,
 %
 % EXAMPLES:
 % USING ANALYTICAL MAGNETIC FIELD
-% ST = pOrbs('','','2D',[],[1E6,1E-2,10],[-1,1],[2.0,0,0],[0.99,170],true);
+% ST = pOrbs('','','2D',[],[1E6,1E-2,10],[-1,1],[2.0,0,0],[50E6,170],true);
 % USING TABULATED FIELDS OF THE ANALYTICAL MAGNETIC FIELD
 % ST = pOrbs('fields/CHEBYSHEV.dat','VMEC','2D',[60,60],[1E3,1.16E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
 % USING XPAND FILES OF ITER FIELDS

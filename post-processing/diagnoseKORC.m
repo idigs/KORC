@@ -8,13 +8,13 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
-% pitchAngleDiagnostic(ST,100);
+pitchAngleDiagnostic(ST,100);
 
 % magneticMomentDiagnostic(ST,100);
 
-poloidalPlaneDistributions(ST,25);
+% poloidalPlaneDistributions(ST,25);
 
 % angularMomentum(ST);
 
@@ -36,9 +36,9 @@ for ii=1:length(info.Groups)
             h5read(info.Filename,['/' name '/' subname]);
     end
 end
-
-% params.simulation.num_snapshots = 3828;
-% params.simulation.t_steps = 19140000;
+% 
+% params.simulation.num_snapshots = 968;
+% params.simulation.t_steps = 154880000;
 
 end
 

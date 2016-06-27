@@ -80,6 +80,7 @@ TYPE, PUBLIC :: KORC_PARAMS
 	INTEGER(ip) :: output_cadence
 	INTEGER(ip) :: num_snapshots
 	INTEGER :: num_species
+	INTEGER :: num_impurity_species
 	INTEGER :: pic_algorithm
 	LOGICAL :: radiation_losses
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
@@ -123,7 +124,6 @@ TYPE, PUBLIC :: SPECIES
 	REAL(rp) :: Ro
 	REAL(rp) :: Zo
 	REAL(rp) :: r
-	! Here go the parameters for collisions, replenishment, weighting... 
 END TYPE SPECIES
 
 
@@ -156,6 +156,14 @@ TYPE, PUBLIC :: FIELDS
 	REAL(rp) :: Ro ! Radial position of magnetic axis
 	INTEGER, DIMENSION(3) :: dims ! dims(NR, NPHI, NZ)
 END TYPE FIELDS
+
+
+TYPE, PUBLIC :: COLLISION_PARAMS
+	REAL(rp) :: Te ! Background electron temperature in eV
+	REAL(rp) :: ne! Background electron density in 1/m^3
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zj ! Atomic number of each impurity: Z=1 for D, Z=10 for Ne
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: nj ! Impurity densities
+END TYPE COLLISION_PARAMS
 
 
 PUBLIC :: ALLOCATE_FIELDS_ARRAYS, DEALLOCATE_FIELDS_ARRAYS

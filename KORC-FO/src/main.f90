@@ -15,6 +15,7 @@ program main
 	TYPE(KORC_PARAMS) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE :: spp
 	TYPE(FIELDS) :: EB
+	TYPE(COLLISION_PARAMS) :: cparams
 	INTEGER(ip) :: it ! Iterator(s)
 	REAL(rp) :: t1, t2 ! variables for timing the simulation
 
@@ -29,18 +30,20 @@ program main
 
 	call initialize_particles(params,EB,spp) ! Initialize particles
 
+	call initialize_collision_params(params,cparams)
+
 	call compute_charcs_plasma_params(params,spp,EB)
 
 	call define_time_step(params)
 
-	call normalize_variables(params,spp,EB)
+	call normalize_variables(params,spp,EB,cparams)
 
 	call initialize_interpolant(params,EB)
 
 	call set_up_particles_ic(params,EB,spp)
 	! * * * INITIALIZATION STAGE * * *
 
-	call save_simulation_parameters(params,spp,EB)
+	call save_simulation_parameters(params,spp,EB,cparams)
 
 	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
 	! *** BEYOND THIS POINT VARIABLES ARE DIMENSIONLESS ***
@@ -77,7 +80,7 @@ program main
 	call finalize_interpolant(params)
 
 	! DEALLOCATION OF VARIABLES
-	call deallocate_variables(params,EB,spp)
+	call deallocate_variables(params,EB,spp,cparams)
 
 	call finalize_communications(params)
 	! * * * FINALIZING SIMULATION * * * 

@@ -38,9 +38,9 @@ subroutine compute_charcs_plasma_params(params,spp,F)
 	params%cpp%energy = params%cpp%mass*(params%cpp%velocity**2)
 	params%cpp%Eo = params%cpp%velocity*params%cpp%Bo
 
-	params%cpp%density = 0.0_rp
+	params%cpp%density = 1.0_rp/params%cpp%length**3
 	params%cpp%pressure = 0.0_rp
-	params%cpp%temperature = 0.0_rp
+	params%cpp%temperature = params%cpp%energy
 end subroutine compute_charcs_plasma_params
 
 
@@ -56,11 +56,12 @@ subroutine define_time_step(params)
 end subroutine define_time_step
 
 
-subroutine normalize_variables(params,spp,F)
+subroutine normalize_variables(params,spp,F,cparams)
     implicit none
 	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
 	TYPE(FIELDS), INTENT(INOUT) :: F
+	TYPE(COLLISION_PARAMS), INTENT(INOUT) :: cparams
 	INTEGER :: ii ! Iterator(s)
 
 !	Normalize params variables
@@ -109,7 +110,10 @@ subroutine normalize_variables(params,spp,F)
 		F%X%Z = F%X%Z/params%cpp%length
 	end if
 
-!	Normalize other variables
+!	Normalize collision parameters
+	cparams%Te = cparams%Te/params%cpp%temperature ! Background electron temperature in eV
+	cparams%ne = cparams%ne/params%cpp%density! Background electron density in 1/m^3
+	if (ALLOCATED(cparams%nj)) cparams%nj = cparams%nj/params%cpp%density
 !		.
 !		.
 end subroutine normalize_variables

@@ -43,11 +43,12 @@ subroutine load_korc_params(params)
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
 	INTEGER(ip) :: output_cadence
 	INTEGER :: num_species
+	INTEGER :: num_impurity_species
 	INTEGER :: pic_algorithm
 
 	NAMELIST /input_parameters/ magnetic_field_model,poloidal_flux,&
 			magnetic_field_filename,t_steps,dt,output_cadence,num_species,&
-			pic_algorithm,radiation_losses
+			pic_algorithm,radiation_losses,num_impurity_species
 	
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=input_parameters)
@@ -59,6 +60,7 @@ subroutine load_korc_params(params)
 	params%num_snapshots = t_steps/output_cadence
 	params%dt = dt
 	params%num_species = num_species
+	params%num_impurity_species = num_impurity_species
 	params%magnetic_field_model = TRIM(magnetic_field_model)
 	params%poloidal_flux = poloidal_flux
 	params%magnetic_field_filename = TRIM(magnetic_field_filename)
@@ -351,5 +353,36 @@ subroutine initialize_fields(params,F)
 	end if
 end subroutine initialize_fields
 
+
+subroutine initialize_collision_params(params,cparams)
+	implicit none
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(COLLISION_PARAMS), INTENT(OUT) :: cparams
+	REAL(rp) :: Te ! Background electron temperature in eV
+	REAL(rp) :: ne! Background electron density in 1/m^3
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zj ! Atomic number of each impurity: Z=1 for D, Z=10 for Ne
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: nj ! Impurity densities
+
+	NAMELIST /collision_parameters/ Te,ne,Zj,nj
+
+	ALLOCATE(Zj(params%num_impurity_species))
+	ALLOCATE(nj(params%num_impurity_species))
+
+	ALLOCATE(cparams%Zj(params%num_impurity_species))
+	ALLOCATE(cparams%nj(params%num_impurity_species))
+
+	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
+	read(default_unit_open,nml=collision_parameters)
+	close(default_unit_open)
+
+	cparams%Te = Te*C_E
+	cparams%ne = ne
+
+	cparams%Zj = Zj
+	cparams%nj = nj
+
+	DEALLOCATE(Zj)
+	DEALLOCATE(nj)
+end subroutine initialize_collision_params
 
 end module initialize
