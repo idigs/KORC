@@ -160,9 +160,15 @@ END TYPE FIELDS
 
 TYPE, PUBLIC :: COLLISION_PARAMS
 	REAL(rp) :: Te ! Background electron temperature in eV
-	REAL(rp) :: ne! Background electron density in 1/m^3
+	REAL(rp) :: ne ! Background electron density in 1/m^3
+	REAL(rp) :: nH ! Background proton density in 1/m^3
+	REAL(rp) :: nef ! Free electron density in 1/m^3
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: neb ! Bound electron density in 1/m^3
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zo ! Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zj ! Atomic number of each impurity: Z=1 for D, Z=10 for Ne
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: nj ! Impurity densities
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: IZj ! Ionization energy of impurity in eV
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: Ee_IZj ! me*c^2/IZj dimensionless parameter
 
 	REAL(rp) :: rD ! Debye length
 	REAL(rp) :: re ! Classical electron radius

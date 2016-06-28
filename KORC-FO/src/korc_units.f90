@@ -35,7 +35,7 @@ subroutine compute_charcs_plasma_params(params,spp,F)
 	params%cpp%mass = spp(ind)%m
 	params%cpp%charge = abs(spp(ind)%q)
 	params%cpp%length = params%cpp%velocity*params%cpp%time
-	params%cpp%energy = params%cpp%mass*(params%cpp%velocity**2)
+	params%cpp%energy = params%cpp%mass*params%cpp%velocity**2
 	params%cpp%Eo = params%cpp%velocity*params%cpp%Bo
 
 	params%cpp%density = 1.0_rp/params%cpp%length**3
@@ -102,7 +102,7 @@ subroutine normalize_variables(params,spp,F,cparams)
 		if (ALLOCATED(F%B%Z)) F%B%Z = F%B%Z/params%cpp%Bo
 
 		if (ALLOCATED(F%PSIp)) F%PSIp = &
-					F%PSIp/(params%cpp%Bo*(params%cpp%length**2))
+					F%PSIp/(params%cpp%Bo*params%cpp%length**2)
 		if (ALLOCATED(F%PSIp)) F%Ro = F%Ro/params%cpp%length
 
 		F%X%R = F%X%R/params%cpp%length
@@ -111,12 +111,16 @@ subroutine normalize_variables(params,spp,F,cparams)
 	end if
 
 !	Normalize collision parameters
-	cparams%Te = cparams%Te/params%cpp%temperature ! Background electron temperature in eV
-	cparams%ne = cparams%ne/params%cpp%density! Background electron density in 1/m^3
+	cparams%Te = cparams%Te/params%cpp%temperature
+	cparams%ne = cparams%ne/params%cpp%density
+	cparams%nH = cparams%nH/params%cpp%density
+	cparams%nef = cparams%nef/params%cpp%density
+	cparams%neb = cparams%neb/params%cpp%density
 	if (ALLOCATED(cparams%nj)) cparams%nj = cparams%nj/params%cpp%density
+	if (ALLOCATED(cparams%IZj)) cparams%IZj = cparams%IZj/params%cpp%energy
 	cparams%rD = cparams%rD/params%cpp%length
 	cparams%re = cparams%re/params%cpp%length
-!		.
+
 end subroutine normalize_variables
 
 end module korc_units

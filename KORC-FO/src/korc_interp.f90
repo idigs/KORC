@@ -307,7 +307,7 @@ subroutine unitVectors(params,Xo,F,par,perp)
 	call RANDOM_NUMBER(rnd_num)
 	
 	do ii=1,ppp
-		par(:,ii) = B(:,ii)/sqrt( sum(B(:,ii)**2) )
+		par(:,ii) = B(:,ii)/sqrt( DOT_PRODUCT(B(:,ii),B(:,ii)) )
 		if ( ALL( ABS(par(:,ii)) .GE. korc_zero ) ) then
 			c1 = par(1,ii)**2 + par(2,ii)**2
 			

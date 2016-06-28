@@ -40,7 +40,11 @@ subroutine deallocate_variables(params,F,spp,cparams)
 	DEALLOCATE(spp)
 
 	if (ALLOCATED(cparams%Zj)) DEALLOCATE(cparams%Zj)
+	if (ALLOCATED(cparams%Zo)) DEALLOCATE(cparams%Zo)
 	if (ALLOCATED(cparams%nj)) DEALLOCATE(cparams%nj)
+	if (ALLOCATED(cparams%neb)) DEALLOCATE(cparams%neb)
+	if (ALLOCATED(cparams%IZj)) DEALLOCATE(cparams%IZj)
+	if (ALLOCATED(cparams%Zj)) DEALLOCATE(cparams%Ee_IZj)
 
     if (params%magnetic_field_model .EQ. 'EXTERNAL') then
         call DEALLOCATE_FIELDS_ARRAYS(F)

@@ -36,9 +36,9 @@ for ii=1:length(info.Groups)
             h5read(info.Filename,['/' name '/' subname]);
     end
 end
-% 
-% params.simulation.num_snapshots = 968;
-% params.simulation.t_steps = 154880000;
+
+params.simulation.num_snapshots = 100;
+params.simulation.t_steps = 16000000;
 
 end
 

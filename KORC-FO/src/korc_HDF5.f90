@@ -874,14 +874,38 @@ subroutine save_simulation_parameters(params,spp,F,cparams)
 		units = params%cpp%density
 		call save_to_hdf5(h5file_id,dset,units*cparams%ne,attr)
 
+		dset = TRIM(gname) // "/nH"
+		attr = "Background proton density in m^-3"
+		units = params%cpp%density
+		call save_to_hdf5(h5file_id,dset,units*cparams%nH,attr)
+
+		dset = TRIM(gname) // "/nef"
+		attr = "Free electron density in m^-3"
+		units = params%cpp%density
+		call save_to_hdf5(h5file_id,dset,units*cparams%nef,attr)
+
+		dset = TRIM(gname) // "/neb"
+		attr_array(1) = "Bound electron density per impurity in m^-3"
+		units = params%cpp%density
+		call rsave_1d_array_to_hdf5(h5file_id,dset,units*cparams%neb,attr_array)
+
+		dset = TRIM(gname) // "/Zo"
+		attr_array(1) = "Full nuclear charge of impurities"
+		call rsave_1d_array_to_hdf5(h5file_id,dset,cparams%Zo,attr_array)
+
 		dset = TRIM(gname) // "/Zj"
-		attr_array(1) = "Atomic Number"
+		attr_array(1) = "Average charge state of impurities"
 		call rsave_1d_array_to_hdf5(h5file_id,dset,cparams%Zj,attr_array)
 
 		dset = TRIM(gname) // "/nj"
 		attr_array(1) = "Density of impurities in m^-3"
 		units = params%cpp%density
 		call rsave_1d_array_to_hdf5(h5file_id,dset,units*cparams%nj,attr_array)
+
+		dset = TRIM(gname) // "/IZj"
+		attr_array(1) = " Ionization energy of impurities in eV"
+		units = params%cpp%energy/C_E
+		call  rsave_1d_array_to_hdf5(h5file_id,dset,units*cparams%IZj,attr_array)
 
 		dset = TRIM(gname) // "/rD"
 		attr = "Debye length in m"
@@ -963,7 +987,7 @@ subroutine save_simulation_outputs(params,spp,F,it)
 	    call rsave_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%eta)
 
 	    dset = "mu"
-		units = params%cpp%mass*(params%cpp%velocity**2)/params%cpp%Bo
+		units = params%cpp%mass*params%cpp%velocity**2/params%cpp%Bo
 	    call rsave_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%mu)
 
 	    dset = "Prad"

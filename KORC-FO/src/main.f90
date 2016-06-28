@@ -49,7 +49,7 @@ program main
 	! *** BEYOND THIS POINT VARIABLES ARE DIMENSIONLESS ***
 	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
 
-	call advance_particles_velocity(params,EB,spp,0.0_rp,.TRUE.)
+	call advance_particles_velocity(params,EB,cparams,spp,0.0_rp,.TRUE.)
 
 	! Save initial condition
 	call save_simulation_outputs(params,spp,EB,0_ip)
@@ -61,12 +61,12 @@ program main
 
 	do it=1,params%t_steps
 		if ( modulo(it,params%output_cadence) .EQ. 0_ip ) then
-            call advance_particles_velocity(params,EB,spp,params%dt,.TRUE.)
+            call advance_particles_velocity(params,EB,cparams,spp,params%dt,.TRUE.)
 		    call advance_particles_position(params,EB,spp,params%dt)
 			write(6,'("Saving snapshot: ",I15)') it/params%output_cadence
 			call save_simulation_outputs(params,spp,EB,it)
         else
-            call advance_particles_velocity(params,EB,spp,params%dt,.FALSE.)
+            call advance_particles_velocity(params,EB,cparams,spp,params%dt,.FALSE.)
 		    call advance_particles_position(params,EB,spp,params%dt)
         end if
 	end do

@@ -360,16 +360,24 @@ subroutine initialize_collision_params(params,cparams)
 	TYPE(COLLISION_PARAMS), INTENT(OUT) :: cparams
 	REAL(rp) :: Te ! Background electron temperature in eV
 	REAL(rp) :: ne! Background electron density in 1/m^3
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zo ! Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zj ! Atomic number of each impurity: Z=1 for D, Z=10 for Ne
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: nj ! Impurity densities
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: IZj ! Ionization energy of impurity in eV
 
-	NAMELIST /collision_parameters/ Te,ne,Zj,nj
+	NAMELIST /collision_parameters/ Te,ne,Zo,Zj,nj,IZj
 
 	ALLOCATE(Zj(params%num_impurity_species))
+	ALLOCATE(Zo(params%num_impurity_species))
 	ALLOCATE(nj(params%num_impurity_species))
+	ALLOCATE(IZj(params%num_impurity_species))
 
 	ALLOCATE(cparams%Zj(params%num_impurity_species))
+	ALLOCATE(cparams%Zo(params%num_impurity_species))
 	ALLOCATE(cparams%nj(params%num_impurity_species))
+	ALLOCATE(cparams%neb(params%num_impurity_species))
+	ALLOCATE(cparams%IZj(params%num_impurity_species))
+	ALLOCATE(cparams%Ee_IZj(params%num_impurity_species))
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=collision_parameters)
@@ -377,16 +385,25 @@ subroutine initialize_collision_params(params,cparams)
 
 	cparams%Te = Te*C_E
 	cparams%ne = ne
+	cparams%nH = ne
 
 	cparams%Zj = Zj
+	cparams%Zo = Zo
 	cparams%nj = nj
+	cparams%IZj = C_E*IZj
+
+	cparams%nef = ne + sum(cparams%Zj*cparams%nj)
+	cparams%neb = ne + (cparams%Zo-cparams%Zj)*cparams%nj
 
 	cparams%rD = SQRT( C_E0*cparams%Te/(cparams%ne*C_E**2) )
 	cparams%re = C_E**2/( 4.0_rp*C_PI*C_E0*C_ME*C_C**2 )
+	cparams%Ee_IZj = C_ME*C_C**2/cparams%IZj
 
 
 	DEALLOCATE(Zj)
+	DEALLOCATE(Zo)
 	DEALLOCATE(nj)
+	DEALLOCATE(IZj)
 end subroutine initialize_collision_params
 
 end module initialize
