@@ -897,10 +897,10 @@ subroutine save_simulation_parameters(params,spp,F,cparams)
 		attr_array(1) = "Average charge state of impurities"
 		call rsave_1d_array_to_hdf5(h5file_id,dset,cparams%Zj,attr_array)
 
-		dset = TRIM(gname) // "/nj"
+		dset = TRIM(gname) // "/nz"
 		attr_array(1) = "Density of impurities in m^-3"
 		units = params%cpp%density
-		call rsave_1d_array_to_hdf5(h5file_id,dset,units*cparams%nj,attr_array)
+		call rsave_1d_array_to_hdf5(h5file_id,dset,units*cparams%nz,attr_array)
 
 		dset = TRIM(gname) // "/IZj"
 		attr_array(1) = " Ionization energy of impurities in eV"

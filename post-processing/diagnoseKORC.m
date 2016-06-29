@@ -1,5 +1,5 @@
 function ST = diagnoseKORC(path)
-close all
+% close all
 
 ST = struct;
 ST.path = path;
@@ -37,8 +37,8 @@ for ii=1:length(info.Groups)
     end
 end
 
-params.simulation.num_snapshots = 100;
-params.simulation.t_steps = 16000000;
+% params.simulation.num_snapshots = 862;
+% params.simulation.t_steps = 275840000;
 
 end
 

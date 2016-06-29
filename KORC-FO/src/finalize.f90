@@ -41,7 +41,7 @@ subroutine deallocate_variables(params,F,spp,cparams)
 
 	if (ALLOCATED(cparams%Zj)) DEALLOCATE(cparams%Zj)
 	if (ALLOCATED(cparams%Zo)) DEALLOCATE(cparams%Zo)
-	if (ALLOCATED(cparams%nj)) DEALLOCATE(cparams%nj)
+	if (ALLOCATED(cparams%nz)) DEALLOCATE(cparams%nz)
 	if (ALLOCATED(cparams%neb)) DEALLOCATE(cparams%neb)
 	if (ALLOCATED(cparams%IZj)) DEALLOCATE(cparams%IZj)
 	if (ALLOCATED(cparams%Zj)) DEALLOCATE(cparams%Ee_IZj)

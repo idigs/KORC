@@ -91,7 +91,7 @@ subroutine advance_particles_velocity(params,EB,cparams,spp,dt,bool)
 						sqrt( sigma**2 + 4.0_rp*(DOT_PRODUCT(tau,tau) + us**2) )) )
 				t = tau/gamma
 				s = 1.0_rp/(1.0_rp + DOT_PRODUCT(t,t)) ! variable 's' in Vay, J.-L. PoP (2008)
-		        U_L = s*( up + DOT_PRODUCT(up,t)*t + cross(up,t) )
+		        U_L = s*(up + DOT_PRODUCT(up,t)*t + cross(up,t))
 				! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
 
                 if (params%radiation_losses) then
@@ -102,23 +102,24 @@ subroutine advance_particles_velocity(params,EB,cparams,spp,dt,bool)
 					gamma_os = sqrt(1.0_rp + DOT_PRODUCT(U_os,U_os))
 					V_os = U_os/gamma_os
 
-					tmp = spp(ii)%q**3/( 6.0_rp*C_PI*E0*spp(ii)%m**2 )
+					tmp = spp(ii)%q**3/(6.0_rp*C_PI*E0*spp(ii)%m**2)
 
 					F2 = tmp*( DOT_PRODUCT(spp(ii)%vars%E(:,pp),V_os)*spp(ii)%vars%E(:,pp) + &
 						cross(spp(ii)%vars%E(:,pp),spp(ii)%vars%B(:,pp)) + &
 						cross(spp(ii)%vars%B(:,pp),cross(spp(ii)%vars%B(:,pp),V_os)) )
 		    		vec = spp(ii)%vars%E(:,pp) + cross(V_os,spp(ii)%vars%B(:,pp))
-		    		F3 = ( tmp*gamma_os**2 )*( DOT_PRODUCT(spp(ii)%vars%E(:,pp),V_os)**2 - &
+		    		F3 = (tmp*gamma_os**2)*( DOT_PRODUCT(spp(ii)%vars%E(:,pp),V_os)**2 - &
 						DOT_PRODUCT(vec,vec) )*V_os
 
 					! ! ! Collisions
 					tmp = (gamma_os - 1.0_rp)*sqrt(gamma_os + 1.0_rp)
-					Clog_ef = log( 0.5_rp*tmp*(cparams%rD/cparams%re)/gamma_os )
+					Clog_ef = log(0.5_rp*tmp*(cparams%rD/cparams%re)/gamma_os)
 					ae = cparams%nef*Clog_ef
 					do ppi=1,params%num_impurity_species
-						Clog_eb = log( tmp*cparams%Ee_IZj(ppi) )
+						Clog_eb = log(tmp*cparams%Ee_IZj(ppi))
 						ae = ae + cparams%neb(ppi)*Clog_eb
 					end do
+
 
 					tmp = (gamma_os**2 - 1.0_rp)/gamma_os
 					Clog_eH = log( tmp*(cparams%rD/cparams%re) )
@@ -126,20 +127,19 @@ subroutine advance_particles_velocity(params,EB,cparams,spp,dt,bool)
 					do ppi=1,params%num_impurity_species
 						Clog_eZj = &
 						log( cparams%rD/(cparams%Zj(ppi)*cparams%re*cparams%Ee_IZj(ppi)) )
-						Clog_eZo = log( tmp*cparams%Ee_IZj(ppi) )
+						Clog_eZo = log(tmp*cparams%Ee_IZj(ppi))
 						ai = ai + &
-						cparams%nj(ppi)*( Clog_eZj*cparams%Zj(ppi)**2 + Clog_eZo*cparams%Zo(ppi)**2 )
+						cparams%nz(ppi)*(Clog_eZj*cparams%Zj(ppi)**2 + Clog_eZo*cparams%Zo(ppi)**2)
 					end do
 
 					tmp = gamma_os*(gamma_os + 1.0_rp)/(sqrt(DOT_PRODUCT(U_os,U_os))**3)
-					Fcolle = -4.0_rp*C_PI*ae*spp(ii)%m*(cparams%re**2)*tmp*U_os
+					Fcolle = -4.0_rp*C_PI*ae*spp(ii)%m*(cparams%re**2)*tmp*U_os/spp(ii)%q
 
 					tmp = gamma_os/(sqrt(DOT_PRODUCT(U_os,U_os))**3)
-					Fcolli = -4.0_rp*C_PI*ai*spp(ii)%m*(cparams%re**2)*tmp*U_os
+					Fcolli = -4.0_rp*C_PI*ai*spp(ii)%m*(cparams%re**2)*tmp*U_os/spp(ii)%q
 					! ! ! Collisions
-		    
-!		    		U_R = U_R + a*( F2 + F3 )
-		    		U_R = U_R + a*( F2 + F3 + Fcolle + Fcolli )
+
+		    		U_R = U_R + a*(F2 + F3 + Fcolle + Fcolli)
 		    
 					U = U_L + U_R - U
 					gamma = sqrt( 1.0_rp + DOT_PRODUCT(U,U) )

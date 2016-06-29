@@ -116,7 +116,7 @@ subroutine normalize_variables(params,spp,F,cparams)
 	cparams%nH = cparams%nH/params%cpp%density
 	cparams%nef = cparams%nef/params%cpp%density
 	cparams%neb = cparams%neb/params%cpp%density
-	if (ALLOCATED(cparams%nj)) cparams%nj = cparams%nj/params%cpp%density
+	if (ALLOCATED(cparams%nz)) cparams%nz = cparams%nz/params%cpp%density
 	if (ALLOCATED(cparams%IZj)) cparams%IZj = cparams%IZj/params%cpp%energy
 	cparams%rD = cparams%rD/params%cpp%length
 	cparams%re = cparams%re/params%cpp%length
