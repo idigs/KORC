@@ -1,11 +1,11 @@
 &input_parameters
-	t_steps = 320000 ! 1050000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	t_steps = 3200000 ! 1050000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
     dt = 0.025 ! Time step as fraction of non-relativistic gyro-period
-    output_cadence = 3200 ! 1400 for saving each 100 gyro-periods
+    output_cadence = 32000 ! 1400 for saving each 100 gyro-periods
 	num_species = 5
 	num_impurity_species = 1
-	radiation = .FALSE.
-	collisions = .FALSE.
+	radiation = .TRUE.
+	collisions = .TRUE.
 	magnetic_field_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
 										! For 'ANALYTICAL', the magnetic field is calculated based on
 										! the parameters given in the "analytic_mag_field_params" section.
@@ -19,9 +19,9 @@
 
 &plasma_species
 	runaway = .FALSE. !
-	Ro = 1.695, 1.695, 1.695, 1.695, 1.695 !
+	Ro = 1.5, 1.5, 1.5, 1.5, 1.5 !
 	Zo = 0.0, 0.0, 0.0, 0.0, 0.0 !
-	r = 0.4, 0.4, 0.4, 0.4, 0.4 !
+	r = 0.3, 0.3, 0.3, 0.3, 0.3 !
 	Eo = 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6 ! Initial energy in eV
 	etao = 10.0, 20.0, 30.0, 40.0, 50.0  ! Initial pitch angle
 	ppp = 50, 50, 50, 50, 50 ! Number of particles per process (mpi)
@@ -32,18 +32,18 @@
 &analytic_mag_field_params
 	Eo = -2.0 ! In V/m
 	Bo = 2.19 ! In Teslas. ITER: 5.42 DIII-D: 2.19
-	minor_radius = 0.6 ! Minor radius in meters. ITER: 1.5 DIII-D: 0.5
-	major_radius = 1.695 ! Major radius in meters. ITER: 6.5 DIII-D: 1.6
+	minor_radius = 0.5 ! Minor radius in meters. ITER: 1.5 DIII-D: 0.5
+	major_radius = 1.5 ! Major radius in meters. ITER: 6.5 DIII-D: 1.6
 	q_factor_at_separatrix = 3.0 ! Safety factor at the separatrix (r=a)
 	free_param = 0.5 ! defined as the ratio minor_radius/lambda
 /
 
 &collision_parameters
-	Te = 1.0 ! Background electron temperature in eV
-	ne = 1.0E20 ! Background electron density in 1/m^3
-	Zo = 10.0 ! Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
+	Te = 1.5 ! Background electron temperature in eV
+	ne = 1.0E19 ! Background electron density in 1/m^3
+	Zo = 18.0 ! Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
 	Zj = 1.0 ! Average charge state of each impurity
 	nz = 1.0E19 ! Impurity densities
-	IZj = 21.5646 ! Ionization energy of impurity in eV
+	IZj = 15.7596 ! Ionization energy of impurity in eV
 /
 

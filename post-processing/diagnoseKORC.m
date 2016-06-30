@@ -1,5 +1,5 @@
 function ST = diagnoseKORC(path)
-% close all
+close all
 
 ST = struct;
 ST.path = path;
