@@ -69,7 +69,7 @@ function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,
 
 narginchk(8,9);
 
-% close all
+close all
 
 ST = struct;
 % Script parameters
@@ -910,7 +910,7 @@ function E = analyticalE(X)
 narginchk(1,2);
 
 % Parameters of the analytical magnetic field
-Eo = -0.0;
+Eo = -2.0;
 Ro = 1.695; % Major radius in meters.
 % Parameters of the analytical magnetic field
 
@@ -979,6 +979,7 @@ fcolli = zeros(1,ST.params.numSnapshots); % Collision force with ions
 
 WL = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 WR = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
+WC = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 
 % Normalization
 X(1,:) = ST.params.Xo/ST.norm.l;
@@ -1027,16 +1028,11 @@ aux =  cross(v(1,:),E) + v(1,:)*sum(v(1,:).*B) - B*vmag^2;
 k(1) = abs(q)*sqrt( sum(aux.^2) )/(gamma*m*vmag^3);
 % Curvature and torsion
 
-% % % Leap-frog scheme for the radiation damping force % % %
+% % % Radiation damping and collision force % % %
 F2 = ( q^3/(6*pi*ep*m^2) )*( (E*v(1,:)')*E + cross(E,B) +...
     cross(B,cross(B,v(1,:))) );
 vec = E + cross(v(1,:),B);
 F3 = ( gamma^2*q^3/(6*pi*ep*m^2) )*( (E*v(1,:)')^2 - vec*vec' )*v(1,:);
-
-WL(1) = q*(E*v(1,:)');
-WR(1) = ( q^4/(6*pi*ep*m^2) )*( E*E' + cross(v(1,:),B)*E' +...
-    gamma^2*( (E*v(1,:)')^2 - vec*vec' ) );
-
 
 tmp = (gamma - 1.0)*sqrt(gamma + 1.0);
 Clog_ef = log(0.5*tmp*(ST.coll.rD/ST.coll.re)/gamma);
@@ -1056,12 +1052,16 @@ for ppi=1:ST.coll.nimpurities
 end
 
 tmp = gamma*(gamma + 1.0)/sqrt(u(1,:)*u(1,:)')^3;
-Fcolle = -4.0*pi*ae*m*(ST.coll.re^2)*tmp*u(1,:);
+Fcolle = -4.0*pi*ae*m*(ST.coll.re^2)*tmp*u(1,:)/q;
 
 tmp = gamma/sqrt(u(1,:)*u(1,:)')^3;
-Fcolli = -4.0*pi*ai*m*(ST.coll.re^2)*tmp*u(1,:);
+Fcolli = -4.0*pi*ai*m*(ST.coll.re^2)*tmp*u(1,:)/q;
 % Collisions
-% % % Leap-frog scheme for the radiation damping force % % %
+
+WL(1) = q*(E*v(1,:)');
+WR(1) = ( q^4/(6*pi*ep*m^2) )*( E*E' + cross(v(1,:),B)*E' +...
+    gamma^2*( (E*v(1,:)')^2 - vec*vec' ) );
+WC(1) = q*(Fcolli + Fcolle)*v(1,:)';
 
 fL(1) = abs(q)*sqrt( vec*vec' );
 f2(1) = abs(q)*sqrt( F2*F2' );
@@ -1221,6 +1221,7 @@ for ii=2:ST.params.numSnapshots
     WL(ii) = q*(E*V_eff');
     WR(ii) = ( q^4/(6*pi*ep*m^2) )*( E*E' + cross(V_eff,B)*E' +...
         gamma_eff^2*( (E*V_eff')^2 - vec*vec' ) );
+    WC(ii) = q*(Fcolli + Fcolle)*V_eff';
 end
 
 
@@ -1369,20 +1370,26 @@ if ST.opt
     ylabel('$|f_{coll}|$','Interpreter','latex','FontSize',16)
     
     figure
-    subplot(3,1,1)
+    subplot(4,1,1)
     plot(time, WL)
     box on
     grid on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
     ylabel('$|W_L|$','Interpreter','latex','FontSize',16)
     title(PP.method,'Interpreter','latex','FontSize',16)
-    subplot(3,1,2)
+    subplot(4,1,2)
     plot(time, WR)
     box on
     grid on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
     ylabel('$|W_R|$','Interpreter','latex','FontSize',16)
-    subplot(3,1,3)
+     subplot(4,1,3)
+    plot(time, WC)
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$|W_{coll}|$','Interpreter','latex','FontSize',16)
+    subplot(4,1,4)
     plot(time, abs(WR./WL))
     box on
     grid on

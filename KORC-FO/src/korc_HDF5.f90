@@ -671,9 +671,17 @@ subroutine save_simulation_parameters(params,spp,F,cparams)
 		attr = "Number of mpi processes"
 		call save_to_hdf5(h5file_id,dset,params%mpi_params%nmpi,attr)
 
-		dset = TRIM(gname) // "/rad_loss"
+		dset = TRIM(gname) // "/radiation"
 		attr = "Radiation losses included in simulation"
-		if(params%radiation_losses) then
+		if(params%radiation) then
+			call save_to_hdf5(h5file_id,dset,1_idef,attr)
+		else
+			call save_to_hdf5(h5file_id,dset,0_idef,attr)
+		end if
+
+		dset = TRIM(gname) // "/collisions"
+		attr = "Radiation losses included in simulation"
+		if(params%collisions) then
 			call save_to_hdf5(h5file_id,dset,1_idef,attr)
 		else
 			call save_to_hdf5(h5file_id,dset,0_idef,attr)

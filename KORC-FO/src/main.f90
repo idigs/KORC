@@ -36,6 +36,8 @@ program main
 
 	call define_time_step(params)
 
+	call initialize_particle_pusher(params)
+
 	call normalize_variables(params,spp,EB,cparams)
 
 	call initialize_interpolant(params,EB)

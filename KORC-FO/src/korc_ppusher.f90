@@ -8,10 +8,22 @@ module korc_ppusher
 
     implicit none
 
-    PRIVATE :: cross
-    PUBLIC :: advance_particles_position, advance_particles_velocity
+	REAL(rp), PRIVATE :: E0 ! Dimensionless vacuum permittivity
+
+    PRIVATE :: cross,radiation_force,collision_force
+    PUBLIC :: initialize_particle_pusher,advance_particles_position,&
+				advance_particles_velocity
 
     contains
+
+
+subroutine initialize_particle_pusher(params)
+	implicit none
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+
+	E0 = C_E0*(params%cpp%mass**2*params%cpp%velocity**3)/(params%cpp%charge**3*params%cpp%Bo)
+end subroutine initialize_particle_pusher
+
 
 function cross(a,b)
 	REAL(rp), DIMENSION(3), INTENT(IN) :: a
@@ -24,6 +36,69 @@ function cross(a,b)
 end function cross
 
 
+subroutine radiation_force(spp,U,E,B,Frad)
+    implicit none
+	TYPE(SPECIES), INTENT(IN) :: spp
+	REAL(rp), DIMENSION(3), INTENT(IN) :: U, E, B
+	REAL(rp), DIMENSION(3), INTENT(OUT) :: Frad
+	REAL(rp), DIMENSION(3) :: F1, F2, F3, V, vec
+	REAL(rp) :: gamma, tmp
+	
+	gamma = sqrt(1.0_rp + DOT_PRODUCT(U,U))
+	V = U/gamma
+
+	tmp = spp%q**4/(6.0_rp*C_PI*E0*spp%m**2)
+
+	F2 = tmp*( DOT_PRODUCT(E,V)*E + cross(E,B) + cross(B,cross(B,V)) )
+	vec = E + cross(V,B)
+	F3 = (tmp*gamma**2)*( DOT_PRODUCT(E,V)**2 - DOT_PRODUCT(vec,vec) )*V
+
+	Frad = F2 + F3
+end subroutine radiation_force
+
+
+subroutine collision_force(spp,cparams,U,Fcoll)
+    implicit none
+	TYPE(SPECIES), INTENT(IN) :: spp
+	TYPE(COLLISION_PARAMS), INTENT(IN) :: cparams
+	REAL(rp), DIMENSION(3), INTENT(IN) :: U
+	REAL(rp), DIMENSION(3), INTENT(OUT) :: Fcoll
+	REAL(rp), DIMENSION(3) :: V, Fcolle, Fcolli
+	REAL(rp) :: gamma, tmp
+	REAL(rp) :: ae, ai, Clog_ef, Clog_eb, Clog_eH, Clog_eZj, Clog_eZo
+	INTEGER :: ppi
+	
+	gamma = sqrt(1.0_rp + DOT_PRODUCT(U,U))
+	V = U/gamma
+	
+	tmp = (gamma - 1.0_rp)*sqrt(gamma + 1.0_rp)
+	Clog_ef = log(0.5_rp*tmp*(cparams%rD/cparams%re)/gamma)
+	ae = cparams%nef*Clog_ef
+	do ppi=1,cparams%num_impurity_species
+		Clog_eb = log(tmp*cparams%Ee_IZj(ppi))
+		ae = ae + cparams%neb(ppi)*Clog_eb
+	end do
+
+	tmp = (gamma**2 - 1.0_rp)/gamma
+	Clog_eH = log( tmp*(cparams%rD/cparams%re) )
+	ai = cparams%nH*Clog_eH
+	do ppi=1,cparams%num_impurity_species
+		Clog_eZj = log( cparams%rD/(cparams%Zj(ppi)*cparams%re*cparams%Ee_IZj(ppi)) )
+		Clog_eZo = log(tmp*cparams%Ee_IZj(ppi))
+		ai = ai + &
+			cparams%nz(ppi)*(Clog_eZj*cparams%Zj(ppi)**2 + Clog_eZo*cparams%Zo(ppi)**2)
+	end do
+
+	tmp = gamma*(gamma + 1.0_rp)/(sqrt(DOT_PRODUCT(U,U))**3)
+	Fcolle = -4.0_rp*C_PI*ae*spp%m*(cparams%re**2)*tmp*U
+
+	tmp = gamma/(sqrt(DOT_PRODUCT(U,U))**3)
+	Fcolli = -4.0_rp*C_PI*ai*spp%m*(cparams%re**2)*tmp*U
+
+	Fcoll = Fcolle + Fcolli
+end subroutine collision_force
+
+
 subroutine advance_particles_velocity(params,EB,cparams,spp,dt,bool)
     implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
@@ -32,19 +107,13 @@ subroutine advance_particles_velocity(params,EB,cparams,spp,dt,bool)
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
     LOGICAL, INTENT(IN) :: bool
 	REAL(rp), INTENT(IN) :: dt
-	REAL(rp) :: B, vpar, vperp, tmp ! diagnostics and temporary variables
-	REAL(rp) :: Prad, gamma_os
-	REAL(rp) :: ae, ai, Clog_ef, Clog_eb, Clog_eH, Clog_eZj, Clog_eZo
+	REAL(rp) :: Prad, B, vpar, vperp, tmp ! diagnostics and temporary variables
 	REAL(rp) :: a, gammap, sigma, us, gamma, s ! variables of leapfrog of Vay, J.-L. PoP (2008)
 	REAL(rp), DIMENSION(3) :: U_L, U_hs, tau, up, t
-	REAL(rp), DIMENSION(3) :: U, U_R, U_os, V_os, F1, F2, F3
-	REAL(rp), DIMENSION(3) :: Fcolle, Fcolli
+	REAL(rp), DIMENSION(3) :: U, U_RC, U_os
+	REAL(rp), DIMENSION(3) :: Frad, Fcoll
 	REAL(rp), DIMENSION(3) :: vec, b_unit ! diagnostics and temporary variables
-	REAL(rp) :: Ke, E0 ! Dimensionless physical quantities
-	INTEGER :: ii, pp, ppi ! Iterators
-
-	E0 = &
-	C_E0*(params%cpp%mass**2*params%cpp%velocity**3)/(params%cpp%charge**3*params%cpp%Bo)
+	INTEGER :: ii, pp ! Iterators
 
 	do ii = 1,params%num_species
 		if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
@@ -55,11 +124,9 @@ subroutine advance_particles_velocity(params,EB,cparams,spp,dt,bool)
 
 	a = spp(ii)%q*dt/spp(ii)%m
 
-!$OMP PARALLEL FIRSTPRIVATE(a,dt,E0,bool)&
-!$OMP& PRIVATE(pp,ppi,U,U_L,U_hs,tau,up,gammap,sigma,us,gamma,t,s,&
-!$OMP& F1,F2,F3,Fcolle,Fcolli,U_R,U_os,V_os,gamma_os,&
-!$OMP& ae,ai,Clog_ef,Clog_eb,Clog_eH,Clog_eZj,Clog_eZo,&
-!$OMP& tmp,b_unit,B,vpar,vperp,vec,Prad)&
+!$OMP PARALLEL FIRSTPRIVATE(a,dt,bool)&
+!$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gammap,sigma,us,gamma,t,s,&
+!$OMP& Frad,Fcoll,U_RC,U_os,tmp,b_unit,B,vpar,vperp,vec,Prad)&
 !$OMP& SHARED(ii,spp)
 !$OMP DO
 		do pp=1,spp(ii)%ppp
@@ -77,8 +144,10 @@ subroutine advance_particles_velocity(params,EB,cparams,spp,dt,bool)
 				    /( spp(ii)%q*B**2 )
                 end if
 
-				! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
 				U_L = U
+				U_RC = U
+
+				! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
 				U_hs = U_L + &
 						0.5_rp*a*( spp(ii)%vars%E(:,pp) + &
 						cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)) )		        
@@ -94,60 +163,20 @@ subroutine advance_particles_velocity(params,EB,cparams,spp,dt,bool)
 		        U_L = s*(up + DOT_PRODUCT(up,t)*t + cross(up,t))
 				! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
 
-                if (params%radiation_losses) then
-					! ! ! LEAP-FROG SCHEME FOR THE RADIATION DAMPING FORCE ! ! !
-					U_R = U
+				! ! ! Splitting operator for including radiation and collisions
+				U_os = 0.5_rp*(U_L + U)
 
-					U_os = 0.5_rp*(U_L + U)
-					gamma_os = sqrt(1.0_rp + DOT_PRODUCT(U_os,U_os))
-					V_os = U_os/gamma_os
+				call radiation_force(spp(ii),U_os,spp(ii)%vars%E(:,pp),spp(ii)%vars%B(:,pp),Frad)
+				U_RC = U_RC + a*Frad/spp(ii)%q
 
-					tmp = spp(ii)%q**3/(6.0_rp*C_PI*E0*spp(ii)%m**2)
-
-					F2 = tmp*( DOT_PRODUCT(spp(ii)%vars%E(:,pp),V_os)*spp(ii)%vars%E(:,pp) + &
-						cross(spp(ii)%vars%E(:,pp),spp(ii)%vars%B(:,pp)) + &
-						cross(spp(ii)%vars%B(:,pp),cross(spp(ii)%vars%B(:,pp),V_os)) )
-		    		vec = spp(ii)%vars%E(:,pp) + cross(V_os,spp(ii)%vars%B(:,pp))
-		    		F3 = (tmp*gamma_os**2)*( DOT_PRODUCT(spp(ii)%vars%E(:,pp),V_os)**2 - &
-						DOT_PRODUCT(vec,vec) )*V_os
-
-					! ! ! Collisions
-					tmp = (gamma_os - 1.0_rp)*sqrt(gamma_os + 1.0_rp)
-					Clog_ef = log(0.5_rp*tmp*(cparams%rD/cparams%re)/gamma_os)
-					ae = cparams%nef*Clog_ef
-					do ppi=1,params%num_impurity_species
-						Clog_eb = log(tmp*cparams%Ee_IZj(ppi))
-						ae = ae + cparams%neb(ppi)*Clog_eb
-					end do
-
-
-					tmp = (gamma_os**2 - 1.0_rp)/gamma_os
-					Clog_eH = log( tmp*(cparams%rD/cparams%re) )
-					ai = cparams%nH*Clog_eH
-					do ppi=1,params%num_impurity_species
-						Clog_eZj = &
-						log( cparams%rD/(cparams%Zj(ppi)*cparams%re*cparams%Ee_IZj(ppi)) )
-						Clog_eZo = log(tmp*cparams%Ee_IZj(ppi))
-						ai = ai + &
-						cparams%nz(ppi)*(Clog_eZj*cparams%Zj(ppi)**2 + Clog_eZo*cparams%Zo(ppi)**2)
-					end do
-
-					tmp = gamma_os*(gamma_os + 1.0_rp)/(sqrt(DOT_PRODUCT(U_os,U_os))**3)
-					Fcolle = -4.0_rp*C_PI*ae*spp(ii)%m*(cparams%re**2)*tmp*U_os/spp(ii)%q
-
-					tmp = gamma_os/(sqrt(DOT_PRODUCT(U_os,U_os))**3)
-					Fcolli = -4.0_rp*C_PI*ai*spp(ii)%m*(cparams%re**2)*tmp*U_os/spp(ii)%q
-					! ! ! Collisions
-
-		    		U_R = U_R + a*(F2 + F3 + Fcolle + Fcolli)
-		    
-					U = U_L + U_R - U
-					gamma = sqrt( 1.0_rp + DOT_PRODUCT(U,U) )
-					! ! ! LEAP-FROG SCHEME FOR THE RADIATION DAMPING FORCE ! ! !
-				else
-					U = U_L
+				if (params%collisions) then
+					call collision_force(spp(ii),cparams,U_os,Fcoll)
+					U_RC = U_RC + a*Fcoll/spp(ii)%q
 				end if
 
+				U = U_L + U_RC - U
+				gamma = sqrt( 1.0_rp + DOT_PRODUCT(U,U) )
+				! ! ! Splitting operator for including radiation and collisions
 
 		        spp(ii)%vars%V(:,pp) = U/gamma
 				spp(ii)%vars%gamma(pp) = gamma
@@ -172,7 +201,7 @@ subroutine advance_particles_velocity(params,EB,cparams,spp,dt,bool)
 				    spp(ii)%vars%mu(pp) = 0.5_rp*spp(ii)%m*(gamma*vperp)**2/B
 
 					!! Radiated power
-					tmp = (spp(ii)%q**4)/( 6.0_rp*C_PI*E0*(spp(ii)%m**2) )
+					tmp = spp(ii)%q**4/(6.0_rp*C_PI*E0*spp(ii)%m**2)
 
 					vec = spp(ii)%vars%E(:,pp) + &
 					cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp))

@@ -82,7 +82,8 @@ TYPE, PUBLIC :: KORC_PARAMS
 	INTEGER :: num_species
 	INTEGER :: num_impurity_species
 	INTEGER :: pic_algorithm
-	LOGICAL :: radiation_losses
+	LOGICAL :: radiation
+	LOGICAL :: collisions
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
 	LOGICAL :: poloidal_flux
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
@@ -159,6 +160,7 @@ END TYPE FIELDS
 
 
 TYPE, PUBLIC :: COLLISION_PARAMS
+	INTEGER :: num_impurity_species
 	REAL(rp) :: Te ! Background electron temperature in eV
 	REAL(rp) :: ne ! Background electron density in 1/m^3
 	REAL(rp) :: nH ! Background proton density in 1/m^3

@@ -1,10 +1,11 @@
 &input_parameters
-	t_steps = 32000000 ! 1050000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	t_steps = 320000 ! 1050000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
     dt = 0.025 ! Time step as fraction of non-relativistic gyro-period
-    output_cadence = 32000 ! 1400 for saving each 100 gyro-periods
+    output_cadence = 3200 ! 1400 for saving each 100 gyro-periods
 	num_species = 5
 	num_impurity_species = 1
-	radiation_losses = .TRUE.
+	radiation = .FALSE.
+	collisions = .FALSE.
 	magnetic_field_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
 										! For 'ANALYTICAL', the magnetic field is calculated based on
 										! the parameters given in the "analytic_mag_field_params" section.
@@ -23,7 +24,7 @@
 	r = 0.4, 0.4, 0.4, 0.4, 0.4 !
 	Eo = 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6 ! Initial energy in eV
 	etao = 10.0, 20.0, 30.0, 40.0, 50.0  ! Initial pitch angle
-	ppp = 100, 100, 100, 100, 100 ! Number of particles per process (mpi)
+	ppp = 50, 50, 50, 50, 50 ! Number of particles per process (mpi)
     q = -1.0, -1.0, -1.0, -1.0, -1.0 ! Electric charge
     m = 1.0, 1.0, 1.0, 1.0, 1.0 ! In units of electron mass
 /

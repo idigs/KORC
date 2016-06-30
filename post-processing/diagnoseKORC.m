@@ -37,8 +37,8 @@ for ii=1:length(info.Groups)
     end
 end
 
-% params.simulation.num_snapshots = 862;
-% params.simulation.t_steps = 275840000;
+% params.simulation.num_snapshots = 577;
+% params.simulation.t_steps = 18464000;
 
 end
 
@@ -133,8 +133,8 @@ try
         tmp = zeros(size(ST.data.(['sp' num2str(ss)]).gamma));
         for ii=1:ST.params.species.ppp(ss)*ST.params.simulation.nmpi
             tmp(ii,:) = ...
-                100*( ST.data.(['sp' num2str(ss)]).gamma(ii,1) - ...
-                ST.data.(['sp' num2str(ss)]).gamma(ii,:) )./ST.data.(['sp' num2str(ss)]).gamma(ii,1);
+                100*( ST.data.(['sp' num2str(ss)]).gamma(ii,:) - ...
+                ST.data.(['sp' num2str(ss)]).gamma(ii,1) )./ST.data.(['sp' num2str(ss)]).gamma(ii,1);
         end
         err(:,ss) = mean(tmp,1);
         maxerr(:,ss) = max(tmp,[],1);
