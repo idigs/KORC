@@ -397,7 +397,7 @@ subroutine initialize_collision_params(params,cparams)
 	cparams%IZj = C_E*IZj
 
 	cparams%nef = ne + sum(cparams%Zj*cparams%nz)
-	cparams%neb = ne + (cparams%Zo-cparams%Zj)*cparams%nz
+	cparams%neb = (cparams%Zo-cparams%Zj)*cparams%nz
 
 	cparams%rD = SQRT( C_E0*cparams%Te/(cparams%ne*C_E**2) )
 	cparams%re = C_E**2/( 4.0_rp*C_PI*C_E0*C_ME*C_C**2 )

@@ -37,8 +37,8 @@ for ii=1:length(info.Groups)
     end
 end
 
-% params.simulation.num_snapshots = 577;
-% params.simulation.t_steps = 18464000;
+% params.simulation.num_snapshots = 50;
+% params.simulation.t_steps = 16000000;
 
 end
 
