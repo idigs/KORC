@@ -118,6 +118,10 @@ subroutine advance_particles_velocity(params,EB,cparams,spp,dt,bool)
 	do ii = 1,params%num_species
 		if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
 			call interp_analytical_field(spp(ii)%vars, EB)
+            if (TRIM(EB%electric_field_mode) .EQ. 'PULSE') then 
+                spp(ii)%vars%E = &
+                EXP(-0.5_rp*((params%time - EB%to)/EB%sig)**2)*spp(ii)%vars%E
+            end if
 		else
 			call interp_field(spp(ii)%vars, EB)
 		end if

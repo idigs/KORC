@@ -93,7 +93,10 @@ subroutine normalize_variables(params,spp,F,cparams)
 		F%AB%lambda = F%AB%lambda/params%cpp%length
 		F%AB%Bpo = F%AB%Bpo/params%cpp%Bo
 
+        ! Electric field parameters
 		F%Eo = F%Eo/params%cpp%Eo
+        F%to = F%to/params%cpp%time
+        F%sig = F%sig/params%cpp%time
 	else
 		F%Bo = F%Bo/params%cpp%Bo
 

@@ -314,11 +314,14 @@ subroutine initialize_fields(params,F)
 	REAL(rp) :: major_radius
 	REAL(rp) :: q_factor_at_separatrix
 	REAL(rp) :: free_param
-
+    CHARACTER(MAX_STRING_LENGTH) :: electric_field_mode
 	REAL(rp) :: Eo
+    REAL(rp) :: pulse_maximum
+    REAL(rp) :: pulse_duration
 
 	NAMELIST /analytic_mag_field_params/ Bo,minor_radius,major_radius,&
-			q_factor_at_separatrix,free_param, Eo
+			q_factor_at_separatrix,free_param,&
+            electric_field_mode,Eo,pulse_maximum,pulse_duration
 
 	if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
 		! Load the parameters of the analytical magnetic field
@@ -337,6 +340,10 @@ subroutine initialize_fields(params,F)
 
 		F%Eo = Eo
 		F%Bo = F%AB%Bo
+
+        F%electric_field_mode = TRIM(electric_field_mode)
+		F%to = pulse_maximum
+		F%sig = pulse_duration
 	else if (params%magnetic_field_model .EQ. 'EXTERNAL') then
 		! Load the magnetic field from an external HDF5 file
         call load_dim_data_from_hdf5(params,F%dims)

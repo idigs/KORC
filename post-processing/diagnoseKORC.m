@@ -10,7 +10,7 @@ ST.data = loadData(ST);
 
 energyConservation(ST);
 
-pitchAngleDiagnostic(ST,100);
+% pitchAngleDiagnostic(ST,100);
 
 % magneticMomentDiagnostic(ST,100);
 
@@ -37,8 +37,8 @@ for ii=1:length(info.Groups)
     end
 end
 
-% params.simulation.num_snapshots = 50;
-% params.simulation.t_steps = 16000000;
+% params.simulation.num_snapshots = 68;
+% params.simulation.t_steps = 21760000;
 
 end
 

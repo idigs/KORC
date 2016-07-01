@@ -76,6 +76,7 @@ TYPE, PUBLIC :: KORC_PARAMS
 	INTEGER :: num_omp_threads
 	LOGICAL :: restart
 	REAL(rp) :: dt
+	REAL(rp) :: time
 	INTEGER(ip) :: t_steps
 	INTEGER(ip) :: output_cadence
 	INTEGER(ip) :: num_snapshots
@@ -150,12 +151,17 @@ TYPE, PUBLIC :: FIELDS
 	TYPE(A_FIELD) :: AB
 	TYPE(V_FIELD_3D) :: E
 	TYPE(V_FIELD_3D) :: B
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: PSIp ! Poloidal flux
 	TYPE(MESH) :: X
-	REAL(rp) :: Bo ! Characteristic magnetic field
-	REAL(rp) :: Eo ! Characteristic electric field
-	REAL(rp) :: Ro ! Radial position of magnetic axis
 	INTEGER, DIMENSION(3) :: dims ! dims(NR, NPHI, NZ)
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: PSIp ! Poloidal flux
+
+	REAL(rp) :: Bo ! Characteristic magnetic field
+	REAL(rp) :: Ro ! Radial position of magnetic axis
+
+    CHARACTER(MAX_STRING_LENGTH) :: electric_field_mode
+	REAL(rp) :: Eo ! Characteristic electric field
+    REAL(rp) :: to
+    REAL(rp) :: sig
 END TYPE FIELDS
 
 

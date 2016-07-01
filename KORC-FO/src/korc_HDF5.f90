@@ -969,7 +969,7 @@ subroutine save_simulation_outputs(params,spp,F,it)
     
 	dset = TRIM(gname) // "/time"
 	attr = "Simulation time in secs"
-	call save_to_hdf5(h5file_id,dset,REAL(it,ip)*params%dt*params%cpp%time,attr)
+	call save_to_hdf5(h5file_id,dset,REAL(it,rp)*params%dt*params%cpp%time,attr)
 
     do ii=1,params%num_species
         write(tmp_str,'(I18)') ii
