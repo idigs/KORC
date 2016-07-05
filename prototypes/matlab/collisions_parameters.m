@@ -13,27 +13,27 @@ Te = Te*qe;
 rD = sqrt( e0*Te/(ne*qe^2) );
 re = qe^2/(4*pi*e0*me*c^2);
 
-Eo = linspace(1E6,100E6,1E3);
+Eo = linspace(1E3,100E6,1E5) + me*c^2/qe;
 gamma = qe*Eo/(me*c^2);
-Eo = Eo/1E6;
-
+v = c*sqrt(1 - 1./gamma.^2);
+Eo = (Eo -  + me*c^2/qe)/1E6;
 % Iz = qe*[15.7596,27.62965,40.74,59.81,75.02]; % Argon
 % Iz = qe*[21.5646,40.96296,63.45,97.12,126.21]; % Neon
 % Zj = 1:1:numel(Iz);
 
 % % % % Argon
-% Iz = qe*(27.62965);
-% Zj = 2.0;
-% Zo = 18.0;
+Iz = qe*27.62965; %qe*(15.7596);
+Zj = 2.0;
+Zo = 18.0;
 
-% % % Neon
-Iz = qe*(21.5646);
-Zj = 1.0;
-Zo = 10.0;
+% % % % Neon
+% Iz = qe*(21.5646);
+% Zj = 1.0;
+% Zo = 10.0;
 
 nH = ne;
 nef = ne + Zj*nz;
-neb = ne + (Zo - Zj)*nz;
+neb = (Zo - Zj)*nz;
 
 ae = zeros(size(Eo));
 ai = zeros(size(Eo));
@@ -48,6 +48,8 @@ ae = nef*Clog_ef + neb*Clog_eb;
 
 figure
 semilogx(Eo,Clog_ef,Eo,Clog_eb,'--')
+xlabel('$\mathcal{E}$ (MeV)','Interpreter','latex','FontSize',16)
+ylabel('$\log{(\Lambda_e)}$','Interpreter','latex','FontSize',16)
 box on
 grid on
 
@@ -59,8 +61,29 @@ ai = nH*Clog_eH + nz*(Clog_eZ*Zj^2 + Clog_eZo*Zo^2);
 
 figure
 semilogx(Eo,Clog_eH,Eo,Clog_eZ*ones(size(Eo)),'--',Eo,Clog_eZo,':')
+xlabel('$\mathcal{E}$ (MeV)','Interpreter','latex','FontSize',16)
+ylabel('$\log{(\Lambda_i)}$','Interpreter','latex','FontSize',16)
 box on
 grid on
+
+
+% Collision force magnitude
+Fcolle = 4*pi*me*c^4*re^2*ae.*gamma.*(gamma + 1)./(v.*gamma).^2;
+Fcollef = 4*pi*me*c^4*re^2*(nef*Clog_ef).*gamma.*(gamma + 1)./(v.*gamma).^2;
+Fcolleb = 4*pi*me*c^4*re^2*(neb*Clog_eb).*gamma.*(gamma + 1)./(v.*gamma).^2;
+Fcolli = 4*pi*me*c^4*re^2*ai./(v.^2.*gamma);
+FcollH = 4*pi*me*c^4*re^2*(nH*Clog_eH)./(v.^2.*gamma);
+FcollZj = 4*pi*me*c^4*re^2*(nz*Clog_eZ*Zj^2)./(v.^2.*gamma);
+FcollZo = 4*pi*me*c^4*re^2*(nz*Clog_eZo*Zo^2)./(v.^2.*gamma);
+
+figure
+loglog(Eo,Fcolle,'r-',Eo,Fcollef,'r:',Eo,Fcolleb,'r--',...
+    Eo,Fcolli,'k-',Eo,FcollH,'k:',Eo,FcollZj,'k--',Eo,FcollZo,'k-.')
+xlabel('$\mathcal{E}$ (MeV)','Interpreter','latex','FontSize',16)
+ylabel('$F_{coll}$ (N)','Interpreter','latex','FontSize',16)
+box on
+grid on
+% Collision force magnitude
 
 ae = ae/1E20;
 ai = ai/1E20;
@@ -70,12 +93,15 @@ Zeff = (nH + nz*Zj^2)/(nH + nz*Zj);
 figure
 subplot(2,1,1)
 semilogx(Eo,ae,'r',Eo,ai,'b')
+xlabel('$\mathcal{E}$ (MeV)','Interpreter','latex','FontSize',16)
+ylabel('$\alpha_{e,i}$','Interpreter','latex','FontSize',16)
 box on
 grid on
 subplot(2,1,2)
 semilogx(Eo,ai./ae,Eo,Zeff*ones(size(Eo)))
+xlabel('$\mathcal{E}$ (MeV)','Interpreter','latex','FontSize',16)
+ylabel('$Z_{coll}, Z_{eff}$','Interpreter','latex','FontSize',16)
 box on
 grid on
-
 
 end

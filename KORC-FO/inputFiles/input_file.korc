@@ -1,52 +1,51 @@
 &input_parameters
-	t_steps = 32000 ! 1050000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
-    dt = 0.025 ! Time step as fraction of non-relativistic gyro-period
-    output_cadence = 320 ! 1400 for saving each 100 gyro-periods
-	num_species = 2
-	num_impurity_species = 1
-	radiation = .TRUE.
-	collisions = .TRUE.
-	magnetic_field_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
-										! For 'ANALYTICAL', the magnetic field is calculated based on
-										! the parameters given in the "analytic_mag_field_params" section.
-										! For 'EXTERNAL', the magnetic field is loaded from the file
-										! specified in "filename".
-	poloidal_flux = .FALSE.				! .TRUE. if using JFIT poloidal flux, .FALSE. if using the
-										! cylindrical components of the magnetic field
-	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/DIII-D_JFIT.h5"
-	pic_algorithm = 1 ! 1 = Leapfrog, 2 = RK4, 3 = some other
+        t_steps = 320000000 ! 1050000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+        dt = 0.025 ! Time step as fraction of non-relativistic gyro-period
+        output_cadence = 640000 ! 1400 for saving each 100 gyro-periods
+        num_species = 2
+        num_impurity_species = 1
+        radiation = .TRUE.
+        collisions = .FALSE.
+        magnetic_field_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
+                                                                                ! For 'ANALYTICAL', the magnetic field is calculated based on
+                                                                                ! the parameters given in the "analytic_mag_field_params" section.
+                                                                                ! For 'EXTERNAL', the magnetic field is loaded from the file
+                                                                                ! specified in "filename".
+        poloidal_flux = .FALSE.                         ! .TRUE. if using JFIT poloidal flux, .FALSE. if using the
+                                                                                ! cylindrical components of the magnetic field
+        magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/DIII-D_JFIT.h5"
+        pic_algorithm = 1 ! 1 = Leapfrog, 2 = RK4, 3 = some other
 /
 
 &plasma_species
-	runaway = .FALSE. !
-	Ro = 1.5, 1.5 !
-	Zo = 0.0, 0.0 !
-	r = 0.3, 0.3 !
-	Eo = 40.0E6, 40.0E6 ! Initial energy in eV
-	etao = 10.0, 20.0  ! Initial pitch angle
-	ppp = 10, 10 ! Number of particles per process (mpi)
-    q = -1.0, -1.0 ! Electric charge
-    m = 1.0, 1.0 ! In units of electron mass
+        runaway = .FALSE. !
+        Ro = 1.5, 1.5 !
+        Zo = 0.0, 0.0 !
+        r = 0.3, 0.3 !
+        Eo = 40.0E6, 40.0E6 ! Initial energy in eV
+        etao = 10.0, 20.0  ! Initial pitch angle
+        ppp = 50, 50 ! Number of particles per process (mpi)
+        q = -1.0, -1.0 ! Electric charge
+        m = 1.0, 1.0 ! In units of electron mass
 /
 
 &analytic_mag_field_params
-    electric_field_mode = 'PULSE' ! Options are 'CONSTANT' and 'PULSE'
-	Eo = -5.0 ! In V/m
-    pulse_maximum = 5.0E-7 ! Time at which maximum is reached in s
-    pulse_duration = 0.6E-7 ! Duration of intense toroidal electric field
-	Bo = 2.19 ! In Teslas. ITER: 5.42 DIII-D: 2.19
-	minor_radius = 0.5 ! Minor radius in meters. ITER: 1.5 DIII-D: 0.5
-	major_radius = 1.5 ! Major radius in meters. ITER: 6.5 DIII-D: 1.6
-	q_factor_at_separatrix = 3.0 ! Safety factor at the separatrix (r=a)
-	free_param = 0.5 ! defined as the ratio minor_radius/lambda
+        electric_field_mode = 'CONSTANT' ! Options are 'CONSTANT' and 'PULSE'
+        Eo = -0.0 ! In V/m
+        pulse_maximum = 3.0E-3 ! Time at which maximum is reached in s
+        pulse_duration = 6.7E-4 ! Duration of intense toroidal electric field
+        Bo = 2.19 ! In Teslas. ITER: 5.42 DIII-D: 2.19
+        minor_radius = 0.5 ! Minor radius in meters. ITER: 1.5 DIII-D: 0.5
+        major_radius = 1.5 ! Major radius in meters. ITER: 6.5 DIII-D: 1.6
+        q_factor_at_separatrix = 3.0 ! Safety factor at the separatrix (r=a)
+        free_param = 0.5 ! defined as the ratio minor_radius/lambda
 /
 
 &collision_parameters
-	Te = 1.5 ! Background electron temperature in eV
-	ne = 1.0E20 ! Background electron density in 1/m^3
-	Zo = 18.0 ! Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
-	Zj = 1.0 ! Average charge state of each impurity
-	nz = 5.0E18 ! Impurity densities
-	IZj = 15.7596 ! Ionization energy of impurity in eV
+        Te = 1.5 ! Background electron temperature in eV
+        ne = 1.0E20 ! Background electron density in 1/m^3
+        Zo = 18.0 ! Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
+        Zj = 1.0 ! Average charge state of each impurity
+        nz = 5.0E18 ! Impurity densities
+        IZj = 15.7596 ! Ionization energy of impurity in eV
 /
-

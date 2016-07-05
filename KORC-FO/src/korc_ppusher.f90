@@ -74,20 +74,20 @@ subroutine collision_force(spp,cparams,U,Fcoll)
 	tmp = (gamma - 1.0_rp)*sqrt(gamma + 1.0_rp)
 	Clog_ef = log(0.5_rp*tmp*(cparams%rD/cparams%re)/gamma)
 	ae = cparams%nef*Clog_ef
-	do ppi=1,cparams%num_impurity_species
-		Clog_eb = log(tmp*cparams%Ee_IZj(ppi))
-		ae = ae + cparams%neb(ppi)*Clog_eb
-	end do
+!	do ppi=1,cparams%num_impurity_species
+!		Clog_eb = log(tmp*cparams%Ee_IZj(ppi))
+!		ae = ae + cparams%neb(ppi)*Clog_eb
+!	end do
 
 	tmp = (gamma**2 - 1.0_rp)/gamma
 	Clog_eH = log( tmp*(cparams%rD/cparams%re) )
 	ai = cparams%nH*Clog_eH
-	do ppi=1,cparams%num_impurity_species
-		Clog_eZj = log( cparams%rD/(cparams%Zj(ppi)*cparams%re*cparams%Ee_IZj(ppi)) )
-		Clog_eZo = log(tmp*cparams%Ee_IZj(ppi))
-		ai = ai + &
-			cparams%nz(ppi)*(Clog_eZj*cparams%Zj(ppi)**2 + Clog_eZo*cparams%Zo(ppi)**2)
-	end do
+!	do ppi=1,cparams%num_impurity_species
+!		Clog_eZj = log( cparams%rD/(cparams%Zj(ppi)*cparams%re*cparams%Ee_IZj(ppi)) )
+!		Clog_eZo = log(tmp*cparams%Ee_IZj(ppi))
+!		ai = ai + &
+!			cparams%nz(ppi)*(Clog_eZj*cparams%Zj(ppi)**2 + Clog_eZo*cparams%Zo(ppi)**2)
+!	end do
 
 	tmp = gamma*(gamma + 1.0_rp)/(sqrt(DOT_PRODUCT(U,U))**3)
 	Fcolle = -4.0_rp*C_PI*ae*spp%m*(cparams%re**2)*tmp*U

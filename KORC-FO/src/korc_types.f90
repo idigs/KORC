@@ -172,6 +172,7 @@ TYPE, PUBLIC :: COLLISION_PARAMS
 	REAL(rp) :: nH ! Background proton density in 1/m^3
 	REAL(rp) :: nef ! Free electron density in 1/m^3
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: neb ! Bound electron density in 1/m^3
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zi ! Atomic number of (majority) background ions
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zo ! Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zj ! Atomic number of each impurity: Z=1 for D, Z=10 for Ne
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: nz ! Impurity densities
