@@ -1,5 +1,5 @@
 function ST = diagnoseKORC(path)
-% close all
+close all
 
 ST = struct;
 ST.path = path;
@@ -8,9 +8,9 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
-% radialTransport(ST);
+radialTransport(ST);
 
 % pitchAngleDiagnostic(ST,100);
 
@@ -134,10 +134,10 @@ try
     for ss=1:ST.params.simulation.num_species
         tmp = zeros(size(ST.data.(['sp' num2str(ss)]).gamma));
         for ii=1:ST.params.species.ppp(ss)*ST.params.simulation.nmpi
-%             tmp(ii,:) = ...
-%                 100*( ST.data.(['sp' num2str(ss)]).gamma(ii,:) - ...
-%                 ST.data.(['sp' num2str(ss)]).gamma(ii,1) )./ST.data.(['sp' num2str(ss)]).gamma(ii,1);
-            tmp(ii,:) = ST.data.(['sp' num2str(ss)]).gamma(ii,:)./ST.data.(['sp' num2str(ss)]).gamma(ii,1);
+            tmp(ii,:) = ...
+                100*( ST.data.(['sp' num2str(ss)]).gamma(ii,:) - ...
+                ST.data.(['sp' num2str(ss)]).gamma(ii,1) )./ST.data.(['sp' num2str(ss)]).gamma(ii,1);
+%             tmp(ii,:) = ST.data.(['sp' num2str(ss)]).gamma(ii,:)./ST.data.(['sp' num2str(ss)]).gamma(ii,1);
         end
         err(:,ss) = mean(tmp,1);
         maxerr(:,ss) = max(tmp,[],1);
@@ -148,8 +148,8 @@ try
         box on
         grid on
         xlabel('Time (s)','Interpreter','latex','FontSize',16)
-%         ylabel('$\Delta E/E_0$ (\%)','Interpreter','latex','FontSize',16)
-        ylabel('$\mathcal{E}(t)/\mathcal{E}_0$','Interpreter','latex','FontSize',16)
+        ylabel('$\Delta E/E_0$ (\%)','Interpreter','latex','FontSize',16)
+%         ylabel('$\mathcal{E}(t)/\mathcal{E}_0$','Interpreter','latex','FontSize',16)
         
 %         figure(h2)
 %         subplot(double(ST.params.simulation.num_species),1,double(ss))
@@ -656,6 +656,7 @@ function radialTransport(ST)
 cad = ST.params.simulation.output_cadence;
 time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
 Ro = ST.params.fields.Ro;
+rc = zeros(1,ST.params.simulation.num_species);
 for ss=1:ST.params.simulation.num_species
     h1=figure;
     for pp=1:ST.params.species.ppp(ss)*ST.params.simulation.nmpi
@@ -670,12 +671,22 @@ for ss=1:ST.params.simulation.num_species
         zeta = atan2(X(1),X(2));
         zeta(zeta<0) = zeta(zeta<0) + 2*pi;
         % Toroidal coordinates
-        
+        if all(r < ST.params.fields.a)
+            rc(ss) = r(1);
+        end
        figure(h1)
        hold on
        plot(theta,r,'.')
        hold off
     end
+    figure(h1)
+    grid on
+    box on
+    xlim([0,360])
 end
+
+plot(ST.params.species.etao,rc,'ks--')
+xlabel('Initial pitch angle ($^\circ$)','Interpreter','latex','FontSize',16)
+ylabel('$r_{max}$ (cm)','Interpreter','latex','FontSize',16)
 
 end

@@ -104,6 +104,37 @@ box on
 grid on
 % Collision force magnitude
 
+
+% Power balance
+Pcolle = 4*pi*me*c^4*re^2*ae.*(gamma + 1).*gamma.^2./(v.*gamma.^3);
+Pcollef = 4*pi*me*c^4*re^2*(nef*Clog_ef).*(gamma + 1).*gamma.^2./(v.*gamma.^3);
+Pcolleb = 4*pi*me*c^4*re^2*(neb*Clog_eb).*(gamma + 1).*gamma.^2./(v.*gamma.^3);
+
+Pcolli = 4*pi*me*c^4*re^2*ai./(v.*gamma);
+PcollH = 4*pi*me*c^4*re^2*(nH*Clog_eH)./(v.*gamma);
+PcollZj = 4*pi*me*c^4*re^2*(nz*Clog_eZ*Zj^2)./(v.*gamma);
+PcollZo = 4*pi*me*c^4*re^2*(nz*Clog_eZo*Zo^2)./(v.*gamma);
+
+PE = qe*E*v*cos(eta);
+
+A2 = (v*cos(eta)).^2*(E/c)^4;
+B2 = v*B^2*sin(eta);
+C2 = (gamma/c).^4.*( v.*((E*v*cos(eta)/c).^2 - E^2 - (v*B*sin(eta)).^2) ).^2;
+AC = (gamma/c).^2.*(E*v*cos(eta)/c).^2.*((E*v*cos(eta)/c).^2 - E^2 - (v*B*sin(eta)).^2);
+
+PR = (2*qe^2*re/(3*me*c))*( E^2 + gamma.^2.*((E*v*cos(eta)/c).^2 - E^2 - (v*B*sin(eta)).^2) );
+PR = abs(PR);
+
+figure
+loglog(Eo,Pcolle,'r-',Eo,Pcollef,'r:',Eo,Pcolleb,'r--',...
+    Eo,Pcolli,'k-',Eo,PcollH,'k:',Eo,PcollZj,'k--',Eo,PcollZo,'k-.',...
+    Eo,PE,'b-',Eo,PR,'g-')
+xlabel('$\mathcal{E}$ (MeV)','Interpreter','latex','FontSize',16)
+ylabel('$P$ (Watts)','Interpreter','latex','FontSize',16)
+box on
+grid on
+% Power balance
+
 ae = ae/1E20;
 ai = ai/1E20;
 

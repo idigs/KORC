@@ -74,20 +74,20 @@ subroutine collision_force(spp,cparams,U,Fcoll)
 	tmp = (gamma - 1.0_rp)*sqrt(gamma + 1.0_rp)
 	Clog_ef = log(0.5_rp*tmp*(cparams%rD/cparams%re)/gamma)
 	ae = cparams%nef*Clog_ef
-!	do ppi=1,cparams%num_impurity_species
-!		Clog_eb = log(tmp*cparams%Ee_IZj(ppi))
-!		ae = ae + cparams%neb(ppi)*Clog_eb
-!	end do
+	do ppi=1,cparams%num_impurity_species
+		Clog_eb = log(tmp*cparams%Ee_IZj(ppi))
+		ae = ae + cparams%neb(ppi)*Clog_eb
+	end do
 
 	tmp = (gamma**2 - 1.0_rp)/gamma
 	Clog_eH = log( tmp*(cparams%rD/cparams%re) )
 	ai = cparams%nH*Clog_eH
-!	do ppi=1,cparams%num_impurity_species
-!		Clog_eZj = log( cparams%rD/(cparams%Zj(ppi)*cparams%re*cparams%Ee_IZj(ppi)) )
-!		Clog_eZo = log(tmp*cparams%Ee_IZj(ppi))
-!		ai = ai + &
-!			cparams%nz(ppi)*(Clog_eZj*cparams%Zj(ppi)**2 + Clog_eZo*cparams%Zo(ppi)**2)
-!	end do
+	do ppi=1,cparams%num_impurity_species
+		Clog_eZj = log( cparams%rD/(cparams%Zj(ppi)*cparams%re*cparams%Ee_IZj(ppi)) )
+		Clog_eZo = log(tmp*cparams%Ee_IZj(ppi))
+		ai = ai + &
+			cparams%nz(ppi)*(Clog_eZj*cparams%Zj(ppi)**2 + Clog_eZo*cparams%Zo(ppi)**2)
+	end do
 
 	tmp = gamma*(gamma + 1.0_rp)/(sqrt(DOT_PRODUCT(U,U))**3)
 	Fcolle = -4.0_rp*C_PI*ae*spp%m*(cparams%re**2)*tmp*U
@@ -168,18 +168,20 @@ subroutine advance_particles_velocity(params,EB,cparams,spp,dt,bool)
 				! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
 
 				! ! ! Splitting operator for including radiation and collisions
-				U_os = 0.5_rp*(U_L + U)
+!				U_os = 0.5_rp*(U_L + U)
 
-				call radiation_force(spp(ii),U_os,spp(ii)%vars%E(:,pp),spp(ii)%vars%B(:,pp),Frad)
-				U_RC = U_RC + a*Frad/spp(ii)%q
+!				call radiation_force(spp(ii),U_os,spp(ii)%vars%E(:,pp),spp(ii)%vars%B(:,pp),Frad)
+!				U_RC = U_RC + a*Frad/spp(ii)%q
 
-				if (params%collisions) then
-					call collision_force(spp(ii),cparams,U_os,Fcoll)
-					U_RC = U_RC + a*Fcoll/spp(ii)%q
-				end if
+!				if (params%collisions) then
+!					call collision_force(spp(ii),cparams,U_os,Fcoll)
+!					U_RC = U_RC + a*Fcoll/spp(ii)%q
+!				end if
 
-				U = U_L + U_RC - U
-				gamma = sqrt( 1.0_rp + DOT_PRODUCT(U,U) )
+!				U = U_L + U_RC - U
+!				gamma = sqrt( 1.0_rp + DOT_PRODUCT(U,U) )
+				
+				U = U_L
 				! ! ! Splitting operator for including radiation and collisions
 
 		        spp(ii)%vars%V(:,pp) = U/gamma
