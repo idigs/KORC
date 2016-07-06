@@ -1,4 +1,4 @@
-function cp = collisions_parameters(Te,ne,nz)
+function cp = collisions_parameters(Te,ne,nz,eta,E,B)
 close all
 % Collision parameters for RE in fusion plasmas
 kB = 1.38E-23; % Boltzmann constant
@@ -8,13 +8,23 @@ e0 = 8.854E-12;% Electric permitivity
 c = 2.9979E8; % Speed of light
 qe = 1.602176E-19; % Electron charge
 me = 9.109382E-31; % Electron mass
+% E = 5.0; % Background electric field
+% B = 2.19 % Background magnetic field
+eta = eta*pi/180; % Pitch angle
 
 Te = Te*qe;
 rD = sqrt( e0*Te/(ne*qe^2) );
 re = qe^2/(4*pi*e0*me*c^2);
 
-Eo = linspace(1E3,100E6,1E5) + me*c^2/qe;
+% Eo = linspace(0,1E2,1E4) + me*c^2/qe;
+x = linspace(40,80,1E6);
+% fx = (exp(x) - min(exp(x)))/max(exp(x) - min(exp(x)));
+fx = exp(x)/max(exp(x));
+Eo = 500E6*fx + me*c^2/qe;
 gamma = qe*Eo/(me*c^2);
+find(gamma==1,1,'last')
+Eo(gamma==1) = [];
+gamma(gamma==1) = [];
 v = c*sqrt(1 - 1./gamma.^2);
 Eo = (Eo -  + me*c^2/qe)/1E6;
 % Iz = qe*[15.7596,27.62965,40.74,59.81,75.02]; % Argon
@@ -75,10 +85,19 @@ Fcolli = 4*pi*me*c^4*re^2*ai./(v.^2.*gamma);
 FcollH = 4*pi*me*c^4*re^2*(nH*Clog_eH)./(v.^2.*gamma);
 FcollZj = 4*pi*me*c^4*re^2*(nz*Clog_eZ*Zj^2)./(v.^2.*gamma);
 FcollZo = 4*pi*me*c^4*re^2*(nz*Clog_eZo*Zo^2)./(v.^2.*gamma);
+FE = E*qe*ones(size(FcollZo));
+
+A2 = (v*cos(eta)).^2*(E/c)^4;
+B2 = v*B^2*sin(eta);
+C2 = (gamma/c).^4.*( v.*((E*v*cos(eta)/c).^2 - E^2 - (v*B*sin(eta)).^2) ).^2;
+AC = (gamma/c).^2.*(E*v*cos(eta)/c).^2.*((E*v*cos(eta)/c).^2 - E^2 - (v*B*sin(eta)).^2);
+
+FR = (2*qe^2*re/(3*me*c))*sqrt( A2 + B2 + C2 + 2*AC );
 
 figure
 loglog(Eo,Fcolle,'r-',Eo,Fcollef,'r:',Eo,Fcolleb,'r--',...
-    Eo,Fcolli,'k-',Eo,FcollH,'k:',Eo,FcollZj,'k--',Eo,FcollZo,'k-.')
+    Eo,Fcolli,'k-',Eo,FcollH,'k:',Eo,FcollZj,'k--',Eo,FcollZo,'k-.',...
+    Eo,FE,'b-',Eo,FR,'g-')
 xlabel('$\mathcal{E}$ (MeV)','Interpreter','latex','FontSize',16)
 ylabel('$F_{coll}$ (N)','Interpreter','latex','FontSize',16)
 box on
