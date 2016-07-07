@@ -8,11 +8,11 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
-radialTransport(ST);
+% ST.RT = radialTransport(ST);
 
-% pitchAngleDiagnostic(ST,100);
+% % pitchAngleDiagnostic(ST,100);
 
 % magneticMomentDiagnostic(ST,100);
 
@@ -652,7 +652,9 @@ end
 
 end
 
-function radialTransport(ST)
+function RT = radialTransport(ST)
+RT = struct;
+
 cad = ST.params.simulation.output_cadence;
 time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
 Ro = ST.params.fields.Ro;
@@ -691,5 +693,7 @@ end
 plot(ST.params.species.etao,rc,'ks--')
 xlabel('Initial pitch angle ($^\circ$)','Interpreter','latex','FontSize',16)
 ylabel('$r_{max}$ (cm)','Interpreter','latex','FontSize',16)
+
+RT.rc = rc;
 
 end

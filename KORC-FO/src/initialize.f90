@@ -229,15 +229,15 @@ subroutine set_up_particles_ic(params,F,spp)
 		call init_random_seed()
 		call RANDOM_NUMBER(radius)
 		
-!		Xo(1,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*sin(zeta)
-!		Xo(2,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*cos(zeta)
-!		Xo(3,:) = spp(ii)%Zo + spp(ii)%r*sqrt(radius)*sin(theta)
+		Xo(1,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*sin(zeta)
+		Xo(2,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*cos(zeta)
+		Xo(3,:) = spp(ii)%Zo + spp(ii)%r*sqrt(radius)*sin(theta)
 
-		do jj=1,spp(ii)%ppp
-			Xo(1,jj) = spp(ii)%Ro + spp(ii)%r*real(jj,rp)/real(spp(ii)%ppp,rp)
-			Xo(2,jj) = 0.0_rp
-			Xo(3,jj) = spp(ii)%Zo + spp(ii)%r/real(spp(ii)%ppp,rp)
-		end do
+!		do jj=1,spp(ii)%ppp
+!			Xo(1,jj) = spp(ii)%Ro + spp(ii)%r*real(jj,rp)/real(spp(ii)%ppp,rp)
+!			Xo(2,jj) = 0.0_rp
+!			Xo(3,jj) = spp(ii)%Zo + spp(ii)%r/real(spp(ii)%ppp,rp)
+!		end do
 
 		spp(ii)%vars%X(1,:) = Xo(1,:)
 		spp(ii)%vars%X(2,:) = Xo(2,:)

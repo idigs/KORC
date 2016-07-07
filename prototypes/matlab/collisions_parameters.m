@@ -1,5 +1,5 @@
 function cp = collisions_parameters(Te,ne,nz,eta,E,B)
-close all
+% close all
 % Collision parameters for RE in fusion plasmas
 kB = 1.38E-23; % Boltzmann constant
 Kc = 8.987E9; % Coulomb constant in N*m^2/C^2
