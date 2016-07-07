@@ -658,7 +658,7 @@ time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
 Ro = ST.params.fields.Ro;
 rc = zeros(1,ST.params.simulation.num_species);
 for ss=1:ST.params.simulation.num_species
-    h1=figure;
+    h1=figure;    
     for pp=1:ST.params.species.ppp(ss)*ST.params.simulation.nmpi
         X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,pp,:));
         
@@ -671,7 +671,10 @@ for ss=1:ST.params.simulation.num_species
         zeta = atan2(X(1),X(2));
         zeta(zeta<0) = zeta(zeta<0) + 2*pi;
         % Toroidal coordinates
-        if all(r < ST.params.fields.a)
+        
+        bool = all(ST.data.(['sp' num2str(ss)]).eta(pp,:) < 90);
+        
+        if all(r < ST.params.fields.a) && bool
             rc(ss) = r(1);
         end
        figure(h1)
