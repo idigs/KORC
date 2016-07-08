@@ -8,9 +8,9 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
-% ST.RT = radialTransport(ST);
+ST.RT = radialTransport(ST);
 
 % % pitchAngleDiagnostic(ST,100);
 
@@ -39,7 +39,7 @@ for ii=1:length(info.Groups)
     end
 end
 
-% params.simulation.num_snapshots = 100;
+% params.simulation.num_snapshots = 220;
 % params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 
 end
@@ -77,7 +77,7 @@ end
 
 
 % list = {'eta','gamma'};%,'mu','Prad','tau'};
-list = {'eta','gamma','mu','Prad','Pin'};
+list = {'eta','gamma','Prad','Pin'};%,'mu'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -659,8 +659,18 @@ cad = ST.params.simulation.output_cadence;
 time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
 Ro = ST.params.fields.Ro;
 rc = zeros(1,ST.params.simulation.num_species);
+
+C = colormap(jet(512));
+offset = floor(512/ST.params.simulation.num_species);
+colour = C(1:offset:end,:);
+
+h1=figure;
+set(h1,'name','IC','numbertitle','off')
+legends = cell(1,ST.params.simulation.num_species);
 for ss=1:ST.params.simulation.num_species
-    h1=figure;    
+%     h1=figure;
+%     set(h1,'name',['Species ' num2str(ss)],'numbertitle','off')
+    pin = zeros(1,ST.params.species.ppp(ss)*ST.params.simulation.nmpi);
     for pp=1:ST.params.species.ppp(ss)*ST.params.simulation.nmpi
         X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,pp,:));
         
@@ -677,22 +687,61 @@ for ss=1:ST.params.simulation.num_species
         bool = all(ST.data.(['sp' num2str(ss)]).eta(pp,:) < 90);
         
         if all(r < ST.params.fields.a) && bool
-            rc(ss) = r(1);
+%             rc(ss) = r(1);
+            pin(pp) = 1;
         end
-       figure(h1)
-       hold on
-       plot(theta,r,'.')
-       hold off
+%        figure(h1)
+%        hold on
+%        plot(theta,r,'.')
+%        hold off
     end
+    
+    t = linspace(0,2*pi,200);
+    Rs = ST.params.fields.Ro + ST.params.fields.a*cos(t);
+    Zs = ST.params.fields.a*sin(t);
+
+    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,logical(pin),1));
+    R = sqrt( sum(X(1:2,:).^2,1) );
+    Z = X(3,:);
+    
     figure(h1)
-    grid on
-    box on
-    xlim([0,360])
+%     subplot(2,1,1)
+    hold on
+    plot(R,Z,'k.','MarkerSize',12,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+    hold off
+%     hold on
+%     plot(Rs,Zs,'r')
+%     box on
+%     axis on
+%     axis equal
+%     xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+%     ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
+
+    
+%     X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,logical(pin),end));
+%     R = sqrt( sum(X(1:2,:).^2,1) );
+%     Z = X(3,:);
+%     
+%     subplot(2,1,2)
+%     plot(R,Z,'b.',Rs,Zs,'r')
+%     box on
+%     axis on
+%     axis equal
+%     xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+%     ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
+    legends{ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
 end
 
-plot(ST.params.species.etao,rc,'ks--')
-xlabel('Initial pitch angle ($^\circ$)','Interpreter','latex','FontSize',16)
-ylabel('$r_{max}$ (cm)','Interpreter','latex','FontSize',16)
+figure(h1)
+% subplot(2,1,1)
+legend(legends)
+hold on
+plot(Rs,Zs,'r')
+box on
+axis on
+axis square
+xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
 
 RT.rc = rc;
 

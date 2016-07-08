@@ -358,12 +358,54 @@ subroutine unitVectors(params,Xo,F,par,perp)
 				    perp(:,ii) = (/ax, ay, az/)
 				end if
 			end if
-		else if ( par(1,ii) .LE. korc_zero ) then
-			write(6,'("Exception!")')
-		else if ( par(2,ii) .LE. korc_zero ) then
-			write(6,'("Exception!")')
-		else if ( par(3,ii) .LE. korc_zero ) then
-			write(6,'("Exception!")')
+		else if ( ABS(par(3,ii)) .LE. korc_zero ) then
+!			write(6,'("Exception: bz .LE. 0",3F20.16)') par(:,ii)
+			ax = 0.99_rp*rnd_num(ii)
+			ay = -ax*par(1,ii)/par(2,ii)
+
+			az = sqrt( 1 - ax**2 - ay**2 )
+			perp(:,ii) = (/ax, ay, az/)
+
+			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
+				az = -sqrt( 1 - ax**2 - ay**2 )
+				perp(:,ii) = (/ax, ay, az/)
+			end if
+
+			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
+				write(6,'("Exception: bz .LE. 0",3F20.16)') par(:,ii)
+			end if
+		else if ( ABS(par(2,ii)) .LE. korc_zero ) then
+!			write(6,'("Exception: by .LE. 0",3F20.16)') par(:,ii)
+			az = 0.99_rp*rnd_num(ii)
+			ax = -az*par(3,ii)/par(1,ii)
+
+			ay = sqrt( 1 - ax**2 - az**2 )
+			perp(:,ii) = (/ax, ay, az/)
+
+			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
+				ay = -sqrt( 1 - ax**2 - az**2 )
+				perp(:,ii) = (/ax, ay, az/)
+			end if
+
+			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
+				write(6,'("Exception: by .LE. 0",3F20.16)') par(:,ii)
+			end if
+		else if ( ABS(par(1,ii)) .LE. korc_zero ) then
+!			write(6,'("Exception: bx .LE. 0",3F20.16)') par(:,ii)
+			az = 0.99_rp*rnd_num(ii)
+			ay = -az*par(3,ii)/par(2,ii)
+
+			ax = sqrt( 1 - ay**2 - az**2 )
+			perp(:,ii) = (/ax, ay, az/)
+
+			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
+				ax = -sqrt( 1 - ay**2 - az**2 )
+				perp(:,ii) = (/ax, ay, az/)
+			end if
+
+			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
+				write(6,'("Exception: bx .LE. 0",3F20.16)') par(:,ii)
+			end if
 		end if
 	end do
 
