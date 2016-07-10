@@ -259,11 +259,13 @@ subroutine interp_analytical_field(prtcls,F)
 	TYPE(PARTICLES), INTENT(INOUT) :: prtcls
 	TYPE(FIELDS), INTENT(IN) :: F
 
-	call cart_to_tor(prtcls%X, F%AB%Ro, prtcls%Y)
+	call cart_to_tor(prtcls%X, F%AB%Ro, prtcls%Y, prtcls%flag)
 
-	call analytical_magnetic_field(F,prtcls%Y,prtcls%B)
+    call check_if_confined(F, prtcls%Y, prtcls%flag)
 
-	call analytical_electric_field(F,prtcls%Y,prtcls%E)
+	call analytical_magnetic_field(F, prtcls%Y, prtcls%B, prtcls%flag)
+
+	call analytical_electric_field(F, prtcls%Y, prtcls%E, prtcls%flag)
 end subroutine interp_analytical_field
 
 
@@ -276,6 +278,7 @@ subroutine unitVectors(params,Xo,F,par,perp)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: perp
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: X
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: B
+	INTEGER, DIMENSION(:), ALLOCATABLE :: flag
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: rnd_num
 	REAL(rp), PARAMETER :: tol = korc_zero
 	REAL(rp) :: c1, c2, c3
@@ -289,12 +292,15 @@ subroutine unitVectors(params,Xo,F,par,perp)
 	ALLOCATE( X(3,ppp) )
 	ALLOCATE( B(3,ppp) )
 	ALLOCATE( rnd_num(ppp) )
+    ALLOCATE( flag(ppp) )
+
+    flag = 1_idef
 	
 	call init_random_seed()
 
 	if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
-		call cart_to_tor(Xo, F%AB%Ro, X) ! To toroidal coords
-		call analytical_magnetic_field(F,X,B)
+		call cart_to_tor(Xo,F%AB%Ro,X,flag) ! To toroidal coords
+		call analytical_magnetic_field(F,X,B,flag)
 	else
 		call cart_to_cyl(Xo, X)
         if (params%poloidal_flux) then
@@ -412,6 +418,7 @@ subroutine unitVectors(params,Xo,F,par,perp)
 	DEALLOCATE(X)
 	DEALLOCATE(B)
 	DEALLOCATE(rnd_num)
+    DEALLOCATE(flag)
 end subroutine unitVectors
 
 end module korc_interp

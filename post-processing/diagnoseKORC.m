@@ -10,7 +10,9 @@ ST.data = loadData(ST);
 
 % energyConservation(ST);
 
-ST.RT = radialTransport(ST);
+% ST.RT = radialTransport(ST);
+
+confined_particles(ST);
 
 % % pitchAngleDiagnostic(ST,100);
 
@@ -39,7 +41,7 @@ for ii=1:length(info.Groups)
     end
 end
 
-% params.simulation.num_snapshots = 220;
+% params.simulation.num_snapshots = 5;
 % params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 
 end
@@ -77,7 +79,7 @@ end
 
 
 % list = {'eta','gamma'};%,'mu','Prad','tau'};
-list = {'eta','gamma','Prad','Pin'};%,'mu'};
+list = {'eta','gamma','Prad','Pin','flag'};%,'mu'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -686,7 +688,7 @@ for ss=1:ST.params.simulation.num_species
         
         bool = all(ST.data.(['sp' num2str(ss)]).eta(pp,:) < 90);
         
-        if all(r < ST.params.fields.a) && bool
+        if all(r < ST.params.fields.a) && bool && all
 %             rc(ss) = r(1);
             pin(pp) = 1;
         end
@@ -744,5 +746,58 @@ xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
 ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
 
 RT.rc = rc;
+
+end
+
+function confined_particles(ST)
+RT = struct;
+
+C = colormap(jet(512));
+offset = floor(512/ST.params.simulation.num_species);
+colour = C(1:offset:end,:);
+
+h1=figure;
+set(h1,'name','IC','numbertitle','off')
+legends = cell(1,ST.params.simulation.num_species);
+for ss=1:ST.params.simulation.num_species
+%     h1=figure;
+%     set(h1,'name',['Species ' num2str(ss)],'numbertitle','off')
+    
+    t = linspace(0,2*pi,200);
+    Rs = ST.params.fields.Ro + ST.params.fields.a*cos(t);
+    Zs = ST.params.fields.a*sin(t);
+
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,pin,1));
+    R = sqrt( sum(X(1:2,:).^2,1) );
+    Z = X(3,:);
+    
+%     figure(h1)
+%     plot(R,Z,'.','MarkerSize',12,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+%     hold on
+%     plot(Rs,Zs,'r')
+%     hold off
+%     box on
+%     axis on
+%     axis square
+%     xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+%     ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
+
+    figure(h1)
+    hold on
+    plot(R,Z,'s','MarkerSize',6,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+    hold off
+    legends{ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
+end
+
+figure(h1)
+legend(legends)
+hold on
+plot(Rs,Zs,'r')
+box on
+axis on
+axis square
+xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
 
 end

@@ -1,5 +1,5 @@
 function cp = collisions_parameters(Te,ne,nz,eta,E,B)
-% close all
+close all
 % Collision parameters for RE in fusion plasmas
 kB = 1.38E-23; % Boltzmann constant
 Kc = 8.987E9; % Coulomb constant in N*m^2/C^2
@@ -17,7 +17,8 @@ rD = sqrt( e0*Te/(ne*qe^2) );
 re = qe^2/(4*pi*e0*me*c^2);
 
 % Eo = linspace(0,1E2,1E4) + me*c^2/qe;
-x = linspace(40,80,1E6);
+x = linspace(70,80,1E4);
+% x = linspace(40,80,1E4);
 % fx = (exp(x) - min(exp(x)))/max(exp(x) - min(exp(x)));
 fx = exp(x)/max(exp(x));
 Eo = 500E6*fx + me*c^2/qe;

@@ -30,23 +30,26 @@ subroutine cart_to_cyl(X,Xcyl)
 end subroutine cart_to_cyl
 
 
-subroutine cart_to_tor(X,Ro,Xtor)
+subroutine cart_to_tor(X,Ro,Xtor,flag)
     implicit none
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: X ! X(1,:) = x, X(2,:) = y, X(3,:) = z
 	REAL(rp), INTENT(IN) :: Ro
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: Xtor ! Xtor(1,:) = r, Xtor(2,:) = theta, Xtor(3,:) = zeta
+	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: flag
 	INTEGER :: pp, ss ! Iterators
 
 	ss = SIZE(X,2)
 
-!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(X,Xtor)
+!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(X,Xtor,flag)
 !$OMP DO
 	do pp=1,ss
-		Xtor(1,pp) = sqrt( (sqrt(X(1,pp)**2 + X(2,pp)**2) - Ro)**2 + X(3,pp)**2 )
-		Xtor(2,pp) = atan2(X(3,pp), sqrt(X(1,pp)**2 + X(2,pp)**2) - Ro)
-		Xtor(2,pp) = modulo(Xtor(2,pp),2.0_rp*C_PI)
-		Xtor(3,pp) = atan2(X(1,pp),X(2,pp))
-		Xtor(3,pp) = modulo(Xtor(3,pp),2.0_rp*C_PI)
+        if ( flag(pp) .EQ. 1_idef ) then
+		    Xtor(1,pp) = sqrt( (sqrt(X(1,pp)**2 + X(2,pp)**2) - Ro)**2 + X(3,pp)**2 )
+		    Xtor(2,pp) = atan2(X(3,pp), sqrt(X(1,pp)**2 + X(2,pp)**2) - Ro)
+		    Xtor(2,pp) = modulo(Xtor(2,pp),2.0_rp*C_PI)
+		    Xtor(3,pp) = atan2(X(1,pp),X(2,pp))
+		    Xtor(3,pp) = modulo(Xtor(3,pp),2.0_rp*C_PI)
+        end if
 	end do
 !$OMP END DO
 !$OMP END PARALLEL

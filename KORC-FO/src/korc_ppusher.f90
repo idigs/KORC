@@ -126,7 +126,7 @@ subroutine advance_particles_velocity(params,EB,cparams,spp,dt,bool)
 			call interp_field(spp(ii)%vars, EB)
 		end if
 
-	a = spp(ii)%q*dt/spp(ii)%m
+	    a = spp(ii)%q*dt/spp(ii)%m
 
 !$OMP PARALLEL FIRSTPRIVATE(a,dt,bool)&
 !$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gammap,sigma,us,gamma,t,s,&
