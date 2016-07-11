@@ -147,7 +147,7 @@ subroutine initialize_particles(params,F,spp)
 		spp(ii)%Zo = Zo(ii)
 		spp(ii)%r = r(ii)
 
-		spp(ii)%gammao =  spp(ii)%Eo/(spp(ii)%m*C_C**2)
+		spp(ii)%gammao = (spp(ii)%Eo + spp(ii)%m*C_C**2)/(spp(ii)%m*C_C**2)
 
 		ALLOCATE( spp(ii)%vars%X(3,spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%V(3,spp(ii)%ppp) )

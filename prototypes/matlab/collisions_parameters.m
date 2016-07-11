@@ -27,7 +27,7 @@ find(gamma==1,1,'last')
 Eo(gamma==1) = [];
 gamma(gamma==1) = [];
 v = c*sqrt(1 - 1./gamma.^2);
-Eo = (Eo -  + me*c^2/qe)/1E6;
+Eo = (Eo - me*c^2/qe)/1E6;
 % Iz = qe*[15.7596,27.62965,40.74,59.81,75.02]; % Argon
 % Iz = qe*[21.5646,40.96296,63.45,97.12,126.21]; % Neon
 % Zj = 1:1:numel(Iz);
@@ -118,15 +118,10 @@ PcollZo = 4*pi*me*c^4*re^2*(nz*Clog_eZo*Zo^2)./(v.*gamma);
 
 PE = qe*E*v*cos(eta);
 
-A2 = (v*cos(eta)).^2*(E/c)^4;
-B2 = v*B^2*sin(eta);
-C2 = (gamma/c).^4.*( v.*((E*v*cos(eta)/c).^2 - E^2 - (v*B*sin(eta)).^2) ).^2;
-AC = (gamma/c).^2.*(E*v*cos(eta)/c).^2.*((E*v*cos(eta)/c).^2 - E^2 - (v*B*sin(eta)).^2);
-
 PR = (2*qe^2*re/(3*me*c))*( E^2 + gamma.^2.*((E*v*cos(eta)/c).^2 - E^2 - (v*B*sin(eta)).^2) );
 PR = abs(PR);
 
-figure
+h = figure;
 loglog(Eo,Pcolle,'r-',Eo,Pcollef,'r:',Eo,Pcolleb,'r--',...
     Eo,Pcolli,'k-',Eo,PcollH,'k:',Eo,PcollZj,'k--',Eo,PcollZo,'k-.',...
     Eo,PE,'b-',Eo,PR,'g-')
@@ -134,6 +129,31 @@ xlabel('$\mathcal{E}$ (MeV)','Interpreter','latex','FontSize',16)
 ylabel('$P$ (Watts)','Interpreter','latex','FontSize',16)
 box on
 grid on
+
+% eta = (10:10:80)*pi/180;
+eta = linspace(5,80,100)*pi/180;
+N = numel(eta);
+vals = zeros(1,N);
+I = zeros(1,N);
+for ii=1:N
+    PE = qe*E*v*cos(eta(ii));
+    PR = (2*qe^2*re/(3*me*c))*( E^2 + gamma.^2.*((E*v*cos(eta(ii))/c).^2 - E^2 - (v*B*sin(eta(ii))).^2) );
+    PR = abs(PR);
+    [~,I(ii)] = min(abs(PR-PE));
+    vals(ii) = PE(I(ii));
+end
+figure(h)
+hold on
+loglog(Eo(I),vals,'rs')
+hold off
+
+eta = 180*eta/pi;
+figure
+plot(eta,Eo(I),'ro--')
+box on
+grid on
+ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex','FontSize',16)
+xlabel('$\eta$ ($^\circ$)','Interpreter','latex','FontSize',16)
 % Power balance
 
 ae = ae/1E20;
