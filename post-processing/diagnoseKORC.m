@@ -759,38 +759,64 @@ colour = C(1:offset:end,:);
 h1=figure;
 set(h1,'name','IC','numbertitle','off')
 legends = cell(1,ST.params.simulation.num_species);
-for ss=1:ST.params.simulation.num_species
-%     h1=figure;
-%     set(h1,'name',['Species ' num2str(ss)],'numbertitle','off')
-    
+for ss=1:ST.params.simulation.num_species   
     t = linspace(0,2*pi,200);
     Rs = ST.params.fields.Ro + ST.params.fields.a*cos(t);
     Zs = ST.params.fields.a*sin(t);
 
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
-    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,pin,1));
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
+    bool = pin & passing;
+    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,1));
     R = sqrt( sum(X(1:2,:).^2,1) );
     Z = X(3,:);
-    
-%     figure(h1)
-%     plot(R,Z,'.','MarkerSize',12,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
-%     hold on
-%     plot(Rs,Zs,'r')
-%     hold off
-%     box on
-%     axis on
-%     axis square
-%     xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
-%     ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
 
     figure(h1)
+    subplot(1,2,1)
     hold on
     plot(R,Z,'s','MarkerSize',6,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+%     plot(R,Z,'.','MarkerSize',10,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
     hold off
     legends{ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
 end
 
 figure(h1)
+subplot(1,2,1)
+legend(legends)
+hold on
+plot(Rs,Zs,'r')
+box on
+axis on
+axis square
+xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
+
+legends = cell(1,ST.params.simulation.num_species);
+for ss=ST.params.simulation.num_species:-1:1
+    t = linspace(0,2*pi,200);
+    Rs = ST.params.fields.Ro + ST.params.fields.a*cos(t);
+    Zs = ST.params.fields.a*sin(t);
+
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    trapped = logical( any(ST.data.(['sp' num2str(ss)]).eta > 90,2) );
+
+    bool = pin & trapped;
+    
+    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,1));
+    R = sqrt( sum(X(1:2,:).^2,1) );
+    Z = X(3,:);
+    
+    figure(h1)
+    subplot(1,2,2)
+    hold on
+    plot(R,Z,'s','MarkerSize',6,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+%     plot(R,Z,'.','MarkerSize',10,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+    hold off
+    legends{ST.params.simulation.num_species + 1 -ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
+end
+
+figure(h1)
+subplot(1,2,2)
 legend(legends)
 hold on
 plot(Rs,Zs,'r')

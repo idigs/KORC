@@ -52,7 +52,6 @@ subroutine define_time_step(params)
 !	are included.
 
 	params%dt = params%dt*(2.0_rp*C_PI*params%cpp%time_r)
-
 end subroutine define_time_step
 
 
