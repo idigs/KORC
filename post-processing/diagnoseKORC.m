@@ -8,13 +8,13 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
 % ST.RT = radialTransport(ST);
 
 confined_particles(ST);
 
-% % pitchAngleDiagnostic(ST,100);
+pitchAngleDiagnostic(ST,100);
 
 % magneticMomentDiagnostic(ST,100);
 
@@ -23,6 +23,8 @@ confined_particles(ST);
 % angularMomentum(ST);
 
 % changeOfMagneticField(ST)
+
+energyLimit(ST);
 
 
 end
@@ -40,9 +42,9 @@ for ii=1:length(info.Groups)
             h5read(info.Filename,['/' name '/' subname]);
     end
 end
-
-% params.simulation.num_snapshots = 5;
-% params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
+% 
+params.simulation.num_snapshots = 125;
+params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 
 end
 
@@ -134,8 +136,11 @@ set(h4,'name','Input power','numbertitle','off')
 set(h5,'name','Energy gain/loss','numbertitle','off')
 try
     for ss=1:ST.params.simulation.num_species
-        tmp = zeros(size(ST.data.(['sp' num2str(ss)]).gamma));
-        for ii=1:ST.params.species.ppp(ss)*ST.params.simulation.nmpi
+        pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+%         passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
+%         bool = pin & passing;
+        tmp = zeros(size(ST.data.(['sp' num2str(ss)]).gamma(pin,:)));
+        for ii=1:size(tmp,1)
             tmp(ii,:) = ...
                 100*( ST.data.(['sp' num2str(ss)]).gamma(ii,:) - ...
                 ST.data.(['sp' num2str(ss)]).gamma(ii,1) )./ST.data.(['sp' num2str(ss)]).gamma(ii,1);
@@ -164,9 +169,9 @@ try
         
         figure(h3)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
-        Prad = mean(abs(ST.data.(['sp' num2str(ss)]).Prad),1);
-        minPrad = min( abs(ST.data.(['sp' num2str(ss)]).Prad), [], 1 );
-        maxPrad = max( abs(ST.data.(['sp' num2str(ss)]).Prad), [], 1 );
+        Prad = mean(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),1);
+        minPrad = min( abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)), [], 1 );
+        maxPrad = max( abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)), [], 1 );
         plot(time,Prad,'k',time,minPrad,'r:',time,maxPrad,'r:')
         box on
         grid on
@@ -175,9 +180,9 @@ try
         
         figure(h4)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
-        Pin = mean(abs(ST.data.(['sp' num2str(ss)]).Pin),1);
-        minPin = min( abs(ST.data.(['sp' num2str(ss)]).Pin), [], 1 );
-        maxPin = max( abs(ST.data.(['sp' num2str(ss)]).Pin), [], 1 );
+        Pin = mean(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),1);
+        minPin = min( abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)), [], 1 );
+        maxPin = max( abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)), [], 1 );
         plot(time,Pin,'k',time,minPin,'r:',time,maxPin,'r:')
         box on
         grid on
@@ -223,8 +228,9 @@ data = [];
 h1 = figure;
 set(h1,'name','PDF time evolution','numbertitle','off')
 for ss=1:ST.params.simulation.num_species
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
 %     tmp = cos(pi*ST.data.(['sp' num2str(ss)]).eta/180);
-    tmp = ST.data.(['sp' num2str(ss)]).eta;
+    tmp = ST.data.(['sp' num2str(ss)]).eta(pin,:);
     
     mean_f(ss,:) = mean(tmp,1);
     std_f(ss,:) = std(tmp,0,1);
@@ -752,21 +758,82 @@ end
 function confined_particles(ST)
 RT = struct;
 
+cad = ST.params.simulation.output_cadence;
+time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
+tmax = max(time);
+tmin = min(time);
+
 C = colormap(jet(512));
 offset = floor(512/ST.params.simulation.num_species);
 colour = C(1:offset:end,:);
+
+t = linspace(0,2*pi,200);
+Rs = ST.params.fields.Ro + ST.params.fields.a*cos(t);
+Zs = ST.params.fields.a*sin(t);
+
+h0 = figure;
+set(h0,'name','Particle loss','numbertitle','off')
+legends = cell(1,ST.params.simulation.num_species);
+for ss=1:ST.params.simulation.num_species
+    confinedParticles = ...
+        100*sum(ST.data.(['sp' num2str(ss)]).flag,1)/size(ST.data.(['sp' num2str(ss)]).flag,1);
+    figure(h0)
+    hold on
+    plot(time,confinedParticles)
+    hold off
+    
+    legends{ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
+end
+
+figure(h0)
+legend(legends,'interpreter','latex','FontSize',12)
+box on
+axis on
+axis square
+xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',16)
+ylabel('$\%$ of confined RE','Interpreter','latex','FontSize',16)
+
+
+h = figure;
+set(h,'name','Spatial distribution particle loss','numbertitle','off')
+legends = cell(1,ST.params.simulation.num_species);
+for ss=1:ST.params.simulation.num_species
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    I = find(pin==0);
+    for ii=1:numel(I)
+        it = find(ST.data.(['sp' num2str(ss)]).flag(I(ii),:)==0,1,'first');
+        
+        X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,I(ii),it));
+        R = sqrt( sum(X(1:2).^2,1) );
+        Z = X(3);
+        
+        figure(h)
+        subplot(1,double(ST.params.simulation.num_species),double(ss))
+        hold on
+        plot(R,Z,'o','MarkerSize',6,'MarkerFaceColor',[0,0,0],'MarkerEdgeColor',[0,0,0])
+        hold off
+    end
+    figure(h)
+    subplot(1,double(ST.params.simulation.num_species),double(ss))
+    hold on
+    plot(Rs,Zs,'r')
+    hold off
+    box on
+    axis on
+    axis equal
+    xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+    ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
+end
+
 
 h1=figure;
 set(h1,'name','IC','numbertitle','off')
 legends = cell(1,ST.params.simulation.num_species);
 for ss=1:ST.params.simulation.num_species   
-    t = linspace(0,2*pi,200);
-    Rs = ST.params.fields.Ro + ST.params.fields.a*cos(t);
-    Zs = ST.params.fields.a*sin(t);
-
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
     passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
     bool = pin & passing;
+    
     X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,1));
     R = sqrt( sum(X(1:2,:).^2,1) );
     Z = X(3,:);
@@ -782,9 +849,10 @@ end
 
 figure(h1)
 subplot(1,2,1)
-legend(legends)
+legend(legends,'interpreter','latex','FontSize',12)
 hold on
 plot(Rs,Zs,'r')
+hold off
 box on
 axis on
 axis square
@@ -817,7 +885,7 @@ end
 
 figure(h1)
 subplot(1,2,2)
-legend(legends)
+legend(legends,'interpreter','latex','FontSize',12)
 hold on
 plot(Rs,Zs,'r')
 box on
@@ -826,4 +894,54 @@ axis square
 xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
 ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
 
+end
+
+function energyLimit(ST)
+cad = ST.params.simulation.output_cadence;
+time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
+tmax = max(time);
+tmin = min(time);
+
+h1=figure;
+set(h1,'name','Energy vs. pitch angle','numbertitle','off')
+h2=figure;
+set(h2,'name','Energy vs. time','numbertitle','off')
+legends = cell(1,ST.params.simulation.num_species);
+
+for ss=1:ST.params.simulation.num_species   
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    
+    energy = mean(ST.data.(['sp' num2str(ss)]).gamma(pin,:),1);
+    energy = ST.params.species.m(ss)*ST.params.scales.v^2*energy/ST.params.scales.q;
+    energy = energy/1E6;
+    pitch = mean(ST.data.(['sp' num2str(ss)]).eta(pin,:),1);
+    
+    figure(h1)
+    hold on
+%     plot(pitch(1),energy(1),'ko',pitch,energy)
+    plot(pitch,energy)
+    hold off
+        
+    figure(h2)
+    hold on
+    plot(time,energy)
+    hold off
+    legends{ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
+end
+
+figure(h1)
+legend(legends,'interpreter','latex','FontSize',12)
+box on
+axis on
+axis square
+xlabel('Pitch angle $\eta$ ($^\circ$)','Interpreter','latex','FontSize',16)
+ylabel('$\mathcal{E}_0$ (MeV)','Interpreter','latex','FontSize',16)
+
+figure(h2)
+legend(legends,'interpreter','latex','FontSize',12)
+box on
+axis on
+axis square
+xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',16)
+ylabel('$\mathcal{E}_0$ (MeV)','Interpreter','latex','FontSize',16)
 end

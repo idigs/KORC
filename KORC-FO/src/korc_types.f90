@@ -107,6 +107,7 @@ TYPE, PUBLIC :: PARTICLES
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Prad ! Radiated power (in Watts/electron)
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Pin ! Input power (in Watts/electron)
 	INTEGER, DIMENSION(:), ALLOCATABLE :: flag
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: AUX
 END TYPE PARTICLES
 
 
