@@ -269,6 +269,25 @@ subroutine interp_analytical_field(prtcls,F)
 end subroutine interp_analytical_field
 
 
+subroutine interp_analytical_field_sp(X,Y,E,B,flag,F)
+    implicit none
+	REAL(rp), DIMENSION(3), INTENT(IN) :: X
+	REAL(rp), DIMENSION(3), INTENT(INOUT) :: Y
+	REAL(rp), DIMENSION(3), INTENT(INOUT) :: E
+	REAL(rp), DIMENSION(3), INTENT(INOUT) :: B
+	INTEGER, INTENT(INOUT) :: flag
+	TYPE(FIELDS), INTENT(IN) :: F
+
+	call cart_to_tor_sp(X,F%AB%Ro,Y,flag)
+
+    call check_if_confined_sp(F,Y,flag)
+
+	call analytical_magnetic_field_sp(F,Y,B,flag)
+
+	call analytical_electric_field_sp(F,Y,E,flag)
+end subroutine interp_analytical_field_sp
+
+
 subroutine unitVectors(params,Xo,F,par,perp)
     implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params

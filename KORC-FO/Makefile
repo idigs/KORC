@@ -46,7 +46,7 @@ endif
 
 BINARIES = $(addprefix $(OBJ)/, korc_types.o    constants.o	korc_HDF5.o	korc_hpc.o  rnd_numbers.o	korc_fields.o	korc_coords.o	korc_interp.o	initialize.o    finalize.o	korc_units.o   korc_ppusher.o	main.o)
 
-all: $(BIN)/KORC-FO
+all: $(BIN)/KORC-FO_X
 
 $(OBJ)/korc_types.o: $(SRC)/korc_types.f90
 	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $<		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
@@ -88,7 +88,7 @@ $(OBJ)/main.o: $(SRC)/main.f90
 	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$<		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
 
-$(BIN)/KORC-FO: $(BINARIES)
+$(BIN)/KORC-FO_X: $(BINARIES)
 	$(FC)	$(FCFLAGS)  $(BINARIES)	-o	$@	$(LIB_FLAGS)	$(LIBSHDF5)	$(LIB)	$(OMP_LIB_FLAGS)
 
 

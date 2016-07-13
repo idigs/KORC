@@ -55,4 +55,19 @@ subroutine cart_to_tor(X,Ro,Xtor,flag)
 !$OMP END PARALLEL
 end subroutine cart_to_tor
 
+
+subroutine cart_to_tor_sp(X,Ro,Xtor,flag)
+    implicit none
+	REAL(rp), DIMENSION(3), INTENT(IN) :: X ! X(1) = x, X(2) = y, X(3) = z
+	REAL(rp), INTENT(IN) :: Ro
+	REAL(rp), DIMENSION(3), INTENT(INOUT) :: Xtor ! Xtor(1) = r, Xtor(2) = theta, Xtor(3) = zeta
+	INTEGER, INTENT(IN) :: flag
+
+	Xtor(1) = sqrt( (sqrt(X(1)**2 + X(2)**2) - Ro)**2 + X(3)**2 )
+	Xtor(2) = atan2(X(3), sqrt(X(1)**2 + X(2)**2) - Ro)
+	Xtor(2) = modulo(Xtor(2),2.0_rp*C_PI)
+	Xtor(3) = atan2(X(1),X(2))
+	Xtor(3) = modulo(Xtor(3),2.0_rp*C_PI)
+end subroutine cart_to_tor_sp
+
 end module korc_coords

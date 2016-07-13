@@ -39,6 +39,26 @@ subroutine analytical_magnetic_field(F,Y,B,flag)
 end subroutine analytical_magnetic_field
 
 
+subroutine analytical_magnetic_field_sp(F,Y,B,flag)
+    implicit none
+	TYPE(FIELDS), INTENT(IN) :: F
+	REAL(rp), DIMENSION(3), INTENT(IN) :: Y ! Y(1) = r, Y(2) = theta, Y(3) = zeta
+	REAL(rp), DIMENSION(3), INTENT(INOUT) :: B ! B(1) = Bx, B(2) = By, B(3) = Bz
+	INTEGER, INTENT(IN) :: flag
+	REAL(rp) :: Bp, Br, eta
+
+	if ( flag .EQ. 1_idef ) then
+		Bp = F%AB%Bpo*( Y(1)/F%AB%lambda )/( 1.0_rp + (Y(1)/F%AB%lambda)**2 )
+		eta = Y(1)/F%Ro
+		Br = 1.0_rp/( 1.0_rp + eta*cos(Y(2)) )
+
+		B(1) = Br*( F%AB%Bo*cos(Y(3)) - Bp*sin(Y(2))*sin(Y(3)) )
+		B(2) = -Br*( F%AB%Bo*sin(Y(3)) + Bp*sin(Y(2))*cos(Y(3)) )
+		B(3) = Br*Bp*cos(Y(2))
+	end if
+end subroutine analytical_magnetic_field_sp
+
+
 subroutine analytical_electric_field(F,Y,E,flag)
     implicit none
 	TYPE(FIELDS), INTENT(IN) :: F
@@ -67,6 +87,27 @@ subroutine analytical_electric_field(F,Y,E,flag)
 !$OMP END PARALLEL
 	end if
 end subroutine analytical_electric_field
+
+
+subroutine analytical_electric_field_sp(F,Y,E,flag)
+    implicit none
+	TYPE(FIELDS), INTENT(IN) :: F
+	REAL(rp), DIMENSION(3), INTENT(IN) :: Y ! Y(1) = r, Y(2) = theta, Y(3) = zeta
+	REAL(rp), DIMENSION(3), INTENT(INOUT) :: E ! E(1) = Ex, E(2) = Ey, E(3) = Ez
+	INTEGER, INTENT(IN) :: flag
+	REAL(rp) :: Ezeta, eta
+
+	if (abs(F%Eo) > 0) then
+		if ( flag .EQ. 1_idef ) then
+			eta = Y(1)/F%Ro		
+			Ezeta = F%Eo/( 1.0_rp + eta*cos(Y(2)) )
+
+			E(1) = Ezeta*cos(Y(3))
+			E(2) = -Ezeta*sin(Y(3))
+			E(3) = 0.0_rp
+		end if
+	end if
+end subroutine analytical_electric_field_sp
 
 
 subroutine mean_F_field(F,Fo,op_field)
@@ -105,5 +146,19 @@ subroutine check_if_confined(F,Y,flag)
 !$OMP END DO
 !$OMP END PARALLEL
 end subroutine check_if_confined
+
+
+subroutine check_if_confined_sp(F,Y,flag)
+    implicit none
+	TYPE(FIELDS), INTENT(IN) :: F
+	REAL(rp), DIMENSION(3), INTENT(IN) :: Y ! Y(1) = r, Y(2) = theta, Y(3) = zeta
+	INTEGER, INTENT(INOUT) :: flag
+
+	if ( flag .EQ. 1_idef ) then
+		if (Y(1) .GT. F%AB%a) then
+			flag = 0_idef
+		end if
+	end if
+end subroutine check_if_confined_sp
 
 end module korc_fields

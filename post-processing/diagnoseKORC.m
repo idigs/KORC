@@ -43,7 +43,7 @@ for ii=1:length(info.Groups)
     end
 end
 % 
-params.simulation.num_snapshots = 125;
+params.simulation.num_snapshots = 141;
 params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 
 end
