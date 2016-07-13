@@ -69,7 +69,7 @@ function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,
 
 narginchk(8,9);
 
-close all
+% close all
 
 ST = struct;
 % Script parameters
@@ -112,7 +112,8 @@ end
 
 % Initial position and velocity of tracer, in SI units
 ST.params.Xo = xo; % Initial position
-vo(1) = sqrt(1 - (ST.params.me*ST.params.c^2/(vo(1)*ST.params.qe))^2);
+Eo = vo(1)*ST.params.qe + ST.params.me*ST.params.c^2;
+vo(1) = sqrt(1 - (ST.params.me*ST.params.c^2/Eo)^2);
 ST.params.vo_params = vo; % vo_params = [velocity magnitude, pitch angle]
 [ST.params.vo, ST.params.vpar, ST.params.vperp] = initializeVelocity(ST);
 
@@ -852,8 +853,8 @@ narginchk(1,2);
 
 % Parameters of the analytical magnetic field
 Bo = 2.19;
-a = 0.6;% Minor radius in meters.
-Ro = 1.695; % Major radius in meters.
+a = 0.5;% Minor radius in meters.
+Ro = 1.5; % Major radius in meters.
 qa = 3; % Safety factor at the separatrix (r=a)
 co = 0.5; % Extra parameter
 lamb = a/co;
@@ -911,7 +912,7 @@ narginchk(1,2);
 
 % Parameters of the analytical magnetic field
 Eo = -2.0;
-Ro = 1.695; % Major radius in meters.
+Ro = 1.5; % Major radius in meters.
 % Parameters of the analytical magnetic field
 
 % Toroidal coordinates
@@ -979,6 +980,7 @@ fcolli = zeros(1,ST.params.numSnapshots); % Collision force with ions
 
 WL = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 WR = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
+Psyn = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 WC = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 
 % Normalization
@@ -995,6 +997,7 @@ else
 end
 dt = ST.params.dt*ST.norm.wc;
 ep = ST.params.ep*(ST.norm.m^2*ST.params.c^3/(ST.norm.q^3*ST.Bo));
+Kc = ST.params.Kc/(ST.norm.m*ST.norm.l*ST.params.c^2/ST.norm.q^2);
 
 ST.coll.Te = ST.coll.Te/ST.norm.E;
 ST.coll.ne = ST.coll.ne/ST.norm.n;
@@ -1026,6 +1029,7 @@ mu(1) = m*gamma^2*vperp(1)^2/(2*B_mag);
 vmag = sqrt( sum(v(1,:).^2) );
 aux =  cross(v(1,:),E) + v(1,:)*sum(v(1,:).*B) - B*vmag^2;
 k(1) = abs(q)*sqrt( sum(aux.^2) )/(gamma*m*vmag^3);
+curv = k(1);
 % Curvature and torsion
 
 % % % Radiation damping and collision force % % %
@@ -1057,6 +1061,8 @@ Fcolle = -4.0*pi*ae*m*(ST.coll.re^2)*tmp*u(1,:)/q;
 tmp = gamma/sqrt(u(1,:)*u(1,:)')^3;
 Fcolli = -4.0*pi*ai*m*(ST.coll.re^2)*tmp*u(1,:)/q;
 % Collisions
+
+Psyn(1) = -(2/3)*( Kc*q^2*gamma^4*vmag^4*curv^2 );
 
 WL(1) = q*(E*v(1,:)');
 WR(1) = ( q^4/(6*pi*ep*m^2) )*( E*E' + cross(v(1,:),B)*E' +...
@@ -1126,41 +1132,42 @@ for ii=2:ST.params.numSnapshots
         vec = E + cross(V_eff,B);
         F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
         
-        % Collisions
-        tmp = (gamma_eff - 1.0)*sqrt(gamma_eff + 1.0);
-        Clog_ef = log(0.5*tmp*(ST.coll.rD/ST.coll.re)/gamma_eff);
-        ae = ST.coll.nef*Clog_ef;
-        for ppi=1:ST.coll.nimpurities
-            Clog_eb = log(tmp*ST.coll.Ee_IZj(ppi));
-            ae = ae + ST.coll.neb(ppi)*Clog_eb;
-        end
-        
-        
-        tmp = (gamma_eff^2 - 1.0)/gamma_eff;
-        Clog_eH = log( tmp*(ST.coll.rD/ST.coll.re) );
-        ai = ST.coll.nH*Clog_eH;
-        for ppi=1:ST.coll.nimpurities
-            Clog_eZj = log( ST.coll.rD/(ST.coll.Zj(ppi)*ST.coll.re*ST.coll.Ee_IZj(ppi)) );
-            Clog_eZo = log(tmp*ST.coll.Ee_IZj(ppi));
-            ai = ai + ST.coll.nj(ppi)*(Clog_eZj*ST.coll.Zj(ppi)^2 + Clog_eZo*ST.coll.Zo(ppi)^2);
-        end
-        
-        tmp = gamma_eff*(gamma_eff + 1.0)/sqrt(U_eff*U_eff')^3;
-        Fcolle = -4.0*pi*ae*m*(ST.coll.re^2)*tmp*U_eff/q;
-        
-        tmp = gamma_eff/sqrt(U_eff*U_eff')^3;
-        Fcolli = -4.0*pi*ai*m*(ST.coll.re^2)*tmp*U_eff/q;
-        % Collisions
-         
-%         U_R = U_R + a*( F2 + F3 );
-        U_R = U_R + a*( F2 + F3 + Fcolle + Fcolli);
+%         % Collisions
+%         tmp = (gamma_eff - 1.0)*sqrt(gamma_eff + 1.0);
+%         Clog_ef = log(0.5*tmp*(ST.coll.rD/ST.coll.re)/gamma_eff);
+%         ae = ST.coll.nef*Clog_ef;
+%         for ppi=1:ST.coll.nimpurities
+%             Clog_eb = log(tmp*ST.coll.Ee_IZj(ppi));
+%             ae = ae + ST.coll.neb(ppi)*Clog_eb;
+%         end
+%         
+%         
+%         tmp = (gamma_eff^2 - 1.0)/gamma_eff;
+%         Clog_eH = log( tmp*(ST.coll.rD/ST.coll.re) );
+%         ai = ST.coll.nH*Clog_eH;
+%         for ppi=1:ST.coll.nimpurities
+%             Clog_eZj = log( ST.coll.rD/(ST.coll.Zj(ppi)*ST.coll.re*ST.coll.Ee_IZj(ppi)) );
+%             Clog_eZo = log(tmp*ST.coll.Ee_IZj(ppi));
+%             ai = ai + ST.coll.nj(ppi)*(Clog_eZj*ST.coll.Zj(ppi)^2 + Clog_eZo*ST.coll.Zo(ppi)^2);
+%         end
+%         
+%         tmp = gamma_eff*(gamma_eff + 1.0)/sqrt(U_eff*U_eff')^3;
+%         Fcolle = -4.0*pi*ae*m*(ST.coll.re^2)*tmp*U_eff/q;
+%         
+%         tmp = gamma_eff/sqrt(U_eff*U_eff')^3;
+%         Fcolli = -4.0*pi*ai*m*(ST.coll.re^2)*tmp*U_eff/q;
+%         % Collisions
+
+%         U_R = U_R + a*( F2 + F3 + Fcolle + Fcolli);
+        U_R = U_R + a*( F2 + F3 );
+
         
         U = U_L + U_R - U;
         gamma = sqrt( 1 + U*U' );
         V = U/gamma;
         
-%         U = U_L;
-%         V = U_L/gamma;
+%          U = U_L;
+%          V = U_L/gamma;
         % % % Leap-frog scheme for the radiation damping force % % %fcoll
         
         zeta_previous = atan2(XX(2),XX(1));
@@ -1206,7 +1213,8 @@ for ii=2:ST.params.numSnapshots
     mu(ii) = m*gamma^2*vperp(ii)^2/(2*B_mag);
     
     k(ii) = curv;
-    
+	Psyn(ii) = -(2/3)*( Kc*q^2*gamma^4*vmag^4*curv^2 );
+            
     fL(ii) = abs(q)*sqrt( vec*vec' );
     f2(ii) = abs(q)*sqrt( F2*F2' );
     f3(ii) = abs(q)*sqrt( F3*F3' );
@@ -1378,7 +1386,7 @@ if ST.opt
     ylabel('$|W_L|$','Interpreter','latex','FontSize',16)
     title(PP.method,'Interpreter','latex','FontSize',16)
     subplot(4,1,2)
-    plot(time, WR)
+    plot(time,WR,'k',time,Psyn,'r')
     box on
     grid on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)

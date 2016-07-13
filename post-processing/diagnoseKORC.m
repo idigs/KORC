@@ -13,7 +13,7 @@ energyConservation(ST);
 % ST.RT = radialTransport(ST);
 
 confined_particles(ST);
-
+% 
 pitchAngleDiagnostic(ST,100);
 
 % magneticMomentDiagnostic(ST,100);
@@ -43,8 +43,8 @@ for ii=1:length(info.Groups)
     end
 end
 % 
-params.simulation.num_snapshots = 141;
-params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
+% params.simulation.num_snapshots = 210;
+% params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 
 end
 
@@ -121,6 +121,11 @@ err = zeros(ST.params.simulation.num_snapshots,ST.params.simulation.num_species)
 maxerr = zeros(ST.params.simulation.num_snapshots,ST.params.simulation.num_species);
 minerr = zeros(ST.params.simulation.num_snapshots,ST.params.simulation.num_species);
 
+st1 = zeros(ST.params.simulation.num_snapshots,ST.params.simulation.num_species);
+st2 = zeros(ST.params.simulation.num_snapshots,ST.params.simulation.num_species);
+st3 = zeros(ST.params.simulation.num_snapshots,ST.params.simulation.num_species);
+st4 = zeros(ST.params.simulation.num_snapshots,ST.params.simulation.num_species);
+
 cad = ST.params.simulation.output_cadence;
 time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
 
@@ -129,33 +134,45 @@ h1 = figure;
 h3 = figure;
 h4 = figure;
 h5 = figure;
+h6 = figure;
 set(h1,'name','Energy conservation','numbertitle','off')
 % set(h2,'name','Relativistic energy','numbertitle','off')
 set(h3,'name','Radiated power','numbertitle','off')
 set(h4,'name','Input power','numbertitle','off')
 set(h5,'name','Energy gain/loss','numbertitle','off')
+set(h6,'name','Energy statistics','numbertitle','off')
 try
     for ss=1:ST.params.simulation.num_species
         pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
 %         passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
 %         bool = pin & passing;
-        tmp = zeros(size(ST.data.(['sp' num2str(ss)]).gamma(pin,:)));
+        gamma = ST.data.(['sp' num2str(ss)]).gamma(pin,:);
+        tmp = zeros(size(gamma));
         for ii=1:size(tmp,1)
             tmp(ii,:) = ...
-                100*( ST.data.(['sp' num2str(ss)]).gamma(ii,:) - ...
-                ST.data.(['sp' num2str(ss)]).gamma(ii,1) )./ST.data.(['sp' num2str(ss)]).gamma(ii,1);
+                100*( gamma(ii,:) - gamma(ii,1) )./gamma(ii,1);
 %             tmp(ii,:) = ST.data.(['sp' num2str(ss)]).gamma(ii,:)./ST.data.(['sp' num2str(ss)]).gamma(ii,1);
         end
         err(:,ss) = mean(tmp,1);
-        maxerr(:,ss) = max(tmp,[],1);
-        minerr(:,ss) = min(tmp,[],1);
+%         maxerr(:,ss) = max(tmp,[],1);
+%         minerr(:,ss) = min(tmp,[],1);
+        maxerr(:,ss) = err(:,ss) + std(tmp,0,1)';
+        minerr(:,ss) = err(:,ss) - std(tmp,0,1)';
+        
+        if (~isempty(tmp))
+            st1(:,ss) = mean(tmp,1);
+            st2(:,ss) = std(tmp,0,1);
+            st3(:,ss) = skewness(tmp,1,1);
+            st4(:,ss) = kurtosis(tmp,1,1);
+        end
+        
         figure(h1)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
         plot(time,err(:,ss),'k-',time,minerr(:,ss),'r:',time,maxerr(:,ss),'r:')
         box on
         grid on
         xlabel('Time (s)','Interpreter','latex','FontSize',16)
-        ylabel('$\Delta E/E_0$ (\%)','Interpreter','latex','FontSize',16)
+        ylabel('$\Delta \mathcal{E}/\mathcal{E}_0$ (\%)','Interpreter','latex','FontSize',16)
 %         ylabel('$\mathcal{E}(t)/\mathcal{E}_0$','Interpreter','latex','FontSize',16)
         
 %         figure(h2)
@@ -166,12 +183,37 @@ try
 %         grid on
 %         xlabel('Time (s)','Interpreter','latex','FontSize',16)
 %         ylabel('$\langle \gamma m_0 c^2 \rangle$','Interpreter','latex','FontSize',16)
+
+        figure(h6)
+        subplot(4,1,1)
+        hold on; plot(time,st1(:,ss)); hold off
+        box on; grid on
+        xlabel('Time (s)','Interpreter','latex','FontSize',16)
+        ylabel('$\mu$','Interpreter','latex','FontSize',16)
+        subplot(4,1,2)
+        hold on; plot(time,st2(:,ss)); hold off
+        box on; grid on
+        xlabel('Time (s)','Interpreter','latex','FontSize',16)
+        ylabel('$\sigma$','Interpreter','latex','FontSize',16)
+        subplot(4,1,3)
+        hold on; plot(time,st3(:,ss)); hold off
+        box on; grid on
+        xlabel('Time (s)','Interpreter','latex','FontSize',16)
+        ylabel('$s$','Interpreter','latex','FontSize',16)
+        subplot(4,1,4)
+        hold on; plot(time,st4(:,ss)); hold off
+        box on; grid on
+        xlabel('Time (s)','Interpreter','latex','FontSize',16)
+        ylabel('$k$','Interpreter','latex','FontSize',16)
+        
         
         figure(h3)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
         Prad = mean(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),1);
-        minPrad = min( abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)), [], 1 );
-        maxPrad = max( abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)), [], 1 );
+%         minPrad = min( abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)), [], 1 );
+%         maxPrad = max( abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)), [], 1 );        
+        minPrad = Prad + std(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),0,1);
+        maxPrad = Prad - std(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),0,1);
         plot(time,Prad,'k',time,minPrad,'r:',time,maxPrad,'r:')
         box on
         grid on
@@ -181,8 +223,10 @@ try
         figure(h4)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
         Pin = mean(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),1);
-        minPin = min( abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)), [], 1 );
-        maxPin = max( abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)), [], 1 );
+%         minPin = min( abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)), [], 1 );
+%         maxPin = max( abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)), [], 1 );
+        minPin = Pin + std(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),0,1);
+        maxPin = Pin - std(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),0,1);
         plot(time,Pin,'k',time,minPin,'r:',time,maxPin,'r:')
         box on
         grid on
@@ -596,21 +640,32 @@ co = 0.5; % Extra parameter
 lambda = a/co;
 Bpo = 1E4*ST.params.fields.Bpo;
 
+st1 = zeros(ST.params.simulation.num_snapshots,ST.params.simulation.num_species);
+st2 = zeros(ST.params.simulation.num_snapshots,ST.params.simulation.num_species);
+st3 = zeros(ST.params.simulation.num_snapshots,ST.params.simulation.num_species);
+st4 = zeros(ST.params.simulation.num_snapshots,ST.params.simulation.num_species);
+
 h = figure;
 set(h,'name','Angular momentum conservation','numbertitle','off')
+h1 = figure;
+set(h1,'name','Angular momentum statistics','numbertitle','off')
 for ss=1:ST.params.simulation.num_species
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    num_part = numel(find(pin==1));
+%     num_part = ST.params.species.ppp(ss)*ST.params.simulation.nmpi;
+    
     m = 1E3*ST.params.species.m(ss);
     q = 3E9*ST.params.species.q(ss);
     
     invariant = ...
-        zeros(ST.params.species.ppp(ss)*ST.params.simulation.nmpi,ST.params.simulation.num_snapshots);
+        zeros(num_part,ST.params.simulation.num_snapshots);
     err = zeros(1,ST.params.simulation.num_snapshots);
     minerr = zeros(1,ST.params.simulation.num_snapshots);
     maxerr = zeros(1,ST.params.simulation.num_snapshots);
     
     for ii=1:ST.params.simulation.num_snapshots
-        X = 1E2*squeeze( ST.data.(['sp' num2str(ss)]).X(:,:,ii) );
-        V = 1E2*squeeze( ST.data.(['sp' num2str(ss)]).V(:,:,ii) );
+        X = 1E2*squeeze( ST.data.(['sp' num2str(ss)]).X(:,pin,ii) );
+        V = 1E2*squeeze( ST.data.(['sp' num2str(ss)]).V(:,pin,ii) );
 
         % Toroidal coordinates
         % r = radius, theta = poloidal angle, phi = toroidal angle
@@ -621,7 +676,7 @@ for ss=1:ST.params.simulation.num_species
         zeta(zeta<0) = zeta(zeta<0) + 2*pi;
         % Toroidal coordinates
 
-        gamma = squeeze( ST.data.(['sp' num2str(ss)]).gamma(:,ii) )';
+        gamma = squeeze( ST.data.(['sp' num2str(ss)]).gamma(pin,ii) )';
 
         eta = r/Ro;
         psi = 0.5*lambda*Bpo*log(1 + r.^2/lambda^2);
@@ -631,10 +686,19 @@ for ss=1:ST.params.simulation.num_species
         (X(2,:).*V(1,:) - X(1,:).*V(2,:))./( sum(X(1:2,:).^2,1) );
     
         invariant(:,ii) = dzeta.*( 1 + eta.*cos(theta) ).^2 - wo.*psi/(Ro*Bo);
-        tmp_vec = 100*(invariant(:,1) - invariant(:,ii))./invariant(:,1);
+        tmp_vec = 100*(invariant(:,ii) - invariant(:,1))./invariant(:,1);
         err(ii) = mean( tmp_vec );
-        minerr(ii) = min( tmp_vec );
-        maxerr(ii) = max( tmp_vec );
+%         minerr(ii) = min( tmp_vec );
+%         maxerr(ii) = max( tmp_vec );
+        minerr(ii) = err(ii) - std( tmp_vec );
+        maxerr(ii) = err(ii) + std( tmp_vec );
+        
+        if (~isempty(tmp_vec))
+            st1(ii,ss) = mean(tmp_vec);
+            st2(ii,ss) = std(tmp_vec);
+            st3(ii,ss) = skewness(tmp_vec);
+            st4(ii,ss) = kurtosis(tmp_vec);
+        end
     end
     
     figure(h)
@@ -644,6 +708,29 @@ for ss=1:ST.params.simulation.num_species
     grid on
     xlabel('Time (s)','Interpreter','latex','FontSize',12)
     ylabel('Angular momentum conservation (\%)','Interpreter','latex','FontSize',12)
+    
+    figure(h1)
+    subplot(4,1,1)
+    hold on; plot(time,st1(:,ss)); hold off
+    box on; grid on
+    xlabel('Time (s)','Interpreter','latex','FontSize',16)
+    ylabel('$\mu$','Interpreter','latex','FontSize',16)
+    subplot(4,1,2)
+    hold on; plot(time,st2(:,ss)); hold off
+    box on; grid on
+    xlabel('Time (s)','Interpreter','latex','FontSize',16)
+    ylabel('$\sigma$','Interpreter','latex','FontSize',16)
+    subplot(4,1,3)
+    hold on; plot(time,st3(:,ss)); hold off
+    box on; grid on
+    xlabel('Time (s)','Interpreter','latex','FontSize',16)
+    ylabel('$s$','Interpreter','latex','FontSize',16)
+    subplot(4,1,4)
+    hold on; plot(time,st4(:,ss)); hold off
+    box on; grid on
+    xlabel('Time (s)','Interpreter','latex','FontSize',16)
+    ylabel('$k$','Interpreter','latex','FontSize',16)
+    
 end
 
 
