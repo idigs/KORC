@@ -1,5 +1,5 @@
 function ST = diagnoseKORC(path)
-close all
+% close all
 
 ST = struct;
 ST.path = path;
@@ -8,13 +8,13 @@ ST.params = loadSimulationParameters(ST);
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
 % ST.RT = radialTransport(ST);
 
-confined_particles(ST);
-% 
-pitchAngleDiagnostic(ST,100);
+% confined_particles(ST);
+
+% pitchAngleDiagnostic(ST,100);
 
 % magneticMomentDiagnostic(ST,100);
 
@@ -24,7 +24,9 @@ pitchAngleDiagnostic(ST,100);
 
 % changeOfMagneticField(ST)
 
-energyLimit(ST);
+% energyLimit(ST);
+
+LarmorVsLL(ST);
 
 
 end
@@ -42,8 +44,8 @@ for ii=1:length(info.Groups)
             h5read(info.Filename,['/' name '/' subname]);
     end
 end
-% 
-% params.simulation.num_snapshots = 210;
+
+% params.simulation.num_snapshots = 250;
 % params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 
 end
@@ -51,7 +53,7 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {'X','V'};%,'Rgc'};
+list = {'X','V'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -80,8 +82,7 @@ for ll=1:length(list)
 end
 
 
-% list = {'eta','gamma'};%,'mu','Prad','tau'};
-list = {'eta','gamma','Prad','Pin','flag'};%,'mu'};
+list = {'eta','gamma','Prad','Pin','flag','mu'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -91,9 +92,7 @@ for ll=1:length(list)
         data.(['sp' num2str(ss)]).(list{ll}) = ...
             zeros(tnp,ST.params.simulation.num_snapshots);
         
-        for ii=1:ST.params.simulation.num_snapshots
-            % disp(['Loading: ' list{ll} ' Snapshot: ' num2str((ii-1))])
-            
+        for ii=1:ST.params.simulation.num_snapshots            
             for ff=1:ST.params.simulation.nmpi
                 
                 filename = [ST.path 'file_' num2str(ff-1) '.h5'];
@@ -130,13 +129,14 @@ cad = ST.params.simulation.output_cadence;
 time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
 
 h1 = figure;
-% h2 = figure;
+h2 = figure;
 h3 = figure;
 h4 = figure;
 h5 = figure;
 h6 = figure;
+
 set(h1,'name','Energy conservation','numbertitle','off')
-% set(h2,'name','Relativistic energy','numbertitle','off')
+set(h2,'name','Velocity components','numbertitle','off')
 set(h3,'name','Radiated power','numbertitle','off')
 set(h4,'name','Input power','numbertitle','off')
 set(h5,'name','Energy gain/loss','numbertitle','off')
@@ -166,6 +166,19 @@ try
             st4(:,ss) = kurtosis(tmp,1,1);
         end
         
+        Prad = mean(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),1);
+        minPrad = Prad + std(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),0,1);
+        maxPrad = Prad - std(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),0,1);
+        
+        Pin = mean(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),1);
+        minPin = Pin + std(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),0,1);
+        maxPin = Pin - std(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),0,1);
+        
+        eta = ST.data.(['sp' num2str(ss)]).eta(pin,:);
+        V = sqrt(1 - 1./gamma.^2); % in units of the speed of light
+        Vpar = mean((V.*cos(eta)).^2,1);
+        Vperp = mean((V.*sin(eta)).^2,1);
+        
         figure(h1)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
         plot(time,err(:,ss),'k-',time,minerr(:,ss),'r:',time,maxerr(:,ss),'r:')
@@ -173,16 +186,15 @@ try
         grid on
         xlabel('Time (s)','Interpreter','latex','FontSize',16)
         ylabel('$\Delta \mathcal{E}/\mathcal{E}_0$ (\%)','Interpreter','latex','FontSize',16)
-%         ylabel('$\mathcal{E}(t)/\mathcal{E}_0$','Interpreter','latex','FontSize',16)
         
-%         figure(h2)
-%         subplot(double(ST.params.simulation.num_species),1,double(ss))
-%         Erel = (299792458.0)^2*ST.params.species.m(ss)*mean(ST.data.(['sp' num2str(ss)]).gamma,1)/abs(ST.params.species.q(ss));
-%         plot(time,Erel)
-%         box on
-%         grid on
-%         xlabel('Time (s)','Interpreter','latex','FontSize',16)
-%         ylabel('$\langle \gamma m_0 c^2 \rangle$','Interpreter','latex','FontSize',16)
+        figure(h2)
+        subplot(double(ST.params.simulation.num_species),1,double(ss))
+        plot(time,Vpar-Vperp,'k-')
+%         plot(time,Vpar,'k-',time,Vperp,'r-')
+        box on
+        grid on
+        xlabel('Time (s)','Interpreter','latex','FontSize',16)
+        ylabel('$v_\parallel$, $v_\perp$ ($c$)','Interpreter','latex','FontSize',16)
 
         figure(h6)
         subplot(4,1,1)
@@ -209,11 +221,6 @@ try
         
         figure(h3)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
-        Prad = mean(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),1);
-%         minPrad = min( abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)), [], 1 );
-%         maxPrad = max( abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)), [], 1 );        
-        minPrad = Prad + std(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),0,1);
-        maxPrad = Prad - std(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),0,1);
         plot(time,Prad,'k',time,minPrad,'r:',time,maxPrad,'r:')
         box on
         grid on
@@ -222,11 +229,6 @@ try
         
         figure(h4)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
-        Pin = mean(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),1);
-%         minPin = min( abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)), [], 1 );
-%         maxPin = max( abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)), [], 1 );
-        minPin = Pin + std(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),0,1);
-        maxPin = Pin - std(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),0,1);
         plot(time,Pin,'k',time,minPin,'r:',time,maxPin,'r:')
         box on
         grid on
@@ -881,36 +883,78 @@ xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',16)
 ylabel('$\%$ of confined RE','Interpreter','latex','FontSize',16)
 
 
-h = figure;
-set(h,'name','Spatial distribution particle loss','numbertitle','off')
-legends = cell(1,ST.params.simulation.num_species);
-for ss=1:ST.params.simulation.num_species
-    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
-    I = find(pin==0);
-    for ii=1:numel(I)
-        it = find(ST.data.(['sp' num2str(ss)]).flag(I(ii),:)==0,1,'first');
-        
-        X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,I(ii),it));
-        R = sqrt( sum(X(1:2).^2,1) );
-        Z = X(3);
-        
-        figure(h)
-        subplot(1,double(ST.params.simulation.num_species),double(ss))
-        hold on
-        plot(R,Z,'o','MarkerSize',6,'MarkerFaceColor',[0,0,0],'MarkerEdgeColor',[0,0,0])
-        hold off
-    end
-    figure(h)
-    subplot(1,double(ST.params.simulation.num_species),double(ss))
-    hold on
-    plot(Rs,Zs,'r')
-    hold off
-    box on
-    axis on
-    axis equal
-    xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
-    ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
-end
+% h = figure;
+% set(h,'name','Spatial distribution particle loss','numbertitle','off')
+% legends = cell(1,ST.params.simulation.num_species);
+% for ss=1:ST.params.simulation.num_species
+%     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+%     I = find(pin==0);
+%     for ii=1:numel(I)
+%         it = find(ST.data.(['sp' num2str(ss)]).flag(I(ii),:)==0,1,'first');
+%         
+%         X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,I(ii),it));
+%         R = sqrt( sum(X(1:2).^2,1) );
+%         Z = X(3);
+%         
+%         figure(h)
+%         subplot(1,double(ST.params.simulation.num_species),double(ss))
+%         hold on
+%         plot(R,Z,'o','MarkerSize',6,'MarkerFaceColor',[0,0,0],'MarkerEdgeColor',[0,0,0])
+%         hold off
+%     end
+%     figure(h)
+%     subplot(1,double(ST.params.simulation.num_species),double(ss))
+%     hold on
+%     plot(Rs,Zs,'r')
+%     hold off
+%     box on
+%     axis on
+%     axis equal
+%     xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+%     ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
+% end
+
+% % Toroidal coordinates
+%         % r = radius, theta = poloidal angle, zeta = toroidal angle
+%         r = sqrt( (sqrt(sum(X(1:2,:).^2,1)) - Ro).^2 + X(3,:).^2 );
+%         theta = atan2(X(3,:),sqrt(sum(X(1:2,:).^2,1)) - Ro);
+%         theta(theta<0) = theta(theta<0) + 2*pi;
+%         theta = 180*theta/pi;
+%         zeta = atan2(X(1),X(2));
+%         zeta(zeta<0) = zeta(zeta<0) + 2*pi;
+%         % Toroidal coordinates
+%         
+%         
+% h = figure;
+% set(h,'name','Spatial distribution particle loss','numbertitle','off')
+% legends = cell(1,ST.params.simulation.num_species);
+% for ss=1:ST.params.simulation.num_species
+%     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+%     I = find(pin==0);
+%     for ii=1:numel(I)
+%         it = find(ST.data.(['sp' num2str(ss)]).flag(I(ii),:)==0,1,'first');
+%         
+%         X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,I(ii),it));
+%         R = sqrt( sum(X(1:2).^2,1) );
+%         Z = X(3);
+%         
+%         figure(h)
+%         subplot(1,double(ST.params.simulation.num_species),double(ss))
+%         hold on
+%         plot(R,Z,'o','MarkerSize',6,'MarkerFaceColor',[0,0,0],'MarkerEdgeColor',[0,0,0])
+%         hold off
+%     end
+%     figure(h)
+%     subplot(1,double(ST.params.simulation.num_species),double(ss))
+%     hold on
+%     plot(Rs,Zs,'r')
+%     hold off
+%     box on
+%     axis on
+%     axis equal
+%     xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+%     ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
+% end
 
 
 h1=figure;
@@ -928,7 +972,7 @@ for ss=1:ST.params.simulation.num_species
     figure(h1)
     subplot(1,2,1)
     hold on
-    plot(R,Z,'s','MarkerSize',6,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+    plot(R,Z,'s','MarkerSize',4,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
 %     plot(R,Z,'.','MarkerSize',10,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
     hold off
     legends{ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
@@ -1018,17 +1062,169 @@ end
 
 figure(h1)
 legend(legends,'interpreter','latex','FontSize',12)
-box on
-axis on
-axis square
+grid on; box on; axis on; axis square
 xlabel('Pitch angle $\eta$ ($^\circ$)','Interpreter','latex','FontSize',16)
 ylabel('$\mathcal{E}_0$ (MeV)','Interpreter','latex','FontSize',16)
 
 figure(h2)
 legend(legends,'interpreter','latex','FontSize',12)
-box on
-axis on
-axis square
+grid on; box on; axis on; axis square
 xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',16)
 ylabel('$\mathcal{E}_0$ (MeV)','Interpreter','latex','FontSize',16)
+end
+
+function B = analyticalB(ST,X)
+% Analytical magnetic field
+% X is a vector X(1)=x, X(2)=y, X(3)=z.
+
+narginchk(1,2);
+
+% Parameters of the analytical magnetic field
+Bo = ST.params.fields.Bo;
+a = ST.params.fields.a;
+Ro = ST.params.fields.Ro;
+qa = ST.params.fields.qa;
+co = ST.params.fields.co;
+lamb = ST.params.fields.lambda;
+Bpo = ST.params.fields.Bpo;
+% Parameters of the analytical magnetic field
+
+
+% Toroidal coordinates
+% r = radius, theta = poloidal angle, zeta = toroidal angle
+r = squeeze(sqrt( (sqrt(sum(X(1:2,:,:).^2,1)) - Ro).^2 + X(3,:,:).^2));
+theta = atan2(squeeze(X(3,:,:)),squeeze(sqrt(sum(X(1:2,:,:).^2,1)) - Ro));
+theta(theta<0) = theta(theta<0) + 2*pi;
+zeta = atan2(squeeze(X(1,:,:)),squeeze(X(2,:,:)));
+zeta(zeta<0) = zeta(zeta<0) + 2*pi;
+% Toroidal coordinates
+
+% Poloidal magnetic field
+% Minus sign = TEXTOR
+% Plus sign = default
+Bp = Bpo*(r/lamb)./( 1 + (r/lamb).^2 );
+
+eta = r/Ro;
+Br = 1./( 1 + eta.*cos(theta) );
+
+Bx = Br.*( Bo*cos(zeta) - Bp.*sin(theta).*sin(zeta) );
+By = -Br.*( Bo*sin(zeta) + Bp.*sin(theta).*cos(zeta) );
+Bz = Br.*Bp.*cos(theta);
+
+B = zeros(3,size(r,1),size(r,2));
+B(1,:,:) = Bx;
+B(2,:,:) = By;
+B(3,:,:) = Bz;
+
+end
+
+function E = analyticalE(ST,X)
+% Analytical magnetic field
+% X is a vector X(1)=x, X(2)=y, X(3)=z.
+
+narginchk(1,2);
+
+% Parameters of the analytical magnetic field
+Eo = ST.params.fields.Eo;
+Ro = ST.params.fields.Ro;
+% Parameters of the analytical magnetic field
+
+
+% Toroidal coordinates
+% r = radius, theta = poloidal angle, zeta = toroidal angle
+r = squeeze(sqrt( (sqrt(sum(X(1:2,:,:).^2,1)) - Ro).^2 + X(3,:,:).^2));
+theta = atan2(squeeze(X(3,:,:)),squeeze(sqrt(sum(X(1:2,:,:).^2,1)) - Ro));
+theta(theta<0) = theta(theta<0) + 2*pi;
+zeta = atan2(squeeze(X(1,:,:)),squeeze(X(2,:,:)));
+zeta(zeta<0) = zeta(zeta<0) + 2*pi;
+% Toroidal coordinates
+
+% Poloidal magnetic field
+eta = r/Ro;
+Ezeta = Eo./( 1 + eta.*cos(theta) );
+
+Ex = Ezeta.*cos(zeta);
+Ey = -Ezeta.*sin(zeta);
+Ez = 0;
+
+E = zeros(3,size(r,1),size(r,2));
+E(1,:,:) = Ex;
+E(2,:,:) = Ey;
+E(3,:,:) = Ez;
+
+end
+
+function LarmorVsLL(ST)
+cad = ST.params.simulation.output_cadence;
+time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
+tmax = max(time);
+tmin = min(time);
+
+kB = 1.38E-23; % Boltzmann constant
+Kc = 8.987E9; % Coulomb constant in N*m^2/C^2
+mu0 = (4E-7)*pi; % Magnetic permeability
+ep = 8.854E-12;% Electric permitivity
+c = 2.9979E8; % Speed of light
+qe = 1.602176E-19; % Electron charge
+me = 9.109382E-31; % Electron mass
+% % % % % % % % % % %
+
+
+% 
+%         % % % % % % % % % % % % % % %
+%         % Radiation losses operator
+%         vmag = sqrt( V*V' );
+%         aux =  cross(V,E) + V*(V*B') - B*vmag^2;
+%         curv = abs(q)*sqrt( aux*aux' )/(gamma*m*vmag^3);
+%         % Radiation losses operator
+%         % % % % 
+
+h=figure;
+set(h,'name','Radiation: Larmor approx','numbertitle','off')
+for ss=1:ST.params.simulation.num_species
+    q = ST.params.species.q(ss);
+    m = ST.params.species.m(ss);
+    
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    
+    V = ST.data.(['sp' num2str(ss)]).V(:,pin,:);
+    gamma = ST.data.(['sp' num2str(ss)]).gamma(pin,:);
+    X = ST.data.(['sp' num2str(ss)]).X(:,pin,:);
+    B = analyticalB(ST,X);
+    E = analyticalE(ST,X);
+    
+    vmag = squeeze(sqrt(sum(V.^2,1)));
+    VxE = zeros(size(X));
+    VxVxB = zeros(size(X));
+    for it=1:size(X,3)
+        VxE(:,:,it) = cross(V(:,:,it),E(:,:,it));
+        VxVxB(:,:,it) = cross(V(:,:,it),cross(V(:,:,it),B(:,:,it)));
+    end
+    clear E B
+    
+    kappa = q*sqrt( squeeze(sum((VxE + VxVxB).^2,1)) )./(m*gamma.*vmag.^3);
+    clear VxE VxVxB
+    
+    PR = 2*Kc*q^2*mean((gamma.*vmag).^4.*kappa.^2,1)/(3*c^3);
+    
+    eta = ST.data.(['sp' num2str(ss)]).eta(pin,:);
+    v = c*sqrt(1 - 1./gamma.^2); % in units of the speed of light
+    vperp = v.*sin(eta);
+    wc = q*ST.params.fields.Bo./(gamma*m);
+    rg = vperp./wc;
+    kappa2 = 1/ST.params.fields.Ro.^2 + ...
+        sin(eta).^4./rg.^2;
+    
+    PR_approx = 2*Kc*q^2*mean((gamma.*vmag).^4.*kappa2,1)/(3*c^3);
+    
+    
+    figure(h)
+    subplot(double(ST.params.simulation.num_species),1,double(ss))
+%     semilogy(time,PR,'k',time,PR_approx,'r')
+    plot(time,PR./PR_approx,'k')
+    box on; grid on;
+    xlabel('Time (s)','Interpreter','latex','FontSize',16)
+    ylabel('$\langle P_{R} \rangle$/$\langle P_{RL} \rangle$','Interpreter','latex','FontSize',16)
+end
+
 end

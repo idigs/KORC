@@ -17,7 +17,7 @@ me = 9.109382E-31; % Electron mass
 
 eta = eta*pi/180;
 
-gamma = qe*Eo/(me*c^2);
+gamma = (qe*Eo + me*c^2)/(me*c^2);
 v = c*sqrt(1 - 1./gamma.^2);
 vpar = v*cos(eta);
 
