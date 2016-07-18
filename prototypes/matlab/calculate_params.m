@@ -1,4 +1,4 @@
-function IT = calculate_params(B,Ro,Eo,eta,DT,numTransits)
+function IT = calculate_params(B,Ro,a,Eo,eta,DT,numTransits)
 % + B is the magnetic field
 % + Ro is the major radius of the plasma
 % + Eo is the range of energies in eV
@@ -21,14 +21,20 @@ gamma = (qe*Eo + me*c^2)/(me*c^2);
 v = c*sqrt(1 - 1./gamma.^2);
 vpar = v*cos(eta);
 
-
-
 wc = qe*B./(gamma*me);
+Tc = 2*pi./wc;
+
 dt = DT*(2*pi./wc);
+
+Ba = B*Ro/(Ro + a);
+wca = qe*Ba./(gamma*me);
+Tca = 2*pi./wca;
 
 P = 2*pi*Ro;
 simTime = numTransits*P./vpar;
 
-IT = simTime./dt;
+% IT = simTime./dt;
+IT = ceil(Tca./dt);
+disp(['Eo = ' num2str(Eo/1E6) ' IT = ' num2str(IT)])
 
 end

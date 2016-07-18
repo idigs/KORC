@@ -1,5 +1,5 @@
 function ST = diagnoseKORC(path)
-% close all
+close all
 
 ST = struct;
 ST.path = path;
@@ -16,17 +16,17 @@ ST.data = loadData(ST);
 
 % pitchAngleDiagnostic(ST,100);
 
-% magneticMomentDiagnostic(ST,100);
+% magneticMomentDiagnostic(ST,50);
 
 % poloidalPlaneDistributions(ST,25);
 
 % angularMomentum(ST);
 
-% changeOfMagneticField(ST)
+changeOfMagneticField(ST)
 
 % energyLimit(ST);
 
-LarmorVsLL(ST);
+% LarmorVsLL(ST);
 
 
 end
@@ -53,7 +53,7 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {'X','V'};
+list = {'X','V','B'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -61,13 +61,13 @@ for ll=1:length(list)
         tnp = double(ST.params.species.ppp(ss)*ST.params.simulation.nmpi);
         
         data.(['sp' num2str(ss)]).(list{ll}) = ...
-            zeros(3,tnp,ST.params.simulation.num_snapshots);
+            zeros(3,tnp,ST.params.simulation.num_snapshots+1);
         
         for ff=1:ST.params.simulation.nmpi
             filename = [ST.path 'file_' num2str(ff-1) '.h5'];
             indi = (ff - 1)*double(ST.params.species.ppp(ss)) + 1;
             indf = ff*double(ST.params.species.ppp(ss));
-            for ii=1:ST.params.simulation.num_snapshots
+            for ii=1:(ST.params.simulation.num_snapshots+1)
                 dataset = ...
                     ['/' num2str((ii-1)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
                     '/' list{ll}];
@@ -82,7 +82,8 @@ for ll=1:length(list)
 end
 
 
-list = {'eta','gamma','Prad','Pin','flag','mu'};
+% list = {'eta','gamma','Prad','Pin','flag','mu'};
+list = {'eta','gamma','flag','mu'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -126,7 +127,7 @@ st3 = zeros(ST.params.simulation.num_snapshots,ST.params.simulation.num_species)
 st4 = zeros(ST.params.simulation.num_snapshots,ST.params.simulation.num_species);
 
 cad = ST.params.simulation.output_cadence;
-time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
+time = ST.params.simulation.dt*double(0:cad:ST.params.simulation.t_steps);
 
 h1 = figure;
 h2 = figure;
@@ -255,7 +256,7 @@ N = 10;
 nbins = 30;
 
 cad = ST.params.simulation.output_cadence;
-time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
+time = ST.params.simulation.dt*double(0:cad:ST.params.simulation.t_steps);
 tmax = max(time);
 tmin = min(time);
 
@@ -474,36 +475,80 @@ end
 end
 
 function magneticMomentDiagnostic(ST,numBins)
-tmp = [];
-
-for ss=1:ST.params.simulation.num_species
-    tmp = [tmp;ST.data.(['sp' num2str(ss)]).mu];
-end
-
-
-f = zeros(numBins,ST.params.simulation.num_snapshots);
-
-for ii=2:ST.params.simulation.num_snapshots
-    tmp(:,ii) = 100*(tmp(:,1) - tmp(:,ii))./tmp(:,1);
-    minVal = min(min( tmp(:,ii) ));
-    maxVal = max(max( tmp(:,ii) ));
-    vals = linspace(0,20,numBins);
-    [f(:,ii),~] = hist(tmp(:,ii),vals);
-end
-
 cad = ST.params.simulation.output_cadence;
-time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
+time = ST.params.simulation.dt*double(0:cad:ST.params.simulation.t_steps);
 tmax = max(time);
 tmin = min(time);
 
-figure
-set(gcf,'name','Magnetic moment','numbertitle','off')
-surf(time(2:end),vals,f(:,2:end),'LineStyle','none')
-% surf(time,vals,f,'LineStyle','none')
-% axis([tmin tmax minVal maxVal])
-xlabel('Time (s)','Interpreter','latex','FontSize',16)
-ylabel('Magnetic moment $\mu$ (arbitrary units)','Interpreter','latex','FontSize',16)
-colormap(jet)
+mean_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
+std_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
+skewness_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
+kurtosis_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots);
+
+fx = zeros(ST.params.simulation.num_species,numBins,ST.params.simulation.num_snapshots);
+x = zeros(ST.params.simulation.num_species,numBins);
+
+h1 = figure;
+set(h1,'name','PDF of magnetic moment','numbertitle','off')
+for ss=1:ST.params.simulation.num_species
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    tmp = ST.data.(['sp' num2str(ss)]).mu(pin,:);
+    for ii=1:size(tmp,1)
+        tmp(ii,:) = 100*(tmp(ii,:) - tmp(ii,1))./tmp(ii,1);
+    end
+    
+    mean_f(ss,:) = mean(tmp,1);
+    std_f(ss,:) = std(tmp,0,1);
+    skewness_f(ss,:) = skewness(tmp,0,1);
+    kurtosis_f(ss,:) = kurtosis(tmp,1,1);
+      
+    minVal = min(min( tmp ));
+    maxVal = max(max( tmp ));
+    x(ss,:) = linspace(minVal,maxVal,numBins);
+    
+    for ii=1:ST.params.simulation.num_snapshots
+        try
+            [fx(ss,:,ii),~] = hist(tmp(:,ii),x(ss,:));
+        catch
+        end
+    end
+    
+    subplot(double(ST.params.simulation.num_species),1,double(ss))
+    surf(time,squeeze(x(ss,:)),log10(squeeze(fx(ss,:,:))),'LineStyle','none')
+%     axis([tmin tmax minVal maxVal])
+    view([0,90])
+    box on
+    axis on
+    xlabel('Time (s)','Interpreter','latex','FontSize',16)
+    ylabel('$\Delta \mu/\mu_0$ ($\%$)','Interpreter','latex','FontSize',16)
+    colormap(jet)
+end
+
+h2 = figure;
+set(h2,'name','Statistical moments magnetic moment','numbertitle','off')
+for ii=1:ST.params.simulation.num_species
+    figure(h2)
+    subplot(4,1,1)
+    hold on
+    plot(time,mean_f(ii,:))
+    hold off
+    figure(h2)
+    subplot(4,1,2)
+    hold on
+    plot(time,std_f(ii,:))
+    hold off
+    figure(h2)
+    subplot(4,1,3)
+    hold on
+    plot(time,skewness_f(ii,:))
+    hold off
+    figure(h2)
+    subplot(4,1,4)
+    hold on
+    plot(time,kurtosis_f(ii,:))
+    hold off
+end
+
 end
 
 function poloidalPlaneDistributions(ST,nbins)
@@ -511,7 +556,7 @@ N = 3;
 offset = floor(double(ST.params.simulation.num_snapshots)/N);
 
 cad = ST.params.simulation.output_cadence;
-time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
+time = ST.params.simulation.dt*double(0:cad:ST.params.simulation.t_steps);
 
 % m = figure;
 
@@ -633,7 +678,7 @@ c = 299792458.0;
 c = 1E2*c;
 
 cad = ST.params.simulation.output_cadence;
-time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
+time = ST.params.simulation.dt*double(0:cad:ST.params.simulation.t_steps);
 
 Bo = 1E4*ST.params.fields.Bo;
 Ro = 1E2*ST.params.fields.Ro; % Major radius in meters.
@@ -739,13 +784,65 @@ end
 end
 
 function changeOfMagneticField(ST)
+cad = ST.params.simulation.output_cadence;
+time = ST.params.simulation.dt*double(0:cad:ST.params.simulation.t_steps);
+tmax = max(time);
+tmin = min(time);
 
-for ss=1:ST.params.simulation.num_species
-    m = ST.params.species.m(ss);
+for ss=1:ST.params.simulation.num_species   
     q = ST.params.species.q(ss);
-    gamma = ST.data.(['sp' num2str(ss)]).gamma(:,1); % initial relativistic factor
+    m = ST.params.species.m(ss);
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    aux = find(pin == 1);
     
+    Bo = squeeze( sqrt( sum(ST.data.(['sp' num2str(ss)]).B(:,pin,1).^2,1) ) );
+    gamma = ST.data.(['sp' num2str(ss)]).gamma(pin,1)';
+    wc = abs(q)*Bo./(gamma*m);
+    Tc = 2*pi./wc;
+    I = zeros(size(Bo));
+    B = zeros(size(Bo));
+    DB = zeros(size(Bo));
+    for ii=1:numel(Bo)
+        [~,I(ii)] = min( abs(Tc(ii) - time) );
+        tmp = squeeze( sqrt( sum(ST.data.(['sp' num2str(ss)]).B(:,aux(ii),1:I(ii)).^2,1) ) );
+        DB(ii) = max( 100*abs(tmp - Bo(ii))/Bo(ii) );
+        
+%         B = squeeze( sqrt( sum(ST.data.(['sp' num2str(ss)]).B(:,aux(ii),I(ii)).^2,1) ) );
+%         DB(ii) = 100*abs(B - Bo(ii))/Bo(ii);
+        
+%         B1 = ST.data.(['sp' num2str(ss)]).B(:,aux(ii),1);
+%         B2 = ST.data.(['sp' num2str(ss)]).B(:,aux(ii),I(ii));
+%         DB(ii) = 100*sqrt(sum((B2-B1).^2))/sqrt(sum(B1.^2));
+        
+%         B(ii) = squeeze( sqrt( sum(ST.data.(['sp' num2str(ss)]).B(:,aux(ii),I(ii)).^2,1) ) );
+    end
+%     DB = 100*abs( B - Bo )./Bo;
+
+    minVal = min( DB );
+    maxVal = max( DB );
+    x = linspace(minVal,maxVal,50);
+
+    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,pin,1));
+    R = sqrt( sum(X(1:2,:).^2,1) );
+    Z = X(3,:);
+
+    S = 12*ones(size(gamma));
+    h=figure;
+    set(h,'name',['Change of B-field: sp' num2str(ss)],'numbertitle','off')
+%     scatter3(R,Z,DB,S,DB,'square','filled')
+    subplot(1,2,1)
+    histogram(DB,x)
+    subplot(1,2,2)
+    scatter3(R,Z,DB,S,DB,'square','filled')
+    colormap(jet(256))
+    colorbar
+    view([0,90])
+    box on; axis on; axis square
+    xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+    ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
 end
+
+
 
 end
 
@@ -753,7 +850,7 @@ function RT = radialTransport(ST)
 RT = struct;
 
 cad = ST.params.simulation.output_cadence;
-time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
+time = ST.params.simulation.dt*double(0:cad:ST.params.simulation.t_steps);
 Ro = ST.params.fields.Ro;
 rc = zeros(1,ST.params.simulation.num_species);
 
@@ -848,7 +945,7 @@ function confined_particles(ST)
 RT = struct;
 
 cad = ST.params.simulation.output_cadence;
-time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
+time = ST.params.simulation.dt*double(0:cad:ST.params.simulation.t_steps);
 tmax = max(time);
 tmin = min(time);
 
@@ -1029,7 +1126,7 @@ end
 
 function energyLimit(ST)
 cad = ST.params.simulation.output_cadence;
-time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
+time = ST.params.simulation.dt*double(0:cad:ST.params.simulation.t_steps);
 tmax = max(time);
 tmin = min(time);
 
@@ -1156,7 +1253,7 @@ end
 
 function LarmorVsLL(ST)
 cad = ST.params.simulation.output_cadence;
-time = ST.params.simulation.dt*double(cad:cad:ST.params.simulation.t_steps);
+time = ST.params.simulation.dt*double(0:cad:ST.params.simulation.t_steps);
 tmax = max(time);
 tmin = min(time);
 
