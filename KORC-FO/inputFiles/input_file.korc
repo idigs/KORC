@@ -1,8 +1,8 @@
 &input_parameters
-        t_steps = 850000000 ! 1050000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+        t_steps = 150000 ! 1050000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
         dt = 0.025 ! Time step as fraction of non-relativistic gyro-period
-        output_cadence = 850000 ! 1400 for saving each 100 gyro-periods
-        num_species = 3
+        output_cadence = 15000 ! 300000 ! 1400 for saving each 100 gyro-periods
+        num_species = 1
         num_impurity_species = 1
         radiation = .TRUE.
         collisions = .FALSE.
@@ -18,20 +18,20 @@
 /
 
 &plasma_species
-        runaway = .FALSE., .FALSE., .FALSE. !
-        Ro = 1.15, 1.15, 1.15 !
-        Zo = 0.0, 0.0, 0.0 !
-        r = 0.1, 0.1, 0.1 !
-        Eo = 75.13E6, 75.13E6, 75.13E6 ! Initial energy in eV
-        etao = 17.48, 19.98, 22.48  ! Initial pitch angle
-        ppp = 250, 250, 250 ! Number of particles per process (mpi)
-        q = -1.0, -1.0, -1.0 ! Electric charge
-        m = 1.0, 1.0, 1.0 ! In units of electron mass
+        runaway = .FALSE. !
+        Ro = 1.15 !
+        Zo = 0.0 !
+        r = 0.1 !
+        Eo = 10.0E6 ! Initial energy in eV
+        etao = 17.48  ! Initial pitch angle
+        ppp = 200 ! Number of particles per process (mpi)
+        q = -1.0 ! Electric charge
+        m = 1.0 ! In units of electron mass
 /
 
 &analytic_mag_field_params
         electric_field_mode = 'CONSTANT' ! Options are 'CONSTANT' and 'PULSE'
-        Eo = -4.0 ! In V/m
+        Eo = -0.0 ! In V/m
         pulse_maximum = 3.0E-3 ! Time at which maximum is reached in s
         pulse_duration = 6.7E-4 ! Duration of intense toroidal electric field
         Bo = 2.19 ! In Teslas. ITER: 5.42 DIII-D: 2.19

@@ -912,7 +912,7 @@ function E = analyticalE(X)
 narginchk(1,2);
 
 % Parameters of the analytical magnetic field
-Eo = -2.0;
+Eo = -4.0;
 Ro = 1.5; % Major radius in meters.
 % Parameters of the analytical magnetic field
 

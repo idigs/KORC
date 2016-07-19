@@ -187,20 +187,23 @@ subroutine advance_particles_velocity(params,EB,cparams,spp,dt,bool)
 				! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
 
 				! ! ! Splitting operator for including radiation and collisions
-!				U_os = 0.5_rp*(U_L + U)
+				U_os = 0.5_rp*(U_L + U)
 
-!				call radiation_force(spp(ii),U_os,spp(ii)%vars%E(:,pp),spp(ii)%vars%B(:,pp),Frad)
-!				U_RC = U_RC + a*Frad/spp(ii)%q
+				if (params%radiation) then
+					call radiation_force(spp(ii),U_os,spp(ii)%vars%E(:,pp),spp(ii)%vars%B(:,pp),Frad)
+					U_RC = U_RC + a*Frad/spp(ii)%q
+				end if
 
-!				if (params%collisions) then
-!					call collision_force(spp(ii),cparams,U_os,Fcoll)
-!					U_RC = U_RC + a*Fcoll/spp(ii)%q
-!				end if
+				if (params%collisions) then
+					call collision_force(spp(ii),cparams,U_os,Fcoll)
+					U_RC = U_RC + a*Fcoll/spp(ii)%q
+				end if
 
-!				U = U_L + U_RC - U
-!				gamma = sqrt( 1.0_rp + DOT_PRODUCT(U,U) )
+				U = U_L + U_RC - U
+				if (params%radiation .OR. ) then
+					gamma = sqrt( 1.0_rp + DOT_PRODUCT(U,U) )
+				end if
 				
-				U = U_L
 				! ! ! Splitting operator for including radiation and collisions
 
 		        spp(ii)%vars%V(:,pp) = U/gamma
