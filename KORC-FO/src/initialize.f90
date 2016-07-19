@@ -216,8 +216,7 @@ subroutine set_up_particles_ic(params,F,spp)
 		ALLOCATE( theta(spp(ii)%ppp) )
 		ALLOCATE( zeta(spp(ii)%ppp) )
 		ALLOCATE( radius(spp(ii)%ppp) )
-		ALLOCA
-TE( pitch(spp(ii)%ppp) )
+!		ALLOCATE( pitch(spp(ii)%ppp) )
 
 		! Initial condition of uniformly distributed particles on a disk in the xz-plane
 		! A unique velocity direction
@@ -233,17 +232,17 @@ TE( pitch(spp(ii)%ppp) )
 		call init_random_seed()
 		call RANDOM_NUMBER(radius)
 		
-		Xo(1,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*sin(zeta)
-		Xo(2,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*cos(zeta)
-		Xo(3,:) = spp(ii)%Zo + spp(ii)%r*sqrt(radius)*sin(theta)
+!		Xo(1,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*sin(zeta)
+!		Xo(2,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*cos(zeta)
+!		Xo(3,:) = spp(ii)%Zo + spp(ii)%r*sqrt(radius)*sin(theta)
 
-!		do jj=1,spp(ii)%ppp
-!			Xo(1,jj) = (spp(ii)%Ro - spp(ii)%r) + &
-!					2.0_rp*spp(ii)%r*REAL(MODULO(jj,101_idef),rp)/101.0_rp
-!			Xo(2,jj) = 0.0_rp
-!			Xo(3,jj) = spp(ii)%r - &
-!					2.0_rp*spp(ii)%r*FLOOR(REAL(jj,rp)/101.0_rp)/101.0_rp
-!		end do
+		do jj=1,spp(ii)%ppp
+			Xo(1,jj) = (spp(ii)%Ro - spp(ii)%r) + &
+					2.0_rp*spp(ii)%r*REAL(MODULO(jj,101_idef),rp)/101.0_rp
+			Xo(2,jj) = 0.0_rp
+			Xo(3,jj) = spp(ii)%r - &
+					2.0_rp*spp(ii)%r*FLOOR(REAL(jj,rp)/101.0_rp)/101.0_rp
+		end do
 
 		spp(ii)%vars%X(1,:) = Xo(1,:)
 		spp(ii)%vars%X(2,:) = Xo(2,:)
@@ -271,7 +270,7 @@ TE( pitch(spp(ii)%ppp) )
 		DEALLOCATE(theta)
 		DEALLOCATE(zeta)
 		DEALLOCATE(radius)
-		DEALLOCATE(pitch)	
+!		DEALLOCATE(pitch)	
 		DEALLOCATE(Xo)
 		DEALLOCATE(Vo)
 		DEALLOCATE(Vpar)

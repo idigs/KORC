@@ -200,7 +200,7 @@ subroutine advance_particles_velocity(params,EB,cparams,spp,dt,bool)
 				end if
 
 				U = U_L + U_RC - U
-				if (params%radiation .OR. ) then
+				if (params%radiation .OR. params%collisions) then
 					gamma = sqrt( 1.0_rp + DOT_PRODUCT(U,U) )
 				end if
 				

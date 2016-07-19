@@ -55,7 +55,7 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {'X','V'};
+list = {'X','V','B'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -1220,21 +1220,22 @@ for ss=1:ST.params.simulation.num_species
     V = ST.data.(['sp' num2str(ss)]).V(:,pin,:);
     v = squeeze( sqrt( sum(V.^2,1) ) );
     gamma = ST.data.(['sp' num2str(ss)]).gamma(pin,:);
-%     eta = ST.data.(['sp' num2str(ss)]).eta(pin,:);
-    eta = repmat(ST.data.(['sp' num2str(ss)]).eta(pin,1),1,size(gamma,2));
+    eta = pi*ST.data.(['sp' num2str(ss)]).eta(pin,:)/180;
+%     eta = repmat(ST.data.(['sp' num2str(ss)]).eta(pin,1),1,size(gamma,2));
     X = ST.data.(['sp' num2str(ss)]).X(:,pin,:);
-    B = analyticalB(ST,X);
+%     B = analyticalB(ST,X);
+    B = ST.data.(['sp' num2str(ss)]).B(:,pin,:);
     E = analyticalE(ST,X);
     
     vec_mag = zeros(size(gamma));
     for it=1:size(X,3)
         for ii=1:size(gamma,1)
-
 %             VxE = cross(squeeze(V(:,ii,it)),squeeze(E(:,ii,it)));
 %             VxB = cross(squeeze(V(:,ii,it)),squeeze(B(:,ii,it)));
 %             VxVxB = cross(squeeze(V(:,ii,it)),VxB);
 %             vec = VxE + VxVxB;
 %             vec_mag(ii,it) = sqrt( vec'*vec );
+
             Bmag = sqrt( squeeze(B(:,ii,it))'*squeeze(B(:,ii,it))  );
             vec_mag(ii,it) = v(ii,it)^2*Bmag*sin(eta(ii,it));
         end
@@ -1251,13 +1252,13 @@ for ss=1:ST.params.simulation.num_species
     PR_LL = mean(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),1);
     PR_L = 2*Kc*q^2*mean((gamma.*v).^4.*kappa.^2,1)/(3*c^3);
     PR_approx = 2*Kc*q^2*mean((gamma.*v).^4.*kappa2,1)/(3*c^3);
-%     RATIO1 = PR_L./PR_LL;
-    RATIO2 = PR_approx./PR_L;   
+    RATIO1 = PR_L./PR_LL;
+    RATIO2 = PR_approx./PR_LL;   
     PR.A(:,ss) = [PR_L(end), PR_approx(end)];
     
     figure(h)
     subplot(double(ST.params.simulation.num_species),1,double(ss))
-    plot(ST.time,RATIO2,'k')%,ST.time,RATIO2,'r')
+    plot(ST.time,RATIO1,'k',ST.time,RATIO2,'r')
     box on; grid on;
     xlabel('Time (s)','Interpreter','latex','FontSize',16)
     ylabel('$P_R$','Interpreter','latex','FontSize',12)
