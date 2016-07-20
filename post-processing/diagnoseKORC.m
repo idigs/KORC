@@ -18,7 +18,7 @@ ST.data = loadData(ST);
 
 % ST.CP = confined_particles(ST);
 
-% pitchAngleDiagnostic(ST,100);
+pitchAngleDiagnostic(ST,100);
 
 % magneticMomentDiagnostic(ST,50);
 
@@ -30,7 +30,7 @@ ST.data = loadData(ST);
 
 % energyLimit(ST);
 
-ST.PR = LarmorVsLL(ST);
+% ST.PR = LarmorVsLL(ST);
 end
 
 function params = loadSimulationParameters(ST)
@@ -47,15 +47,15 @@ for ii=1:length(info.Groups)
     end
 end
 
-% params.simulation.num_snapshots = 500;
-% params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
+params.simulation.num_snapshots = 500;
+params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 
 end
 
 function data = loadData(ST)
 data = struct;
 
-list = {'X','V','B'};
+list = {'X','V'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -378,8 +378,11 @@ for ii=1:N
     hold on
     for ss=1:ST.params.simulation.num_species
         dx = mean(diff(x(ss,:)));
-        xAxis = ( x(ss,:) - mean_f(ss,it) )/std_f(ss,it);
-        f = std_f(ss,it)*fx(ss,:,it)/(sum(fx(ss,:,it))*dx);
+%         xAxis = ( x(ss,:) - mean_f(ss,it) )/std_f(ss,it);
+%         f = std_f(ss,it)*fx(ss,:,it)/(sum(fx(ss,:,it))*dx);
+        
+        xAxis = x(ss,:);
+        f = squeeze(fx(ss,:,it));
         
         figure(h3)
         plot(xAxis,log10(f),'o:')
@@ -1206,7 +1209,7 @@ qe = 1.602176E-19; % Electron charge
 me = 9.109382E-31; % Electron mass
 % % % % % % % % % % %
 
-PR.A = zeros(2,ST.params.simulation.num_species);
+PR.A = zeros(3,ST.params.simulation.num_species);
 
 h=figure;
 set(h,'name','Radiation: Larmor approx','numbertitle','off')
@@ -1221,40 +1224,50 @@ for ss=1:ST.params.simulation.num_species
     v = squeeze( sqrt( sum(V.^2,1) ) );
     gamma = ST.data.(['sp' num2str(ss)]).gamma(pin,:);
     eta = pi*ST.data.(['sp' num2str(ss)]).eta(pin,:)/180;
-%     eta = repmat(ST.data.(['sp' num2str(ss)]).eta(pin,1),1,size(gamma,2));
+%     eta = pi*repmat(ST.params.species.etao(ss),size(gamma,1),size(gamma,2))/180;
     X = ST.data.(['sp' num2str(ss)]).X(:,pin,:);
-%     B = analyticalB(ST,X);
-    B = ST.data.(['sp' num2str(ss)]).B(:,pin,:);
+    try
+        B = ST.data.(['sp' num2str(ss)]).B(:,pin,:);
+    catch
+        B = analyticalB(ST,X);
+    end
     E = analyticalE(ST,X);
     
     vec_mag = zeros(size(gamma));
     for it=1:size(X,3)
         for ii=1:size(gamma,1)
-%             VxE = cross(squeeze(V(:,ii,it)),squeeze(E(:,ii,it)));
-%             VxB = cross(squeeze(V(:,ii,it)),squeeze(B(:,ii,it)));
-%             VxVxB = cross(squeeze(V(:,ii,it)),VxB);
-%             vec = VxE + VxVxB;
-%             vec_mag(ii,it) = sqrt( vec'*vec );
+            VxE = cross(squeeze(V(:,ii,it)),squeeze(E(:,ii,it)));
+            VxB = cross(squeeze(V(:,ii,it)),squeeze(B(:,ii,it)));
+            VxVxB = cross(squeeze(V(:,ii,it)),VxB);
+            vec = VxE + VxVxB;
+            vec_mag(ii,it) = sqrt( vec'*vec );
 
-            Bmag = sqrt( squeeze(B(:,ii,it))'*squeeze(B(:,ii,it))  );
-            vec_mag(ii,it) = v(ii,it)^2*Bmag*sin(eta(ii,it));
+%             Bmag = sqrt( squeeze(B(:,ii,it))'*squeeze(B(:,ii,it))  );
+%             vec_mag(ii,it) = v(ii,it)^2*Bmag*sin(eta(ii,it));
         end
     end
 
+    % Approximation of <1/R^2> ~ sin^4(eta)/rg^2
     vperp = v.*sin(eta);
     wc = q*ST.params.fields.Bo./(gamma*m);
-%     wc = q*squeeze(sqrt( sum(B.^2,1) ))./(gamma*m);
     rg = vperp./wc;
     kappa2 = sin(eta).^4./rg.^2;
     
+    % Actual curvature
     kappa = q*vec_mag./(m*gamma.*v.^3);    
 
+    % Landau-Lifshiftz radiation formula
     PR_LL = mean(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),1);
+    
+    % Larmor approximation using actual curvature
     PR_L = 2*Kc*q^2*mean((gamma.*v).^4.*kappa.^2,1)/(3*c^3);
+    
+    % Larmor approximation using approximation for curvature
     PR_approx = 2*Kc*q^2*mean((gamma.*v).^4.*kappa2,1)/(3*c^3);
+    
     RATIO1 = PR_L./PR_LL;
     RATIO2 = PR_approx./PR_LL;   
-    PR.A(:,ss) = [PR_L(end), PR_approx(end)];
+    PR.A(:,ss) = [PR_LL(end), PR_L(end), PR_approx(end)];
     
     figure(h)
     subplot(double(ST.params.simulation.num_species),1,double(ss))
