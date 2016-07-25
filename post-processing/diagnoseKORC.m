@@ -12,11 +12,11 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
 % ST.RT = radialTransport(ST);
 
-% ST.CP = confined_particles(ST);
+ST.CP = confined_particles(ST);
 
 % pitchAngleDiagnostic(ST,100);
 
@@ -24,7 +24,7 @@ energyConservation(ST);
 
 % poloidalPlaneDistributions(ST,25);
 
-angularMomentum(ST);
+% angularMomentum(ST);
 
 % ST.CMF = changeOfMagneticField(ST)
 
@@ -1006,7 +1006,7 @@ Zs = ST.params.fields.a*sin(t);
 CP.confined = zeros(1,ST.params.simulation.num_species);
 
 h0 = figure;
-set(h0,'name','Particle loss','numbertitle','off')
+set(h0,'Visible','off','name','Particle loss','numbertitle','off');
 legends = cell(1,ST.params.simulation.num_species);
 for ss=1:ST.params.simulation.num_species
     numConfPart = sum(ST.data.(['sp' num2str(ss)]).flag(:,1),1);
@@ -1034,7 +1034,7 @@ saveas(h0,[ST.path 'particle_loss'],'fig')
 % close(h0)
 
 h1=figure;
-set(h1,'name','IC','numbertitle','off')
+set(h1,'Visible','off','name','IC','numbertitle','off')
 legends = cell(1,ST.params.simulation.num_species);
 for ss=1:ST.params.simulation.num_species   
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
