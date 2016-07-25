@@ -1,5 +1,5 @@
 function ST = diagnoseKORC(path)
-close all
+% close all
 
 ST = struct;
 ST.path = path;
@@ -34,6 +34,8 @@ angularMomentum(ST);
 
 % stackedPlots(ST,40);
 
+% scatterPlots(ST);
+
 
 
 
@@ -55,7 +57,7 @@ for ii=1:length(info.Groups)
     end
 end
 
-% params.simulation.num_snapshots = 500;
+% params.simulation.num_snapshots = 20;
 % params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 
 end
@@ -280,7 +282,9 @@ f_tot = zeros(numBins,ST.params.simulation.num_snapshots+1);
 data = [];
 
 h1 = figure;
-set(h1,'name','PDF time evolution','numbertitle','off')
+set(h1,'name','Pitch angle PDF vs. time','numbertitle','off')
+h0 = figure;
+set(h0,'name','Energy PDF vs. time','numbertitle','off')
 for ss=1:ST.params.simulation.num_species
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
 %     tmp = cos(pi*ST.data.(['sp' num2str(ss)]).eta/180);
@@ -301,15 +305,39 @@ for ss=1:ST.params.simulation.num_species
         [fx(ss,:,ii),~] = hist(tmp(:,ii),x(ss,:));
     end
     
+    figure(h1)
     subplot(double(ST.params.simulation.num_species),1,double(ss))
-%     surf(ST.time,squeeze(x(ss,:)),log10(squeeze(fx(ss,:,:))),'LineStyle','none')
-    surf(ST.time,squeeze(x(ss,:)),squeeze(fx(ss,:,:)),'LineStyle','none')
+    surf(ST.time,squeeze(x(ss,:)),log10(squeeze(fx(ss,:,:))),'LineStyle','none')
+%     surf(ST.time,squeeze(x(ss,:)),squeeze(fx(ss,:,:)),'LineStyle','none')
     axis([tmin tmax minVal maxVal])
     box on
     axis on
     xlabel('Time (s)','Interpreter','latex','FontSize',16)
     ylabel('$\eta$ ($^\circ$)','Interpreter','latex','FontSize',16)
-    colormap(jet)
+    colormap(jet(256))
+    
+    
+    tmp = ...
+        ST.data.(['sp' num2str(ss)]).gamma(pin,:)*ST.params.species.m(ss)*ST.params.scales.v^2/abs(ST.params.species.q(ss));
+    tmp = tmp/1E6;
+    
+    minVal = min(min( tmp ));
+    maxVal = max(max( tmp ));
+    y = linspace(minVal,maxVal,nbins);
+    fy = zeros(nbins,ST.params.simulation.num_snapshots+1);
+    for ii=1:ST.params.simulation.num_snapshots+1
+        [fy(:,ii),~] = hist(tmp(:,ii),y);
+    end
+    
+    figure(h0)
+    subplot(double(ST.params.simulation.num_species),1,double(ss))
+    surf(ST.time,y,log10(fy),'LineStyle','none')
+    axis([tmin tmax minVal maxVal])
+    box on
+    axis on
+    xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',16)
+    ylabel('$\mathcal{E}(t)$ (MeV)','Interpreter','latex','FontSize',16)
+    colormap(jet(256))
 end
 
 minVal = min(min( data ));
@@ -1270,22 +1298,12 @@ for ss=1:ST.params.simulation.num_species
     PR_LL = abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:));
     
     % Larmor approximation using actual curvature
-    PR_L = 2*Kc*q^2*mean((gamma.*v).^4.*kappa.^2,1)/(3*c^3);
+%     PR_L = 2*Kc*q^2*mean((gamma.*v).^4.*kappa.^2,1)/(3*c^3);
+    PR_L = 2*Kc*q^2*(gamma.*v).^4.*kappa.^2/(3*c^3);
     
     % Larmor approximation using approximation for curvature
 %     PR_approx = 2*Kc*q^2*mean((gamma.*v).^4.*kappa2,1)/(3*c^3);
     PR_approx = 2*Kc*q^2*(gamma.*v).^4.*kappa2/(3*c^3);
-    
-%     RATIO1 = PR_L./PR_LL;
-%     RATIO2 = PR_approx./PR_LL;   
-%     PR.A(:,ss) = [PR_LL(end), PR_L(end), PR_approx(end)];
-%     
-%     figure(h)
-%     subplot(double(ST.params.simulation.num_species),1,double(ss))
-%     plot(ST.time,RATIO1,'k',ST.time,RATIO2,'r')
-%     box on; grid on;
-%     xlabel('Time (s)','Interpreter','latex','FontSize',16)
-%     ylabel('$P_R$','Interpreter','latex','FontSize',12)
     
     figure(h1)
     subplot(double(ST.params.simulation.num_species),1,double(ss))
@@ -1294,6 +1312,21 @@ for ss=1:ST.params.simulation.num_species
     box on; grid on;
     xlabel('$\eta$ ($^\circ$)','Interpreter','latex','FontSize',16)
     ylabel('$P_{rad}$','Interpreter','latex','FontSize',16)
+    
+    PR_LL = mean(PR_LL,1);
+    PR_L = mean(PR_L,1);
+    PR_approx = mean(PR_approx,1);
+    
+    RATIO1 = PR_L./PR_LL;
+    RATIO2 = PR_approx./PR_LL;   
+    PR.A(:,ss) = [PR_LL(end), PR_L(end), PR_approx(end)];
+    
+    figure(h)
+    subplot(double(ST.params.simulation.num_species),1,double(ss))
+    plot(ST.time,RATIO1,'k',ST.time,RATIO2,'r')
+    box on; grid on;
+    xlabel('Time (s)','Interpreter','latex','FontSize',16)
+    ylabel('$P_R$','Interpreter','latex','FontSize',12)
 end
 
 end
@@ -1338,3 +1371,45 @@ end
 
 
 end
+
+function scatterPlots(ST)
+kB = 1.38E-23; % Boltzmann constant
+Kc = 8.987E9; % Coulomb constant in N*m^2/C^2
+mu0 = (4E-7)*pi; % Magnetic permeability
+ep = 8.854E-12;% Electric permitivity
+c = 2.9979E8; % Speed of light
+qe = 1.602176E-19; % Electron charge
+me = 9.109382E-31; % Electron mass
+% % % % % % % % % % %
+
+h=figure;
+set(h,'name','Scatter: E vs pitch','numbertitle','off')
+for ss=1:ST.params.simulation.num_species
+    q = abs(ST.params.species.q(ss));
+    m = ST.params.species.m(ss);
+    
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    eta = ST.data.(['sp' num2str(ss)]).eta(pin,:);
+    Et = ST.data.(['sp' num2str(ss)]).gamma(pin,:)*m*ST.params.scales.v^2/(abs(q)*1E6);
+    Eo = ST.params.species.Eo(ss)/1E6;
+    etao = ST.params.species.etao(ss);
+
+    eta_mean = mean(eta,1);
+    Et_mean = mean(Et,1);
+
+    figure(h)
+    subplot(double(ST.params.simulation.num_species),1,double(ss))
+    plot(squeeze(eta(:,end)),squeeze(Et(:,end)),'.','MarkerFaceColor',[0,0.45,0.74],...
+        'MarkerEdgeColor',[0,0.45,0.74])
+    hold on
+    plot(eta_mean,Et_mean,'k',...
+        etao,Eo,'rs','MarkerFaceColor','r','MarkerSize',10)
+    hold off
+    box on; grid on;
+    xlabel('$\eta$ ($^\circ$)','Interpreter','latex','FontSize',16)
+    ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex','FontSize',16)
+end
+
+end
+
+
