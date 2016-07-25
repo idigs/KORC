@@ -12,25 +12,33 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
 % ST.RT = radialTransport(ST);
 
 % ST.CP = confined_particles(ST);
 
-pitchAngleDiagnostic(ST,100);
+% pitchAngleDiagnostic(ST,100);
 
 % magneticMomentDiagnostic(ST,50);
 
 % poloidalPlaneDistributions(ST,25);
 
-% angularMomentum(ST);
+angularMomentum(ST);
 
 % ST.CMF = changeOfMagneticField(ST)
 
 % energyLimit(ST);
 
 % ST.PR = LarmorVsLL(ST);
+
+% stackedPlots(ST,40);
+
+
+
+
+
+% save('energy_limit','ST')
 end
 
 function params = loadSimulationParameters(ST)
@@ -47,8 +55,8 @@ for ii=1:length(info.Groups)
     end
 end
 
-params.simulation.num_snapshots = 500;
-params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
+% params.simulation.num_snapshots = 500;
+% params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 
 end
 
@@ -294,7 +302,8 @@ for ss=1:ST.params.simulation.num_species
     end
     
     subplot(double(ST.params.simulation.num_species),1,double(ss))
-    surf(ST.time,squeeze(x(ss,:)),log10(squeeze(fx(ss,:,:))),'LineStyle','none')
+%     surf(ST.time,squeeze(x(ss,:)),log10(squeeze(fx(ss,:,:))),'LineStyle','none')
+    surf(ST.time,squeeze(x(ss,:)),squeeze(fx(ss,:,:)),'LineStyle','none')
     axis([tmin tmax minVal maxVal])
     box on
     axis on
@@ -386,6 +395,7 @@ for ii=1:N
         
         figure(h3)
         plot(xAxis,log10(f),'o:')
+        plot(xAxis,f,'o:')
         
         figure(h2)
         subplot(4,1,1)
@@ -1213,6 +1223,8 @@ PR.A = zeros(3,ST.params.simulation.num_species);
 
 h=figure;
 set(h,'name','Radiation: Larmor approx','numbertitle','off')
+h1=figure;
+set(h1,'name','Scatter plot','numbertitle','off')
 for ss=1:ST.params.simulation.num_species
     q = abs(ST.params.species.q(ss));
     m = ST.params.species.m(ss);
@@ -1241,9 +1253,6 @@ for ss=1:ST.params.simulation.num_species
             VxVxB = cross(squeeze(V(:,ii,it)),VxB);
             vec = VxE + VxVxB;
             vec_mag(ii,it) = sqrt( vec'*vec );
-
-%             Bmag = sqrt( squeeze(B(:,ii,it))'*squeeze(B(:,ii,it))  );
-%             vec_mag(ii,it) = v(ii,it)^2*Bmag*sin(eta(ii,it));
         end
     end
 
@@ -1257,24 +1266,75 @@ for ss=1:ST.params.simulation.num_species
     kappa = q*vec_mag./(m*gamma.*v.^3);    
 
     % Landau-Lifshiftz radiation formula
-    PR_LL = mean(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),1);
+%     PR_LL = mean(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),1);
+    PR_LL = abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:));
     
     % Larmor approximation using actual curvature
     PR_L = 2*Kc*q^2*mean((gamma.*v).^4.*kappa.^2,1)/(3*c^3);
     
     % Larmor approximation using approximation for curvature
-    PR_approx = 2*Kc*q^2*mean((gamma.*v).^4.*kappa2,1)/(3*c^3);
+%     PR_approx = 2*Kc*q^2*mean((gamma.*v).^4.*kappa2,1)/(3*c^3);
+    PR_approx = 2*Kc*q^2*(gamma.*v).^4.*kappa2/(3*c^3);
     
-    RATIO1 = PR_L./PR_LL;
-    RATIO2 = PR_approx./PR_LL;   
-    PR.A(:,ss) = [PR_LL(end), PR_L(end), PR_approx(end)];
+%     RATIO1 = PR_L./PR_LL;
+%     RATIO2 = PR_approx./PR_LL;   
+%     PR.A(:,ss) = [PR_LL(end), PR_L(end), PR_approx(end)];
+%     
+%     figure(h)
+%     subplot(double(ST.params.simulation.num_species),1,double(ss))
+%     plot(ST.time,RATIO1,'k',ST.time,RATIO2,'r')
+%     box on; grid on;
+%     xlabel('Time (s)','Interpreter','latex','FontSize',16)
+%     ylabel('$P_R$','Interpreter','latex','FontSize',12)
     
-    figure(h)
+    figure(h1)
     subplot(double(ST.params.simulation.num_species),1,double(ss))
-    plot(ST.time,RATIO1,'k',ST.time,RATIO2,'r')
+    plot(squeeze(180*eta(:,end)/pi),squeeze(PR_LL(:,end)),'b.',...
+        squeeze(180*eta(:,end)/pi),squeeze(PR_approx(:,end)),'r.')
     box on; grid on;
-    xlabel('Time (s)','Interpreter','latex','FontSize',16)
-    ylabel('$P_R$','Interpreter','latex','FontSize',12)
+    xlabel('$\eta$ ($^\circ$)','Interpreter','latex','FontSize',16)
+    ylabel('$P_{rad}$','Interpreter','latex','FontSize',16)
 end
+
+end
+
+function stackedPlots(ST,nbins)
+tmax = max(ST.time);
+tmin = min(ST.time);
+
+fx = zeros(ST.params.simulation.num_species,nbins,ST.params.simulation.num_snapshots+1);
+Prad = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
+x = zeros(ST.params.simulation.num_species,nbins);
+
+h2 = figure;
+set(h2,'name','PDF of radiated power','numbertitle','off')
+for ss=1:ST.params.simulation.num_species
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+%     data = ST.data.(['sp' num2str(ss)]).eta(pin,:);
+    data = abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:));
+
+    minVal = min(min( data ));
+    maxVal = max(max( data ));
+    x(ss,:) = linspace(minVal,maxVal,nbins);
+    
+    for ii=1:ST.params.simulation.num_snapshots+1
+        [fx(ss,:,ii),~] = hist(data(:,ii),x(ss,:));
+        Prad(ss,ii) = mean(diff(x(ss,:)))*sum(x(ss,:).*fx(ss,:,ii));
+    end
+    
+    figure(h2)
+    subplot(double(ST.params.simulation.num_species),1,double(ss))
+%     surf(ST.time,squeeze(x(ss,:)),log10(squeeze(fx(ss,:,:))),'LineStyle','none')
+    plot(ST.time,Prad(ss,:))
+    axis([tmin tmax min(Prad(ss,:)) max(Prad(ss,:))])
+%     axis([tmin tmax minVal maxVal])
+    box on
+    axis on
+    xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',16)
+    ylabel('$P_{rad}$ (Watts/electron)','Interpreter','latex','FontSize',16)
+    colormap(jet)
+    colorbar
+end
+
 
 end

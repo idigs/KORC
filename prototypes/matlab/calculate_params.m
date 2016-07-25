@@ -33,8 +33,9 @@ Tca = 2*pi./wca;
 P = 2*pi*Ro;
 simTime = numTransits*P./vpar;
 
-IT = simTime./dt;
+% IT = simTime./dt;
 % IT = ceil(Tca./dt);
+IT = ceil(0.5E-6/dt);
 disp(['Eo = ' num2str(Eo/1E6) ' IT = ' num2str(IT)])
 
 end
