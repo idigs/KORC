@@ -238,10 +238,10 @@ subroutine set_up_particles_ic(params,F,spp)
 
 !		do jj=1,spp(ii)%ppp
 !			Xo(1,jj) = (spp(ii)%Ro - spp(ii)%r) + &
-!					2.0_rp*spp(ii)%r*REAL(MODULO(jj,201_idef),rp)/201.0_rp
+!					2.0_rp*spp(ii)%r*REAL(MODULO(jj,101_idef),rp)/101.0_rp
 !			Xo(2,jj) = 0.0_rp
 !			Xo(3,jj) = spp(ii)%r - &
-!					2.0_rp*spp(ii)%r*FLOOR(REAL(jj,rp)/201.0_rp)/201.0_rp
+!					2.0_rp*spp(ii)%r*FLOOR(REAL(jj,rp)/101.0_rp)/101.0_rp
 !		end do
 
 		spp(ii)%vars%X(1,:) = Xo(1,:)

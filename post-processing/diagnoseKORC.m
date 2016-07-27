@@ -1,8 +1,9 @@
-function ST = diagnoseKORC(path)
-% close all
+function ST = diagnoseKORC(path,visible)
+close all
 
 ST = struct;
 ST.path = path;
+ST.visible = visible;
 
 ST.params = loadSimulationParameters(ST);
 
@@ -16,9 +17,9 @@ ST.data = loadData(ST);
 
 % ST.RT = radialTransport(ST);
 
-ST.CP = confined_particles(ST);
+% ST.CP = confined_particles(ST);
 
-% pitchAngleDiagnostic(ST,100);
+ST.PAD = pitchAngleDiagnostic(ST,100);
 
 % magneticMomentDiagnostic(ST,50);
 
@@ -65,7 +66,7 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {'X','V'};
+list = {'X','V'};%,'B'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -138,12 +139,12 @@ st2 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_specie
 st3 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
 st4 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
 
-h1 = figure;
-h2 = figure;
-h3 = figure;
-h4 = figure;
-h5 = figure;
-h6 = figure;
+h1 = figure('Visible',ST.visible);
+h2 = figure('Visible',ST.visible);
+h3 = figure('Visible',ST.visible);
+h4 = figure('Visible',ST.visible);
+h5 = figure('Visible',ST.visible);
+h6 = figure('Visible',ST.visible);
 
 set(h1,'name','Energy conservation','numbertitle','off')
 set(h2,'name','Velocity components','numbertitle','off')
@@ -196,6 +197,7 @@ set(h6,'name','Energy statistics','numbertitle','off')
         grid on
         xlabel('Time (s)','Interpreter','latex','FontSize',16)
         ylabel('$\Delta \mathcal{E}/\mathcal{E}_0$ (\%)','Interpreter','latex','FontSize',16)
+        saveas(h1,[ST.path 'energy_conservation'],'fig')
         
         figure(h2)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
@@ -205,6 +207,7 @@ set(h6,'name','Energy statistics','numbertitle','off')
         grid on
         xlabel('Time (s)','Interpreter','latex','FontSize',16)
         ylabel('$v_\parallel$, $v_\perp$ ($c$)','Interpreter','latex','FontSize',16)
+        saveas(h2,[ST.path 'velocity_components'],'fig')
 
         figure(h6)
         subplot(4,1,1)
@@ -227,6 +230,7 @@ set(h6,'name','Energy statistics','numbertitle','off')
         box on; grid on
         xlabel('Time (s)','Interpreter','latex','FontSize',16)
         ylabel('$k$','Interpreter','latex','FontSize',16)
+        saveas(h6,[ST.path 'energy_statistics'],'fig')
         
         
         figure(h3)
@@ -236,6 +240,7 @@ set(h6,'name','Energy statistics','numbertitle','off')
         grid on
         xlabel('Time (s)','Interpreter','latex','FontSize',16)
         ylabel('$\langle P_{rad} \rangle$','Interpreter','latex','FontSize',16)
+        saveas(h3,[ST.path 'radiated_power'],'fig')
         
         figure(h4)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
@@ -244,6 +249,7 @@ set(h6,'name','Energy statistics','numbertitle','off')
         grid on
         xlabel('Time (s)','Interpreter','latex','FontSize',16)
         ylabel('$\langle P_{in} \rangle$','Interpreter','latex','FontSize',16)
+        saveas(h4,[ST.path 'input_power'],'fig')
         
         figure(h5)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
@@ -252,6 +258,7 @@ set(h6,'name','Energy statistics','numbertitle','off')
         grid on
         xlabel('Time (s)','Interpreter','latex','FontSize',16)
         ylabel('$\langle P_{rad} \rangle / \langle P_{in} \rangle$','Interpreter','latex','FontSize',16)
+        saveas(h5,[ST.path 'energy_gain-lost'],'fig')
     end
 % catch
 %     error('Something went wrong: energyConservation')
@@ -260,12 +267,11 @@ set(h6,'name','Energy statistics','numbertitle','off')
 
 end
 
-function pitchAngleDiagnostic(ST,numBins)
+function PAD = pitchAngleDiagnostic(ST,numBins)
+PAD = struct;
 N = 10;
 nbins = 30;
 
-% cad = ST.params.simulation.output_cadence;
-% time = ST.params.simulation.dt*double(0:cad:ST.params.simulation.t_steps);
 tmax = max(ST.time);
 tmin = min(ST.time);
 
@@ -281,28 +287,32 @@ f_tot = zeros(numBins,ST.params.simulation.num_snapshots+1);
 
 data = [];
 
-h1 = figure;
+h1 = figure('Visible',ST.visible);
 set(h1,'name','Pitch angle PDF vs. time','numbertitle','off')
-h0 = figure;
+h0 = figure('Visible',ST.visible);
 set(h0,'name','Energy PDF vs. time','numbertitle','off')
 for ss=1:ST.params.simulation.num_species
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
+    bool = pin & passing;
 %     tmp = cos(pi*ST.data.(['sp' num2str(ss)]).eta/180);
-    tmp = ST.data.(['sp' num2str(ss)]).eta(pin,:);
+    tmp = ST.data.(['sp' num2str(ss)]).eta(bool,:);
     
-    mean_f(ss,:) = mean(tmp,1);
-    std_f(ss,:) = std(tmp,0,1);
-    skewness_f(ss,:) = skewness(tmp,0,1);
-    kurtosis_f(ss,:) = kurtosis(tmp,1,1);
-    
-    data = [data; ST.data.(['sp' num2str(ss)]).eta];
-
-    minVal = min(min( tmp ));
-    maxVal = max(max( tmp ));
-    x(ss,:) = linspace(minVal,maxVal,nbins);
-    
-    for ii=1:ST.params.simulation.num_snapshots+1
-        [fx(ss,:,ii),~] = hist(tmp(:,ii),x(ss,:));
+    if ~isempty(tmp)
+        mean_f(ss,:) = mean(tmp,1);
+        std_f(ss,:) = std(tmp,0,1);
+        skewness_f(ss,:) = skewness(tmp,0,1);
+        kurtosis_f(ss,:) = kurtosis(tmp,1,1);
+        
+        data = [data; ST.data.(['sp' num2str(ss)]).eta];
+        
+        minVal = min(min( tmp ));
+        maxVal = max(max( tmp ));
+        x(ss,:) = linspace(minVal,maxVal,nbins);
+        
+        for ii=1:ST.params.simulation.num_snapshots+1
+            [fx(ss,:,ii),~] = hist(tmp(:,ii),x(ss,:));
+        end
     end
     
     figure(h1)
@@ -318,21 +328,24 @@ for ss=1:ST.params.simulation.num_species
     
     
     tmp = ...
-        ST.data.(['sp' num2str(ss)]).gamma(pin,:)*ST.params.species.m(ss)*ST.params.scales.v^2/abs(ST.params.species.q(ss));
+        ST.data.(['sp' num2str(ss)]).gamma(bool,:)*ST.params.species.m(ss)*ST.params.scales.v^2/abs(ST.params.species.q(ss));
     tmp = tmp/1E6;
-    
-    minVal = min(min( tmp ));
-    maxVal = max(max( tmp ));
-    y = linspace(minVal,maxVal,nbins);
-    fy = zeros(nbins,ST.params.simulation.num_snapshots+1);
-    for ii=1:ST.params.simulation.num_snapshots+1
-        [fy(:,ii),~] = hist(tmp(:,ii),y);
+    if ~isempty(tmp)
+        minVal = min(min( tmp ));
+        maxVal = max(max( tmp ));
+        y = linspace(minVal,maxVal,nbins);
+        fy = zeros(nbins,ST.params.simulation.num_snapshots+1);
+        for ii=1:ST.params.simulation.num_snapshots+1
+            [fy(:,ii),~] = hist(tmp(:,ii),y);
+        end
     end
     
     figure(h0)
     subplot(double(ST.params.simulation.num_species),1,double(ss))
-    surf(ST.time,y,log10(fy),'LineStyle','none')
-    axis([tmin tmax minVal maxVal])
+    if ~isempty(tmp)
+        surf(ST.time,y,log10(fy),'LineStyle','none')
+        axis([tmin tmax minVal maxVal])
+    end
     box on
     axis on
     xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',16)
@@ -348,7 +361,7 @@ for ii=1:ST.params.simulation.num_snapshots+1
     [f_tot(:,ii),~] = hist(data(:,ii),vals);
 end
 
-h2 = figure
+h2 = figure('Visible',ST.visible);
 set(h2,'name','Statistical moments pitch angle','numbertitle','off')
 for ii=1:ST.params.simulation.num_species
     figure(h2)
@@ -404,7 +417,7 @@ offset = floor(double(ST.params.simulation.num_snapshots+1)/N);
 z = linspace(-4,4,100);
 fz = exp( -0.5*z.^2 )/sqrt(2*pi);
 
-h3 = figure;
+h3 = figure('Visible',ST.visible);
 set(h3,'name','PDF pitch angle','numbertitle','off')
 for ii=1:N
     it = ii*offset;
@@ -476,7 +489,7 @@ end
 
 barcolor = [1,0,0;0,1,0;0,0,1;0.5,0.5,1.0;1.0,0.2,0.2];
 
-h4 = figure;
+h4 = figure('Visible',ST.visible);
 set(h4,'name','PDF poloidal angle','numbertitle','off')
 for ii=1:N
     it = ii*offset;
@@ -717,9 +730,9 @@ st2 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_specie
 st3 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
 st4 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
 
-h = figure;
+h = figure('Visible',ST.visible);
 set(h,'name','Angular momentum conservation','numbertitle','off')
-h1 = figure;
+h1 = figure('Visible',ST.visible);
 set(h1,'name','Angular momentum statistics','numbertitle','off')
 for ss=1:ST.params.simulation.num_species
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
@@ -780,6 +793,7 @@ for ss=1:ST.params.simulation.num_species
     grid on
     xlabel('Time (s)','Interpreter','latex','FontSize',12)
     ylabel('$\Delta p_\zeta/p_{\zeta 0}$ (\%)','Interpreter','latex','FontSize',12)
+    saveas(h,[ST.path 'ang_mom_conservation'],'fig')
     
     figure(h1)
     subplot(4,1,1)
@@ -802,7 +816,7 @@ for ss=1:ST.params.simulation.num_species
     box on; grid on
     xlabel('Time (s)','Interpreter','latex','FontSize',16)
     ylabel('$k$','Interpreter','latex','FontSize',16)
-    
+    saveas(h1,[ST.path 'ang_mom_stat'],'fig')
 end
 
 
@@ -827,19 +841,24 @@ for ss=1:ST.params.simulation.num_species
     I = zeros(size(Bo));
     B = zeros(size(Bo));
     DBvec = zeros(size(Bo));
+    DBmag = zeros(size(Bo));
     for ii=1:numel(Bo)
         [~,I(ii)] = min( abs(Tc(ii) - ST.time) );
-%         tmp = squeeze( sqrt( sum(ST.data.(['sp' num2str(ss)]).B(:,aux(ii),1:I(ii)).^2,1) ) );
-%         DBmax(ii) = max( 100*abs(tmp - Bo(ii))/Bo(ii) );
-        
+        tmp = squeeze( sqrt( sum(ST.data.(['sp' num2str(ss)]).B(:,aux(ii),1:I(ii)).^2,1) ) );
+        DBmag(ii) = max( 100*abs(tmp - Bo(ii))/Bo(ii) );
         
         B1 = squeeze(ST.data.(['sp' num2str(ss)]).B(:,aux(ii),1));
-        B2 = squeeze(ST.data.(['sp' num2str(ss)]).B(:,aux(ii),I(ii)));
-        DBvec(ii) = 100*sqrt(sum((B2-B1).^2))/sqrt(sum(B1.^2));
-
-        B(ii) = squeeze( sqrt( sum(ST.data.(['sp' num2str(ss)]).B(:,aux(ii),I(ii)).^2,1) ) );
+        for jj=1:I(ii)
+            B2 = squeeze(ST.data.(['sp' num2str(ss)]).B(:,aux(ii),jj));
+            tmp = 100*sqrt(sum((B2-B1).^2))/sqrt(sum(B1.^2));
+            if(abs(tmp) > DBvec(ii))
+                DBvec(ii) = tmp;
+            end
+        end
+        
+%         B(ii) = squeeze( sqrt( sum(ST.data.(['sp' num2str(ss)]).B(:,aux(ii),I(ii)).^2,1) ) );
     end
-    DBmag = 100*abs( B - Bo )./Bo;
+%     DBmag = 100*abs( B - Bo )./Bo;
 
     CMF.stat.mag(1,ss) = mean(DBmag);
     CMF.stat.mag(2,ss) = std(DBmag);
@@ -856,7 +875,7 @@ for ss=1:ST.params.simulation.num_species
     Z = X(3,:);
 
     S = 12*ones(size(gamma));
-    h=figure('units','normalized','OuterPosition',[0.1,0.25,0.75,0.4]);
+    h=figure('Visible',ST.visible,'units','normalized','OuterPosition',[0.1,0.25,0.75,0.4]);
     set(h,'name',['Change of B-field: sp' num2str(ss)],'numbertitle','off')
     subplot(1,3,1)
     histogram(DBvec,xvec)
@@ -887,7 +906,7 @@ for ss=1:ST.params.simulation.num_species
     xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
     ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
     saveas(h,[ST.path 'B-field_sp' num2str(ss)],'fig')
-    close(h)
+%     close(h)
 end
 
 
@@ -995,18 +1014,19 @@ CP = struct;
 tmax = max(ST.time);
 tmin = min(ST.time);
 
-C = colormap(jet(512));
-offset = floor(512/ST.params.simulation.num_species);
-colour = C(1:offset:end,:);
-
 t = linspace(0,2*pi,200);
 Rs = ST.params.fields.Ro + ST.params.fields.a*cos(t);
 Zs = ST.params.fields.a*sin(t);
 
 CP.confined = zeros(1,ST.params.simulation.num_species);
 
-h0 = figure;
-set(h0,'Visible','off','name','Particle loss','numbertitle','off');
+h0 = figure('Visible',ST.visible);
+set(h0,'name','Particle loss','numbertitle','off');
+
+C = colormap(h0,jet(512));
+offset = floor(512/ST.params.simulation.num_species);
+colour = C(1:offset:end,:);
+
 legends = cell(1,ST.params.simulation.num_species);
 for ss=1:ST.params.simulation.num_species
     numConfPart = sum(ST.data.(['sp' num2str(ss)]).flag(:,1),1);
@@ -1034,7 +1054,7 @@ saveas(h0,[ST.path 'particle_loss'],'fig')
 % close(h0)
 
 h1=figure;
-set(h1,'Visible','off','name','IC','numbertitle','off')
+set(h1,'Visible',ST.visible,'name','IC','numbertitle','off')
 legends = cell(1,ST.params.simulation.num_species);
 for ss=1:ST.params.simulation.num_species   
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
@@ -1249,9 +1269,9 @@ me = 9.109382E-31; % Electron mass
 
 PR.A = zeros(3,ST.params.simulation.num_species);
 
-h=figure;
+h = figure('Visible',ST.visible);
 set(h,'name','Radiation: Larmor approx','numbertitle','off')
-h1=figure;
+h1 = figure('Visible',ST.visible);
 set(h1,'name','Scatter plot','numbertitle','off')
 for ss=1:ST.params.simulation.num_species
     q = abs(ST.params.species.q(ss));
@@ -1312,6 +1332,7 @@ for ss=1:ST.params.simulation.num_species
     box on; grid on;
     xlabel('$\eta$ ($^\circ$)','Interpreter','latex','FontSize',16)
     ylabel('$P_{rad}$','Interpreter','latex','FontSize',16)
+    saveas(h1,[ST.path 'radiation_scatter_plot'],'fig')
     
     PR_LL = mean(PR_LL,1);
     PR_L = mean(PR_L,1);
@@ -1327,6 +1348,7 @@ for ss=1:ST.params.simulation.num_species
     box on; grid on;
     xlabel('Time (s)','Interpreter','latex','FontSize',16)
     ylabel('$P_R$','Interpreter','latex','FontSize',12)
+    saveas(h,[ST.path 'radiation_ratios'],'fig')
 end
 
 end
