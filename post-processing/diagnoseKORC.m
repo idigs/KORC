@@ -19,9 +19,9 @@ ST.data = loadData(ST);
 
 % ST.CP = confined_particles(ST);
 
-ST.PAD = pitchAngleDiagnostic(ST,100);
+% ST.PAD = pitchAngleDiagnostic(ST,100);
 
-% magneticMomentDiagnostic(ST,50);
+ST.MMD = magneticMomentDiagnostic(ST,70);
 
 % poloidalPlaneDistributions(ST,25);
 
@@ -512,9 +512,13 @@ for ii=1:N
     grid on
 end
 
+PAD.mean = mean_f;
+PAD.std = std_f;
+
 end
 
-function magneticMomentDiagnostic(ST,numBins)
+function MMD = magneticMomentDiagnostic(ST,numBins)
+MMD = struct;
 tmax = max(ST.time);
 tmin = min(ST.time);
 
@@ -526,33 +530,39 @@ kurtosis_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_sna
 fx = zeros(ST.params.simulation.num_species,numBins,ST.params.simulation.num_snapshots+1);
 x = zeros(ST.params.simulation.num_species,numBins);
 
-h1 = figure;
+h1 = figure('Visible',ST.visible);
 set(h1,'name','PDF of magnetic moment','numbertitle','off')
 for ss=1:ST.params.simulation.num_species
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
     tmp = ST.data.(['sp' num2str(ss)]).mu(pin,:);
-    for ii=1:size(tmp,1)
-        tmp(ii,:) = 100*(tmp(ii,:) - tmp(ii,1))./tmp(ii,1);
-    end
     
-    mean_f(ss,:) = mean(tmp,1);
-    std_f(ss,:) = std(tmp,0,1);
-    skewness_f(ss,:) = skewness(tmp,0,1);
-    kurtosis_f(ss,:) = kurtosis(tmp,1,1);
-      
-    minVal = min(min( tmp ));
-    maxVal = max(max( tmp ));
-    x(ss,:) = linspace(minVal,maxVal,numBins);
-    
-    for ii=1:ST.params.simulation.num_snapshots+1
-        try
-            [fx(ss,:,ii),~] = hist(tmp(:,ii),x(ss,:));
-        catch
+    if ~isempty(tmp)
+        for ii=1:size(tmp,1)
+            tmp(ii,:) = 100*abs(tmp(ii,:) - tmp(ii,1))./tmp(ii,1);
+        end
+        
+        mean_f(ss,:) = mean(tmp,1);
+        std_f(ss,:) = std(tmp,0,1);
+        skewness_f(ss,:) = skewness(tmp,0,1);
+        kurtosis_f(ss,:) = kurtosis(tmp,1,1);
+        
+        minVal = min(min( tmp ));
+        maxVal = max(max( tmp ));
+        x(ss,:) = linspace(minVal,maxVal,numBins);
+        
+        for ii=1:ST.params.simulation.num_snapshots+1
+            try
+                [fx(ss,:,ii),~] = hist(tmp(:,ii),x(ss,:));
+%                 fx(ss,:,ii) = fx(ss,:,ii)/( mean(diff(x(ss,:)))*sum(fx(ss,:,ii)) );
+                fx(ss,:,ii) = fx(ss,:,ii)/max(squeeze(fx(ss,:,ii)));
+            catch
+            end
         end
     end
     
     subplot(double(ST.params.simulation.num_species),1,double(ss))
-    surf(ST.time,squeeze(x(ss,:)),log10(squeeze(fx(ss,:,:))),'LineStyle','none')
+%     surf(ST.time,squeeze(x(ss,:)),log10(squeeze(fx(ss,:,2:end))),'LineStyle','none')
+    surf(ST.time(2:end),squeeze(x(ss,:)),squeeze(fx(ss,:,2:end)),'LineStyle','none')
 %     axis([tmin tmax minVal maxVal])
     view([0,90])
     box on
@@ -562,7 +572,7 @@ for ss=1:ST.params.simulation.num_species
     colormap(jet)
 end
 
-h2 = figure;
+h2 = figure('Visible',ST.visible);
 set(h2,'name','Statistical moments magnetic moment','numbertitle','off')
 for ii=1:ST.params.simulation.num_species
     figure(h2)
@@ -587,6 +597,13 @@ for ii=1:ST.params.simulation.num_species
     hold off
 end
 
+saveas(h1,[ST.path 'magnetic_moment_pdfs'],'fig')
+saveas(h2,[ST.path 'magnetic_moment_stats'],'fig')
+
+MMD.stat1 = mean_f;
+MMD.stat2 = std_f;
+MMD.stat3 = skewness_f;
+MMD.stat4 = kurtosis_f;
 end
 
 function poloidalPlaneDistributions(ST,nbins)
@@ -1253,8 +1270,6 @@ end
 
 function PR = LarmorVsLL(ST)
 PR = struct;
-% cad = ST.params.simulation.output_cadence;
-% time = ST.params.simulation.dt*double(0:cad:ST.params.simulation.t_steps);
 tmax = max(ST.time);
 tmin = min(ST.time);
 

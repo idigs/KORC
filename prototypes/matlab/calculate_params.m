@@ -35,7 +35,7 @@ simTime = numTransits*P./vpar;
 
 % IT = simTime./dt;
 % IT = ceil(Tca./dt);
-IT = ceil(1E-3/dt);
-disp(['Eo = ' num2str(Eo/1E6) ' IT = ' num2str(IT)])
+IT = ceil(10E-3/dt);
+disp(['Eo = ' num2str(Eo/1E6) ' IT = ' num2str(IT) ' Eo = ' num2str(Eo/1E6) ' MeV'])
 
 end

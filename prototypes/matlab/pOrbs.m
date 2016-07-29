@@ -856,7 +856,7 @@ narginchk(1,2);
 Bo = 2.19;
 a = 0.5;% Minor radius in meters.
 Ro = 1.5; % Major radius in meters.
-qa = 3; % Safety factor at the separatrix (r=a)
+qa = 2; % Safety factor at the separatrix (r=a)
 co = 0.5; % Extra parameter
 lamb = a/co;
 Bpo = (a/Ro)*(Bo/qa)*(1+co^2)/co;
@@ -912,7 +912,7 @@ function E = analyticalE(X)
 narginchk(1,2);
 
 % Parameters of the analytical magnetic field
-Eo = -4.0;
+Eo = 0.0;
 Ro = 1.5; % Major radius in meters.
 % Parameters of the analytical magnetic field
 
@@ -1160,15 +1160,15 @@ for ii=2:ST.params.numSnapshots
 %         % Collisions
 
 %         U_R = U_R + a*( F2 + F3 + Fcolle + Fcolli);
-        U_R = U_R + a*( F2 + F3 );
-
+%         U_R = U_R + a*( F2 + F3 );
+% 
+% 
+%         U = U_L + U_R - U;
+%         gamma = sqrt( 1 + U*U' );
+%         V = U/gamma;
         
-        U = U_L + U_R - U;
-        gamma = sqrt( 1 + U*U' );
-        V = U/gamma;
-        
-%          U = U_L;
-%          V = U_L/gamma;
+         U = U_L;
+         V = U_L/gamma;
         % % % Leap-frog scheme for the radiation damping force % % %fcoll
         
         zeta_previous = atan2(XX(2),XX(1));
