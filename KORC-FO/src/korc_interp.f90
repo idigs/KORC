@@ -261,7 +261,7 @@ subroutine interp_analytical_field(prtcls,F)
 
 	call cart_to_tor(prtcls%X, F%AB%Ro, prtcls%Y, prtcls%flag)
 
-	call check_if_confined(F, prtcls%Y, prtcls%flag)
+!	call check_if_confined(F, prtcls%Y, prtcls%flag)
 
 	call analytical_magnetic_field(F, prtcls%Y, prtcls%B, prtcls%flag)
 

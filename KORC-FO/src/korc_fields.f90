@@ -27,7 +27,7 @@ subroutine analytical_magnetic_field(F,Y,B,flag)
         if ( flag(pp) .EQ. 1_idef ) then
 		    eta = Y(1,pp)/F%Ro
             q = F%AB%qo*(1.0_rp + (Y(1,pp)/F%AB%lambda)**2)
-            Bp = eta*F%AB%Bo/(q*( 1.0_rp + (Y(1,pp)/F%AB%lambda)**2 ))
+            Bp = eta*F%AB%Bo/(q*(1.0_rp + eta*cos(Y(2,pp))))
 		    Bt = F%AB%Bo/( 1.0_rp + eta*cos(Y(2,pp)) )
 
 		    B(1,pp) =  Bt*cos(Y(3,pp)) - Bp*sin(Y(2,pp))*sin(Y(3,pp))

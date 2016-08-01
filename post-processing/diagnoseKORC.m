@@ -13,19 +13,19 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
 % ST.RT = radialTransport(ST);
 
 % ST.CP = confined_particles(ST);
 
-ST.PAD = pitchAngleDiagnostic(ST,30);
+% ST.PAD = pitchAngleDiagnostic(ST,30);
 
 % ST.MMD = magneticMomentDiagnostic(ST,70);
 
 % poloidalPlaneDistributions(ST,25);
 
-% angularMomentum(ST);
+angularMomentum(ST);
 
 % ST.CMF = changeOfMagneticField(ST)
 
