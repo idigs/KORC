@@ -15,23 +15,24 @@ subroutine analytical_magnetic_field(F,Y,B,flag)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz
 	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: flag
-	REAL(rp) :: Bp, Br, eta
+	REAL(rp) :: Bp, Bt, eta, q
 	INTEGER(ip) pp ! Iterator(s)
 	INTEGER(ip) :: ss
 
 	ss = SIZE(Y,2)
 
-!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,Bp,Br,eta) SHARED(F,Y,B,flag)
+!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,Bp,Bt,eta,q) SHARED(F,Y,B,flag)
 !$OMP DO
 	do pp=1,ss
         if ( flag(pp) .EQ. 1_idef ) then
-		    Bp = F%AB%Bpo*( Y(1,pp)/F%AB%lambda )/( 1.0_rp + (Y(1,pp)/F%AB%lambda)**2 )
 		    eta = Y(1,pp)/F%Ro
-		    Br = 1.0_rp/( 1.0_rp + eta*cos(Y(2,pp)) )
+            q = F%AB%qo*(1.0_rp + (Y(1,pp)/F%AB%lambda)**2)
+            Bp = eta*F%AB%Bo/(q*( 1.0_rp + (Y(1,pp)/F%AB%lambda)**2 ))
+		    Bt = F%AB%Bo/( 1.0_rp + eta*cos(Y(2,pp)) )
 
-		    B(1,pp) = Br*( F%AB%Bo*cos(Y(3,pp)) - Bp*sin(Y(2,pp))*sin(Y(3,pp)) )
-		    B(2,pp) = -Br*( F%AB%Bo*sin(Y(3,pp)) + Bp*sin(Y(2,pp))*cos(Y(3,pp)) )
-		    B(3,pp) = Br*Bp*cos(Y(2,pp))
+		    B(1,pp) =  Bt*cos(Y(3,pp)) - Bp*sin(Y(2,pp))*sin(Y(3,pp))
+		    B(2,pp) = -Bt*sin(Y(3,pp)) - Bp*sin(Y(2,pp))*cos(Y(3,pp))
+		    B(3,pp) = Bp*cos(Y(2,pp))
         end if
 	end do
 !$OMP END DO

@@ -70,7 +70,7 @@ function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,
 
 narginchk(8,9);
 
-% close all
+close all
 
 ST = struct;
 % Script parameters
@@ -853,13 +853,14 @@ function B = analyticalB(X,opt)
 narginchk(1,2);
 
 % Parameters of the analytical magnetic field
-Bo = 2.19;
+Bo = 5;
 a = 0.5;% Minor radius in meters.
-Ro = 1.5; % Major radius in meters.
+Ro = 1.0; % Major radius in meters.
 qa = 2; % Safety factor at the separatrix (r=a)
-co = 0.5; % Extra parameter
+co = 0.25; % Extra parameter
 lamb = a/co;
 Bpo = (a/Ro)*(Bo/qa)*(1+co^2)/co;
+qo = lamb*Bo/(Ro*Bpo);
 % Parameters of the analytical magnetic field
 
 if nargin == 2
@@ -872,6 +873,7 @@ if nargin == 2
         B.co = co; % Extra parameter
         B.lamb = lamb;
         B.Bpo = Bpo;
+        disp(['q-factor at magnetic axis: ' num2str(qo)])
     elseif strcmp(opt,'normalize')
     end
 else
@@ -891,14 +893,18 @@ else
     % Poloidal magnetic field
     % Minus sign = TEXTOR
     % Plus sign = default
-    Bp = Bpo*(r/lamb)/( 1 + (r/lamb)^2 );
+    % Bp = poloidal magnetic field
+    % Bt = toroidal magnetic field
     
+    q = qo*(1 + (r/lamb)^2);
+%     q = 2;
     eta = r/Ro;
-    Br = 1/( 1 + eta*cos(theta) );
+    Bp = eta*Bo/(q*(1 + eta*cos(theta)));
+    Bt = Bo/( 1 + eta*cos(theta) );
     
-    Bx = Br*( Bo*cos(zeta) - Bp*sin(theta)*sin(zeta) );
-    By = -Br*( Bo*sin(zeta) + Bp*sin(theta)*cos(zeta) );
-    Bz = Br*Bp*cos(theta);
+    Bx = Bt*cos(zeta) - Bp*sin(theta)*sin(zeta);
+    By = -Bt*sin(zeta) - Bp*sin(theta)*cos(zeta);
+    Bz = Bp*cos(theta);
     
     B = [Bx,By,Bz];
 end
@@ -970,6 +976,8 @@ k = zeros(1,ST.params.numSnapshots); % Curvature
 T = zeros(1,ST.params.numSnapshots); % Torsion
 vpar = zeros(1,ST.params.numSnapshots); % parallel velocity
 vperp = zeros(1,ST.params.numSnapshots); % perpendicular velocity
+ppar = zeros(1,ST.params.numSnapshots); % parallel momentum
+pperp = zeros(1,ST.params.numSnapshots); % perpendicular momentum
 mu = zeros(1,ST.params.numSnapshots); % instantaneous magnetic moment
 EK = zeros(1,ST.params.numSnapshots); % kinetic energy
 
@@ -1024,6 +1032,8 @@ B_mag = sqrt(B*B');
 b = B/B_mag;
 vpar(1) = v(1,:)*b';
 vperp(1) = sqrt( v(1,:)*v(1,:)' - vpar(1)^2 );
+ppar(1) = gamma*m*vpar(1);
+pperp(1) = gamma*m*vperp(1);
 mu(1) = m*gamma^2*vperp(1)^2/(2*B_mag);
 
 % Curvature and torsion
@@ -1211,6 +1221,8 @@ for ii=2:ST.params.numSnapshots
     b = B/B_mag;
     vpar(ii) = v(ii,:)*b';
     vperp(ii) = sqrt( v(ii,:)*v(ii,:)' - vpar(ii)^2 );
+    ppar(ii) = gamma*m*vpar(ii);
+    pperp(ii) = gamma*m*vperp(ii);
     mu(ii) = m*gamma^2*vperp(ii)^2/(2*B_mag);
     
     k(ii) = curv;
@@ -1294,6 +1306,22 @@ if ST.opt
     grid on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
     ylabel('$v$ [c]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    
+    figure
+    subplot(2,1,1)
+    plot(time, ppar)
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$p_\parallel$ [$mc$]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    subplot(2,1,2)
+    plot(time, pperp)
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$p_\perp$ [$mc$]','Interpreter','latex','FontSize',16)
     title(PP.method,'Interpreter','latex','FontSize',16)
 end
 

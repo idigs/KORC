@@ -135,6 +135,7 @@ TYPE, PRIVATE :: A_FIELD
 	REAL(rp) :: a
 	REAL(rp) :: Ro
 	REAL(rp) :: qa
+	REAL(rp) :: qo
 	REAL(rp) :: co
 	REAL(rp) :: lambda
 	REAL(rp) :: Bpo

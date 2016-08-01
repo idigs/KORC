@@ -19,9 +19,9 @@ ST.data = loadData(ST);
 
 % ST.CP = confined_particles(ST);
 
-% ST.PAD = pitchAngleDiagnostic(ST,100);
+ST.PAD = pitchAngleDiagnostic(ST,30);
 
-ST.MMD = magneticMomentDiagnostic(ST,70);
+% ST.MMD = magneticMomentDiagnostic(ST,70);
 
 % poloidalPlaneDistributions(ST,25);
 
@@ -58,8 +58,8 @@ for ii=1:length(info.Groups)
     end
 end
 
-% params.simulation.num_snapshots = 20;
-% params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
+params.simulation.num_snapshots = 470;
+params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 
 end
 
@@ -267,10 +267,9 @@ set(h6,'name','Energy statistics','numbertitle','off')
 
 end
 
-function PAD = pitchAngleDiagnostic(ST,numBins)
+function PAD = pitchAngleDiagnostic(ST,nbins)
 PAD = struct;
 N = 10;
-nbins = 30;
 
 tmax = max(ST.time);
 tmin = min(ST.time);
@@ -280,18 +279,19 @@ std_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshot
 skewness_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
 kurtosis_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
 
+stats = zeros(2,ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
+
 fx = zeros(ST.params.simulation.num_species,nbins,ST.params.simulation.num_snapshots+1);
 x = zeros(ST.params.simulation.num_species,nbins);
-
-f_tot = zeros(numBins,ST.params.simulation.num_snapshots+1);
-
-data = [];
 
 h1 = figure('Visible',ST.visible);
 set(h1,'name','Pitch angle PDF vs. time','numbertitle','off')
 h0 = figure('Visible',ST.visible);
 set(h0,'name','Energy PDF vs. time','numbertitle','off')
+h = figure('Visible',ST.visible);
+set(h,'name','Pitch angle: variability','numbertitle','off')
 for ss=1:ST.params.simulation.num_species
+    
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
     passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
     bool = pin & passing;
@@ -304,13 +304,13 @@ for ss=1:ST.params.simulation.num_species
         skewness_f(ss,:) = skewness(tmp,0,1);
         kurtosis_f(ss,:) = kurtosis(tmp,1,1);
         
-        data = [data; ST.data.(['sp' num2str(ss)]).eta];
-        
         minVal = min(min( tmp ));
         maxVal = max(max( tmp ));
         x(ss,:) = linspace(minVal,maxVal,nbins);
         
         for ii=1:ST.params.simulation.num_snapshots+1
+            stats(1,ss,ii) = 100*mean((tmp(:,ii) - tmp(:,1))./tmp(:,1));
+            stats(2,ss,ii) = 100*std((tmp(:,ii) - tmp(:,1))./tmp(:,1));
             [fx(ss,:,ii),~] = hist(tmp(:,ii),x(ss,:));
         end
     end
@@ -325,6 +325,26 @@ for ss=1:ST.params.simulation.num_species
     xlabel('Time (s)','Interpreter','latex','FontSize',16)
     ylabel('$\eta$ ($^\circ$)','Interpreter','latex','FontSize',16)
     colormap(jet(256))
+    
+    figure(h)
+    subplot(2,1,1)
+    hold on
+    plot(ST.time,squeeze(stats(1,ss,:)))
+    hold off
+    xlim([tmin tmax])
+    box on
+    axis on
+    xlabel('Time (s)','Interpreter','latex','FontSize',16)
+    ylabel('mean($\Delta |\theta|/\theta_0$) ($\%$)','Interpreter','latex','FontSize',16)
+    subplot(2,1,2)
+    hold on
+    plot(ST.time,squeeze(stats(2,ss,:)))
+    hold off
+    xlim([tmin tmax])
+    box on
+    axis on
+    xlabel('Time (s)','Interpreter','latex','FontSize',16)
+    ylabel('std($\Delta |\theta|/\theta_0$) ($\%$)','Interpreter','latex','FontSize',16)
     
     
     tmp = ...
@@ -351,14 +371,6 @@ for ss=1:ST.params.simulation.num_species
     xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',16)
     ylabel('$\mathcal{E}(t)$ (MeV)','Interpreter','latex','FontSize',16)
     colormap(jet(256))
-end
-
-minVal = min(min( data ));
-maxVal = max(max( data ));
-vals = linspace(minVal,maxVal,numBins);
-
-for ii=1:ST.params.simulation.num_snapshots+1
-    [f_tot(:,ii),~] = hist(data(:,ii),vals);
 end
 
 h2 = figure('Visible',ST.visible);
@@ -411,7 +423,6 @@ ylabel('kurtosis($\theta$)','Interpreter','latex','FontSize',16)
 box on
 grid on
 
-
 offset = floor(double(ST.params.simulation.num_snapshots+1)/N);
 
 z = linspace(-4,4,100);
@@ -431,11 +442,11 @@ for ii=1:N
 %         xAxis = ( x(ss,:) - mean_f(ss,it) )/std_f(ss,it);
 %         f = std_f(ss,it)*fx(ss,:,it)/(sum(fx(ss,:,it))*dx);
         
-        xAxis = x(ss,:);
+        xAxis = x(ss,:) - mean_f(ss,it);
         f = squeeze(fx(ss,:,it));
         
         figure(h3)
-        plot(xAxis,log10(f),'o:')
+%         plot(xAxis,log10(f),'o:')
         plot(xAxis,f,'o:')
         
         figure(h2)
@@ -467,50 +478,56 @@ for ii=1:N
 end
 
 
-% % Poloidal angle distribution function % %
+% % % Poloidal angle distribution function % %
+% 
+% ft = zeros(ST.params.simulation.num_species,nbins,N);
+% t = zeros(ST.params.simulation.num_species,nbins,N);
+% 
+% for ii=1:N
+%     it = ii*offset;
+%     for ss=1:ST.params.simulation.num_species
+% %         I = find( any(ST.data.sp3.eta > 90, 2) == 0 );
+% %         X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,I,it));
+%         X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,:,it));
+%         theta = atan2(X(3,:), sqrt(X(1,:).^2 + X(2,:).^2) - ST.params.fields.Ro);
+%         theta(theta < 0) = theta(theta < 0) + 2*pi;
+%         theta = (180/pi)*theta;
+%         [ft(ss,:,ii),t(ss,:,ii)] = hist(theta,nbins);
+%         dt = mean(diff(t(ss,:,ii)));
+%         ft(ss,:,ii) = ft(ss,:,ii)/(sum(ft(ss,:,ii))*dt);
+%     end
+% end
+% 
+% barcolor = [1,0,0;0,1,0;0,0,1;0.5,0.5,1.0;1.0,0.2,0.2];
+% 
+% h4 = figure('Visible',ST.visible);
+% set(h4,'name','PDF poloidal angle','numbertitle','off')
+% for ii=1:N
+%     it = ii*offset;
+%     nc = floor(N/2);
+%     nr = floor(N/nc);
+%     figure(h4)
+%     subplot(nr,nc,ii)
+%     hold on
+%     for ss=1:ST.params.simulation.num_species
+%         plot(t(ss,:,ii),ft(ss,:,ii),'o:')
+% %         bar(t(ss,:,ii),ft(ss,:,ii),'FaceColor',barcolor(ss,:))
+%     end
+%     currentAxis = gca;
+% %     set(currentAxis.Children(:),'FaceAlpha',0.2);
+%     hold off
+%     xlim([0 360])
+%     title(['Time: ' num2str(ST.time(it))],'Interpreter','latex','FontSize',11)
+%     xlabel('$\theta$','Interpreter','latex','FontSize',16)
+%     box on
+%     grid on
+% end
 
-ft = zeros(ST.params.simulation.num_species,nbins,N);
-t = zeros(ST.params.simulation.num_species,nbins,N);
-
-for ii=1:N
-    it = ii*offset;
-    for ss=1:ST.params.simulation.num_species
-%         I = find( any(ST.data.sp3.eta > 90, 2) == 0 );
-%         X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,I,it));
-        X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,:,it));
-        theta = atan2(X(3,:), sqrt(X(1,:).^2 + X(2,:).^2) - ST.params.fields.Ro);
-        theta(theta < 0) = theta(theta < 0) + 2*pi;
-        theta = (180/pi)*theta;
-        [ft(ss,:,ii),t(ss,:,ii)] = hist(theta,nbins);
-        dt = mean(diff(t(ss,:,ii)));
-        ft(ss,:,ii) = ft(ss,:,ii)/(sum(ft(ss,:,ii))*dt);
-    end
-end
-
-barcolor = [1,0,0;0,1,0;0,0,1;0.5,0.5,1.0;1.0,0.2,0.2];
-
-h4 = figure('Visible',ST.visible);
-set(h4,'name','PDF poloidal angle','numbertitle','off')
-for ii=1:N
-    it = ii*offset;
-    nc = floor(N/2);
-    nr = floor(N/nc);
-    figure(h4)
-    subplot(nr,nc,ii)
-    hold on
-    for ss=1:ST.params.simulation.num_species
-        plot(t(ss,:,ii),ft(ss,:,ii),'o:')
-%         bar(t(ss,:,ii),ft(ss,:,ii),'FaceColor',barcolor(ss,:))
-    end
-    currentAxis = gca;
-%     set(currentAxis.Children(:),'FaceAlpha',0.2);
-    hold off
-    xlim([0 360])
-    title(['Time: ' num2str(ST.time(it))],'Interpreter','latex','FontSize',11)
-    xlabel('$\theta$','Interpreter','latex','FontSize',16)
-    box on
-    grid on
-end
+saveas(h,[ST.path 'variability'],'fig')
+saveas(h0,[ST.path 'Energy_PDF_vs_time'],'fig')
+saveas(h1,[ST.path 'pitch_vs_time'],'fig')
+saveas(h2,[ST.path 'pitch_stats'],'fig')
+saveas(h3,[ST.path 'pitch_pdfs'],'fig')
 
 PAD.mean = mean_f;
 PAD.std = std_f;
@@ -1179,12 +1196,15 @@ legend(legends,'interpreter','latex','FontSize',12)
 grid on; box on; axis on; axis square
 xlabel('Pitch angle $\eta$ ($^\circ$)','Interpreter','latex','FontSize',16)
 ylabel('$\mathcal{E}_0$ (MeV)','Interpreter','latex','FontSize',16)
+saveas(h1,[ST.path 'Energy_vs_pitch'],'fig')
+
 
 figure(h2)
 legend(legends,'interpreter','latex','FontSize',12)
 grid on; box on; axis on; axis square
 xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',16)
 ylabel('$\mathcal{E}_0$ (MeV)','Interpreter','latex','FontSize',16)
+saveas(h2,[ST.path 'mean_energy_vs_time'],'fig')
 end
 
 function B = analyticalB(ST,X)

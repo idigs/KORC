@@ -355,6 +355,7 @@ subroutine initialize_fields(params,F)
 		F%AB%co = free_param
 		F%AB%lambda = F%AB%a / F%AB%co
 		F%AB%Bpo = (F%AB%a/F%AB%Ro)*(F%AB%Bo/F%AB%qa)*(1+F%AB%co**2)/F%AB%co;
+        F%AB%qo = F%AB%lambda*F%AB%Bo/(F%AB%Ro*F%AB%Bpo)
 
 		F%Eo = Eo
 		F%Bo = F%AB%Bo

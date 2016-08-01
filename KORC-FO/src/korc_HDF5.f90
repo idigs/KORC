@@ -770,6 +770,10 @@ subroutine save_simulation_parameters(params,spp,F,cparams)
 			attr = "Safety factor at minor radius"
         	call save_to_hdf5(h5file_id,dset,F%AB%qa,attr)
 
+			dset = TRIM(gname) // "/qo"
+			attr = "Safety factor at the magnetic axis"
+        	call save_to_hdf5(h5file_id,dset,F%AB%qo,attr)
+
 			dset = TRIM(gname) // "/lambda"
 			attr = "Parameter lamda in m"
         	call save_to_hdf5(h5file_id,dset,F%AB%lambda*params%cpp%length,attr)
