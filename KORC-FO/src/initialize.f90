@@ -232,17 +232,17 @@ subroutine set_up_particles_ic(params,F,spp)
 		call init_random_seed()
 		call RANDOM_NUMBER(radius)
 		
-		Xo(1,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*sin(zeta)
-		Xo(2,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*cos(zeta)
-		Xo(3,:) = spp(ii)%Zo + spp(ii)%r*sqrt(radius)*sin(theta)
+!		Xo(1,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*sin(zeta)
+!		Xo(2,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*cos(zeta)
+!		Xo(3,:) = spp(ii)%Zo + spp(ii)%r*sqrt(radius)*sin(theta)
 
-!		do jj=1,spp(ii)%ppp
-!			Xo(1,jj) = (spp(ii)%Ro - spp(ii)%r) + &
-!					2.0_rp*spp(ii)%r*REAL(MODULO(jj,101_idef),rp)/101.0_rp
-!			Xo(2,jj) = 0.0_rp
-!			Xo(3,jj) = spp(ii)%r - &
-!					2.0_rp*spp(ii)%r*FLOOR(REAL(jj,rp)/101.0_rp)/101.0_rp
-!		end do
+		do jj=1,spp(ii)%ppp
+			Xo(1,jj) = (spp(ii)%Ro - spp(ii)%r) + &
+					2.0_rp*spp(ii)%r*REAL(MODULO(jj,101_idef),rp)/101.0_rp
+			Xo(2,jj) = 0.0_rp
+			Xo(3,jj) = spp(ii)%r - &
+					2.0_rp*spp(ii)%r*FLOOR(REAL(jj,rp)/101.0_rp)/101.0_rp
+		end do
 
 		spp(ii)%vars%X(1,:) = Xo(1,:)
 		spp(ii)%vars%X(2,:) = Xo(2,:)
@@ -330,16 +330,15 @@ subroutine initialize_fields(params,F)
 	REAL(rp) :: Bo
 	REAL(rp) :: minor_radius
 	REAL(rp) :: major_radius
-	REAL(rp) :: q_factor_at_separatrix
-	REAL(rp) :: free_param
+	REAL(rp) :: qa
+	REAL(rp) :: qo
     CHARACTER(MAX_STRING_LENGTH) :: electric_field_mode
 	REAL(rp) :: Eo
     REAL(rp) :: pulse_maximum
     REAL(rp) :: pulse_duration
 
 	NAMELIST /analytic_mag_field_params/ Bo,minor_radius,major_radius,&
-			q_factor_at_separatrix,free_param,&
-            electric_field_mode,Eo,pulse_maximum,pulse_duration
+			qa,qo,electric_field_mode,Eo,pulse_maximum,pulse_duration
 
 	if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
 		! Load the parameters of the analytical magnetic field
@@ -351,11 +350,10 @@ subroutine initialize_fields(params,F)
 		F%AB%a = minor_radius
 		F%AB%Ro = major_radius
 		F%Ro = major_radius
-		F%AB%qa = q_factor_at_separatrix
-		F%AB%co = free_param
-		F%AB%lambda = F%AB%a / F%AB%co
-		F%AB%Bpo = (F%AB%a/F%AB%Ro)*(F%AB%Bo/F%AB%qa)*(1+F%AB%co**2)/F%AB%co;
-        F%AB%qo = F%AB%lambda*F%AB%Bo/(F%AB%Ro*F%AB%Bpo)
+		F%AB%qa = qa
+		F%AB%qo = qo
+		F%AB%lambda = F%AB%a/sqrt(qa/qo - 1.0_rp)
+		F%AB%Bpo = F%AB%lambda*F%AB%Bo/(F%AB%qo*F%AB%Ro)
 
 		F%Eo = Eo
 		F%Bo = F%AB%Bo

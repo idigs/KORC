@@ -1,7 +1,7 @@
 &input_parameters
-        t_steps = 5000 ! Number of iterations
+        t_steps = 310000 ! Number of iterations
         dt = 0.025 ! Time step as fraction of non-relativistic gyro-period
-        output_cadence = 10
+        output_cadence = 620
         num_species = 6
         num_impurity_species = 1
         radiation = .FALSE.
@@ -24,7 +24,7 @@
         r = 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 !
         Eo = 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6 ! Initial energy in eV
         etao = 0.0, 10.0, 20.0, 30.0, 40.0, 50.0  ! Initial pitch angle
-        ppp = 10, 10, 10, 10, 10, 10 ! Number of particles per process (mpi)
+        ppp = 100, 100, 100, 100, 100, 100 ! Number of particles per process (mpi)
         q = -1.0, -1.0, -1.0, -1.0, -1.0, -1.0 ! Electric charge
         m = 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 ! In units of electron mass
 /
@@ -37,8 +37,8 @@
         Bo = 2.19 ! In Teslas. ITER: 5.42 DIII-D: 2.19
         minor_radius = 0.5 ! Minor radius in meters. ITER: 1.5 DIII-D: 0.5
         major_radius = 1.5 ! Major radius in meters. ITER: 6.5 DIII-D: 1.6
-        q_factor_at_separatrix = 2.0 ! Safety factor at the separatrix (r=a)
-        free_param = 0.5 ! defined as the ratio minor_radius/lambda
+        qa = 2.0 ! Safety factor at the separatrix (r=a)
+        qo = 1.0 ! Safety factor at the separatrix (r=a)
 /
 
 &collision_parameters

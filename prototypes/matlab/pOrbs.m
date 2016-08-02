@@ -70,7 +70,7 @@ function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,
 
 narginchk(8,9);
 
-close all
+% close all
 
 ST = struct;
 % Script parameters
@@ -853,14 +853,22 @@ function B = analyticalB(X,opt)
 narginchk(1,2);
 
 % Parameters of the analytical magnetic field
-Bo = 5;
+% Bo = 2.19;
+% a = 0.5;% Minor radius in meters.
+% Ro = 1.5; % Major radius in meters.
+% qa = 3.0; % Safety factor at the separatrix (r=a)
+% co = 0.5; % Extra parameter
+% lamb = a/co;
+% Bpo = (a/Ro)*(Bo/qa)*(1+co^2)/co;
+% qo = lamb*Bo/(Ro*Bpo);
+
+Bo = 2.19;
 a = 0.5;% Minor radius in meters.
-Ro = 1.0; % Major radius in meters.
-qa = 2; % Safety factor at the separatrix (r=a)
-co = 0.25; % Extra parameter
-lamb = a/co;
-Bpo = (a/Ro)*(Bo/qa)*(1+co^2)/co;
-qo = lamb*Bo/(Ro*Bpo);
+Ro = 1.5; % Major radius in meters.
+qa = 2.0; % Safety factor at the separatrix (r=a)
+qo = 1.6; % Safety factor at the magnetic axis.
+lamb = a/sqrt(qa/qo - 1);
+Bpo = lamb*Bo/(qo*Ro);
 % Parameters of the analytical magnetic field
 
 if nargin == 2
@@ -870,7 +878,6 @@ if nargin == 2
         B.a = a;% 0.6;% Minor radius in meters.
         B.Ro = Ro; % Major radius in meters.
         B.qa = qa; % Safety factor at the separatrix (r=a)
-        B.co = co; % Extra parameter
         B.lamb = lamb;
         B.Bpo = Bpo;
         disp(['q-factor at magnetic axis: ' num2str(qo)])
@@ -1170,15 +1177,15 @@ for ii=2:ST.params.numSnapshots
 %         % Collisions
 
 %         U_R = U_R + a*( F2 + F3 + Fcolle + Fcolli);
-%         U_R = U_R + a*( F2 + F3 );
-% 
-% 
-%         U = U_L + U_R - U;
-%         gamma = sqrt( 1 + U*U' );
-%         V = U/gamma;
+        U_R = U_R + a*( F2 + F3 );
+
+
+        U = U_L + U_R - U;
+        gamma = sqrt( 1 + U*U' );
+        V = U/gamma;
         
-         U = U_L;
-         V = U_L/gamma;
+%          U = U_L;
+%          V = U_L/gamma;
         % % % Leap-frog scheme for the radiation damping force % % %fcoll
         
         zeta_previous = atan2(XX(2),XX(1));

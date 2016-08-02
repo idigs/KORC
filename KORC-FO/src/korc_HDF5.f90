@@ -782,10 +782,6 @@ subroutine save_simulation_parameters(params,spp,F,cparams)
 			attr = "Poloidal magnetic field in T"
         	call save_to_hdf5(h5file_id,dset,F%AB%Bpo*params%cpp%Bo,attr)
 
-			dset = TRIM(gname) // "/co"
-			attr = "Free parameter"
-        	call save_to_hdf5(h5file_id,dset,F%AB%co,attr)
-
 			dset = TRIM(gname) // "/Eo"
 			attr = "Electric field at the magnetic axis in V/m"
 			call save_to_hdf5(h5file_id,dset,F%Eo*params%cpp%Eo,attr)

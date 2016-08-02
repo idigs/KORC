@@ -13,11 +13,11 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
 % ST.RT = radialTransport(ST);
 
-% ST.CP = confined_particles(ST);
+ST.CP = confined_particles(ST);
 
 % ST.PAD = pitchAngleDiagnostic(ST,30);
 
@@ -25,7 +25,7 @@ energyConservation(ST);
 
 % poloidalPlaneDistributions(ST,25);
 
-angularMomentum(ST);
+% angularMomentum(ST);
 
 % ST.CMF = changeOfMagneticField(ST)
 
@@ -58,9 +58,8 @@ for ii=1:length(info.Groups)
     end
 end
 
-params.simulation.num_snapshots = 470;
-params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
-
+% params.simulation.num_snapshots = 470;
+% params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 end
 
 function data = loadData(ST)
@@ -274,15 +273,22 @@ N = 10;
 tmax = max(ST.time);
 tmin = min(ST.time);
 
-mean_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
-std_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
-skewness_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
-kurtosis_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
+mean_fx = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
+std_fx = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
+skewness_fx = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
+kurtosis_fx = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
+
+mean_fz = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
+std_fz = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
+skewness_fz = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
+kurtosis_fz = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
 
 stats = zeros(2,ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
 
 fx = zeros(ST.params.simulation.num_species,nbins,ST.params.simulation.num_snapshots+1);
 x = zeros(ST.params.simulation.num_species,nbins);
+fz = zeros(ST.params.simulation.num_species,nbins,ST.params.simulation.num_snapshots+1);
+z = zeros(ST.params.simulation.num_species,nbins);
 
 h1 = figure('Visible',ST.visible);
 set(h1,'name','Pitch angle PDF vs. time','numbertitle','off')
@@ -291,27 +297,40 @@ set(h0,'name','Energy PDF vs. time','numbertitle','off')
 h = figure('Visible',ST.visible);
 set(h,'name','Pitch angle: variability','numbertitle','off')
 for ss=1:ST.params.simulation.num_species
+    q = ST.params.species.q(ss);
+    m = ST.params.species.m(ss);
+    c = ST.params.scales.v;
     
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
     passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
     bool = pin & passing;
-%     tmp = cos(pi*ST.data.(['sp' num2str(ss)]).eta/180);
-    tmp = ST.data.(['sp' num2str(ss)]).eta(bool,:);
+    eta = ST.data.(['sp' num2str(ss)]).eta(bool,:);
+    Eo = ST.data.(['sp' num2str(ss)]).gamma(bool,:)*m*c^2/q;
     
-    if ~isempty(tmp)
-        mean_f(ss,:) = mean(tmp,1);
-        std_f(ss,:) = std(tmp,0,1);
-        skewness_f(ss,:) = skewness(tmp,0,1);
-        kurtosis_f(ss,:) = kurtosis(tmp,1,1);
+    if ~isempty(eta)
+        mean_fx(ss,:) = mean(eta,1);
+        std_fx(ss,:) = std(eta,0,1);
+        skewness_fx(ss,:) = skewness(eta,0,1);
+        kurtosis_fx(ss,:) = kurtosis(eta,1,1);
         
-        minVal = min(min( tmp ));
-        maxVal = max(max( tmp ));
+        mean_fz(ss,:) = mean(Eo,1);
+        std_fz(ss,:) = std(Eo,0,1);
+        skewness_fz(ss,:) = skewness(Eo,0,1);
+        kurtosis_fz(ss,:) = kurtosis(Eo,1,1);
+        
+        minVal = min(min( eta ));
+        maxVal = max(max( eta ));
         x(ss,:) = linspace(minVal,maxVal,nbins);
         
+        minVal = min(min( Eo ));
+        maxVal = max(max( Eo ));
+        z(ss,:) = linspace(minVal,maxVal,nbins);
+        
         for ii=1:ST.params.simulation.num_snapshots+1
-            stats(1,ss,ii) = 100*mean((tmp(:,ii) - tmp(:,1))./tmp(:,1));
-            stats(2,ss,ii) = 100*std((tmp(:,ii) - tmp(:,1))./tmp(:,1));
-            [fx(ss,:,ii),~] = hist(tmp(:,ii),x(ss,:));
+            stats(1,ss,ii) = 100*mean((eta(:,ii) - eta(:,1))./eta(:,1));
+            stats(2,ss,ii) = 100*std((eta(:,ii) - eta(:,1))./eta(:,1));
+            [fx(ss,:,ii),~] = hist(eta(:,ii),x(ss,:));
+            [fz(ss,:,ii),~] = hist(Eo(:,ii),z(ss,:));
         end
     end
     
@@ -379,22 +398,22 @@ for ii=1:ST.params.simulation.num_species
     figure(h2)
     subplot(4,1,1)
     hold on
-    plot(ST.time,mean_f(ii,:))
+    plot(ST.time,mean_fx(ii,:))
     hold off
     figure(h2)
     subplot(4,1,2)
     hold on
-    plot(ST.time,std_f(ii,:))
+    plot(ST.time,std_fx(ii,:))
     hold off
     figure(h2)
     subplot(4,1,3)
     hold on
-    plot(ST.time,skewness_f(ii,:))
+    plot(ST.time,skewness_fx(ii,:))
     hold off
     figure(h2)
     subplot(4,1,4)
     hold on
-    plot(ST.time,kurtosis_f(ii,:))
+    plot(ST.time,kurtosis_fx(ii,:))
     hold off
 end
 
@@ -425,24 +444,31 @@ grid on
 
 offset = floor(double(ST.params.simulation.num_snapshots+1)/N);
 
-z = linspace(-4,4,100);
-fz = exp( -0.5*z.^2 )/sqrt(2*pi);
+% z = linspace(-4,4,100);
+% fz = exp( -0.5*z.^2 )/sqrt(2*pi);
 
 h3 = figure('Visible',ST.visible);
 set(h3,'name','PDF pitch angle','numbertitle','off')
+hh = figure('Visible',ST.visible);
+set(hh,'name','PDF energy','NumberTitle','off')
 for ii=1:N
     it = ii*offset;
     nc = floor(N/2);
     nr = floor(N/nc);
+    figure(h3)
     subplot(nr,nc,ii)
-    plot(z,log10(fz),'k')
     hold on
+    figure(hh)
+    subplot(nr,nc,ii)
+    hold on
+%     plot(z,log10(fz),'k')
+    
     for ss=1:ST.params.simulation.num_species
-        dx = mean(diff(x(ss,:)));
+%         dx = mean(diff(x(ss,:)));
 %         xAxis = ( x(ss,:) - mean_f(ss,it) )/std_f(ss,it);
 %         f = std_f(ss,it)*fx(ss,:,it)/(sum(fx(ss,:,it))*dx);
         
-        xAxis = x(ss,:) - mean_f(ss,it);
+        xAxis = x(ss,:) - mean_fx(ss,it);
         f = squeeze(fx(ss,:,it));
         
         figure(h3)
@@ -452,25 +478,36 @@ for ii=1:N
         figure(h2)
         subplot(4,1,1)
         hold on
-        plot(ST.time(it),mean_f(ss,it),'rs')
+        plot(ST.time(it),mean_fx(ss,it),'rs')
         hold off
         figure(h2)
         subplot(4,1,2)
         hold on
-        plot(ST.time(it),std_f(ss,it),'rs')
+        plot(ST.time(it),std_fx(ss,it),'rs')
         hold off
         figure(h2)
         subplot(4,1,3)
         hold on
-        plot(ST.time(it),skewness_f(ss,it),'rs')
+        plot(ST.time(it),skewness_fx(ss,it),'rs')
         hold off
         figure(h2)
         subplot(4,1,4)
         hold on
-        plot(ST.time(it),kurtosis_f(ss,it),'rs')
+        plot(ST.time(it),kurtosis_fx(ss,it),'rs')
         hold off
+        
+        xAxis = z(ss,:) - mean_fz(ss,it);
+        f = squeeze(fz(ss,:,it));
+        
+        figure(hh)
+        plot(xAxis,f,'o:')
     end
     figure(h3)
+    title(['Time: ' num2str(ST.time(it))],'Interpreter','latex','FontSize',11)
+    hold off
+    box on
+    grid on
+    figure(hh)
     title(['Time: ' num2str(ST.time(it))],'Interpreter','latex','FontSize',11)
     hold off
     box on
@@ -528,9 +565,10 @@ saveas(h0,[ST.path 'Energy_PDF_vs_time'],'fig')
 saveas(h1,[ST.path 'pitch_vs_time'],'fig')
 saveas(h2,[ST.path 'pitch_stats'],'fig')
 saveas(h3,[ST.path 'pitch_pdfs'],'fig')
+saveas(hh,[ST.path 'energy_pdfs'],'fig')
 
-PAD.mean = mean_f;
-PAD.std = std_f;
+PAD.mean = mean_fx;
+PAD.std = std_fx;
 
 end
 
@@ -755,8 +793,7 @@ c = 1E2*c;
 Bo = 1E4*ST.params.fields.Bo;
 Ro = 1E2*ST.params.fields.Ro; % Major radius in meters.
 a = 1E2*ST.params.fields.a;% Minor radius in meters.
-co = 0.5; % Extra parameter
-lambda = a/co;
+lambda = a/sqrt(ST.params.fields.qa/ST.params.fields.qo - 1.0);
 Bpo = 1E4*ST.params.fields.Bpo;
 
 st1 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
