@@ -13,11 +13,11 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
 % ST.RT = radialTransport(ST);
 
-ST.CP = confined_particles(ST);
+% ST.CP = confined_particles(ST);
 
 % ST.PAD = pitchAngleDiagnostic(ST,30);
 
@@ -58,8 +58,8 @@ for ii=1:length(info.Groups)
     end
 end
 
-% params.simulation.num_snapshots = 470;
-% params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
+params.simulation.num_snapshots = 470;
+params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 end
 
 function data = loadData(ST)
@@ -184,10 +184,10 @@ set(h6,'name','Energy statistics','numbertitle','off')
         minPin = Pin + std(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),0,1);
         maxPin = Pin - std(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),0,1);
         
-        eta = ST.data.(['sp' num2str(ss)]).eta(pin,:);
+        eta = 2*pi*ST.data.(['sp' num2str(ss)]).eta(pin,:)/180;
         V = sqrt(1 - 1./gamma.^2); % in units of the speed of light
-        Vpar = mean((V.*cos(eta)).^2,1);
-        Vperp = mean((V.*sin(eta)).^2,1);
+        Vpar = mean(V.*cos(eta),1);
+        Vperp = mean(V.*sin(eta),1);
         
         figure(h1)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
@@ -200,7 +200,7 @@ set(h6,'name','Energy statistics','numbertitle','off')
         
         figure(h2)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
-        plot(ST.time,Vpar-Vperp,'k-')
+        plot(ST.time,Vpar,'k',ST.time,Vperp,'r')
 %         plot(time,Vpar,'k-',time,Vperp,'r-')
         box on
         grid on
@@ -296,6 +296,10 @@ h0 = figure('Visible',ST.visible);
 set(h0,'name','Energy PDF vs. time','numbertitle','off')
 h = figure('Visible',ST.visible);
 set(h,'name','Pitch angle: variability','numbertitle','off')
+h3 = figure('Visible',ST.visible);
+set(h3,'name','PDF pitch angle','numbertitle','off')
+hh = figure('Visible',ST.visible);
+set(hh,'name','PDF energy','NumberTitle','off')
 for ss=1:ST.params.simulation.num_species
     q = ST.params.species.q(ss);
     m = ST.params.species.m(ss);
@@ -305,7 +309,8 @@ for ss=1:ST.params.simulation.num_species
     passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
     bool = pin & passing;
     eta = ST.data.(['sp' num2str(ss)]).eta(bool,:);
-    Eo = ST.data.(['sp' num2str(ss)]).gamma(bool,:)*m*c^2/q;
+    Eo = ST.data.(['sp' num2str(ss)]).gamma(bool,:)*m*c^2/abs(q);
+    Eo = Eo/1E6;
     
     if ~isempty(eta)
         mean_fx(ss,:) = mean(eta,1);
@@ -334,10 +339,54 @@ for ss=1:ST.params.simulation.num_species
         end
     end
     
+    offset = floor(double(ST.params.simulation.num_snapshots+1)/N);
+    
+    for ii=1:N
+        it = ii*offset;
+        nc = floor(N/2);
+        nr = floor(N/nc);
+        figure(h3)
+        subplot(nr,nc,ii)
+        hold on
+        figure(hh)
+        subplot(nr,nc,ii)
+        hold on
+        
+        minVal = min(eta(:,it));
+        maxVal = max(eta(:,it));
+        xAxis = linspace(minVal,maxVal,nbins);
+        f = hist(eta(:,it),xAxis);
+        f = f/(mean(diff(xAxis))*sum(f));
+        
+        figure(h3)
+        plot(xAxis,f,'o:')
+        
+        minVal = min(Eo(:,it));
+        maxVal = max(Eo(:,it));
+        xAxis = linspace(minVal,maxVal,nbins);
+        f = hist(Eo(:,it),xAxis);
+        f = f/(mean(diff(xAxis))*sum(f));
+        
+        figure(hh)
+        plot(xAxis,f,'o:')
+        
+        
+        figure(h3)
+        title(['Time: ' num2str(ST.time(it))],'Interpreter','latex','FontSize',11)
+        hold off
+        box on
+        grid on
+        figure(hh)
+        title(['Time: ' num2str(ST.time(it))],'Interpreter','latex','FontSize',11)
+        hold off
+        box on
+        grid on
+    end
+    
     figure(h1)
     subplot(double(ST.params.simulation.num_species),1,double(ss))
     surf(ST.time,squeeze(x(ss,:)),log10(squeeze(fx(ss,:,:))),'LineStyle','none')
-%     surf(ST.time,squeeze(x(ss,:)),squeeze(fx(ss,:,:)),'LineStyle','none')
+    %     surf(ST.time,squeeze(x(ss,:)),squeeze(fx(ss,:,:)),'LineStyle','none')
     axis([tmin tmax minVal maxVal])
     box on
     axis on
@@ -442,84 +491,12 @@ ylabel('kurtosis($\theta$)','Interpreter','latex','FontSize',16)
 box on
 grid on
 
-offset = floor(double(ST.params.simulation.num_snapshots+1)/N);
-
-% z = linspace(-4,4,100);
-% fz = exp( -0.5*z.^2 )/sqrt(2*pi);
-
-h3 = figure('Visible',ST.visible);
-set(h3,'name','PDF pitch angle','numbertitle','off')
-hh = figure('Visible',ST.visible);
-set(hh,'name','PDF energy','NumberTitle','off')
-for ii=1:N
-    it = ii*offset;
-    nc = floor(N/2);
-    nr = floor(N/nc);
-    figure(h3)
-    subplot(nr,nc,ii)
-    hold on
-    figure(hh)
-    subplot(nr,nc,ii)
-    hold on
-%     plot(z,log10(fz),'k')
-    
-    for ss=1:ST.params.simulation.num_species
-%         dx = mean(diff(x(ss,:)));
-%         xAxis = ( x(ss,:) - mean_f(ss,it) )/std_f(ss,it);
-%         f = std_f(ss,it)*fx(ss,:,it)/(sum(fx(ss,:,it))*dx);
-        
-        xAxis = x(ss,:) - mean_fx(ss,it);
-        f = squeeze(fx(ss,:,it));
-        
-        figure(h3)
-%         plot(xAxis,log10(f),'o:')
-        plot(xAxis,f,'o:')
-        
-        figure(h2)
-        subplot(4,1,1)
-        hold on
-        plot(ST.time(it),mean_fx(ss,it),'rs')
-        hold off
-        figure(h2)
-        subplot(4,1,2)
-        hold on
-        plot(ST.time(it),std_fx(ss,it),'rs')
-        hold off
-        figure(h2)
-        subplot(4,1,3)
-        hold on
-        plot(ST.time(it),skewness_fx(ss,it),'rs')
-        hold off
-        figure(h2)
-        subplot(4,1,4)
-        hold on
-        plot(ST.time(it),kurtosis_fx(ss,it),'rs')
-        hold off
-        
-        xAxis = z(ss,:) - mean_fz(ss,it);
-        f = squeeze(fz(ss,:,it));
-        
-        figure(hh)
-        plot(xAxis,f,'o:')
-    end
-    figure(h3)
-    title(['Time: ' num2str(ST.time(it))],'Interpreter','latex','FontSize',11)
-    hold off
-    box on
-    grid on
-    figure(hh)
-    title(['Time: ' num2str(ST.time(it))],'Interpreter','latex','FontSize',11)
-    hold off
-    box on
-    grid on
-end
-
 
 % % % Poloidal angle distribution function % %
-% 
+%
 % ft = zeros(ST.params.simulation.num_species,nbins,N);
 % t = zeros(ST.params.simulation.num_species,nbins,N);
-% 
+%
 % for ii=1:N
 %     it = ii*offset;
 %     for ss=1:ST.params.simulation.num_species
@@ -534,9 +511,9 @@ end
 %         ft(ss,:,ii) = ft(ss,:,ii)/(sum(ft(ss,:,ii))*dt);
 %     end
 % end
-% 
+%
 % barcolor = [1,0,0;0,1,0;0,0,1;0.5,0.5,1.0;1.0,0.2,0.2];
-% 
+%
 % h4 = figure('Visible',ST.visible);
 % set(h4,'name','PDF poloidal angle','numbertitle','off')
 % for ii=1:N
