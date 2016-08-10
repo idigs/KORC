@@ -13,7 +13,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
 % ST.RT = radialTransport(ST);
 
@@ -25,9 +25,9 @@ energyConservation(ST);
 
 % poloidalPlaneDistributions(ST,25);
 
-% angularMomentum(ST);
+angularMomentum(ST);
 
-ST.CMF = changeOfMagneticField(ST)
+% ST.CMF = changeOfMagneticField(ST)
 
 % energyLimit(ST);
 
@@ -58,8 +58,8 @@ for ii=1:length(info.Groups)
     end
 end
 
-params.simulation.num_snapshots = 470;
-params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
+% params.simulation.num_snapshots = 470;
+% params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 end
 
 function data = loadData(ST)
@@ -184,10 +184,10 @@ set(h6,'name','Energy statistics','numbertitle','off')
         minPin = Pin + std(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),0,1);
         maxPin = Pin - std(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),0,1);
         
-        eta = 2*pi*ST.data.(['sp' num2str(ss)]).eta(pin,:)/180;
+        eta = ST.data.(['sp' num2str(ss)]).eta(pin,:);
         V = sqrt(1 - 1./gamma.^2); % in units of the speed of light
-        Vpar = mean(V.*cos(eta),1);
-        Vperp = mean(V.*sin(eta),1);
+        Vpar = mean((V.*cos(eta)).^2,1);
+        Vperp = mean((V.*sin(eta)).^2,1);
         
         figure(h1)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
@@ -200,7 +200,7 @@ set(h6,'name','Energy statistics','numbertitle','off')
         
         figure(h2)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
-        plot(ST.time,Vpar,'k',ST.time,Vperp,'r')
+        plot(ST.time,Vpar-Vperp,'k-')
 %         plot(time,Vpar,'k-',time,Vperp,'r-')
         box on
         grid on
@@ -296,10 +296,6 @@ h0 = figure('Visible',ST.visible);
 set(h0,'name','Energy PDF vs. time','numbertitle','off')
 h = figure('Visible',ST.visible);
 set(h,'name','Pitch angle: variability','numbertitle','off')
-h3 = figure('Visible',ST.visible);
-set(h3,'name','PDF pitch angle','numbertitle','off')
-hh = figure('Visible',ST.visible);
-set(hh,'name','PDF energy','NumberTitle','off')
 for ss=1:ST.params.simulation.num_species
     q = ST.params.species.q(ss);
     m = ST.params.species.m(ss);
@@ -309,8 +305,7 @@ for ss=1:ST.params.simulation.num_species
     passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
     bool = pin & passing;
     eta = ST.data.(['sp' num2str(ss)]).eta(bool,:);
-    Eo = ST.data.(['sp' num2str(ss)]).gamma(bool,:)*m*c^2/abs(q);
-    Eo = Eo/1E6;
+    Eo = ST.data.(['sp' num2str(ss)]).gamma(bool,:)*m*c^2/q;
     
     if ~isempty(eta)
         mean_fx(ss,:) = mean(eta,1);
@@ -326,72 +321,32 @@ for ss=1:ST.params.simulation.num_species
         minVal = min(min( eta ));
         maxVal = max(max( eta ));
         x(ss,:) = linspace(minVal,maxVal,nbins);
+        Dx = mean(diff(x(ss,:)));
         
         minVal = min(min( Eo ));
         maxVal = max(max( Eo ));
         z(ss,:) = linspace(minVal,maxVal,nbins);
+        Dz = mean(diff(z(ss,:)));
         
         for ii=1:ST.params.simulation.num_snapshots+1
-            stats(1,ss,ii) = 100*mean((eta(:,ii) - eta(:,1))./eta(:,1));
-            stats(2,ss,ii) = 100*std((eta(:,ii) - eta(:,1))./eta(:,1));
+            stats(1,ss,ii) = 100*mean(abs(eta(:,ii) - eta(:,1))./eta(:,1));
+            stats(2,ss,ii) = 100*std(abs(eta(:,ii) - eta(:,1))./eta(:,1));
             [fx(ss,:,ii),~] = hist(eta(:,ii),x(ss,:));
+            fx(ss,:,ii) = fx(ss,:,ii)/(Dx*sum(fx(ss,:,ii)));
             [fz(ss,:,ii),~] = hist(Eo(:,ii),z(ss,:));
+            fz(ss,:,ii) = fz(ss,:,ii)/(Dz*sum(fz(ss,:,ii)));
         end
-    end
-    
-    offset = floor(double(ST.params.simulation.num_snapshots+1)/N);
-    
-    for ii=1:N
-        it = ii*offset;
-        nc = floor(N/2);
-        nr = floor(N/nc);
-        figure(h3)
-        subplot(nr,nc,ii)
-        hold on
-        figure(hh)
-        subplot(nr,nc,ii)
-        hold on
-        
-        minVal = min(eta(:,it));
-        maxVal = max(eta(:,it));
-        xAxis = linspace(minVal,maxVal,nbins);
-        f = hist(eta(:,it),xAxis);
-        f = f/(mean(diff(xAxis))*sum(f));
-        
-        figure(h3)
-        plot(xAxis,f,'o:')
-        
-        minVal = min(Eo(:,it));
-        maxVal = max(Eo(:,it));
-        xAxis = linspace(minVal,maxVal,nbins);
-        f = hist(Eo(:,it),xAxis);
-        f = f/(mean(diff(xAxis))*sum(f));
-        
-        figure(hh)
-        plot(xAxis,f,'o:')
-        
-        
-        figure(h3)
-        title(['Time: ' num2str(ST.time(it))],'Interpreter','latex','FontSize',11)
-        hold off
-        box on
-        grid on
-        figure(hh)
-        title(['Time: ' num2str(ST.time(it))],'Interpreter','latex','FontSize',11)
-        hold off
-        box on
-        grid on
     end
     
     figure(h1)
     subplot(double(ST.params.simulation.num_species),1,double(ss))
     surf(ST.time,squeeze(x(ss,:)),log10(squeeze(fx(ss,:,:))),'LineStyle','none')
-    %     surf(ST.time,squeeze(x(ss,:)),squeeze(fx(ss,:,:)),'LineStyle','none')
-    axis([tmin tmax minVal maxVal])
+%     surf(ST.time,squeeze(x(ss,:)),squeeze(fx(ss,:,:)),'LineStyle','none')
+%     axis([tmin tmax minVal maxVal])
     box on
     axis on
     xlabel('Time (s)','Interpreter','latex','FontSize',16)
-    ylabel('$\eta$ ($^\circ$)','Interpreter','latex','FontSize',16)
+    ylabel('$\theta$ ($^\circ$)','Interpreter','latex','FontSize',16)
     colormap(jet(256))
     
     figure(h)
@@ -491,12 +446,85 @@ ylabel('kurtosis($\theta$)','Interpreter','latex','FontSize',16)
 box on
 grid on
 
+offset = floor(double(ST.params.simulation.num_snapshots+1)/N);
+
+% z = linspace(-4,4,100);
+% fz = exp( -0.5*z.^2 )/sqrt(2*pi);
+
+h3 = figure('Visible',ST.visible);
+set(h3,'name','PDF pitch angle','numbertitle','off')
+hh = figure('Visible',ST.visible);
+set(hh,'name','PDF energy','NumberTitle','off')
+for ii=1:N
+    it = ii*offset;
+    nc = floor(N/2);
+    nr = floor(N/nc);
+    figure(h3)
+    subplot(nr,nc,ii)
+    hold on
+    figure(hh)
+    subplot(nr,nc,ii)
+    hold on
+%     plot(z,log10(fz),'k')
+    
+    for ss=1:ST.params.simulation.num_species
+%         dx = mean(diff(x(ss,:)));
+%         xAxis = ( x(ss,:) - mean_f(ss,it) )/std_f(ss,it);
+%         f = std_f(ss,it)*fx(ss,:,it)/(sum(fx(ss,:,it))*dx);
+        
+%         xAxis = x(ss,:) - mean_fx(ss,it);
+        xAxis = x(ss,:);
+        f = squeeze(fx(ss,:,it));
+        
+        figure(h3)
+%         plot(xAxis,log10(f),'o:')
+        plot(xAxis,f,'o:')
+        
+        figure(h2)
+        subplot(4,1,1)
+        hold on
+        plot(ST.time(it),mean_fx(ss,it),'rs')
+        hold off
+        figure(h2)
+        subplot(4,1,2)
+        hold on
+        plot(ST.time(it),std_fx(ss,it),'rs')
+        hold off
+        figure(h2)
+        subplot(4,1,3)
+        hold on
+        plot(ST.time(it),skewness_fx(ss,it),'rs')
+        hold off
+        figure(h2)
+        subplot(4,1,4)
+        hold on
+        plot(ST.time(it),kurtosis_fx(ss,it),'rs')
+        hold off
+        
+        xAxis = z(ss,:);
+        f = squeeze(fz(ss,:,it));
+        
+        figure(hh)
+        plot(xAxis,f,'o:')
+    end
+    figure(h3)
+    title(['Time: ' num2str(ST.time(it))],'Interpreter','latex','FontSize',11)
+    hold off
+    box on
+    grid on
+    figure(hh)
+    title(['Time: ' num2str(ST.time(it))],'Interpreter','latex','FontSize',11)
+    hold off
+    box on
+    grid on
+end
+
 
 % % % Poloidal angle distribution function % %
-%
+% 
 % ft = zeros(ST.params.simulation.num_species,nbins,N);
 % t = zeros(ST.params.simulation.num_species,nbins,N);
-%
+% 
 % for ii=1:N
 %     it = ii*offset;
 %     for ss=1:ST.params.simulation.num_species
@@ -511,9 +539,9 @@ grid on
 %         ft(ss,:,ii) = ft(ss,:,ii)/(sum(ft(ss,:,ii))*dt);
 %     end
 % end
-%
+% 
 % barcolor = [1,0,0;0,1,0;0,0,1;0.5,0.5,1.0;1.0,0.2,0.2];
-%
+% 
 % h4 = figure('Visible',ST.visible);
 % set(h4,'name','PDF poloidal angle','numbertitle','off')
 % for ii=1:N
@@ -570,7 +598,7 @@ for ss=1:ST.params.simulation.num_species
     
     if ~isempty(tmp)
         for ii=1:size(tmp,1)
-            tmp(ii,:) = 100*abs(tmp(ii,:) - tmp(ii,1))./tmp(ii,1);
+            tmp(ii,:) = 100*(tmp(ii,:) - tmp(ii,1))./tmp(ii,1);
         end
         
         mean_f(ss,:) = mean(tmp,1);
@@ -770,7 +798,8 @@ c = 1E2*c;
 Bo = 1E4*ST.params.fields.Bo;
 Ro = 1E2*ST.params.fields.Ro; % Major radius in meters.
 a = 1E2*ST.params.fields.a;% Minor radius in meters.
-lambda = a/sqrt(ST.params.fields.qa/ST.params.fields.qo - 1.0);
+co = 0.5; % Extra parameter
+lambda = a/co;
 Bpo = 1E4*ST.params.fields.Bpo;
 
 st1 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
@@ -1112,12 +1141,14 @@ for ss=1:ST.params.simulation.num_species
     X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,1));
     R = sqrt( sum(X(1:2,:).^2,1) );
     Z = X(3,:);
+    Prad = squeeze(abs(ST.data.(['sp' num2str(ss)]).Prad(bool,end)));
 
     figure(h1)
     subplot(1,2,1)
     hold on
-    plot(R,Z,'s','MarkerSize',4,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+%     plot(R,Z,'s','MarkerSize',4,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
 %     plot(R,Z,'.','MarkerSize',10,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+    plot3(R,Z,Prad,'s','MarkerSize',4,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
     hold off
     legends{ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
 end
@@ -1232,8 +1263,13 @@ Bo = ST.params.fields.Bo;
 a = ST.params.fields.a;
 Ro = ST.params.fields.Ro;
 qa = ST.params.fields.qa;
-co = ST.params.fields.co;
 lamb = ST.params.fields.lambda;
+try
+    co = ST.params.fields.co;
+catch
+    qo = ST.params.fields.qa;
+    co = a/lamb;
+end
 Bpo = ST.params.fields.Bpo;
 % Parameters of the analytical magnetic field
 
@@ -1304,8 +1340,6 @@ end
 
 function PR = LarmorVsLL(ST)
 PR = struct;
-tmax = max(ST.time);
-tmin = min(ST.time);
 
 kB = 1.38E-23; % Boltzmann constant
 Kc = 8.987E9; % Coulomb constant in N*m^2/C^2
@@ -1316,27 +1350,42 @@ qe = 1.602176E-19; % Electron charge
 me = 9.109382E-31; % Electron mass
 % % % % % % % % % % %
 
-PR.A = zeros(3,ST.params.simulation.num_species);
+PR.models = zeros(3,ST.params.simulation.num_species);
 
 h = figure('Visible',ST.visible);
-set(h,'name','Radiation: Larmor approx','numbertitle','off')
+set(h,'name','Model comparison: ratios','numbertitle','off')
 h1 = figure('Visible',ST.visible);
-set(h1,'name','Scatter plot','numbertitle','off')
+set(h1,'name','Scatter plot: comparison','numbertitle','off')
+h2 = figure('Visible',ST.visible);
+set(h2,'name','Scatter plot: actual radiation','numbertitle','off')
+h3 = figure('Visible',ST.visible);
+set(h3,'name','Radiation bar plots','numbertitle','off')
 for ss=1:ST.params.simulation.num_species
     q = abs(ST.params.species.q(ss));
     m = ST.params.species.m(ss);
     
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
-    aux = find(pin == 1);
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
+    bool = pin & passing;
+    aux = find(bool == 1);
+    S = numel(aux);
     
-    V = ST.data.(['sp' num2str(ss)]).V(:,pin,:);
+    V = ST.data.(['sp' num2str(ss)]).V(:,bool,:);
     v = squeeze( sqrt( sum(V.^2,1) ) );
-    gamma = ST.data.(['sp' num2str(ss)]).gamma(pin,:);
-    eta = pi*ST.data.(['sp' num2str(ss)]).eta(pin,:)/180;
-%     eta = pi*repmat(ST.params.species.etao(ss),size(gamma,1),size(gamma,2))/180;
-    X = ST.data.(['sp' num2str(ss)]).X(:,pin,:);
+    gamma = ST.data.(['sp' num2str(ss)]).gamma(bool,:);
+    eta = pi*ST.data.(['sp' num2str(ss)]).eta(bool,:)/180;
+    
+    gammao = repmat(ST.params.species.gammao(ss),S,ST.params.simulation.num_snapshots+1);
+    vo = ST.params.scales.v*sqrt(1 - 1./gammao.^2);
+    etao = pi*repmat(ST.params.species.etao(ss),S,ST.params.simulation.num_snapshots+1)/180;
+    
+%     gammao = gamma;
+%     etao = eta;
+%     vo = v;
+    
+    X = ST.data.(['sp' num2str(ss)]).X(:,bool,:);
     try
-        B = ST.data.(['sp' num2str(ss)]).B(:,pin,:);
+        B = ST.data.(['sp' num2str(ss)]).B(:,bool,:);
     catch
         B = analyticalB(ST,X);
     end
@@ -1354,42 +1403,75 @@ for ss=1:ST.params.simulation.num_species
     end
 
     % Approximation of <1/R^2> ~ sin^4(eta)/rg^2
-    vperp = v.*sin(eta);
-    wc = q*ST.params.fields.Bo./(gamma*m);
+    vperp = vo.*sin(etao);
+    wc = q*ST.params.fields.Bo./(gammao*m);
     rg = vperp./wc;
-    kappa2 = sin(eta).^4./rg.^2;
-    
+    kappa2 = sin(etao).^4./rg.^2;
+ 
     % Actual curvature
     kappa = q*vec_mag./(m*gamma.*v.^3);    
 
     % Landau-Lifshiftz radiation formula
-%     PR_LL = mean(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),1);
-    PR_LL = abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:));
+    PR_LL = abs(ST.data.(['sp' num2str(ss)]).Prad(bool,:));
     
     % Larmor approximation using actual curvature
-%     PR_L = 2*Kc*q^2*mean((gamma.*v).^4.*kappa.^2,1)/(3*c^3);
-    PR_L = 2*Kc*q^2*(gamma.*v).^4.*kappa.^2/(3*c^3);
+%     PR_L = 2*Kc*q^2*(gamma.*v).^4.*kappa.^2/(3*c^3);
+    Tr = 6*pi*ep*(m*ST.params.scales.v)^3./(q^4*squeeze(sum(B.^2,1)));
+    PR_L = gamma.*v.*(m*gamma.*v).*sin(eta).^2./Tr;
     
     % Larmor approximation using approximation for curvature
-%     PR_approx = 2*Kc*q^2*mean((gamma.*v).^4.*kappa2,1)/(3*c^3);
-    PR_approx = 2*Kc*q^2*(gamma.*v).^4.*kappa2/(3*c^3);
+%     PR_app = 2*Kc*q^2*(gammao.*v).^4.*kappa2/(3*c^3);
+    Tr = 6*pi*ep*(m*ST.params.scales.v)^3/(q^4*ST.params.fields.Bo^2);
+    PR_app = gammao.*vo.*(m*gammao.*vo).*sin(eta).^2/Tr;
     
     figure(h1)
     subplot(double(ST.params.simulation.num_species),1,double(ss))
-    plot(squeeze(180*eta(:,end)/pi),squeeze(PR_LL(:,end)),'b.',...
-        squeeze(180*eta(:,end)/pi),squeeze(PR_approx(:,end)),'r.')
+    plot(squeeze(180*eta(:,end)/pi),squeeze(PR_L(:,end)),'b.',...
+        squeeze(180*eta(:,end)/pi),squeeze(PR_app(:,end)),'r.','MarkerSize',4)
     box on; grid on;
-    xlabel('$\eta$ ($^\circ$)','Interpreter','latex','FontSize',16)
-    ylabel('$P_{rad}$','Interpreter','latex','FontSize',16)
-    saveas(h1,[ST.path 'radiation_scatter_plot'],'fig')
+    xlabel('$\theta$ ($^\circ$)','Interpreter','latex','FontSize',16)
+    ylabel('$P_R$','Interpreter','latex','FontSize',16)
+    
+    figure(h2)
+    subplot(double(ST.params.simulation.num_species),1,double(ss))
+    plot(squeeze(180*eta(:,end)/pi),squeeze(PR_LL(:,end)),'k.','MarkerSize',4)
+    box on; grid on;
+    xlabel('$\theta$ ($^\circ$)','Interpreter','latex','FontSize',16)
+    ylabel('$P_R$','Interpreter','latex','FontSize',16)
+    
+    
+    minVal = min( eta(:,end) );
+    maxVal = max( eta(:,end) );
+    x = linspace(minVal,maxVal,20);
+    Dx = mean(diff(x));
+    
+    [fx,~] = hist(eta(:,end),x);
+    fx = fx/(Dx*sum(fx));
+    
+    minVal = min( PR_LL(:,end) );
+    maxVal = max( PR_LL(:,end) );
+    z = linspace(minVal,maxVal,20);
+    Dz = mean(diff(z));
+    
+    [fz,~] = hist(PR_LL(:,end),z);
+    fz = fz/(Dz*sum(fz));
+    
+    figure(h3)
+    offset = 2*(double(ss) - 1);
+    subplot(double(ST.params.simulation.num_species),2,offset + 1)
+    bar(180*x/pi,fx)
+    xlabel('$\theta$ ($^\circ$)','Interpreter','latex','FontSize',16)
+    subplot(double(ST.params.simulation.num_species),2,offset + 2)
+    bar(z,fz)
+    xlabel('$P_R$ (Watts/electron)','Interpreter','latex','FontSize',16)
     
     PR_LL = mean(PR_LL,1);
     PR_L = mean(PR_L,1);
-    PR_approx = mean(PR_approx,1);
+    PR_app = mean(PR_app,1);
     
     RATIO1 = PR_L./PR_LL;
-    RATIO2 = PR_approx./PR_LL;   
-    PR.A(:,ss) = [PR_LL(end), PR_L(end), PR_approx(end)];
+    RATIO2 = PR_app./PR_LL;   
+    PR.models(:,ss) = [PR_LL(end), PR_L(end), PR_app(end)];
     
     figure(h)
     subplot(double(ST.params.simulation.num_species),1,double(ss))
@@ -1397,9 +1479,11 @@ for ss=1:ST.params.simulation.num_species
     box on; grid on;
     xlabel('Time (s)','Interpreter','latex','FontSize',16)
     ylabel('$P_R$','Interpreter','latex','FontSize',12)
-    saveas(h,[ST.path 'radiation_ratios'],'fig')
 end
-
+saveas(h,[ST.path 'radiation_ratios'],'fig')
+saveas(h1,[ST.path 'scatter_plot_comparison'],'fig')
+saveas(h2,[ST.path 'scatter_plot_actual_radiation'],'fig')
+saveas(h3,[ST.path 'radiation_pdfs'],'fig')
 end
 
 function stackedPlots(ST,nbins)
@@ -1472,14 +1556,15 @@ for ss=1:ST.params.simulation.num_species
     subplot(double(ST.params.simulation.num_species),1,double(ss))
     plot(squeeze(eta(:,end)),squeeze(Et(:,end)),'.','MarkerFaceColor',[0,0.45,0.74],...
         'MarkerEdgeColor',[0,0.45,0.74])
-    hold on
-    plot(eta_mean,Et_mean,'k',...
-        etao,Eo,'rs','MarkerFaceColor','r','MarkerSize',10)
-    hold off
+%     hold on
+%     plot(eta_mean,Et_mean,'k',...
+%         etao,Eo,'rs','MarkerFaceColor','r','MarkerSize',10)
+%     hold off
     box on; grid on;
     xlabel('$\eta$ ($^\circ$)','Interpreter','latex','FontSize',16)
     ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex','FontSize',16)
 end
+saveas(h,[ST.path 'scatter_plot_E_vs_pitch'],'fig')
 
 end
 
