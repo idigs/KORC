@@ -1,8 +1,8 @@
 &input_parameters
-        t_steps = 310000 ! Number of iterations
-        dt = 0.025 ! Time step as fraction of non-relativistic gyro-period
-        output_cadence = 620
-        num_species = 6
+        t_steps = 78000000 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+        dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
+        output_cadence = 156000 ! 1400 for saving each 100 gyro-periods
+        num_species = 9
         num_impurity_species = 1
         radiation = .FALSE.
         collisions = .FALSE.
@@ -19,26 +19,26 @@
 
 &plasma_species
         runaway = .FALSE. !
-        Ro = 1.5, 1.5, 1.5, 1.5, 1.5, 1.5 !
-        Zo = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 !
-        r = 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 !
-        Eo = 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6 ! Initial energy in eV
-        etao = 0.0, 10.0, 20.0, 30.0, 40.0, 50.0  ! Initial pitch angle
-        ppp = 100, 100, 100, 100, 100, 100 ! Number of particles per process (mpi)
-        q = -1.0, -1.0, -1.0, -1.0, -1.0, -1.0 ! Electric charge
-        m = 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 ! In units of electron mass
+        Ro = 1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4 !
+        Zo = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 !
+        r = 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25 !
+        Eo = 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6 ! Initial energy in eV
+        etao = 0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0  ! Initial pitch angle
+        ppp = 20, 20, 20, 20, 20, 20, 20, 20, 20 ! Number of particles per process (mpi)
+        q = -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0 ! Electric charge
+        m = 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 ! In units of electron mass
 /
 
 &analytic_mag_field_params
         electric_field_mode = 'CONSTANT' ! Options are 'CONSTANT' and 'PULSE'
-        Eo = -0.0 ! -4.0 ! In V/m
+        Eo = 0.0 ! In V/m
         pulse_maximum = 3.0E-3 ! Time at which maximum is reached in s
         pulse_duration = 6.7E-4 ! Duration of intense toroidal electric field
         Bo = 2.19 ! In Teslas. ITER: 5.42 DIII-D: 2.19
         minor_radius = 0.5 ! Minor radius in meters. ITER: 1.5 DIII-D: 0.5
         major_radius = 1.5 ! Major radius in meters. ITER: 6.5 DIII-D: 1.6
         qa = 2.0 ! Safety factor at the separatrix (r=a)
-        qo = 1.0 ! Safety factor at the separatrix (r=a)
+        qo = 1.6 ! Safety factor at the separatrix (r=a)
 /
 
 &collision_parameters

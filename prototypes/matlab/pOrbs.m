@@ -70,7 +70,7 @@ function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,
 
 narginchk(8,9);
 
-% close all
+close all
 
 ST = struct;
 % Script parameters
@@ -862,11 +862,11 @@ narginchk(1,2);
 % Bpo = (a/Ro)*(Bo/qa)*(1+co^2)/co;
 % qo = lamb*Bo/(Ro*Bpo);
 
-Bo = 2.19;
-a = 0.5;% Minor radius in meters.
-Ro = 1.5; % Major radius in meters.
-qa = 2.0; % Safety factor at the separatrix (r=a)
-qo = 1.6; % Safety factor at the magnetic axis.
+Bo = 5.3;
+a = 2.0;% Minor radius in meters.
+Ro = 6.2; % Major radius in meters.
+qa = 3; % Safety factor at the separatrix (r=a)
+qo = 2.4; % Safety factor at the magnetic axis.
 lamb = a/sqrt(qa/qo - 1);
 Bpo = lamb*Bo/(qo*Ro);
 % Parameters of the analytical magnetic field

@@ -27,7 +27,7 @@ energyConservation(ST);
 
 % angularMomentum(ST);
 
-% ST.CMF = changeOfMagneticField(ST)
+ST.CMF = changeOfMagneticField(ST)
 
 % energyLimit(ST);
 
