@@ -111,12 +111,17 @@ else
     ST.Bo = ST.B.Bo;
 end
 
-% Initial position and velocity of tracer, in SI units
+% Particle's parameters and nitial position and velocity of tracer, in SI units
+ST.params.q = tracerParams(1)*ST.params.qe; %alpha-particle
+ST.params.m = tracerParams(2)*ST.params.me; % alpha-particle
+
 ST.params.Xo = xo; % Initial position
-Eo = vo(1)*ST.params.qe + ST.params.me*ST.params.c^2;
-vo(1) = sqrt(1 - (ST.params.me*ST.params.c^2/Eo)^2);
+Eo = vo(1)*ST.params.qe + ST.params.m*ST.params.c^2;
+vo(1) = sqrt(1 - (ST.params.m*ST.params.c^2/Eo)^2);
 ST.params.vo_params = vo; % vo_params = [velocity magnitude, pitch angle]
 [ST.params.vo, ST.params.vpar, ST.params.vperp] = initializeVelocity(ST);
+
+ST.params.wc = sqrt(1 - sum(ST.params.vo.^2)/ST.params.c^2)*abs(ST.params.q)*ST.Bo/ST.params.m;
 
 ST.coll.nimpurities = 1;
 ST.coll.Te = 1.0*ST.params.qe; % Background electron temperature in eV
@@ -133,10 +138,6 @@ ST.coll.rD = sqrt( ST.params.ep*ST.coll.Te/(ST.coll.ne*ST.params.qe^2) );
 ST.coll.re = ST.params.qe^2/( 4*pi*ST.params.ep*ST.params.me*ST.params.c^2 );
 ST.coll.Ee_IZj = ST.params.me*ST.params.c^2/ST.coll.IZj;
 
-% Particle's parameters
-ST.params.q = tracerParams(1)*ST.params.qe; %alpha-particle
-ST.params.m = tracerParams(2)*ST.params.me; % alpha-particle
-ST.params.wc = sqrt(1 - sum(ST.params.vo.^2)/ST.params.c^2)*abs(ST.params.q)*ST.Bo/ST.params.m;
 % ST.params.rL = ST.params.vperp/ST.params.wc; % Larmor radius of particle
 
 if ST.opt
@@ -862,11 +863,11 @@ narginchk(1,2);
 % Bpo = (a/Ro)*(Bo/qa)*(1+co^2)/co;
 % qo = lamb*Bo/(Ro*Bpo);
 
-Bo = 5.3;
-a = 2.0;% Minor radius in meters.
-Ro = 6.2; % Major radius in meters.
+Bo = 2.1;
+a = 1.0;% Minor radius in meters.
+Ro = 3.0; % Major radius in meters.
 qa = 3; % Safety factor at the separatrix (r=a)
-qo = 2.4; % Safety factor at the magnetic axis.
+qo = 1.0; % Safety factor at the magnetic axis.
 lamb = a/sqrt(qa/qo - 1);
 Bpo = lamb*Bo/(qo*Ro);
 % Parameters of the analytical magnetic field
@@ -1177,15 +1178,15 @@ for ii=2:ST.params.numSnapshots
 %         % Collisions
 
 %         U_R = U_R + a*( F2 + F3 + Fcolle + Fcolli);
-        U_R = U_R + a*( F2 + F3 );
+%         U_R = U_R + a*( F2 + F3 );
 
 
-        U = U_L + U_R - U;
-        gamma = sqrt( 1 + U*U' );
-        V = U/gamma;
+%         U = U_L + U_R - U;
+%         gamma = sqrt( 1 + U*U' );
+%         V = U/gamma;
         
-%          U = U_L;
-%          V = U_L/gamma;
+         U = U_L;
+         V = U_L/gamma;
         % % % Leap-frog scheme for the radiation damping force % % %fcoll
         
         zeta_previous = atan2(XX(2),XX(1));

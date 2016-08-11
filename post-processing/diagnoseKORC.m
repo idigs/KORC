@@ -13,7 +13,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
 % ST.RT = radialTransport(ST);
 
@@ -36,9 +36,6 @@ angularMomentum(ST);
 % stackedPlots(ST,40);
 
 % scatterPlots(ST);
-
-
-
 
 
 % save('energy_limit','ST')
@@ -792,14 +789,24 @@ function angularMomentum(ST)
 c = 299792458.0;
 c = 1E2*c;
 
-% cad = ST.params.simulation.output_cadence;
-% time = ST.params.simulation.dt*double(0:cad:ST.params.simulation.t_steps);
-
 Bo = 1E4*ST.params.fields.Bo;
 Ro = 1E2*ST.params.fields.Ro; % Major radius in meters.
 a = 1E2*ST.params.fields.a;% Minor radius in meters.
 co = 0.5; % Extra parameter
 lambda = a/co;
+Bpo = 1E4*ST.params.fields.Bpo;
+
+Bo = 1E4*ST.params.fields.Bo;
+a = 1E2*ST.params.fields.a;
+Ro = 1E2*ST.params.fields.Ro;
+qa = ST.params.fields.qa;
+lambda = 1E2*ST.params.fields.lambda;
+try
+    co = ST.params.fields.co;
+catch
+    qo = ST.params.fields.qa;
+    co = a/lambda;
+end
 Bpo = 1E4*ST.params.fields.Bpo;
 
 st1 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
