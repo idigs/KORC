@@ -203,6 +203,9 @@ subroutine set_up_particles_ic(params,F,spp)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: b1, b2, b3
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Xo
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: theta, zeta, radius, angle ! temporary vars
+	REAL(rp), DIMENSION(3) :: x = (/1.0_rp,0.0_rp,0.0_rp/)
+	REAL(rp), DIMENSION(3) :: y = (/0.0_rp,1.0_rp,0.0_rp/)
+	REAL(rp), DIMENSION(3) :: z = (/0.0_rp,0.0_rp,1.0_rp/)
 	INTEGER :: ii,jj ! Iterator
 
 	do ii=1,params%num_species
@@ -235,17 +238,17 @@ subroutine set_up_particles_ic(params,F,spp)
 		call init_random_seed()
 		call RANDOM_NUMBER(radius)
 		
-		Xo(1,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*sin(zeta)
-		Xo(2,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*cos(zeta)
-		Xo(3,:) = spp(ii)%Zo + spp(ii)%r*sqrt(radius)*sin(theta)
+!		Xo(1,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*sin(zeta)
+!		Xo(2,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*cos(zeta)
+!		Xo(3,:) = spp(ii)%Zo + spp(ii)%r*sqrt(radius)*sin(theta)
 
-!		do jj=1,spp(ii)%ppp
-!			Xo(1,jj) = (spp(ii)%Ro - spp(ii)%r) + &
-!					2.0_rp*spp(ii)%r*REAL(MODULO(jj,101_idef),rp)/101.0_rp
-!			Xo(2,jj) = 0.0_rp
-!			Xo(3,jj) = spp(ii)%r - &
-!					2.0_rp*spp(ii)%r*FLOOR(REAL(jj,rp)/101.0_rp)/101.0_rp
-!		end do
+		do jj=1,spp(ii)%ppp
+			Xo(1,jj) = (spp(ii)%Ro - spp(ii)%r) + &
+					2.0_rp*spp(ii)%r*REAL(MODULO(jj,201_idef),rp)/201.0_rp
+			Xo(2,jj) = 0.0_rp
+			Xo(3,jj) = spp(ii)%r - &
+					2.0_rp*spp(ii)%r*FLOOR(REAL(jj,rp)/201.0_rp)/201.0_rp
+		end do
 
 		spp(ii)%vars%X(1,:) = Xo(1,:)
 		spp(ii)%vars%X(2,:) = Xo(2,:)
@@ -266,17 +269,17 @@ subroutine set_up_particles_ic(params,F,spp)
         call unitVectors(params,Xo,F,b1,b2,b3)
 
 		do jj=1,spp(ii)%ppp
-			spp(ii)%vars%V(1,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),(/1.0_rp,0.0_rp,0.0_rp/)) + &
-                                    V2(jj)*DOT_PRODUCT(b2(:,jj),(/1.0_rp,0.0_rp,0.0_rp/)) + &
-                                    V3(jj)*DOT_PRODUCT(b3(:,jj),(/1.0_rp,0.0_rp,0.0_rp/))
+			spp(ii)%vars%V(1,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),x) + &
+                                    V2(jj)*DOT_PRODUCT(b2(:,jj),x) + &
+                                    V3(jj)*DOT_PRODUCT(b3(:,jj),x)
 
-			spp(ii)%vars%V(2,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),(/0.0_rp,1.0_rp,0.0_rp/)) + &
-                                    V2(jj)*DOT_PRODUCT(b2(:,jj),(/0.0_rp,1.0_rp,0.0_rp/)) + &
-                                    V3(jj)*DOT_PRODUCT(b3(:,jj),(/0.0_rp,1.0_rp,0.0_rp/))
+			spp(ii)%vars%V(2,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),y) + &
+                                    V2(jj)*DOT_PRODUCT(b2(:,jj),y) + &
+                                    V3(jj)*DOT_PRODUCT(b3(:,jj),y)
 
-			spp(ii)%vars%V(3,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),(/0.0_rp,0.0_rp,1.0_rp/)) + &
-                                    V2(jj)*DOT_PRODUCT(b2(:,jj),(/0.0_rp,0.0_rp,1.0_rp/)) + &
-                                    V3(jj)*DOT_PRODUCT(b3(:,jj),(/0.0_rp,0.0_rp,1.0_rp/))
+			spp(ii)%vars%V(3,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),z) + &
+                                    V2(jj)*DOT_PRODUCT(b2(:,jj),z) + &
+                                    V3(jj)*DOT_PRODUCT(b3(:,jj),z)
 		end do
 
 		DEALLOCATE(theta)

@@ -44,7 +44,8 @@ function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,
 %
 % EXAMPLES:
 % USING ANALYTICAL MAGNETIC FIELD
-% ST = pOrbs('','','2D',[],[1E6,1E-2,10],[-1,1],[2.0,0,0],[50E6,170],true);
+% ST = pOrbs('','','2D',[],[5E4,1E-2,5],[2,7.2939E3],[3.33,0,0],[3.6E6,130.2],true);
+% ST = pOrbs('','','2D',[],[1E4,1E-2,10],[-1,1],[1.6,0,0],[40E6,0],true);
 % ST = pOrbs('','','2D',[],[1E4,2.5E-2,100],[-1,1],[1.15,0,0],[70E6,10],true);
 % USING TABULATED FIELDS OF THE ANALYTICAL MAGNETIC FIELD
 % ST = pOrbs('fields/CHEBYSHEV.dat','VMEC','2D',[60,60],[1E3,1.16E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
@@ -166,6 +167,8 @@ for ii=1:ST.params.numSnapshots
     ST.time(ii) = (ii-1)*ST.params.dt*ST.params.cadence;
 end
 
+ST.time = ST.time/(2*pi/ST.params.wc);
+
 ST.PP = particlePusherLeapfrog(ST);
 
 % Particle pusher using matlab ODEs solvers
@@ -185,26 +188,34 @@ end
 
 function [vo,vpar,vperp] = initializeVelocity(ST)
 % ST.params.vo_params = [vo, pitch_angle]
+x = [1,0,0];
+y = [0,1,0];
+z = [0,0,1];
+
 v = ST.params.vo_params(1)*ST.params.c; % magnitude of initial velocity
 pitchAngle = pi*ST.params.vo_params(2)/180;
+
+rng('shuffle')
+angle = 2*pi*rand;
 
 vpar = v*cos(pitchAngle);
 vperp = v*sin(pitchAngle);
 
-[b,a] = unitVectors(ST);
-vo = vpar*b + vperp*a;
+v1 = v*cos(pitchAngle);
+v2 = v*sin(pitchAngle)*cos(angle);
+v3 = v*sin(pitchAngle)*sin(angle);
 
-if ST.opt
-    disp(['Parallel velocity: ' num2str(vpar/ST.params.c)])
-    disp(['Perpendicular velocity: ' num2str(vperp/ST.params.c)])
-end
+[b1,b2,b3] = unitVectors(ST);
+
+vo = [0,0,0];
+vo(1) = v1*(b1*x') + v2*(b2*x') + v3*(b3*x');
+vo(2) = v1*(b1*y') + v2*(b2*y') + v3*(b3*y');
+vo(3) = v1*(b1*z') + v2*(b2*z') + v3*(b3*z');
 end
 
-function [b,a] = unitVectors(ST)
+function [b1,b2,b3] = unitVectors(ST)
 % initial condition of an electron drifting parallel to the local magnetic
 % field.
-
-tol = 1E-10;
 
 if ST.analytical
     B = analyticalB(ST.params.Xo);
@@ -214,76 +225,18 @@ else
     b = B/sqrt(sum(B.^2));
 end
 
-rng('shuffle')
+b1 = b;
 
-if all(b)
-    c1 = b(1)^2 + b(2)^2;
-    
-    az = sqrt(c1)*rand;
-    
-    c2 = 2*b(1)*b(3)*az;
-    c3 = (b(2)^2 + b(3)^2)*az^2 -b(2)^2;
-    
-    ax = (-c2 + sqrt(c2^2 - 4*c1*c3))/(2*c1);
-    ay = sqrt(1 - ax^2 - az^2);
-    
-    a = [ax, ay, az];
-    
-    if abs(dot(a,b)) > tol      
-        ax = (-c2 - sqrt(c2^2 - 4*c1*c3))/(2*c1);
-        ay = sqrt(1 - ax^2 - az^2);
-        
-        a = [ax, ay, az];
-    end
-    
-    if abs(dot(a,b)) > tol
-        az = -az;
-        
-        c2 = 2*b(1)*b(3)*az;
-        c3 = (b(2)^2 + b(3)^2)*az^2 -b(2)^2;
-        
-        ax = (-c2 + sqrt(c2^2 - 4*c1*c3))/(2*c1);
-        ay = sqrt(1 - ax^2 - az^2);
-        
-        a = [ax, ay, az];
-        
-        if abs(dot(a,b)) > tol
-            ax = (-c2 - sqrt(c2^2 - 4*c1*c3))/(2*c1);
-            ay = sqrt(1 - ax^2 - az^2);
-            
-            a = [ax, ay, az];
-        end
-    end
-elseif b(1) == 0
-    ay = rand/sqrt( 1 + (b(2)/b(3))^2 );
-    az = -ay*(b(2)/b(z));
-    ax = sqrt( 1 - ay^2*( 1 + (b(2)/b(3))^2 ) );
-    
-    a = [ax, ay, az];
-elseif b(2) == 0
-    az = rand/sqrt( 1 + (b(3)/b(1))^2 );
-    ax = -az*(b(3)/b(1));
-    ay = sqrt( 1 - az^2*( 1 + (b(3)/b(1))^2 ) );
-    
-    a = [ax, ay, az];
-elseif b(3) == 0
-    ay = rand/sqrt( 1 + (b(2)/b(1))^2 );
-    ax = -ay*(b(2)/b(1));
-    az = sqrt( 1 - ay^2*( 1 + (b(2)/b(1))^2 ) );
-    
-    a = [ax, ay, az];
-end
+b2 = cross(b,[0,0,1]);
+b2 = b2/sqrt(b2*b2');
 
-if ~isreal(a)
-    error('Imaginary values in perpendicular vector to b');
-end
-
-if  abs(dot(a,b)) > tol
-    error('a.b ~= 0')
-end
+b3 = cross(b1,b2);
+b3 = b3/sqrt(b3*b3');
 
 % figure
-% plot3([0,b(1)],[0,b(2)],[0,b(3)],'r',[0,a(1)],[0,a(2)],[0,a(3)],'b')
+% plot3([0,b1(1)],[0,b1(2)],[0,b1(3)],'r',[0,b2(1)],[0,b2(2)],[0,b2(3)],'b',...
+%     [0,b3(1)],[0,b3(2)],[0,b3(3)],'k')
+% axis equal
 
 end
 
@@ -863,11 +816,19 @@ narginchk(1,2);
 % Bpo = (a/Ro)*(Bo/qa)*(1+co^2)/co;
 % qo = lamb*Bo/(Ro*Bpo);
 
-Bo = 2.1;
-a = 1.0;% Minor radius in meters.
-Ro = 3.0; % Major radius in meters.
-qa = 3.0; % Safety factor at the separatrix (r=a)
-qo = 2.4; % Safety factor at the magnetic axis.
+% Bo = 2.8;
+% a = 1.2;% Minor radius in meters.
+% Ro = 3.0; % Major radius in meters.
+% qa = 3.0; % Safety factor at the separatrix (r=a)
+% qo = 1.5; % Safety factor at the magnetic axis.
+% lamb = a/sqrt(qa/qo - 1);
+% Bpo = lamb*Bo/(qo*Ro);
+
+Bo = 2.19;
+a = 0.5;% Minor radius in meters.
+Ro = 1.5; % Major radius in meters.
+qa = 2.0; % Safety factor at the separatrix (r=a)
+qo = 1.6; % Safety factor at the magnetic axis.
 lamb = a/sqrt(qa/qo - 1);
 Bpo = lamb*Bo/(qo*Ro);
 % Parameters of the analytical magnetic field

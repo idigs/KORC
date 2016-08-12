@@ -38,9 +38,6 @@ ST.data = loadData(ST);
 % scatterPlots(ST);
 
 
-
-
-
 % save('energy_limit','ST')
 end
 
@@ -58,14 +55,14 @@ for ii=1:length(info.Groups)
     end
 end
 
-% params.simulation.num_snapshots = 470;
-% params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
+params.simulation.num_snapshots = 470;
+params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 end
 
 function data = loadData(ST)
 data = struct;
 
-list = {'X','V','B'};
+list = {'X','V'};%,'B'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -193,9 +190,9 @@ set(h6,'name','Energy statistics','numbertitle','off')
         subplot(double(ST.params.simulation.num_species),1,double(ss))
         try
             plot(ST.time,err(:,ss),'k-',ST.time,minerr(:,ss),'r:',ST.time,maxerr(:,ss),'r:')
-            hold on
-            plot(ST.time,tmp)
-            hold off
+%             hold on
+%             plot(ST.time,tmp)
+%             hold off
         catch
         end
         box on
@@ -877,9 +874,9 @@ for ss=1:ST.params.simulation.num_species
     subplot(double(ST.params.simulation.num_species),1,double(ss))
     try
         plot(ST.time,err,'k-',ST.time,minerr,'r:',ST.time,maxerr,'r:')
-        hold on
-        plot(ST.time,invariant)
-        hold off
+%         hold on
+%         plot(ST.time,invariant)
+%         hold off
     catch
     end
     box on
@@ -1162,9 +1159,9 @@ for ss=1:ST.params.simulation.num_species
     figure(h1)
     subplot(1,2,1)
     hold on
-%     plot(R,Z,'s','MarkerSize',4,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+    plot(R,Z,'s','MarkerSize',4,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
 %     plot(R,Z,'.','MarkerSize',10,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
-    plot3(R,Z,Prad,'s','MarkerSize',4,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+%     plot3(R,Z,Prad,'s','MarkerSize',4,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
     hold off
     legends{ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
 end
