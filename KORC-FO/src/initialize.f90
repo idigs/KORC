@@ -197,36 +197,39 @@ subroutine set_up_particles_ic(params,F,spp)
 	TYPE(FIELDS), INTENT(IN) :: F
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Vo
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: Vpar
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: Vperp
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: b
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: a
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: V1
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: V2
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: V3
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: b1, b2, b3
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Xo
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: theta, zeta, radius, pitch ! temporary vars
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: theta, zeta, radius, angle ! temporary vars
 	INTEGER :: ii,jj ! Iterator
 
 	do ii=1,params%num_species
 		ALLOCATE( Xo(3,spp(ii)%ppp) )
 		ALLOCATE( Vo(spp(ii)%ppp) )
-		ALLOCATE( Vpar(spp(ii)%ppp) )
-		ALLOCATE( Vperp(spp(ii)%ppp) )
-		ALLOCATE( b(3,spp(ii)%ppp) )
-		ALLOCATE( a(3,spp(ii)%ppp) )
+		ALLOCATE( V1(spp(ii)%ppp) )
+		ALLOCATE( V2(spp(ii)%ppp) )
+		ALLOCATE( V3(spp(ii)%ppp) )
+		ALLOCATE( b1(3,spp(ii)%ppp) )
+		ALLOCATE( b2(3,spp(ii)%ppp) )
+		ALLOCATE( b3(3,spp(ii)%ppp) )
+
 		
 		ALLOCATE( theta(spp(ii)%ppp) )
 		ALLOCATE( zeta(spp(ii)%ppp) )
 		ALLOCATE( radius(spp(ii)%ppp) )
-!		ALLOCATE( pitch(spp(ii)%ppp) )
+		ALLOCATE( angle(spp(ii)%ppp) )
 
 		! Initial condition of uniformly distributed particles on a disk in the xz-plane
 		! A unique velocity direction
 		call init_random_seed()
 		call RANDOM_NUMBER(theta)
-		theta = 2*C_PI*theta
+		theta = 2.0_rp*C_PI*theta
 
 		call init_random_seed()
 		call RANDOM_NUMBER(zeta)
-		zeta = 2*C_PI*zeta
+		zeta = 2.0_rp*C_PI*zeta
 
 		! Uniform distribution on a disk at a fixed azimuthal theta		
 		call init_random_seed()
@@ -251,32 +254,43 @@ subroutine set_up_particles_ic(params,F,spp)
 		! Monoenergetic distribution
 		spp(ii)%vars%gamma(:) = spp(ii)%gammao
 
-!		call init_random_seed()
-!		call RANDOM_NUMBER(pitch)
-!		pitch = 15.0_rp*pitch + 5.0_rp
+		call init_random_seed()
+		call RANDOM_NUMBER(angle)
+		angle = 2.0_rp*C_PI*angle
 
 		Vo = sqrt( 1.0_rp - 1.0_rp/(spp(ii)%vars%gamma(:)**2) )
-		Vpar = Vo*cos( C_PI*spp(ii)%etao/180_rp )
-		Vperp = Vo*sin( C_PI*spp(ii)%etao/180_rp )
-!		Vpar = Vo*cos( C_PI*pitch/180_rp )
-!		Vperp = Vo*sin( C_PI*pitch/180_rp )
+        V1 = Vo*cos(C_PI*spp(ii)%etao/180.0_rp)
+        V2 = Vo*sin(C_PI*spp(ii)%etao/180.0_rp)*cos(angle)
+        V3 = Vo*sin(C_PI*spp(ii)%etao/180.0_rp)*sin(angle)
 
-		call unitVectors(params,Xo,F,b,a)
+        call unitVectors(params,Xo,F,b1,b2,b3)
 
 		do jj=1,spp(ii)%ppp
-			spp(ii)%vars%V(:,jj) = Vpar(jj)*b(:,jj) + Vperp(jj)*a(:,jj)
+			spp(ii)%vars%V(1,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),(/1.0_rp,0.0_rp,0.0_rp/)) + &
+                                    V2(jj)*DOT_PRODUCT(b2(:,jj),(/1.0_rp,0.0_rp,0.0_rp/)) + &
+                                    V3(jj)*DOT_PRODUCT(b3(:,jj),(/1.0_rp,0.0_rp,0.0_rp/))
+
+			spp(ii)%vars%V(2,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),(/0.0_rp,1.0_rp,0.0_rp/)) + &
+                                    V2(jj)*DOT_PRODUCT(b2(:,jj),(/0.0_rp,1.0_rp,0.0_rp/)) + &
+                                    V3(jj)*DOT_PRODUCT(b3(:,jj),(/0.0_rp,1.0_rp,0.0_rp/))
+
+			spp(ii)%vars%V(3,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),(/0.0_rp,0.0_rp,1.0_rp/)) + &
+                                    V2(jj)*DOT_PRODUCT(b2(:,jj),(/0.0_rp,0.0_rp,1.0_rp/)) + &
+                                    V3(jj)*DOT_PRODUCT(b3(:,jj),(/0.0_rp,0.0_rp,1.0_rp/))
 		end do
 
 		DEALLOCATE(theta)
 		DEALLOCATE(zeta)
 		DEALLOCATE(radius)
-!		DEALLOCATE(pitch)	
+		DEALLOCATE(angle)	
 		DEALLOCATE(Xo)
 		DEALLOCATE(Vo)
-		DEALLOCATE(Vpar)
-		DEALLOCATE(Vperp)
-		DEALLOCATE(b)
-		DEALLOCATE(a)
+		DEALLOCATE(V1)
+		DEALLOCATE(V2)
+		DEALLOCATE(V3)
+		DEALLOCATE(b1)
+		DEALLOCATE(b2)
+		DEALLOCATE(b3)
 	end do
 end subroutine set_up_particles_ic
 

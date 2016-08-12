@@ -175,7 +175,7 @@ ST.PP = particlePusherLeapfrog(ST);
 if ST.opt
     PoincarePlots(ST);
 end
-% ST.PP.angularMomentum = DiegosInvariants(ST);
+ST.PP.angularMomentum = DiegosInvariants(ST);
 
 munlock
 
@@ -866,8 +866,8 @@ narginchk(1,2);
 Bo = 2.1;
 a = 1.0;% Minor radius in meters.
 Ro = 3.0; % Major radius in meters.
-qa = 3; % Safety factor at the separatrix (r=a)
-qo = 1.0; % Safety factor at the magnetic axis.
+qa = 3.0; % Safety factor at the separatrix (r=a)
+qo = 2.4; % Safety factor at the magnetic axis.
 lamb = a/sqrt(qa/qo - 1);
 Bpo = lamb*Bo/(qo*Ro);
 % Parameters of the analytical magnetic field
@@ -1656,8 +1656,8 @@ function DI = DiegosInvariants(ST)
 Bo = 1E4*ST.B.Bo;
 a = 1E2*ST.B.a;% Minor radius in meters.
 Ro = 1E2*ST.B.Ro; % Major radius in meters.
-co = ST.B.co; % Extra parameter
-lamb = a/co;
+lamb = 1E2*ST.B.lamb;
+co = a/lamb; % Extra parameter
 Bpo = 1E4*ST.B.Bpo;
 % Parameters of the analytical magnetic field
 

@@ -60,9 +60,20 @@ module korc_interp
 
     PUBLIC :: interp_field, interp_analytical_field, unitVectors,&
 				initialize_interpolant, finalize_interpolant
-	PRIVATE :: interp_magnetic_field, interp_3D_magnetic_field
+	PRIVATE :: interp_magnetic_field, interp_3D_magnetic_field, cross
 
     contains
+
+
+function cross(a,b)
+	REAL(rp), DIMENSION(3), INTENT(IN) :: a
+	REAL(rp), DIMENSION(3), INTENT(IN) :: b
+	REAL(rp), DIMENSION(3) :: cross
+
+	cross(1) = a(2)*b(3) - a(3)*b(2)
+	cross(2) = a(3)*b(1) - a(1)*b(3)
+	cross(3) = a(1)*b(2) - a(2)*b(1)
+end function cross
 
 
 subroutine initialize_interpolant(params,F)
@@ -288,29 +299,177 @@ subroutine interp_analytical_field_sp(X,Y,E,B,flag,F)
 end subroutine interp_analytical_field_sp
 
 
-subroutine unitVectors(params,Xo,F,par,perp)
+!subroutine unitVectors(params,Xo,F,par,perp)
+!    implicit none
+!	TYPE(KORC_PARAMS), INTENT(IN) :: params
+!	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Xo
+!	TYPE(FIELDS), INTENT(IN) :: F
+!	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: par
+!	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: perp
+!	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: X
+!	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: B
+!	INTEGER, DIMENSION(:), ALLOCATABLE :: flag
+!	REAL(rp), DIMENSION(:), ALLOCATABLE :: rnd_num
+!	REAL(rp), PARAMETER :: tol = korc_zero
+!	REAL(rp) :: c1, c2, c3
+!	REAL(rp) :: ax, ay, az
+!	INTEGER :: ppp
+!	INTEGER :: ii
+!
+!
+!	ppp = SIZE(Xo,2) ! Number of particles
+!
+!	ALLOCATE( X(3,ppp) )
+!	ALLOCATE( B(3,ppp) )
+!	ALLOCATE( rnd_num(ppp) )
+!    ALLOCATE( flag(ppp) )
+!
+!    flag = 1_idef
+!	
+!	call init_random_seed()
+!
+!	if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
+!		call cart_to_tor(Xo,F%AB%Ro,X,flag) ! To toroidal coords
+!		call analytical_magnetic_field(F,X,B,flag)
+!	else
+!		call cart_to_cyl(Xo, X)
+!        if (params%poloidal_flux) then
+!            call calculate_magnetic_field(X,F,B)
+!        else
+!            call interp_magnetic_field(X,B)
+!        end if
+!	end if
+!
+!	call RANDOM_NUMBER(rnd_num)
+!	
+!	do ii=1,ppp
+!		par(:,ii) = B(:,ii)/sqrt( DOT_PRODUCT(B(:,ii),B(:,ii)) )
+!		if ( ALL( ABS(par(:,ii)) .GE. korc_zero ) ) then
+!			c1 = par(1,ii)**2 + par(2,ii)**2
+!			
+!			az = sqrt(c1)*rnd_num(ii)
+!		
+!			c2 = 2.0_rp*par(1,ii)*par(3,ii)*az
+!			c3 = (par(2,ii)**2 + par(3,ii)**2)*az**2 -par(2,ii)**2
+!
+!			ax = ( -c2 + sqrt(c2**2 - 4.0_rp*c1*c3) )/(2.0_rp*c1)
+!			if ( (1.0_rp - (ax**2 + az**2)) .GE. korc_zero ) then
+!				ay = sqrt(1.0_rp - ax**2 - az**2)
+!			else
+!				ay = 0.0_rp
+!			end if
+!			perp(:,ii) = (/ax, ay, az/)
+!
+!			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
+!				ax = ( -c2 - sqrt(c2**2 - 4.0_rp*c1*c3) )/(2.0_rp*c1)
+!				if ( (1.0_rp - (ax**2 + az**2)) .GE. korc_zero ) then
+!					ay = sqrt(1.0_rp - ax**2 - az**2)
+!				else
+!					ay = 0.0_rp
+!				end if
+!				perp(:,ii) = (/ax, ay, az/)
+!			end if
+!		
+!			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
+!				az = -az
+!				
+!				c2 = 2.0_rp*par(1,ii)*par(3,ii)*az
+!				c3 = (par(2,ii)**2 + par(3,ii)**2)*az**2 -par(2,ii)**2
+!				
+!				ax = ( -c2 + sqrt(c2**2 - 4.0_rp*c1*c3) )/(2.0_rp*c1)
+!				if ( (1.0_rp - (ax**2 + az**2)) .GE. korc_zero ) then
+!					ay = sqrt(1.0_rp - ax**2 - az**2)
+!				else
+!					ay = 0.0_rp
+!				end if				
+!				perp(:,ii) = (/ax, ay, az/)
+!				
+!				if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
+!					ax = ( -c2 - sqrt(c2**2 - 4.0_rp*c1*c3) )/(2.0_rp*c1)
+!					if ( (1.0_rp - (ax**2 + az**2)) .GE. korc_zero ) then
+!						ay = sqrt(1.0_rp - ax**2 - az**2)
+!					else
+!						ay = 0.0_rp
+!				    end if
+!				    perp(:,ii) = (/ax, ay, az/)
+!				end if
+!			end if
+!		else if ( ABS(par(3,ii)) .LE. korc_zero ) then
+!!			write(6,'("Exception: bz .LE. 0",3F20.16)') par(:,ii)
+!			ax = 0.99_rp*rnd_num(ii)
+!			ay = -ax*par(1,ii)/par(2,ii)
+!
+!			az = sqrt( 1 - ax**2 - ay**2 )
+!			perp(:,ii) = (/ax, ay, az/)
+!
+!			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
+!				az = -sqrt( 1 - ax**2 - ay**2 )
+!				perp(:,ii) = (/ax, ay, az/)
+!			end if
+!
+!			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
+!				write(6,'("Exception: bz .LE. 0",3F20.16)') par(:,ii)
+!			end if
+!		else if ( ABS(par(2,ii)) .LE. korc_zero ) then
+!!			write(6,'("Exception: by .LE. 0",3F20.16)') par(:,ii)
+!			az = 0.99_rp*rnd_num(ii)
+!			ax = -az*par(3,ii)/par(1,ii)
+!
+!			ay = sqrt( 1 - ax**2 - az**2 )
+!			perp(:,ii) = (/ax, ay, az/)
+!
+!			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
+!				ay = -sqrt( 1 - ax**2 - az**2 )
+!				perp(:,ii) = (/ax, ay, az/)
+!			end if
+!
+!			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
+!				write(6,'("Exception: by .LE. 0",3F20.16)') par(:,ii)
+!			end if
+!		else if ( ABS(par(1,ii)) .LE. korc_zero ) then
+!!			write(6,'("Exception: bx .LE. 0",3F20.16)') par(:,ii)
+!			az = 0.99_rp*rnd_num(ii)
+!			ay = -az*par(3,ii)/par(2,ii)
+!
+!			ax = sqrt( 1 - ay**2 - az**2 )
+!			perp(:,ii) = (/ax, ay, az/)
+!
+!			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
+!				ax = -sqrt( 1 - ay**2 - az**2 )
+!				perp(:,ii) = (/ax, ay, az/)
+!			end if
+!
+!			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
+!				write(6,'("Exception: bx .LE. 0",3F20.16)') par(:,ii)
+!			end if
+!		end if
+!	end do
+!
+!	DEALLOCATE(X)
+!	DEALLOCATE(B)
+!	DEALLOCATE(rnd_num)
+!    DEALLOCATE(flag)
+!end subroutine unitVectors
+
+
+subroutine unitVectors(params,Xo,F,b1,b2,b3)
     implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Xo
 	TYPE(FIELDS), INTENT(IN) :: F
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: par
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: perp
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: b1
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: b2
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: b3
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: X
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: B
 	INTEGER, DIMENSION(:), ALLOCATABLE :: flag
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: rnd_num
 	REAL(rp), PARAMETER :: tol = korc_zero
-	REAL(rp) :: c1, c2, c3
-	REAL(rp) :: ax, ay, az
-	INTEGER :: ppp
-	INTEGER :: ii
-
+	INTEGER :: ii, ppp
 
 	ppp = SIZE(Xo,2) ! Number of particles
 
 	ALLOCATE( X(3,ppp) )
 	ALLOCATE( B(3,ppp) )
-	ALLOCATE( rnd_num(ppp) )
     ALLOCATE( flag(ppp) )
 
     flag = 1_idef
@@ -328,116 +487,21 @@ subroutine unitVectors(params,Xo,F,par,perp)
             call interp_magnetic_field(X,B)
         end if
 	end if
-
-	call RANDOM_NUMBER(rnd_num)
 	
 	do ii=1,ppp
-		par(:,ii) = B(:,ii)/sqrt( DOT_PRODUCT(B(:,ii),B(:,ii)) )
-		if ( ALL( ABS(par(:,ii)) .GE. korc_zero ) ) then
-			c1 = par(1,ii)**2 + par(2,ii)**2
-			
-			az = sqrt(c1)*rnd_num(ii)
-		
-			c2 = 2.0_rp*par(1,ii)*par(3,ii)*az
-			c3 = (par(2,ii)**2 + par(3,ii)**2)*az**2 -par(2,ii)**2
+		b1(:,ii) = B(:,ii)/sqrt( DOT_PRODUCT(B(:,ii),B(:,ii)) )
 
-			ax = ( -c2 + sqrt(c2**2 - 4.0_rp*c1*c3) )/(2.0_rp*c1)
-			if ( (1.0_rp - (ax**2 + az**2)) .GE. korc_zero ) then
-				ay = sqrt(1.0_rp - ax**2 - az**2)
-			else
-				ay = 0.0_rp
-			end if
-			perp(:,ii) = (/ax, ay, az/)
+        b2(:,ii) = cross(b1(:,ii),(/0.0_rp,0.0_rp,1.0_rp/))
+        b2(:,ii) = b2(:,ii)/sqrt( DOT_PRODUCT(b2(:,ii),b2(:,ii)) )
 
-			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
-				ax = ( -c2 - sqrt(c2**2 - 4.0_rp*c1*c3) )/(2.0_rp*c1)
-				if ( (1.0_rp - (ax**2 + az**2)) .GE. korc_zero ) then
-					ay = sqrt(1.0_rp - ax**2 - az**2)
-				else
-					ay = 0.0_rp
-				end if
-				perp(:,ii) = (/ax, ay, az/)
-			end if
-		
-			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
-				az = -az
-				
-				c2 = 2.0_rp*par(1,ii)*par(3,ii)*az
-				c3 = (par(2,ii)**2 + par(3,ii)**2)*az**2 -par(2,ii)**2
-				
-				ax = ( -c2 + sqrt(c2**2 - 4.0_rp*c1*c3) )/(2.0_rp*c1)
-				if ( (1.0_rp - (ax**2 + az**2)) .GE. korc_zero ) then
-					ay = sqrt(1.0_rp - ax**2 - az**2)
-				else
-					ay = 0.0_rp
-				end if				
-				perp(:,ii) = (/ax, ay, az/)
-				
-				if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
-					ax = ( -c2 - sqrt(c2**2 - 4.0_rp*c1*c3) )/(2.0_rp*c1)
-					if ( (1.0_rp - (ax**2 + az**2)) .GE. korc_zero ) then
-						ay = sqrt(1.0_rp - ax**2 - az**2)
-					else
-						ay = 0.0_rp
-				    end if
-				    perp(:,ii) = (/ax, ay, az/)
-				end if
-			end if
-		else if ( ABS(par(3,ii)) .LE. korc_zero ) then
-!			write(6,'("Exception: bz .LE. 0",3F20.16)') par(:,ii)
-			ax = 0.99_rp*rnd_num(ii)
-			ay = -ax*par(1,ii)/par(2,ii)
-
-			az = sqrt( 1 - ax**2 - ay**2 )
-			perp(:,ii) = (/ax, ay, az/)
-
-			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
-				az = -sqrt( 1 - ax**2 - ay**2 )
-				perp(:,ii) = (/ax, ay, az/)
-			end if
-
-			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
-				write(6,'("Exception: bz .LE. 0",3F20.16)') par(:,ii)
-			end if
-		else if ( ABS(par(2,ii)) .LE. korc_zero ) then
-!			write(6,'("Exception: by .LE. 0",3F20.16)') par(:,ii)
-			az = 0.99_rp*rnd_num(ii)
-			ax = -az*par(3,ii)/par(1,ii)
-
-			ay = sqrt( 1 - ax**2 - az**2 )
-			perp(:,ii) = (/ax, ay, az/)
-
-			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
-				ay = -sqrt( 1 - ax**2 - az**2 )
-				perp(:,ii) = (/ax, ay, az/)
-			end if
-
-			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
-				write(6,'("Exception: by .LE. 0",3F20.16)') par(:,ii)
-			end if
-		else if ( ABS(par(1,ii)) .LE. korc_zero ) then
-!			write(6,'("Exception: bx .LE. 0",3F20.16)') par(:,ii)
-			az = 0.99_rp*rnd_num(ii)
-			ay = -az*par(3,ii)/par(2,ii)
-
-			ax = sqrt( 1 - ay**2 - az**2 )
-			perp(:,ii) = (/ax, ay, az/)
-
-			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
-				ax = -sqrt( 1 - ay**2 - az**2 )
-				perp(:,ii) = (/ax, ay, az/)
-			end if
-
-			if ( ABS(DOT_PRODUCT(par(:,ii),perp(:,ii)) ) .GE. tol ) then
-				write(6,'("Exception: bx .LE. 0",3F20.16)') par(:,ii)
-			end if
-		end if
+        b3(:,ii) = cross(b1(:,ii),b2(:,ii))
+        b3(:,ii) = b3(:,ii)/sqrt( DOT_PRODUCT(b3(:,ii),b3(:,ii)) )
 	end do
 
 	DEALLOCATE(X)
 	DEALLOCATE(B)
-	DEALLOCATE(rnd_num)
     DEALLOCATE(flag)
 end subroutine unitVectors
+
 
 end module korc_interp

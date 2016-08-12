@@ -13,7 +13,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
 % ST.RT = radialTransport(ST);
 
@@ -25,7 +25,7 @@ energyConservation(ST);
 
 % poloidalPlaneDistributions(ST,25);
 
-angularMomentum(ST);
+% angularMomentum(ST);
 
 % ST.CMF = changeOfMagneticField(ST)
 
@@ -36,6 +36,9 @@ angularMomentum(ST);
 % stackedPlots(ST,40);
 
 % scatterPlots(ST);
+
+
+
 
 
 % save('energy_limit','ST')
@@ -62,7 +65,7 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {'X','V'};%,'B'};
+list = {'X','V','B'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -157,7 +160,7 @@ set(h6,'name','Energy statistics','numbertitle','off')
         tmp = zeros(size(gamma));
         for ii=1:size(tmp,1)
             tmp(ii,:) = ...
-                100*( gamma(ii,:) - gamma(ii,1) )./gamma(ii,1);
+                ( gamma(ii,:) - gamma(ii,1) )./gamma(ii,1);
 %             tmp(ii,:) = ST.data.(['sp' num2str(ss)]).gamma(ii,:)./ST.data.(['sp' num2str(ss)]).gamma(ii,1);
         end
         err(:,ss) = mean(tmp,1);
@@ -188,7 +191,13 @@ set(h6,'name','Energy statistics','numbertitle','off')
         
         figure(h1)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
-        plot(ST.time,err(:,ss),'k-',ST.time,minerr(:,ss),'r:',ST.time,maxerr(:,ss),'r:')
+        try
+            plot(ST.time,err(:,ss),'k-',ST.time,minerr(:,ss),'r:',ST.time,maxerr(:,ss),'r:')
+            hold on
+            plot(ST.time,tmp)
+            hold off
+        catch
+        end
         box on
         grid on
         xlabel('Time (s)','Interpreter','latex','FontSize',16)
@@ -789,24 +798,14 @@ function angularMomentum(ST)
 c = 299792458.0;
 c = 1E2*c;
 
+% cad = ST.params.simulation.output_cadence;
+% time = ST.params.simulation.dt*double(0:cad:ST.params.simulation.t_steps);
+
 Bo = 1E4*ST.params.fields.Bo;
 Ro = 1E2*ST.params.fields.Ro; % Major radius in meters.
 a = 1E2*ST.params.fields.a;% Minor radius in meters.
 co = 0.5; % Extra parameter
 lambda = a/co;
-Bpo = 1E4*ST.params.fields.Bpo;
-
-Bo = 1E4*ST.params.fields.Bo;
-a = 1E2*ST.params.fields.a;
-Ro = 1E2*ST.params.fields.Ro;
-qa = ST.params.fields.qa;
-lambda = 1E2*ST.params.fields.lambda;
-try
-    co = ST.params.fields.co;
-catch
-    qo = ST.params.fields.qa;
-    co = a/lambda;
-end
 Bpo = 1E4*ST.params.fields.Bpo;
 
 st1 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
@@ -870,9 +869,19 @@ for ss=1:ST.params.simulation.num_species
         end
     end
     
+    for pp=1:size(invariant,1)
+        invariant(pp,:) = (invariant(pp,:) - invariant(pp,1))/invariant(pp,1);
+    end
+    
     figure(h)
     subplot(double(ST.params.simulation.num_species),1,double(ss))
-    plot(ST.time,err,'k-',ST.time,minerr,'r:',ST.time,maxerr,'r:')
+    try
+        plot(ST.time,err,'k-',ST.time,minerr,'r:',ST.time,maxerr,'r:')
+        hold on
+        plot(ST.time,invariant)
+        hold off
+    catch
+    end
     box on
     grid on
     xlabel('Time (s)','Interpreter','latex','FontSize',12)
