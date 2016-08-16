@@ -71,7 +71,7 @@ function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,
 
 narginchk(8,9);
 
-close all
+% close all
 
 ST = struct;
 % Script parameters
@@ -233,10 +233,10 @@ b2 = b2/sqrt(b2*b2');
 b3 = cross(b1,b2);
 b3 = b3/sqrt(b3*b3');
 
-% figure
-% plot3([0,b1(1)],[0,b1(2)],[0,b1(3)],'r',[0,b2(1)],[0,b2(2)],[0,b2(3)],'b',...
-%     [0,b3(1)],[0,b3(2)],[0,b3(3)],'k')
-% axis equal
+figure
+plot3([0,b1(1)],[0,b1(2)],[0,b1(3)],'r',[0,b2(1)],[0,b2(2)],[0,b2(3)],'b',...
+    [0,b3(1)],[0,b3(2)],[0,b3(3)],'k')
+axis equal
 
 end
 
