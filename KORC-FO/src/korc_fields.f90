@@ -127,6 +127,7 @@ subroutine mean_F_field(F,Fo,op_field)
 	end if
 end subroutine mean_F_field
 
+
 subroutine check_if_confined(F,Y,flag)
     implicit none
 	TYPE(FIELDS), INTENT(IN) :: F

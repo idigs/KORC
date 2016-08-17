@@ -226,7 +226,7 @@ subroutine advance_particles_velocity(params,EB,cparams,spp,dt,bool)
 		            spp(ii)%vars%eta(pp) = 180.0_rp*modulo(atan2(vperp,vpar), 2.0_rp*C_PI)/C_PI
 
 				    !! Magnetic moment
-				    spp(ii)%vars%mu(pp) = 0.5_rp*spp(ii)%m*(gamma*vperp)**2/B
+				    spp(ii)%vars%mu(pp) = 0.5_rp*spp(ii)%m*gamma*vperp**2/B
 
 					!! Radiated power
 					tmp = spp(ii)%q**4/(6.0_rp*C_PI*E0*spp(ii)%m**2)

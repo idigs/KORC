@@ -19,7 +19,7 @@ ST.data = loadData(ST);
 
 % ST.CP = confined_particles(ST);
 
-% ST.PAD = pitchAngleDiagnostic(ST,30);
+ST.PAD = pitchAngleDiagnostic(ST,30);
 
 % ST.MMD = magneticMomentDiagnostic(ST,70);
 
@@ -27,11 +27,11 @@ ST.data = loadData(ST);
 
 % angularMomentum(ST);
 
-% ST.CMF = changeOfMagneticField(ST)
+ST.CMF = changeOfMagneticField(ST)
 
 % energyLimit(ST);
 
-ST.PR = LarmorVsLL(ST);
+% ST.PR = LarmorVsLL(ST);
 
 % stackedPlots(ST,40);
 
@@ -62,7 +62,7 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {'X','V'};%,'B'};
+list = {'X','V','B'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -1463,7 +1463,7 @@ for ss=1:ST.params.simulation.num_species
         Dx = mean(diff(x));
         
         [fx,~] = hist(eta(:,end),x);
-        fx = fx/(Dx*sum(fx));
+%         fx = fx/(Dx*sum(fx));
     catch
     end
     
@@ -1475,7 +1475,7 @@ for ss=1:ST.params.simulation.num_species
         Dz = mean(diff(z));
         
         [fz,~] = hist(PR_LL(:,end),z);
-        fz = fz/(Dz*sum(fz));
+%         fz = fz/(Dz*sum(fz));
     catch
     end
     
