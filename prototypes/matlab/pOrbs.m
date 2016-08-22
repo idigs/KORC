@@ -71,7 +71,7 @@ function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,
 
 narginchk(8,9);
 
-% close all
+close all
 
 ST = struct;
 % Script parameters
@@ -178,7 +178,9 @@ ST.PP = particlePusherLeapfrog(ST);
 if ST.opt
     PoincarePlots(ST);
 end
-ST.PP.angularMomentum = DiegosInvariants(ST);
+% ST.PP.angularMomentum = DiegosInvariants(ST);
+
+ST.PP.invariant = invariants(ST);
 
 munlock
 
@@ -840,6 +842,7 @@ if nargin == 2
         B.a = a;% 0.6;% Minor radius in meters.
         B.Ro = Ro; % Major radius in meters.
         B.qa = qa; % Safety factor at the separatrix (r=a)
+        B.qo = qo;
         B.lamb = lamb;
         B.Bpo = Bpo;
         disp(['q-factor at magnetic axis: ' num2str(qo)])
@@ -866,10 +869,14 @@ else
     % Bt = toroidal magnetic field
     
     q = qo*(1 + (r/lamb)^2);
-%     q = 2;
     eta = r/Ro;
     Bp = eta*Bo/(q*(1 + eta*cos(theta)));
     Bt = Bo/( 1 + eta*cos(theta) );
+    
+    % only toroidal magnetic field
+%     Bp = Bo/(1 + eta*cos(theta));
+%     Bt = 0;
+    
     
     Bx = Bt*cos(zeta) - Bp*sin(theta)*sin(zeta);
     By = -Bt*sin(zeta) - Bp*sin(theta)*cos(zeta);
@@ -931,6 +938,7 @@ PP.method = 'Leapfrog';
 
 X = zeros(ST.params.numSnapshots,3); % (it,ii), ii=x,y,z
 v = zeros(ST.params.numSnapshots,3);
+% g = zeros(1,ST.params.numSnapshots);
 u = zeros(ST.params.numSnapshots,3);
 R = zeros(ST.params.numSnapshots,3);
 
@@ -1623,7 +1631,7 @@ Bpo = 1E4*ST.B.Bpo;
 % Parameters of the analytical magnetic field
 
 c = 1E2*ST.params.c;
-q = 3E9*ST.params.q;
+q = 3E9*abs(ST.params.q);
 m = 1E3*ST.params.m;
 X = 1E2*ST.PP.X;
 v = 1E2*ST.PP.v;
@@ -1646,11 +1654,20 @@ wo = q*Bo./(m*c*gamma);
 dzeta = ...
     (X(:,2).*v(:,1) - X(:,1).*v(:,2))./( sum(X(:,1:2).^2,2) );
 
-DI = dzeta.*( 1 + eta.*cos(theta) ).^2 - wo.*psi/(Ro*Bo);
+
+DI1 = dzeta.*( 1 + eta.*cos(theta) ).^2;
+DI2 = wo.*psi/(Ro*Bo);
+DI = DI1 + DI2;
 
 ERR = 100*(DI(1) - DI)./DI(1);
 
 time = ST.time/(2*pi/ST.norm.wc);
+
+T1 = dzeta.*(Ro + r.*cos(theta)).^2;
+T2 = wo.*r*Ro;
+T3 = m*gamma.*(T1 - T2);
+ERR = 100*(T3 - T3(1))./T3(1);
+% figure;plot(ST.time,T1,'r',ST.time,T2,'b',ST.time,T3,'k')
 
 figure
 subplot(2,1,1)
@@ -1662,5 +1679,54 @@ subplot(2,1,2)
 plot(ST.time(:),ERR)
 xlabel('Time $t$ [$\tau_c$]','Interpreter','latex','FontSize',16)
 ylabel('Relative error [\%]','Interpreter','latex','FontSize',16)
+end
+
+function I = invariants(ST)
+
+Ro = ST.B.Ro;
+Bo = ST.B.Bo;
+lambda = ST.B.lamb;
+qo = ST.B.qo;
+
+m = ST.params.m;
+q = ST.params.q;
+
+X = ST.PP.X;
+gamma = ST.PP.EK';
+V = ST.PP.v;
+
+% Toroidal coordinates
+% r = radius, theta = poloidal angle, zeta = toroidal angle
+r = sqrt( (sqrt(X(:,1).^2 + X(:,2).^2) - Ro).^2 + X(:,3).^2 );
+eta = r/Ro;
+theta = atan2(X(:,3),sqrt(X(:,1).^2 + X(:,2).^2) - Ro);
+theta(theta < 0) = theta(theta < 0) + 2*pi;
+zeta = atan2(X(:,1),X(:,2));
+zeta(zeta < 0) = zeta(zeta < 0) + 2*pi;
+% Toroidal coordinates
+
+
+dzeta_dt = ...
+    (X(:,2).*V(:,1) - X(:,1).*V(:,2))./( X(:,1).^2 + X(:,2).^2 );
+
+wc = q*Bo./(m*gamma);
+
+
+% T1 = dzeta_dt.*(1 + eta.*cos(theta)).^2;
+% T2 = 0.5*wc.*eta.^2/qo;
+
+T1 = dzeta_dt.*(1 + eta.*cos(theta)).^2;
+T2 = lambda^2*wc.*log(1 + (r/lambda).^2)/(2*qo*Ro^2);
+
+
+I = T1 - T2;
+err = 100*(I - I(1))/I(1);
+
+figure;
+subplot(2,1,1)
+plot(ST.time,T1,'r',ST.time,T2,'b',ST.time,I,'k')
+subplot(2,1,2)
+plot(ST.time,err)
+
 end
 
