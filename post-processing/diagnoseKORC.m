@@ -19,7 +19,7 @@ ST.data = loadData(ST);
 
 % ST.CP = confined_particles(ST);
 
-ST.PAD = pitchAngleDiagnostic(ST,30);
+% ST.PAD = pitchAngleDiagnostic(ST,30);
 
 % ST.MMD = magneticMomentDiagnostic(ST,70);
 
@@ -27,7 +27,7 @@ ST.PAD = pitchAngleDiagnostic(ST,30);
 
 % angularMomentum(ST);
 
-ST.CMF = changeOfMagneticField(ST)
+% ST.CMF = changeOfMagneticField(ST)
 
 % energyLimit(ST);
 
@@ -36,6 +36,8 @@ ST.CMF = changeOfMagneticField(ST)
 % stackedPlots(ST,40);
 
 % scatterPlots(ST);
+
+ST.NS = neoclassicalShift(ST);
 
 
 % save('energy_limit','ST')
@@ -62,7 +64,7 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {'X','V','B'};
+list = {'X','V'};%'B'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -793,18 +795,10 @@ end
 end
 
 function angularMomentum(ST)
-c = 299792458.0;
-c = 1E2*c;
-
-% cad = ST.params.simulation.output_cadence;
-% time = ST.params.simulation.dt*double(0:cad:ST.params.simulation.t_steps);
-
-Bo = 1E4*ST.params.fields.Bo;
-Ro = 1E2*ST.params.fields.Ro; % Major radius in meters.
-a = 1E2*ST.params.fields.a;% Minor radius in meters.
-co = 0.5; % Extra parameter
-lambda = a/co;
-Bpo = 1E4*ST.params.fields.Bpo;
+Bo = ST.params.fields.Bo;
+Ro = ST.params.fields.Ro; % Major radius in meters.
+lambda = ST.params.fields.lambda;
+qo = ST.params.fields.qo;
 
 st1 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
 st2 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
@@ -820,19 +814,20 @@ for ss=1:ST.params.simulation.num_species
     num_part = numel(find(pin==1));
 %     num_part = ST.params.species.ppp(ss)*ST.params.simulation.nmpi;
     
-    m = 1E3*ST.params.species.m(ss);
-    q = 3E9*ST.params.species.q(ss);
+    m = ST.params.species.m(ss);
+    q = ST.params.species.q(ss);
     
-    invariant = ...
-        zeros(num_part,ST.params.simulation.num_snapshots+1);
+    I = zeros(num_part,ST.params.simulation.num_snapshots+1);
     err = zeros(1,ST.params.simulation.num_snapshots+1);
     minerr = zeros(1,ST.params.simulation.num_snapshots+1);
     maxerr = zeros(1,ST.params.simulation.num_snapshots+1);
     
     for ii=1:ST.params.simulation.num_snapshots+1
-        X = 1E2*squeeze( ST.data.(['sp' num2str(ss)]).X(:,pin,ii) );
-        V = 1E2*squeeze( ST.data.(['sp' num2str(ss)]).V(:,pin,ii) );
-
+        X = squeeze( ST.data.(['sp' num2str(ss)]).X(:,pin,ii) );
+        V = squeeze( ST.data.(['sp' num2str(ss)]).V(:,pin,ii) );
+        gamma = squeeze( ST.data.(['sp' num2str(ss)]).gamma(pin,ii) )';
+        
+        
         % Toroidal coordinates
         % r = radius, theta = poloidal angle, phi = toroidal angle
         r = sqrt( (sqrt(X(1,:).^2 + X(2,:).^2) - Ro).^2 + X(3,:).^2 );
@@ -842,17 +837,16 @@ for ss=1:ST.params.simulation.num_species
         zeta(zeta<0) = zeta(zeta<0) + 2*pi;
         % Toroidal coordinates
 
-        gamma = squeeze( ST.data.(['sp' num2str(ss)]).gamma(pin,ii) )';
-
         eta = r/Ro;
-        psi = 0.5*lambda*Bpo*log(1 + r.^2/lambda^2);
-        wo = q*Bo./(m*c*gamma);
+        wc = q*Bo./(m*gamma);
 
-        dzeta = ...
-        (X(2,:).*V(1,:) - X(1,:).*V(2,:))./( sum(X(1:2,:).^2,1) );
+        dzeta_dt = (X(2,:).*V(1,:) - X(1,:).*V(2,:))./( X(1,:).^2 + X(2,:).^2 );
     
-        invariant(:,ii) = dzeta.*( 1 + eta.*cos(theta) ).^2 - wo.*psi/(Ro*Bo);
-        tmp_vec = 100*(invariant(:,ii) - invariant(:,1))./invariant(:,1);
+        T1 = dzeta_dt.*(1 + eta.*cos(theta)).^2;
+        T2 = lambda^2*wc.*log(1 + (r/lambda).^2)/(2*qo*Ro^2);
+        I(:,ii) = T1 - T2;
+        
+        tmp_vec = (I(:,ii) - I(:,1))./I(:,1);
         err(ii) = mean( tmp_vec );
 %         minerr(ii) = min( tmp_vec );
 %         maxerr(ii) = max( tmp_vec );
@@ -867,17 +861,17 @@ for ss=1:ST.params.simulation.num_species
         end
     end
     
-    for pp=1:size(invariant,1)
-        invariant(pp,:) = (invariant(pp,:) - invariant(pp,1))/invariant(pp,1);
+    for pp=1:size(I,1)
+        I(pp,:) = (I(pp,:) - I(pp,1))/I(pp,1);
     end
     
     figure(h)
     subplot(double(ST.params.simulation.num_species),1,double(ss))
     try
         plot(ST.time,err,'k-',ST.time,minerr,'r:',ST.time,maxerr,'r:')
-%         hold on
-%         plot(ST.time,invariant)
-%         hold off
+        hold on
+        plot(ST.time,I)
+        hold off
     catch
     end
     box on
@@ -1142,7 +1136,7 @@ axis square
 xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',16)
 ylabel('$\%$ of confined RE','Interpreter','latex','FontSize',16)
 saveas(h0,[ST.path 'particle_loss'],'fig')
-% close(h0)
+close(h0)
 
 h1=figure;
 set(h1,'Visible',ST.visible,'name','IC','numbertitle','off')
@@ -1161,8 +1155,8 @@ for ss=1:ST.params.simulation.num_species
     subplot(1,2,1)
     hold on
     plot(R,Z,'s','MarkerSize',4,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
-%     plot(R,Z,'.','MarkerSize',10,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
-%     plot3(R,Z,Prad,'s','MarkerSize',4,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+    plot(R,Z,'.','MarkerSize',10,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+    plot3(R,Z,Prad,'s','MarkerSize',4,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
     hold off
     legends{ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
 end
@@ -1198,7 +1192,7 @@ for ss=ST.params.simulation.num_species:-1:1
     subplot(1,2,2)
     hold on
     plot(R,Z,'s','MarkerSize',6,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
-%     plot(R,Z,'.','MarkerSize',10,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+    plot(R,Z,'.','MarkerSize',10,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
     hold off
     legends{ST.params.simulation.num_species + 1 -ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
 end
@@ -1214,7 +1208,7 @@ axis square
 xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
 ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
 saveas(h1,[ST.path 'IC'],'fig')
-% close(h1)
+close(h1)
 end
 
 function energyLimit(ST)
@@ -1589,6 +1583,33 @@ for ss=1:ST.params.simulation.num_species
     ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex','FontSize',16)
 end
 saveas(h,[ST.path 'scatter_plot_E_vs_pitch'],'fig')
+
+end
+
+function NS = neoclassicalShift(ST)
+NS = struct;
+
+Ro = ST.params.fields.Ro;
+Bo = ST.params.fields.Bo;
+lambda = ST.params.fields.lambda;
+qo = ST.params.fields.qo;
+a = ST.params.fields.a;
+
+NS.Rmax = zeros(1,ST.params.simulation.num_species);
+
+for ss=1:ST.params.simulation.num_species
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
+    bool = pin & passing;
+    
+    if all(pin == bool)
+        X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,1));
+        R = sqrt( sum(X(1:2,:).^2,1) );
+        Z = X(3,:);
+        
+        NS.Rmax(ss) = max(R);
+    end
+end
 
 end
 

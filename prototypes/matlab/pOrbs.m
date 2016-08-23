@@ -117,8 +117,8 @@ ST.params.q = tracerParams(1)*ST.params.qe; %alpha-particle
 ST.params.m = tracerParams(2)*ST.params.me; % alpha-particle
 
 ST.params.Xo = xo; % Initial position
-Eo = vo(1)*ST.params.qe + ST.params.m*ST.params.c^2;
-vo(1) = sqrt(1 - (ST.params.m*ST.params.c^2/Eo)^2);
+ST.Eo = vo(1)*ST.params.qe + ST.params.m*ST.params.c^2;
+vo(1) = sqrt(1 - (ST.params.m*ST.params.c^2/ST.Eo)^2);
 ST.params.vo_params = vo; % vo_params = [velocity magnitude, pitch angle]
 [ST.params.vo, ST.params.vpar, ST.params.vperp] = initializeVelocity(ST);
 
@@ -167,7 +167,7 @@ for ii=1:ST.params.numSnapshots
     ST.time(ii) = (ii-1)*ST.params.dt*ST.params.cadence;
 end
 
-ST.time = ST.time/(2*pi/ST.params.wc);
+ST.time = ST.time;%/(2*pi/ST.params.wc);
 
 ST.PP = particlePusherLeapfrog(ST);
 
@@ -180,7 +180,11 @@ if ST.opt
 end
 % ST.PP.angularMomentum = DiegosInvariants(ST);
 
-ST.PP.invariant = invariants(ST);
+% ST.PP.invariant = invariants(ST);
+
+orbitShift(ST);
+
+% parametricShift(ST);
 
 munlock
 
@@ -188,26 +192,29 @@ end
 
 % INITIALIZATION
 
-function [vo,vpar,vperp] = initializeVelocity(ST)
+function [vo,vpar,vperp] = initializeVelocity(ST,Xo,V,pitchAngle)
 % ST.params.vo_params = [vo, pitch_angle]
 x = [1,0,0];
 y = [0,1,0];
 z = [0,0,1];
 
-v = ST.params.vo_params(1)*ST.params.c; % magnitude of initial velocity
-pitchAngle = pi*ST.params.vo_params(2)/180;
+if nargin == 1
+    Xo = ST.params.Xo;
+    V = ST.params.vo_params(1)*ST.params.c; % magnitude of initial velocity
+    pitchAngle = pi*ST.params.vo_params(2)/180;
+end
 
 rng('shuffle')
 angle = 2*pi*rand;
 
-vpar = v*cos(pitchAngle);
-vperp = v*sin(pitchAngle);
+vpar = V*cos(pitchAngle);
+vperp = V*sin(pitchAngle);
 
-v1 = v*cos(pitchAngle);
-v2 = v*sin(pitchAngle)*cos(angle);
-v3 = v*sin(pitchAngle)*sin(angle);
+v1 = V*cos(pitchAngle);
+v2 = V*sin(pitchAngle)*cos(angle);
+v3 = V*sin(pitchAngle)*sin(angle);
 
-[b1,b2,b3] = unitVectors(ST);
+[b1,b2,b3] = unitVectors(ST,Xo);
 
 vo = [0,0,0];
 vo(1) = v1*(b1*x') + v2*(b2*x') + v3*(b3*x');
@@ -215,15 +222,15 @@ vo(2) = v1*(b1*y') + v2*(b2*y') + v3*(b3*y');
 vo(3) = v1*(b1*z') + v2*(b2*z') + v3*(b3*z');
 end
 
-function [b1,b2,b3] = unitVectors(ST)
+function [b1,b2,b3] = unitVectors(ST,Xo)
 % initial condition of an electron drifting parallel to the local magnetic
 % field.
 
 if ST.analytical
-    B = analyticalB(ST.params.Xo);
+    B = analyticalB(Xo);
     b = B/sqrt(sum(B.^2));
 else
-    B = interpMagField(ST,ST.params.Xo);
+    B = interpMagField(Xo);
     b = B/sqrt(sum(B.^2));
 end
 
@@ -235,24 +242,10 @@ b2 = b2/sqrt(b2*b2');
 b3 = cross(b1,b2);
 b3 = b3/sqrt(b3*b3');
 
-figure
-plot3([0,b1(1)],[0,b1(2)],[0,b1(3)],'r',[0,b2(1)],[0,b2(2)],[0,b2(3)],'b',...
-    [0,b3(1)],[0,b3(2)],[0,b3(3)],'k')
-axis equal
-
-end
-
-function b = unitParallelVector(ST,X)
-% initial condition of an electron drifting parallel to the local magnetic
-% field.
-
-if ST.analytical
-    B = analyticalB(X);
-    b = B/sqrt(sum(B.^2));
-else
-    B = interpMagField(ST,X);
-    b = B/sqrt(sum(B.^2));
-end
+% figure
+% plot3([0,b1(1)],[0,b1(2)],[0,b1(3)],'r',[0,b2(1)],[0,b2(2)],[0,b2(3)],'b',...
+%     [0,b3(1)],[0,b3(2)],[0,b3(3)],'k')
+% axis equal
 
 end
 
@@ -1271,8 +1264,7 @@ if ST.opt
     title(PP.method,'Interpreter','latex','FontSize',16)
     subplot(3,1,2)
     plot(time, vperp)
-    box on
-    grid on
+    box on; grid on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
     ylabel('$v_\perp$ [c]','Interpreter','latex','FontSize',16)
     title(PP.method,'Interpreter','latex','FontSize',16)
@@ -1573,50 +1565,51 @@ end
 % POST-PROCESSING
 
 function PoincarePlots(ST)
-X = ST.PP.X;
-
-R = sqrt(X(:,1).^2 + X(:,2).^2);
-Z = X(:,3);
-
-if isfield(ST.PP,'R')
-    Rgc = sqrt(ST.PP.R(:,1).^2 + ST.PP.R(:,2).^2);
-    Zgc = ST.PP.R(:,3);
-end
-
-zeta = atan2(X(:,2),X(:,1));
-zeta(zeta<0) = zeta(zeta<0) + 2*pi;
-locs = find(abs(diff(zeta)) > 6);
-
-figure
-plot(R(locs),Z(locs),'r.','MarkerSize',15)
-hold on
-if isfield(ST.PP,'R')
-    plot(Rgc(locs),Zgc(locs),'k.','MarkerSize',15)
-end
-hold off
-% try 
-%     pol_angle = atan2(Z - ST.B.Ro(2),R - ST.B.Ro(1));
-% %     pol_angle(pol_angle<0) = pol_angle(pol_angle<0) + 2*pi;
-%     locs = find(abs(diff(pol_angle)) > 6);
-%     hold on
-%     plot(R(locs(1):locs(2)),Z(locs(1):locs(2)),'k')
-%     if isfield(ST.PP,'R')
-%         plot(Rgc(locs(1):locs(2)),Zgc(locs(1):locs(2)),'g')
-%     end
-%     hold off
-% catch
+if isfield(ST,'X')
+    X = ST.PP.X;
+    
+    R = sqrt(X(:,1).^2 + X(:,2).^2);
+    Z = X(:,3);
+    
+    if isfield(ST.PP,'R')
+        Rgc = sqrt(ST.PP.R(:,1).^2 + ST.PP.R(:,2).^2);
+        Zgc = ST.PP.R(:,3);
+    end
+    
+    zeta = atan2(X(:,2),X(:,1));
+    zeta(zeta<0) = zeta(zeta<0) + 2*pi;
+    locs = find(abs(diff(zeta)) > 6);
+    
+    figure
+    plot(R(locs),Z(locs),'r.','MarkerSize',15)
+    hold on
+    if isfield(ST.PP,'R')
+        plot(Rgc(locs),Zgc(locs),'k.','MarkerSize',15)
+    end
+    hold off
+    % try
+    %     pol_angle = atan2(Z - ST.B.Ro(2),R - ST.B.Ro(1));
+    % %     pol_angle(pol_angle<0) = pol_angle(pol_angle<0) + 2*pi;
+    %     locs = find(abs(diff(pol_angle)) > 6);
+    %     hold on
+    %     plot(R(locs(1):locs(2)),Z(locs(1):locs(2)),'k')
+    %     if isfield(ST.PP,'R')
+    %         plot(Rgc(locs(1):locs(2)),Zgc(locs(1):locs(2)),'g')
+    %     end
+    %     hold off
+    % catch
     hold on
     plot(R,X(:,3),'k')
     if isfield(ST.PP,'R')
         plot(Rgc,Zgc,'g','LineWidth',2)
     end
     hold off
-% end
-axis equal
-xlabel('R [m]','Interpreter','latex','FontSize',16)
-ylabel('Z [m]','Interpreter','latex','FontSize',16)
-title('Poincare plot','Interpreter','latex','FontSize',16)
-
+    % end
+    axis equal
+    xlabel('R [m]','Interpreter','latex','FontSize',16)
+    ylabel('Z [m]','Interpreter','latex','FontSize',16)
+    title('Poincare plot','Interpreter','latex','FontSize',16)
+end
 end
 
 function DI = DiegosInvariants(ST)
@@ -1727,6 +1720,132 @@ subplot(2,1,1)
 plot(ST.time,T1,'r',ST.time,T2,'b',ST.time,I,'k')
 subplot(2,1,2)
 plot(ST.time,err)
+
+end
+
+function S = orbitShift(ST)
+
+Ro = ST.B.Ro;
+Bo = ST.B.Bo;
+lambda = ST.B.lamb;
+qo = ST.B.qo;
+a = ST.B.a;
+
+m = ST.params.m;
+q = ST.params.q;
+
+X = ST.PP.X;
+gamma = ST.PP.EK';
+V = ST.PP.v;
+
+% Toroidal coordinates
+% r = radius, theta = poloidal angle, zeta = toroidal angle
+r = sqrt( (sqrt(X(:,1).^2 + X(:,2).^2) - Ro).^2 + X(:,3).^2 );
+eta = r/Ro;
+theta = atan2(X(:,3),sqrt(X(:,1).^2 + X(:,2).^2) - Ro);
+theta(theta < 0) = theta(theta < 0) + 2*pi;
+zeta = atan2(X(:,1),X(:,2));
+zeta(zeta < 0) = zeta(zeta < 0) + 2*pi;
+% Toroidal coordinates
+
+dzeta_dt = ...
+    (X(:,2).*V(:,1) - X(:,1).*V(:,2))./( X(:,1).^2 + X(:,2).^2 );
+
+wc = q*Bo./(m*gamma);
+
+shift = qo*Ro*(1 + eta.*cos(theta)).*dzeta_dt./wc;
+
+R = Ro*(1 + eta.*cos(theta));
+Z = X(:,3);
+Rorb = sqrt( (R - (Ro + shift)).^2 + Z.^2 ); 
+
+t = linspace(0,2*pi,100);
+x = (Ro+shift(1)) + Rorb(1)*cos(t);
+y = Rorb(1)*sin(t);
+
+x95 = Ro + a*cos(t);
+y95 = a*sin(t);
+
+% Exact iso-surfaces
+wce = abs(q)*Bo/(gamma(1)*m);
+po = gamma(1)*m*( R(1)^2*dzeta_dt(1) + ...
+    0.5*lambda*wce*log(1 + (r(1)/lambda)^2)/qo );
+
+Te = 2*pi/wce;
+I = find(ST.time - Te > 0, 1, 'first');
+
+% Riso = linspace(1,2,1E4);
+Riso = R;
+
+% A = (2*qo/(lambda*wce))*(po/(gamma(1)*m) - mean(dzeta_dt(1:1690))*Riso.^2);
+% A = (2*qo/(lambda*wce))*(po/(gamma(1)*m) - mean(dzeta_dt(1:I))*Riso.^2);
+% A = (2*qo/(lambda*wce))*(po/(gamma(1)*m) - dzeta_dt(1)*Riso.^2);
+A = (2*qo/(lambda*wce))*(po/(gamma(1)*m) - dzeta_dt.*Riso.^2);
+% A = (2*qo/(lambda*wce))*(po/(gamma(1)*m) - min(dzeta_dt)*Riso.^2);
+
+Ziso = sqrt( lambda^2*(exp(A) -1) - (Riso - Ro).^2 );
+
+% Riso(imag(Ziso)~=0) = [];
+% Ziso(imag(Ziso)~=0) = [];
+% Riso = [Riso;Ris]
+% Exact iso-surfaces
+
+figure;
+subplot(3,2,1)
+plot(ST.time,shift)
+axis([0 max(ST.time) min(shift) max(shift)])
+xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',14)
+ylabel('$\Delta$ (m)','Interpreter','latex','FontSize',14)
+subplot(3,2,3)
+plot(ST.time,Rorb)
+xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',14)
+ylabel('$r_{neo}$ (m)','Interpreter','latex','FontSize',14)
+axis([0 max(ST.time) min(Rorb) max(Rorb)])
+subplot(3,2,5)
+plot(ST.time,R.*dzeta_dt)
+xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',14)
+ylabel('$R\dot{\zeta}$ (m)','Interpreter','latex','FontSize',14)
+axis([0 max(ST.time) min(R.*dzeta_dt) max(R.*dzeta_dt)])
+subplot(3,2,[2,4,6])
+% figure
+plot(x95,y95,'k--',R,Z,'b',Riso,Ziso,'r',Riso,-Ziso,'r')
+% axis([min(R) max(R) min(Z) max(Z)])
+axis equal
+xlabel('R [m]','Interpreter','latex','FontSize',14)
+ylabel('Z [m]','Interpreter','latex','FontSize',14)
+end
+
+function D = parametricShift(ST)
+N = 20;
+
+r = linspace(-0.1,0.3,N);
+shift = zeros(1,N);
+
+beta = ST.params.vo_params(1);
+V = beta*ST.params.c;
+gamma = 1/sqrt( 1 - beta^2 );
+pitchAngle = pi*ST.params.vo_params(2)/180;
+
+qo = ST.B.qo;
+Ro = ST.B.Ro;
+Bo = ST.B.Bo;
+me = ST.params.me;
+qe = abs(ST.params.qe);
+
+wce = qe*Bo/(gamma*me);
+
+
+for ii = 1:N
+    Xo = [ST.B.Ro + r(ii), 0, 0];
+    [Vo,~,~] = initializeVelocity(ST,Xo,V,pitchAngle);
+    
+    shift(ii) = -qo*(Xo(1)*Vo(2))/wce;
+end
+
+figure
+plot(Ro + r,shift)
+xlabel('$R$ (m)','Interpreter','latex','FontSize',14)
+ylabel('$\Delta$ (m)','Interpreter','latex','FontSize',14)
 
 end
 
