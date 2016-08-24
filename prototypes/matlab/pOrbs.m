@@ -861,7 +861,8 @@ else
     % Bp = poloidal magnetic field
     % Bt = toroidal magnetic field
     
-    q = qo*(1 + (r/lamb)^2);
+%     q = qo*(1 + (r/lamb)^2);
+    q = qo;
     eta = r/Ro;
     Bp = eta*Bo/(q*(1 + eta*cos(theta)));
     Bt = Bo/( 1 + eta*cos(theta) );
@@ -1748,23 +1749,16 @@ zeta = atan2(X(:,1),X(:,2));
 zeta(zeta < 0) = zeta(zeta < 0) + 2*pi;
 % Toroidal coordinates
 
-dzeta_dt = ...
-    (X(:,2).*V(:,1) - X(:,1).*V(:,2))./( X(:,1).^2 + X(:,2).^2 );
-
-wc = q*Bo./(m*gamma);
-
-shift = qo*Ro*(1 + eta.*cos(theta)).*dzeta_dt./wc;
-
+% Cylindrical coordinates
 R = Ro*(1 + eta.*cos(theta));
 Z = X(:,3);
-Rorb = sqrt( (R - (Ro + shift)).^2 + Z.^2 ); 
+% Cylindrical coordinates
 
-t = linspace(0,2*pi,100);
-x = (Ro+shift(1)) + Rorb(1)*cos(t);
-y = Rorb(1)*sin(t);
+dzeta_dt = ...
+    (X(:,2).*V(:,1) - X(:,1).*V(:,2))./( X(:,1).^2 + X(:,2).^2 );
+dzeta_dt_change = 100*(dzeta_dt - dzeta_dt(1))/dzeta_dt(1);
 
-x95 = Ro + a*cos(t);
-y95 = a*sin(t);
+wc = q*Bo./(m*gamma(1));
 
 % Exact iso-surfaces
 wce = abs(q)*Bo/(gamma(1)*m);
@@ -1774,43 +1768,79 @@ po = gamma(1)*m*( R(1)^2*dzeta_dt(1) + ...
 Te = 2*pi/wce;
 I = find(ST.time - Te > 0, 1, 'first');
 
-% Riso = linspace(1,2,1E4);
-Riso = R;
+Riso = linspace(0.5,2,1E4);
+% Riso = R;
 
-% A = (2*qo/(lambda*wce))*(po/(gamma(1)*m) - mean(dzeta_dt(1:1690))*Riso.^2);
+% Gyro-average
 % A = (2*qo/(lambda*wce))*(po/(gamma(1)*m) - mean(dzeta_dt(1:I))*Riso.^2);
+
+% Total average
+A = (2*qo/(lambda*wce))*(po/(gamma(1)*m) - mean(dzeta_dt)*Riso.^2);
+
+% Other options
 % A = (2*qo/(lambda*wce))*(po/(gamma(1)*m) - dzeta_dt(1)*Riso.^2);
-A = (2*qo/(lambda*wce))*(po/(gamma(1)*m) - dzeta_dt.*Riso.^2);
-% A = (2*qo/(lambda*wce))*(po/(gamma(1)*m) - min(dzeta_dt)*Riso.^2);
+% A = (2*qo/(lambda*wce))*(po/(gamma(1)*m) - dzeta_dt.*Riso.^2);
 
 Ziso = sqrt( lambda^2*(exp(A) -1) - (Riso - Ro).^2 );
-
-% Riso(imag(Ziso)~=0) = [];
-% Ziso(imag(Ziso)~=0) = [];
-% Riso = [Riso;Ris]
 % Exact iso-surfaces
+
+
+shift = qo*Ro*(1 + eta.*cos(theta)).*dzeta_dt./wc;
+alpha = 0.5*wc/qo;
+Rc = - alpha*Ro./(dzeta_dt - alpha);
+disp(['max(Rc) - min(Rc) = ' num2str(max(Rc) - min(Rc))])
+
+G2 = (po/(m*gamma(1)) + alpha*Ro^2)./(dzeta_dt - alpha) + ...
+    (alpha*Ro./(dzeta_dt - alpha)).^2;
+axis_a = sqrt(G2);
+axis_b = sqrt( (1 - dzeta_dt/alpha).*G2 );
+
+a2 = mean(axis_a.^2);
+b2 = mean(axis_b.^2);
+Rmin = mean(Rc) - sqrt(a2);
+Rmax = mean(Rc) + sqrt(a2);
+
+R_ellipse = linspace(Rmin,Rmax,200);
+Z_ellipse = sqrt(b2)*sqrt(1 - (R_ellipse - mean(Rc)).^2/a2);
+
+
+Rorb = sqrt( (R - (Ro + shift)).^2 + Z.^2 ); 
+t = linspace(0,2*pi,100);
+x = (Ro + shift(1)) + Rorb(1)*cos(t);
+y = Rorb(1)*sin(t);
+
+x95 = Ro + a*cos(t);
+y95 = a*sin(t);
+
+
 
 figure;
 subplot(3,2,1)
-plot(ST.time,shift)
-axis([0 max(ST.time) min(shift) max(shift)])
+plot(ST.time,Ro-Rc,'k',ST.time,abs(shift),'r')
+xlim([0 max(ST.time)])
 xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',14)
 ylabel('$\Delta$ (m)','Interpreter','latex','FontSize',14)
 subplot(3,2,3)
-plot(ST.time,Rorb)
+plot(ST.time,axis_a,'b',ST.time,axis_b,'r')
 xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',14)
-ylabel('$r_{neo}$ (m)','Interpreter','latex','FontSize',14)
-axis([0 max(ST.time) min(Rorb) max(Rorb)])
+ylabel('axis (m)','Interpreter','latex','FontSize',14)
+xlim([0 max(ST.time)])
 subplot(3,2,5)
-plot(ST.time,R.*dzeta_dt)
+plot(ST.time,dzeta_dt_change)
 xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',14)
-ylabel('$R\dot{\zeta}$ (m)','Interpreter','latex','FontSize',14)
-axis([0 max(ST.time) min(R.*dzeta_dt) max(R.*dzeta_dt)])
+ylabel('$\dot{\zeta}$ (m)','Interpreter','latex','FontSize',14)
+xlim([0 max(ST.time)])
 subplot(3,2,[2,4,6])
 % figure
-plot(x95,y95,'k--',R,Z,'b',Riso,Ziso,'r',Riso,-Ziso,'r')
+plot(x95,y95,'k--',Ro,0,'kx',R,Z,'b',...
+    R_ellipse,Z_ellipse,'g',R_ellipse,-Z_ellipse,'g',...
+    min(Rc),0,'gx',max(Rc),0,'gx')
+% hold on
+% plot(Riso,Ziso,'r',Riso,-Ziso,'r')
+% hold off
 % axis([min(R) max(R) min(Z) max(Z)])
 axis equal
+grid on; box on
 xlabel('R [m]','Interpreter','latex','FontSize',14)
 ylabel('Z [m]','Interpreter','latex','FontSize',14)
 end
