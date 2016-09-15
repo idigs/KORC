@@ -182,7 +182,9 @@ end
 
 % ST.PP.invariant = invariants(ST);
 
-orbitShift(ST);
+% orbitShift(ST);
+
+neoclassicalOrbits(ST);
 
 % parametricShift(ST);
 
@@ -823,7 +825,7 @@ Bo = 2.19;
 a = 0.5;% Minor radius in meters.
 Ro = 1.5; % Major radius in meters.
 qa = 2.0; % Safety factor at the separatrix (r=a)
-qo = 1.6; % Safety factor at the magnetic axis.
+qo = 2.0; % Safety factor at the magnetic axis.
 lamb = a/sqrt(qa/qo - 1);
 Bpo = lamb*Bo/(qo*Ro);
 % Parameters of the analytical magnetic field
@@ -1756,7 +1758,8 @@ Z = X(:,3);
 
 dzeta_dt = ...
     (X(:,2).*V(:,1) - X(:,1).*V(:,2))./( X(:,1).^2 + X(:,2).^2 );
-dzeta_dt_change = 100*(dzeta_dt - dzeta_dt(1))/dzeta_dt(1);
+% dzeta_dt_change = 100*(dzeta_dt - dzeta_dt(1))/dzeta_dt(1);
+dzeta_dt_change = 100*(R.*dzeta_dt - R(1)*dzeta_dt(1))/(R(1)*dzeta_dt(1));
 
 wc = q*Bo./(m*gamma(1));
 
@@ -1843,6 +1846,159 @@ axis equal
 grid on; box on
 xlabel('R [m]','Interpreter','latex','FontSize',14)
 ylabel('Z [m]','Interpreter','latex','FontSize',14)
+end
+
+function S = neoclassicalOrbits(ST)
+
+Ro = ST.B.Ro;
+Bo = ST.B.Bo;
+lambda = ST.B.lamb;
+qo = ST.B.qo;
+a = ST.B.a;
+
+m = ST.params.m;
+q = ST.params.q;
+
+X = ST.PP.X;
+gamma = ST.PP.EK';
+V = ST.PP.v;
+
+% Toroidal coordinates
+% r = radius, theta = poloidal angle, zeta = toroidal angle
+r = sqrt( (sqrt(X(:,1).^2 + X(:,2).^2) - Ro).^2 + X(:,3).^2 );
+eta = r/Ro;
+theta = atan2(X(:,3),sqrt(X(:,1).^2 + X(:,2).^2) - Ro);
+theta(theta < 0) = theta(theta < 0) + 2*pi;
+zeta = atan2(X(:,1),X(:,2));
+zeta(zeta < 0) = zeta(zeta < 0) + 2*pi;
+% Toroidal coordinates
+
+if any(r > ST.B.a)
+    disp('Particle unconfined!')
+end
+
+% Cylindrical coordinates
+R = Ro*(1 + eta.*cos(theta));
+Z = X(:,3);
+% Cylindrical coordinates
+
+dzeta_dt = ...
+    (X(:,2).*V(:,1) - X(:,1).*V(:,2))./( X(:,1).^2 + X(:,2).^2 );
+% dzeta_dt_change = 100*(dzeta_dt - dzeta_dt(1))/dzeta_dt(1);
+v_zeta = R.*dzeta_dt;
+v_zeta_change = 100*(v_zeta - v_zeta(1))/v_zeta(1);
+
+wc = q*Bo./(m*gamma(1));
+wce = abs(q)*Bo/(gamma(1)*m);
+alpha = 0.5*wc/qo;
+
+% Exact iso-surfaces
+po = gamma(1)*m*( R(1)^2*dzeta_dt(1) - alpha*r(1).^2 );
+Te = 2*pi/wce; % gyro-period
+% Index to find the time iteration corresponding to a gyro-period
+I = find(ST.time - Te > 0, 1, 'first'); 
+% Exact iso-surfaces
+
+D = qo*v_zeta/wce;
+Rc = Ro - D;
+DRc = 100*(Rc - Rc(1))/Rc(1);
+
+% Rneo = sqrt( -(po/(alpha*gamma(1)*m) + Ro^2) + ...
+%     (Ro + 0.5*v_zeta/alpha).^2 );
+
+Rneo = sqrt( 2*qo*po/(wce*gamma(1)*m) + Rc.^2 - Ro^2);
+Rneo(imag(Rneo)~=0) = 0;
+DRneo = 100*(Rneo - Rneo(1))/Rneo(1);
+
+if min(Rneo) == 0
+    disp('Minimum value of Rneo equals zero!')
+end
+
+N=400;
+
+R_ds = Rneo(1);
+Rmin = Rc(1) - R_ds;
+Rmax = Rc(1) + R_ds;
+
+R_drift = linspace(Rmin,Rmax,N);
+Z_drift = sqrt(R_ds^2 - (R_drift - Rc(1)).^2);
+
+[R_ds,I] = min(Rneo);
+Rmin = Rc(I) - R_ds;
+Rmax = Rc(I) + R_ds;
+
+R_drift_min = linspace(Rmin,Rmax,N);
+Z_drift_min = sqrt(R_ds^2 - (R_drift_min - Rc(I)).^2);
+
+[R_ds,I] = max(Rneo);
+Rmin = Rc(I) - R_ds;
+Rmax = Rc(I) + R_ds;
+
+R_drift_max = linspace(Rmin,Rmax,N);
+Z_drift_max = sqrt(R_ds^2 - (R_drift_max - Rc(I)).^2);
+
+t = linspace(0,2*pi,100);
+x95 = Ro + a*cos(t);
+y95 = a*sin(t);
+
+% figure;
+% subplot(3,2,1)
+% plot(ST.time,DRc,'k')
+% xlim([0 max(ST.time)])
+% xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',14)
+% ylabel('$\Delta R_c$ ($\%$)','Interpreter','latex','FontSize',14)
+% subplot(3,2,3)
+% plot(ST.time,DRneo,'k')
+% xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',14)
+% ylabel('$\Delta R_{neo}$ ($\%$)','Interpreter','latex','FontSize',14)
+% xlim([0 max(ST.time)])
+% subplot(3,2,5)
+% plot(ST.time,v_zeta_change)
+% xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',14)
+% ylabel('$\Delta \upsilon_\zeta$ (m/s)','Interpreter','latex','FontSize',14)
+% xlim([0 max(ST.time)])
+% subplot(3,2,[2,4,6])
+% % figure
+% plot(x95,y95,'k--',Ro,0,'kx',R,Z,'b',...
+%     R_drift,Z_drift,'r',R_drift,-Z_drift,'r',...
+%     R_drift_min,Z_drift_min,'g',R_drift_min,-Z_drift_min,'g',...
+%     R_drift_max,Z_drift_max,'g',R_drift_max,-Z_drift_max,'g',...
+%     min(Rc),0,'gx',max(Rc),0,'gx',mean(Rc),0,'rx')
+% % hold on
+% % plot(Riso,Ziso,'r',Riso,-Ziso,'r')
+% % hold off
+% % axis([min(R) max(R) min(Z) max(Z)])
+% axis equal
+% grid on; box on
+% xlabel('R [m]','Interpreter','latex','FontSize',14)
+% ylabel('Z [m]','Interpreter','latex','FontSize',14)
+
+figure;
+subplot(4,1,[1 2])
+plot(x95,y95,'k',Ro,0,'kx',R,Z,'b',...
+    R_drift,Z_drift,'r',R_drift,-Z_drift,'r',...
+    R_drift_min,Z_drift_min,'g',R_drift_min,-Z_drift_min,'g',...
+    R_drift_max,Z_drift_max,'g',R_drift_max,-Z_drift_max,'g',...
+    min(Rc),0,'gx',max(Rc),0,'gx',Rc(1),0,'rx','LineWidth',1)
+axis([0.9 2.1 -0.6 0.6])
+axis square
+grid on; box on
+xlabel('$R$ (m)','Interpreter','latex','FontSize',14)
+ylabel('$Z$ (m)','Interpreter','latex','FontSize',14)
+subplot(4,1,3)
+plot(ST.time,v_zeta/ST.params.c)
+xlim([0 max(ST.time)])
+ylabel('$\upsilon_\zeta$ (c)','Interpreter','latex','FontSize',14)
+xlabel('Time $t$ (s)','Interpreter','latex','FontSize',14)
+subplot(4,1,4)
+yyaxis left           % plot against left y-axis 
+plot(ST.time,Rc)
+ylabel('$\Delta$ (m)','Interpreter','latex','FontSize',14)
+yyaxis right          % plot against right y-axis)
+plot(ST.time,Rneo)
+ylabel('$R_c$ (m)','Interpreter','latex','FontSize',14)
+xlabel('Time $t$ (s)','Interpreter','latex','FontSize',14)
+xlim([0 max(ST.time)])
 end
 
 function D = parametricShift(ST)
