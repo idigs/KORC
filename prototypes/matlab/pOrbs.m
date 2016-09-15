@@ -184,9 +184,11 @@ end
 
 % orbitShift(ST);
 
-neoclassicalOrbits(ST);
+% neoclassicalOrbits(ST);
 
 % parametricShift(ST);
+
+ST.P = synchrotronSpectrum(ST);
 
 munlock
 
@@ -825,7 +827,7 @@ Bo = 2.19;
 a = 0.5;% Minor radius in meters.
 Ro = 1.5; % Major radius in meters.
 qa = 2.0; % Safety factor at the separatrix (r=a)
-qo = 2.0; % Safety factor at the magnetic axis.
+qo = 1.6; % Safety factor at the magnetic axis.
 lamb = a/sqrt(qa/qo - 1);
 Bpo = lamb*Bo/(qo*Ro);
 % Parameters of the analytical magnetic field
@@ -863,8 +865,8 @@ else
     % Bp = poloidal magnetic field
     % Bt = toroidal magnetic field
     
-%     q = qo*(1 + (r/lamb)^2);
-    q = qo;
+    q = qo*(1 + (r/lamb)^2);
+%     q = qo;
     eta = r/Ro;
     Bp = eta*Bo/(q*(1 + eta*cos(theta)));
     Bt = Bo/( 1 + eta*cos(theta) );
@@ -1308,7 +1310,7 @@ PP.vperp = vperp;
 PP.k = k/ST.norm.l; % curvature
 PP.T = T/ST.norm.l; % curvature
 
-PP.EK = EK;
+PP.gamma = EK;
 PP.mu = mu;
 
 POINCARE.R = POINCARE.R*ST.norm.l;
@@ -1568,7 +1570,7 @@ end
 % POST-PROCESSING
 
 function PoincarePlots(ST)
-if isfield(ST,'X')
+if isfield(ST.PP,'X')
     X = ST.PP.X;
     
     R = sqrt(X(:,1).^2 + X(:,2).^2);
@@ -2034,4 +2036,64 @@ xlabel('$R$ (m)','Interpreter','latex','FontSize',14)
 ylabel('$\Delta$ (m)','Interpreter','latex','FontSize',14)
 
 end
+
+function P = synchrotronSpectrum(ST)
+disp('Calculating spectrum of synchrotron radiation...')
+P = struct;
+N = 100;
+lambda_min = 10E-9;
+intLimit = 50;
+if isfield(ST.PP,'k')
+    m = ST.params.m;
+    c = ST.params.c;
+    qe = ST.params.qe;
+    
+    E = m*c^2*ST.PP.gamma + m*c^2;
+    Eo = m*c^2;
+    
+    P.lambdac = (4/3)*pi*(Eo./E).^3./ST.PP.k;
+    lambdao = c*ST.PP.k;
+    
+    P.lambda = zeros(ST.params.numSnapshots,N);
+    P.Psyn = zeros(ST.params.numSnapshots,N);
+    Co = sqrt(27)*qe^2/(4*pi);
+    fun = @(x) besselk(5/3,x);
+    for ii=1:ST.params.numSnapshots
+        P.lambda(ii,:) = linspace(lambda_min,P.lambdac(ii),N);
+        for jj=1:N
+            Q = integral(fun,P.lambdac(ii)/P.lambda(ii,jj),intLimit);
+            A1 = P.lambdac(ii)^2/(lambdao(ii)*P.lambda(ii,jj));
+            A2 = (E(ii)/Eo)^4;
+            P.Psyn(ii,jj) =  Co*ST.PP.k(ii)*A2*A1*Q;
+        end
+    end
+    
+    figure
+    subplot(2,1,1)
+    plot(ST.time,P.lambdac/1E-9)
+    box on; axis on
+    xlabel('Time $t$ (s)','FontSize',14,'Interpreter','latex')
+    ylabel('$\lambda_c$ (nm)','FontSize',14,'Interpreter','latex')
+    subplot(2,1,2)
+%     plot(P.lambda(end,:)/1E-9,P.Psyn(end,:))
+%     box on; axis on
+%     ylabel('$P_{syn}(\lambda)$ (Watts)','FontSize',14,'Interpreter','latex')
+%     xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
+    hold on
+    for ii=1:ST.params.numSnapshots
+        plot3(ST.time(ii)*ones(1,N),P.lambda(ii,:)/1E-9,P.Psyn(ii,:),'k')
+    end
+    axis([0 ST.time(end) min(min(P.lambda))/1E-9 max(max(P.lambda))/1E-9 min(min(P.Psyn)) max(max(P.Psyn)) ])
+    hold off
+    box on; axis on; view([64,38])
+    xlabel('Time $t$ (s)','FontSize',14,'Interpreter','latex')
+    ylabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
+    zlabel('$P_{syn}(\lambda)$ (Watts)','FontSize',14,'Interpreter','latex')
+else
+    error('Curvature not found!')
+end
+disp('Spectrum of synchrotron radiation: done!')
+end
+
+
 
