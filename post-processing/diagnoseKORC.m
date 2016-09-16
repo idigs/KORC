@@ -1613,3 +1613,9 @@ end
 
 end
 
+function P = synchrotronSpectrum(ST)
+disp('Calculating spectrum of synchrotron radiation...')
+P = struct;
+disp('Spectrum of synchrotron radiation: done!')
+end
+

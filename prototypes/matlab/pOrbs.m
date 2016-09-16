@@ -67,7 +67,7 @@ function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,
 % name='fields/bfield_tracing/d3d_bfield_tracing-3E-3.dat';
 % ST = pOrbs(name,'SIESTA','3D',[100,79,149],[1E7,1E-2,1],[-1,1],[1.5,0,-0.5],[0.99,30]);
 % USING RAW FILES
-% ST = pOrbs('jfit_165365_1400.txt','RAW','2D',[],[1E5,1E-2,10],[-1,1],[1.82,0,-0.4928],[0.99,70]);
+% ST = pOrbs('jfit_165365_1400.mat','RAW','2D',[],[1E5,1E-2,10],[-1,1],[1.82,0,-0.4928],[0.99,70]);
 
 narginchk(8,9);
 
@@ -892,7 +892,7 @@ function E = analyticalE(X)
 narginchk(1,2);
 
 % Parameters of the analytical magnetic field
-Eo = 0.0;
+Eo = -0.0;
 Ro = 1.5; % Major radius in meters.
 % Parameters of the analytical magnetic field
 
