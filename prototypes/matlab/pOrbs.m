@@ -1148,12 +1148,11 @@ for ii=2:ST.params.numSnapshots
 %         U_R = U_R + a*( F2 + F3 );
 
 
-%         U = U_L + U_R - U;
-%         gamma = sqrt( 1 + U*U' );
-%         V = U/gamma;
+%         U = U_L + U_R - U; % Comment or uncomment
+%         gamma = sqrt( 1 + U*U' ); % Comment or uncomment
+%         V = U/gamma; % Comment or uncomment
         
-         U = U_L;
-         V = U_L/gamma;
+         U = U_L; % Comment or uncomment
         % % % Leap-frog scheme for the radiation damping force % % %fcoll
         
         zeta_previous = atan2(XX(2),XX(1));
@@ -1585,6 +1584,10 @@ if isfield(ST.PP,'X')
     zeta(zeta<0) = zeta(zeta<0) + 2*pi;
     locs = find(abs(diff(zeta)) > 6);
     
+    t = linspace(0,2*pi,100);
+    x95 = ST.B.Ro + ST.B.a*cos(t);
+    y95 = ST.B.a*sin(t);
+    
     figure
     plot(R(locs),Z(locs),'r.','MarkerSize',15)
     hold on
@@ -1604,7 +1607,7 @@ if isfield(ST.PP,'X')
     %     hold off
     % catch
     hold on
-    plot(R,X(:,3),'k')
+    plot(R,X(:,3),'k',x95,y95,'b',ST.B.Ro,0,'bx')
     if isfield(ST.PP,'R')
         plot(Rgc,Zgc,'g','LineWidth',2)
     end
@@ -2041,49 +2044,74 @@ function P = synchrotronSpectrum(ST)
 disp('Calculating spectrum of synchrotron radiation...')
 P = struct;
 N = 100;
-lambda_min = 10E-9;
+lambda_min = 1E-10;
 intLimit = 50;
 if isfield(ST.PP,'k')
-    m = ST.params.m;
-    c = ST.params.c;
-    qe = ST.params.qe;
+    c = 1E2*ST.params.c;
+    qe = 3E9*abs(ST.params.q);
+    m = 1E3*ST.params.m;
+    
+    lambda_min = 1E2*lambda_min;
     
     E = m*c^2*ST.PP.gamma + m*c^2;
     Eo = m*c^2;
     
-    P.lambdac = (4/3)*pi*(Eo./E).^3./ST.PP.k;
-    lambdao = c*ST.PP.k;
+    E = 1E7*E;
+    Eo = 1E7*Eo;
+    
+    k = ST.PP.k/1E2;
+    
+    P.lambdac = (4/3)*pi*(Eo./E).^3./k;
+    lambdao = c*k;
     
     P.lambda = zeros(ST.params.numSnapshots,N);
     P.Psyn = zeros(ST.params.numSnapshots,N);
-    Co = sqrt(27)*qe^2/(4*pi);
+    Co = sqrt(27)*c*qe^2/2;
     fun = @(x) besselk(5/3,x);
     for ii=1:ST.params.numSnapshots
         P.lambda(ii,:) = linspace(lambda_min,P.lambdac(ii),N);
         for jj=1:N
             Q = integral(fun,P.lambdac(ii)/P.lambda(ii,jj),intLimit);
-            A1 = P.lambdac(ii)^2/(lambdao(ii)*P.lambda(ii,jj));
+            A1 = P.lambdac(ii)^2/(lambdao(ii)*P.lambda(ii,jj)^3);
             A2 = (E(ii)/Eo)^4;
-            P.Psyn(ii,jj) =  Co*ST.PP.k(ii)*A2*A1*Q;
+            P.Psyn(ii,jj) =  Co*k(ii)*A2*A1*Q;
         end
     end
     
+    lch = 1E7;
+    Pch = 1E-7;
+    
+    P.lambda = lch*P.lambda;
+    P.lambdac = lch*P.lambdac;
+    P.Psyn = Pch*P.Psyn;
+    k = 1E2*k;
+    
+    [~,Imin] = min(k);
+    [~,Imax] = max(k);
+    
     figure
-    subplot(2,1,1)
-    plot(ST.time,P.lambdac/1E-9)
+    subplot(3,1,1)
+    yyaxis left 
+    plot(ST.time,P.lambdac)
     box on; axis on
-    xlabel('Time $t$ (s)','FontSize',14,'Interpreter','latex')
     ylabel('$\lambda_c$ (nm)','FontSize',14,'Interpreter','latex')
-    subplot(2,1,2)
-%     plot(P.lambda(end,:)/1E-9,P.Psyn(end,:))
-%     box on; axis on
-%     ylabel('$P_{syn}(\lambda)$ (Watts)','FontSize',14,'Interpreter','latex')
-%     xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
+    yyaxis right 
+    plot(ST.time,k)
+    ylabel('$\kappa$ (m$^{-1}$)','FontSize',14,'Interpreter','latex')
+    xlabel('Time $t$ (s)','FontSize',14,'Interpreter','latex')
+    subplot(3,1,2)
+    plot(P.lambda(Imin,:),P.Psyn(Imin,:),'b',...
+        P.lambda(Imax,:),P.Psyn(Imax,:),'r')
+    legend({'$P_{syn}(\kappa_{min})$','$P_{syn}(\kappa_{max})$'},'Interpreter','latex','FontSize',14)
+    box on; axis on
+    ylabel('$P_{syn}(\lambda)$ (Watts)','FontSize',14,'Interpreter','latex')
+    xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
+    subplot(3,1,3)
     hold on
     for ii=1:ST.params.numSnapshots
-        plot3(ST.time(ii)*ones(1,N),P.lambda(ii,:)/1E-9,P.Psyn(ii,:),'k')
+        plot3(ST.time(ii)*ones(1,N),P.lambda(ii,:),P.Psyn(ii,:),'k')
     end
-    axis([0 ST.time(end) min(min(P.lambda))/1E-9 max(max(P.lambda))/1E-9 min(min(P.Psyn)) max(max(P.Psyn)) ])
+    axis([0 ST.time(end) min(min(P.lambda)) max(max(P.lambda)) min(min(P.Psyn)) max(max(P.Psyn)) ])
     hold off
     box on; axis on; view([64,38])
     xlabel('Time $t$ (s)','FontSize',14,'Interpreter','latex')
