@@ -1585,13 +1585,15 @@ P = struct;
 
 Nr = 25;
 Ntheta = 80;
-Psyn = zeros(Ntheta,Nr);
+% Psyn = zeros(Ntheta,Nr);
 
 upper_integration_limit = 100.0;
 
-N = 25;
-lambda_min = 450E-9;% in meters
-lambda_max = 950E-9;% in meters
+N = 10;
+% lambda_min = 450E-9;% in meters
+% lambda_max = 950E-9;% in meters
+lambda_min = 745E-9;% in meters
+lambda_max = 749E-9;% in meters
 lambda_camera = linspace(lambda_min,lambda_max,N);
 Dlambda_camera = mean(diff(lambda_camera));
 
@@ -1599,6 +1601,8 @@ lambda_camera = 1E2*lambda_camera;
 
 rmin = 0;
 rmax = ST.params.fields.a;
+
+fh = figure;
 
 % Poloidal distribution of the total radiated power
 for ss=1:ST.params.simulation.num_species
@@ -1722,7 +1726,6 @@ for ss=1:ST.params.simulation.num_species
 %         k_app = k_app/1E2;
         
         lambdac = (4/3)*pi*(Eo./E).^3./k;
-        lambdao = c*k;
         
         I = find(lambdac > lambda_min);
         numEmittingPart = numel(I);
@@ -1730,7 +1733,7 @@ for ss=1:ST.params.simulation.num_species
         Psyn_camera = zeros(numEmittingPart,N);
         disp('Decomposing radiation in wavelengths...')
         
-        Co = sqrt(27)*c*qe^2/2;
+        C0 = 4*pi*c*qe^2/sqrt(3);
         fun = @(x) besselk(5/3,x);
         for ii=1:numEmittingPart
 %             parfor jj=1:N
@@ -1740,10 +1743,25 @@ for ss=1:ST.params.simulation.num_species
                 else
                     lower_integration_limit = lambdac(I(ii))/lambda_camera(jj);
                     Q = integral(fun,lower_integration_limit,upper_integration_limit);
-                    A1 = lambdac(I(ii))^2/(lambdao(I(ii))*lambda_camera(jj)^3);
-                    A2 = (E(I(ii))/Eo)^4;
-                    Psyn_camera(ii,jj) =  Co*k(I(ii))*A2*A1*Q;
+                    C1 = (Eo/E(ii))^2/lambda_camera(jj)^3;
+                    Psyn_camera(ii,jj) =  C0*C1*Q;
                 end
+            end
+        end
+        
+        ind_part = 1:1:numEmittingPart;
+                
+        Psyn = zeros(Ntheta,Nr);
+        disp('Calculating poloidal plane...')
+        for ii=1:numEmittingPart
+            try
+%                 Psyn(itheta(I(ii)),ir(I(ii))) = Psyn(itheta(I(ii)),ir(I(ii))) + ...
+%                     Dlambda_camera*sum(Psyn_camera(ii,:));
+                
+                Psyn(itheta(I(ii)),ir(I(ii))) = Psyn(itheta(I(ii)),ir(I(ii))) + ...
+                    trapz(lambda_camera,Psyn_camera(ii,:));
+            catch
+                disp(['sp:' num2str(ss) ' ' num2str(ir(I(ii))) ' ' num2str(itheta(I(ii)))])
             end
         end
         
@@ -1752,47 +1770,46 @@ for ss=1:ST.params.simulation.num_species
         
         lambdac = lch*lambdac;
         Psyn_camera = Pch*Psyn_camera;
+        Psyn = Pch*Psyn;
         k = 1E2*k;
         
         % % % % Beyond this point all variables are in SI units % % % %
         
-        ind_part = 1:1:numEmittingPart;
-                
-%         Psyn = zeros(Ntheta,Nr);
-        disp('Calculating poloidal plane...')
-        for ii=1:numEmittingPart
-            try
-%                 Psyn(itheta(I(ii)),ir(I(ii))) = Psyn(itheta(I(ii)),ir(I(ii))) + ...
-%                     Dlambda_camera*sum(Psyn_camera(ii,:));
-                
-                Psyn(itheta(I(ii)),ir(I(ii))) = Psyn(itheta(I(ii)),ir(I(ii))) + ...
-                    sum(Psyn_camera(ii,:));
-            catch
-                disp(['sp:' num2str(ss) ' ' num2str(ir(I(ii))) ' ' num2str(itheta(I(ii)))])
-            end
-        end
+%         figure
+%         subplot(3,1,1)
+%         yyaxis left
+%         set(gca,'YColor',[0,0,1])
+%         plot(ind_part,lambdac(I),'b-')
+%         box on; axis on
+%         ylabel('$\lambda_c$ (nm)','FontSize',14,'Interpreter','latex')
+%         yyaxis right
+%         set(gca,'YColor',[1,0,0])
+%         plot(ind_part,k(I),'r-')
+%         ylabel('$\kappa$ (m$^{-1}$)','FontSize',14,'Interpreter','latex')
+%         xlabel('Particle number','FontSize',14,'Interpreter','latex')
+%         title(['$\theta_0$ = ' num2str(ST.params.species.etao(ss)) '$^\circ$'],...
+%             'FontSize',14,'Interpreter','latex')
+%         
+%         subplot(3,1,2)
+%         plot(lambda_camera*lch,mean(Psyn_camera,1),'b-')
+%         ylabel('$P_{syn}(\lambda)$ (Watts)','FontSize',14,'Interpreter','latex')
+%         xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
         
-        figure
-        subplot(3,1,1)
-        yyaxis left
-        set(gca,'YColor',[0,0,1])
-        plot(ind_part,lambdac(I),'b-')
-        box on; axis on
-        ylabel('$\lambda_c$ (nm)','FontSize',14,'Interpreter','latex')
-        yyaxis right
-        set(gca,'YColor',[1,0,0])
-        plot(ind_part,k(I),'r-')
-        ylabel('$\kappa$ (m$^{-1}$)','FontSize',14,'Interpreter','latex')
-        xlabel('Particle number','FontSize',14,'Interpreter','latex')
-        title(['$\theta_0$ = ' num2str(ST.params.species.etao(ss)) '$^\circ$'],...
-            'FontSize',14,'Interpreter','latex')
-        
-        subplot(3,1,2)
-        plot(lambda_camera*lch,mean(Psyn_camera,1),'b-')
-        ylabel('$P_{syn}(\lambda)$ (Watts)','FontSize',14,'Interpreter','latex')
-        xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
-        
-        subplot(3,1,3)
+%         subplot(3,1,3)
+%         surf(x_grid,y_grid,Psyn,'LineStyle','none')
+%         colormap(jet(512))
+%         h = colorbar;
+%         ylabel(h,'$P_{syn}$ (Watts)','Interpreter','latex','FontSize',16)
+%         view([0,90])
+%         axis square; box on
+%         shading interp
+%         xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+%         ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
+%         title(['$\theta_0 = $' num2str(ST.params.species.etao(ss)) '$^\circ$'],...
+%             'Interpreter','latex','FontSize',16)
+
+        figure(fh)
+        subplot(3,3,double(ss))
         surf(x_grid,y_grid,Psyn,'LineStyle','none')
         colormap(jet(512))
         h = colorbar;

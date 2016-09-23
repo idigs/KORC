@@ -2088,10 +2088,10 @@ if isfield(ST.PP,'k')
     lambda_min = 1E2*lambda_min;
     
     P.lambdac = (4/3)*pi*(Eo./E).^3./k;
-    lambdao = c*k;
+%     lambdao = 2*pi./k;
     
     P.lambdac_app = (4/3)*pi*(Eo./E).^3./k_app;
-    lambdao_app = c*k_app;
+%     lambdao_app = 2*pi./k_app;
     
     P.lambda = zeros(ST.params.numSnapshots,N);
     P.Psyn = zeros(ST.params.numSnapshots,N);
@@ -2103,7 +2103,7 @@ if isfield(ST.PP,'k')
     Q = zeros(ST.params.numSnapshots,N);
     Qapp = zeros(ST.params.numSnapshots,N);
     
-    Co = sqrt(27)*c*qe^2/2;
+    C0 = 4*pi*c*qe^2/sqrt(3);
     fun = @(x) besselk(5/3,x);
     for ii=1:ST.params.numSnapshots
         P.lambda(ii,:) = linspace(lambda_min,P.lambdac(ii),N);
@@ -2113,21 +2113,19 @@ if isfield(ST.PP,'k')
                 P.Psyn(ii,jj) = 0;
             else
                 Q(ii,jj) = integral(fun,P.lambdac(ii)/P.lambda(ii,jj),upper_integration_limit);
-                A1 = P.lambdac(ii)^2/(lambdao(ii)*P.lambda(ii,jj)^3);
-                A2 = (E(ii)/Eo)^4;
-                P.Psyn(ii,jj) =  Co*k(ii)*A2*A1*Q(ii,jj);
+                C1 = (Eo/E(ii))^2/P.lambda(ii,jj)^3;
+                P.Psyn(ii,jj) =  C0*C1*Q(ii,jj);
             end
             
             if (P.lambdac(ii)/P.lambda(ii,jj) > upper_integration_limit)
                 P.Psyn_app(ii,jj) = 0;
             else
                 Qapp(ii,jj) = integral(fun,P.lambdac_app(ii)/P.lambda_app(ii,jj),upper_integration_limit);
-                A1 = P.lambdac_app(ii)^2/(lambdao_app(ii)*P.lambda_app(ii,jj)^3);
-                A2 = (E(ii)/Eo)^4;
-                P.Psyn_app(ii,jj) =  Co*k_app(ii)*A2*A1*Qapp(ii,jj);
+                C1 = (Eo/E(ii))^2/P.lambda_app(ii,jj)^3;
+                P.Psyn_app(ii,jj) =  C0*C1*Qapp(ii,jj);
             end
         end
-        Ptot(ii) = sum(P.Psyn(ii,:));
+        Ptot(ii) = trapz(P.lambda(ii,:),P.Psyn(ii,:));
     end
     
     % % % All variables below are in SI units
@@ -2145,7 +2143,7 @@ if isfield(ST.PP,'k')
     P.Psyn_app = Pch*P.Psyn_app;
     k_app = 1E2*k_app;
     
-%     Ptot = Pch*Ptot;
+    Ptot = Pch*Ptot;
         
     [~,Imin] = min(k);
     [~,Imax] = max(k);
