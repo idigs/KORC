@@ -823,9 +823,11 @@ narginchk(1,2);
 % lamb = a/sqrt(qa/qo - 1);
 % Bpo = lamb*Bo/(qo*Ro);
 
+% Bo = 2.1;
+% Ro = 1.67; % Major radius in meters.
 Bo = 2.19;
-a = 0.5;% Minor radius in meters.
 Ro = 1.5; % Major radius in meters.
+a = 0.5;% Minor radius in meters.
 qa = 2.0; % Safety factor at the separatrix (r=a)
 qo = 1.6; % Safety factor at the magnetic axis.
 lamb = a/sqrt(qa/qo - 1);
@@ -892,7 +894,7 @@ function E = analyticalE(X)
 narginchk(1,2);
 
 % Parameters of the analytical magnetic field
-Eo = -0.0;
+Eo = 0.0;
 Ro = 1.5; % Major radius in meters.
 % Parameters of the analytical magnetic field
 
@@ -948,6 +950,7 @@ POINCARE.T = [];
 POINCARE.pitch = [];
 
 k = zeros(1,ST.params.numSnapshots); % Curvature
+kapp = zeros(1,ST.params.numSnapshots); % Approximation of the curvature
 T = zeros(1,ST.params.numSnapshots); % Torsion
 vpar = zeros(1,ST.params.numSnapshots); % parallel velocity
 vperp = zeros(1,ST.params.numSnapshots); % perpendicular velocity
@@ -1015,6 +1018,13 @@ mu(1) = m*gamma^2*vperp(1)^2/(2*B_mag);
 vmag = sqrt( sum(v(1,:).^2) );
 aux =  cross(v(1,:),E) + v(1,:)*sum(v(1,:).*B) - B*vmag^2;
 k(1) = abs(q)*sqrt( sum(aux.^2) )/(gamma*m*vmag^3);
+
+pitch = atan2(vperp(1),vpar(1));
+if (pitch < 0)
+    pitch = pitch + 2*pi;
+end
+% kapp(1) = abs(q)*B_mag*sin(pitch)/sqrt(ppar(1)^2 + pperp(1)^2);
+kapp(1) = abs(q)*sin(pitch)/sqrt(ppar(1)^2 + pperp(1)^2);% Bo = 1 due to normalization
 curv = k(1);
 % Curvature and torsion
 
@@ -1200,6 +1210,14 @@ for ii=2:ST.params.numSnapshots
     mu(ii) = m*gamma^2*vperp(ii)^2/(2*B_mag);
     
     k(ii) = curv;
+    
+    pitch = atan2(vperp(ii),vpar(ii));
+    if (pitch < 0)
+        pitch = pitch + 2*pi;
+    end
+%     kapp(ii) = abs(q)*B_mag*sin(pitch)/sqrt(ppar(ii)^2 + pperp(ii)^2);
+    kapp(ii) = abs(q)*sin(pitch)/sqrt(ppar(ii)^2 + pperp(ii)^2);% Bo = 1 due to normalization
+    
 	Psyn(ii) = -(2/3)*( Kc*q^2*gamma^4*vmag^4*curv^2 );
             
     fL(ii) = abs(q)*sqrt( vec*vec' );
@@ -1307,10 +1325,14 @@ PP.vpar = vpar;
 PP.vperp = vperp;
 
 PP.k = k/ST.norm.l; % curvature
+PP.kapp = kapp/ST.norm.l; % curvature
 PP.T = T/ST.norm.l; % curvature
 
 PP.gamma = EK;
 PP.mu = mu;
+
+Psyn = Psyn*ST.norm.m*ST.params.c^3/ST.norm.l;
+WR = WR*ST.norm.m*ST.params.c^3/ST.norm.l;
 
 POINCARE.R = POINCARE.R*ST.norm.l;
 POINCARE.Z = POINCARE.Z*ST.norm.l;
@@ -1323,7 +1345,7 @@ PP.POINCARE = POINCARE;
 if ST.opt
     figure
     subplot(2,1,1)
-    plot(time, PP.k)
+    plot(time,PP.k,'k',time,PP.kapp,'r')
     box on
     grid on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
@@ -1388,11 +1410,11 @@ if ST.opt
     ylabel('$|W_L|$','Interpreter','latex','FontSize',16)
     title(PP.method,'Interpreter','latex','FontSize',16)
     subplot(4,1,2)
-    plot(time,WR,'k',time,Psyn,'r')
+    plot(time,abs(WR),'k',time,abs(Psyn),'r')
     box on
     grid on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-    ylabel('$|W_R|$','Interpreter','latex','FontSize',16)
+    ylabel('$P_{syn}$ (Watts)','Interpreter','latex','FontSize',16)
      subplot(4,1,3)
     plot(time, WC)
     box on
@@ -2044,39 +2066,71 @@ function P = synchrotronSpectrum(ST)
 disp('Calculating spectrum of synchrotron radiation...')
 P = struct;
 N = 100;
-lambda_min = 1E-10;
-intLimit = 50;
+
+upper_integration_limit = 100.0;
+
+lambda_min = 1E-9;
+
 if isfield(ST.PP,'k')
     c = 1E2*ST.params.c;
     qe = 3E9*abs(ST.params.q);
     m = 1E3*ST.params.m;
-    
-    lambda_min = 1E2*lambda_min;
-    
+        
     E = m*c^2*ST.PP.gamma + m*c^2;
     Eo = m*c^2;
     
-    E = 1E7*E;
-    Eo = 1E7*Eo;
+    E = 1E7*E; % Energy in erg
+    Eo = 1E7*Eo; % Energy in erg
     
     k = ST.PP.k/1E2;
+    k_app = ST.PP.kapp/1E2;
+    
+    lambda_min = 1E2*lambda_min;
     
     P.lambdac = (4/3)*pi*(Eo./E).^3./k;
     lambdao = c*k;
     
+    P.lambdac_app = (4/3)*pi*(Eo./E).^3./k_app;
+    lambdao_app = c*k_app;
+    
     P.lambda = zeros(ST.params.numSnapshots,N);
     P.Psyn = zeros(ST.params.numSnapshots,N);
+    P.lambda_app = zeros(ST.params.numSnapshots,N);
+    P.Psyn_app = zeros(ST.params.numSnapshots,N);
+    
+    Ptot = zeros(1,ST.params.numSnapshots);
+    
+    Q = zeros(ST.params.numSnapshots,N);
+    Qapp = zeros(ST.params.numSnapshots,N);
+    
     Co = sqrt(27)*c*qe^2/2;
     fun = @(x) besselk(5/3,x);
     for ii=1:ST.params.numSnapshots
         P.lambda(ii,:) = linspace(lambda_min,P.lambdac(ii),N);
+        P.lambda_app(ii,:) = linspace(lambda_min,P.lambdac_app(ii),N);
         for jj=1:N
-            Q = integral(fun,P.lambdac(ii)/P.lambda(ii,jj),intLimit);
-            A1 = P.lambdac(ii)^2/(lambdao(ii)*P.lambda(ii,jj)^3);
-            A2 = (E(ii)/Eo)^4;
-            P.Psyn(ii,jj) =  Co*k(ii)*A2*A1*Q;
+            if (P.lambdac(ii)/P.lambda(ii,jj) > upper_integration_limit)
+                P.Psyn(ii,jj) = 0;
+            else
+                Q(ii,jj) = integral(fun,P.lambdac(ii)/P.lambda(ii,jj),upper_integration_limit);
+                A1 = P.lambdac(ii)^2/(lambdao(ii)*P.lambda(ii,jj)^3);
+                A2 = (E(ii)/Eo)^4;
+                P.Psyn(ii,jj) =  Co*k(ii)*A2*A1*Q(ii,jj);
+            end
+            
+            if (P.lambdac(ii)/P.lambda(ii,jj) > upper_integration_limit)
+                P.Psyn_app(ii,jj) = 0;
+            else
+                Qapp(ii,jj) = integral(fun,P.lambdac_app(ii)/P.lambda_app(ii,jj),upper_integration_limit);
+                A1 = P.lambdac_app(ii)^2/(lambdao_app(ii)*P.lambda_app(ii,jj)^3);
+                A2 = (E(ii)/Eo)^4;
+                P.Psyn_app(ii,jj) =  Co*k_app(ii)*A2*A1*Qapp(ii,jj);
+            end
         end
+        Ptot(ii) = sum(P.Psyn(ii,:));
     end
+    
+    % % % All variables below are in SI units
     
     lch = 1E7;
     Pch = 1E-7;
@@ -2085,38 +2139,60 @@ if isfield(ST.PP,'k')
     P.lambdac = lch*P.lambdac;
     P.Psyn = Pch*P.Psyn;
     k = 1E2*k;
+       
+    P.lambda_app = lch*P.lambda_app;
+    P.lambdac_app = lch*P.lambdac_app;
+    P.Psyn_app = Pch*P.Psyn_app;
+    k_app = 1E2*k_app;
     
+%     Ptot = Pch*Ptot;
+        
     [~,Imin] = min(k);
     [~,Imax] = max(k);
+    
+    [~,Jmin] = min(k_app);
+    [~,Jmax] = max(k_app);
     
     figure
     subplot(3,1,1)
     yyaxis left 
-    plot(ST.time,P.lambdac)
+    set(gca,'YColor',[0,0,1])
+    plot(ST.time,P.lambdac,'b-',ST.time,P.lambdac_app,'b--')
     box on; axis on
     ylabel('$\lambda_c$ (nm)','FontSize',14,'Interpreter','latex')
     yyaxis right 
-    plot(ST.time,k)
+    set(gca,'YColor',[1,0,0])
+    plot(ST.time,k,'r-',ST.time,k_app,'r--')
     ylabel('$\kappa$ (m$^{-1}$)','FontSize',14,'Interpreter','latex')
     xlabel('Time $t$ (s)','FontSize',14,'Interpreter','latex')
     subplot(3,1,2)
     plot(P.lambda(Imin,:),P.Psyn(Imin,:),'b',...
-        P.lambda(Imax,:),P.Psyn(Imax,:),'r')
-    legend({'$P_{syn}(\kappa_{min})$','$P_{syn}(\kappa_{max})$'},'Interpreter','latex','FontSize',14)
+        P.lambda(Imax,:),P.Psyn(Imax,:),'r',...
+        P.lambda_app(Jmin,:),P.Psyn_app(Imin,:),'b--',...
+        P.lambda_app(Jmax,:),P.Psyn_app(Imax,:),'r--')
+    legend({'$P_{syn}(\kappa_{min})$','$P_{syn}(\kappa_{max})$',...
+        '$P_{syn}(\kappa^*_{min})$','$P_{syn}(\kappa^*_{max})$'},...
+        'Interpreter','latex','FontSize',14)
     box on; axis on
     ylabel('$P_{syn}(\lambda)$ (Watts)','FontSize',14,'Interpreter','latex')
     xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
+%     xlim([450 950])
     subplot(3,1,3)
-    hold on
-    for ii=1:ST.params.numSnapshots
-        plot3(ST.time(ii)*ones(1,N),P.lambda(ii,:),P.Psyn(ii,:),'k')
-    end
-    axis([0 ST.time(end) min(min(P.lambda)) max(max(P.lambda)) min(min(P.Psyn)) max(max(P.Psyn)) ])
-    hold off
-    box on; axis on; view([64,38])
+    plot(ST.time,Ptot)
+    box on;grid on
+    ylabel('$P_{syn}(\lambda)$ (Watts)','FontSize',14,'Interpreter','latex')
     xlabel('Time $t$ (s)','FontSize',14,'Interpreter','latex')
-    ylabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
-    zlabel('$P_{syn}(\lambda)$ (Watts)','FontSize',14,'Interpreter','latex')
+    
+%     hold on
+%     for ii=1:ST.params.numSnapshots
+%         plot3(ST.time(ii)*ones(1,N),P.lambda(ii,:),P.Psyn(ii,:),'k')
+%     end
+%     axis([0 ST.time(end) min(min(P.lambda)) max(max(P.lambda)) min(min(P.Psyn)) max(max(P.Psyn)) ])
+%     hold off
+%     box on; axis on; view([64,38])
+%     xlabel('Time $t$ (s)','FontSize',14,'Interpreter','latex')
+%     ylabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
+%     zlabel('$P_{syn}(\lambda)$ (Watts)','FontSize',14,'Interpreter','latex')
 else
     error('Curvature not found!')
 end

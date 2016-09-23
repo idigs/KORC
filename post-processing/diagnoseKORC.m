@@ -37,8 +37,7 @@ ST.data = loadData(ST);
 
 % scatterPlots(ST);
 
-ST.NS = neoclassicalShift(ST);
-
+ST.P = synchrotronSpectrum(ST,true,false,8);
 
 % save('energy_limit','ST')
 end
@@ -94,7 +93,7 @@ end
 
 
 % list = {'eta','gamma','Prad','Pin','flag','mu'};
-list = {'eta','gamma','Prad','Pin','flag','mu'};
+list = {'eta','gamma','Prad','flag'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -155,11 +154,11 @@ set(h6,'name','Energy statistics','numbertitle','off')
         pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
 %         passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
 %         bool = pin & passing;
-        gamma = ST.data.(['sp' num2str(ss)]).gamma(pin,:);
-        tmp = zeros(size(gamma));
+        gammap = ST.data.(['sp' num2str(ss)]).gamma(pin,:);
+        tmp = zeros(size(gammap));
         for ii=1:size(tmp,1)
             tmp(ii,:) = ...
-                ( gamma(ii,:) - gamma(ii,1) )./gamma(ii,1);
+                ( gammap(ii,:) - gammap(ii,1) )./gammap(ii,1);
 %             tmp(ii,:) = ST.data.(['sp' num2str(ss)]).gamma(ii,:)./ST.data.(['sp' num2str(ss)]).gamma(ii,1);
         end
         err(:,ss) = mean(tmp,1);
@@ -184,7 +183,7 @@ set(h6,'name','Energy statistics','numbertitle','off')
         maxPin = Pin - std(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),0,1);
         
         eta = ST.data.(['sp' num2str(ss)]).eta(pin,:);
-        V = sqrt(1 - 1./gamma.^2); % in units of the speed of light
+        V = sqrt(1 - 1./gammap.^2); % in units of the speed of light
         Vpar = mean((V.*cos(eta)).^2,1);
         Vperp = mean((V.*sin(eta)).^2,1);
         
@@ -676,12 +675,6 @@ function poloidalPlaneDistributions(ST,nbins)
 N = 3;
 offset = floor(double(ST.params.simulation.num_snapshots+1)/N);
 
-% cad = ST.params.simulation.output_cadence;
-% time = ST.params.simulation.dt*double(0:cad:ST.params.simulation.t_steps);
-
-% m = figure;
-
-
 for ss=1:ST.params.simulation.num_species
     for ii=1:N
         it = ii*offset;
@@ -825,7 +818,7 @@ for ss=1:ST.params.simulation.num_species
     for ii=1:ST.params.simulation.num_snapshots+1
         X = squeeze( ST.data.(['sp' num2str(ss)]).X(:,pin,ii) );
         V = squeeze( ST.data.(['sp' num2str(ss)]).V(:,pin,ii) );
-        gamma = squeeze( ST.data.(['sp' num2str(ss)]).gamma(pin,ii) )';
+        gammap = squeeze( ST.data.(['sp' num2str(ss)]).gamma(pin,ii) )';
         
         
         % Toroidal coordinates
@@ -838,7 +831,7 @@ for ss=1:ST.params.simulation.num_species
         % Toroidal coordinates
 
         eta = r/Ro;
-        wc = q*Bo./(m*gamma);
+        wc = q*Bo./(m*gammap);
 
         dzeta_dt = (X(2,:).*V(1,:) - X(1,:).*V(2,:))./( X(1,:).^2 + X(2,:).^2 );
     
@@ -920,8 +913,8 @@ for ss=1:ST.params.simulation.num_species
     aux = find(pin == 1);
     
     Bo = squeeze( sqrt( sum(ST.data.(['sp' num2str(ss)]).B(:,pin,1).^2,1) ) );
-    gamma = ST.data.(['sp' num2str(ss)]).gamma(pin,1)';
-    wc = abs(q)*Bo./(gamma*m);
+    gammap = ST.data.(['sp' num2str(ss)]).gamma(pin,1)';
+    wc = abs(q)*Bo./(gammap*m);
     Tc = 2*pi./wc;
     I = zeros(size(Bo));
     B = zeros(size(Bo));
@@ -959,7 +952,7 @@ for ss=1:ST.params.simulation.num_species
     R = sqrt( sum(X(1:2,:).^2,1) );
     Z = X(3,:);
 
-    S = 12*ones(size(gamma));
+    S = 12*ones(size(gammap));
     h=figure('Visible',ST.visible,'units','normalized','OuterPosition',[0.1,0.25,0.75,0.4]);
     set(h,'name',['Change of B-field: sp' num2str(ss)],'numbertitle','off')
     subplot(1,3,1)
@@ -1380,14 +1373,14 @@ for ss=1:ST.params.simulation.num_species
     
     V = ST.data.(['sp' num2str(ss)]).V(:,bool,:);
     v = squeeze( sqrt( sum(V.^2,1) ) );
-    gamma = ST.data.(['sp' num2str(ss)]).gamma(bool,:);
+    gammap = ST.data.(['sp' num2str(ss)]).gamma(bool,:);
     eta = pi*ST.data.(['sp' num2str(ss)]).eta(bool,:)/180;
     
-    gammao = repmat(ST.params.species.gammao(ss),S,ST.params.simulation.num_snapshots+1);
-    vo = ST.params.scales.v*sqrt(1 - 1./gammao.^2);
+    gammapo = repmat(ST.params.species.gammao(ss),S,ST.params.simulation.num_snapshots+1);
+    vo = ST.params.scales.v*sqrt(1 - 1./gammapo.^2);
     etao = pi*repmat(ST.params.species.etao(ss),S,ST.params.simulation.num_snapshots+1)/180;
     
-%     gammao = gamma;
+%     gammapo = gammap;
 %     etao = eta;
 %     vo = v;
     
@@ -1399,9 +1392,9 @@ for ss=1:ST.params.simulation.num_species
     end
     E = analyticalE(ST,X);
     
-    vec_mag = zeros(size(gamma));
+    vec_mag = zeros(size(gammap));
     for it=1:size(X,3)
-        for ii=1:size(gamma,1)
+        for ii=1:size(gammap,1)
             VxE = cross(squeeze(V(:,ii,it)),squeeze(E(:,ii,it)));
             VxB = cross(squeeze(V(:,ii,it)),squeeze(B(:,ii,it)));
             VxVxB = cross(squeeze(V(:,ii,it)),VxB);
@@ -1412,25 +1405,25 @@ for ss=1:ST.params.simulation.num_species
 
     % Approximation of <1/R^2> ~ sin^4(eta)/rg^2
     vperp = vo.*sin(etao);
-    wc = q*ST.params.fields.Bo./(gammao*m);
+    wc = q*ST.params.fields.Bo./(gammapo*m);
     rg = vperp./wc;
     kappa2 = sin(etao).^4./rg.^2;
  
     % Actual curvature
-    kappa = q*vec_mag./(m*gamma.*v.^3);    
+    kappa = q*vec_mag./(m*gammap.*v.^3);    
 
     % Landau-Lifshiftz radiation formula
     PR_LL = abs(ST.data.(['sp' num2str(ss)]).Prad(bool,:));
     
     % Larmor approximation using actual curvature
-%     PR_L = 2*Kc*q^2*(gamma.*v).^4.*kappa.^2/(3*c^3);
+%     PR_L = 2*Kc*q^2*(gammap.*v).^4.*kappa.^2/(3*c^3);
     Tr = 6*pi*ep*(m*ST.params.scales.v)^3./(q^4*squeeze(sum(B.^2,1)));
-    PR_L = gamma.*v.*(m*gamma.*v).*sin(eta).^2./Tr;
+    PR_L = gammap.*v.*(m*gammap.*v).*sin(eta).^2./Tr;
     
     % Larmor approximation using approximation for curvature
-%     PR_app = 2*Kc*q^2*(gammao.*v).^4.*kappa2/(3*c^3);
+%     PR_app = 2*Kc*q^2*(gammapo.*v).^4.*kappa2/(3*c^3);
     Tr = 6*pi*ep*(m*ST.params.scales.v)^3/(q^4*ST.params.fields.Bo^2);
-    PR_app = gammao.*vo.*(m*gammao.*vo).*sin(etao).^2/Tr;
+    PR_app = gammapo.*vo.*(m*gammapo.*vo).*sin(etao).^2/Tr;
     
     figure(h1)
     subplot(double(ST.params.simulation.num_species),1,double(ss))
@@ -1586,36 +1579,255 @@ saveas(h,[ST.path 'scatter_plot_E_vs_pitch'],'fig')
 
 end
 
-function NS = neoclassicalShift(ST)
-NS = struct;
-
-Ro = ST.params.fields.Ro;
-Bo = ST.params.fields.Bo;
-lambda = ST.params.fields.lambda;
-qo = ST.params.fields.qo;
-a = ST.params.fields.a;
-
-NS.Rmax = zeros(1,ST.params.simulation.num_species);
-
-for ss=1:ST.params.simulation.num_species
-    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
-    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
-    bool = pin & passing;
-    
-    if all(pin == bool)
-        X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,1));
-        R = sqrt( sum(X(1:2,:).^2,1) );
-        Z = X(3,:);
-        
-        NS.Rmax(ss) = max(R);
-    end
-end
-
-end
-
-function P = synchrotronSpectrum(ST)
+function P = synchrotronSpectrum(ST,opt1,opt2,poolsize)
 disp('Calculating spectrum of synchrotron radiation...')
 P = struct;
+
+Nr = 25;
+Ntheta = 80;
+Psyn = zeros(Ntheta,Nr);
+
+upper_integration_limit = 100.0;
+
+N = 25;
+lambda_min = 450E-9;% in meters
+lambda_max = 950E-9;% in meters
+lambda_camera = linspace(lambda_min,lambda_max,N);
+Dlambda_camera = mean(diff(lambda_camera));
+
+lambda_camera = 1E2*lambda_camera;
+
+rmin = 0;
+rmax = ST.params.fields.a;
+
+% Poloidal distribution of the total radiated power
+for ss=1:ST.params.simulation.num_species
+% for ss=2:2
+    q = abs(ST.params.species.q(ss));
+    m = ST.params.species.m(ss);
+    Ro = ST.params.fields.Ro;
+    
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
+    bool = pin;% & passing;
+    aux = find(bool == 1);
+    numPart = numel(aux);
+    
+    it = ST.params.simulation.num_snapshots + 1;
+%     it = 1;
+    
+    X = ST.data.(['sp' num2str(ss)]).X(:,bool,it);
+    V = ST.data.(['sp' num2str(ss)]).V(:,bool,it);
+    v = squeeze( sqrt( sum(V.^2,1) ) )';
+    gammap = ST.data.(['sp' num2str(ss)]).gamma(bool,it);
+    eta = pi*ST.data.(['sp' num2str(ss)]).eta(bool,it)/180;
+    Prad = abs(ST.data.(['sp' num2str(ss)]).Prad(bool,it));
+    
+    
+    % Toroidal coordinates
+    % r = radius, theta = poloidal angle, zeta = toroidal angle
+    r = squeeze(sqrt( (sqrt(sum(X(1:2,:).^2,1)) - Ro).^2 + X(3,:).^2));
+    theta = atan2(squeeze(X(3,:)),squeeze(sqrt(sum(X(1:2,:).^2,1)) - Ro));
+    theta(theta<0) = theta(theta<0) + 2*pi;
+    %         zeta = atan2(squeeze(X(1,:,:)),squeeze(X(2,:,:)));
+    %         zeta(zeta<0) = zeta(zeta<0) + 2*pi;
+    % Toroidal coordinates
+    
+    Dr = (rmax - rmin)/Nr;
+    r_grid = 0.5*Dr + (0:1:(Nr-1))*Dr;
+    
+    Dtheta = 2*pi/Ntheta;
+    theta_grid = 0.5*Dtheta + (0:1:(Ntheta-1))*Dtheta;
+    
+    ir = floor(r/Dr) + 1;
+    itheta = floor(theta/Dtheta) + 1;
+    
+    % % % Set-up of the grid of the poloidal plane
+    x_grid = zeros(Ntheta,Nr);
+    y_grid = zeros(Ntheta,Nr);
+    for ii=1:Nr
+        for jj=1:Ntheta
+            x_grid(jj,ii) = Ro + r_grid(ii)*cos(theta_grid(jj));
+            y_grid(jj,ii) = r_grid(ii)*sin(theta_grid(jj));
+        end
+    end
+    
+
+    % % % Option for calculating the total Psyn WITHOUT wavelength filtering
+    if (opt2)
+        Psyn = zeros(Ntheta,Nr);
+        for ii=1:numPart
+            try
+                Psyn(itheta(ii),ir(ii)) = Psyn(itheta(ii),ir(ii)) + ...
+                    Prad(ii);
+            catch
+                disp(['sp:' num2str(ss) ' ' num2str(ir(ii)) ' ' num2str(itheta(ii))])
+            end
+        end
+        
+        figure
+        surf(x_grid,y_grid,Psyn,'LineStyle','none')
+        colormap(jet(512))
+        h = colorbar;
+        ylabel(h,'$P_{syn}$ (Watts)','Interpreter','latex','FontSize',16)
+        view([0,90])
+        axis square; box on
+        shading interp
+        xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+        ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
+        title(['$\theta_0 = $' num2str(ST.params.species.etao(ss)) '$^\circ$'],...
+            'Interpreter','latex','FontSize',16)
+    end
+    
+    
+    % % % Option for calculating the total Psyn WITH wavelength filtering
+    if (opt1)
+        try
+            B = ST.data.(['sp' num2str(ss)]).B(:,bool,it);
+        catch
+            B = analyticalB(ST,X);
+        end
+        E = analyticalE(ST,X);
+        
+        vec_mag = zeros(size(gammap));
+        
+%         parfor ii=1:numPart
+        for ii=1:numPart
+            VxE = cross(squeeze(V(:,ii)),squeeze(E(:,ii)));
+            VxB = cross(squeeze(V(:,ii)),squeeze(B(:,ii)));
+            VxVxB = cross(squeeze(V(:,ii)),VxB);
+            vec = VxE + VxVxB;
+            vec_mag(ii) = sqrt( vec'*vec );
+        end
+        
+        % Approximation of the curvaturetrue
+        p = m*gammap.*v;
+        k_app = q*ST.params.fields.Bo*sin(eta)./p;
+        
+        % Actual curvature
+        k = q*vec_mag./(m*gammap.*v.^3);
+        
+        % % % % Beyond this point all variables are in cgs units % % % %
+        c = 1E2*ST.params.scales.v;
+        qe = 3E9*q;
+        m = 1E3*m;
+        
+        E = m*c^2*gammap + m*c^2;
+        Eo = m*c^2;
+        
+        E = 1E7*E;
+        Eo = 1E7*Eo;
+        
+        k = k/1E2;
+%         k_app = k_app/1E2;
+        
+        lambdac = (4/3)*pi*(Eo./E).^3./k;
+        lambdao = c*k;
+        
+        I = find(lambdac > lambda_min);
+        numEmittingPart = numel(I);
+         
+        Psyn_camera = zeros(numEmittingPart,N);
+        disp('Decomposing radiation in wavelengths...')
+        
+        Co = sqrt(27)*c*qe^2/2;
+        fun = @(x) besselk(5/3,x);
+        for ii=1:numEmittingPart
+%             parfor jj=1:N
+            for jj=1:N
+                if ( lambda_camera(jj) > lambdac(I(ii)) )
+                    Psyn_camera(ii,jj) =  0;
+                else
+                    lower_integration_limit = lambdac(I(ii))/lambda_camera(jj);
+                    Q = integral(fun,lower_integration_limit,upper_integration_limit);
+                    A1 = lambdac(I(ii))^2/(lambdao(I(ii))*lambda_camera(jj)^3);
+                    A2 = (E(I(ii))/Eo)^4;
+                    Psyn_camera(ii,jj) =  Co*k(I(ii))*A2*A1*Q;
+                end
+            end
+        end
+        
+        lch = 1E7;
+        Pch = 1E-7;
+        
+        lambdac = lch*lambdac;
+        Psyn_camera = Pch*Psyn_camera;
+        k = 1E2*k;
+        
+        % % % % Beyond this point all variables are in SI units % % % %
+        
+        ind_part = 1:1:numEmittingPart;
+                
+%         Psyn = zeros(Ntheta,Nr);
+        disp('Calculating poloidal plane...')
+        for ii=1:numEmittingPart
+            try
+%                 Psyn(itheta(I(ii)),ir(I(ii))) = Psyn(itheta(I(ii)),ir(I(ii))) + ...
+%                     Dlambda_camera*sum(Psyn_camera(ii,:));
+                
+                Psyn(itheta(I(ii)),ir(I(ii))) = Psyn(itheta(I(ii)),ir(I(ii))) + ...
+                    sum(Psyn_camera(ii,:));
+            catch
+                disp(['sp:' num2str(ss) ' ' num2str(ir(I(ii))) ' ' num2str(itheta(I(ii)))])
+            end
+        end
+        
+        figure
+        subplot(3,1,1)
+        yyaxis left
+        set(gca,'YColor',[0,0,1])
+        plot(ind_part,lambdac(I),'b-')
+        box on; axis on
+        ylabel('$\lambda_c$ (nm)','FontSize',14,'Interpreter','latex')
+        yyaxis right
+        set(gca,'YColor',[1,0,0])
+        plot(ind_part,k(I),'r-')
+        ylabel('$\kappa$ (m$^{-1}$)','FontSize',14,'Interpreter','latex')
+        xlabel('Particle number','FontSize',14,'Interpreter','latex')
+        title(['$\theta_0$ = ' num2str(ST.params.species.etao(ss)) '$^\circ$'],...
+            'FontSize',14,'Interpreter','latex')
+        
+        subplot(3,1,2)
+        plot(lambda_camera*lch,mean(Psyn_camera,1),'b-')
+        ylabel('$P_{syn}(\lambda)$ (Watts)','FontSize',14,'Interpreter','latex')
+        xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
+        
+        subplot(3,1,3)
+        surf(x_grid,y_grid,Psyn,'LineStyle','none')
+        colormap(jet(512))
+        h = colorbar;
+        ylabel(h,'$P_{syn}$ (Watts)','Interpreter','latex','FontSize',16)
+        view([0,90])
+        axis square; box on
+        shading interp
+        xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+        ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
+        title(['$\theta_0 = $' num2str(ST.params.species.etao(ss)) '$^\circ$'],...
+            'Interpreter','latex','FontSize',16)
+
+    end
+    
+end
+
+
+
+
+
+% % % % Final figures % % % %
+
+if (opt2)
+    figure
+    surf(x_grid,y_grid,Psyn,'LineStyle','none')
+    colormap(jet(512))
+    h = colorbar;
+    ylabel(h,'$P_{syn}$ (Watts)','Interpreter','latex','FontSize',16)
+    view([0,90])
+    axis square; box on
+    shading interp
+    xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+    ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
+end
+
 disp('Spectrum of synchrotron radiation: done!')
 end
 
