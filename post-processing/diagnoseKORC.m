@@ -1592,8 +1592,8 @@ upper_integration_limit = 100.0;
 N = 10;
 % lambda_min = 450E-9;% in meters
 % lambda_max = 950E-9;% in meters
-lambda_min = 745E-9;% in meters
-lambda_max = 749E-9;% in meters
+lambda_min = 895E-9;% in meters
+lambda_max = 905E-9;% in meters
 lambda_camera = linspace(lambda_min,lambda_max,N);
 Dlambda_camera = mean(diff(lambda_camera));
 
@@ -1736,12 +1736,10 @@ for ss=1:ST.params.simulation.num_species
         C0 = 4*pi*c*qe^2/sqrt(3);
         fun = @(x) besselk(5/3,x);
         for ii=1:numEmittingPart
-%             parfor jj=1:N
+            %             parfor jj=1:N
             for jj=1:N
-                if ( lambda_camera(jj) > lambdac(I(ii)) )
-                    Psyn_camera(ii,jj) =  0;
-                else
-                    lower_integration_limit = lambdac(I(ii))/lambda_camera(jj);
+                lower_integration_limit = lambdac(I(ii))/lambda_camera(jj);
+                if (lambda_camera(jj) < lambdac(I(ii))) && (lower_integration_limit < upper_integration_limit)
                     Q = integral(fun,lower_integration_limit,upper_integration_limit);
                     C1 = (Eo/E(ii))^2/lambda_camera(jj)^3;
                     Psyn_camera(ii,jj) =  C0*C1*Q;
