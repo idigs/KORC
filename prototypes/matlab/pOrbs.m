@@ -1331,8 +1331,9 @@ PP.T = T/ST.norm.l; % curvature
 PP.gamma = EK;
 PP.mu = mu;
 
+PP.Psyn = WR*ST.norm.m*ST.params.c^3/ST.norm.l;
 Psyn = Psyn*ST.norm.m*ST.params.c^3/ST.norm.l;
-WR = WR*ST.norm.m*ST.params.c^3/ST.norm.l;
+
 
 POINCARE.R = POINCARE.R*ST.norm.l;
 POINCARE.Z = POINCARE.Z*ST.norm.l;
@@ -1410,7 +1411,7 @@ if ST.opt
     ylabel('$|W_L|$','Interpreter','latex','FontSize',16)
     title(PP.method,'Interpreter','latex','FontSize',16)
     subplot(4,1,2)
-    plot(time,abs(WR),'k',time,abs(Psyn),'r')
+    plot(time,abs(PP.Psyn),'k',time,abs(Psyn),'r')
     box on
     grid on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
@@ -1422,7 +1423,7 @@ if ST.opt
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
     ylabel('$|W_{coll}|$','Interpreter','latex','FontSize',16)
     subplot(4,1,4)
-    plot(time, abs(WR./WL))
+    plot(time, abs(PP.Psyn./WL))
     box on
     grid on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
@@ -1773,7 +1774,7 @@ V = ST.PP.v;
 r = sqrt( (sqrt(X(:,1).^2 + X(:,2).^2) - Ro).^2 + X(:,3).^2 );
 eta = r/Ro;
 theta = atan2(X(:,3),sqrt(X(:,1).^2 + X(:,2).^2) - Ro);
-theta(theta < 0) = theta(theta < 0) + 2*pi;
+theta(theta < 0) = theta(theta < 0) + 2*pi;P.lambda(ii,:)
 zeta = atan2(X(:,1),X(:,2));
 zeta(zeta < 0) = zeta(zeta < 0) + 2*pi;
 % Toroidal coordinates
@@ -2066,6 +2067,8 @@ function P = synchrotronSpectrum(ST)
 disp('Calculating spectrum of synchrotron radiation...')
 P = struct;
 N = 100;
+Npsi = 10;
+psi = (pi/180)*linspace(0,5,Npsi);
 
 upper_integration_limit = 100.0;
 
@@ -2076,27 +2079,29 @@ if isfield(ST.PP,'k')
     qe = 3E9*abs(ST.params.q);
     m = 1E3*ST.params.m;
         
-    E = m*c^2*ST.PP.gamma + m*c^2;
+    gammap = ST.PP.gamma;
+    E = m*c^2*gammap + m*c^2;
     Eo = m*c^2;
     
     E = 1E7*E; % Energy in erg
     Eo = 1E7*Eo; % Energy in erg
     
-    k = ST.PP.k/1E2;
-    k_app = ST.PP.kapp/1E2;
+    k = ST.PP.k/1E2; % in cm^-1
+    k_app = ST.PP.kapp/1E2; % in cm^-1
     
-    lambda_min = 1E2*lambda_min;
+    lambda_min = 1E2*lambda_min; % in cm
     
     P.lambdac = (4/3)*pi*(Eo./E).^3./k;
-%     lambdao = 2*pi./k;
     
     P.lambdac_app = (4/3)*pi*(Eo./E).^3./k_app;
-%     lambdao_app = 2*pi./k_app;
     
     P.lambda = zeros(ST.params.numSnapshots,N);
     P.Psyn = zeros(ST.params.numSnapshots,N);
     P.lambda_app = zeros(ST.params.numSnapshots,N);
     P.Psyn_app = zeros(ST.params.numSnapshots,N);
+    
+    P.Psyn_psi = zeros(ST.params.numSnapshots,Npsi);
+    P.Psyn_psi_lambda = zeros(ST.params.numSnapshots,Npsi,N);
     
     Ptot = zeros(1,ST.params.numSnapshots);
     
@@ -2108,24 +2113,37 @@ if isfield(ST.PP,'k')
     for ii=1:ST.params.numSnapshots
         P.lambda(ii,:) = linspace(lambda_min,P.lambdac(ii),N);
         P.lambda_app(ii,:) = linspace(lambda_min,P.lambdac_app(ii),N);
+        
+        x = (gammap(ii)*psi).^2;        
+        A0 = c*qe^2*k(ii)^2*gammap(ii)^5;
+        P.Psyn_psi(ii,:) = A0*(1 + x).^(-5/2).*( 7/16 +...
+            (5/16)*x./(1+x) );
+        
         for jj=1:N
-            if (P.lambdac(ii)/P.lambda(ii,jj) > upper_integration_limit)
-                P.Psyn(ii,jj) = 0;
-            else
-                Q(ii,jj) = integral(fun,P.lambdac(ii)/P.lambda(ii,jj),upper_integration_limit);
+            lower_integration_limit = P.lambdac(ii)/P.lambda(ii,jj);
+            if (lower_integration_limit < upper_integration_limit)
+                Q(ii,jj) = integral(fun,lower_integration_limit,upper_integration_limit);
                 C1 = (Eo/E(ii))^2/P.lambda(ii,jj)^3;
                 P.Psyn(ii,jj) =  C0*C1*Q(ii,jj);
+                
+                zeta = 0.5*lower_integration_limit*(1 + x).^(3/2);
+                
+                D0 = 3*c*qe^2*k(ii)/(2*pi*P.lambda(ii,jj)^2);
+                P.Psyn_psi_lambda(ii,:,jj) = ...
+                    D0*lower_integration_limit^2*gammap(ii)^2*(1 + x).^2.*(besselk(2/3,zeta).^2 + ...
+                    (x./(1 + x)).*besselk(1/3,zeta).^2);
             end
             
-            if (P.lambdac(ii)/P.lambda(ii,jj) > upper_integration_limit)
-                P.Psyn_app(ii,jj) = 0;
-            else
-                Qapp(ii,jj) = integral(fun,P.lambdac_app(ii)/P.lambda_app(ii,jj),upper_integration_limit);
+            lower_integration_limit_app = P.lambdac_app(ii)/P.lambda_app(ii,jj);
+            if (lower_integration_limit_app < upper_integration_limit)
+                Qapp(ii,jj) = integral(fun,lower_integration_limit_app,upper_integration_limit);
                 C1 = (Eo/E(ii))^2/P.lambda_app(ii,jj)^3;
                 P.Psyn_app(ii,jj) =  C0*C1*Qapp(ii,jj);
             end
         end
-        Ptot(ii) = trapz(P.lambda(ii,:),P.Psyn(ii,:));
+        
+%         Ptot(ii) = trapz(P.lambda(ii,:),P.Psyn(ii,:));
+        Ptot(ii) = trapz(psi,P.Psyn_psi(ii,:));
     end
     
     % % % All variables below are in SI units
@@ -2133,26 +2151,33 @@ if isfield(ST.PP,'k')
     lch = 1E7;
     Pch = 1E-7;
     
+    lambda_min = lch*lambda_min;
+    
     P.lambda = lch*P.lambda;
-    P.lambdac = lch*P.lambdac;
+    P.lambdac = lch*P.lambdac;    
     P.Psyn = Pch*P.Psyn;
     k = 1E2*k;
+    
+    psi = (180/pi)*psi;
+    P.Psyn_psi = Pch*P.Psyn_psi;
+    P.Psyn_psi_lambda = Pch*P.Psyn_psi_lambda;
        
     P.lambda_app = lch*P.lambda_app;
     P.lambdac_app = lch*P.lambdac_app;
     P.Psyn_app = Pch*P.Psyn_app;
     k_app = 1E2*k_app;
     
-    Ptot = Pch*Ptot;
-        
+    Ptot = 2*Pch*Ptot;
+            
     [~,Imin] = min(k);
     [~,Imax] = max(k);
     
     [~,Jmin] = min(k_app);
     [~,Jmax] = max(k_app);
     
+
     figure
-    subplot(3,1,1)
+    subplot(3,2,[1 2])
     yyaxis left 
     set(gca,'YColor',[0,0,1])
     plot(ST.time,P.lambdac,'b-',ST.time,P.lambdac_app,'b--')
@@ -2163,7 +2188,8 @@ if isfield(ST.PP,'k')
     plot(ST.time,k,'r-',ST.time,k_app,'r--')
     ylabel('$\kappa$ (m$^{-1}$)','FontSize',14,'Interpreter','latex')
     xlabel('Time $t$ (s)','FontSize',14,'Interpreter','latex')
-    subplot(3,1,2)
+    
+    subplot(3,2,[3 4])
     plot(P.lambda(Imin,:),P.Psyn(Imin,:),'b',...
         P.lambda(Imax,:),P.Psyn(Imax,:),'r',...
         P.lambda_app(Jmin,:),P.Psyn_app(Imin,:),'b--',...
@@ -2175,22 +2201,39 @@ if isfield(ST.PP,'k')
     ylabel('$P_{syn}(\lambda)$ (Watts)','FontSize',14,'Interpreter','latex')
     xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
 %     xlim([450 950])
-    subplot(3,1,3)
-    plot(ST.time,Ptot)
+    xlim([lambda_min, max([max(P.lambdac) max(P.lambdac_app)])])
+    
+    subplot(3,2,5)
+    plot(ST.time,abs(ST.PP.Psyn),'k',ST.time,Ptot,'r')
+    legend({'$P_{LL}(t)$','$P_{syn}(t)$'},...
+        'Interpreter','latex','FontSize',14)
     box on;grid on
     ylabel('$P_{syn}(\lambda)$ (Watts)','FontSize',14,'Interpreter','latex')
     xlabel('Time $t$ (s)','FontSize',14,'Interpreter','latex')
     
-%     hold on
-%     for ii=1:ST.params.numSnapshots
-%         plot3(ST.time(ii)*ones(1,N),P.lambda(ii,:),P.Psyn(ii,:),'k')
+%     subplot(3,2,6)
+%     plot(ST.time,P.Psyn_psi)
+%     L = cell(1,Npsi);
+%     for pp=1:Npsi
+%         L{pp} = ['$\psi =' num2str(psi(pp)) '^\circ$'];
 %     end
-%     axis([0 ST.time(end) min(min(P.lambda)) max(max(P.lambda)) min(min(P.Psyn)) max(max(P.Psyn)) ])
-%     hold off
-%     box on; axis on; view([64,38])
-%     xlabel('Time $t$ (s)','FontSize',14,'Interpreter','latex')
-%     ylabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
-%     zlabel('$P_{syn}(\lambda)$ (Watts)','FontSize',14,'Interpreter','latex')
+%     legend(L,'Interpreter','latex','FontSize',14)
+%     box on;grid on
+%     ylabel('$P_{syn}(\psi,t)$ (Watts)','FontSize',14,'Interpreter','latex')
+%     xlabel('Time $t$ (s)','FontSize',14,'Interpreter','latex')    
+
+    subplot(3,2,6)
+    A = squeeze(P.Psyn_psi_lambda(Imax,:,:))';
+    plot(P.lambda(Imax,:),A)
+    L = cell(1,Npsi);
+    for pp=1:Npsi
+        L{pp} = ['$\psi =' num2str(psi(pp)) '^\circ$'];
+    end
+    legend(L,'Interpreter','latex','FontSize',14)
+    box on;grid on
+    ylabel('$P_{syn}(\psi,t)$ (Watts)','FontSize',14,'Interpreter','latex')
+    xlabel('Time $t$ (s)','FontSize',14,'Interpreter','latex')    
+
 else
     error('Curvature not found!')
 end
