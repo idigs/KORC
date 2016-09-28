@@ -11,10 +11,10 @@ lambda_min = 450E-9; % in meters
 lambda_max = 950E-9; % in meters
 % lambda_min = 1E-9; % in meters
 % lambda_max = 1000E-9; % in meters
-Nlambda = 100;
+Nlambda = 200;
 lambda = linspace(lambda_min,lambda_max,Nlambda);
 
-NE = 100;
+NE = 200;
 % Npitch = 9;
 
 upper_integration_limit = 100;
@@ -28,12 +28,14 @@ gammap = E/Eo;
 
 p = sqrt(E.^2 - (Eo)^2)/c;
 
-% pitch = (pi/180)*linspace(1,90,Npitch); % Pitch angle in radians
-pitch = (pi/180)*[5,10,20,30,40,50,60,70,80];
-Npitch = numel(pitch);
+Npitch = 50;
+pitch = (pi/180)*linspace(1,80,Npitch); % Pitch angle in radians
+ 
+% pitch = (pi/180)*[5,10,20,30,40,50,60,70,80];
+% Npitch = numel(pitch);
 
 % Emission angle
-Npsi = 10;
+Npsi = 20;
 psi = (pi/180)*linspace(0,5,Npsi);
 
 
@@ -59,13 +61,13 @@ R = 1E2*R;
 k = 1E-2*k;
 
 lambdac = zeros(NE,Npitch);
-wc = zeros(NE,Npitch);
+% wc = zeros(NE,Npitch);
 Psyn = zeros(Nlambda,NE,Npitch);
 Psyn_tot = zeros(NE,Npitch);
 
 for ii=1:NE
     lambdac(ii,:) = (4*pi/3)*R(ii,:).*(Eo./E(ii)).^3;
-    wc(ii,:) = 2*pi*c./lambdac(ii,:);
+%     wc(ii,:) = 2*pi*c./lambdac(ii,:);
 end
 
 % Spectral distribution of Psyn
@@ -84,7 +86,7 @@ for ii=1:NE
                 Psyn(ll,ii,pp) =  C0*C1*Q;  
             end
             
-            Psyn_tot(ii,pp) = trapz(lambda,squeeze(Psyn(:,ii,pp)));
+            Psyn_tot(ii,pp) = 2*trapz(lambda,squeeze(Psyn(:,ii,pp)));
         end
     end    
 end
@@ -100,7 +102,7 @@ for ii=1:NE
         Psyn_psi(ii,pp,:) = A0*(1 + x).^(-5/2).*(7/16 + ...
             (5/16)*x./(1+x));
         
-        Psyn_psi_tot(ii,pp) = trapz(psi,squeeze(Psyn_psi(ii,pp,:)));
+        Psyn_psi_tot(ii,pp) = 2*trapz(psi,squeeze(Psyn_psi(ii,pp,:)));
     end    
 end
 
@@ -120,11 +122,13 @@ for ii=1:NE
                 Psyn_psi_lambda(ll,ii,pp,:) = ...
                     C0*lambda_ratio^2*gammap(ii)^2*(1 + x).^2.*( besselk(2/3,zeta).^2 + ...
                     (x./(1 + x)).*besselk(1/3,zeta).^2 );
+                
+                Psyn_psi_lambda(ll,ii,pp,:) = 2*Psyn_psi_lambda(ll,ii,pp,:);
             end
             
             tmp(ll) = trapz(psi,squeeze(Psyn_psi_lambda(ll,ii,pp,:)));
         end
-        Psyn_psi_lambda_tot(ii,pp) = trapz(lambda,tmp);
+        Psyn_psi_lambda_tot(ii,pp) = 2*trapz(lambda,tmp);
     end
 end
 
@@ -190,27 +194,28 @@ xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
 title('$\int \int P_{syn}(\mathcal{E},\theta,\lambda,\psi) d\psi d\lambda$','Interpreter','latex')
 %%
-figure
-for ii=1:Npitch
-    subplot(3,3,ii)
-    A = squeeze(Psyn(:,:,ii));
-    surf(E,lambda,A,'LineStyle','none')
-    axis([min(E) max(E) min(lambda) max(lambda) min(min(A)) max(max(A))])
-    box on; view([0,90])
-    cmp = colormap(jet(1024));
-    new_colormap = cmp;
-    new_colormap(1,:) = [1,1,1];
-    colormap(new_colormap);
-    colorbar
-    shading interp
-    title(['$\theta=$' num2str(pitch(ii)) '$^\circ$'],'Interpreter','latex')
-    ylabel('$\lambda$ (nm)','Interpreter','latex')
-    xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
-end
-
+% figure
+% for ii=1:Npitch
+%     subplot(3,3,ii)
+%     A = squeeze(Psyn(:,:,ii));
+%     surf(E,lambda,A,'LineStyle','none')
+%     axis([min(E) max(E) min(lambda) max(lambda) min(min(A)) max(max(A))])
+%     box on; view([0,90])
+%     cmp = colormap(jet(1024));
+%     new_colormap = cmp;
+%     new_colormap(1,:) = [1,1,1];
+%     colormap(new_colormap);
+%     colorbar
+%     shading interp
+%     title(['$\theta=$' num2str(pitch(ii)) '$^\circ$'],'Interpreter','latex')
+%     ylabel('$\lambda$ (nm)','Interpreter','latex')
+%     xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+% end
+% 
 % figure % Psyn_psi = zeros(NE,Npitch,Npsi);
 % for ii=1:Npitch
 %     subplot(3,3,ii)
+% %     A = squeeze(Psyn_psi(:,ii,:));
 %     A = log10(squeeze(Psyn_psi(:,ii,:)));
 %     surf(psi,E,A,'LineStyle','none')
 %     axis([min(psi) max(psi) min(E) max(E) min(min(A)) max(max(A))])
@@ -226,34 +231,34 @@ end
 %     ylabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
 % end
 %%
-
-for jj=Npsi:-1:1
-    figure('name',['psi = ' num2str(psi(jj)) ' (degrees)'])
-    % figure
-    for ii=1:Npitch
-        subplot(3,3,ii)
-        A = squeeze(Psyn_psi_lambda(:,:,ii,jj));
-%         A = zeros(Nlambda,NE);
-%         for aa=1:NE
-%             for bb=1:Nlambda
-%                 A(bb,aa) = trapz(psi,squeeze(Psyn_psi_lambda(bb,aa,ii,:)));
-%             end
+% 
+% for jj=4:-1:1
+%     figure('name',['psi = ' num2str(psi(jj)) ' (degrees)'])
+%     % figure
+%     for ii=1:Npitch
+%         subplot(3,3,ii)
+%         A = squeeze(Psyn_psi_lambda(:,:,ii,jj));
+% %         A = zeros(Nlambda,NE);
+% %         for aa=1:NE
+% %             for bb=1:Nlambda
+% %                 A(bb,aa) = trapz(psi,squeeze(Psyn_psi_lambda(bb,aa,ii,:)));
+% %             end
+% %         end
+%         surf(E,lambda,A,'LineStyle','none')
+%         try
+%             axis([min(E) max(E) min(lambda) max(lambda) min(min(A)) max(max(A))])
+%         catch
+%             axis([min(E) max(E) min(lambda) max(lambda)])
 %         end
-        surf(E,lambda,A,'LineStyle','none')
-        try
-            axis([min(E) max(E) min(lambda) max(lambda) min(min(A)) max(max(A))])
-        catch
-            axis([min(E) max(E) min(lambda) max(lambda)])
-        end
-        box on; view([0,90])
-        cmp = colormap(jet(1024));
-        new_colormap = cmp;
-        new_colormap(1,:) = [1,1,1];
-        colormap(new_colormap);
-        colorbar
-        shading interp
-        title(['$\theta=$' num2str(pitch(ii)) '$^\circ$'],'Interpreter','latex')
-        ylabel('$\lambda$ (nm)','Interpreter','latex')
-        xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
-    end
-end
+%         box on; view([0,90])
+%         cmp = colormap(jet(1024));
+%         new_colormap = cmp;
+%         new_colormap(1,:) = [1,1,1];
+%         colormap(new_colormap);
+%         colorbar
+%         shading interp
+%         title(['$\theta=$' num2str(pitch(ii)) '$^\circ$'],'Interpreter','latex')
+%         ylabel('$\lambda$ (nm)','Interpreter','latex')
+%         xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+%     end
+% end

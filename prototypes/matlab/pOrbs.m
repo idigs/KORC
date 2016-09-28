@@ -2104,6 +2104,8 @@ if isfield(ST.PP,'k')
     P.Psyn_psi_lambda = zeros(ST.params.numSnapshots,Npsi,N);
     
     Ptot = zeros(1,ST.params.numSnapshots);
+    Ptot_psi = zeros(1,ST.params.numSnapshots);
+    Ptot_psi_lambda = zeros(1,ST.params.numSnapshots);
     
     Q = zeros(ST.params.numSnapshots,N);
     Qapp = zeros(ST.params.numSnapshots,N);
@@ -2119,31 +2121,36 @@ if isfield(ST.PP,'k')
         P.Psyn_psi(ii,:) = A0*(1 + x).^(-5/2).*( 7/16 +...
             (5/16)*x./(1+x) );
         
-        for jj=1:N
-            lower_integration_limit = P.lambdac(ii)/P.lambda(ii,jj);
+        tmpIntegral = zeros(1,N);
+        for ll=1:N
+            lower_integration_limit = P.lambdac(ii)/P.lambda(ii,ll);
             if (lower_integration_limit < upper_integration_limit)
-                Q(ii,jj) = integral(fun,lower_integration_limit,upper_integration_limit);
-                C1 = (Eo/E(ii))^2/P.lambda(ii,jj)^3;
-                P.Psyn(ii,jj) =  C0*C1*Q(ii,jj);
+                Q(ii,ll) = integral(fun,lower_integration_limit,upper_integration_limit);
+%                 C1 = (Eo/E(ii))^2/P.lambda(ii,ll)^3;
+                C1 = 1/(gammap(ii)^2*P.lambda(ii,ll)^3);
+                P.Psyn(ii,ll) =  C0*C1*Q(ii,ll);
                 
                 zeta = 0.5*lower_integration_limit*(1 + x).^(3/2);
                 
-                D0 = 3*c*qe^2*k(ii)/(2*pi*P.lambda(ii,jj)^2);
-                P.Psyn_psi_lambda(ii,:,jj) = ...
+                D0 = 3*c*qe^2*k(ii)/(2*pi*P.lambda(ii,ll)^2);
+                P.Psyn_psi_lambda(ii,:,ll) = ...
                     D0*lower_integration_limit^2*gammap(ii)^2*(1 + x).^2.*(besselk(2/3,zeta).^2 + ...
                     (x./(1 + x)).*besselk(1/3,zeta).^2);
+                
+                tmpIntegral(ll) = 2*trapz(psi,squeeze(P.Psyn_psi_lambda(ii,:,ll)));
             end
             
-            lower_integration_limit_app = P.lambdac_app(ii)/P.lambda_app(ii,jj);
+            lower_integration_limit_app = P.lambdac_app(ii)/P.lambda_app(ii,ll);
             if (lower_integration_limit_app < upper_integration_limit)
-                Qapp(ii,jj) = integral(fun,lower_integration_limit_app,upper_integration_limit);
-                C1 = (Eo/E(ii))^2/P.lambda_app(ii,jj)^3;
-                P.Psyn_app(ii,jj) =  C0*C1*Qapp(ii,jj);
+                Qapp(ii,ll) = integral(fun,lower_integration_limit_app,upper_integration_limit);
+                C1 = (Eo/E(ii))^2/P.lambda_app(ii,ll)^3;
+                P.Psyn_app(ii,ll) =  C0*C1*Qapp(ii,ll);
             end
         end
         
-%         Ptot(ii) = trapz(P.lambda(ii,:),P.Psyn(ii,:));
-        Ptot(ii) = trapz(psi,P.Psyn_psi(ii,:));
+        Ptot(ii) = 2*trapz(P.lambda(ii,:),P.Psyn(ii,:));
+        Ptot_psi(ii) = 2*trapz(psi,P.Psyn_psi(ii,:));
+        Ptot_psi_lambda(ii) = 2*trapz(P.lambda(ii,:),tmpIntegral);
     end
     
     % % % All variables below are in SI units
@@ -2167,7 +2174,9 @@ if isfield(ST.PP,'k')
     P.Psyn_app = Pch*P.Psyn_app;
     k_app = 1E2*k_app;
     
-    Ptot = 2*Pch*Ptot;
+    Ptot = Pch*Ptot;
+    Ptot_psi = Pch*Ptot_psi;
+    Ptot_psi_lambda = Pch*Ptot_psi_lambda;
             
     [~,Imin] = min(k);
     [~,Imax] = max(k);
@@ -2204,8 +2213,10 @@ if isfield(ST.PP,'k')
     xlim([lambda_min, max([max(P.lambdac) max(P.lambdac_app)])])
     
     subplot(3,2,5)
-    plot(ST.time,abs(ST.PP.Psyn),'k',ST.time,Ptot,'r')
-    legend({'$P_{LL}(t)$','$P_{syn}(t)$'},...
+    plot(ST.time,abs(ST.PP.Psyn),'k',ST.time,Ptot,'b',ST.time,Ptot_psi,'r',...
+        ST.time,Ptot_psi_lambda,'g')
+    legend({'$P_{LL}(t)$','$\int P_{syn}(\lambda,t)d\lambda$',...
+        '$\int P_{syn}(\psi,t)d\psi$','$\int \int P_{syn}(\lambda,\psi,t)d\psi d\lambda$'},...
         'Interpreter','latex','FontSize',14)
     box on;grid on
     ylabel('$P_{syn}(\lambda)$ (Watts)','FontSize',14,'Interpreter','latex')
