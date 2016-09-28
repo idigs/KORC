@@ -37,7 +37,9 @@ ST.data = loadData(ST);
 
 % scatterPlots(ST);
 
-ST.P = synchrotronSpectrum(ST,true,false,8);
+% ST.P = synchrotronSpectrum(ST,true,false,8);
+
+ST.VS = identifyVisibleParticles(ST);
 
 % save('energy_limit','ST')
 end
@@ -1844,5 +1846,77 @@ if (opt2)
 end
 
 disp('Spectrum of synchrotron radiation: done!')
+end
+
+function VS = identifyVisibleParticles(ST)
+VS = struct;
+
+% tokamak parameters
+% Radial position of inner wall
+Riw = 1; % in meters
+% Radial and vertical position of the camera
+Rc = 2.38; % in meters
+Zc = 0.076; % in meters
+
+it = ST.params.simulation.num_snapshots + 1;
+
+for ss=1:ST.params.simulation.num_species
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2)); % confined particles
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) ); % passing particles
+    % If bool = pin & passing, we consider confined passing particles
+    % If bool = pin, we consider passing and trapped particles
+    bool = pin;
+    np = numel(find(bool == 1));
+    
+    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,it));
+    V = squeeze(ST.data.(['sp' num2str(ss)]).V(:,bool,it));
+    gammap = ST.data.(['sp' num2str(ss)]).gamma(bool,it);
+    
+    % mea = maximum emission angle of synchrotron radiation
+    mea = 1./gammap; % in rad. \psi ~ 1/\gamma
+    
+    xo = X(1,:);
+    yo = X(2,:);
+    zo = X(3,:);
+    
+    v = sqrt(sum(V.^2,1));
+    vx = V(1,:)./v;
+    vy = V(2,:)./v;
+    vz = V(3,:)./v;
+    
+    % polinomial coefficients p(1)*x^2 + p(2)*x + p(3) = 0
+    Zp = zeros(1,np);
+    hitInnerWall = true(1,np);
+    for ii=1:np
+        p = zeros(1,3);
+        
+        % Z position where V hits the wall at Rc
+        p(1) = vx(ii)^2 + vy(ii)^2;
+        p(2) = 2*(xo(ii)*vx(ii) + yo(ii)*vy(ii));
+        p(3) = xo(ii)^2 + yo(ii)^2 - Rc^2;
+        
+        r = roots(p);
+        if all(r>0) | all(r<0)
+            error(['Something wrong at ii=' num2str(ii)])
+        end        
+        Zp(ii) = zo(ii) + vz(ii)*max(r);
+        
+        p(3) = xo(ii)^2 + yo(ii)^2 - Riw^2;
+        r = roots(p);
+        if isreal(r) && any(r>0)
+            hitInnerWall(ii) = false;
+        end
+    end
+    
+    Ro = sqrt(xo(hitInnerWall).^2 + yo(hitInnerWall).^2);
+    Zo = zo(hitInnerWall);
+    figure
+    plot(Ro,Zo,'k.')
+    axis equal
+
+    
+end
+
+
 end
 
