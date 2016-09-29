@@ -37,9 +37,9 @@ ST.data = loadData(ST);
 
 % scatterPlots(ST);
 
-% ST.P = synchrotronSpectrum(ST,true,false,8);
+ST.P = synchrotronSpectrum(ST,true,false,8);
 
-ST.VS = identifyVisibleParticles(ST);
+% ST.VS = identifyVisibleParticles(ST);
 
 % save('energy_limit','ST')
 end
@@ -58,7 +58,7 @@ for ii=1:length(info.Groups)
     end
 end
 
-% params.simulation.num_snapshots = 15;
+% params.simulation.num_snapshots = 41;
 % params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 end
 
@@ -1585,17 +1585,20 @@ function P = synchrotronSpectrum(ST,opt1,opt2,poolsize)
 disp('Calculating spectrum of synchrotron radiation...')
 P = struct;
 
+it = ST.params.simulation.num_snapshots + 1;
+%     it = 1;
+
 Nr = 25;
 Ntheta = 80;
-% Psyn = zeros(Ntheta,Nr);
+Psyn_total = zeros(Ntheta,Nr);
 
-upper_integration_limit = 100.0;
+upper_integration_limit = 200.0;
 
 N = 10;
-% lambda_min = 450E-9;% in meters
-% lambda_max = 950E-9;% in meters
-lambda_min = 895E-9;% in meters
-lambda_max = 905E-9;% in meters
+lambda_min = 450E-9;% in meters
+lambda_max = 950E-9;% in meters
+% lambda_min = 907E-9;% in meters
+% lambda_max = 917E-9;% in meters
 lambda_camera = linspace(lambda_min,lambda_max,N);
 Dlambda_camera = mean(diff(lambda_camera));
 
@@ -1604,10 +1607,13 @@ lambda_camera = 1E2*lambda_camera;
 rmin = 0;
 rmax = ST.params.fields.a;
 
+num_species = double(ST.params.simulation.num_species);
+
 fh = figure;
+numPanels = ceil(sqrt(num_species + 1));
 
 % Poloidal distribution of the total radiated power
-for ss=1:ST.params.simulation.num_species
+for ss=1:num_species
 % for ss=2:2
     q = abs(ST.params.species.q(ss));
     m = ST.params.species.m(ss);
@@ -1616,19 +1622,23 @@ for ss=1:ST.params.simulation.num_species
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
     passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
     bool = pin;% & passing;
-    aux = find(bool == 1);
-    numPart = numel(aux);
-    
-    it = ST.params.simulation.num_snapshots + 1;
-%     it = 1;
     
     X = ST.data.(['sp' num2str(ss)]).X(:,bool,it);
     V = ST.data.(['sp' num2str(ss)]).V(:,bool,it);
-    v = squeeze( sqrt( sum(V.^2,1) ) )';
     gammap = ST.data.(['sp' num2str(ss)]).gamma(bool,it);
-    eta = pi*ST.data.(['sp' num2str(ss)]).eta(bool,it)/180;
-    Prad = abs(ST.data.(['sp' num2str(ss)]).Prad(bool,it));
     
+    
+    [vp,psi] = identifyVisibleParticles(ST,X,V,gammap);
+    
+    X(:,~vp) = [];
+    V(:,~vp) = [];
+    gammap(~vp) = [];
+    
+    v = squeeze( sqrt( sum(V.^2,1) ) )';
+    eta = pi*ST.data.(['sp' num2str(ss)]).eta(bool(vp),it)/180;
+    Prad = abs(ST.data.(['sp' num2str(ss)]).Prad(bool(vp),it));
+    
+    numPart = numel(v);
     
     % Toroidal coordinates
     % r = radius, theta = poloidal angle, zeta = toroidal angle
@@ -1666,12 +1676,16 @@ for ss=1:ST.params.simulation.num_species
             try
                 Psyn(itheta(ii),ir(ii)) = Psyn(itheta(ii),ir(ii)) + ...
                     Prad(ii);
+                
+                Psyn_total(itheta(ii),ir(ii)) = Psyn_total(itheta(ii),ir(ii)) + ...
+                    Prad(ii);
             catch
                 disp(['sp:' num2str(ss) ' ' num2str(ir(ii)) ' ' num2str(itheta(ii))])
             end
         end
         
-        figure
+        figure(fh)
+        subplot(numPanels,numPanels,ss)
         surf(x_grid,y_grid,Psyn,'LineStyle','none')
         colormap(jet(512))
         h = colorbar;
@@ -1706,10 +1720,6 @@ for ss=1:ST.params.simulation.num_species
             vec_mag(ii) = sqrt( vec'*vec );
         end
         
-        % Approximation of the curvaturetrue
-        p = m*gammap.*v;
-        k_app = q*ST.params.fields.Bo*sin(eta)./p;
-        
         % Actual curvature
         k = q*vec_mag./(m*gammap.*v.^3);
         
@@ -1718,16 +1728,10 @@ for ss=1:ST.params.simulation.num_species
         qe = 3E9*q;
         m = 1E3*m;
         
-        E = m*c^2*gammap + m*c^2;
-        Eo = m*c^2;
-        
-        E = 1E7*E;
-        Eo = 1E7*Eo;
-        
         k = k/1E2;
-%         k_app = k_app/1E2;
         
-        lambdac = (4/3)*pi*(Eo./E).^3./k;
+%         lambdac = (4/3)*pi*(1./gammap).^3./k;
+        lambdac = 1E2*lambda_max*ones(size(k));
         
         I = find(lambdac > lambda_min);
         numEmittingPart = numel(I);
@@ -1737,14 +1741,22 @@ for ss=1:ST.params.simulation.num_species
         
         C0 = 4*pi*c*qe^2/sqrt(3);
         fun = @(x) besselk(5/3,x);
+        y = (gammap.*psi).^2;
         for ii=1:numEmittingPart
-            %             parfor jj=1:N
+            ind = I(ii);
             for jj=1:N
-                lower_integration_limit = lambdac(I(ii))/lambda_camera(jj);
-                if (lambda_camera(jj) < lambdac(I(ii))) && (lower_integration_limit < upper_integration_limit)
-                    Q = integral(fun,lower_integration_limit,upper_integration_limit);
-                    C1 = (Eo/E(ii))^2/lambda_camera(jj)^3;
-                    Psyn_camera(ii,jj) =  C0*C1*Q;
+                lower_integration_limit = lambdac(ind)/lambda_camera(jj);
+                if (lambda_camera(jj) < lambdac(ind)) && (lower_integration_limit < upper_integration_limit)
+%                     Q = integral(fun,lower_integration_limit,upper_integration_limit);
+%                     C1 = 1/(gammap(ind)^2*lambda_camera(jj)^3);
+%                     Psyn_camera(ii,jj) =  C0*C1*Q;
+                      
+                    zeta = 0.5*lower_integration_limit*(1 + y(ind))^(3/2);
+                    D0 = 3*c*qe^2*k(ind)/(2*pi*lambda_camera(jj)^2);
+                    
+                    Psyn_camera(ii,jj) = ...
+                        D0*lower_integration_limit^2*gammap(ind)^2*(1 + y(ind))^2*(besselk(2/3,zeta)^2 + ...
+                        (y(ind)/(1 + y(ind)))*besselk(1/3,zeta).^2);
                 end
             end
         end
@@ -1754,14 +1766,15 @@ for ss=1:ST.params.simulation.num_species
         Psyn = zeros(Ntheta,Nr);
         disp('Calculating poloidal plane...')
         for ii=1:numEmittingPart
+            ind = I(ii);
             try
-%                 Psyn(itheta(I(ii)),ir(I(ii))) = Psyn(itheta(I(ii)),ir(I(ii))) + ...
-%                     Dlambda_camera*sum(Psyn_camera(ii,:));
-                
-                Psyn(itheta(I(ii)),ir(I(ii))) = Psyn(itheta(I(ii)),ir(I(ii))) + ...
+                Psyn(itheta(ind),ir(ind)) = Psyn(itheta(ind),ir(ind)) + ...
                     trapz(lambda_camera,Psyn_camera(ii,:));
+                
+                Psyn_total(itheta(ind),ir(ind)) = ...
+                    Psyn_total(itheta(ind),ir(ind)) + trapz(lambda_camera,Psyn_camera(ii,:));
             catch
-                disp(['sp:' num2str(ss) ' ' num2str(ir(I(ii))) ' ' num2str(itheta(I(ii)))])
+                disp(['sp:' num2str(ss) ' ' num2str(ir(ind)) ' ' num2str(itheta(ind))])
             end
         end
         
@@ -1773,43 +1786,10 @@ for ss=1:ST.params.simulation.num_species
         Psyn = Pch*Psyn;
         k = 1E2*k;
         
-        % % % % Beyond this point all variables are in SI units % % % %
-        
-%         figure
-%         subplot(3,1,1)
-%         yyaxis left
-%         set(gca,'YColor',[0,0,1])
-%         plot(ind_part,lambdac(I),'b-')
-%         box on; axis on
-%         ylabel('$\lambda_c$ (nm)','FontSize',14,'Interpreter','latex')
-%         yyaxis right
-%         set(gca,'YColor',[1,0,0])
-%         plot(ind_part,k(I),'r-')
-%         ylabel('$\kappa$ (m$^{-1}$)','FontSize',14,'Interpreter','latex')
-%         xlabel('Particle number','FontSize',14,'Interpreter','latex')
-%         title(['$\theta_0$ = ' num2str(ST.params.species.etao(ss)) '$^\circ$'],...
-%             'FontSize',14,'Interpreter','latex')
-%         
-%         subplot(3,1,2)
-%         plot(lambda_camera*lch,mean(Psyn_camera,1),'b-')
-%         ylabel('$P_{syn}(\lambda)$ (Watts)','FontSize',14,'Interpreter','latex')
-%         xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
-        
-%         subplot(3,1,3)
-%         surf(x_grid,y_grid,Psyn,'LineStyle','none')
-%         colormap(jet(512))
-%         h = colorbar;
-%         ylabel(h,'$P_{syn}$ (Watts)','Interpreter','latex','FontSize',16)
-%         view([0,90])
-%         axis square; box on
-%         shading interp
-%         xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
-%         ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
-%         title(['$\theta_0 = $' num2str(ST.params.species.etao(ss)) '$^\circ$'],...
-%             'Interpreter','latex','FontSize',16)
+        % % % % Beyond this point all variables are in SI units % % % %      
 
         figure(fh)
-        subplot(3,3,double(ss))
+        subplot(numPanels,numPanels,ss)
         surf(x_grid,y_grid,Psyn,'LineStyle','none')
         colormap(jet(512))
         h = colorbar;
@@ -1828,13 +1808,11 @@ end
 
 
 
-
-
 % % % % Final figures % % % %
-
 if (opt2)
-    figure
-    surf(x_grid,y_grid,Psyn,'LineStyle','none')
+    figure(fh)
+    subplot(numPanels,numPanels,num_species+1)
+    surf(x_grid,y_grid,Psyn_total,'LineStyle','none')
     colormap(jet(512))
     h = colorbar;
     ylabel(h,'$P_{syn}$ (Watts)','Interpreter','latex','FontSize',16)
@@ -1843,24 +1821,47 @@ if (opt2)
     shading interp
     xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
     ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
+    title('Total $P_{syn}$','Interpreter','latex','FontSize',16)
+end
+
+if (opt1)
+    Psyn_total = 1E-7*Psyn_total;
+    
+    figure(fh)
+    subplot(numPanels,numPanels,num_species+1)
+    surf(x_grid,y_grid,Psyn_total,'LineStyle','none')
+    colormap(jet(512))
+    h = colorbar;
+    ylabel(h,'$P_{syn}$ (Watts)','Interpreter','latex','FontSize',16)
+    view([0,90])
+    axis square; box on
+    shading interp
+    xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+    ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
+    title('Total $P_{syn}$','Interpreter','latex','FontSize',16)
 end
 
 disp('Spectrum of synchrotron radiation: done!')
 end
 
-function VS = identifyVisibleParticles(ST)
+function VS = identifyVisibleParticles_prototype(ST)
 VS = struct;
 
-% tokamak parameters
 % Radial position of inner wall
 Riw = 1; % in meters
+
 % Radial and vertical position of the camera
 Rc = 2.38; % in meters
 Zc = 0.076; % in meters
 
 it = ST.params.simulation.num_snapshots + 1;
 
-for ss=1:ST.params.simulation.num_species
+num_species = double(ST.params.simulation.num_species);
+
+h = figure;
+numPanels = ceil(sqrt(num_species));
+
+for ss=1:num_species
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2)); % confined particles
     passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) ); % passing particles
     % If bool = pin & passing, we consider confined passing particles
@@ -1880,26 +1881,32 @@ for ss=1:ST.params.simulation.num_species
     zo = X(3,:);
     
     v = sqrt(sum(V.^2,1));
-    vx = V(1,:)./v;
-    vy = V(2,:)./v;
-    vz = V(3,:)./v;
+    vox = V(1,:)./v;
+    voy = V(2,:)./v;
+    voz = V(3,:)./v;
     
-    % polinomial coefficients p(1)*x^2 + p(2)*x + p(3) = 0
-    Zp = zeros(1,np);
+    % First we find the Z position where V hits the wall at Rc
+    theta_f = zeros(1,np);
+    Z_f = zeros(1,np);
     hitInnerWall = true(1,np);
     for ii=1:np
         p = zeros(1,3);
         
-        % Z position where V hits the wall at Rc
-        p(1) = vx(ii)^2 + vy(ii)^2;
-        p(2) = 2*(xo(ii)*vx(ii) + yo(ii)*vy(ii));
+        % polinomial coefficients p(1)*x^2 + p(2)*x + p(3) = 0
+        p(1) = vox(ii)^2 + voy(ii)^2;
+        p(2) = 2*(xo(ii)*vox(ii) + yo(ii)*voy(ii));
         p(3) = xo(ii)^2 + yo(ii)^2 - Rc^2;
         
         r = roots(p);
-        if all(r>0) | all(r<0)
+        if all(r>0) || all(r<0)
             error(['Something wrong at ii=' num2str(ii)])
         end        
-        Zp(ii) = zo(ii) + vz(ii)*max(r);
+        t = max(r);
+        Z_f(ii) = zo(ii) + voz(ii)*t;
+        theta_f(ii) = atan2(yo(ii) + voy(ii)*t,xo(ii) + vox(ii)*t);
+        if (theta_f(ii) < 0)
+            theta_f(ii) = theta_f(ii) + 2*pi;
+        end
         
         p(3) = xo(ii)^2 + yo(ii)^2 - Riw^2;
         r = roots(p);
@@ -1908,15 +1915,139 @@ for ss=1:ST.params.simulation.num_species
         end
     end
     
-    Ro = sqrt(xo(hitInnerWall).^2 + yo(hitInnerWall).^2);
-    Zo = zo(hitInnerWall);
-    figure
-    plot(Ro,Zo,'k.')
+    Ro = sqrt(xo(~hitInnerWall).^2 + yo(~hitInnerWall).^2);
+    Zo = zo(~hitInnerWall);
+    figure(h);
+    subplot(numPanels,numPanels,ss)
+    plot(Ro,Zo,'r.')
     axis equal
-
+    
+    xo(~hitInnerWall) = [];
+    yo(~hitInnerWall) = [];
+    zo(~hitInnerWall) = [];
+    vox(~hitInnerWall) = [];
+    voy(~hitInnerWall) = [];
+    voz(~hitInnerWall) = [];
+    theta_f(~hitInnerWall) = [];
+    mea(~hitInnerWall) = [];
+    
+    nvp = numel(find(hitInnerWall == false));
+    
+    Ro = sqrt(xo.^2 + yo.^2);
+    figure(h);
+    subplot(numPanels,numPanels,ss)
+    hold on
+    plot(Ro,zo,'k.')
+    hold off
+    
+    % Then, we calculate the angle between V and the position of the camera
+    xc = Rc*cos(theta_f);
+    yc = Rc*sin(theta_f);
+    
+    ax = xc - xo;
+    ay = yc - yo;
+    az = Zc - zo;
+    
+    a = sqrt(ax.^2 + ay.^2 + az.^2);
+    
+    ax = ax./a;
+    ay = ay./a;
+    az = az./a;
+    
+    angle = acos(ax.*vox + ay.*voy + az.*voz)';
+    visible = angle < mea;
+    
+    Ro = sqrt(xo(visible).^2 + yo(visible).^2);
+    figure(h);
+    subplot(numPanels,numPanels,ss)
+    hold on
+    plot(Ro,zo(visible),'g.','MarkerSize',18)
+    hold off
     
 end
 
 
 end
 
+function [vp,psi] = identifyVisibleParticles(ST,X,V,gammap)
+
+% Radial position of inner wall
+Riw = 1; % in meters
+
+% Radial and vertical position of the camera
+Rc = 2.38; % in meters
+Zc = 0.076; % in meters
+
+np = numel(gammap);
+
+% mea = maximum emission angle of synchrotron radiation
+mea = 1./gammap; % in rad. \psi ~ 1/\gamma
+
+xo = X(1,:);
+yo = X(2,:);
+zo = X(3,:);
+
+v = sqrt(sum(V.^2,1));
+vox = V(1,:)./v;
+voy = V(2,:)./v;
+voz = V(3,:)./v;
+
+% First we find the Z position where V hits the wall at Rc
+theta_f = zeros(1,np);
+Z_f = zeros(1,np);
+hitInnerWall = false(1,np);
+for ii=1:np
+    p = zeros(1,3);
+    
+    % polinomial coefficients p(1)*x^2 + p(2)*x + p(3) = 0
+    p(1) = vox(ii)^2 + voy(ii)^2;
+    p(2) = 2*(xo(ii)*vox(ii) + yo(ii)*voy(ii));
+    p(3) = xo(ii)^2 + yo(ii)^2 - Rc^2;
+    
+    r = roots(p);
+    if all(r>0) || all(r<0)
+        error(['Something wrong at ii=' num2str(ii)])
+    end
+    t = max(r);
+    Z_f(ii) = zo(ii) + voz(ii)*t;
+    theta_f(ii) = atan2(yo(ii) + voy(ii)*t,xo(ii) + vox(ii)*t);
+    if (theta_f(ii) < 0)
+        theta_f(ii) = theta_f(ii) + 2*pi;
+    end
+    
+    p(3) = xo(ii)^2 + yo(ii)^2 - Riw^2;
+    r = roots(p);
+    if isreal(r) && any(r>0)
+        hitInnerWall(ii) = true;
+    end
+end
+
+I = find(hitInnerWall == false);
+
+% Then, we calculate the angle between V and the position of the camera
+xc = Rc*cos(theta_f(I));
+yc = Rc*sin(theta_f(I));
+
+ax = xc - xo(I);
+ay = yc - yo(I);
+az = Zc - zo(I);
+
+a = sqrt(ax.^2 + ay.^2 + az.^2);
+
+ax = ax./a;
+ay = ay./a;
+az = az./a;
+
+psi = acos(ax.*vox(I) + ay.*voy(I) + az.*voz(I))';
+visible = psi <= mea(I);
+
+% Ro = sqrt(xo(I(visible)).^2 + yo(I(visible)).^2);
+% figure
+% plot(Ro,zo(I(visible)),'g.','MarkerSize',18)
+
+vp = false(1,np);
+vp(I(visible)) = true;
+
+psi(~visible) = [];
+
+end

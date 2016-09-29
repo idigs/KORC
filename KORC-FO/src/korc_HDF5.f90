@@ -1009,9 +1009,9 @@ subroutine save_simulation_outputs(params,spp,F,it)
 		dset = "flag"
 		call isave_1d_array_to_hdf5(subgroup_id,dset, spp(ii)%vars%flag)
 
-	    dset = "B"
-		units = params%cpp%Bo
-	    call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%B)
+!	    dset = "B"
+!		units = params%cpp%Bo
+!	    call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%B)
 
 !	    dset = "AUX"
 !	    call rsave_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%AUX)
