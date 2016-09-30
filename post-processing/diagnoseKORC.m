@@ -37,7 +37,7 @@ ST.data = loadData(ST);
 
 % scatterPlots(ST);
 
-ST.P = synchrotronSpectrum(ST,true,false,8);
+ST.P = synchrotronSpectrum(ST,true,false);
 
 % ST.VS = identifyVisibleParticles(ST);
 
@@ -58,14 +58,14 @@ for ii=1:length(info.Groups)
     end
 end
 
-% params.simulation.num_snapshots = 41;
+% params.simulation.num_snapshots = 47;
 % params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 end
 
 function data = loadData(ST)
 data = struct;
 
-list = {'X','V'};%'B'};
+list = {'X','V','B'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -88,8 +88,7 @@ for ll=1:length(list)
                     h5read(filename, dataset);
             end
             
-        end
-        
+        end 
     end
 end
 
@@ -1581,31 +1580,65 @@ saveas(h,[ST.path 'scatter_plot_E_vs_pitch'],'fig')
 
 end
 
-function P = synchrotronSpectrum(ST,opt1,opt2,poolsize)
+function P = synchrotronSpectrum(ST,opt1,opt2)
 disp('Calculating spectrum of synchrotron radiation...')
 P = struct;
 
 it = ST.params.simulation.num_snapshots + 1;
-%     it = 1;
-
-Nr = 25;
-Ntheta = 80;
-Psyn_total = zeros(Ntheta,Nr);
+% it = 1;
+geometry = 'cylindrical';
 
 upper_integration_limit = 200.0;
 
-N = 10;
+N = 100;
 lambda_min = 450E-9;% in meters
 lambda_max = 950E-9;% in meters
 % lambda_min = 907E-9;% in meters
 % lambda_max = 917E-9;% in meters
+% lambda_min = 742E-9;% in meters
+% lambda_max = 752E-9;% in meters
 lambda_camera = linspace(lambda_min,lambda_max,N);
 Dlambda_camera = mean(diff(lambda_camera));
 
-lambda_camera = 1E2*lambda_camera;
-
 rmin = 0;
-rmax = ST.params.fields.a;
+try
+    rmax = ST.params.fields.a;
+    Nr = 25;
+    Ntheta = 80;
+    
+    Rmin = 0.9;
+    Rmax = 2.1;
+    
+    Zmin = -0.6;
+    Zmax = 0.6;
+    
+    NR = 30;
+    NZ = 30;
+catch
+    %     Ro = ST.params.fields.Ro;
+    %     rmax = max([max(ST.params.fields.R) - Ro, Ro - min(ST.params.fields.R)]);
+    rmax = 1.2;
+    Nr = 40;
+    Ntheta = 80;
+    
+    Rmin = 0.9;
+    Rmax = 2.6;
+    
+    Zmin = -2.0;
+    Zmax = 2.0;
+    
+    NR = 100;
+    NZ = 235;
+end
+
+if strcmp(geometry,'poloidal')
+    Psyn_total = zeros(Ntheta,Nr);
+else
+    Psyn_total = zeros(NZ,NR);
+end
+
+
+lambda_camera = 1E2*lambda_camera;
 
 num_species = double(ST.params.simulation.num_species);
 
@@ -1614,10 +1647,12 @@ numPanels = ceil(sqrt(num_species + 1));
 
 % Poloidal distribution of the total radiated power
 for ss=1:num_species
-% for ss=2:2
     q = abs(ST.params.species.q(ss));
     m = ST.params.species.m(ss);
     Ro = ST.params.fields.Ro;
+    
+    Psyn = zeros(Ntheta,Nr);
+    Psyn = zeros(NZ,NR);
     
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
     passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
@@ -1628,7 +1663,7 @@ for ss=1:num_species
     gammap = ST.data.(['sp' num2str(ss)]).gamma(bool,it);
     
     
-    [vp,psi] = identifyVisibleParticles(ST,X,V,gammap);
+    [vp,psi] = identifyVisibleParticles(X,V,gammap,false);
     
     X(:,~vp) = [];
     V(:,~vp) = [];
@@ -1640,47 +1675,67 @@ for ss=1:num_species
     
     numPart = numel(v);
     
-    % Toroidal coordinates
-    % r = radius, theta = poloidal angle, zeta = toroidal angle
-    r = squeeze(sqrt( (sqrt(sum(X(1:2,:).^2,1)) - Ro).^2 + X(3,:).^2));
-    theta = atan2(squeeze(X(3,:)),squeeze(sqrt(sum(X(1:2,:).^2,1)) - Ro));
-    theta(theta<0) = theta(theta<0) + 2*pi;
-    %         zeta = atan2(squeeze(X(1,:,:)),squeeze(X(2,:,:)));
-    %         zeta(zeta<0) = zeta(zeta<0) + 2*pi;
-    % Toroidal coordinates
-    
-    Dr = (rmax - rmin)/Nr;
-    r_grid = 0.5*Dr + (0:1:(Nr-1))*Dr;
-    
-    Dtheta = 2*pi/Ntheta;
-    theta_grid = 0.5*Dtheta + (0:1:(Ntheta-1))*Dtheta;
-    
-    ir = floor(r/Dr) + 1;
-    itheta = floor(theta/Dtheta) + 1;
-    
-    % % % Set-up of the grid of the poloidal plane
-    x_grid = zeros(Ntheta,Nr);
-    y_grid = zeros(Ntheta,Nr);
-    for ii=1:Nr
-        for jj=1:Ntheta
-            x_grid(jj,ii) = Ro + r_grid(ii)*cos(theta_grid(jj));
-            y_grid(jj,ii) = r_grid(ii)*sin(theta_grid(jj));
+    if strcmp(geometry,'poloidal')
+        % Toroidal coordinates
+        % r = radius, theta = poloidal angle, zeta = toroidal angle
+        r = squeeze(sqrt( (sqrt(sum(X(1:2,:).^2,1)) - Ro).^2 + X(3,:).^2));
+        theta = atan2(squeeze(X(3,:)),squeeze(sqrt(sum(X(1:2,:).^2,1)) - Ro));
+        theta(theta<0) = theta(theta<0) + 2*pi;
+
+        Dr = (rmax - rmin)/Nr;
+        r_grid = 0.5*Dr + (0:1:(Nr-1))*Dr;
+
+        Dtheta = 2*pi/Ntheta;
+        theta_grid = 0.5*Dtheta + (0:1:(Ntheta-1))*Dtheta;
+
+        ir = floor(r/Dr) + 1;
+        itheta = floor(theta/Dtheta) + 1;
+
+        % % % Set-up of the grid of the poloidal plane
+        x_grid = zeros(Ntheta,Nr);
+        y_grid = zeros(Ntheta,Nr);
+        for ii=1:Nr
+            for jj=1:Ntheta
+                x_grid(jj,ii) = Ro + r_grid(ii)*cos(theta_grid(jj));
+                y_grid(jj,ii) = r_grid(ii)*sin(theta_grid(jj));
+            end
         end
+        % Toroidal coordinates
+    else
+        % Cylindrical coordinates
+        R = sqrt(sum(X(1:2,:).^2,1));
+        Z = X(3,:);
+
+        DR = (Rmax - Rmin)/NR;
+        DZ = (Zmax - Zmin)/NZ;
+
+        R_grid = Rmin + 0.5*DR + (0:1:(NR-1))*DR;
+        Z_grid = Zmin + 0.5*DZ + (0:1:(NZ-1))*DZ;
+
+        iR = floor((R - Rmin)/DR) + 1;
+        iZ = floor((Z - Zmin)/DZ) + 1;
+        % Cylindrical coordinates
     end
     
-
     % % % Option for calculating the total Psyn WITHOUT wavelength filtering
     if (opt2)
-        Psyn = zeros(Ntheta,Nr);
         for ii=1:numPart
             try
-                Psyn(itheta(ii),ir(ii)) = Psyn(itheta(ii),ir(ii)) + ...
-                    Prad(ii);
-                
-                Psyn_total(itheta(ii),ir(ii)) = Psyn_total(itheta(ii),ir(ii)) + ...
-                    Prad(ii);
+                if strcmp(geometry,'poloidal')
+                    Psyn(itheta(ii),ir(ii)) = Psyn(itheta(ii),ir(ii)) + ...
+                        Prad(ii);
+                    
+                    Psyn_total(itheta(ii),ir(ii)) = Psyn_total(itheta(ii),ir(ii)) + ...
+                        Prad(ii);
+                else
+                    Psyn(iZ(ii),iR(ii)) = ...
+                        Psyn(iZ(ii),iR(ii)) + Prad(ii);
+                    
+                    Psyn_total(iZ(ii),iR(ii)) = ...
+                        Psyn_total(iZ(ii),iR(ii)) + Prad(ii);
+                end
             catch
-                disp(['sp:' num2str(ss) ' ' num2str(ir(ii)) ' ' num2str(itheta(ii))])
+                disp('An issue calculating poloidal plane')
             end
         end
         
@@ -1704,10 +1759,12 @@ for ss=1:num_species
     if (opt1)
         try
             B = ST.data.(['sp' num2str(ss)]).B(:,bool,it);
+            E = zeros(size(B));
         catch
             B = analyticalB(ST,X);
+            E = analyticalE(ST,X);
         end
-        E = analyticalE(ST,X);
+
         
         vec_mag = zeros(size(gammap));
         
@@ -1730,8 +1787,8 @@ for ss=1:num_species
         
         k = k/1E2;
         
-%         lambdac = (4/3)*pi*(1./gammap).^3./k;
-        lambdac = 1E2*lambda_max*ones(size(k));
+        lambdac = (4/3)*pi*(1./gammap).^3./k;
+%         lambdac = 1E2*lambda_max*ones(size(k));
         
         I = find(lambdac > lambda_min);
         numEmittingPart = numel(I);
@@ -1746,11 +1803,12 @@ for ss=1:num_species
             ind = I(ii);
             for jj=1:N
                 lower_integration_limit = lambdac(ind)/lambda_camera(jj);
-                if (lambda_camera(jj) < lambdac(ind)) && (lower_integration_limit < upper_integration_limit)
+%                 if (lambda_camera(jj) < lambdac(ind)) && (lower_integration_limit < upper_integration_limit)             
 %                     Q = integral(fun,lower_integration_limit,upper_integration_limit);
 %                     C1 = 1/(gammap(ind)^2*lambda_camera(jj)^3);
 %                     Psyn_camera(ii,jj) =  C0*C1*Q;
-                      
+
+                if (lambda_camera(jj) < lambdac(ind)) && isfinite(lambdac(ind))
                     zeta = 0.5*lower_integration_limit*(1 + y(ind))^(3/2);
                     D0 = 3*c*qe^2*k(ind)/(2*pi*lambda_camera(jj)^2);
                     
@@ -1760,21 +1818,27 @@ for ss=1:num_species
                 end
             end
         end
-        
-        ind_part = 1:1:numEmittingPart;
                 
-        Psyn = zeros(Ntheta,Nr);
         disp('Calculating poloidal plane...')
         for ii=1:numEmittingPart
             ind = I(ii);
             try
-                Psyn(itheta(ind),ir(ind)) = Psyn(itheta(ind),ir(ind)) + ...
-                    trapz(lambda_camera,Psyn_camera(ii,:));
-                
-                Psyn_total(itheta(ind),ir(ind)) = ...
-                    Psyn_total(itheta(ind),ir(ind)) + trapz(lambda_camera,Psyn_camera(ii,:));
+                Psyn_integrated = trapz(lambda_camera,Psyn_camera(ii,:));
+                if strcmp(geometry,'poloidal')
+                    Psyn(itheta(ind),ir(ind)) = ...
+                        Psyn(itheta(ind),ir(ind)) + Psyn_integrated;
+                    
+                    Psyn_total(itheta(ind),ir(ind)) = ...
+                        Psyn_total(itheta(ind),ir(ind)) + Psyn_integrated;
+                else
+                    Psyn(iZ(ind),iR(ind)) = ...
+                        Psyn(iZ(ind),iR(ind)) + Psyn_integrated;
+                    
+                    Psyn_total(iZ(ind),iR(ind)) = ...
+                        Psyn_total(iZ(ind),iR(ind)) + Psyn_integrated;
+                end
             catch
-                disp(['sp:' num2str(ss) ' ' num2str(ir(ind)) ' ' num2str(itheta(ind))])
+                disp('An issue calculating poloidal plane')
             end
         end
         
@@ -1790,12 +1854,18 @@ for ss=1:num_species
 
         figure(fh)
         subplot(numPanels,numPanels,ss)
-        surf(x_grid,y_grid,Psyn,'LineStyle','none')
+        if strcmp(geometry,'poloidal')
+            surf(x_grid,y_grid,Psyn,'LineStyle','none')
+            axis([min(x_grid) max(x_grid) min(y_grid) max(y_grid)])
+        else
+            surf(R_grid,Z_grid,Psyn,'LineStyle','none')
+            axis([min(R_grid) max(R_grid) min(Z_grid) max(Z_grid)])
+        end
         colormap(jet(512))
         h = colorbar;
         ylabel(h,'$P_{syn}$ (Watts)','Interpreter','latex','FontSize',16)
         view([0,90])
-        axis square; box on
+        axis equal; box on
         shading interp
         xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
         ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
@@ -1826,15 +1896,22 @@ end
 
 if (opt1)
     Psyn_total = 1E-7*Psyn_total;
+    Psyn_total = 1E-7*Psyn_total;
     
     figure(fh)
     subplot(numPanels,numPanels,num_species+1)
-    surf(x_grid,y_grid,Psyn_total,'LineStyle','none')
+    if strcmp(geometry,'poloidal')
+        surf(x_grid,y_grid,Psyn_total_pol,'LineStyle','none')
+        axis([min(x_grid) max(x_grid) min(y_grid) max(y_grid)])
+    else
+        surf(R_grid,Z_grid,Psyn_total,'LineStyle','none')
+        axis([min(R_grid) max(R_grid) min(Z_grid) max(Z_grid)])
+    end
     colormap(jet(512))
     h = colorbar;
     ylabel(h,'$P_{syn}$ (Watts)','Interpreter','latex','FontSize',16)
     view([0,90])
-    axis square; box on
+    axis equal; box on
     shading interp
     xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
     ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
@@ -1969,7 +2046,7 @@ end
 
 end
 
-function [vp,psi] = identifyVisibleParticles(ST,X,V,gammap)
+function [vp,psi] = identifyVisibleParticles(X,V,gammap,option)
 
 % Radial position of inner wall
 Riw = 1; % in meters
@@ -1977,6 +2054,7 @@ Riw = 1; % in meters
 % Radial and vertical position of the camera
 Rc = 2.38; % in meters
 Zc = 0.076; % in meters
+% Zc = 0;
 
 np = numel(gammap);
 
@@ -1986,6 +2064,8 @@ mea = 1./gammap; % in rad. \psi ~ 1/\gamma
 xo = X(1,:);
 yo = X(2,:);
 zo = X(3,:);
+
+Ro = sqrt(sum(X(1:2,:).^2,1));
 
 v = sqrt(sum(V.^2,1));
 vox = V(1,:)./v;
@@ -1997,27 +2077,34 @@ theta_f = zeros(1,np);
 Z_f = zeros(1,np);
 hitInnerWall = false(1,np);
 for ii=1:np
-    p = zeros(1,3);
-    
-    % polinomial coefficients p(1)*x^2 + p(2)*x + p(3) = 0
-    p(1) = vox(ii)^2 + voy(ii)^2;
-    p(2) = 2*(xo(ii)*vox(ii) + yo(ii)*voy(ii));
-    p(3) = xo(ii)^2 + yo(ii)^2 - Rc^2;
-    
-    r = roots(p);
-    if all(r>0) || all(r<0)
-        error(['Something wrong at ii=' num2str(ii)])
-    end
-    t = max(r);
-    Z_f(ii) = zo(ii) + voz(ii)*t;
-    theta_f(ii) = atan2(yo(ii) + voy(ii)*t,xo(ii) + vox(ii)*t);
-    if (theta_f(ii) < 0)
-        theta_f(ii) = theta_f(ii) + 2*pi;
-    end
-    
-    p(3) = xo(ii)^2 + yo(ii)^2 - Riw^2;
-    r = roots(p);
-    if isreal(r) && any(r>0)
+    if (Ro(ii) < Rc)
+        p = zeros(1,3);
+        
+        % polinomial coefficients p(1)*x^2 + p(2)*x + p(3) = 0
+        p(1) = vox(ii)^2 + voy(ii)^2;
+        p(2) = 2*(xo(ii)*vox(ii) + yo(ii)*voy(ii));
+        p(3) = xo(ii)^2 + yo(ii)^2 - Rc^2;
+        
+        r = roots(p);
+        if all(r>0) || all(r<0)
+            disp(['Something wrong at ii=' num2str(ii)])
+            hitInnerWall(ii) = true;
+        else
+            t = max(r);
+            Z_f(ii) = zo(ii) + voz(ii)*t;
+            theta_f(ii) = atan2(yo(ii) + voy(ii)*t,xo(ii) + vox(ii)*t);
+            if (theta_f(ii) < 0)
+                theta_f(ii) = theta_f(ii) + 2*pi;
+            end
+            
+            p(3) = xo(ii)^2 + yo(ii)^2 - Riw^2;
+            r = roots(p);
+            if isreal(r) && any(r>0)
+                hitInnerWall(ii) = true;
+            end
+        end
+    else
+        % The particle hits the outer wall
         hitInnerWall(ii) = true;
     end
 end
@@ -2041,9 +2128,11 @@ az = az./a;
 psi = acos(ax.*vox(I) + ay.*voy(I) + az.*voz(I))';
 visible = psi <= mea(I);
 
-% Ro = sqrt(xo(I(visible)).^2 + yo(I(visible)).^2);
-% figure
-% plot(Ro,zo(I(visible)),'g.','MarkerSize',18)
+if ( option )
+    Ro = sqrt(xo(I(visible)).^2 + yo(I(visible)).^2);
+    figure
+    plot(Ro,zo(I(visible)),'g.','MarkerSize',18)
+end
 
 vp = false(1,np);
 vp(I(visible)) = true;

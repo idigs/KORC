@@ -269,17 +269,19 @@ subroutine set_up_particles_ic(params,F,spp)
         call unitVectors(params,Xo,F,b1,b2,b3)
 
 		do jj=1,spp(ii)%ppp
-			spp(ii)%vars%V(1,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),x) + &
-                                    V2(jj)*DOT_PRODUCT(b2(:,jj),x) + &
-                                    V3(jj)*DOT_PRODUCT(b3(:,jj),x)
+			if ( spp(ii)%vars%flag(jj) .EQ. 1_idef ) then
+				spp(ii)%vars%V(1,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),x) + &
+		                                V2(jj)*DOT_PRODUCT(b2(:,jj),x) + &
+		                                V3(jj)*DOT_PRODUCT(b3(:,jj),x)
 
-			spp(ii)%vars%V(2,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),y) + &
-                                    V2(jj)*DOT_PRODUCT(b2(:,jj),y) + &
-                                    V3(jj)*DOT_PRODUCT(b3(:,jj),y)
+				spp(ii)%vars%V(2,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),y) + &
+		                                V2(jj)*DOT_PRODUCT(b2(:,jj),y) + &
+		                                V3(jj)*DOT_PRODUCT(b3(:,jj),y)
 
-			spp(ii)%vars%V(3,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),z) + &
-                                    V2(jj)*DOT_PRODUCT(b2(:,jj),z) + &
-                                    V3(jj)*DOT_PRODUCT(b3(:,jj),z)
+				spp(ii)%vars%V(3,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),z) + &
+		                                V2(jj)*DOT_PRODUCT(b2(:,jj),z) + &
+		                                V3(jj)*DOT_PRODUCT(b3(:,jj),z)
+			end if
 		end do
 
 		DEALLOCATE(theta)
