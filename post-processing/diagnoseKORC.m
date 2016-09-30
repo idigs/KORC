@@ -37,7 +37,7 @@ ST.data = loadData(ST);
 
 % scatterPlots(ST);
 
-ST.P = synchrotronSpectrum(ST,true,false);
+ST.P = synchrotronSpectrum(ST,true);
 
 % ST.VS = identifyVisibleParticles(ST);
 
@@ -65,7 +65,11 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {'X','V','B'};
+if isfield(ST.params.fields,'dims')
+    list = {'X','V','B'};
+else
+    list = {'X','V'};
+end
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -1580,7 +1584,7 @@ saveas(h,[ST.path 'scatter_plot_E_vs_pitch'],'fig')
 
 end
 
-function P = synchrotronSpectrum(ST,opt1,opt2)
+function P = synchrotronSpectrum(ST,filtered)
 disp('Calculating spectrum of synchrotron radiation...')
 P = struct;
 
@@ -1591,8 +1595,8 @@ geometry = 'cylindrical';
 upper_integration_limit = 200.0;
 
 N = 100;
-lambda_min = 450E-9;% in meters
-lambda_max = 950E-9;% in meters
+lambda_min = 400E-9;% in meters
+lambda_max = 700E-9;% in meters
 % lambda_min = 907E-9;% in meters
 % lambda_max = 917E-9;% in meters
 % lambda_min = 742E-9;% in meters
@@ -1643,7 +1647,11 @@ lambda_camera = 1E2*lambda_camera;
 num_species = double(ST.params.simulation.num_species);
 
 fh = figure;
+spectrum_figure = figure;
 numPanels = ceil(sqrt(num_species + 1));
+
+
+L = cell(1,num_species);
 
 % Poloidal distribution of the total radiated power
 for ss=1:num_species
@@ -1661,6 +1669,9 @@ for ss=1:num_species
     X = ST.data.(['sp' num2str(ss)]).X(:,bool,it);
     V = ST.data.(['sp' num2str(ss)]).V(:,bool,it);
     gammap = ST.data.(['sp' num2str(ss)]).gamma(bool,it);
+    v = squeeze( sqrt( sum(V.^2,1) ) )';
+    eta = pi*ST.data.(['sp' num2str(ss)]).eta(bool,it)/180;
+    Prad = abs(ST.data.(['sp' num2str(ss)]).Prad(bool,it));
     
     
     [vp,psi] = identifyVisibleParticles(X,V,gammap,false);
@@ -1668,12 +1679,11 @@ for ss=1:num_species
     X(:,~vp) = [];
     V(:,~vp) = [];
     gammap(~vp) = [];
+    v(~vp) = [];
+    eta(~vp) = [];
+    Prad(~vp) = [];
     
-    v = squeeze( sqrt( sum(V.^2,1) ) )';
-    eta = pi*ST.data.(['sp' num2str(ss)]).eta(bool(vp),it)/180;
-    Prad = abs(ST.data.(['sp' num2str(ss)]).Prad(bool(vp),it));
-    
-    numPart = numel(v);
+    numPart = numel(psi);
     
     if strcmp(geometry,'poloidal')
         % Toroidal coordinates
@@ -1718,7 +1728,7 @@ for ss=1:num_species
     end
     
     % % % Option for calculating the total Psyn WITHOUT wavelength filtering
-    if (opt2)
+    if (~filtered)
         for ii=1:numPart
             try
                 if strcmp(geometry,'poloidal')
@@ -1741,22 +1751,26 @@ for ss=1:num_species
         
         figure(fh)
         subplot(numPanels,numPanels,ss)
-        surf(x_grid,y_grid,Psyn,'LineStyle','none')
+        if strcmp(geometry,'poloidal')
+            surf(x_grid,y_grid,Psyn,'LineStyle','none')
+            axis([min(x_grid) max(x_grid) min(y_grid) max(y_grid)])
+        else
+            surf(R_grid,Z_grid,Psyn,'LineStyle','none')
+            axis([min(R_grid) max(R_grid) min(Z_grid) max(Z_grid)])
+        end
         colormap(jet(512))
         h = colorbar;
         ylabel(h,'$P_{syn}$ (Watts)','Interpreter','latex','FontSize',16)
         view([0,90])
-        axis square; box on
+        axis equal; box on
         shading interp
         xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
         ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
         title(['$\theta_0 = $' num2str(ST.params.species.etao(ss)) '$^\circ$'],...
             'Interpreter','latex','FontSize',16)
-    end
-    
-    
-    % % % Option for calculating the total Psyn WITH wavelength filtering
-    if (opt1)
+        
+    else % WITH filter
+        
         try
             B = ST.data.(['sp' num2str(ss)]).B(:,bool,it);
             E = zeros(size(B));
@@ -1765,10 +1779,8 @@ for ss=1:num_species
             E = analyticalE(ST,X);
         end
 
-        
         vec_mag = zeros(size(gammap));
         
-%         parfor ii=1:numPart
         for ii=1:numPart
             VxE = cross(squeeze(V(:,ii)),squeeze(E(:,ii)));
             VxB = cross(squeeze(V(:,ii)),squeeze(B(:,ii)));
@@ -1856,10 +1868,10 @@ for ss=1:num_species
         subplot(numPanels,numPanels,ss)
         if strcmp(geometry,'poloidal')
             surf(x_grid,y_grid,Psyn,'LineStyle','none')
-            axis([min(x_grid) max(x_grid) min(y_grid) max(y_grid)])
+%             axis([min(x_grid) max(x_grid) min(y_grid) max(y_grid)])
         else
             surf(R_grid,Z_grid,Psyn,'LineStyle','none')
-            axis([min(R_grid) max(R_grid) min(Z_grid) max(Z_grid)])
+%             axis([min(R_grid) max(R_grid) min(Z_grid) max(Z_grid)])
         end
         colormap(jet(512))
         h = colorbar;
@@ -1871,7 +1883,15 @@ for ss=1:num_species
         ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
         title(['$\theta_0 = $' num2str(ST.params.species.etao(ss)) '$^\circ$'],...
             'Interpreter','latex','FontSize',16)
-
+        
+        figure(spectrum_figure)
+        hold on
+        plot(lch*lambda_camera,sum(Psyn_camera,1))
+        hold off
+        grid on;box on
+        xlabel('$\lambda$ (nm)','Interpreter','latex','FontSize',16)
+        ylabel('$P_{syn}$ (Watts)','Interpreter','latex','FontSize',16)
+        L{ss} = ['$\theta_0 = $' num2str(ST.params.species.etao(ss)) '$^\circ$'];
     end
     
 end
@@ -1879,23 +1899,26 @@ end
 
 
 % % % % Final figures % % % %
-if (opt2)
+if (~filtered)
     figure(fh)
     subplot(numPanels,numPanels,num_species+1)
-    surf(x_grid,y_grid,Psyn_total,'LineStyle','none')
+    if strcmp(geometry,'poloidal')
+        surf(x_grid,y_grid,Psyn_total_pol,'LineStyle','none')
+%         axis([min(x_grid) max(x_grid) min(y_grid) max(y_grid)])
+    else
+        surf(R_grid,Z_grid,Psyn_total,'LineStyle','none')
+%         axis([min(R_grid) max(R_grid) min(Z_grid) max(Z_grid)])
+    end
     colormap(jet(512))
     h = colorbar;
     ylabel(h,'$P_{syn}$ (Watts)','Interpreter','latex','FontSize',16)
     view([0,90])
-    axis square; box on
+    axis equal; box on
     shading interp
     xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
     ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
     title('Total $P_{syn}$','Interpreter','latex','FontSize',16)
-end
-
-if (opt1)
-    Psyn_total = 1E-7*Psyn_total;
+else
     Psyn_total = 1E-7*Psyn_total;
     
     figure(fh)
@@ -1916,6 +1939,9 @@ if (opt1)
     xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
     ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
     title('Total $P_{syn}$','Interpreter','latex','FontSize',16)
+    
+    figure(spectrum_figure)
+    legend(L,'Interpreter','latex','FontSize',12)
 end
 
 disp('Spectrum of synchrotron radiation: done!')
