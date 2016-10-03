@@ -8,7 +8,6 @@ module initialize
     use rnd_numbers
 
     implicit none
-
 	
 
 	PRIVATE :: set_paths, load_korc_params, initialization_sanity_check, unitVectors

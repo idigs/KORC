@@ -73,6 +73,29 @@ subroutine initialize_mpi(params)
 end subroutine initialize_mpi
 
 
+subroutine timing_KORC(params,t1,t2)
+	implicit none
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	REAL(rp), INTENT(IN) :: t1, t2
+	REAL(rp) :: individual_runtime
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: runtime
+	INTEGER :: mpierr
+	
+	ALLOCATE(runtime(params%mpi_params%nmpi))	
+
+	individual_runtime = t2 - t1
+
+	call MPI_GATHER(individual_runtime,1,MPI_DOUBLE_PRECISION,runtime,&
+			1,MPI_DOUBLE_PRECISION,0_idef, MPI_COMM_WORLD, mpierr)
+
+	if (params%mpi_params%rank .EQ. 0_idef) then
+		write(6,'("The execution time is: ",F20.16)') SUM(runtime)/REAL(params%mpi_params%nmpi,rp)
+	end if
+
+	DEALLOCATE(runtime)	
+end subroutine timing_KORC
+
+
 subroutine finalize_mpi(params)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params

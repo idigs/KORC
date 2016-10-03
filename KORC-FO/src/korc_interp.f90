@@ -61,7 +61,7 @@ module korc_interp
     PUBLIC :: interp_field, interp_analytical_field, unitVectors,&
 				initialize_interpolant, finalize_interpolant
 	PRIVATE :: interp_magnetic_field, interp_3D_magnetic_field, cross,&
-				check_if_in_domain
+				check_if_in_domain2D, check_if_in_domain3D
 
     contains
 
@@ -175,7 +175,7 @@ subroutine finalize_interpolant(params)
 end subroutine finalize_interpolant
 
 
-subroutine check_if_in_domain(F,Y,flag)
+subroutine check_if_in_domain2D(F,Y,flag)
     implicit none
 	TYPE(FIELDS), INTENT(IN) :: F
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
@@ -197,37 +197,66 @@ subroutine check_if_in_domain(F,Y,flag)
 	end do
 !$OMP END DO
 !$OMP END PARALLEL
-end subroutine check_if_in_domain
+end subroutine check_if_in_domain2D
 
 
-subroutine interp_3D_magnetic_field(Y,B)
+subroutine check_if_in_domain3D(F,Y,flag)
+    implicit none
+	TYPE(FIELDS), INTENT(IN) :: F
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
+	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
+	INTEGER(ip) :: pp,ss
+
+
+    ss = SIZE(Y,2)
+!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(F,Y,flag)
+!$OMP DO
+	do pp=1,ss
+        if ( flag(pp) .EQ. 1_idef ) then
+			call EZspline_isInDomain3_r8(interp3d%R, Y(1,pp), Y(2,pp), Y(3,pp), ezerr)
+			if (ezerr .NE. 0) then
+				flag(pp) = 0_idef
+			end if
+!			write(6,'("Error code is:",I3)') ezerr
+        end if
+	end do
+!$OMP END DO
+!$OMP END PARALLEL
+end subroutine check_if_in_domain3D
+
+
+subroutine interp_3D_magnetic_field(Y,B,flag)
 	implicit none
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = R, Y(2,:) = PHI, Y(3,:) = Z
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: F ! F(1,:) = FR, F(2,:) = FPHI, F(3,:) = FZ
+	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
 	INTEGER :: pp, ss
 
 	ss = size(Y,2)
 
 	ALLOCATE(F(3,ss))
-!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(interp3d,F,Y,B)
+!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(interp3d,F,Y,B,flag)
 !$OMP DO
 	do pp=1,ss
-		call EZspline_interp(interp3d%R, Y(1,pp), Y(2,pp), Y(3,pp), F(1,pp), ezerr)
-		call EZspline_error(ezerr)
-!		if (ezerr .NE. 0) then
-!			write(6,'("ezerr value: ",I15)') ezerr ! 97 outside interpolation domain
-!		end if
+		if ( flag(pp) .EQ. 1_idef ) then
+			call EZspline_interp(interp3d%R, Y(1,pp), Y(2,pp), Y(3,pp), F(1,pp), ezerr)
+			call EZspline_error(ezerr)
 
-		call EZspline_interp(interp3d%PHI, Y(1,pp), Y(2,pp), Y(3,pp), F(2,pp), ezerr)
-		call EZspline_error(ezerr)
+			if (ezerr .EQ. 97) then ! We flag the particle as lost
+				flag(pp) = 0_idef
+			end if
 
-		call EZspline_interp(interp3d%Z, Y(1,pp), Y(2,pp), Y(3,pp), F(3,pp), ezerr)
-		call EZspline_error(ezerr)
+			call EZspline_interp(interp3d%PHI, Y(1,pp), Y(2,pp), Y(3,pp), F(2,pp), ezerr)
+			call EZspline_error(ezerr)
 
-		B(1,pp) = F(1,pp)*cos(Y(2,pp)) - F(2,pp)*sin(Y(2,pp))
-		B(2,pp) = F(1,pp)*sin(Y(2,pp)) + F(2,pp)*cos(Y(2,pp))
-		B(3,pp) = F(3,pp)
+			call EZspline_interp(interp3d%Z, Y(1,pp), Y(2,pp), Y(3,pp), F(3,pp), ezerr)
+			call EZspline_error(ezerr)
+
+			B(1,pp) = F(1,pp)*cos(Y(2,pp)) - F(2,pp)*sin(Y(2,pp))
+			B(2,pp) = F(1,pp)*sin(Y(2,pp)) + F(2,pp)*cos(Y(2,pp))
+			B(3,pp) = F(3,pp)
+		end if
 	end do
 !$OMP END DO
 !$OMP END PARALLEL
@@ -252,9 +281,9 @@ subroutine calculate_magnetic_field(Y,F,B,flag)
 	do pp=1,ss
 		if ( flag(pp) .EQ. 1_idef ) then
 			call EZspline_derivative(interp2d%A, 0, 1, Y(1,pp), Y(3,pp), A(1,pp), ezerr)
-			call EZspline_error(ezerr)
+!			call EZspline_error(ezerr)
 
-			if (ezerr .EQ. 96_idef) then
+			if (ezerr .EQ. 96_idef) then ! We flag the particle as lost
 				flag(pp) = 0_idef
 			else
 				A(1,pp) = A(1,pp)/Y(1,pp)
@@ -293,9 +322,11 @@ subroutine interp_field(prtcls,F)
 	call cart_to_cyl(prtcls%X, prtcls%Y)
 
 	if (.NOT. ALLOCATED(F%PSIp)) then
-		call interp_magnetic_field(prtcls%Y,prtcls%B)
+		call check_if_in_domain3D(F, prtcls%Y, prtcls%flag)
+
+		call interp_magnetic_field(prtcls%Y,prtcls%B,prtcls%flag)
 	else
-		call check_if_in_domain(F, prtcls%Y, prtcls%flag)
+		call check_if_in_domain2D(F, prtcls%Y, prtcls%flag)
 
 		call calculate_magnetic_field(prtcls%Y,F,prtcls%B,prtcls%flag)
 	end if
@@ -315,25 +346,6 @@ subroutine interp_analytical_field(prtcls,F)
 
 	call analytical_electric_field(F, prtcls%Y, prtcls%E, prtcls%flag)
 end subroutine interp_analytical_field
-
-
-subroutine interp_analytical_field_sp(X,Y,E,B,flag,F)
-    implicit none
-	REAL(rp), DIMENSION(3), INTENT(IN) :: X
-	REAL(rp), DIMENSION(3), INTENT(INOUT) :: Y
-	REAL(rp), DIMENSION(3), INTENT(INOUT) :: E
-	REAL(rp), DIMENSION(3), INTENT(INOUT) :: B
-	INTEGER, INTENT(INOUT) :: flag
-	TYPE(FIELDS), INTENT(IN) :: F
-
-	call cart_to_tor_sp(X,F%AB%Ro,Y,flag)
-
-    call check_if_confined_sp(F,Y,flag)
-
-	call analytical_magnetic_field_sp(F,Y,B,flag)
-
-	call analytical_electric_field_sp(F,Y,E,flag)
-end subroutine interp_analytical_field_sp
 
 
 subroutine unitVectors(params,Xo,F,b1,b2,b3)
@@ -366,11 +378,13 @@ subroutine unitVectors(params,Xo,F,b1,b2,b3)
 	else
 		call cart_to_cyl(Xo, X)
         if (params%poloidal_flux) then
-			call check_if_in_domain(F,X,flag)
+			call check_if_in_domain2D(F,X,flag)
 
             call calculate_magnetic_field(X,F,B,flag)
         else
-            call interp_magnetic_field(X,B)
+			call check_if_in_domain3D(F,X,flag)
+
+            call interp_magnetic_field(X,B,flag)
         end if
 	end if
 	

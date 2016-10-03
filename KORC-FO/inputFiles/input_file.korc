@@ -1,7 +1,7 @@
 &input_parameters
-        t_steps = 200 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+        t_steps = 100 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
         dt = 0.025 ! Time step as fraction of non-relativistic gyro-period
-        output_cadence = 2 ! 1400 for saving each 100 gyro-periods
+        output_cadence = 50 ! 1400 for saving each 100 gyro-periods
         num_species = 9
         num_impurity_species = 1
         radiation = .TRUE.

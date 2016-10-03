@@ -17,7 +17,7 @@ ST.data = loadData(ST);
 
 % ST.RT = radialTransport(ST);
 
-% ST.CP = confined_particles(ST);
+ST.CP = confined_particles(ST);
 
 % ST.PAD = pitchAngleDiagnostic(ST,30);
 
@@ -58,8 +58,8 @@ for ii=1:length(info.Groups)
     end
 end
 
-% params.simulation.num_snapshots = 47;
-% params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
+params.simulation.num_snapshots = 9;
+params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 end
 
 function data = loadData(ST)
@@ -1097,9 +1097,11 @@ CP = struct;
 tmax = max(ST.time);
 tmin = min(ST.time);
 
-t = linspace(0,2*pi,200);
-Rs = ST.params.fields.Ro + ST.params.fields.a*cos(t);
-Zs = ST.params.fields.a*sin(t);
+if isfield(ST.params.fields,'a')
+    t = linspace(0,2*pi,200);
+    Rs = ST.params.fields.Ro + ST.params.fields.a*cos(t);
+    Zs = ST.params.fields.a*sin(t);
+end
 
 CP.confined = zeros(1,ST.params.simulation.num_species);
 
@@ -1153,8 +1155,8 @@ for ss=1:ST.params.simulation.num_species
     subplot(1,2,1)
     hold on
     plot(R,Z,'s','MarkerSize',4,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
-    plot(R,Z,'.','MarkerSize',10,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
-    plot3(R,Z,Prad,'s','MarkerSize',4,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+%     plot(R,Z,'.','MarkerSize',10,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+%     plot3(R,Z,Prad,'s','MarkerSize',4,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
     hold off
     legends{ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
 end
@@ -1162,9 +1164,11 @@ end
 figure(h1)
 subplot(1,2,1)
 legend(legends,'interpreter','latex','FontSize',12)
-hold on
-plot(Rs,Zs,'r')
-hold off
+if isfield(ST.params.fields,'a')
+    hold on
+    plot(Rs,Zs,'r')
+    hold off
+end
 box on
 axis on
 axis square
@@ -1173,10 +1177,6 @@ ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
 
 legends = cell(1,ST.params.simulation.num_species);
 for ss=ST.params.simulation.num_species:-1:1
-    t = linspace(0,2*pi,200);
-    Rs = ST.params.fields.Ro + ST.params.fields.a*cos(t);
-    Zs = ST.params.fields.a*sin(t);
-
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
     trapped = logical( any(ST.data.(['sp' num2str(ss)]).eta > 90,2) );
 
@@ -1190,17 +1190,20 @@ for ss=ST.params.simulation.num_species:-1:1
     subplot(1,2,2)
     hold on
     plot(R,Z,'s','MarkerSize',6,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
-    plot(R,Z,'.','MarkerSize',10,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+%     plot(R,Z,'.','MarkerSize',10,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
     hold off
     legends{ST.params.simulation.num_species + 1 -ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
 end
 
+
 figure(h1)
 subplot(1,2,2)
 legend(legends,'interpreter','latex','FontSize',12)
-hold on
-plot(Rs,Zs,'r')
-box on
+if isfield(ST.params.fields,'a')
+    hold on
+    plot(Rs,Zs,'r')
+    box on
+end
 axis on
 axis square
 xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
@@ -1590,6 +1593,7 @@ P = struct;
 
 it = ST.params.simulation.num_snapshots + 1;
 % it = 1;
+
 geometry = 'cylindrical';
 
 upper_integration_limit = 200.0;
@@ -1616,8 +1620,8 @@ try
     Zmin = -0.6;
     Zmax = 0.6;
     
-    NR = 30;
-    NZ = 30;
+    NR = 60;
+    NZ = 60;
 catch
     %     Ro = ST.params.fields.Ro;
     %     rmax = max([max(ST.params.fields.R) - Ro, Ro - min(ST.params.fields.R)]);
@@ -1650,7 +1654,6 @@ fh = figure;
 spectrum_figure = figure;
 numPanels = ceil(sqrt(num_species + 1));
 
-
 L = cell(1,num_species);
 
 % Poloidal distribution of the total radiated power
@@ -1662,8 +1665,8 @@ for ss=1:num_species
     Psyn = zeros(Ntheta,Nr);
     Psyn = zeros(NZ,NR);
     
-    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
-    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag(:,1:it),2));
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta(1:it) < 90,2) );
     bool = pin;% & passing;
     
     X = ST.data.(['sp' num2str(ss)]).X(:,bool,it);

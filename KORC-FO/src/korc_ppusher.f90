@@ -116,24 +116,6 @@ subroutine advance_particles_velocity(params,EB,cparams,spp,dt,bool)
 	INTEGER :: ii, pp ! Iterators
 
 	do ii = 1,params%num_species
-!	    a = spp(ii)%q*dt/spp(ii)%m
-!!$OMP PARALLEL FIRSTPRIVATE(a,dt,bool)&
-!!$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gammap,sigma,us,gamma,t,s,&
-!!$OMP& Frad,Fcoll,U_RC,U_os,tmp,b_unit,B,vpar,vperp,vec,Prad)&
-!!$OMP& SHARED(params,EB,ii,spp)
-!!$OMP DO
-!		do pp=1,spp(ii)%ppp
-!			if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
-!				call interp_analytical_field_sp(spp(ii)%vars%X(:,pp),&
-!					spp(ii)%vars%Y(:,pp),spp(ii)%vars%E(:,pp),&
-!					spp(ii)%vars%B(:,pp),spp(ii)%vars%flag(pp),EB)
-!		        if (TRIM(EB%electric_field_mode) .EQ. 'PULSE') then 
-!		            spp(ii)%vars%E(:,pp) = &
-!		            EXP(-0.5_rp*((params%time - EB%to)/EB%sig)**2)*spp(ii)%vars%E(:,pp)
-!		        end if
-!			else
-!				! Something to be coded
-!			end if
 
 		if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
 			call interp_analytical_field(spp(ii)%vars, EB)
