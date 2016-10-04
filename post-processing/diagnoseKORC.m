@@ -58,7 +58,7 @@ for ii=1:length(info.Groups)
     end
 end
 
-params.simulation.num_snapshots = 9;
+params.simulation.num_snapshots = 8;
 params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 end
 
@@ -1591,8 +1591,8 @@ function P = synchrotronSpectrum(ST,filtered)
 disp('Calculating spectrum of synchrotron radiation...')
 P = struct;
 
-it = ST.params.simulation.num_snapshots + 1;
-% it = 1;
+% it = ST.params.simulation.num_snapshots + 1;
+it = 1;
 
 geometry = 'cylindrical';
 

@@ -81,6 +81,8 @@ program main
 	t2 = MPI_WTIME()
 	write(6,'("MPI: ",I2," Total time: ",F20.16)') params%mpi_params%rank, t2 - t1
 
+	call timing_KORC(params,t1,t2)
+
 	! * * * FINALIZING SIMULATION * * * 
 	call finalize_HDF5()
 
@@ -88,8 +90,6 @@ program main
 
 	! DEALLOCATION OF VARIABLES
 	call deallocate_variables(params,EB,spp,cparams)
-
-	call timing_KORC(params,t1,t2)
 
 	call finalize_communications(params)
 	! * * * FINALIZING SIMULATION * * * 

@@ -85,6 +85,8 @@ subroutine timing_KORC(params,t1,t2)
 
 	individual_runtime = t2 - t1
 
+	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+
 	call MPI_GATHER(individual_runtime,1,MPI_DOUBLE_PRECISION,runtime,&
 			1,MPI_DOUBLE_PRECISION,0_idef, MPI_COMM_WORLD, mpierr)
 
