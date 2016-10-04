@@ -1,7 +1,7 @@
 &input_parameters
-        t_steps = 100 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
-        dt = 0.025 ! Time step as fraction of non-relativistic gyro-period
-        output_cadence = 50 ! 1400 for saving each 100 gyro-periods
+        t_steps = 1000 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+        dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
+        output_cadence = 500 ! 1400 for saving each 100 gyro-periods
         num_species = 9
         num_impurity_species = 1
         radiation = .TRUE.
@@ -24,7 +24,7 @@
         r = 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25 !
         Eo = 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6 ! Initial energy in eV
         etao = 0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0  ! Initial pitch angle
-        ppp = 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000 ! Number of particles per process (mpi)
+        ppp = 4096, 4096, 4096, 4096, 4096, 4096, 4096, 4096, 4096 ! Number of particles per process (mpi)
         q = -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0 ! Electric charge
         m = 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 ! In units of electron mass
 /

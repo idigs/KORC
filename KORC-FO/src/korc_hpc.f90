@@ -92,6 +92,8 @@ subroutine timing_KORC(params,t1,t2)
 		write(6,'("The execution time is: ",F20.16)') SUM(runtime)/REAL(params%mpi_params%nmpi,rp)
 	end if
 
+	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+
 	DEALLOCATE(runtime)	
 end subroutine timing_KORC
 

@@ -41,7 +41,7 @@ ifeq ($(UNAME), Linux)
 	LIBSHDF5	=$(EXTLIB)	$(HDF5_INSTALL)/lib/libhdf5hl_fortran.a	$(HDF5_INSTALL)/lib/libhdf5_fortran.a	$(HDF5_INSTALL)/lib/libhdf5_hl.a	$(HDF5_INSTALL)/lib/libhdf5.a
 	LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib
 	LIB	= -lm   -lz -ldl	-lpspline
-	OMP_LIB_FLAGS =	-lgomp
+	OMP_LIB_FLAGS =
 endif
 
 BINARIES = $(addprefix $(OBJ)/, korc_types.o    constants.o	korc_HDF5.o	korc_hpc.o  rnd_numbers.o	korc_fields.o	korc_coords.o	korc_interp.o	initialize.o    finalize.o	korc_units.o   korc_ppusher.o	main.o)

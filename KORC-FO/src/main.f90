@@ -79,7 +79,7 @@ program main
 	end do
 	
 	t2 = MPI_WTIME()
-	write(6,'("MPI: ",I2," Total time: ",F16.14)') params%mpi_params%rank, t2 - t1
+	write(6,'("MPI: ",I2," Total time: ",F20.16)') params%mpi_params%rank, t2 - t1
 
 	! * * * FINALIZING SIMULATION * * * 
 	call finalize_HDF5()
