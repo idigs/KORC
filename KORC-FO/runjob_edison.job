@@ -1,35 +1,29 @@
 #!/bin/bash -l
 #SBATCH -J KORC-FO
 #SBATCH -p debug
-#SBATCH -N 1
-#SBATCH -n 1
-##SBATCH -c 12
-#SBATCH -t 00:20:00
+#SBATCH -N 2
+#SBATCH -t 00:05:00
 #SBATCH -L project,SCRATCH
-#SBATCH -o KORC-FO_%j.out 
-#SBATCH -e KORC-FO_%j.err
+#SBATCH -o KORC_INTEL_%j.out 
+#SBATCH -e KORC_INTEL_%j.err
 
-#module unload cray-mpich/7.3.1
-module swap PrgEnv-intel PrgEnv-gnu
-module load openmpi-ccm/1.10.2
+module load cray-hdf5/1.10.0
 
 ## You might want to change the path of the outouts folder
 PATH_TO_SCRATCH='/scratch1/scratchdirs/carbajal'
 FOLDER='profiling'
 OUTPUT_FOLDER=${PATH_TO_SCRATCH}/${FOLDER}
 
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$SLURM_SUBMIT_DIR/../HDF5/lib
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$opt/cray/hdf5/1.10.0/INTEL/15.0/lib
 
 mkdir ${OUTPUT_FOLDER}
 cd $SLURM_SUBMIT_DIR
 
-#export OMP_NUM_THREADS=48
-#mpirun --map-by node bin/KORC-FO inputFiles/input_file.korc ${OUTPUT_FOLDER}/
-#mpirun -n 2 bin/KORC-FO inputFiles/input_file.korc ${OUTPUT_FOLDER}/
+export OMP_NUM_THREADS=6
+#mpirun -genvall --map-by node bin/KORC-FO inputFiles/input_file.korc ${OUTPUT_FOLDER}/
+#mpirun -genvall --map-by socket bin/KORC-FO inputFiles/input_file.korc ${OUTPUT_FOLDER}/
+#mpirun -genvall -map-by ppr:6:node:pe=4 bin/KORC-FO inputFiles/input_file.korc ${OUTPUT_FOLDER}/
+srun -n 8 -c 6 bin/KORC-FO inputFiles/input_file.korc ${OUTPUT_FOLDER}/
 
-for it in `seq 48`
-do
-export OMP_NUM_THREADS=$it
-mpirun --map-by node bin/KORC-FO inputFiles/input_file.korc ${OUTPUT_FOLDER}/
-sleep 5s
-done
+
+

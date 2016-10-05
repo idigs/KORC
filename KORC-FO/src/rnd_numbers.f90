@@ -1,5 +1,6 @@
 module rnd_numbers
 
+    use ifport
     use korc_types
 
     implicit none

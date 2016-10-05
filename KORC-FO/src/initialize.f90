@@ -332,10 +332,12 @@ subroutine initialization_sanity_check(params)
 !	call GET_ENVIRONMENT_VARIABLE("GOMP_CPU_AFFINITY",env_variable)
 	write(6,*) TRIM(env_variable)
 
-!$OMP PARALLEL SHARED(params) PRIVATE(ierr, flag)
+!$OMP PARALLEL SHARED(params) PRIVATE(ierr,flag)
 	call MPI_INITIALIZED(flag, ierr)
+	!$OMP CRITICAL
 	write(6,'("MPI: ",I3," OMP/of: ",I3," / ",I3," Procs: ",I3," Init: ",l1)') &
 	params%mpi_params%rank,OMP_GET_THREAD_NUM(),OMP_GET_NUM_THREADS(),OMP_GET_NUM_PROCS(),flag
+	!$OMP END CRITICAL
 !$OMP END PARALLEL
 end subroutine initialization_sanity_check
 
