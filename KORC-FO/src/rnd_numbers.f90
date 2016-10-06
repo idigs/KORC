@@ -1,6 +1,9 @@
 module rnd_numbers
 
+#ifdef INTEL
     use ifport
+#endif
+
     use korc_types
 
     implicit none
