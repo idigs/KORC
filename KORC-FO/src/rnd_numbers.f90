@@ -3,12 +3,95 @@ module rnd_numbers
 #ifdef INTEL
     use ifport
 #endif
-
     use korc_types
 
-    implicit none
+    implicit none	
+
+! Parameters and variables used in generator of uniform random numbers	
+	INTEGER(8), PARAMETER :: iv = 4101842887655102017_8
+	INTEGER(8), PARAMETER :: iw = 1_8
+	INTEGER(8), PARAMETER :: a = 4294957665_8
+	INTEGER(8), PARAMETER :: b = 4294967295_8
+	INTEGER(8), PARAMETER :: d = 2862933555777941757_8
+	INTEGER(8), PARAMETER :: e = 7046029254386353087_8
+	REAL(rp), PARAMETER :: rcoeff = 5.42101086242752217E-20_rp
+
+	TYPE, PRIVATE :: URAND
+		INTEGER(8) :: u, v, w
+	END TYPE
+
+	TYPE(URAND), PRIVATE :: urand_vars
+! Parameters and variables used in generator of uniform random numbers
+
+	INTERFACE u_random
+	  module procedure rand_int64,rand_int32,rand_real
+	END INTERFACE
+
+	PUBLIC :: init_u_random, u_random
+	PRIVATE :: rand_int64,rand_int32,rand_real
 
     contains
+
+subroutine init_u_random(seed)
+	implicit none
+	INTEGER(8), INTENT(IN) :: seed
+	INTEGER(8) :: dummy_int64
+
+	urand_vars%u = seed**urand_vars%v
+	call rand_int64()
+	urand_vars%v = urand_vars%u
+	call rand_int64()
+	urand_vars%w = urand_vars%v
+	call rand_int64()
+end subroutine init_u_random
+
+
+subroutine rand_int64(irand)
+	implicit none
+	INTEGER(8), OPTIONAL, INTENT(OUT) :: irand
+	INTEGER(8) :: x
+
+
+	urand_vars%u = urand_vars%u*d + e !u=u* 2862933555777941757LL + 7046029254386353087LL;
+
+	urand_vars%v = IEOR(urand_vars%v,ISHFT(urand_vars%v,-17)) ! v^=v>>17;
+	urand_vars%v = IEOR(urand_vars%v,ISHFT(urand_vars%v,31)) ! v^=v<<31; 
+	urand_vars%v = IEOR(urand_vars%v,ISHFT(urand_vars%v,-8)) ! v^=v>>8; 
+
+	urand_vars%w = a*IAND(urand_vars%w,b) + ISHFT(urand_vars%w,-32) ! w = 4294957665U*(w & 0xffffffff) + (w >> 32);
+
+	x = IEOR(urand_vars%u,ISHFT(urand_vars%u,21)) ! Ullong x=u^(u<< 21); 
+	x = IEOR(x,ISHFT(x,-35)) ! x ^= x >> 35;
+	x = IEOR(x,ISHFT(x,4)) ! x ^= x << 4; 
+ 
+	if (PRESENT(irand)) then
+		irand = IEOR(x + urand_vars%v,urand_vars%w)
+	end if
+end subroutine rand_int64
+
+
+subroutine rand_int32(irand32)
+	implicit none
+	INTEGER(4), INTENT(OUT) :: irand32
+	INTEGER(8) :: irand64
+
+	call rand_int64(irand64)	
+
+	irand32 = INT(irand64,4)
+end subroutine rand_int32
+
+
+subroutine rand_real(rrand)
+	implicit none
+	REAL(rp), INTENT(OUT) :: rrand
+	INTEGER(8) :: irand64
+
+	call rand_int64(irand64)	
+
+	rrand = rcoeff*REAL(irand64,rp)
+end subroutine rand_real
+
+
 
 subroutine init_random_seed()
 !use iso_fortran_env, only: int64

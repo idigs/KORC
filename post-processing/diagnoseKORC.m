@@ -17,7 +17,7 @@ ST.data = loadData(ST);
 
 % ST.RT = radialTransport(ST);
 
-ST.CP = confined_particles(ST);
+% ST.CP = confined_particles(ST);
 
 % ST.PAD = pitchAngleDiagnostic(ST,30);
 
@@ -1599,8 +1599,8 @@ geometry = 'cylindrical';
 upper_integration_limit = 200.0;
 
 N = 100;
-lambda_min = 400E-9;% in meters
-lambda_max = 700E-9;% in meters
+lambda_min = 10E-9;% in meters
+lambda_max = 10000E-9;% in meters
 % lambda_min = 907E-9;% in meters
 % lambda_max = 917E-9;% in meters
 % lambda_min = 742E-9;% in meters

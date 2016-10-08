@@ -223,6 +223,8 @@ subroutine set_up_particles_ic(params,F,spp)
 		ALLOCATE( radius(spp(ii)%ppp) )
 		ALLOCATE( angle(spp(ii)%ppp) )
 
+		call init_u_random(10_8)
+
 		! Initial condition of uniformly distributed particles on a disk in the xz-plane
 		! A unique velocity direction
 		call init_random_seed()
