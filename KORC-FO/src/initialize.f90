@@ -205,6 +205,7 @@ subroutine set_up_particles_ic(params,F,spp)
 	REAL(rp), DIMENSION(3) :: x = (/1.0_rp,0.0_rp,0.0_rp/)
 	REAL(rp), DIMENSION(3) :: y = (/0.0_rp,1.0_rp,0.0_rp/)
 	REAL(rp), DIMENSION(3) :: z = (/0.0_rp,0.0_rp,1.0_rp/)
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: dummy
 	INTEGER :: ii,jj ! Iterator
 
 	do ii=1,params%num_species
@@ -223,7 +224,15 @@ subroutine set_up_particles_ic(params,F,spp)
 		ALLOCATE( radius(spp(ii)%ppp) )
 		ALLOCATE( angle(spp(ii)%ppp) )
 
-		call init_u_random(10_8)
+		ALLOCATE( dummy(spp(ii)%ppp) ) ! dummy array
+
+		call init_u_random(10986546_8)
+
+!        open(unit=default_unit_write,file='/Users/Leopo/Documents/MATLAB/KORK/KORC-FO/rnd.dat',status='UNKNOWN',form='formatted')
+!        call u_random(dummy)
+!        write(default_unit_write,'(F20.16)') dummy
+!        close(default_unit_write)
+!        call korc_abort()
 
 		! Initial condition of uniformly distributed particles on a disk in the xz-plane
 		! A unique velocity direction

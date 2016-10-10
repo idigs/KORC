@@ -24,7 +24,7 @@ module rnd_numbers
 ! Parameters and variables used in generator of uniform random numbers
 
 	INTERFACE u_random
-	  module procedure rand_int64,rand_int32,rand_real
+	  module procedure rand_int64,rand_int32,rand_real,rand_real_array
 	END INTERFACE
 
 	PUBLIC :: init_u_random, u_random
@@ -81,14 +81,27 @@ subroutine rand_int32(irand32)
 end subroutine rand_int32
 
 
+subroutine rand_real_array(rrand)
+	implicit none
+	REAL(rp), DIMENSION(:), INTENT(INOUT) :: rrand
+	INTEGER(8) :: irand64
+    INTEGER :: ii ! Iterator
+
+    do ii=1,SIZE(rrand)
+        	call rand_int64(irand64)	
+        rrand(ii) = rcoeff*REAL(irand64,rp) + 0.5_rp
+    end do
+
+end subroutine rand_real_array
+
+
 subroutine rand_real(rrand)
 	implicit none
 	REAL(rp), INTENT(OUT) :: rrand
 	INTEGER(8) :: irand64
 
-	call rand_int64(irand64)	
-
-	rrand = rcoeff*REAL(irand64,rp)
+ 	call rand_int64(irand64)	
+    rrand = rcoeff*REAL(irand64,rp) + 0.5_rp
 end subroutine rand_real
 
 
