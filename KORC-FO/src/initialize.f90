@@ -205,7 +205,7 @@ subroutine set_up_particles_ic(params,F,spp)
 	REAL(rp), DIMENSION(3) :: x = (/1.0_rp,0.0_rp,0.0_rp/)
 	REAL(rp), DIMENSION(3) :: y = (/0.0_rp,1.0_rp,0.0_rp/)
 	REAL(rp), DIMENSION(3) :: z = (/0.0_rp,0.0_rp,1.0_rp/)
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: dummy
+!    REAL(rp), DIMENSION(:), ALLOCATABLE :: dummy
 	INTEGER :: ii,jj ! Iterator
 
 	do ii=1,params%num_species
@@ -224,7 +224,7 @@ subroutine set_up_particles_ic(params,F,spp)
 		ALLOCATE( radius(spp(ii)%ppp) )
 		ALLOCATE( angle(spp(ii)%ppp) )
 
-		ALLOCATE( dummy(spp(ii)%ppp) ) ! dummy array
+!		ALLOCATE( dummy(spp(ii)%ppp) ) ! dummy array
 
 		call init_u_random(10986546_8)
 
