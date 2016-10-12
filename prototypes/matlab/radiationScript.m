@@ -14,13 +14,13 @@ lambda_max = 950E-9; % in meters
 Nlambda = 200;
 lambda = linspace(lambda_min,lambda_max,Nlambda);
 
-NE = 200;
+NE = 100;
 % Npitch = 9;
 
 upper_integration_limit = 100;
 
 Emin = 1E6;
-Emax = 80E6;
+Emax = 60E6;
 E = linspace(Emin,Emax,NE); % Energy in eV
 E = E*qe; % Energy in J
 Eo = me*c^2; % rest energy in J
@@ -28,11 +28,11 @@ gammap = E/Eo;
 
 p = sqrt(E.^2 - (Eo)^2)/c;
 
-Npitch = 50;
-pitch = (pi/180)*linspace(1,80,Npitch); % Pitch angle in radians
+% Npitch = 9;
+% pitch = (pi/180)*linspace(1,80,Npitch); % Pitch angle in radians
  
-% pitch = (pi/180)*[5,10,20,30,40,50,60,70,80];
-% Npitch = numel(pitch);
+pitch = (pi/180)*[5,10,20,30,40,50,60,70,80];
+Npitch = numel(pitch);
 
 % Emission angle
 Npsi = 20;
@@ -165,100 +165,102 @@ pitch = 180*pitch/pi;
 lambda = lambda/1E-9;
 psi = 180*psi/pi;
 
-figure
-subplot(1,3,1)
-surf(pitch,E,Psyn_tot,'LineStyle','none')
-axis([min(pitch) max(pitch) min(E) max(E) min(min(Psyn_tot)) max(max(Psyn_tot))])
-box on; view([0,90])
-cmp = colormap(jet(1024));
-colorbar
-xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
-ylabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
-title('$\int P_{syn}(\mathcal{E},\theta,\lambda) d\lambda$','Interpreter','latex')
-subplot(1,3,2)
-surf(pitch,E,Psyn_psi_tot,'LineStyle','none')
-axis([min(pitch) max(pitch) min(E) max(E) min(min(Psyn_psi_tot)) max(max(Psyn_psi_tot))])
-box on; view([0,90])
-cmp = colormap(jet(1024));
-colorbar
-xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
-ylabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
-title('$\int P_{syn}(\mathcal{E},\theta,\psi) d\psi$','Interpreter','latex')
-subplot(1,3,3)
-surf(pitch,E,Psyn_psi_lambda_tot,'LineStyle','none')
-axis([min(pitch) max(pitch) min(E) max(E) min(min(Psyn_psi_lambda_tot)) max(max(Psyn_psi_lambda_tot))])
-box on; view([0,90])
-cmp = colormap(jet(1024));
-colorbar
-xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
-ylabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
-title('$\int \int P_{syn}(\mathcal{E},\theta,\lambda,\psi) d\psi d\lambda$','Interpreter','latex')
-%%
 % figure
-% for ii=1:Npitch
-%     subplot(3,3,ii)
-%     A = squeeze(Psyn(:,:,ii));
-%     surf(E,lambda,A,'LineStyle','none')
-%     axis([min(E) max(E) min(lambda) max(lambda) min(min(A)) max(max(A))])
-%     box on; view([0,90])
-%     cmp = colormap(jet(1024));
+% subplot(1,3,1)
+% surf(pitch,E,Psyn_tot,'LineStyle','none')
+% axis([min(pitch) max(pitch) min(E) max(E) min(min(Psyn_tot)) max(max(Psyn_tot))])
+% box on; view([0,90])
+% cmp = colormap(jet(1024));
+% colorbar
+% xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
+% ylabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+% title('$\int P_{syn}(\mathcal{E},\theta,\lambda) d\lambda$','Interpreter','latex')
+% subplot(1,3,2)
+% surf(pitch,E,Psyn_psi_tot,'LineStyle','none')
+% axis([min(pitch) max(pitch) min(E) max(E) min(min(Psyn_psi_tot)) max(max(Psyn_psi_tot))])
+% box on; view([0,90])
+% cmp = colormap(jet(1024));
+% colorbar
+% xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
+% ylabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+% title('$\int P_{syn}(\mathcal{E},\theta,\psi) d\psi$','Interpreter','latex')
+% subplot(1,3,3)
+% surf(pitch,E,Psyn_psi_lambda_tot,'LineStyle','none')
+% axis([min(pitch) max(pitch) min(E) max(E) min(min(Psyn_psi_lambda_tot)) max(max(Psyn_psi_lambda_tot))])
+% box on; view([0,90])
+% cmp = colormap(jet(1024));
+% colorbar
+% xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
+% ylabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+% title('$\int \int P_{syn}(\mathcal{E},\theta,\lambda,\psi) d\psi d\lambda$','Interpreter','latex')
+%
+figure
+for ii=1:Npitch
+    subplot(3,3,ii)
+    A = squeeze(Psyn(:,:,ii));
+    surf(E,lambda,A,'LineStyle','none')
+    axis([min(E) max(E) min(lambda) max(lambda) min(min(A)) max(max(A))])
+    box on; view([0,90])
+    cmp = colormap(jet(1024));
+    new_colormap = cmp;
+    new_colormap(1,:) = [1,1,1];
+    colormap(new_colormap);
+    colorbar
+    shading interp
+    title(['$\theta=$' num2str(pitch(ii)) '$^\circ$'],'Interpreter','latex')
+    ylabel('$\lambda$ (nm)','Interpreter','latex')
+    xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+end
+
+figure % Psyn_psi = zeros(NE,Npitch,Npsi);
+for ii=1:Npitch
+    subplot(3,3,ii)
+%     A = squeeze(Psyn_psi(:,ii,:));
+    A = log10(squeeze(Psyn_psi(:,ii,:)));
+    surf(psi,E,A,'LineStyle','none')
+    axis([min(psi) max(psi) min(E) max(E) min(min(A)) max(max(A))])
+    box on; view([0,90])
+    cmp = colormap(jet(1024));
 %     new_colormap = cmp;
 %     new_colormap(1,:) = [1,1,1];
 %     colormap(new_colormap);
-%     colorbar
-%     shading interp
-%     title(['$\theta=$' num2str(pitch(ii)) '$^\circ$'],'Interpreter','latex')
-%     ylabel('$\lambda$ (nm)','Interpreter','latex')
-%     xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
-% end
-% 
-% figure % Psyn_psi = zeros(NE,Npitch,Npsi);
-% for ii=1:Npitch
-%     subplot(3,3,ii)
-% %     A = squeeze(Psyn_psi(:,ii,:));
-%     A = log10(squeeze(Psyn_psi(:,ii,:)));
-%     surf(psi,E,A,'LineStyle','none')
-%     axis([min(psi) max(psi) min(E) max(E) min(min(A)) max(max(A))])
-%     box on; view([0,90])
-%     cmp = colormap(jet(1024));
-% %     new_colormap = cmp;
-% %     new_colormap(1,:) = [1,1,1];
-% %     colormap(new_colormap);
-%     colorbar
-%     shading interp
-%     title(['$\theta=$' num2str(pitch(ii)) '$^\circ$'],'Interpreter','latex')
-%     xlabel('$\psi$ ($^\circ$)','Interpreter','latex')
-%     ylabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
-% end
-%%
-% 
-% for jj=4:-1:1
-%     figure('name',['psi = ' num2str(psi(jj)) ' (degrees)'])
-%     % figure
-%     for ii=1:Npitch
-%         subplot(3,3,ii)
-%         A = squeeze(Psyn_psi_lambda(:,:,ii,jj));
-% %         A = zeros(Nlambda,NE);
-% %         for aa=1:NE
-% %             for bb=1:Nlambda
-% %                 A(bb,aa) = trapz(psi,squeeze(Psyn_psi_lambda(bb,aa,ii,:)));
-% %             end
-% %         end
-%         surf(E,lambda,A,'LineStyle','none')
-%         try
-%             axis([min(E) max(E) min(lambda) max(lambda) min(min(A)) max(max(A))])
-%         catch
-%             axis([min(E) max(E) min(lambda) max(lambda)])
+    colorbar
+    shading interp
+    title(['$\theta=$' num2str(pitch(ii)) '$^\circ$'],'Interpreter','latex')
+    xlabel('$\psi$ ($^\circ$)','Interpreter','latex')
+    ylabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+end
+%
+
+iframes = [1,5,10];
+
+for jj=1:numel(iframes)
+    figure('name',['psi = ' num2str(psi(iframes(jj))) ' (degrees)'])
+    % figure
+    for ii=1:Npitch
+        subplot(3,3,ii)
+        A = squeeze(Psyn_psi_lambda(:,:,ii,iframes(jj)));
+%         A = zeros(Nlambda,NE);
+%         for aa=1:NE
+%             for bb=1:Nlambda
+%                 A(bb,aa) = trapz(psi,squeeze(Psyn_psi_lambda(bb,aa,ii,:)));
+%             end
 %         end
-%         box on; view([0,90])
-%         cmp = colormap(jet(1024));
-%         new_colormap = cmp;
-%         new_colormap(1,:) = [1,1,1];
-%         colormap(new_colormap);
-%         colorbar
-%         shading interp
-%         title(['$\theta=$' num2str(pitch(ii)) '$^\circ$'],'Interpreter','latex')
-%         ylabel('$\lambda$ (nm)','Interpreter','latex')
-%         xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
-%     end
-% end
+        surf(E,lambda,A,'LineStyle','none')
+        try
+            axis([min(E) max(E) min(lambda) max(lambda) min(min(A)) max(max(A))])
+        catch
+            axis([min(E) max(E) min(lambda) max(lambda)])
+        end
+        box on; view([0,90])
+        cmp = colormap(jet(1024));
+        new_colormap = cmp;
+        new_colormap(1,:) = [1,1,1];
+        colormap(new_colormap);
+        colorbar
+        shading interp
+        title(['$\theta=$' num2str(pitch(ii)) '$^\circ$'],'Interpreter','latex')
+        ylabel('$\lambda$ (nm)','Interpreter','latex')
+        xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+    end
+end
