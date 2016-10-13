@@ -2067,7 +2067,7 @@ function P = synchrotronSpectrum(ST)
 disp('Calculating spectrum of synchrotron radiation...')
 P = struct;
 N = 100;
-Npsi = 10;
+Npsi = 5;
 psi = (pi/180)*linspace(0,5,Npsi);
 
 upper_integration_limit = 100.0;
@@ -2243,7 +2243,7 @@ if isfield(ST.PP,'k')
     legend(L,'Interpreter','latex','FontSize',14)
     box on;grid on
     ylabel('$P_{syn}(\psi,t)$ (Watts)','FontSize',14,'Interpreter','latex')
-    xlabel('Time $t$ (s)','FontSize',14,'Interpreter','latex')    
+    xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
 
 else
     error('Curvature not found!')

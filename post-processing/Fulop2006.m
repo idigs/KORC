@@ -11,10 +11,10 @@ NP = 200;
 NPAR = 100;
 NPERP = 50;
 
-Npcls = 1E4;
+Npcls = 1E5;
 
 pitch_min = 0; % in degrees
-pitch_max = 80; % in degrees
+pitch_max = 85; % in degrees
 Emax = 40E6; % Machimum energy in eV
 
 % Plasma parameters and physical constants, all in SI units
@@ -75,6 +75,7 @@ Do = @(x) C2*x + C1./x;
 P = @(x,a) Co(x).*(a./Do(x) + 1./Do(x).^2).*exp(-a.*Do(x)); % Marginal distribution function
 Pc = @(y,b) fo*y.*exp(-y/cz)*(1 - exp(-b))/b;
 chi_deviate = @(x) sqrt( fo*C1./(C2*(fo - 2*C2*C1*x)) - C1/C2 );
+fun = @(x) (1-exp(-eo))
 
 disp(['Normalization: ' num2str(trapz(fliplr(chi),P(fliplr(chi),0)))])
 

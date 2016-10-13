@@ -1591,20 +1591,20 @@ function P = synchrotronSpectrum(ST,filtered)
 disp('Calculating spectrum of synchrotron radiation...')
 P = struct;
 
-% it = ST.params.simulation.num_snapshots + 1;
-it = 1;
+it = ST.params.simulation.num_snapshots + 1;
+% it = 1;
 
 geometry = 'cylindrical';
 
 upper_integration_limit = 200.0;
 
 N = 100;
-lambda_min = 10E-9;% in meters
-lambda_max = 10000E-9;% in meters
+% lambda_min = 450E-9;% in meters
+% lambda_max = 950E-9;% in meters
 % lambda_min = 907E-9;% in meters
 % lambda_max = 917E-9;% in meters
-% lambda_min = 742E-9;% in meters
-% lambda_max = 752E-9;% in meters
+lambda_min = 742E-9;% in meters
+lambda_max = 752E-9;% in meters
 lambda_camera = linspace(lambda_min,lambda_max,N);
 Dlambda_camera = mean(diff(lambda_camera));
 
@@ -1678,6 +1678,8 @@ for ss=1:num_species
     
     
     [vp,psi] = identifyVisibleParticles(X,V,gammap,false);
+%     vp = true(size(gammap));
+%     psi = ones(size(gammap));
     
     X(:,~vp) = [];
     V(:,~vp) = [];
@@ -1889,11 +1891,11 @@ for ss=1:num_species
         
         figure(spectrum_figure)
         hold on
-        plot(lch*lambda_camera,sum(Psyn_camera,1))
+        plot(lch*lambda_camera,sum(Psyn_camera,1)/lch)
         hold off
         grid on;box on
         xlabel('$\lambda$ (nm)','Interpreter','latex','FontSize',16)
-        ylabel('$P_{syn}$ (Watts)','Interpreter','latex','FontSize',16)
+        ylabel('$P_{syn}$ (Watts/m)','Interpreter','latex','FontSize',16)
         L{ss} = ['$\theta_0 = $' num2str(ST.params.species.etao(ss)) '$^\circ$'];
     end
     
@@ -2082,8 +2084,8 @@ Riw = 1; % in meters
 
 % Radial and vertical position of the camera
 Rc = 2.38; % in meters
-Zc = 0.076; % in meters
-% Zc = 0;
+% Zc = 0.076; % in meters
+Zc = 0;
 
 np = numel(gammap);
 
