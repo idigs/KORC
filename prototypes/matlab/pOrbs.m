@@ -188,7 +188,7 @@ end
 
 % parametricShift(ST);
 
-ST.P = synchrotronSpectrum(ST);
+% ST.P = synchrotronSpectrum(ST);
 
 munlock
 
@@ -1155,14 +1155,14 @@ for ii=2:ST.params.numSnapshots
 %         % Collisions
 
 %         U_R = U_R + a*( F2 + F3 + Fcolle + Fcolli);
-%         U_R = U_R + a*( F2 + F3 );
+        U_R = U_R + a*( F2 + F3 );
 
 
-%         U = U_L + U_R - U; % Comment or uncomment
-%         gamma = sqrt( 1 + U*U' ); % Comment or uncomment
-%         V = U/gamma; % Comment or uncomment
+        U = U_L + U_R - U; % Comment or uncomment
+        gamma = sqrt( 1 + U*U' ); % Comment or uncomment
+        V = U/gamma; % Comment or uncomment
         
-         U = U_L; % Comment or uncomment
+%          U = U_L; % Comment or uncomment
         % % % Leap-frog scheme for the radiation damping force % % %fcoll
         
         zeta_previous = atan2(XX(2),XX(1));

@@ -61,12 +61,16 @@ chimin = min(chi);
 % % % FRE(p,chi) % % %
 fo = alpha/cz;
 n = alpha*cz -1;
-go = 97.8436;
 eo = 15;
 Vol = cz*alpha*(1 - exp(-eo))/eo;
 C1 = 0.5*alpha;
 C2 = 1/cz - C1;
 C3 = 0.5*alpha/cz;
+
+% Bidimensional PDFs
+F = @(x,y) fo*y.*exp( -y.*(C2*x + C1./x) )./x;
+G = @(x,y) fo*y.*exp( -y/cz ).*exp(-eo*(1-x));
+% Bidimensional PDFs
 
 % % % Marginal distribution gRE % % %
 % Pc =  @(x) fo*x./(C2*x.^2 + C1).^2; % comparison function
@@ -75,40 +79,86 @@ Do = @(x) C2*x + C1./x;
 P = @(x,a) Co(x).*(a./Do(x) + 1./Do(x).^2).*exp(-a.*Do(x)); % Marginal distribution function
 Pc = @(y,b) fo*y.*exp(-y/cz)*(1 - exp(-b))/b;
 chi_deviate = @(x) sqrt( fo*C1./(C2*(fo - 2*C2*C1*x)) - C1/C2 );
-fun = @(x) (1-exp(-eo))
+% fun = @(x) (alpha/cz)*(cz^2 - (cz^2 +cz*x).*exp(-x/cz)) - rand*eo/(1-exp(-eo));
+
+
 
 disp(['Normalization: ' num2str(trapz(fliplr(chi),P(fliplr(chi),0)))])
 
 urnd = rand(1,Npcls);
-deviate = chi_deviate(urnd);
-IL = find(deviate < chimin);
+deviate1 = chi_deviate(urnd);
+IL = find(deviate1 < chimin);
 while numel(IL) ~= 0
     urnd = rand(1,numel(IL));
-    deviate(IL) = chi_deviate(urnd);
-    IL = find(deviate < chimin);
+    deviate1(IL) = chi_deviate(urnd);
+    IL = find(deviate1 < chimin);
 end
 
-h = histogram(deviate,'Normalization','pdf');
+h = histogram(deviate1,'Normalization','pdf');
 dchi = mean(diff(h.BinEdges));
-xDeviate = 0.5*dchi + h.BinEdges(1:end-1);
-yDeviate = h.Values;
+xDeviate1 = 0.5*dchi + h.BinEdges(1:end-1);
+yDeviate1 = h.Values;
+
+
+urnd = rand(1,Npcls);
+deviate2 = zeros(1,Npcls);
+exitflag = 1;
+for ii=1:Npcls
+    fun = @(x) (1 - (x/cz + 1).*exp(-x/cz)) - urnd(ii);
+    [deviate2(ii),~,exitflag,~] = fzero(fun,25);
+    while (exitflag ~= 1 || deviate2(ii) < 0)
+        urnd_tmp = rand;
+        fun = @(x) (1 - (x/cz + 1).*exp(-x/cz)) - urnd_tmp;
+        [deviate2(ii),~,exitflag,~] = fzero(fun,25);
+    end
+end
+
+h = histogram(deviate2,'Normalization','pdf');
+dp = mean(diff(h.BinEdges));
+xDeviate2 = 0.5*dp + h.BinEdges(1:end-1);
+yDeviate2 = h.Values;
+
+yDeviate2 = max(Pc(p,eo))*yDeviate2/(max(yDeviate2));
+
+logic = false(1,Npcls);
+for ii=1:Npcls
+    while rand*G(deviate1(ii),deviate2(ii)) > F(deviate1(ii),deviate2(ii))
+        deviate1(ii) = chi_deviate(rand);
+        while (deviate1(ii) < chimin)
+            deviate1(ii) = chi_deviate(rand);
+        end
+        
+        %         logic(ii) = true;
+        urnd_tmp = rand;
+        fun = @(x) (1 - (x/cz + 1).*exp(-x/cz)) - urnd_tmp;
+        [deviate2(ii),~,exitflag,~] = fzero(fun,25);
+        while (exitflag ~= 1 || deviate2(ii) < 0)
+            urnd_tmp = rand;
+            fun = @(x) (1 - (x/cz + 1).*exp(-x/cz)) - urnd_tmp;
+            [deviate2(ii),~,exitflag,~] = fzero(fun,25);
+        end
+    end
+end
+
+deviate1(logic) = [];
+deviate3 = 180*acos(deviate1)/pi;
+deviate2(logic) = [];
 
 figure
 subplot(2,1,1)
 % semilogy(chi,P(chi,0),'r--',chi,P(chi,pr),'b',xDeviate,yDeviate,'g.:')
-semilogy(chi,P(chi,0),'r--',xDeviate,yDeviate,'b.:')
+semilogy(chi,P(chi,0),'r-',xDeviate1,yDeviate1,'b.:')
 xlabel('$\chi$','Interpreter','latex')
 ylabel('$\int f_{RE}(\chi,p) dp$','Interpreter','latex')
 subplot(2,1,2)
-plot(p,Pc(p,eo),'k')
+plot(p,Pc(p,eo),'r',xDeviate2,yDeviate2,'b.:')
 xlabel('$p$ ($m_ec$)','Interpreter','latex')
 ylabel('$\int f_c(\chi,p) d\chi$','Interpreter','latex')
 % % % Marginal distribution gRE % % %
 %% Bidimensional distribution
 
-F = @(x,y) fo*y.*exp( -y.*(C2*x + C1./x) )./x;
-% G = @(x,y) fo*y.*exp( -y/cz ).*exp(-go^2*(1-x).^2);
-G = @(x,y) fo*y.*exp( -y/cz ).*exp(-eo*(1-x));
+% F = @(x,y) fo*y.*exp( -y.*(C2*x + C1./x) )./x;
+% G = @(x,y) fo*y.*exp( -y/cz ).*exp(-eo*(1-x));
 
 fRE = zeros(NE,NP);
 fc = zeros(NE,NP);
@@ -131,8 +181,19 @@ xAxis = pitch;
 A = log10(fRE);
 B = log10(fc);
 levels = [0.2,0.1,0,-1,-2,-3,-4,-5,-6];
+figure;
+subplot(1,2,1)
 contour(xAxis,p,A,levels,'ShowText','on')
 hold on;contour(xAxis,p,B,levels,'ShowText','on','LineColor',[0,0,0]);hold off
+xlabel('$\chi$','Interpreter','latex')
+ylabel('$p$ ($m_ec$)','Interpreter','latex')
+box on;
+colormap(jet)
+hc = colorbar;
+ylabel(hc,'$f_{RE}(\chi,p)$','Interpreter','latex','FontSize',16)
+subplot(1,2,2)
+histogram2(deviate3,deviate2,'FaceColor','flat','Normalization','pdf','LineStyle','none')
+axis([min(xAxis) max(xAxis) 0 pmax])
 xlabel('$\chi$','Interpreter','latex')
 ylabel('$p$ ($m_ec$)','Interpreter','latex')
 box on;
