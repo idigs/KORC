@@ -125,7 +125,7 @@ ST.params.vo_params = vo; % vo_params = [velocity magnitude, pitch angle]
 ST.params.wc = sqrt(1 - sum(ST.params.vo.^2)/ST.params.c^2)*abs(ST.params.q)*ST.Bo/ST.params.m;
 
 ST.coll.nimpurities = 1;
-ST.coll.Te = 1.0*ST.params.qe; % Background electron temperature in eV
+ST.coll.Te = 1.0*ST.params.qe; % Background electron temperature in Joules
 ST.coll.ne = 1.0E20; % Background electron density in 1/m^3
 ST.coll.nH = ST.coll.ne;
 ST.coll.Zo = [10.0]; % Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
@@ -151,7 +151,9 @@ ST.norm.m = ST.params.m;
 ST.norm.wc = ST.norm.q*ST.Bo/ST.norm.m;
 ST.norm.t = 1/ST.norm.wc;
 ST.norm.l = ST.params.c*ST.norm.t;
-ST.norm.E = ST.norm.m*ST.params.c^2;
+ST.norm.v = ST.params.c;
+ST.norm.E = ST.norm.m*ST.norm.v^2;
+ST.norm.p = ST.norm.m*ST.norm.v;
 ST.norm.n = 1/ST.norm.l^3;
 % Normalisation parameters
 
@@ -169,6 +171,8 @@ end
 
 ST.time = ST.time;%/(2*pi/ST.params.wc);
 
+ST.collOp = initializeCollisionOperators(ST);
+
 ST.PP = particlePusherLeapfrog(ST);
 
 % Particle pusher using matlab ODEs solvers
@@ -180,7 +184,7 @@ if ST.opt
 end
 % ST.PP.angularMomentum = DiegosInvariants(ST);
 
-% ST.PP.invariant = invariants(ST);
+ST.PP.invariant = invariants(ST);
 
 % orbitShift(ST);
 
@@ -245,12 +249,6 @@ b2 = b2/sqrt(b2*b2');
 
 b3 = cross(b1,b2);
 b3 = b3/sqrt(b3*b3');
-
-% figure
-% plot3([0,b1(1)],[0,b1(2)],[0,b1(3)],'r',[0,b2(1)],[0,b2(2)],[0,b2(3)],'b',...
-%     [0,b3(1)],[0,b3(2)],[0,b3(3)],'k')
-% axis equal
-
 end
 
 function B = loadMagneticField(ST)
@@ -894,7 +892,7 @@ function E = analyticalE(X)
 narginchk(1,2);
 
 % Parameters of the analytical magnetic field
-Eo = 0.0;
+Eo = -0.1;
 Ro = 1.5; % Major radius in meters.
 % Parameters of the analytical magnetic field
 
@@ -923,9 +921,550 @@ E = [Ex,Ey,Ez];
 
 end
 
+% Monte-Calor collision operators
+
+function collOp = initializeCollisionOperators(ST)
+collOp = struct;
+
+collOp.Te = 2.0*ST.params.qe; % Background electron temperature in Joules
+collOp.Ti = collOp.Te; % Background ion temperature in Joules
+collOp.ne = 5.0E19; % Background electron density in 1/m^3
+collOp.Zeff = 1.0; % Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
+collOp.rD = ...
+    sqrt( ST.params.ep*collOp.Te/(collOp.ne*ST.params.qe^2*(1 + collOp.Zeff*collOp.Te/collOp.Ti)) );
+collOp.re = ST.params.qe^2/( 4*pi*ST.params.ep*ST.params.me*ST.params.c^2 );
+collOp.Clog = log(collOp.rD/collOp.re);
+collOp.VTe = sqrt(2*collOp.Te/ST.params.me);
+collOp.delta = collOp.VTe/ST.params.c;
+collOp.Gamma = collOp.ne*ST.params.qe^4*collOp.Clog/(4*pi*ST.params.ep^2);
+
+% Normalization
+collOp.Te = collOp.Te/ST.norm.E;
+collOp.Ti = collOp.Ti/ST.norm.E;
+collOp.ne = collOp.ne/ST.norm.l^3;
+collOp.VTe = collOp.VTe/ST.norm.v;
+
+collOp.Gamma = collOp.Gamma/(ST.norm.p^2*ST.norm.v/ST.norm.t);
+% Normalization
+
+collOp.psi = @(v) 0.5*( erf(v/collOp.VTe) - ...
+    2*(v/collOp.VTe).*exp(-(v/collOp.VTe).^2)/sqrt(pi) )./(v/collOp.VTe).^2;
+collOp.CA = @(v) collOp.Gamma*collOp.psi(v)./v;
+collOp.CB = @(v) (0.5*collOp.Gamma./v).*( collOp.Zeff + ...
+    erf(v/collOp.VTe) - collOp.psi(v) + 0.5*collOp.delta^4*(v/collOp.VTe).^2 );
+collOp.CF = @(v) collOp.Gamma*collOp.psi(v)./collOp.Te;
+
+collOp.fun = @(v) (6*collOp.VTe./v + 4*v/collOp.VTe).*exp(-(v/collOp.VTe).^2)/sqrt(pi) - ...
+    3*(collOp.VTe./v).^2.*erf(v/collOp.VTe);
+
+if ST.opt
+    v = linspace(0.2,0.9999,100);
+    figure;
+    subplot(3,1,1);
+    plot(v,collOp.CA(v));
+    ylabel('$C_A(v)$ ($e B_0/m_e^3 c^2 $)','Interpreter','latex')
+    xlabel('Velocity $v$ (c)','Interpreter','latex')
+    subplot(3,1,2);
+    plot(v,collOp.CB(v));
+    ylabel('$C_B(v)$ ($e B_0/m_e^3 c^2 $)','Interpreter','latex')
+    xlabel('Velocity $v$ (c)','Interpreter','latex')
+    subplot(3,1,3);
+    plot(v,collOp.CF(v));
+    ylabel('$C_F(v)$ ($e B_0/m_e^2 c $)','Interpreter','latex')
+    xlabel('Velocity $v$ (c)','Interpreter','latex')
+end
+end
+
+function [U,Wcoll] = collisionOperator(ST,X,V,dt)
+% This function calculates the random kicks due to collisions
+U = zeros(1,3);
+
+v = sqrt(V*V');
+gammap = 1/sqrt(1 - v^2);
+p = gammap*v;
+
+[b1,b2,b3] = unitVectors(ST,X);
+
+U1 = gammap*V*b1';
+U2 = gammap*V*b2';
+U3 = gammap*V*b3';
+
+xi = b1*V';
+
+dWp = rand*sqrt(dt);
+dWxi = rand*sqrt(dt);
+dWphi = rand*sqrt(dt);
+
+CA = ST.collOp.CA(v);
+CB = ST.collOp.CB(v);
+CF = ST.collOp.CF(v);
+
+dp = ( -CF + 2*CA/p + ST.collOp.Gamma*ST.collOp.fun(v)/(gammap*p^2) )*dt + ...
+    sqrt(2*CA)*dWp;
+
+dxi = -2*xi*CB*dt/p^2 - sqrt(2*CB*(1 - xi^2))*dWxi/p;
+
+if xi ~= 1
+    dphi = sqrt(2*CB/(1 - xi^2))*dWphi/p;
+else
+    dphi = 0;
+end
+
+x = [1,0,0];
+y = [0,1,0];
+z = [0,0,1];
+
+pitchAngle = acos(dxi);
+
+dU1 = dp*cos(pitchAngle);
+dU2 = dp*sin(pitchAngle)*cos(dphi);
+dU3 = dp*sin(pitchAngle)*sin(dphi);
+
+U(1) = (U1+dU1)*(b1*x') + (U2+dU2)*(b2*x') + (U3+dU3)*(b3*x');
+U(2) = (U1+dU1)*(b1*y') + (U2+dU2)*(b2*y') + (U3+dU3)*(b3*y');
+U(3) = (U1+dU1)*(b1*z') + (U2+dU2)*(b2*z') + (U3+dU3)*(b3*z');
+
+Wcoll = (gammap - sqrt(1 + U*U'))/dt;
+end
+
 % LEAP-FROG PARTICLE PUSHER
 
 function PP = particlePusherLeapfrog(ST)
+% Relativistic particle pusher.
+% Vay, J.-L. 2008, PoP 15, 056701.
+if ST.opt
+    disp('Initializing particle pusher...')
+end
+
+PP = struct;
+
+PP.method = 'Leapfrog';
+
+X = zeros(ST.params.numSnapshots,3); % (it,ii), ii=x,y,z
+v = zeros(ST.params.numSnapshots,3);
+u = zeros(ST.params.numSnapshots,3);
+R = zeros(ST.params.numSnapshots,3);
+
+POINCARE = struct;
+POINCARE.R = [];
+POINCARE.Z = [];
+POINCARE.k = [];
+POINCARE.T = [];
+POINCARE.pitch = [];
+
+k = zeros(1,ST.params.numSnapshots); % Curvature
+kapp = zeros(1,ST.params.numSnapshots); % Approximation of the curvature
+T = zeros(1,ST.params.numSnapshots); % Torsion
+vpar = zeros(1,ST.params.numSnapshots); % parallel velocity
+vperp = zeros(1,ST.params.numSnapshots); % perpendicular velocity
+ppar = zeros(1,ST.params.numSnapshots); % parallel momentum
+pperp = zeros(1,ST.params.numSnapshots); % perpendicular momentum
+mu = zeros(1,ST.params.numSnapshots); % instantaneous magnetic moment
+EK = zeros(1,ST.params.numSnapshots); % kinetic energy
+
+fL = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
+f2 = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
+f3 = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
+
+WL = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
+WR = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
+Psyn = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
+Wcoll = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
+
+% Normalization
+X(1,:) = ST.params.Xo/ST.norm.l;
+v(1,:) = ST.params.vo/ST.norm.v;
+q = ST.params.q/ST.norm.q;
+m = ST.params.m/ST.norm.m;
+if ST.analytical
+    B = analyticalB(X(1,:)*ST.norm.l)/ST.Bo;
+    E = analyticalE(X(1,:)*ST.norm.l)/(ST.Bo*ST.norm.v);
+else
+    B = interpMagField(ST,X(1,:)*ST.norm.l)/ST.Bo;
+    E = [0,0,0];
+end
+dt = ST.params.dt*ST.norm.wc;
+ep = ST.params.ep*(ST.norm.m^2*ST.norm.v^3/(ST.norm.q^3*ST.Bo));
+Kc = ST.params.Kc/(ST.norm.m*ST.norm.l*ST.norm.v^2/ST.norm.q^2);
+% Normalization
+
+% initial velocity at time level t = 0
+u(1,:) = v(1,:)/sqrt(1 - sum(v(1,:).^2));
+gamma = sqrt(1 + sum(u(1,:).^2));
+v(1,:) = u(1,:)/gamma;
+R(1,:) = X(1,:) + gamma*m*cross(v(1,:),B)/(q*sum(B.^2));
+EK(1) = gamma;
+
+% % % % % % % % % % % % % % % % % % 
+B_mag = sqrt(B*B');
+b = B/B_mag;
+vpar(1) = v(1,:)*b';
+vperp(1) = sqrt( v(1,:)*v(1,:)' - vpar(1)^2 );
+ppar(1) = gamma*m*vpar(1);
+pperp(1) = gamma*m*vperp(1);
+mu(1) = m*gamma^2*vperp(1)^2/(2*B_mag);
+
+% Curvature and torsion
+vmag = sqrt( sum(v(1,:).^2) );
+aux =  cross(v(1,:),E) + v(1,:)*sum(v(1,:).*B) - B*vmag^2;
+k(1) = abs(q)*sqrt( sum(aux.^2) )/(gamma*m*vmag^3);
+
+pitch = atan2(vperp(1),vpar(1));
+if (pitch < 0)
+    pitch = pitch + 2*pi;
+end
+% kapp(1) = abs(q)*B_mag*sin(pitch)/sqrt(ppar(1)^2 + pperp(1)^2);
+kapp(1) = abs(q)*sin(pitch)/sqrt(ppar(1)^2 + pperp(1)^2);% Bo = 1 due to normalization
+curv = k(1);
+% Curvature and torsion
+
+% % % Radiation damping force % % %
+F2 = ( q^3/(6*pi*ep*m^2) )*( (E*v(1,:)')*E + cross(E,B) +...
+    cross(B,cross(B,v(1,:))) );
+vec = E + cross(v(1,:),B);
+F3 = ( gamma^2*q^3/(6*pi*ep*m^2) )*( (E*v(1,:)')^2 - vec*vec' )*v(1,:);
+% Collisions
+
+Psyn(1) = -(2/3)*( Kc*q^2*gamma^4*vmag^4*curv^2 );
+
+WL(1) = q*(E*v(1,:)');
+WR(1) = ( q^4/(6*pi*ep*m^2) )*( E*E' + cross(v(1,:),B)*E' +...
+    gamma^2*( (E*v(1,:)')^2 - vec*vec' ) );
+
+fL(1) = abs(q)*sqrt( vec*vec' );
+f2(1) = abs(q)*sqrt( F2*F2' );
+f3(1) = abs(q)*sqrt( F3*F3' );
+% % % % % % % % % % % % % % % % % % 
+
+% initial half-step for position
+DT = 0.5*dt;
+V = v(1,:);
+U = u(1,:);
+% XX = X(1,:) + DT*V; % Advance position
+XX = X(1,:);
+% initial half-step for position
+
+a = q*dt/m;
+
+for ii=2:ST.params.numSnapshots
+    for jj=1:ST.params.cadence
+        
+        if ST.analytical
+            B = analyticalB(XX*ST.norm.l)/ST.Bo;
+            E = analyticalE(XX*ST.norm.l)/(ST.Bo*ST.norm.v);
+        else
+            B = interpMagField(ST,XX*ST.norm.l)/ST.Bo;
+        end
+        
+        U_R = U;
+        U_L = U;
+        
+        % % % Leap-frog scheme for Lorentz force % % %
+        U_hs = U_L + 0.5*a*(E + cross(V,B)); % Half step for velocity
+        
+        [U_hs,dummyWcoll] = collisionOperator(ST,XX,U_hs/sqrt( 1 + U_hs*U_hs' ),dt);
+        
+        % % % % % % % % % % % % % % %
+        % Radiation losses operator
+        vmag = sqrt( V*V' );
+        aux =  cross(V,E) + V*(V*B') - B*vmag^2;
+        curv = abs(q)*sqrt( aux*aux' )/(gamma*m*vmag^3);
+        % Radiation losses operator
+        % % % % % % % % % % % % % % %
+        
+        tau = 0.5*q*dt*B/m;
+        up = U_hs + 0.5*a*E;
+        gammap = sqrt(1 + up*up');
+        sigma = gammap^2 - tau*tau';
+        us = up*tau'; % variable 'u^*' in paper
+        gamma = sqrt(0.5)*sqrt( sigma + sqrt(sigma^2 + 4*(tau*tau' + us^2)) );
+        t = tau/gamma;
+        s = 1/(1 + t*t'); % variable 's' in paper
+        
+        U_L = s*(up + (up*t')*t + cross(up,t));
+        V = U_L/gamma;
+        % % % Leap-frog scheme for Lorentz force % % %
+        
+        % % % Leap-frog scheme for the radiation damping force % % %
+        U_eff = 0.5*(U_L + U);
+        gamma_eff = sqrt(1 + U_eff*U_eff');
+        V_eff = U_eff/gamma_eff;
+        
+        F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
+            cross(B,cross(B,V_eff)) );
+        vec = E + cross(V_eff,B);
+        F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
+
+%         U_R = U_R + a*( F2 + F3 );
+%         U = U_L + U_R - U; % Comment or uncomment
+%         gamma = sqrt( 1 + U*U' ); % Comment or uncomment
+%         V = U/gamma; % Comment or uncomment
+        
+        U = U_L; % Comment or uncomment
+        % % % Leap-frog scheme for the radiation damping force % % %fcoll
+        
+        zeta_previous = atan2(XX(2),XX(1));
+        if zeta_previous < 0
+            zeta_previous = zeta_previous + 2*pi;
+        end
+        
+%         XX = XX + dt*V; % Advance position
+        
+        zeta_current = atan2(XX(2),XX(1));
+        if zeta_current < 0
+            zeta_current = zeta_current + 2*pi;
+        end
+        
+        if abs(zeta_previous - zeta_current) > 6
+            
+            POINCARE.R = [POINCARE.R; sqrt(XX(1).^2 + XX(2).^2)];
+            POINCARE.Z = [POINCARE.Z; XX(3)];
+            
+            b = B/sqrt(B*B');
+            Vpar = V*b';
+            Vperp = sqrt( V*V' - Vpar^2 );
+            
+            POINCARE.k = [POINCARE.k; curv];
+            POINCARE.T = [POINCARE.T; 0.0];
+            POINCARE.pitch = [POINCARE.pitch; atan2(Vperp,Vpar)];
+        end
+    end
+    
+    X(ii,:) = XX; % Time level n+1/2
+    u(ii,:) = U; % Time level n+1
+    v(ii,:) = V; % Time level n+1
+    EK(ii) = gamma; % Time level n+1
+    
+    gamma_half_step = sqrt(1 + U_hs*U_hs');
+    v_half_step = U_hs/gamma_half_step;
+    
+    R(ii,:) = X(ii,:) + gamma*m*cross(v_half_step,B)/(q*(B*B'));
+    
+    B_mag = sqrt(B*B');
+    b = B/B_mag;
+    vpar(ii) = v(ii,:)*b';
+    vperp(ii) = sqrt( v(ii,:)*v(ii,:)' - vpar(ii)^2 );
+    ppar(ii) = gamma*m*vpar(ii);
+    pperp(ii) = gamma*m*vperp(ii);
+    mu(ii) = m*gamma^2*vperp(ii)^2/(2*B_mag);
+    
+    k(ii) = curv;
+    
+    pitch = atan2(vperp(ii),vpar(ii));
+    if (pitch < 0)
+        pitch = pitch + 2*pi;
+    end
+%     kapp(ii) = abs(q)*B_mag*sin(pitch)/sqrt(ppar(ii)^2 + pperp(ii)^2);
+    kapp(ii) = abs(q)*sin(pitch)/sqrt(ppar(ii)^2 + pperp(ii)^2);% Bo = 1 due to normalization
+    
+	Psyn(ii) = -(2/3)*( Kc*q^2*gamma^4*vmag^4*curv^2 );
+            
+    fL(ii) = abs(q)*sqrt( vec*vec' );
+    f2(ii) = abs(q)*sqrt( F2*F2' );
+    f3(ii) = abs(q)*sqrt( F3*F3' );
+    
+    F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
+        cross(B,cross(B,V_eff)) );
+    vec = E + cross(V_eff,B);
+    F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
+    
+    WL(ii) = q*(E*V_eff');
+    WR(ii) = ( q^4/(6*pi*ep*m^2) )*( E*E' + cross(V_eff,B)*E' +...
+        gamma_eff^2*( (E*V_eff')^2 - vec*vec' ) );
+    Wcoll(ii) = dummyWcoll;
+end
+
+
+if ST.opt
+    time = ST.time;%/(2*pi/ST.params.wc);
+    
+    % Relative error in energy conservation
+    ERR_EK = 100*(EK - EK(1))./EK(1);
+    ERR_mu = 100*(mu - mu(1))./mu(1);
+    % Relative error in energy conservation
+    
+    x = linspace(min(time),max(time),10);
+    y = zeros(1,10);
+    
+    figure
+    subplot(4,1,1)
+    plot(time, EK)
+    box on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$\gamma m c^2$ [$m_e c^2$]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    subplot(4,1,2)
+    plot(time, ERR_EK,x,y,'k--')
+    box on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('Error in $\gamma m c^2$ [\%]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    subplot(4,1,3)
+    plot(time, mu)
+    box on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$\mu$ [$c^2 m_o/B_o$]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    subplot(4,1,4)
+    plot(time, ERR_mu,x,y,'k--')
+    box on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('Error in $\mu$ [\%]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    
+    
+    figure
+    subplot(3,1,1)
+    plot(time, vpar)
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$v_\parallel$ [c]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    subplot(3,1,2)
+    plot(time, vperp)
+    box on; grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$v_\perp$ [c]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    v_tot = sqrt(vpar.^2 +vperp.^2);
+    subplot(3,1,3)
+    plot(time, v_tot)
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$v$ [c]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    
+    figure
+    subplot(2,1,1)
+    plot(time, ppar)
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$p_\parallel$ [$mc$]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    subplot(2,1,2)
+    plot(time, pperp)
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$p_\perp$ [$mc$]','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+end
+
+% Return position and velocity with SI units
+PP.X = X*ST.norm.l;
+PP.R = R*ST.norm.l;
+PP.v = v*ST.norm.v;
+
+PP.vpar = vpar;
+PP.vperp = vperp;
+
+PP.k = k/ST.norm.l; % curvature
+PP.kapp = kapp/ST.norm.l; % curvature
+PP.T = T/ST.norm.l; % curvature
+
+PP.gamma = EK;
+PP.mu = mu;
+
+PP.Psyn = WR*ST.norm.m*ST.norm.v^3/ST.norm.l;
+Psyn = Psyn*ST.norm.m*ST.norm.v^3/ST.norm.l;
+
+
+POINCARE.R = POINCARE.R*ST.norm.l;
+POINCARE.Z = POINCARE.Z*ST.norm.l;
+POINCARE.k = POINCARE.k/ST.norm.l;
+POINCARE.T = POINCARE.T/ST.norm.l;
+
+PP.POINCARE = POINCARE;
+
+
+if ST.opt
+    figure
+    subplot(2,1,1)
+    plot(time,PP.k,'k',time,PP.kapp,'r')
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('Curvature $\kappa(t)$','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    subplot(2,1,2)
+    plot(time, PP.T,time,0*time,'k--')
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('Torsion $\tau(t)$','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    
+    figure
+    plot3(PP.X(:,1),PP.X(:,2),PP.X(:,3),'b')
+    hold on
+    plot3(PP.R(:,1),PP.R(:,2),PP.R(:,3),'r')
+    hold off
+    axis equal
+    box on
+    xlabel('X','Interpreter','latex','FontSize',16)
+    ylabel('Y','Interpreter','latex','FontSize',16)
+    zlabel('Z','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    
+    figure
+    subplot(3,1,1)
+    plot(time, fL)
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$|F_L|$','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    subplot(3,1,2)
+    plot(time, f2)
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$|f_2|$','Interpreter','latex','FontSize',16)
+    subplot(3,1,3)
+    plot(time, f3)
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$|f_3|$','Interpreter','latex','FontSize',16)
+    
+    figure
+    subplot(4,1,1)
+    plot(time, WL)
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$|W_L|$','Interpreter','latex','FontSize',16)
+    title(PP.method,'Interpreter','latex','FontSize',16)
+    subplot(4,1,2)
+    plot(time,abs(PP.Psyn),'k',time,abs(Psyn),'r')
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$P_{syn}$ (Watts)','Interpreter','latex','FontSize',16)
+    subplot(4,1,3)
+    plot(time, Wcoll)
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$|W_{coll}|$','Interpreter','latex','FontSize',16)
+    subplot(4,1,4)
+    plot(time, abs(PP.Psyn./WL))
+    box on
+    grid on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$|W_R/W_L|$','Interpreter','latex','FontSize',16)
+    disp(['Mean value: ' num2str(mean(WR./WL))])
+end
+
+if ST.opt
+    disp('Particle pusher: done!')
+end
+end
+
+function PP = particlePusherLeapfrog_old(ST)% Particle pusher with old collision model
 % Relativistic particle pusher.
 % Vay, J.-L. 2008, PoP 15, 056701.
 if ST.opt
@@ -972,19 +1511,19 @@ WC = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 
 % Normalization
 X(1,:) = ST.params.Xo/ST.norm.l;
-v(1,:) = ST.params.vo/ST.params.c;
+v(1,:) = ST.params.vo/ST.norm.v;
 q = ST.params.q/ST.norm.q;
 m = ST.params.m/ST.norm.m;
 if ST.analytical
     B = analyticalB(X(1,:)*ST.norm.l)/ST.Bo;
-    E = analyticalE(X(1,:)*ST.norm.l)/(ST.Bo*ST.params.c);
+    E = analyticalE(X(1,:)*ST.norm.l)/(ST.Bo*ST.norm.v);
 else
     B = interpMagField(ST,X(1,:)*ST.norm.l)/ST.Bo;
     E = [0,0,0];
 end
 dt = ST.params.dt*ST.norm.wc;
-ep = ST.params.ep*(ST.norm.m^2*ST.params.c^3/(ST.norm.q^3*ST.Bo));
-Kc = ST.params.Kc/(ST.norm.m*ST.norm.l*ST.params.c^2/ST.norm.q^2);
+ep = ST.params.ep*(ST.norm.m^2*ST.norm.v^3/(ST.norm.q^3*ST.Bo));
+Kc = ST.params.Kc/(ST.norm.m*ST.norm.l*ST.norm.v^2/ST.norm.q^2);
 
 ST.coll.Te = ST.coll.Te/ST.norm.E;
 ST.coll.ne = ST.coll.ne/ST.norm.n;
@@ -1086,7 +1625,7 @@ for ii=2:ST.params.numSnapshots
         
         if ST.analytical
             B = analyticalB(XX*ST.norm.l)/ST.Bo;
-            E = analyticalE(XX*ST.norm.l)/(ST.Bo*ST.params.c);
+            E = analyticalE(XX*ST.norm.l)/(ST.Bo*ST.norm.v);
         else
             B = interpMagField(ST,XX*ST.norm.l)/ST.Bo;
         end
@@ -1095,7 +1634,9 @@ for ii=2:ST.params.numSnapshots
         U_L = U;
         
         % % % Leap-frog scheme for Lorentz force % % %
-        U_hs = U_L + 0.5*a*(E + cross(V,B));
+        U_hs = U_L + 0.5*a*(E + cross(V,B)); % Half step for velocity
+        
+        U_hs = collisionOperator(ST,XX,U_hs/sqrt( 1 + U_hs*U_hs' ),dt);
         
         % % % % % % % % % % % % % % %
         % Radiation losses operator
@@ -1162,7 +1703,7 @@ for ii=2:ST.params.numSnapshots
         gamma = sqrt( 1 + U*U' ); % Comment or uncomment
         V = U/gamma; % Comment or uncomment
         
-%          U = U_L; % Comment or uncomment
+%         U = U_L; % Comment or uncomment
         % % % Leap-frog scheme for the radiation damping force % % %fcoll
         
         zeta_previous = atan2(XX(2),XX(1));
@@ -1319,7 +1860,7 @@ end
 % Return position and velocity with SI units
 PP.X = X*ST.norm.l;
 PP.R = R*ST.norm.l;
-PP.v = v*ST.params.c;
+PP.v = v*ST.norm.v;
 
 PP.vpar = vpar;
 PP.vperp = vperp;
@@ -1331,8 +1872,8 @@ PP.T = T/ST.norm.l; % curvature
 PP.gamma = EK;
 PP.mu = mu;
 
-PP.Psyn = WR*ST.norm.m*ST.params.c^3/ST.norm.l;
-Psyn = Psyn*ST.norm.m*ST.params.c^3/ST.norm.l;
+PP.Psyn = WR*ST.norm.m*ST.norm.v^3/ST.norm.l;
+Psyn = Psyn*ST.norm.m*ST.norm.v^3/ST.norm.l;
 
 
 POINCARE.R = POINCARE.R*ST.norm.l;
@@ -1452,7 +1993,7 @@ u = zeros(ST.params.numIt,3);
 
 % Normalization
 X(1,:) = ST.params.Xo/ST.norm.l;
-v(1,:) = ST.params.vo/ST.params.c;
+v(1,:) = ST.params.vo/ST.norm.v;
 q = ST.params.q/ST.norm.q;
 m = ST.params.m/ST.norm.m;
 if ST.analytical
@@ -1460,7 +2001,7 @@ if ST.analytical
 else
     B = interpMagField(ST,X(1,:)*ST.norm.l)/ST.Bo;
 end
-E = ST.E/(ST.Bo*ST.params.c);
+E = ST.E/(ST.Bo*ST.norm.v);
 
 u(1,:) = v(1,:)/sqrt(1 - sum(v(1,:).^2));
 v(1,:) = u(1,:)/sqrt(1 + sum(u(1,:).^2));
@@ -1515,7 +2056,7 @@ if ST.opt
     title(PP.method,'Interpreter','latex','FontSize',16)
 end
 
-PP.v = PP.v*ST.params.c;
+PP.v = PP.v*ST.norm.v;
 
 end
 
@@ -1716,7 +2257,7 @@ m = ST.params.m;
 q = ST.params.q;
 
 X = ST.PP.X;
-gamma = ST.PP.EK';
+gammap = ST.PP.gamma';
 V = ST.PP.v;
 
 % Toroidal coordinates
@@ -1733,7 +2274,7 @@ zeta(zeta < 0) = zeta(zeta < 0) + 2*pi;
 dzeta_dt = ...
     (X(:,2).*V(:,1) - X(:,1).*V(:,2))./( X(:,1).^2 + X(:,2).^2 );
 
-wc = q*Bo./(m*gamma);
+wc = q*Bo./(m*gammap);
 
 
 % T1 = dzeta_dt.*(1 + eta.*cos(theta)).^2;
@@ -2014,7 +2555,7 @@ grid on; box on
 xlabel('$R$ (m)','Interpreter','latex','FontSize',14)
 ylabel('$Z$ (m)','Interpreter','latex','FontSize',14)
 subplot(4,1,3)
-plot(ST.time,v_zeta/ST.params.c)
+plot(ST.time,v_zeta/ST.norm.v)
 xlim([0 max(ST.time)])
 ylabel('$\upsilon_\zeta$ (c)','Interpreter','latex','FontSize',14)
 xlabel('Time $t$ (s)','Interpreter','latex','FontSize',14)
