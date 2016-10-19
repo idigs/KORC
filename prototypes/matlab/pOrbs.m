@@ -171,7 +171,7 @@ end
 
 ST.time = ST.time;%/(2*pi/ST.params.wc);
 
-ST.collOp = initializeCollisionOperators(ST);
+ST.cOp = initializeCollisionOperators(ST);
 
 ST.PP = particlePusherLeapfrog(ST);
 
@@ -923,58 +923,68 @@ end
 
 % Monte-Calor collision operators
 
-function collOp = initializeCollisionOperators(ST)
-collOp = struct;
+function cOp = initializeCollisionOperators(ST)
+cOp = struct;
 
-collOp.Te = 2.0*ST.params.qe; % Background electron temperature in Joules
-collOp.Ti = collOp.Te; % Background ion temperature in Joules
-collOp.ne = 5.0E19; % Background electron density in 1/m^3
-collOp.Zeff = 12.0; % Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
-collOp.rD = ...
-    sqrt( ST.params.ep*collOp.Te/(collOp.ne*ST.params.qe^2*(1 + collOp.Zeff*collOp.Te/collOp.Ti)) );
-collOp.re = ST.params.qe^2/( 4*pi*ST.params.ep*ST.params.me*ST.params.c^2 );
-collOp.Clog = log(collOp.rD/collOp.re);
-collOp.VTe = sqrt(2*collOp.Te/ST.params.me);
-collOp.delta = collOp.VTe/ST.params.c;
-collOp.Gamma = collOp.ne*ST.params.qe^4*collOp.Clog/(4*pi*ST.params.ep^2);
-collOp.ED = collOp.ne*ST.params.qe^3*collOp.Clog/(4*pi*ST.params.ep^2*collOp.Te);
+cOp.Te = 2.0*ST.params.qe; % Background electron temperature in Joules
+cOp.Ti = cOp.Te; % Background ion temperature in Joules
+cOp.ne = 5.0E19; % Background electron density in 1/m^3
+cOp.Zeff = 12.0; % Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
+cOp.rD = ...
+    sqrt( ST.params.ep*cOp.Te/(cOp.ne*ST.params.qe^2*(1 + cOp.Zeff*cOp.Te/cOp.Ti)) );
+cOp.re = ST.params.qe^2/( 4*pi*ST.params.ep*ST.params.me*ST.params.c^2 );
+cOp.Clog = 25.3 - 1.15*log10(1E-3*cOp.ne) + 2.3*log10(cOp.Te/ST.params.qe);
+cOp.VTe = sqrt(2*cOp.Te/ST.params.me);
+cOp.delta = cOp.VTe/ST.params.c;
+cOp.Gamma = cOp.ne*ST.params.qe^4*cOp.Clog/(4*pi*ST.params.ep^2);
+% cOp.Gamma = cOp.ne*ST.params.qe^4*cOp.Clog/(4*pi*ST.params.ep^2);
+cOp.ED = cOp.ne*ST.params.qe^3*cOp.Clog/(4*pi*ST.params.ep^2*cOp.Te);
 
 Ef = analyticalE([ST.B.Ro,0,0]);
-collOp.Vc = collOp.VTe*sqrt(0.5*collOp.ED/sqrt(Ef*Ef'));
+cOp.Vc = cOp.VTe*sqrt(0.5*cOp.ED/sqrt(Ef*Ef'));
 
 % Normalization
-collOp.Te = collOp.Te/ST.norm.E;
-collOp.Ti = collOp.Ti/ST.norm.E;
-collOp.ne = collOp.ne/ST.norm.l^3;
-collOp.VTe = collOp.VTe/ST.norm.v;
+cOp.Te = cOp.Te/ST.norm.E;
+cOp.Ti = cOp.Ti/ST.norm.E;
+cOp.ne = cOp.ne/ST.norm.l^3;
+cOp.VTe = cOp.VTe/ST.norm.v;
 
-collOp.Gamma = collOp.Gamma/(ST.norm.p^2*ST.norm.v/ST.norm.t);
-collOp.Vc = collOp.Vc/ST.norm.v;
+cOp.Gamma = cOp.Gamma/(ST.norm.p^2*ST.norm.v/ST.norm.t);
+cOp.Vc = cOp.Vc/ST.norm.v;
 % Normalization
 
-collOp.psi = @(v) 0.5*( erf(v/collOp.VTe) - ...
-    2*(v/collOp.VTe).*exp(-(v/collOp.VTe).^2)/sqrt(pi) )./(v/collOp.VTe).^2;
-collOp.CA = @(v) collOp.Gamma*collOp.psi(v)./v;
-collOp.CB = @(v) (0.5*collOp.Gamma./v).*( collOp.Zeff + ...
-    erf(v/collOp.VTe) - collOp.psi(v) + 0.5*collOp.delta^4*(v/collOp.VTe).^2 );
-collOp.CF = @(v) collOp.Gamma*collOp.psi(v)./collOp.Te;
+cOp.x = @(v) v/cOp.VTe;
 
-collOp.fun = @(v) (6*collOp.VTe./v + 4*v/collOp.VTe).*exp(-(v/collOp.VTe).^2)/sqrt(pi) - ...
-    3*(collOp.VTe./v).^2.*erf(v/collOp.VTe);
+cOp.psi = @(v) 0.5*( erf(cOp.x(v)) - ...
+    2*cOp.x(v).*exp(-cOp.x(v).^2)/sqrt(pi) )./cOp.x(v).^2;
+
+cOp.CA = @(v) cOp.Gamma*cOp.psi(v)./v;
+
+cOp.CB = @(v) (0.5*cOp.Gamma./v).*( cOp.Zeff + ...
+    erf(cOp.x(v)) - cOp.psi(v) + 0.5*cOp.delta^4*cOp.x(v).^2 );
+
+cOp.CF = @(v) cOp.Gamma*cOp.psi(v)/cOp.Te;
+
+% cOp.fun = @(v) (6*(cOp.VTe./v)/sqrt(pi) + 4*cOp.x(v)).*exp(-(cOp.x(v)).^2)/sqrt(pi) - ...
+%     3*(cOp.VTe./v).^2.*erf(cOp.x(v));
+
+cOp.fun = @(v) 3*exp(-cOp.x(v).^2)./(cOp.x(v)*sqrt(pi)) + ...
+    2*cOp.x(v).*exp(-cOp.x(v).^2)/sqrt(pi) - ...
+    1.5*erf(cOp.x(v))./cOp.x(v).^2;
 
 if ST.opt
     v = linspace(0.2,0.9999,100);
     figure;
     subplot(3,1,1);
-    plot(v,collOp.CA(v));
+    plot(v,cOp.CA(v));
     ylabel('$C_A(v)$ ($e B_0/m_e^3 c^2 $)','Interpreter','latex')
     xlabel('Velocity $v$ (c)','Interpreter','latex')
     subplot(3,1,2);
-    plot(v,collOp.CB(v));
+    plot(v,cOp.CB(v));
     ylabel('$C_B(v)$ ($e B_0/m_e^3 c^2 $)','Interpreter','latex')
     xlabel('Velocity $v$ (c)','Interpreter','latex')
     subplot(3,1,3);
-    plot(v,collOp.CF(v));
+    plot(v,cOp.CF(v));
     ylabel('$C_F(v)$ ($e B_0/m_e^2 c $)','Interpreter','latex')
     xlabel('Velocity $v$ (c)','Interpreter','latex')
 end
@@ -994,23 +1004,27 @@ U1 = gammap*V*b1';
 U2 = gammap*V*b2';
 U3 = gammap*V*b3';
 
-xi = b1*V';
+% xi = b1*V'/sqrt(V*V');
+pitch = acos(b1*V'/sqrt(V*V'));
 
-dWp = rand*sqrt(dt);
-dWxi = rand*sqrt(dt);
-dWphi = rand*sqrt(dt);
+dWp = random('uniform',0,1,1)*sqrt(dt);
+dWtheta = random('uniform',0,pi,1)*sqrt(dt);
+dWphi = random('uniform',0,2*pi,1)*sqrt(dt);
 
-CA = ST.collOp.CA(v);
-CB = ST.collOp.CB(v);
-CF = ST.collOp.CF(v);
+CA = ST.cOp.CA(v);
+CB = ST.cOp.CB(v);
+CF = ST.cOp.CF(v);
 
-dp = ( -CF + 2*CA/p + ST.collOp.Gamma*ST.collOp.fun(v)/(gammap*p^2) )*dt + ...
+dp = ( -CF + 2*CA/p + ST.cOp.Gamma*ST.cOp.fun(v)/(gammap*p^2) )*dt + ...
     sqrt(2*CA)*dWp;
 
-dxi = -2*xi*CB*dt/p^2 - sqrt(2*CB*(1 - xi^2))*dWxi/p;
+% dxi = -2*xi*CB*dt/p^2 - sqrt(2*CB*(1 - xi^2))*dWxi/p;
 
-if xi ~= 1
-    dphi = sqrt(2*CB/(1 - xi^2))*dWphi/p;
+dpitch = sqrt(2*CB)*dWtheta/p;
+
+if pitch > 1E-2
+    dphi = sqrt(2*CB)*dWphi/(p*sin(pitch));
+    dpitch = dpitch + CB*cot(pitch)*dt/p^2;
 else
     dphi = 0;
 end
@@ -1019,11 +1033,9 @@ x = [1,0,0];
 y = [0,1,0];
 z = [0,0,1];
 
-pitchAngle = acos(dxi);
-
-dU1 = dp*cos(pitchAngle);
-dU2 = dp*sin(pitchAngle)*cos(dphi);
-dU3 = dp*sin(pitchAngle)*sin(dphi);
+dU1 = dp*cos(dpitch);
+dU2 = dp*sin(dpitch)*cos(dphi);
+dU3 = dp*sin(dpitch)*sin(dphi);
 
 U(1) = (U1+dU1)*(b1*x') + (U2+dU2)*(b2*x') + (U3+dU3)*(b3*x');
 U(2) = (U1+dU1)*(b1*y') + (U2+dU2)*(b2*y') + (U3+dU3)*(b3*y');
@@ -1195,6 +1207,10 @@ for ii=2:ST.params.numSnapshots
         U_eff = 0.5*(U_L + U);
         gamma_eff = sqrt(1 + U_eff*U_eff');
         V_eff = U_eff/gamma_eff;
+
+%         [U_eff,dummyWcoll] = collisionOperator(ST,XX,V_eff,dt);
+%         gamma_eff = sqrt(1 + U_eff*U_eff');
+%         V_eff = U_eff/gamma_eff;
         
         F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
             cross(B,cross(B,V_eff)) );
@@ -1203,6 +1219,9 @@ for ii=2:ST.params.numSnapshots
 
         U_R = U_R + a*( F2 + F3 );
         U = U_L + U_R - U; % Comment or uncomment
+        
+        [U,dummyWcoll] = collisionOperator(ST,XX,U/sqrt( 1 + U*U' ),dt);
+        
         gamma = sqrt( 1 + U*U' ); % Comment or uncomment
         V = U/gamma; % Comment or uncomment
         
@@ -1318,7 +1337,7 @@ if ST.opt
     ylabel('Error in $\mu$ [\%]','Interpreter','latex','FontSize',16)
     title(PP.method,'Interpreter','latex','FontSize',16)
     tmp = floor((ST.Eo/ST.params.qe)/1E6);
-    saveas(h,['energy_Eo_' num2str(tmp) '_po_' num2str(ST.params.vo_params(2))],'fig')
+%     saveas(h,['energy_Eo_' num2str(tmp) '_po_' num2str(ST.params.vo_params(2))],'fig')
        
     
     figure
