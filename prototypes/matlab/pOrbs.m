@@ -184,7 +184,7 @@ if ST.opt
 end
 % ST.PP.angularMomentum = DiegosInvariants(ST);
 
-ST.PP.invariant = invariants(ST);
+% ST.PP.invariant = invariants(ST);
 
 % orbitShift(ST);
 
@@ -892,7 +892,7 @@ function E = analyticalE(X)
 narginchk(1,2);
 
 % Parameters of the analytical magnetic field
-Eo = -0.1;
+Eo = 0.0;
 Ro = 1.5; % Major radius in meters.
 % Parameters of the analytical magnetic field
 
@@ -929,7 +929,7 @@ collOp = struct;
 collOp.Te = 2.0*ST.params.qe; % Background electron temperature in Joules
 collOp.Ti = collOp.Te; % Background ion temperature in Joules
 collOp.ne = 5.0E19; % Background electron density in 1/m^3
-collOp.Zeff = 1.0; % Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
+collOp.Zeff = 12.0; % Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
 collOp.rD = ...
     sqrt( ST.params.ep*collOp.Te/(collOp.ne*ST.params.qe^2*(1 + collOp.Zeff*collOp.Te/collOp.Ti)) );
 collOp.re = ST.params.qe^2/( 4*pi*ST.params.ep*ST.params.me*ST.params.c^2 );
@@ -937,6 +937,10 @@ collOp.Clog = log(collOp.rD/collOp.re);
 collOp.VTe = sqrt(2*collOp.Te/ST.params.me);
 collOp.delta = collOp.VTe/ST.params.c;
 collOp.Gamma = collOp.ne*ST.params.qe^4*collOp.Clog/(4*pi*ST.params.ep^2);
+collOp.ED = collOp.ne*ST.params.qe^3*collOp.Clog/(4*pi*ST.params.ep^2*collOp.Te);
+
+Ef = analyticalE([ST.B.Ro,0,0]);
+collOp.Vc = collOp.VTe*sqrt(0.5*collOp.ED/sqrt(Ef*Ef'));
 
 % Normalization
 collOp.Te = collOp.Te/ST.norm.E;
@@ -945,6 +949,7 @@ collOp.ne = collOp.ne/ST.norm.l^3;
 collOp.VTe = collOp.VTe/ST.norm.v;
 
 collOp.Gamma = collOp.Gamma/(ST.norm.p^2*ST.norm.v/ST.norm.t);
+collOp.Vc = collOp.Vc/ST.norm.v;
 % Normalization
 
 collOp.psi = @(v) 0.5*( erf(v/collOp.VTe) - ...
@@ -1140,11 +1145,12 @@ f3(1) = abs(q)*sqrt( F3*F3' );
 DT = 0.5*dt;
 V = v(1,:);
 U = u(1,:);
-% XX = X(1,:) + DT*V; % Advance position
-XX = X(1,:);
+XX = X(1,:) + DT*V; % Advance position
+% XX = X(1,:);
 % initial half-step for position
 
 a = q*dt/m;
+dummyWcoll = 0;
 
 for ii=2:ST.params.numSnapshots
     for jj=1:ST.params.cadence
@@ -1162,7 +1168,7 @@ for ii=2:ST.params.numSnapshots
         % % % Leap-frog scheme for Lorentz force % % %
         U_hs = U_L + 0.5*a*(E + cross(V,B)); % Half step for velocity
         
-        [U_hs,dummyWcoll] = collisionOperator(ST,XX,U_hs/sqrt( 1 + U_hs*U_hs' ),dt);
+%         [U_hs,dummyWcoll] = collisionOperator(ST,XX,U_hs/sqrt( 1 + U_hs*U_hs' ),dt);
         
         % % % % % % % % % % % % % % %
         % Radiation losses operator
@@ -1195,12 +1201,12 @@ for ii=2:ST.params.numSnapshots
         vec = E + cross(V_eff,B);
         F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
 
-%         U_R = U_R + a*( F2 + F3 );
-%         U = U_L + U_R - U; % Comment or uncomment
-%         gamma = sqrt( 1 + U*U' ); % Comment or uncomment
-%         V = U/gamma; % Comment or uncomment
+        U_R = U_R + a*( F2 + F3 );
+        U = U_L + U_R - U; % Comment or uncomment
+        gamma = sqrt( 1 + U*U' ); % Comment or uncomment
+        V = U/gamma; % Comment or uncomment
         
-        U = U_L; % Comment or uncomment
+%         U = U_L; % Comment or uncomment
         % % % Leap-frog scheme for the radiation damping force % % %fcoll
         
         zeta_previous = atan2(XX(2),XX(1));
@@ -1208,7 +1214,7 @@ for ii=2:ST.params.numSnapshots
             zeta_previous = zeta_previous + 2*pi;
         end
         
-%         XX = XX + dt*V; % Advance position
+        XX = XX + dt*V; % Advance position
         
         zeta_current = atan2(XX(2),XX(1));
         if zeta_current < 0
@@ -1286,7 +1292,7 @@ if ST.opt
     x = linspace(min(time),max(time),10);
     y = zeros(1,10);
     
-    figure
+    h = figure;
     subplot(4,1,1)
     plot(time, EK)
     box on
@@ -1311,7 +1317,9 @@ if ST.opt
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
     ylabel('Error in $\mu$ [\%]','Interpreter','latex','FontSize',16)
     title(PP.method,'Interpreter','latex','FontSize',16)
-    
+    tmp = floor((ST.Eo/ST.params.qe)/1E6);
+    saveas(h,['energy_Eo_' num2str(tmp) '_po_' num2str(ST.params.vo_params(2))],'fig')
+       
     
     figure
     subplot(3,1,1)
