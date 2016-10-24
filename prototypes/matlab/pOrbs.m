@@ -139,8 +139,6 @@ ST.coll.rD = sqrt( ST.params.ep*ST.coll.Te/(ST.coll.ne*ST.params.qe^2) );
 ST.coll.re = ST.params.qe^2/( 4*pi*ST.params.ep*ST.params.me*ST.params.c^2 );
 ST.coll.Ee_IZj = ST.params.me*ST.params.c^2/ST.coll.IZj;
 
-% ST.params.rL = ST.params.vperp/ST.params.wc; % Larmor radius of particle
-
 if ST.opt
     disp(['Cyclotron frequency ' num2str(ST.params.wc) ' Hz'])
 end
@@ -161,6 +159,7 @@ ST.norm.n = 1/ST.norm.l^3;
 ST.params.numIt = timeStepParams(1);
 ST.params.dt = timeStepParams(2)*(2*pi/ST.params.wc);
 ST.params.cadence = timeStepParams(3);
+ST.params.subcycling = timeStepParams(4);
 ST.params.inds = 1:ST.params.cadence:ST.params.numIt;
 ST.params.numSnapshots = numel(ST.params.inds);
 
@@ -929,7 +928,7 @@ cOp = struct;
 cOp.Te = 2.0*ST.params.qe; % Background electron temperature in Joules
 cOp.Ti = cOp.Te; % Background ion temperature in Joules
 cOp.ne = 5.0E19; % Background electron density in 1/m^3
-cOp.Zeff = 12.0; % Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
+cOp.Zeff = 10.0; % Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
 cOp.rD = ...
     sqrt( ST.params.ep*cOp.Te/(cOp.ne*ST.params.qe^2*(1 + cOp.Zeff*cOp.Te/cOp.Ti)) );
 cOp.re = ST.params.qe^2/( 4*pi*ST.params.ep*ST.params.me*ST.params.c^2 );
@@ -937,20 +936,27 @@ cOp.Clog = 25.3 - 1.15*log10(1E-3*cOp.ne) + 2.3*log10(cOp.Te/ST.params.qe);
 cOp.VTe = sqrt(2*cOp.Te/ST.params.me);
 cOp.delta = cOp.VTe/ST.params.c;
 cOp.Gamma = cOp.ne*ST.params.qe^4*cOp.Clog/(4*pi*ST.params.ep^2);
-% cOp.Gamma = cOp.ne*ST.params.qe^4*cOp.Clog/(4*pi*ST.params.ep^2);
+cOp.Tau = ST.params.me^2*ST.params.c^3/cOp.Gamma;
 cOp.ED = cOp.ne*ST.params.qe^3*cOp.Clog/(4*pi*ST.params.ep^2*cOp.Te);
 
 Ef = analyticalE([ST.B.Ro,0,0]);
 cOp.Vc = cOp.VTe*sqrt(0.5*cOp.ED/sqrt(Ef*Ef'));
 
+energy = linspace(1E6,50E6,200)*ST.params.qe;
+u = ST.params.c*sqrt(1 - (ST.params.m*ST.params.c^2./energy).^2);
+
 % Normalization
-cOp.Te = cOp.Te/ST.norm.E;
-cOp.Ti = cOp.Ti/ST.norm.E;
+cOp.Te = cOp.Te/(ST.norm.m*ST.norm.v^2);
+cOp.Ti = cOp.Ti/(ST.norm.m*ST.norm.v^2);
 cOp.ne = cOp.ne/ST.norm.l^3;
 cOp.VTe = cOp.VTe/ST.norm.v;
 
-cOp.Gamma = cOp.Gamma/(ST.norm.p^2*ST.norm.v/ST.norm.t);
+cOp.Gamma = cOp.Gamma*(ST.norm.t/(ST.norm.m^2*ST.norm.v^3));
+cOp.Tau = cOp.Tau/ST.norm.t;
 cOp.Vc = cOp.Vc/ST.norm.v;
+
+u = u/ST.norm.v;
+% cOp.dt = cOp.dt/ST.norm.t;
 % Normalization
 
 cOp.x = @(v) v/cOp.VTe;
@@ -960,33 +966,63 @@ cOp.psi = @(v) 0.5*( erf(cOp.x(v)) - ...
 
 cOp.CA = @(v) cOp.Gamma*cOp.psi(v)./v;
 
-cOp.CB = @(v) (0.5*cOp.Gamma./v).*( cOp.Zeff + ...
-    erf(cOp.x(v)) - cOp.psi(v) + 0.5*cOp.delta^4*cOp.x(v).^2 );
-
 cOp.CF = @(v) cOp.Gamma*cOp.psi(v)/cOp.Te;
 
-% cOp.fun = @(v) (6*(cOp.VTe./v)/sqrt(pi) + 4*cOp.x(v)).*exp(-(cOp.x(v)).^2)/sqrt(pi) - ...
-%     3*(cOp.VTe./v).^2.*erf(cOp.x(v));
+cOp.CB = @(v) (0.5*cOp.Gamma./v).*( cOp.Zeff + ...
+    erf(cOp.x(v)) - cOp.psi(v) + 0.5*cOp.delta^4*cOp.x(v).^2 );
 
 cOp.fun = @(v) 3*exp(-cOp.x(v).^2)./(cOp.x(v)*sqrt(pi)) + ...
     2*cOp.x(v).*exp(-cOp.x(v).^2)/sqrt(pi) - ...
     1.5*erf(cOp.x(v))./cOp.x(v).^2;
 
+cOp.timeStep = @(v) 2*cOp.CA(v)./cOp.CF(v).^2;
+
+vo = ST.params.vo_params(1);
+
+if cOp.timeStep(vo) > (cOp.Tau*ST.params.subcycling)
+    cOp.dt = 10*cOp.timeStep(vo);
+else
+    cOp.dt = cOp.Tau*ST.params.subcycling;
+end
+cOp.subcyclingIter = floor(ST.norm.t*cOp.dt/ST.params.dt);
+
+cOp.ratio = @(v) sqrt(cOp.dt)*cOp.CF(v)./sqrt(2*cOp.CA(v));
+
+
 if ST.opt
-    v = linspace(0.2,0.9999,100);
+    disp(['Collisional time ' num2str(cOp.Tau*ST.norm.t) ' (s)'])
+    disp(['Time step of subcycling ' num2str(cOp.dt*ST.norm.t) ' (s)'])
+    disp(['Calculate collisions each: ' num2str(cOp.subcyclingIter) ' leap-frog iterations'])
+end
+
+if ST.opt
+    energy = 1E-6*energy/ST.params.qe;
+    
     figure;
-    subplot(3,1,1);
-    plot(v,cOp.CA(v));
-    ylabel('$C_A(v)$ ($e B_0/m_e^3 c^2 $)','Interpreter','latex')
-    xlabel('Velocity $v$ (c)','Interpreter','latex')
-    subplot(3,1,2);
-    plot(v,cOp.CB(v));
-    ylabel('$C_B(v)$ ($e B_0/m_e^3 c^2 $)','Interpreter','latex')
-    xlabel('Velocity $v$ (c)','Interpreter','latex')
-    subplot(3,1,3);
-    plot(v,cOp.CF(v));
-    ylabel('$C_F(v)$ ($e B_0/m_e^2 c $)','Interpreter','latex')
-    xlabel('Velocity $v$ (c)','Interpreter','latex')
+    subplot(3,2,1);
+    plot(energy,cOp.CA(u));
+    ylabel('$C_A$ ($e B_0/m_e^3 c^2 $)','Interpreter','latex')
+    xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+    subplot(3,2,2);
+    plot(energy,cOp.CB(u));
+    ylabel('$C_B$ ($e B_0/m_e^3 c^2 $)','Interpreter','latex')
+    xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+    subplot(3,2,3);
+    plot(energy,cOp.CF(u));
+    ylabel('$C_F$ ($e B_0/m_e^2 c $)','Interpreter','latex')
+    xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+    subplot(3,2,4);
+    plot(energy,cOp.ratio(u));
+    ylabel('$C_Fdt/\sqrt{2C_A dt}$','Interpreter','latex')
+    xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+    subplot(3,2,5);
+    plot(energy,cOp.timeStep(u)*ST.norm.t);
+    ylabel('$dt$ (s)','Interpreter','latex')
+    xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')   
+    subplot(3,2,6);
+    plot(energy,cOp.timeStep(u)/(ST.params.dt/ST.norm.t));
+    ylabel('Iterations','Interpreter','latex')
+    xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
 end
 end
 
@@ -1007,7 +1043,7 @@ U3 = gammap*V*b3';
 % xi = b1*V'/sqrt(V*V');
 pitch = acos(b1*V'/sqrt(V*V'));
 
-dWp = random('uniform',0,1,1)*sqrt(dt);
+dWp = sqrt(dt)*sqrt(-2*log(1-rand))*cos(rand);
 dWtheta = random('uniform',0,pi,1)*sqrt(dt);
 dWphi = random('uniform',0,2*pi,1)*sqrt(dt);
 
@@ -1100,7 +1136,8 @@ else
     B = interpMagField(ST,X(1,:)*ST.norm.l)/ST.Bo;
     E = [0,0,0];
 end
-dt = ST.params.dt*ST.norm.wc;
+% dt = ST.params.dt*ST.norm.wc;
+dt = ST.params.dt/ST.norm.t;
 ep = ST.params.ep*(ST.norm.m^2*ST.norm.v^3/(ST.norm.q^3*ST.Bo));
 Kc = ST.params.Kc/(ST.norm.m*ST.norm.l*ST.norm.v^2/ST.norm.q^2);
 % Normalization
@@ -1220,7 +1257,9 @@ for ii=2:ST.params.numSnapshots
         U_R = U_R + a*( F2 + F3 );
         U = U_L + U_R - U; % Comment or uncomment
         
-        [U,dummyWcoll] = collisionOperator(ST,XX,U/sqrt( 1 + U*U' ),dt);
+        if mod((ii-1)*ST.params.cadence + jj,ST.cOp.subcyclingIter) == 0
+            [U,dummyWcoll] = collisionOperator(ST,XX,U/sqrt( 1 + U*U' ),dt*ST.cOp.subcyclingIter);
+        end
         
         gamma = sqrt( 1 + U*U' ); % Comment or uncomment
         V = U/gamma; % Comment or uncomment
@@ -1337,7 +1376,7 @@ if ST.opt
     ylabel('Error in $\mu$ [\%]','Interpreter','latex','FontSize',16)
     title(PP.method,'Interpreter','latex','FontSize',16)
     tmp = floor((ST.Eo/ST.params.qe)/1E6);
-%     saveas(h,['energy_Eo_' num2str(tmp) '_po_' num2str(ST.params.vo_params(2))],'fig')
+    saveas(h,['energy_Eo_' num2str(tmp) '_po_' num2str(ST.params.vo_params(2))],'fig')
        
     
     figure
@@ -2303,7 +2342,6 @@ dzeta_dt = ...
 
 wc = q*Bo./(m*gammap);
 
-
 % T1 = dzeta_dt.*(1 + eta.*cos(theta)).^2;
 % T2 = 0.5*wc.*eta.^2/qo;
 
@@ -2317,8 +2355,12 @@ err = 100*(I - I(1))/I(1);
 figure;
 subplot(2,1,1)
 plot(ST.time,T1,'r',ST.time,T2,'b',ST.time,I,'k')
+xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+ylabel('Decomposition','Interpreter','latex','FontSize',16)
 subplot(2,1,2)
 plot(ST.time,err)
+xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+ylabel('$\Delta p_\zeta$ (\%)','Interpreter','latex','FontSize',16)
 
 end
 
