@@ -58,8 +58,8 @@ for ii=1:length(info.Groups)
     end
 end
 
-params.simulation.num_snapshots = 8;
-params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
+% params.simulation.num_snapshots = 8;
+% params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 end
 
 function data = loadData(ST)
@@ -97,8 +97,8 @@ for ll=1:length(list)
 end
 
 
-% list = {'eta','gamma','Prad','Pin','flag','mu'};
-list = {'eta','gamma','Prad','flag'};
+list = {'eta','gamma','Prad','Pin','flag','mu'};
+% list = {'eta','gamma','Prad','flag'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -600,7 +600,11 @@ kurtosis_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_sna
 fx = zeros(ST.params.simulation.num_species,numBins,ST.params.simulation.num_snapshots+1);
 x = zeros(ST.params.simulation.num_species,numBins);
 
-h1 = figure('Visible',ST.visible);
+if ST.visible
+    h1 = figure('Visible','on');
+else
+    h1 = figure('Visible','off');
+end
 set(h1,'name','PDF of magnetic moment','numbertitle','off')
 for ss=1:ST.params.simulation.num_species
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
@@ -623,8 +627,8 @@ for ss=1:ST.params.simulation.num_species
         for ii=1:ST.params.simulation.num_snapshots+1
             try
                 [fx(ss,:,ii),~] = hist(tmp(:,ii),x(ss,:));
-%                 fx(ss,:,ii) = fx(ss,:,ii)/( mean(diff(x(ss,:)))*sum(fx(ss,:,ii)) );
-                fx(ss,:,ii) = fx(ss,:,ii)/max(squeeze(fx(ss,:,ii)));
+                fx(ss,:,ii) = fx(ss,:,ii)/( trapz(x(ss,:),fx(ss,:,ii)) );
+%                 fx(ss,:,ii) = fx(ss,:,ii)/max(squeeze(fx(ss,:,ii)));
             catch
             end
         end
@@ -642,7 +646,11 @@ for ss=1:ST.params.simulation.num_species
     colormap(jet)
 end
 
-h2 = figure('Visible',ST.visible);
+if ST.visible
+    h2 = figure('Visible','on');
+else
+    h2 = figure('Visible','off');
+end
 set(h2,'name','Statistical moments magnetic moment','numbertitle','off')
 for ii=1:ST.params.simulation.num_species
     figure(h2)
@@ -670,6 +678,8 @@ end
 saveas(h1,[ST.path 'magnetic_moment_pdfs'],'fig')
 saveas(h2,[ST.path 'magnetic_moment_stats'],'fig')
 
+MMD.fx = fx;
+MMD.x = x;
 MMD.stat1 = mean_f;
 MMD.stat2 = std_f;
 MMD.stat3 = skewness_f;
@@ -1591,20 +1601,26 @@ function P = synchrotronSpectrum(ST,filtered)
 disp('Calculating spectrum of synchrotron radiation...')
 P = struct;
 
-it = ST.params.simulation.num_snapshots + 1;
+numSnapshots = 0;
+it1 = ST.params.simulation.num_snapshots + 1 - numSnapshots;
+it2 = ST.params.simulation.num_snapshots + 1;
 % it = 1;
 
 geometry = 'cylindrical';
 
 upper_integration_limit = 200.0;
 
-N = 100;
+N = 500;
 % lambda_min = 450E-9;% in meters
 % lambda_max = 950E-9;% in meters
 % lambda_min = 907E-9;% in meters
 % lambda_max = 917E-9;% in meters
-lambda_min = 742E-9;% in meters
-lambda_max = 752E-9;% in meters
+% lambda_min = 742E-9;% in meters
+% lambda_max = 752E-9;% in meters
+
+lambda_min = 10E-9;% in meters
+lambda_max = 2E-5;% in meters
+
 lambda_camera = linspace(lambda_min,lambda_max,N);
 Dlambda_camera = mean(diff(lambda_camera));
 
@@ -1620,8 +1636,8 @@ try
     Zmin = -0.6;
     Zmax = 0.6;
     
-    NR = 60;
-    NZ = 60;
+    NR = 50;
+    NZ = 50;
 catch
     %     Ro = ST.params.fields.Ro;
     %     rmax = max([max(ST.params.fields.R) - Ro, Ro - min(ST.params.fields.R)]);
@@ -1635,8 +1651,8 @@ catch
     Zmin = -2.0;
     Zmax = 2.0;
     
-    NR = 100;
-    NZ = 235;
+    NR = 100;%100
+    NZ = 235;%235
 end
 
 if strcmp(geometry,'poloidal')
@@ -1658,28 +1674,38 @@ L = cell(1,num_species);
 
 % Poloidal distribution of the total radiated power
 for ss=1:num_species
+% for ss=6:6
     q = abs(ST.params.species.q(ss));
     m = ST.params.species.m(ss);
     Ro = ST.params.fields.Ro;
     
-    Psyn = zeros(Ntheta,Nr);
-    Psyn = zeros(NZ,NR);
+    if strcmp(geometry,'poloidal')
+        Psyn = zeros(Ntheta,Nr);
+    else
+        Psyn = zeros(NZ,NR);
+    end
     
-    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag(:,1:it),2));
-    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta(1:it) < 90,2) );
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag(:,1:end),2));
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta(1:end) < 90,2) );
     bool = pin;% & passing;
     
-    X = ST.data.(['sp' num2str(ss)]).X(:,bool,it);
-    V = ST.data.(['sp' num2str(ss)]).V(:,bool,it);
-    gammap = ST.data.(['sp' num2str(ss)]).gamma(bool,it);
+    X = [];
+    V = [];
+    gammap = [];
+    Prad = [];
+    eta = [];
+    for ii=it1:it2
+        X = [X,ST.data.(['sp' num2str(ss)]).X(:,bool,ii)];
+        V = [V,ST.data.(['sp' num2str(ss)]).V(:,bool,ii)];
+        gammap = [gammap;ST.data.(['sp' num2str(ss)]).gamma(bool,ii)];
+        eta = [eta;pi*ST.data.(['sp' num2str(ss)]).eta(bool,ii)/180];
+        Prad = [Prad;abs(ST.data.(['sp' num2str(ss)]).Prad(bool,ii))];
+    end
     v = squeeze( sqrt( sum(V.^2,1) ) )';
-    eta = pi*ST.data.(['sp' num2str(ss)]).eta(bool,it)/180;
-    Prad = abs(ST.data.(['sp' num2str(ss)]).Prad(bool,it));
     
-    
-    [vp,psi] = identifyVisibleParticles(X,V,gammap,false);
-%     vp = true(size(gammap));
-%     psi = ones(size(gammap));
+%     [vp,psi] = identifyVisibleParticles(X,V,gammap,false);
+    vp = true(size(gammap));
+    psi = ones(size(gammap));
     
     X(:,~vp) = [];
     V(:,~vp) = [];
@@ -1760,7 +1786,7 @@ for ss=1:num_species
             surf(x_grid,y_grid,Psyn,'LineStyle','none')
             axis([min(x_grid) max(x_grid) min(y_grid) max(y_grid)])
         else
-            surf(R_grid,Z_grid,Psyn,'LineStyle','none')
+            contourf(R_grid,Z_grid,Psyn,'LineStyle','none')
             axis([min(R_grid) max(R_grid) min(Z_grid) max(Z_grid)])
         end
         colormap(jet(512))
@@ -1796,6 +1822,9 @@ for ss=1:num_species
         
         % Actual curvature
         k = q*vec_mag./(m*gammap.*v.^3);
+%         k = ...
+%             q*ST.params.fields.Bo*sin(pi*ST.params.species.etao(ss)/180)...
+%             /(ST.params.species.gammao(ss)*ST.params.species.m(ss)*v(1))*ones(size(v));
         
         % % % % Beyond this point all variables are in cgs units % % % %
         c = 1E2*ST.params.scales.v;
@@ -1805,7 +1834,9 @@ for ss=1:num_species
         k = k/1E2;
         
         lambdac = (4/3)*pi*(1./gammap).^3./k;
-%         lambdac = 1E2*lambda_max*ones(size(k));
+        
+        lambda_camera = linspace(1E-7,5*lambdac(1),N);
+%         lambdac = 1E2*lambda_max*ones(size(k));% No wavelength cutoff
         
         I = find(lambdac > lambda_min);
         numEmittingPart = numel(I);
@@ -1821,20 +1852,23 @@ for ss=1:num_species
             for jj=1:N
                 lower_integration_limit = lambdac(ind)/lambda_camera(jj);
 %                 if (lambda_camera(jj) < lambdac(ind)) && (lower_integration_limit < upper_integration_limit)             
-%                     Q = integral(fun,lower_integration_limit,upper_integration_limit);
-%                     C1 = 1/(gammap(ind)^2*lambda_camera(jj)^3);
-%                     Psyn_camera(ii,jj) =  C0*C1*Q;
-
-                if (lambda_camera(jj) < lambdac(ind)) && isfinite(lambdac(ind))
-                    zeta = 0.5*lower_integration_limit*(1 + y(ind))^(3/2);
-                    D0 = 3*c*qe^2*k(ind)/(2*pi*lambda_camera(jj)^2);
-                    
-                    Psyn_camera(ii,jj) = ...
-                        D0*lower_integration_limit^2*gammap(ind)^2*(1 + y(ind))^2*(besselk(2/3,zeta)^2 + ...
-                        (y(ind)/(1 + y(ind)))*besselk(1/3,zeta).^2);
+                if (lower_integration_limit < upper_integration_limit)
+                    Q = integral(fun,lower_integration_limit,upper_integration_limit);
+                    C1 = 1/(gammap(ind)^2*lambda_camera(jj)^3);
+                    Psyn_camera(ii,jj) =  C0*C1*Q;
                 end
+
+%                 if (lambda_camera(jj) < lambdac(ind)) && isfinite(lambdac(ind))
+%                     zeta = 0.5*lower_integration_limit*(1 + y(ind))^(3/2);
+%                     D0 = 3*c*qe^2*k(ind)/(2*pi*lambda_camera(jj)^2);
+%                     
+%                     Psyn_camera(ii,jj) = ...
+%                         D0*lower_integration_limit^2*gammap(ind)^2*(1 + y(ind))^2*(besselk(2/3,zeta)^2 + ...
+%                         (y(ind)/(1 + y(ind)))*besselk(1/3,zeta).^2);
+%                 end
             end
         end
+        Psyn_camera = Psyn_camera/numEmittingPart;
                 
         disp('Calculating poloidal plane...')
         for ii=1:numEmittingPart
@@ -1875,7 +1909,8 @@ for ss=1:num_species
             surf(x_grid,y_grid,Psyn,'LineStyle','none')
 %             axis([min(x_grid) max(x_grid) min(y_grid) max(y_grid)])
         else
-            surf(R_grid,Z_grid,Psyn,'LineStyle','none')
+%             surfc(R_grid,Z_grid,Psyn,'LineStyle','none')
+            contourf(R_grid,Z_grid,Psyn,'LineStyle','none')
 %             axis([min(R_grid) max(R_grid) min(Z_grid) max(Z_grid)])
         end
         colormap(jet(512))
@@ -2084,8 +2119,8 @@ Riw = 1; % in meters
 
 % Radial and vertical position of the camera
 Rc = 2.38; % in meters
-% Zc = 0.076; % in meters
-Zc = 0;
+Zc = 0.076; % in meters
+% Zc = 0;
 
 np = numel(gammap);
 

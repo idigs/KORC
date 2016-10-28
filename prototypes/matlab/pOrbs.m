@@ -191,7 +191,7 @@ end
 
 % parametricShift(ST);
 
-% ST.P = synchrotronSpectrum(ST);
+ST.P = synchrotronSpectrum(ST);
 
 munlock
 
@@ -1245,9 +1245,11 @@ for ii=2:ST.params.numSnapshots
         gamma_eff = sqrt(1 + U_eff*U_eff');
         V_eff = U_eff/gamma_eff;
 
-%         [U_eff,dummyWcoll] = collisionOperator(ST,XX,V_eff,dt);
-%         gamma_eff = sqrt(1 + U_eff*U_eff');
-%         V_eff = U_eff/gamma_eff;
+%         if mod((ii-1)*ST.params.cadence + jj,ST.cOp.subcyclingIter) == 0
+%             [U_eff,dummyWcoll] = collisionOperator(ST,XX,V_eff,dt);
+%             gamma_eff = sqrt(1 + U_eff*U_eff');
+%             V_eff = U_eff/gamma_eff;
+%         end
         
         F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
             cross(B,cross(B,V_eff)) );
@@ -2676,11 +2678,11 @@ end
 function P = synchrotronSpectrum(ST)
 disp('Calculating spectrum of synchrotron radiation...')
 P = struct;
-N = 100;
-Npsi = 5;
-psi = (pi/180)*linspace(0,5,Npsi);
+N = 500;
+Npsi = 30;
+psi = (pi/180)*linspace(0,15,Npsi);
 
-upper_integration_limit = 100.0;
+upper_integration_limit = 200.0;
 
 lambda_min = 1E-9;
 
@@ -2723,7 +2725,7 @@ if isfield(ST.PP,'k')
     C0 = 4*pi*c*qe^2/sqrt(3);
     fun = @(x) besselk(5/3,x);
     for ii=1:ST.params.numSnapshots
-        P.lambda(ii,:) = linspace(lambda_min,P.lambdac(ii),N);
+        P.lambda(ii,:) = linspace(lambda_min,10*P.lambdac(ii),N);
         P.lambda_app(ii,:) = linspace(lambda_min,P.lambdac_app(ii),N);
         
         x = (gammap(ii)*psi).^2;        
@@ -2758,9 +2760,9 @@ if isfield(ST.PP,'k')
             end
         end
         
-        Ptot(ii) = 2*trapz(P.lambda(ii,:),P.Psyn(ii,:));
+        Ptot(ii) = trapz(P.lambda(ii,:),P.Psyn(ii,:));
         Ptot_psi(ii) = 2*trapz(psi,P.Psyn_psi(ii,:));
-        Ptot_psi_lambda(ii) = 2*trapz(P.lambda(ii,:),tmpIntegral);
+        Ptot_psi_lambda(ii) = trapz(P.lambda(ii,:),tmpIntegral);
     end
     
     % % % All variables below are in SI units
@@ -2772,7 +2774,7 @@ if isfield(ST.PP,'k')
     
     P.lambda = lch*P.lambda;
     P.lambdac = lch*P.lambdac;    
-    P.Psyn = Pch*P.Psyn;
+    P.Psyn = Pch*P.Psyn/lch;
     k = 1E2*k;
     
     psi = (180/pi)*psi;
@@ -2781,7 +2783,7 @@ if isfield(ST.PP,'k')
        
     P.lambda_app = lch*P.lambda_app;
     P.lambdac_app = lch*P.lambdac_app;
-    P.Psyn_app = Pch*P.Psyn_app;
+    P.Psyn_app = Pch*P.Psyn_app/lch;
     k_app = 1E2*k_app;
     
     Ptot = Pch*Ptot;
@@ -2817,10 +2819,10 @@ if isfield(ST.PP,'k')
         '$P_{syn}(\kappa^*_{min})$','$P_{syn}(\kappa^*_{max})$'},...
         'Interpreter','latex','FontSize',14)
     box on; axis on
-    ylabel('$P_{syn}(\lambda)$ (Watts)','FontSize',14,'Interpreter','latex')
+    ylabel('$P_{syn}(\lambda)$ (W/nm)','FontSize',14,'Interpreter','latex')
     xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
 %     xlim([450 950])
-    xlim([lambda_min, max([max(P.lambdac) max(P.lambdac_app)])])
+    xlim([lambda_min, max([max(P.lambda(Imax,:)) max(P.lambda(Imin,:))])])
     
     subplot(3,2,5)
     plot(ST.time,abs(ST.PP.Psyn),'k',ST.time,Ptot,'b',ST.time,Ptot_psi,'r',...

@@ -1,10 +1,10 @@
 &input_parameters
-        t_steps = 100 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+        t_steps = 284000 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
         dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
-        output_cadence = 50 ! 1400 for saving each 100 gyro-periods
-        num_species = 9
+        output_cadence = 2840 ! 1400 for saving each 100 gyro-periods
+        num_species = 3
         num_impurity_species = 1
-        radiation = .TRUE.
+        radiation = .FALSE.
         collisions = .FALSE.
         magnetic_field_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
                                                                                 ! For 'ANALYTICAL', the magnetic field is calculated based on
@@ -13,20 +13,20 @@
                                                                                 ! specified in "filename".
         poloidal_flux = .FALSE.                         ! .TRUE. if using JFIT poloidal flux, .FALSE. if using the
                                                                                 ! cylindrical components of the magnetic field
-        magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/DIII-D_JFIT.h5"
+        magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/ITER_3D.h5" ! "/home/l8c/Documents/KORC/KORC-FO/inputFiles/DIII-D_JFIT.h5"
         pic_algorithm = 1 ! 1 = Leapfrog, 2 = RK4, 3 = some other
 /
 
 &plasma_species
-        runaway = .FALSE. !
-        Ro = 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5 !
-        Zo = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 !
-        r = 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25 !
-        Eo = 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6, 40.0E6 ! Initial energy in eV
-        etao = 0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0  ! Initial pitch angle
-        ppp = 4096, 4096, 4096, 4096, 4096, 4096, 4096, 4096, 4096 ! Number of particles per process (mpi)
-        q = -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0 ! Electric charge
-        m = 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 ! In units of electron mass
+        runaway = .FALSE., .FALSE., .FALSE.!
+        Ro = 1.5, 1.5, 1.5 !
+        Zo = 0.0, 0.0, 0.0 !
+        r = 0.5, 0.5, 0.5 !
+        Eo = 40.0E6, 40.0E6, 40.0E6 ! Initial energy in eV
+        etao = 5.0, 10.0, 20.0  ! Initial pitch angle
+        ppp = 50000, 50000, 50000 ! Number of particles per process (mpi)
+        q = -1.0, -1.0, -1.0 ! Electric charge
+        m = 1.0, 1.0, 1.0 ! In units of electron mass
 /
 
 &analytic_mag_field_params
