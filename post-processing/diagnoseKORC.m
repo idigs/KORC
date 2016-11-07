@@ -1601,25 +1601,24 @@ function P = synchrotronSpectrum(ST,filtered)
 disp('Calculating spectrum of synchrotron radiation...')
 P = struct;
 
-numSnapshots = 0;
+numSnapshots = 50;
 it1 = ST.params.simulation.num_snapshots + 1 - numSnapshots;
 it2 = ST.params.simulation.num_snapshots + 1;
-% it = 1;
 
 geometry = 'cylindrical';
 
 upper_integration_limit = 200.0;
 
 N = 500;
-% lambda_min = 450E-9;% in meters
-% lambda_max = 950E-9;% in meters
+lambda_min = 450E-9;% in meters
+lambda_max = 950E-9;% in meters
 % lambda_min = 907E-9;% in meters
 % lambda_max = 917E-9;% in meters
 % lambda_min = 742E-9;% in meters
 % lambda_max = 752E-9;% in meters
 
-lambda_min = 10E-9;% in meters
-lambda_max = 2E-5;% in meters
+% lambda_min = 10E-9;% in meters
+% lambda_max = 2E-5;% in meters
 
 lambda_camera = linspace(lambda_min,lambda_max,N);
 Dlambda_camera = mean(diff(lambda_camera));
@@ -1703,9 +1702,9 @@ for ss=1:num_species
     end
     v = squeeze( sqrt( sum(V.^2,1) ) )';
     
-%     [vp,psi] = identifyVisibleParticles(X,V,gammap,false);
-    vp = true(size(gammap));
-    psi = ones(size(gammap));
+    [vp,psi,camPos] = identifyVisibleParticles(X,V,gammap,false);
+%     vp = true(size(gammap));
+%     psi = ones(size(gammap));
     
     X(:,~vp) = [];
     V(:,~vp) = [];
@@ -1810,7 +1809,8 @@ for ss=1:num_species
             E = analyticalE(ST,X);
         end
 
-        vec_mag = zeros(size(gammap));
+        vec_mag = zeros(numPart,1);
+        Binormal = zeros(numPart,3);
         
         for ii=1:numPart
             VxE = cross(squeeze(V(:,ii)),squeeze(E(:,ii)));
@@ -1818,10 +1818,14 @@ for ss=1:num_species
             VxVxB = cross(squeeze(V(:,ii)),VxB);
             vec = VxE + VxVxB;
             vec_mag(ii) = sqrt( vec'*vec );
+            
+            Binormal(ii,:) = vec/vec_mag(ii);
         end
         
         % Actual curvature
         k = q*vec_mag./(m*gammap.*v.^3);
+
+        % % % % NO CUTOFF % % %
 %         k = ...
 %             q*ST.params.fields.Bo*sin(pi*ST.params.species.etao(ss)/180)...
 %             /(ST.params.species.gammao(ss)*ST.params.species.m(ss)*v(1))*ones(size(v));
@@ -1835,8 +1839,7 @@ for ss=1:num_species
         
         lambdac = (4/3)*pi*(1./gammap).^3./k;
         
-        lambda_camera = linspace(1E-7,5*lambdac(1),N);
-%         lambdac = 1E2*lambda_max*ones(size(k));% No wavelength cutoff
+%         lambda_camera = linspace(1E-7,5*lambdac(1),N); % % % % NO CUTOFF % % %
         
         I = find(lambdac > lambda_min);
         numEmittingPart = numel(I);
@@ -1852,20 +1855,20 @@ for ss=1:num_species
             for jj=1:N
                 lower_integration_limit = lambdac(ind)/lambda_camera(jj);
 %                 if (lambda_camera(jj) < lambdac(ind)) && (lower_integration_limit < upper_integration_limit)             
-                if (lower_integration_limit < upper_integration_limit)
-                    Q = integral(fun,lower_integration_limit,upper_integration_limit);
-                    C1 = 1/(gammap(ind)^2*lambda_camera(jj)^3);
-                    Psyn_camera(ii,jj) =  C0*C1*Q;
-                end
-
-%                 if (lambda_camera(jj) < lambdac(ind)) && isfinite(lambdac(ind))
-%                     zeta = 0.5*lower_integration_limit*(1 + y(ind))^(3/2);
-%                     D0 = 3*c*qe^2*k(ind)/(2*pi*lambda_camera(jj)^2);
-%                     
-%                     Psyn_camera(ii,jj) = ...
-%                         D0*lower_integration_limit^2*gammap(ind)^2*(1 + y(ind))^2*(besselk(2/3,zeta)^2 + ...
-%                         (y(ind)/(1 + y(ind)))*besselk(1/3,zeta).^2);
+%                 if (lower_integration_limit < upper_integration_limit)
+%                     Q = integral(fun,lower_integration_limit,upper_integration_limit);
+%                     C1 = 1/(gammap(ind)^2*lambda_camera(jj)^3);
+%                     Psyn_camera(ii,jj) =  C0*C1*Q;
 %                 end
+
+                if (lambda_camera(jj) < lambdac(ind)) && isfinite(lambdac(ind))
+                    zeta = 0.5*lower_integration_limit*(1 + y(ind))^(3/2);
+                    D0 = 3*c*qe^2*k(ind)/(2*pi*lambda_camera(jj)^2);
+                    
+                    Psyn_camera(ii,jj) = ...
+                        D0*lower_integration_limit^2*gammap(ind)^2*(1 + y(ind))^2*(besselk(2/3,zeta).^2 + ...
+                        (y(ind)/(1 + y(ind)))*besselk(1/3,zeta).^2);
+                end
             end
         end
         Psyn_camera = Psyn_camera/numEmittingPart;
@@ -2112,7 +2115,7 @@ end
 
 end
 
-function [vp,psi] = identifyVisibleParticles(X,V,gammap,option)
+function [vp,psi,camPos] = identifyVisibleParticles(X,V,gammap,option)
 
 % Radial position of inner wall
 Riw = 1; % in meters
@@ -2138,9 +2141,11 @@ vox = V(1,:)./v;
 voy = V(2,:)./v;
 voz = V(3,:)./v;
 
+tmp_cam = zeros(np,3);
+
 % First we find the Z position where V hits the wall at Rc
 theta_f = zeros(1,np);
-Z_f = zeros(1,np);
+% Z_f = zeros(1,np);
 hitInnerWall = false(1,np);
 for ii=1:np
     if (Ro(ii) < Rc)
@@ -2157,13 +2162,26 @@ for ii=1:np
             hitInnerWall(ii) = true;
         else
             t = max(r);
-            Z_f(ii) = zo(ii) + voz(ii)*t;
-            theta_f(ii) = atan2(yo(ii) + voy(ii)*t,xo(ii) + vox(ii)*t);
+            
+            % Cartesian coordinates where the tangent vector intersects the
+            % outter wall of the axisymmetric device
+            X_f = xo(ii) + vox(ii)*t;
+            Y_f = yo(ii) + voy(ii)*t;
+            Z_f = zo(ii) + voz(ii)*t;
+            
+            theta_f(ii) = atan2(Y_f,X_f);
             if (theta_f(ii) < 0)
                 theta_f(ii) = theta_f(ii) + 2*pi;
             end
             
-            p(3) = xo(ii)^2 + yo(ii)^2 - Riw^2;
+            X_cam = Rc*cos(theta_f(ii));
+            Y_cam = Rc*sin(theta_f(ii));
+            
+            tmp_cam(ii,:) = [X_cam - xo(ii), Y_cam - yo(ii), Zc - zo(ii)];
+            tmp_cam(ii,:) = tmp_cam(ii,:)/sqrt(tmp_cam(ii,:)*tmp_cam(ii,:)');
+            
+            % % % Check if the unitary velocity vector hits the inner wall
+            p(3) = xo(ii)^2 + yo(ii)^2 - Riw^2; 
             r = roots(p);
             if isreal(r) && any(r>0)
                 hitInnerWall(ii) = true;
@@ -2204,5 +2222,7 @@ vp = false(1,np);
 vp(I(visible)) = true;
 
 psi(~visible) = [];
+
+camPos = tmp_cam(I(visible),:);
 
 end
