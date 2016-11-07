@@ -1601,7 +1601,7 @@ function P = synchrotronSpectrum(ST,filtered)
 disp('Calculating spectrum of synchrotron radiation...')
 P = struct;
 
-numSnapshots = 50;
+numSnapshots = 10;
 it1 = ST.params.simulation.num_snapshots + 1 - numSnapshots;
 it2 = ST.params.simulation.num_snapshots + 1;
 
@@ -1702,7 +1702,7 @@ for ss=1:num_species
     end
     v = squeeze( sqrt( sum(V.^2,1) ) )';
     
-    [vp,psi,camPos] = identifyVisibleParticles(X,V,gammap,false);
+    [vp,~,camPos] = identifyVisibleParticles(X,V,gammap,false);
 %     vp = true(size(gammap));
 %     psi = ones(size(gammap));
     
@@ -1713,7 +1713,7 @@ for ss=1:num_species
     eta(~vp) = [];
     Prad(~vp) = [];
     
-    numPart = numel(psi);
+    numPart = size(camPos,1);
     
     if strcmp(geometry,'poloidal')
         % Toroidal coordinates
@@ -1822,6 +1822,8 @@ for ss=1:num_species
             Binormal(ii,:) = vec/vec_mag(ii);
         end
         
+        psi = abs(pi/2 - acos(dot(camPos',Binormal')));
+        
         % Actual curvature
         k = q*vec_mag./(m*gammap.*v.^3);
 
@@ -1849,7 +1851,7 @@ for ss=1:num_species
         
         C0 = 4*pi*c*qe^2/sqrt(3);
         fun = @(x) besselk(5/3,x);
-        y = (gammap.*psi).^2;
+        y = (gammap.*psi').^2;
         for ii=1:numEmittingPart
             ind = I(ii);
             for jj=1:N
@@ -1873,6 +1875,8 @@ for ss=1:num_species
         end
         Psyn_camera = Psyn_camera/numEmittingPart;
                 
+        % With the data of Psyn_camera we make the poloidal plane
+        % 'photograph'.
         disp('Calculating poloidal plane...')
         for ii=1:numEmittingPart
             ind = I(ii);
@@ -2167,7 +2171,7 @@ for ii=1:np
             % outter wall of the axisymmetric device
             X_f = xo(ii) + vox(ii)*t;
             Y_f = yo(ii) + voy(ii)*t;
-            Z_f = zo(ii) + voz(ii)*t;
+%             Z_f = zo(ii) + voz(ii)*t;
             
             theta_f(ii) = atan2(Y_f,X_f);
             if (theta_f(ii) < 0)
