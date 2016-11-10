@@ -19,7 +19,7 @@ ST.data = loadData(ST);
 
 % ST.CP = confined_particles(ST);
 
-% ST.PAD = pitchAngleDiagnostic(ST,30);
+ST.PAD = pitchAngleDiagnostic(ST,30);
 
 % ST.MMD = magneticMomentDiagnostic(ST,70);
 
@@ -37,7 +37,7 @@ ST.data = loadData(ST);
 
 % scatterPlots(ST);
 
-ST.P = synchrotronSpectrum(ST,true);
+% ST.P = synchrotronSpectrum(ST,true);
 
 % ST.VS = identifyVisibleParticles(ST);
 
@@ -299,11 +299,20 @@ x = zeros(ST.params.simulation.num_species,nbins,ST.params.simulation.num_snapsh
 fz = zeros(ST.params.simulation.num_species,nbins,ST.params.simulation.num_snapshots+1);
 z = zeros(ST.params.simulation.num_species,nbins,ST.params.simulation.num_snapshots+1);
 
-h1 = figure('Visible',ST.visible);
+if ST.visible
+    h1 = figure('Visible','on');
+else
+    h1 = figure('Visible','off');
+end
+
 set(h1,'name','Pitch angle PDF vs. time','numbertitle','off')
 % h0 = figure('Visible',ST.visible);
 % set(h0,'name','Energy PDF vs. time','numbertitle','off')
-h = figure('Visible',ST.visible);
+if ST.visible
+    h = figure('Visible','on');
+else
+    h = figure('Visible','off');
+end
 set(h,'name','Pitch angle: variability','numbertitle','off')
 for ss=1:ST.params.simulation.num_species
     q = abs(ST.params.species.q(ss));
@@ -316,6 +325,12 @@ for ss=1:ST.params.simulation.num_species
     eta = ST.data.(['sp' num2str(ss)]).eta(bool,:);
     Eo = ST.data.(['sp' num2str(ss)]).gamma(bool,:)*m*c^2/q;
     Eo = Eo/1E6;
+    
+%     try
+%         tmp = eta(:,end);
+%         save(['pitch_' num2str(ST.params.species.etao(ss)) '_E_' num2str(floor(Eo(1,1)))],'tmp')
+%     catch
+%     end
     
     if ~isempty(eta)
         mean_fx(ss,:) = mean(eta,1);
@@ -406,7 +421,11 @@ for ss=1:ST.params.simulation.num_species
 %     colormap(jet(256))
 end
 
-h2 = figure('Visible',ST.visible);
+if ST.visible
+    h2 = figure('Visible','on');
+else
+    h2 = figure('Visible','off');
+end
 set(h2,'name','Statistical moments pitch angle','numbertitle','off')
 for ii=1:ST.params.simulation.num_species
     figure(h2)
@@ -461,9 +480,17 @@ offset = floor(double(ST.params.simulation.num_snapshots+1)/N);
 % z = linspace(-4,4,100);
 % fz = exp( -0.5*z.^2 )/sqrt(2*pi);
 
-h3 = figure('Visible',ST.visible);
+if ST.visible
+    h3 = figure('Visible','on');
+else
+    h3 = figure('Visible','off');
+end
 set(h3,'name','PDF pitch angle','numbertitle','off')
-hh = figure('Visible',ST.visible);
+if ST.visible
+    hh = figure('Visible','on');
+else
+    hh = figure('Visible','off');
+end
 set(hh,'name','PDF energy','NumberTitle','off')
 for ii=1:N
     it = ii*offset;
@@ -477,40 +504,14 @@ for ii=1:N
     hold on
 %     plot(z,log10(fz),'k')
     
-    for ss=1:ST.params.simulation.num_species
-%         dx = mean(diff(x(ss,:)));
-%         xAxis = ( x(ss,:) - mean_f(ss,it) )/std_f(ss,it);
-%         f = std_f(ss,it)*fx(ss,:,it)/(sum(fx(ss,:,it))*dx);
-        
-%         xAxis = x(ss,:) - mean_fx(ss,it);
-        xAxis = x(ss,:,it);
-        f = squeeze(fx(ss,:,it));
+    for ss=1:ST.params.simulation.num_species    
+        xAxis = ( x(ss,:,it) - mean(x(ss,:,it)) )/std(fx(ss,:,it));
+        f = std(fx(ss,:,it))*squeeze(fx(ss,:,it))/trapz(x(ss,:,it),fx(ss,:,it));
         
         figure(h3)
-%         plot(xAxis,log10(f),'o:')
-        plot(xAxis,f,'o:')
-        
-%         figure(h2)
-%         subplot(4,1,1)
-%         hold on
-%         plot(ST.time(it),mean_fx(ss,it),'rs')
-%         hold off
-%         figure(h2)
-%         subplot(4,1,2)
-%         hold on
-%         plot(ST.time(it),std_fx(ss,it),'rs')
-%         hold off
-%         figure(h2)
-%         subplot(4,1,3)
-%         hold on
-%         plot(ST.time(it),skewness_fx(ss,it),'rs')
-%         hold off
-%         figure(h2)
-%         subplot(4,1,4)
-%         hold on
-%         plot(ST.time(it),kurtosis_fx(ss,it),'rs')
-%         hold off
-        
+%         plot(xAxis,f,'o:')
+        plot(xAxis,log10(f),'o:')
+                
         xAxis = z(ss,:,it);
         f = squeeze(fz(ss,:,it));
         
@@ -2228,5 +2229,13 @@ vp(I(visible)) = true;
 psi(~visible) = [];
 
 camPos = tmp_cam(I(visible),:);
+
+end
+
+function SD = syntheticDiagnosticSynchrotron(ST)
+% Synthetic diagnostic of camera for synchrotron radiation.
+
+
+
 
 end
