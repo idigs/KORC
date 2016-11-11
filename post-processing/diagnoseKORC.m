@@ -19,7 +19,7 @@ ST.data = loadData(ST);
 
 % ST.CP = confined_particles(ST);
 
-ST.PAD = pitchAngleDiagnostic(ST,30);
+% ST.PAD = pitchAngleDiagnostic(ST,30);
 
 % ST.MMD = magneticMomentDiagnostic(ST,70);
 
@@ -40,6 +40,8 @@ ST.PAD = pitchAngleDiagnostic(ST,30);
 % ST.P = synchrotronSpectrum(ST,true);
 
 % ST.VS = identifyVisibleParticles(ST);
+
+ST.SD = syntheticDiagnosticSynchrotron(ST);
 
 % save('energy_limit','ST')
 end
@@ -68,7 +70,7 @@ data = struct;
 if isfield(ST.params.fields,'dims')
     list = {'X','V','B'};
 else
-    list = {'X','V'};
+    list = {'X','V','B'};
 end
 
 for ll=1:length(list)
@@ -1602,7 +1604,7 @@ function P = synchrotronSpectrum(ST,filtered)
 disp('Calculating spectrum of synchrotron radiation...')
 P = struct;
 
-numSnapshots = 10;
+numSnapshots = 3;
 it1 = ST.params.simulation.num_snapshots + 1 - numSnapshots;
 it2 = ST.params.simulation.num_snapshots + 1;
 
@@ -2232,10 +2234,196 @@ camPos = tmp_cam(I(visible),:);
 
 end
 
+function ip = findVisibleParticles(X,V,angle,camera_params,option)
+
+% Radial position of inner wall (central post)
+Riw = 1; % in meters
+
+% Radial and vertical position of the camera
+Rc = camera_params.position(1); % in meters
+Zc = camera_params.position(2); % in meters
+
+np = numel(angle);
+
+xo = X(1,:);
+yo = X(2,:);
+zo = X(3,:);
+
+Ro = sqrt(sum(X(1:2,:).^2,1));
+
+v = sqrt(sum(V.^2,1));
+vox = V(1,:)./v;
+voy = V(2,:)./v;
+voz = V(3,:)./v;
+
+% First we find the Z position where V hits the wall at Rc
+tmp_cam = zeros(np,3);
+theta_f = zeros(1,np);
+discarded = false(1,np);
+for ii=1:np
+    p = zeros(1,3);
+    
+    % polinomial coefficients p(1)*x^2 + p(2)*x + p(3) = 0
+    p(1) = vox(ii)^2 + voy(ii)^2;
+    p(2) = 2*(xo(ii)*vox(ii) + yo(ii)*voy(ii));
+    p(3) = xo(ii)^2 + yo(ii)^2 - Rc^2;
+    
+    r = roots(p);
+    if ~isreal(r) || (all(r>0) || all(r<0))
+        disp(['Something wrong at ii=' num2str(ii)])
+        discarded(ii) = true;
+    else
+        t = max(r);
+        
+        % Cartesian coordinates where the tangent vector intersects the
+        % outter wall of the axisymmetric device
+        X_f = xo(ii) + vox(ii)*t;
+        Y_f = yo(ii) + voy(ii)*t;
+        
+        theta_f(ii) = atan2(Y_f,X_f);
+        if (theta_f(ii) < 0)
+            theta_f(ii) = theta_f(ii) + 2*pi;
+        end
+        
+        X_cam = Rc*cos(theta_f(ii));
+        Y_cam = Rc*sin(theta_f(ii));
+        
+        tmp_cam(ii,:) = [X_cam - xo(ii), Y_cam - yo(ii), Zc - zo(ii)];
+        tmp_cam(ii,:) = tmp_cam(ii,:)/sqrt(tmp_cam(ii,:)*tmp_cam(ii,:)');
+        
+        % % % Check if the unitary velocity vector hits the inner wall
+        p(3) = xo(ii)^2 + yo(ii)^2 - Riw^2;
+        s = roots(p);
+        if isreal(s) && any(s>0)
+            discarded(ii) = true;
+        end
+    end
+end
+
+I = find(discarded == false);
+
+% Then, we calculate the angle between V and the position of the camera
+xc = Rc*cos(theta_f(I));
+yc = Rc*sin(theta_f(I));
+
+ax = xc - xo(I);
+ay = yc - yo(I);
+az = Zc - zo(I);
+
+a = sqrt(ax.^2 + ay.^2 + az.^2);
+
+ax = ax./a;
+ay = ay./a;
+az = az./a;
+
+psi = acos(ax.*vox(I) + ay.*voy(I) + az.*voz(I))';
+visible = psi <= angle(I);
+
+if ( option )
+    Ro = sqrt(xo(I(visible)).^2 + yo(I(visible)).^2);
+    figure
+    plot(Ro,zo(I(visible)),'g.','MarkerSize',18)
+end
+
+ip = false(1,np);
+ip(I(visible)) = true;
+end
+
 function SD = syntheticDiagnosticSynchrotron(ST)
 % Synthetic diagnostic of camera for synchrotron radiation.
+SD = struct;
 
+% Here we define many snapshots will be used
+numSnapshots = 10;
+it1 = ST.params.simulation.num_snapshots + 1 - numSnapshots;
+it2 = ST.params.simulation.num_snapshots + 1;
 
+% Simulation parameters
+num_species = double(ST.params.simulation.num_species);
+
+% Resolution in wavelength
+N = 200;
+% Wavelength range (450 nm - 950 nm for visible light).
+lambda_min = 450E-9;% in meters
+lambda_max = 950E-9;% in meters
+lambda = linspace(lambda_min,lambda_max,N);
+lambda = 1E2*lambda; % in cm
+
+% Camera parameters
+camera_params = struct;
+camera_params.NX = 100;
+camera_params.NY = 100;
+camera_params.position = [2.38,0.076]; % [R,Z] in meters
+
+for ss=1:num_species
+    q = abs(ST.params.species.q(ss));
+    m = ST.params.species.m(ss);
+    Ro = ST.params.fields.Ro;
+    
+    Psyn = zeros(camera_params.NX,camera_params.NY);
+    
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag(:,it1:it2),2));
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta(it1:it2) < 90,2) );
+    bool = pin;% & passing;
+    
+    X = [];
+    V = [];
+    gammap = [];
+    Prad = [];
+    eta = [];
+    B = [];
+    E = [];
+    for ii=it1:it2
+        X = [X,ST.data.(['sp' num2str(ss)]).X(:,bool,ii)];
+        V = [V,ST.data.(['sp' num2str(ss)]).V(:,bool,ii)];
+        gammap = [gammap;ST.data.(['sp' num2str(ss)]).gamma(bool,ii)];
+        eta = [eta;pi*ST.data.(['sp' num2str(ss)]).eta(bool,ii)/180];
+        Prad = [Prad;abs(ST.data.(['sp' num2str(ss)]).Prad(bool,ii))];
+        B = [B,ST.data.(['sp' num2str(ss)]).B(:,bool,ii)];
+        try
+            E = [E,ST.data.(['sp' num2str(ss)]).B(:,bool,ii)];
+        catch
+            E = zeros(size(B));
+        end
+    end
+    v = squeeze( sqrt( sum(V.^2,1) ) )';
+    
+    numPart = numel(eta);
+    
+    vec = zeros(numPart,1);
+    for ii=1:numPart
+        VxE = cross(squeeze(V(:,ii)),squeeze(E(:,ii)));
+        VxB = cross(squeeze(V(:,ii)),squeeze(B(:,ii)));
+        VxVxB = cross(squeeze(V(:,ii)),VxB);
+        aux = VxE + VxVxB;
+        vec(ii) = sqrt( aux'*aux );
+    end
+    clear VxE VxB VxVxB aux E B
+    
+    k = q*vec./(m*gammap.*v.^3); % Actual curvature
+    
+    % % % % Beyond this point all variables are in cgs units % % % %
+    c = 1E2*ST.params.scales.v;
+    qe = 3E9*q;
+    m = 1E3*m;
+    
+    k = k/1E2;
+    
+    % This angle is used as the primer criterium for deciding whether the
+    % particle is seen by the camera or not.
+    angle = (3*k*lambda(end)/(4*pi)).^(1/3);
+    
+    ip = findVisibleParticles(X,V,angle,camera_params,true);
+    
+    X(:,~ip) = [];
+    V(:,~ip) = [];
+    gammap(~ip) = [];
+    v(~ip) = [];
+    eta(~ip) = [];
+    Prad(~ip) = [];
+    
+    numVisiblePart = numel(eta);
+end
 
 
 end

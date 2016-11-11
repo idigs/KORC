@@ -2680,9 +2680,9 @@ function P = synchrotronSpectrum(ST)
 disp('Calculating spectrum of synchrotron radiation...')
 P = struct;
 N = 250;
-Npsi = 30;
-Nchi = 40;
-psi = (pi/180)*linspace(0,15,Npsi);
+Npsi = 35;
+Nchi = 30;
+% psi = (pi/180)*linspace(0,15,Npsi);
 
 upper_integration_limit = 200.0;
 
@@ -2710,6 +2710,8 @@ if isfield(ST.PP,'k')
     [~,Jmin] = min(k_app);
     [~,Jmax] = max(k_app);
     
+    Ind = Imax;
+    
     lambda_min = 1E2*lambda_min; % in cm
     
     P.lambdac = (4/3)*pi*(Eo./E).^3./k;
@@ -2727,6 +2729,9 @@ if isfield(ST.PP,'k')
     Ptot = zeros(1,ST.params.numSnapshots);
     Ptot_psi = zeros(1,ST.params.numSnapshots);
     Ptot_psi_lambda = zeros(1,ST.params.numSnapshots);
+    
+    psi_critical = 4^(1/3)/gammap(Ind);
+    psi = linspace(0,psi_critical,Npsi);
     
     Q = zeros(ST.params.numSnapshots,N);
     Qapp = zeros(ST.params.numSnapshots,N);
@@ -2777,31 +2782,40 @@ if isfield(ST.PP,'k')
     
     % % % Angular distribution of Psyn for k(Imax) % % %
     Psyn_psi_chi = zeros(Npsi,Nchi);
+    Psyn_chi_lambda = zeros(Nchi,N);
     
-    Ind = Imax;
     [~,I] = max(P.Psyn(Ind,:));
+%     I = floor(numel(P.Psyn(Ind,:))/2);
     
     psi_critical = (P.lambda(Ind,I)/P.lambdac(Ind)).^(1/3)/gammap(Ind);
     chi_max = sqrt( P.lambda(Ind,I)/(3*P.lambdac(Ind)) )/gammap(Ind); % 0.42;% (24 degrees) 3 percent of error between x and sin(x)
     
-    phi = linspace(0,psi_critical,Npsi);
-    chi = linspace(0,chi_max,Nchi);
+    psi = linspace(-psi_critical,psi_critical,Npsi);
+    chi = linspace(-chi_max,chi_max,Nchi);
     
-    lambda = P.lambda(Ind,I);
+    lambda = P.lambda(Ind,:);
     
-    Po = -4*pi*c*qe^2/(sqrt(3)*k(Ind)*lambda^4);
+    Po = @(y) -4*pi*c*qe^2./(sqrt(3)*k(Ind)*y.^4);
     K13 = @(x) besselk(1/3,x);
     K23 = @(x) besselk(2/3,x);
     for ii=1:Nchi
-        x = gammap(Ind)*chi(ii)./sqrt( 1 + (gammap(Ind)*phi).^2 );
-        zeta = 2*pi*( 1/gammap(Ind)^2 + phi.^2 ).^(1.5)/(3*lambda*k(Ind));
-        coeff = (1/gammap(Ind)^2 + phi.^2).^2;
+        x = gammap(Ind)*chi(ii)./sqrt( 1 + (gammap(Ind)*psi).^2 );
+        zeta = 2*pi*( 1/gammap(Ind)^2 + psi.^2 ).^(1.5)/(3*lambda(I)*k(Ind));
+        coeff = (1/gammap(Ind)^2 + psi.^2).^2;
        
-        P1 = (gammap(Ind)*phi).^2.*K13(zeta).*cos(1.5*zeta.*(x + x.^3/3))./(1 + (gammap(Ind)*phi).^2);
-        P2 = -0.5*K13(zeta).*(1 + x.^2).*cos(1.5*zeta.*(x + x.^3/3));
-        P3 = K23(zeta).*x.*sin(1.5*zeta.*(x + x.^3/3));
-        Psyn_psi_chi(:,ii) = Po*coeff.*( P1 + P2 + P3 );
+        P1 = @(z,x) (gammap(Ind)*psi).^2.*K13(z).*cos(1.5*z.*(x + x.^3/3))./(1 + (gammap(Ind)*psi).^2);
+        P2 = @(z,x) -0.5*K13(z).*(1 + x.^2).*cos(1.5*z.*(x + x.^3/3));
+        P3 = @(z,x) K23(z).*x.*sin(1.5*z.*(x + x.^3/3));
+        Psyn_psi_chi(:,ii) = Po(lambda(I))*coeff.*( P1(zeta,x) + P2(zeta,x) + P3(zeta,x) );
+        
+        
+        x = gammap(Ind)*chi(ii);
+        zeta = 2*pi./(3*lambda*k(Ind)*gammap(Ind)^3);
+        Psyn_chi_lambda(ii,:) = Po(lambda).*(P2(zeta,x) + P3(zeta,x))/gammap(Ind)^4;
     end
+    
+    psic = (3*k(Ind)*P.lambda(Ind,:)/(4*pi)).^(1/3);
+    chic = sqrt(k(Ind)*P.lambda(Ind,:)*gammap(Ind)/(4*pi));
 
     % % % All variables below are in SI units
     
@@ -2819,9 +2833,9 @@ if isfield(ST.PP,'k')
     P.Psyn_psi = Pch*P.Psyn_psi;
     P.Psyn_psi_lambda = Pch*P.Psyn_psi_lambda/lch;
     
-    phi = (180/pi)*phi;
     chi = (180/pi)*chi;
-    Psyn_psi_chi = Pch*Psyn_psi_chi;
+    Psyn_psi_chi = Pch*Psyn_psi_chi/lch;
+    Psyn_chi_lambda = Pch*Psyn_chi_lambda/lch;
        
     P.lambda_app = lch*P.lambda_app;
     P.lambdac_app = lch*P.lambdac_app;
@@ -2832,10 +2846,13 @@ if isfield(ST.PP,'k')
     Ptot_psi = Pch*Ptot_psi;
     Ptot_psi_lambda = Pch*Ptot_psi_lambda;
     
+    psic = (180/pi)*psic;
+    chic = (180/pi)*chic;
+    
     % % % Figures % % %
     
     figure
-    subplot(3,2,[1 2])
+    subplot(3,2,1)
     yyaxis left 
     set(gca,'YColor',[0,0,1])
     plot(ST.time,P.lambdac,'b-',ST.time,P.lambdac_app,'b--')
@@ -2847,7 +2864,7 @@ if isfield(ST.PP,'k')
     ylabel('$\kappa$ (m$^{-1}$)','FontSize',14,'Interpreter','latex')
     xlabel('Time $t$ (s)','FontSize',14,'Interpreter','latex')
     
-    subplot(3,2,3)
+    subplot(3,2,2)
     plot(P.lambda(Imin,:),P.Psyn(Imin,:),'b',...
         P.lambda(Imax,:),P.Psyn(Imax,:),'r',...
         P.lambda_app(Jmin,:),P.Psyn_app(Imin,:),'b--',...
@@ -2856,20 +2873,37 @@ if isfield(ST.PP,'k')
         '$P_{syn}(\kappa^*_{min})$','$P_{syn}(\kappa^*_{max})$'},...
         'Interpreter','latex','FontSize',14)
     box on; axis on
+    title(['$\lambda_c = $' num2str(P.lambdac(Ind)) ' nm'],'FontSize',12,'Interpreter','latex')
     ylabel('$P_{syn}(\lambda)$ (W/nm)','FontSize',14,'Interpreter','latex')
     xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
     xlim([lambda_min, max([max(P.lambda(Imax,:)) max(P.lambda(Imin,:))])])
     
-    subplot(3,2,4)
+    subplot(3,2,3)
     levels = linspace(0,max(max(Psyn_psi_chi)),7);
-    contourf(chi,phi,Psyn_psi_chi,levels,'ShowText','on')
+    contourf(chi,psi,Psyn_psi_chi,levels)%,'ShowText','on')
     colormap(jet)
     colorbar
+    if Ind == Imax
+        kappa = '$\kappa_{max}$';
+    else
+        kappa = '$\kappa_{min}$';
+    end
+    title(['$\lambda = $' num2str(P.lambda(Ind,I)) ' nm, $\kappa$=' kappa],'FontSize',12,'Interpreter','latex')
     ylabel('$\psi$ ($^\circ$)','FontSize',14,'Interpreter','latex')
     xlabel('$\chi$ ($^\circ$)','FontSize',14,'Interpreter','latex')
-    axis square
-    axis([0 max(chi) 0 max(phi)])
+    axis equal
+    axis([min(chi) max(chi) min(psi) max(psi)])
     
+    subplot(3,2,4)
+    plot(P.lambda(Ind,:),Psyn_chi_lambda')
+    L = cell(1,Nchi);
+    for pp=1:Nchi
+        L{pp} = ['$\chi =' num2str(chi(pp)) '^\circ$'];
+    end
+    legend(L,'Interpreter','latex','FontSize',10)
+    box on;grid on
+    ylabel('$P_{syn}(\chi,t)$ (Watts)','FontSize',14,'Interpreter','latex')
+    xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
     
     subplot(3,2,5)
     plot(ST.time,abs(ST.PP.Psyn),'k',ST.time,Ptot,'b',ST.time,Ptot_psi,'r',...
@@ -2891,6 +2925,18 @@ if isfield(ST.PP,'k')
     legend(L,'Interpreter','latex','FontSize',10)
     box on;grid on
     ylabel('$P_{syn}(\psi,t)$ (Watts)','FontSize',14,'Interpreter','latex')
+    xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
+    
+    figure
+    yyaxis left 
+    set(gca,'YColor',[0,0,1])
+    plot(P.lambda(Ind,:),psic,'b-')
+    box on; axis on
+    ylabel('$\psi_c$ ($^\circ$)','FontSize',14,'Interpreter','latex')
+    yyaxis right 
+    set(gca,'YColor',[1,0,0])
+    plot(P.lambda(Ind,:),chic,'r-')
+    ylabel('$\chi_c$ ($^\circ$)','FontSize',14,'Interpreter','latex')
     xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
 
 else
