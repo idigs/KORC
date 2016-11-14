@@ -2322,11 +2322,156 @@ visible = psi <= angle(I);
 if ( option )
     Ro = sqrt(xo(I(visible)).^2 + yo(I(visible)).^2);
     figure
-    plot(Ro,zo(I(visible)),'g.','MarkerSize',18)
+    plot(Ro,zo(I(visible)),'g.','MarkerSize',5)
+    xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+    ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
+    figure
+    histogram(zo(I(visible)))
 end
 
 ip = false(1,np);
 ip(I(visible)) = true;
+end
+
+function pixel_grid = setup_camera_pixel_grid(camera_params,option)
+% Here we set-up the pixel grid of the camera in a coordinate system such
+% that the x-axis corresponds to the horizontal dimension, and the y-axis
+% corresponds to the vertical dimension, with respect to the floor level.
+xmin = -camera_params.size(1)/2;
+xmax = camera_params.size(1)/2;
+DX = camera_params.size(1)/camera_params.NX;
+pixels_x = (xmin+0.5*DX):DX:(xmax-0.5*DX);
+
+ymin = camera_params.position(2) - camera_params.size(2)/2;
+ymax = camera_params.position(2) + camera_params.size(2)/2;
+DY = camera_params.size(2)/camera_params.NY;
+pixels_y = (ymin+0.5*DY):DY:(ymax-0.5*DY);
+
+pixel_grid = struct;
+[pixel_grid.X, pixel_grid.Y] = meshgrid(pixels_x,pixels_y);
+
+% size(pixel_grid.X) = (NX,NY)
+% size(pixel_grid.Y) = (NX,NY)
+
+if option
+    [X,Y] = ...
+        meshgrid(linspace(xmin,xmax,camera_params.NX+1),linspace(ymin,ymax,camera_params.NY+1));
+    
+    h = figure;
+    subplot(1,2,1)
+    plot(pixel_grid.X,pixel_grid.Y,'rs','MarkerSize',2)
+    hold on
+    plot(X,Y,'k',X',Y','k')
+    hold off
+    axis equal
+    title('Camera pixel array','Interpreter','latex','FontSize',12)
+    xlabel('$X$ (m)','Interpreter','latex','FontSize',14)
+    ylabel('$Y$ (m)','Interpreter','latex','FontSize',14)
+    
+    
+    % xy-plane with geometry of camera
+    Rmax = ceil(camera_params.position(1));
+    R = 0.5:0.5:Rmax;
+    t = linspace(0,2*pi,50);
+    for ii=1:numel(R)
+        x = R(ii)*cos(t);
+        y = R(ii)*sin(t);
+        
+        figure(h)
+        subplot(1,2,2)
+        hold on
+        plot(x,y,'--','Color',[0.4,0.4,0.4])
+        hold off
+        axis equal
+        box on
+    end
+    
+    figure(h)
+    subplot(1,2,2)
+    hold on
+    plot(camera_params.position(1),0,'ko','MarkerSize',5)
+    hold off
+    
+    N = 10;
+    ccd_x = linspace(xmin,xmax,N);
+    ccd_y = -camera_params.focal_length*ones(1,N);
+    
+    a = deg2rad(camera_params.incline);
+    
+    ccd_x_r = ccd_x*cos(a) - ccd_y*sin(a);
+    ccd_y_r = ccd_x*sin(a) + ccd_y*cos(a);
+    
+    ccd_x_r = ccd_x_r + camera_params.position(1);
+    
+    figure(h)
+    subplot(1,2,2)
+    hold on
+    plot(ccd_x_r,ccd_y_r,'k','LineWidth',2)
+    hold off
+    
+    % Main line of sight
+    line_x = zeros(1,N);
+    line_y = linspace(-camera_params.focal_length,Rmax,N);
+    
+    line_x_r = line_x*cos(a) - line_y*sin(a);
+    line_y_r = line_x*sin(a) + line_y*cos(a);
+    
+    line_x_r = line_x_r + camera_params.position(1);
+    
+    figure(h)
+    subplot(1,2,2)
+    hold on
+    plot(line_x_r,line_y_r,'r--','LineWidth',1)
+    hold off
+    
+    % Cone of sight min
+    line_x = zeros(1,N);
+    line_y = linspace(0,Rmax+camera_params.focal_length,N);
+    
+    b = camera_params.horizontal_angle_view;
+    
+    line_x_r = line_x*cos(b) + line_y*sin(b);
+    line_y_r = -line_x*sin(b) + line_y*cos(b);
+        
+    line_x_r = line_x_r + xmin;
+    line_y_r = line_y_r - camera_params.focal_length;
+    
+    line_x = line_x_r;
+    line_y = line_y_r;
+    line_x_r = line_x*cos(a) - line_y*sin(a);
+    line_y_r = line_x*sin(a) + line_y*cos(a);
+    
+    line_x_r = line_x_r + camera_params.position(1);
+    
+    figure(h)
+    subplot(1,2,2)
+    hold on
+    plot(line_x_r,line_y_r,'r','LineWidth',1)
+    hold off
+    
+    % Cone of sight max
+    line_x = zeros(1,N);
+    line_y = linspace(0,Rmax+camera_params.focal_length,N);
+    
+    line_x_r = line_x*cos(b) - line_y*sin(b);
+    line_y_r = line_x*sin(b) + line_y*cos(b);
+        
+    line_x_r = line_x_r + xmax;
+    line_y_r = line_y_r - camera_params.focal_length;
+    
+    line_x = line_x_r;
+    line_y = line_y_r;
+    line_x_r = line_x*cos(a) - line_y*sin(a);
+    line_y_r = line_x*sin(a) + line_y*cos(a);
+    
+    line_x_r = line_x_r + camera_params.position(1);
+    
+    figure(h)
+    subplot(1,2,2)
+    hold on
+    plot(line_x_r,line_y_r,'r','LineWidth',1)
+    hold off
+end
 end
 
 function SD = syntheticDiagnosticSynchrotron(ST)
@@ -2351,11 +2496,22 @@ lambda = 1E2*lambda; % in cm
 
 % Camera parameters
 camera_params = struct;
-camera_params.NX = 100;
-camera_params.NY = 100;
-camera_params.position = [2.38,0.076]; % [R,Z] in meters
+camera_params.NX = 60;
+camera_params.NY = 50;
+camera_params.size = [0.25,0.2]; % [horizontal size, vertical size] in meters
+camera_params.focal_length = 0.3; % In meters
+camera_params.position = [2.38,0.0]; % [R,Z] in meters
+% The angle defined by the detector plane (pixel array) and the x-axis of a
+% coordinate system where phi = 0, the toroidal angle, corresponds to the
+% y-axis, and phi = 90 corresponds to the x-axis
+camera_params.incline = 60; % in degrees
+camera_params.horizontal_angle_view = ...
+    atan2(0.5*camera_params.size(1),camera_params.focal_length); % in radians
+camera_params.vertical_angle_view = ...
+    atan2(0.5*camera_params.size(2),camera_params.focal_length); % in radians
+camera_params.pixel_grid = setup_camera_pixel_grid(camera_params,true);
 
-for ss=1:num_species
+for ss=2:num_species
     q = abs(ST.params.species.q(ss));
     m = ST.params.species.m(ss);
     Ro = ST.params.fields.Ro;
