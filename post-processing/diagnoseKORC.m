@@ -2260,6 +2260,8 @@ voz = V(3,:)./v;
 tmp_cam = zeros(np,3);
 theta_f = zeros(1,np);
 discarded = false(1,np);
+X_f = zeros(1,np);
+Y_f = zeros(1,np);
 for ii=1:np
     p = zeros(1,3);
     
@@ -2277,10 +2279,10 @@ for ii=1:np
         
         % Cartesian coordinates where the tangent vector intersects the
         % outter wall of the axisymmetric device
-        X_f = xo(ii) + vox(ii)*t;
-        Y_f = yo(ii) + voy(ii)*t;
+        X_f(ii) = xo(ii) + vox(ii)*t;
+        Y_f(ii) = yo(ii) + voy(ii)*t;
         
-        theta_f(ii) = atan2(Y_f,X_f);
+        theta_f(ii) = atan2(Y_f(ii),X_f(ii));
         if (theta_f(ii) < 0)
             theta_f(ii) = theta_f(ii) + 2*pi;
         end
@@ -2319,14 +2321,28 @@ az = az./a;
 psi = acos(ax.*vox(I) + ay.*voy(I) + az.*voz(I))';
 visible = psi <= angle(I);
 
+% theta_f(I(~visible)) = [];
+
 if ( option )
     Ro = sqrt(xo(I(visible)).^2 + yo(I(visible)).^2);
     figure
+    subplot(2,2,1)
     plot(Ro,zo(I(visible)),'g.','MarkerSize',5)
     xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
     ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
-    figure
+    subplot(2,2,2)
     histogram(zo(I(visible)))
+    xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+    ylabel('$f(R)$','Interpreter','latex','FontSize',16)
+    subplot(2,2,3)
+    plot([xo(I(visible));X_f(I(visible))],[yo(I(visible));Y_f(I(visible))])
+    xlabel('$X$ (m)','Interpreter','latex','FontSize',16)
+    ylabel('$Y$ (m)','Interpreter','latex','FontSize',16)
+    axis equal; box on
+    subplot(2,2,4)
+    plot(theta_f(I(visible)),'b','MarkerSize',5)
+    xlabel('Particle number','Interpreter','latex','FontSize',16)
+    ylabel('$\theta$ (rad)','Interpreter','latex','FontSize',16)
 end
 
 ip = false(1,np);
@@ -2421,7 +2437,7 @@ if option
     figure(h)
     subplot(1,2,2)
     hold on
-    plot(line_x_r,line_y_r,'r--','LineWidth',1)
+    plot(line_x_r,line_y_r,'r-.','LineWidth',1)
     hold off
     
     % Cone of sight min
@@ -2496,15 +2512,15 @@ lambda = 1E2*lambda; % in cm
 
 % Camera parameters
 camera_params = struct;
-camera_params.NX = 60;
-camera_params.NY = 50;
+camera_params.NX = 30;
+camera_params.NY = 25;
 camera_params.size = [0.25,0.2]; % [horizontal size, vertical size] in meters
-camera_params.focal_length = 0.3; % In meters
+camera_params.focal_length = 0.4; % In meters
 camera_params.position = [2.38,0.0]; % [R,Z] in meters
 % The angle defined by the detector plane (pixel array) and the x-axis of a
 % coordinate system where phi = 0, the toroidal angle, corresponds to the
 % y-axis, and phi = 90 corresponds to the x-axis
-camera_params.incline = 60; % in degrees
+camera_params.incline = 45; % in degrees
 camera_params.horizontal_angle_view = ...
     atan2(0.5*camera_params.size(1),camera_params.focal_length); % in radians
 camera_params.vertical_angle_view = ...
