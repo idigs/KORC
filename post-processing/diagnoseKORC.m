@@ -2234,7 +2234,7 @@ camPos = tmp_cam(I(visible),:);
 
 end
 
-function ip = findVisibleParticles(X,V,angle,camera_params,option)
+function [ip,X] = findVisibleParticles(X,V,angle,camera_params,option)
 
 % Radial position of inner wall (central post)
 Riw = 1; % in meters
@@ -2250,6 +2250,7 @@ yo = X(2,:);
 zo = X(3,:);
 
 Ro = sqrt(sum(X(1:2,:).^2,1));
+y_camera = -camera_params.focal_length*(zo - camera_params.position(2))./(camera_params.position(1) - Ro);
 
 v = sqrt(sum(V.^2,1));
 vox = V(1,:)./v;
@@ -2262,6 +2263,7 @@ theta_f = zeros(1,np);
 discarded = false(1,np);
 X_f = zeros(1,np);
 Y_f = zeros(1,np);
+Z_f = zeros(1,np);
 for ii=1:np
     p = zeros(1,3);
     
@@ -2277,27 +2279,32 @@ for ii=1:np
     else
         t = max(r);
         
-        % Cartesian coordinates where the tangent vector intersects the
-        % outter wall of the axisymmetric device
-        X_f(ii) = xo(ii) + vox(ii)*t;
-        Y_f(ii) = yo(ii) + voy(ii)*t;
-        
-        theta_f(ii) = atan2(Y_f(ii),X_f(ii));
-        if (theta_f(ii) < 0)
-            theta_f(ii) = theta_f(ii) + 2*pi;
-        end
-        
-        X_cam = Rc*cos(theta_f(ii));
-        Y_cam = Rc*sin(theta_f(ii));
-        
-        tmp_cam(ii,:) = [X_cam - xo(ii), Y_cam - yo(ii), Zc - zo(ii)];
-        tmp_cam(ii,:) = tmp_cam(ii,:)/sqrt(tmp_cam(ii,:)*tmp_cam(ii,:)');
-        
-        % % % Check if the unitary velocity vector hits the inner wall
-        p(3) = xo(ii)^2 + yo(ii)^2 - Riw^2;
-        s = roots(p);
-        if isreal(s) && any(s>0)
+        if (y_camera(ii) < camera_params.pixel_grid.ymin) || (y_camera(ii) > camera_params.pixel_grid.ymax)
             discarded(ii) = true;
+        else
+            % Cartesian coordinates where the tangent vector intersects the
+            % outter wall of the axisymmetric device
+            X_f(ii) = xo(ii) + vox(ii)*t;
+            Y_f(ii) = yo(ii) + voy(ii)*t;
+            Z_f(ii) = zo(ii) + voz(ii)*t;
+            
+            theta_f(ii) = atan2(Y_f(ii),X_f(ii));
+            if (theta_f(ii) < 0)
+                theta_f(ii) = theta_f(ii) + 2*pi;
+            end
+            
+            X_cam = Rc*cos(theta_f(ii));
+            Y_cam = Rc*sin(theta_f(ii));
+            
+            tmp_cam(ii,:) = [X_cam - xo(ii), Y_cam - yo(ii), Zc - zo(ii)];
+            tmp_cam(ii,:) = tmp_cam(ii,:)/sqrt(tmp_cam(ii,:)*tmp_cam(ii,:)');
+            
+            % % % Check if the unitary velocity vector hits the inner wall
+            p(3) = xo(ii)^2 + yo(ii)^2 - Riw^2;
+            s = roots(p);
+            if isreal(s) && any(s>0)
+                discarded(ii) = true;
+            end
         end
     end
 end
@@ -2321,35 +2328,46 @@ az = az./a;
 psi = acos(ax.*vox(I) + ay.*voy(I) + az.*voz(I))';
 visible = psi <= angle(I);
 
-% theta_f(I(~visible)) = [];
+II = I(visible);
+
+theta_f = theta_f(I(visible));
+XX = [X_f;Y_f;Z_f];
+for jj=1:numel(II)
+    rotation_matrix = [cos(theta_f(jj)),sin(theta_f(jj));
+    -sin(theta_f(jj)),cos(theta_f(jj))];
+    
+    X(1:2,II(jj)) = rotation_matrix*X(1:2,II(jj));
+    
+    XX(1:2,II(jj)) = rotation_matrix*XX(1:2,II(jj));
+end
 
 if ( option )
-    Ro = sqrt(xo(I(visible)).^2 + yo(I(visible)).^2);
+    Ro = sqrt(xo(II).^2 + yo(II).^2);
     figure
     subplot(2,2,1)
-    plot(Ro,zo(I(visible)),'g.','MarkerSize',5)
+    plot(Ro,zo(II),'g.','MarkerSize',5)
     xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
     ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
     subplot(2,2,2)
-    histogram(zo(I(visible)))
-    xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
-    ylabel('$f(R)$','Interpreter','latex','FontSize',16)
+    histogram(zo(II))
+    xlabel('$Z$ (m)','Interpreter','latex','FontSize',16)
+    ylabel('$f(Z)$','Interpreter','latex','FontSize',16)
     subplot(2,2,3)
-    plot([xo(I(visible));X_f(I(visible))],[yo(I(visible));Y_f(I(visible))])
+    plot3([X(1,II);XX(1,II)],[X(2,II);XX(2,II)],[X(3,II);XX(3,II)])
     xlabel('$X$ (m)','Interpreter','latex','FontSize',16)
     ylabel('$Y$ (m)','Interpreter','latex','FontSize',16)
     axis equal; box on
     subplot(2,2,4)
-    plot(theta_f(I(visible)),'b','MarkerSize',5)
+    plot(theta_f,'b','MarkerSize',5)
     xlabel('Particle number','Interpreter','latex','FontSize',16)
     ylabel('$\theta$ (rad)','Interpreter','latex','FontSize',16)
 end
 
 ip = false(1,np);
-ip(I(visible)) = true;
+ip(II) = true;
 end
 
-function pixel_grid = setup_camera_pixel_grid(camera_params,option)
+function pixel_grid = setupCameraPixelGrid(camera_params,option)
 % Here we set-up the pixel grid of the camera in a coordinate system such
 % that the x-axis corresponds to the horizontal dimension, and the y-axis
 % corresponds to the vertical dimension, with respect to the floor level.
@@ -2366,12 +2384,21 @@ pixels_y = (ymin+0.5*DY):DY:(ymax-0.5*DY);
 pixel_grid = struct;
 [pixel_grid.X, pixel_grid.Y] = meshgrid(pixels_x,pixels_y);
 
-% size(pixel_grid.X) = (NX,NY)
-% size(pixel_grid.Y) = (NX,NY)
+pixel_grid.xmin = xmin;
+pixel_grid.xmax = xmax;
+
+pixel_grid.ymin = ymin;
+pixel_grid.ymax = ymax;
+
+pixel_grid.xnodes = pixels_x;
+pixel_grid.ynodes = pixels_y;
+
+pixel_grid.xedges = linspace(xmin,xmax,camera_params.NX+1);
+pixel_grid.yedges = linspace(ymin,ymax,camera_params.NY+1);
 
 if option
     [X,Y] = ...
-        meshgrid(linspace(xmin,xmax,camera_params.NX+1),linspace(ymin,ymax,camera_params.NY+1));
+        meshgrid(pixel_grid.xedges,pixel_grid.yedges);
     
     h = figure;
     subplot(1,2,1)
@@ -2412,7 +2439,7 @@ if option
     ccd_x = linspace(xmin,xmax,N);
     ccd_y = -camera_params.focal_length*ones(1,N);
     
-    a = deg2rad(camera_params.incline);
+    a = camera_params.incline;
     
     ccd_x_r = ccd_x*cos(a) - ccd_y*sin(a);
     ccd_y_r = ccd_x*sin(a) + ccd_y*cos(a);
@@ -2488,6 +2515,127 @@ if option
     plot(line_x_r,line_y_r,'r','LineWidth',1)
     hold off
 end
+
+
+end
+
+function [rotation_angle,ip_in_pixel] = findRotationAngles(X,camera_params)
+%%
+% Here we compute the rotation angles in the toroidal direction based on
+% the pixel array of the camera.
+
+np = size(X,2);
+Rcam = camera_params.position(1);
+incline = camera_params.incline;
+
+xnodes = camera_params.pixel_grid.xnodes;
+xedges = camera_params.pixel_grid.xedges;
+
+ynodes = camera_params.pixel_grid.ynodes;
+yedges = camera_params.pixel_grid.yedges;
+
+eta_range = zeros(2,camera_params.NX);
+beta_range = zeros(2,camera_params.NX);
+for ii=1:camera_params.NX
+    eta_range(:,ii) = atan2(abs([xedges(ii);xedges(ii+1)]),camera_params.focal_length);
+    if (xnodes(ii) < 0)
+        beta_range(:,ii) = pi/2 - incline - eta_range(:,ii);
+    else
+        beta_range(:,ii) = pi/2 - eta_range(:,ii);
+    end
+end
+cos_beta_range = cos(beta_range);
+
+psi_range = zeros(2,camera_params.NY);
+for ii=1:camera_params.NY
+    psi_range(:,ii) = atan2([yedges(ii);yedges(ii+1)],camera_params.focal_length);
+end
+
+rotation_matrix = [cos(incline),sin(incline);
+    -sin(incline),cos(incline)];
+
+P = [X(1,:) - Rcam;X(2,:)];
+tmp = sqrt(sum(P.^2,1));
+P(1,:) = P(1,:)./tmp;
+P(2,:) = P(2,:)./tmp;
+
+PP = zeros(2,np);
+for jj=1:np
+    PP(:,jj) = rotation_matrix*P(:,jj);
+end
+
+ipos = PP(1,:) > 0;
+ineg = PP(1,:) < 0;
+
+cos_beta = zeros(1,np);
+cos_beta(ineg) = -P(1,ineg);
+cos_beta(ipos) = PP(1,ipos);
+
+D = sqrt( (X(1,:) - Rcam).^2 + X(2,:).^2 );
+psi = atan2(X(3,:),D);
+
+ip_in_pixel_x = cell(1,camera_params.NX);
+rotation_angle = cell(1,camera_params.NX);
+for ii=1:camera_params.NX
+    ip_in_pixel_y = cell(1,camera_params.NY);
+    for jj=1:camera_params.NY
+        I1 = find(psi >= psi_range(1,jj));
+        I2 = find(psi < psi_range(2,jj));
+        ip_in_pixel_y{jj} = intersect(I1,I2);
+    end
+    
+    if (xnodes(ii) < 0)
+        I1 = find(cos_beta <= cos_beta_range(1,ii));
+        I2 = find(cos_beta > cos_beta_range(2,ii));
+        ip_in_pixel_x{ii} = intersect(I1,I2);
+        
+        if ~isempty(ip_in_pixel_x{ii})
+            P = X(1:2,ip_in_pixel_x{ii});
+            
+            Ro = -P;
+            tmp = sqrt(sum(Ro.^2,1));
+            Ro(1,:) = Ro(1,:)./tmp;
+            Ro(2,:) = Ro(2,:)./tmp;
+            
+            Rc = [Rcam - P(1,:);-P(2,:)];
+            tmp = sqrt(sum(Rc.^2,1));
+            Rc(1,:) = Rc(1,:)./tmp;
+            Rc(2,:) = Rc(2,:)./tmp;
+            
+            cos_theta = dot(Ro,Rc,1);
+            rotation_angle{ii} = pi - acos(cos_beta(ip_in_pixel_x{ii})) - acos(cos_theta);
+        end
+    else
+        I1 = find(cos_beta >= cos_beta_range(1,ii));
+        I2 = find(cos_beta < cos_beta_range(2,ii));
+        ip_in_pixel_x{ii} = intersect(I1,I2);
+        
+        if ~isempty(ip_in_pixel_x{ii})
+            P = X(1:2,ip_in_pixel_x{ii});
+            
+            Ro = -P;
+            tmp = sqrt(sum(Ro.^2,1));
+            Ro(1,:) = Ro(1,:)./tmp;
+            Ro(2,:) = Ro(2,:)./tmp;
+            
+            Rc = [Rcam - P(1,:);-P(2,:)];
+            tmp = sqrt(sum(Rc.^2,1));
+            Rc(1,:) = Rc(1,:)./tmp;
+            Rc(2,:) = Rc(2,:)./tmp;
+            
+            cos_theta = dot(Ro,Rc,1);
+            rotation_angle{ii} = acos(cos_beta(ip_in_pixel_x{ii})) + incline - acos(cos_theta);
+        end
+    end
+end
+
+ip_in_pixel = cell(camera_params.NX,camera_params.NY);
+for ii=1:camera_params.NX
+    for jj=1:camera_params.NY
+        ip_in_pixel{ii,jj} = intersect(ip_in_pixel_x{ii},ip_in_pixel_y{jj});
+    end
+end
+
 end
 
 function SD = syntheticDiagnosticSynchrotron(ST)
@@ -2520,12 +2668,13 @@ camera_params.position = [2.38,0.0]; % [R,Z] in meters
 % The angle defined by the detector plane (pixel array) and the x-axis of a
 % coordinate system where phi = 0, the toroidal angle, corresponds to the
 % y-axis, and phi = 90 corresponds to the x-axis
-camera_params.incline = 45; % in degrees
+camera_params.incline = 55; % in degrees
+camera_params.incline = deg2rad(camera_params.incline);
 camera_params.horizontal_angle_view = ...
     atan2(0.5*camera_params.size(1),camera_params.focal_length); % in radians
 camera_params.vertical_angle_view = ...
     atan2(0.5*camera_params.size(2),camera_params.focal_length); % in radians
-camera_params.pixel_grid = setup_camera_pixel_grid(camera_params,true);
+camera_params.pixel_grid = setupCameraPixelGrid(camera_params,true);
 
 for ss=2:num_species
     q = abs(ST.params.species.q(ss));
@@ -2585,8 +2734,9 @@ for ss=2:num_species
     % particle is seen by the camera or not.
     angle = (3*k*lambda(end)/(4*pi)).^(1/3);
     
-    ip = findVisibleParticles(X,V,angle,camera_params,true);
+    [ip,X] = findVisibleParticles(X,V,angle,camera_params,false);
     
+    % Here we drop the particles that are not seen by the camera
     X(:,~ip) = [];
     V(:,~ip) = [];
     gammap(~ip) = [];
@@ -2594,7 +2744,11 @@ for ss=2:num_species
     eta(~ip) = [];
     Prad(~ip) = [];
     
-    numVisiblePart = numel(eta);
+    [rotation_angles,ip_in_pixel] = findRotationAngles(X,camera_params);
+    
+
+    
+    numVisiblePart = numel(eta);    
 end
 
 
