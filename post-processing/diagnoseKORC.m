@@ -2235,7 +2235,6 @@ camPos = tmp_cam(I(visible),:);
 end
 
 function [ip,X] = findVisibleParticles(X,V,angle,camera_params,option)
-
 % Radial position of inner wall (central post)
 Riw = 1; % in meters
 
@@ -2331,14 +2330,15 @@ visible = psi <= angle(I);
 II = I(visible);
 
 theta_f = theta_f(I(visible));
-XX = [X_f;Y_f;Z_f];
+XC = [X_f;Y_f;Z_f];
 for jj=1:numel(II)
     rotation_matrix = [cos(theta_f(jj)),sin(theta_f(jj));
     -sin(theta_f(jj)),cos(theta_f(jj))];
     
     X(1:2,II(jj)) = rotation_matrix*X(1:2,II(jj));
+    V(1:2,II(jj)) = rotation_matrix*V(1:2,II(jj));
     
-    XX(1:2,II(jj)) = rotation_matrix*XX(1:2,II(jj));
+    XC(1:2,II(jj)) = rotation_matrix*XC(1:2,II(jj));
 end
 
 if ( option )
@@ -2353,7 +2353,7 @@ if ( option )
     xlabel('$Z$ (m)','Interpreter','latex','FontSize',16)
     ylabel('$f(Z)$','Interpreter','latex','FontSize',16)
     subplot(2,2,3)
-    plot3([X(1,II);XX(1,II)],[X(2,II);XX(2,II)],[X(3,II);XX(3,II)])
+    plot3([X(1,II);XC(1,II)],[X(2,II);XC(2,II)],[X(3,II);XC(3,II)])
     xlabel('$X$ (m)','Interpreter','latex','FontSize',16)
     ylabel('$Y$ (m)','Interpreter','latex','FontSize',16)
     axis equal; box on
@@ -2643,7 +2643,7 @@ function SD = syntheticDiagnosticSynchrotron(ST)
 SD = struct;
 
 % Here we define many snapshots will be used
-numSnapshots = 10;
+numSnapshots = 1;
 it1 = ST.params.simulation.num_snapshots + 1 - numSnapshots;
 it2 = ST.params.simulation.num_snapshots + 1;
 
@@ -2734,7 +2734,7 @@ for ss=2:num_species
     % particle is seen by the camera or not.
     angle = (3*k*lambda(end)/(4*pi)).^(1/3);
     
-    [ip,X] = findVisibleParticles(X,V,angle,camera_params,false);
+    [ip,X] = findVisibleParticles(X,V,angle,camera_params,true);
     
     % Here we drop the particles that are not seen by the camera
     X(:,~ip) = [];
@@ -2749,7 +2749,7 @@ for ss=2:num_species
 
     
     numVisiblePart = numel(eta);    
-end
+ end
 
 
 end
