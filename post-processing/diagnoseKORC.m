@@ -2234,10 +2234,7 @@ camPos = tmp_cam(I(visible),:);
 
 end
 
-function [ip,X] = findVisibleParticles(X,V,angle,camera_params,option)
-% Radial position of inner wall (central post)
-Riw = 1; % in meters
-
+function [ip,X,V] = findVisibleParticles(X,V,angle,camera_params,option)
 % Radial and vertical position of the camera
 Rc = camera_params.position(1); % in meters
 Zc = camera_params.position(2); % in meters
@@ -2299,7 +2296,7 @@ for ii=1:np
             tmp_cam(ii,:) = tmp_cam(ii,:)/sqrt(tmp_cam(ii,:)*tmp_cam(ii,:)');
             
             % % % Check if the unitary velocity vector hits the inner wall
-            p(3) = xo(ii)^2 + yo(ii)^2 - Riw^2;
+            p(3) = xo(ii)^2 + yo(ii)^2 - camera_params.Riw^2;
             s = roots(p);
             if isreal(s) && any(s>0)
                 discarded(ii) = true;
@@ -2519,7 +2516,7 @@ end
 
 end
 
-function [rotation_angle,ip_in_pixel] = findRotationAngles(X,camera_params)
+function [rotation_angle,ip_in_pixel] = findRotationAngles_(X,camera_params)
 %%
 % Here we compute the rotation angles in the toroidal direction based on
 % the pixel array of the camera.
@@ -2552,7 +2549,7 @@ for ii=1:camera_params.NY
 end
 
 rotation_matrix = [cos(incline),sin(incline);
-    -sin(incline),cos(incline)];
+    -sin(incline),cos(incline)]; % anticlockwise rotation
 
 P = [X(1,:) - Rcam;X(2,:)];
 tmp = sqrt(sum(P.^2,1));
@@ -2575,7 +2572,8 @@ D = sqrt( (X(1,:) - Rcam).^2 + X(2,:).^2 );
 psi = atan2(X(3,:),D);
 
 ip_in_pixel_x = cell(1,camera_params.NX);
-rotation_angle = cell(1,camera_params.NX);
+rotation_angle = cell(camera_params.NX,camera_params.NY);
+ip_in_pixel = cell(camera_params.NX,camera_params.NY);
 for ii=1:camera_params.NX
     ip_in_pixel_y = cell(1,camera_params.NY);
     for jj=1:camera_params.NY
@@ -2589,51 +2587,149 @@ for ii=1:camera_params.NX
         I2 = find(cos_beta > cos_beta_range(2,ii));
         ip_in_pixel_x{ii} = intersect(I1,I2);
         
-        if ~isempty(ip_in_pixel_x{ii})
-            P = X(1:2,ip_in_pixel_x{ii});
+        for jj=1:camera_params.NY
+            ip = intersect(ip_in_pixel_x{ii},ip_in_pixel_y{jj});
+            ip_in_pixel{ii,jj} = ip;
             
-            Ro = -P;
-            tmp = sqrt(sum(Ro.^2,1));
-            Ro(1,:) = Ro(1,:)./tmp;
-            Ro(2,:) = Ro(2,:)./tmp;
-            
-            Rc = [Rcam - P(1,:);-P(2,:)];
-            tmp = sqrt(sum(Rc.^2,1));
-            Rc(1,:) = Rc(1,:)./tmp;
-            Rc(2,:) = Rc(2,:)./tmp;
-            
-            cos_theta = dot(Ro,Rc,1);
-            rotation_angle{ii} = pi - acos(cos_beta(ip_in_pixel_x{ii})) - acos(cos_theta);
+            if ~isempty(ip)
+                P = X(1:2,ip);
+                
+                Ro = -P;
+                tmp = sqrt(sum(Ro.^2,1));
+                Ro(1,:) = Ro(1,:)./tmp;
+                Ro(2,:) = Ro(2,:)./tmp;
+                
+                Rc = [Rcam - P(1,:);-P(2,:)];
+                tmp = sqrt(sum(Rc.^2,1));
+                Rc(1,:) = Rc(1,:)./tmp;
+                Rc(2,:) = Rc(2,:)./tmp;
+                
+                cos_theta = dot(Ro,Rc,1);
+                rotation_angle{ii,jj} = pi - acos(cos_beta(ip)) - acos(cos_theta);
+            end
         end
     else
         I1 = find(cos_beta >= cos_beta_range(1,ii));
         I2 = find(cos_beta < cos_beta_range(2,ii));
         ip_in_pixel_x{ii} = intersect(I1,I2);
         
-        if ~isempty(ip_in_pixel_x{ii})
-            P = X(1:2,ip_in_pixel_x{ii});
+        for jj=1:camera_params.NY
+            ip = intersect(ip_in_pixel_x{ii},ip_in_pixel_y{jj});
+            ip_in_pixel{ii,jj} = ip;
             
-            Ro = -P;
-            tmp = sqrt(sum(Ro.^2,1));
-            Ro(1,:) = Ro(1,:)./tmp;
-            Ro(2,:) = Ro(2,:)./tmp;
-            
-            Rc = [Rcam - P(1,:);-P(2,:)];
-            tmp = sqrt(sum(Rc.^2,1));
-            Rc(1,:) = Rc(1,:)./tmp;
-            Rc(2,:) = Rc(2,:)./tmp;
-            
-            cos_theta = dot(Ro,Rc,1);
-            rotation_angle{ii} = acos(cos_beta(ip_in_pixel_x{ii})) + incline - acos(cos_theta);
+            if ~isempty(ip)
+                P = X(1:2,ip);
+                
+                Ro = -P;
+                tmp = sqrt(sum(Ro.^2,1));
+                Ro(1,:) = Ro(1,:)./tmp;
+                Ro(2,:) = Ro(2,:)./tmp;
+                
+                Rc = [Rcam - P(1,:);-P(2,:)];
+                tmp = sqrt(sum(Rc.^2,1));
+                Rc(1,:) = Rc(1,:)./tmp;
+                Rc(2,:) = Rc(2,:)./tmp;
+                
+                cos_theta = dot(Ro,Rc,1);
+                rotation_angle{ii,jj} = acos(cos_beta(ip)) + incline - acos(cos_theta);
+            end
         end
     end
 end
 
-ip_in_pixel = cell(camera_params.NX,camera_params.NY);
+end
+
+function [rotation_angle,ip_in_pixel] = findRotationAngles(X,camera_params)
+% Here we compute the rotation angles in the toroidal direction based on
+% the pixel array of the camera.
+np = size(X,2);
+Rcam = camera_params.position(1);
+incline = camera_params.incline;
+
+xnodes = camera_params.pixel_grid.xnodes;
+xedges = camera_params.pixel_grid.xedges;
+
+ynodes = camera_params.pixel_grid.ynodes;
+yedges = camera_params.pixel_grid.yedges;
+
+eta_angle = abs(atan2(xnodes,camera_params.focal_length));
+beta_angle = zeros(1,camera_params.NX);
 for ii=1:camera_params.NX
-    for jj=1:camera_params.NY
-        ip_in_pixel{ii,jj} = intersect(ip_in_pixel_x{ii},ip_in_pixel_y{jj});
+    if (xedges(ii) < 0)
+        beta_angle(ii) = pi/2 - incline - eta_angle(ii);
+    else
+        beta_angle(ii) = pi/2 - incline + eta_angle(ii);
     end
+end
+
+psi_range = zeros(2,camera_params.NY);
+for ii=1:camera_params.NY
+    psi_range(:,ii) = atan2([yedges(ii);yedges(ii+1)],camera_params.focal_length);
+end
+
+threshold_angle = ...
+    acos(-camera_params.position(1)/sqrt(camera_params.Riw^2 + camera_params.position(1)^2));
+
+R = sqrt(sum(X(1:2,:).^2,1));
+D = sqrt( (X(1,:) - Rcam).^2 + X(2,:).^2 );
+psi = -atan2(X(3,:),D);
+
+rotation_angle = cell(2,camera_params.NX,camera_params.NY);
+ip_in_pixel = cell(2,camera_params.NX,camera_params.NY);
+for ii=1:camera_params.NX
+    a = 1 + tan(beta_angle(ii)).^2;
+    b = -2*tan(beta_angle(ii)).^2*Rcam;
+    c = (Rcam*tan(beta_angle(ii)))^2 - R.^2;
+    
+    xp = 0.5*(-b + sqrt(b.^2 - 4*a*c))./a;
+    xn = 0.5*(-b - sqrt(b.^2 - 4*a*c))./a;
+    
+    yp = sqrt(R.^2 - xp.^2);
+    yn = sqrt(R.^2 - xn.^2);
+    
+    ip = find(imag(xp) == 0);
+    in = find(imag(xn) == 0);
+
+    if ~isempty(ip)
+        xtmp = xp(ip) - camera_params.position(1);
+        ytmp = X(2,ip);
+        Rtmp = sqrt(xtmp.^2 + ytmp.^2);
+        tmp = acos(xtmp./Rtmp);
+        
+        I = find(tmp > threshold_angle);
+        ip(I) = [];
+    end
+    
+    if ~isempty(in)
+        xtmp = xn(in) - camera_params.position(1);
+        ytmp = X(2,in);
+        Rtmp = sqrt(xtmp.^2 + ytmp.^2);
+        tmp = acos(xtmp./Rtmp);
+        
+        I = find(tmp > threshold_angle);
+        in(I) = [];
+    end
+    
+%     hold on;plot(xp(ip),yp(ip),'k.','MarkerSize',2);hold off
+%     hold on;plot(xn(in),yn(in),'b.','MarkerSize',2);hold off
+    
+    for jj=1:camera_params.NY
+        I1 = find(psi >= psi_range(1,jj));
+        I2 = find(psi < psi_range(2,jj));
+        ip_in_pixel_y = intersect(I1,I2);
+        
+        ip_in_pixel{1,ii,jj} = intersect(ip,ip_in_pixel_y);
+        ip_in_pixel{2,ii,jj} = intersect(in,ip_in_pixel_y);
+        
+        tmp = atan2(yp(ip_in_pixel{1,ii,jj}),xp(ip_in_pixel{1,ii,jj}));
+        tmp(tmp<0) = tmp(tmp<0) + 2*pi;
+        rotation_angle{1,ii,jj} = tmp;
+        
+        tmp = atan2(yn(ip_in_pixel{2,ii,jj}),xn(ip_in_pixel{2,ii,jj}));
+        tmp(tmp<0) = tmp(tmp<0) + 2*pi;
+        rotation_angle{2,ii,jj} = tmp;
+    end
+    
 end
 
 end
@@ -2660,6 +2756,7 @@ lambda = 1E2*lambda; % in cm
 
 % Camera parameters
 camera_params = struct;
+camera_params.Riw = 1.0;% inner wall radius in meters
 camera_params.NX = 30;
 camera_params.NY = 25;
 camera_params.size = [0.25,0.2]; % [horizontal size, vertical size] in meters
@@ -2668,13 +2765,13 @@ camera_params.position = [2.38,0.0]; % [R,Z] in meters
 % The angle defined by the detector plane (pixel array) and the x-axis of a
 % coordinate system where phi = 0, the toroidal angle, corresponds to the
 % y-axis, and phi = 90 corresponds to the x-axis
-camera_params.incline = 55; % in degrees
+camera_params.incline = 60; % in degrees
 camera_params.incline = deg2rad(camera_params.incline);
 camera_params.horizontal_angle_view = ...
     atan2(0.5*camera_params.size(1),camera_params.focal_length); % in radians
 camera_params.vertical_angle_view = ...
     atan2(0.5*camera_params.size(2),camera_params.focal_length); % in radians
-camera_params.pixel_grid = setupCameraPixelGrid(camera_params,true);
+camera_params.pixel_grid = setupCameraPixelGrid(camera_params,false);
 
 for ss=2:num_species
     q = abs(ST.params.species.q(ss));
@@ -2723,33 +2820,70 @@ for ss=2:num_species
     
     k = q*vec./(m*gammap.*v.^3); % Actual curvature
     
-    % % % % Beyond this point all variables are in cgs units % % % %
-    c = 1E2*ST.params.scales.v;
-    qe = 3E9*q;
-    m = 1E3*m;
-    
-    k = k/1E2;
-    
     % This angle is used as the primer criterium for deciding whether the
     % particle is seen by the camera or not.
-    angle = (3*k*lambda(end)/(4*pi)).^(1/3);
+    threshold_angle = (3*k*lambda(end)/(4*pi)).^(1/3);
     
-    [ip,X] = findVisibleParticles(X,V,angle,camera_params,true);
+    [ip,X,V] = findVisibleParticles(X,V,threshold_angle,camera_params,false);
     
     % Here we drop the particles that are not seen by the camera
     X(:,~ip) = [];
     V(:,~ip) = [];
     gammap(~ip) = [];
+    k(~ip) = [];
     v(~ip) = [];
     eta(~ip) = [];
     Prad(~ip) = [];
     
     [rotation_angles,ip_in_pixel] = findRotationAngles(X,camera_params);
     
-
+    % % % % Beyond this point all variables are in cgs units % % % %
+    c = 1E2*ST.params.scales.v;
+    qe = 3E9*q;
+    m = 1E3*m;
     
-    numVisiblePart = numel(eta);    
+    k = k/1E2;
+    X = 1E2*X;
+    V = 1E2*V;
+    v = 1E2*v;
+    
+    xcam = [camera_params.position(1);0;camera_params.position(2)];
+    rotation_matrix = @(x) [cos(x),-sin(x);sin(x),cos(x)];
+    for ii=1:camera_params.NX
+        for jj=1:camera_params.NY
+            I = [ip_in_pixel{1,ii,jj},ip_in_pixel{2,ii,jj}];
+            if ~isempty(I)
+                xtmp = X(:,I);
+                vtmp = V(:,I);
+                gtmp = gammap(I);
+                ktmp = k(I);
+                
+                anticlockwise = ...
+                    [rotation_angles{1,ii,jj},rotation_angles{2,ii,jj}];
+                
+                clockwise = atan2(xtmp(2,:),xtmp(1,:));
+                clockwise(clockwise<0) = clockwise(clockwise<0) + 2*pi;
+                
+                angle = anticlockwise - clockwise;
+                
+                chi = zeros(1,numel(I));
+                psi = zeros(1,numel(I));
+                for pp=1:numel(I)
+                    xtmp(1:2,pp) = rotation_matrix(angle(pp))*xtmp(1:2,pp);
+                    vtmp(1:2,pp) = rotation_matrix(angle(pp))*vtmp(1:2,pp);
+%                     hold on;plot(xtmp(1,pp),xtmp(2,pp),'b.','MarkerSize',2);hold off
+                    n = xcam - xtmp(:,pp);
+                    n = n/sqrt(n'*n);
+                    
+                    chi(pp) = dot(n,vtmp(:,pp)/c);
+                    psi(pp) = sqrt(2*(1 - chi(pp)) - 1/gtmp(pp)^2 - chi(pp)^2);
+                    
+                end
+                min(rad2deg(psi))
+            end
+        end
+    end
+    
  end
-
 
 end
