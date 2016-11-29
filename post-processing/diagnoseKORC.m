@@ -2512,129 +2512,6 @@ end
 
 end
 
-function [rotation_angle,ip_in_pixel] = findRotationAngles_(X,camera_params)
-%%
-% Here we compute the rotation angles in the toroidal direction based on
-% the pixel array of the camera.
-
-np = size(X,2);
-Rcam = camera_params.position(1);
-incline = camera_params.incline;
-
-xnodes = camera_params.pixel_grid.xnodes;
-xedges = camera_params.pixel_grid.xedges;
-
-ynodes = camera_params.pixel_grid.ynodes;
-yedges = camera_params.pixel_grid.yedges;
-
-eta_range = zeros(2,camera_params.NX);
-beta_range = zeros(2,camera_params.NX);
-for ii=1:camera_params.NX
-    eta_range(:,ii) = atan2(abs([xedges(ii);xedges(ii+1)]),camera_params.focal_length);
-    if (xnodes(ii) < 0)
-        beta_range(:,ii) = pi/2 - incline - eta_range(:,ii);
-    else
-        beta_range(:,ii) = pi/2 - eta_range(:,ii);
-    end
-end
-cos_beta_range = cos(beta_range);
-
-psi_range = zeros(2,camera_params.NY);
-for ii=1:camera_params.NY
-    psi_range(:,ii) = atan2([yedges(ii);yedges(ii+1)],camera_params.focal_length);
-end
-
-rotation_matrix = [cos(incline),sin(incline);
-    -sin(incline),cos(incline)]; % anticlockwise rotation
-
-P = [X(1,:) - Rcam;X(2,:)];
-tmp = sqrt(sum(P.^2,1));
-P(1,:) = P(1,:)./tmp;
-P(2,:) = P(2,:)./tmp;
-
-PP = zeros(2,np);
-for jj=1:np
-    PP(:,jj) = rotation_matrix*P(:,jj);
-end
-
-ipos = PP(1,:) > 0;
-ineg = PP(1,:) < 0;
-
-cos_beta = zeros(1,np);
-cos_beta(ineg) = -P(1,ineg);
-cos_beta(ipos) = PP(1,ipos);
-
-D = sqrt( (X(1,:) - Rcam).^2 + X(2,:).^2 );
-psi = atan2(X(3,:),D);
-
-ip_in_pixel_x = cell(1,camera_params.NX);
-rotation_angle = cell(camera_params.NX,camera_params.NY);
-ip_in_pixel = cell(camera_params.NX,camera_params.NY);
-for ii=1:camera_params.NX
-    ip_in_pixel_y = cell(1,camera_params.NY);
-    for jj=1:camera_params.NY
-        I1 = find(psi >= psi_range(1,jj));
-        I2 = find(psi < psi_range(2,jj));
-        ip_in_pixel_y{jj} = intersect(I1,I2);
-    end
-    
-    if (xnodes(ii) < 0)
-        I1 = find(cos_beta <= cos_beta_range(1,ii));
-        I2 = find(cos_beta > cos_beta_range(2,ii));
-        ip_in_pixel_x{ii} = intersect(I1,I2);
-        
-        for jj=1:camera_params.NY
-            ip = intersect(ip_in_pixel_x{ii},ip_in_pixel_y{jj});
-            ip_in_pixel{ii,jj} = ip;
-            
-            if ~isempty(ip)
-                P = X(1:2,ip);
-                
-                Ro = -P;
-                tmp = sqrt(sum(Ro.^2,1));
-                Ro(1,:) = Ro(1,:)./tmp;
-                Ro(2,:) = Ro(2,:)./tmp;
-                
-                Rc = [Rcam - P(1,:);-P(2,:)];
-                tmp = sqrt(sum(Rc.^2,1));
-                Rc(1,:) = Rc(1,:)./tmp;
-                Rc(2,:) = Rc(2,:)./tmp;
-                
-                cos_theta = dot(Ro,Rc,1);
-                rotation_angle{ii,jj} = pi - acos(cos_beta(ip)) - acos(cos_theta);
-            end
-        end
-    else
-        I1 = find(cos_beta >= cos_beta_range(1,ii));
-        I2 = find(cos_beta < cos_beta_range(2,ii));
-        ip_in_pixel_x{ii} = intersect(I1,I2);
-        
-        for jj=1:camera_params.NY
-            ip = intersect(ip_in_pixel_x{ii},ip_in_pixel_y{jj});
-            ip_in_pixel{ii,jj} = ip;
-            
-            if ~isempty(ip)
-                P = X(1:2,ip);
-                
-                Ro = -P;
-                tmp = sqrt(sum(Ro.^2,1));
-                Ro(1,:) = Ro(1,:)./tmp;
-                Ro(2,:) = Ro(2,:)./tmp;
-                
-                Rc = [Rcam - P(1,:);-P(2,:)];
-                tmp = sqrt(sum(Rc.^2,1));
-                Rc(1,:) = Rc(1,:)./tmp;
-                Rc(2,:) = Rc(2,:)./tmp;
-                
-                cos_theta = dot(Ro,Rc,1);
-                rotation_angle{ii,jj} = acos(cos_beta(ip)) + incline - acos(cos_theta);
-            end
-        end
-    end
-end
-
-end
-
 function [rotation_angle,ip_in_pixel] = findRotationAngles(X,camera_params)
 % Here we compute the rotation angles in the toroidal direction based on
 % the pixel array of the camera.
@@ -2712,8 +2589,8 @@ for ii=1:camera_params.NX
         in(intersect(I,II)) = [];
     end
     
-    hold on;plot(xp(ip),yp(ip),'k.','MarkerSize',2);hold off
-    hold on;plot(xn(in),yn(in),'b.','MarkerSize',2);hold off
+%     hold on;plot(xp(ip),yp(ip),'k.','MarkerSize',2);hold off
+%     hold on;plot(xn(in),yn(in),'b.','MarkerSize',2);hold off
     
     for jj=1:camera_params.NY
         I1 = find(psi >= psi_range(1,jj));
@@ -2778,7 +2655,7 @@ camera_params.horizontal_angle_view = ...
     atan2(0.5*camera_params.size(1),camera_params.focal_length); % in radians
 camera_params.vertical_angle_view = ...
     atan2(0.5*camera_params.size(2),camera_params.focal_length); % in radians
-camera_params.pixel_grid = setupCameraPixelGrid(camera_params,true);
+camera_params.pixel_grid = setupCameraPixelGrid(camera_params,false);
 
 for ss=1:1
     q = abs(ST.params.species.q(ss));
@@ -2908,8 +2785,8 @@ for ss=1:1
                 
                 angle = anticlockwise - clockwise;
                 
-                chi = zeros(numel(I),1);
-                psi = zeros(numel(I),1);
+%                 chi = zeros(numel(I),1);
+%                 psi = zeros(numel(I),1);
                 for pp=1:numel(I)
                     xtmp(1:2,pp) = anticlockwise_rotation(angle(pp),xtmp(1:2,pp));
                     vtmp(1:2,pp) = anticlockwise_rotation(angle(pp),vtmp(1:2,pp));
@@ -2931,21 +2808,35 @@ for ss=1:1
                     
                     % No apriori assumption on the value of psi or chi is
                     % made here. We use the osculating plane, n and V.
-                    chi(pp) = abs( acos(dot(nperp,v_unit(:,pp))) );
-                    psi(pp) = pi/2 - aa;
+                    chi = abs( acos(dot(nperp,v_unit(:,pp))) );
+                    psi = pi/2 - aa;
                     
-                    chic = sqrt(0.25*gtmp(pp)*kappa(pp)*lambda/pi);
+                    % Here we calculate the critical chi
+                    xi = 2*pi./(3*lambda*kappa(pp)*gtmp(pp)^3);
+                    co = gtmp(pp);
+                    
+                    chic = zeros(1,N);
+                    for ll=1:N
+                        p = [co^3/3, 0, co, -pi/(3*xi(ll))];
+                        r = roots(p);
+                        bool = imag(r) == 0;
+                        chic(ll) = max(r(bool));
+                    end
+                    
+                    % Here we calculate the critical chi
+                    
+%                     chic = sqrt(0.25*gtmp(pp)*kappa(pp)*lambda/pi);
                     psic = (0.75*kappa(pp)*lambda/pi).^(1/3);
                     
                     % Next, we determine to which wavelengths, if any, the
                     % particles will contribute to.
-                    reject_chi = chi(pp) > chic;
-                    reject_psi = (psi(pp) > psic) | (psi(pp) < 0);
-                    reject = reject_chi;% | reject_psi;
+                    reject_chi = chi > chic;
+                    reject_psi = psi > psic;
+                    reject = reject_chi | reject_psi;
                     II = find(reject == false);
  
                     if ~isempty(II)
-                        Psyn_tmp = Psyn(lambda(II),kappa(pp),gtmp(pp),chi(pp),psi(pp));
+                        Psyn_tmp = Psyn(lambda(II),kappa(pp),gtmp(pp),chi,psi);
                         contributing = find(Psyn_tmp > 0);
                         P{ii,jj}(II(contributing)) = P{ii,jj}(II(contributing)) + Psyn_tmp(contributing);
                     end

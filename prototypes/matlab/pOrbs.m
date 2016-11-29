@@ -2784,8 +2784,8 @@ if isfield(ST.PP,'k')
     Psyn_psi_chi = zeros(Npsi,Nchi);
     Psyn_chi_lambda = zeros(Nchi,N);
     
-    [~,I] = max(P.Psyn(Ind,:));
-%     I = floor(numel(P.Psyn(Ind,:))/2);
+%     [~,I] = max(P.Psyn(Ind,:));
+    I = N;
     
     psi_critical = (P.lambda(Ind,I)/P.lambdac(Ind)).^(1/3)/gammap(Ind);
     chi_max = sqrt( P.lambda(Ind,I)/(3*P.lambdac(Ind)) )/gammap(Ind); % 0.42;% (24 degrees) 3 percent of error between x and sin(x)
