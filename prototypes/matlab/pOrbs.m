@@ -2790,28 +2790,39 @@ if isfield(ST.PP,'k')
     psi_critical = (P.lambda(Ind,I)/P.lambdac(Ind)).^(1/3)/gammap(Ind);
     chi_max = sqrt( P.lambda(Ind,I)/(3*P.lambdac(Ind)) )/gammap(Ind); % 0.42;% (24 degrees) 3 percent of error between x and sin(x)
     
-    psi = linspace(-psi_critical,psi_critical,Npsi);
-    chi = linspace(-chi_max,chi_max,Nchi);
-    
     lambda = P.lambda(Ind,:);
+    psi = linspace(-psi_critical,psi_critical,Npsi);
     
+    % Functions
     Po = @(y) -4*pi*c*qe^2./(sqrt(3)*k(Ind)*y.^4);
     K13 = @(x) besselk(1/3,x);
     K23 = @(x) besselk(2/3,x);
+    % Constants
+    coeff = (1/gammap(Ind)^2 + psi.^2).^2;
+    co = gammap(Ind)./sqrt( 1 + (gammap(Ind)*psi).^2 );
+    zeta = 2*pi*( 1/gammap(Ind)^2 + psi.^2 ).^(1.5)/(3*lambda(I)*k(Ind));
+    zeta_zero = 2*pi./(3*lambda*k(Ind)*gammap(Ind)^3);
+    
+    [~,I_psi_zero] = min(abs(psi));
+    p = [co(I_psi_zero)^3/3, 0, co(I_psi_zero), -pi/(3*zeta(I_psi_zero))];
+    r = roots(p);
+    bool = imag(r) == 0;
+    chi_max = max(r(bool));
+    
+    chi = linspace(-chi_max,chi_max,Nchi);
+    
     for ii=1:Nchi
-        x = gammap(Ind)*chi(ii)./sqrt( 1 + (gammap(Ind)*psi).^2 );
-        zeta = 2*pi*( 1/gammap(Ind)^2 + psi.^2 ).^(1.5)/(3*lambda(I)*k(Ind));
-        coeff = (1/gammap(Ind)^2 + psi.^2).^2;
-       
-        P1 = @(z,x) (gammap(Ind)*psi).^2.*K13(z).*cos(1.5*z.*(x + x.^3/3))./(1 + (gammap(Ind)*psi).^2);
-        P2 = @(z,x) -0.5*K13(z).*(1 + x.^2).*cos(1.5*z.*(x + x.^3/3));
-        P3 = @(z,x) K23(z).*x.*sin(1.5*z.*(x + x.^3/3));
+        x = co*chi(ii);
+        
+        arg = @(z,x) 1.5*z.*(x + x.^3/3);
+        P1 = @(z,x) (gammap(Ind)*psi).^2.*K13(z).*cos( arg(z,x) )./(1 + (gammap(Ind)*psi).^2);
+        P2 = @(z,x) -0.5*K13(z).*(1 + x.^2).*cos( arg(z,x) );
+        P3 = @(z,x) K23(z).*x.*sin( arg(z,x) );
+        
         Psyn_psi_chi(:,ii) = Po(lambda(I))*coeff.*( P1(zeta,x) + P2(zeta,x) + P3(zeta,x) );
-        
-        
+              
         x = gammap(Ind)*chi(ii);
-        zeta = 2*pi./(3*lambda*k(Ind)*gammap(Ind)^3);
-        Psyn_chi_lambda(ii,:) = Po(lambda).*(P2(zeta,x) + P3(zeta,x))/gammap(Ind)^4;
+        Psyn_chi_lambda(ii,:) = Po(lambda).*(P2(zeta_zero,x) + P3(zeta_zero,x))/gammap(Ind)^4;
     end
     
     psic = (3*k(Ind)*P.lambda(Ind,:)/(4*pi)).^(1/3);

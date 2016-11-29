@@ -2690,11 +2690,9 @@ for ii=1:camera_params.NX
     yp = sqrt(R.^2 - xp.^2);
     yn = sqrt(R.^2 - xn.^2);
     
-
-
     if ~isempty(ip)
         xtmp = xp(ip) - Rcam;
-        ytmp = X(2,ip);
+        ytmp = yp(ip);
         Rtmp = sqrt(xtmp.^2 + ytmp.^2);
         tmp = atan2(ytmp,xtmp);
         
@@ -2705,12 +2703,8 @@ for ii=1:camera_params.NX
     
     if ~isempty(in)
         xtmp = xn(in) - Rcam;
-        ytmp = X(2,in);
+        ytmp = yn(in);
         Rtmp = sqrt(xtmp.^2 + ytmp.^2);
-%         tmp = acos(xtmp./Rtmp);
-        
-%         I = find(tmp > threshold_angle);
-%         in(I) = [];
         tmp = atan2(ytmp,xtmp);
         
         I = find(tmp > threshold_angle);
@@ -2769,7 +2763,7 @@ lambda = 1E2*lambda; % in cm
 
 % Camera parameters
 camera_params = struct;
-camera_params.Riw = 1.0;% inner wall radius in meters
+camera_params.Riw = 1.05;% inner wall radius in meters
 camera_params.NX = 35;
 camera_params.NY = 30;
 camera_params.size = [0.25,0.2]; % [horizontal size, vertical size] in meters
@@ -2883,9 +2877,10 @@ for ss=1:1
     Po = @(l,k,g,p) -(4*pi*c*q^2./(k*l.^4)).*(1/g^2 + p^2)^2;
     K13 = @(x) besselk(1/3,x);
     K23 = @(x) besselk(2/3,x);
-    P1 = @(l,k,g,x,p) (g*p)^2*K13(zeta(l,k,g,p)).*cos(1.5*zeta(l,k,g,p)*(fx(g,x,p) + fx(g,x,p).^3/3))/(1 + (g*p)^2);
-    P2 = @(l,k,g,x,p) -0.5*K13(zeta(l,k,g,p)).*(1 + fx(g,x,p).^2).*cos(1.5*zeta(l,k,g,p)*(fx(g,x,p) + fx(g,x,p).^3/3));
-    P3 = @(l,k,g,x,p) fx(g,x,p)*K23(zeta(l,k,g,p)).*sin(1.5*zeta(l,k,g,p)*(fx(g,x,p) + fx(g,x,p).^3/3));
+    arg = @(l,k,g,x,p) 1.5*zeta(l,k,g,p)*(fx(g,x,p) + fx(g,x,p).^3/3);
+    P1 = @(l,k,g,x,p) (g*p)^2*K13(zeta(l,k,g,p)).*cos( arg(l,k,g,x,p) )/(1 + (g*p)^2);
+    P2 = @(l,k,g,x,p) -0.5*K13(zeta(l,k,g,p)).*(1 + fx(g,x,p).^2).*cos( arg(l,k,g,x,p) );
+    P3 = @(l,k,g,x,p) fx(g,x,p)*K23(zeta(l,k,g,p)).*sin( arg(l,k,g,x,p) );
     Psyn = ...
         @(l,k,g,x,p) Po(l,k,g,p).*( P1(l,k,g,x,p) + P2(l,k,g,x,p) + P3(l,k,g,x,p));
     
