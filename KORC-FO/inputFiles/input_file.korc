@@ -2,7 +2,7 @@
         t_steps = 284000 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
         dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
         output_cadence = 2840 ! 1400 for saving each 100 gyro-periods
-        num_species = 3
+        num_species = 1
         num_impurity_species = 1
         radiation = .FALSE.
         collisions = .FALSE.
@@ -18,15 +18,15 @@
 /
 
 &plasma_species
-        runaway = .FALSE., .FALSE., .FALSE.!
-        Ro = 1.5, 1.5, 1.5 !
-        Zo = 0.0, 0.0, 0.0 !
-        r = 0.5, 0.5, 0.5 !
-        Eo = 25.0E6, 25.0E6, 25.0E6 ! Initial energy in eV
-        etao = 5.0, 10.0, 20.0  ! Initial pitch angle
-        ppp = 5000, 5000, 5000 ! Number of particles per process (mpi)
-        q = -1.0, -1.0, -1.0 ! Electric charge
-        m = 1.0, 1.0, 1.0 ! In units of electron mass
+        runaway = .FALSE. !
+        Ro = 1.5 !
+        Zo = 0.0 !
+        r = 0.5 !
+        Eo = 25.0E6 ! Initial energy in eV
+        etao = 10.0  ! Initial pitch angle
+        ppp = 50000 ! Number of particles per process (mpi)
+        q = -1.0 ! Electric charge
+        m = 1.0 ! In units of electron mass
 /
 
 &analytic_mag_field_params
