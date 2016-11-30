@@ -2233,6 +2233,7 @@ camPos = tmp_cam(I(visible),:);
 end
 
 function [ip,theta_f] = findVisibleParticles(X,V,angle,camera_params,option)
+disp('Finding visible particles...');
 % Radial and vertical position of the camera
 Rc = camera_params.position(1); % in meters
 Zc = camera_params.position(2); % in meters
@@ -2243,8 +2244,8 @@ xo = X(1,:);
 yo = X(2,:);
 zo = X(3,:);
 
-Ro = sqrt(sum(X(1:2,:).^2,1));
-y_camera = -camera_params.focal_length*(zo - camera_params.position(2))./(camera_params.position(1) - Ro);
+% Ro = sqrt(sum(X(1:2,:).^2,1));
+% y_camera = -camera_params.focal_length*(zo - camera_params.position(2))./(camera_params.position(1) - Ro);
 
 v = sqrt(sum(V.^2,1));
 vox = V(1,:)./v;
@@ -2252,66 +2253,43 @@ voy = V(2,:)./v;
 voz = V(3,:)./v;
 
 % First we find the Z position where V hits the wall at Rc
-tmp_cam = zeros(np,3);
 theta_f = zeros(1,np);
-discarded = false(1,np);
+% discarded = false(1,np);
 X_f = zeros(1,np);
 Y_f = zeros(1,np);
 Z_f = zeros(1,np);
-for ii=1:np
-    p = zeros(1,3);
-    
-    % polinomial coefficients p(1)*x^2 + p(2)*x + p(3) = 0
-    p(1) = vox(ii)^2 + voy(ii)^2;
-    p(2) = 2*(xo(ii)*vox(ii) + yo(ii)*voy(ii));
-    p(3) = xo(ii)^2 + yo(ii)^2 - Rc^2;
-    
-    r = roots(p);
-    if ~isreal(r) || (all(r>0) || all(r<0))
-        disp(['Something wrong at ii=' num2str(ii)])
-        discarded(ii) = true;
-    else
-        t = max(r);
-        
-        if (y_camera(ii) < camera_params.pixel_grid.ymin) || (y_camera(ii) > camera_params.pixel_grid.ymax)
-            discarded(ii) = true;
-        else
-            % Cartesian coordinates where the tangent vector intersects the
-            % outter wall of the axisymmetric device
-            X_f(ii) = xo(ii) + vox(ii)*t;
-            Y_f(ii) = yo(ii) + voy(ii)*t;
-            Z_f(ii) = zo(ii) + voz(ii)*t;
-            
-            theta_f(ii) = atan2(Y_f(ii),X_f(ii));
-            if (theta_f(ii) < 0)
-                theta_f(ii) = theta_f(ii) + 2*pi;
-            end
-            
-            X_cam = Rc*cos(theta_f(ii));
-            Y_cam = Rc*sin(theta_f(ii));
-            
-            tmp_cam(ii,:) = [X_cam - xo(ii), Y_cam - yo(ii), Zc - zo(ii)];
-            tmp_cam(ii,:) = tmp_cam(ii,:)/sqrt(tmp_cam(ii,:)*tmp_cam(ii,:)');
-            
-            % % % Check if the unitary velocity vector hits the inner wall
-            p(3) = xo(ii)^2 + yo(ii)^2 - camera_params.Riw^2;
-            s = roots(p);
-            if isreal(s) && any(s>0)
-                discarded(ii) = true;
-            end
-        end
-    end
-end
 
-I = find(discarded == false);
+a = vox.^2 + voy.^2;
+b = 2*(xo.*vox + yo.*voy);
+c = xo.^2 + yo.^2 - Rc^2;
+ciw = xo.^2 + yo.^2 - camera_params.Riw^2;
+
+discriminant = b.^2 - 4*a.*c;
+discriminantiw = b.^2 - 4*a.*ciw;
+
+INDEX = (discriminant < 0) | (discriminantiw >= 0); % this particles are discarded
+% discarded(INDEX) = true;
+II = find(INDEX == false);
+
+xp = 0.5*(-b(II) + sqrt(discriminant(II)))./a(II);
+xn = 0.5*(-b(II) - sqrt(discriminant(II)))./a(II);
+
+t = max([xp;xn],[],1);
+
+X_f(II) = xo(II) + vox(II).*t;
+Y_f(II) = yo(II) + voy(II).*t;
+Z_f(II) = zo(II) + voz(II).*t;
+
+theta_f(II) = atan2(Y_f(II),X_f(II));
+theta_f(theta_f < 0) = theta_f(theta_f < 0) + 2*pi;
 
 % Then, we calculate the angle between V and the position of the camera
-xc = Rc*cos(theta_f(I));
-yc = Rc*sin(theta_f(I));
+xc = Rc*cos(theta_f(II));
+yc = Rc*sin(theta_f(II));
 
-ax = xc - xo(I);
-ay = yc - yo(I);
-az = Zc - zo(I);
+ax = xc - xo(II);
+ay = yc - yo(II);
+az = Zc - zo(II);
 
 a = sqrt(ax.^2 + ay.^2 + az.^2);
 
@@ -2319,40 +2297,42 @@ ax = ax./a;
 ay = ay./a;
 az = az./a;
 
-psi = acos(ax.*vox(I) + ay.*voy(I) + az.*voz(I))';
-visible = psi <= angle(I);
-
-II = I(visible);
+psi = acos(ax.*vox(II) + ay.*voy(II) + az.*voz(II))';
+visible = psi <= angle(II); % only discarded == false
 
 ip = false(1,np);
-ip(II) = true;
+ip(II(visible)) = true;
+
+% ip(II) = true;
 
 % Optional figures
 if ( option )
-    XC = [X_f;Y_f;Z_f];
+    XP = X(:,ip);
+    XC = [X_f(ip);Y_f(ip);Z_f(ip)];
+    theta = theta_f(ip);
     clockwise_rotation = @(t,x) [cos(t),sin(t);-sin(t),cos(t)]*x;
-    for jj=1:numel(II)
-        X(1:2,II(jj)) = clockwise_rotation(theta_f(II(jj)),X(1:2,II(jj)));
-        XC(1:2,II(jj)) = clockwise_rotation(theta_f(II(jj)),XC(1:2,II(jj)));
+    for jj=1:size(XP,2)
+        XP(1:2,jj) = clockwise_rotation(theta(jj),XP(1:2,jj));
+        XC(1:2,jj) = clockwise_rotation(theta(jj),XC(1:2,jj));
     end
     
-    Ro = sqrt(xo(II).^2 + yo(II).^2);
+    Ro = sqrt(xo(ip).^2 + yo(ip).^2);
     figure
     subplot(2,2,1)
-    plot(Ro,zo(II),'g.','MarkerSize',5)
+    plot(Ro,zo(ip),'g.','MarkerSize',5)
     xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
     ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
     subplot(2,2,2)
-    histogram(zo(II))
+    histogram(zo(ip))
     xlabel('$Z$ (m)','Interpreter','latex','FontSize',16)
     ylabel('$f(Z)$','Interpreter','latex','FontSize',16)
     subplot(2,2,3)
-    plot3([X(1,II);XC(1,II)],[X(2,II);XC(2,II)],[X(3,II);XC(3,II)])
+    plot3([XP(1,:);XC(1,:)],[XP(2,:);XC(2,:)],[XP(3,:);XC(3,:)])
     xlabel('$X$ (m)','Interpreter','latex','FontSize',16)
     ylabel('$Y$ (m)','Interpreter','latex','FontSize',16)
     axis equal; box on
     subplot(2,2,4)
-    plot(theta_f(I(visible)),'b','MarkerSize',5)
+    plot(theta_f(ip),'b','MarkerSize',5)
     xlabel('Particle number','Interpreter','latex','FontSize',16)
     ylabel('$\theta$ (rad)','Interpreter','latex','FontSize',16)
 end
@@ -2362,6 +2342,8 @@ function pixel_grid = setupCameraPixelGrid(camera_params,option)
 % Here we set-up the pixel grid of the camera in a coordinate system such
 % that the x-axis corresponds to the horizontal dimension, and the y-axis
 % corresponds to the vertical dimension, with respect to the floor level.
+disp(['Setting up camera pixel grid...'])
+
 xmin = -camera_params.size(1)/2;
 xmax = camera_params.size(1)/2;
 DX = camera_params.size(1)/camera_params.NX;
@@ -2511,6 +2493,7 @@ end
 end
 
 function [rotation_angle,ip_in_pixel] = findRotationAngles(X,camera_params)
+disp('Calculating rotation angles...')
 % Here we compute the rotation angles in the toroidal direction based on
 % the pixel array of the camera.
 np = size(X,2);
@@ -2614,11 +2597,7 @@ end
 function SD = syntheticDiagnosticSynchrotron(ST)
 % Synthetic diagnostic of camera for synchrotron radiation.
 SD = struct;
-
-% poolobj = gcp('nocreate');
-% if isempty(poolobj)
-%     poolobj = parpool(2);
-% end
+disp('Starting synchrotron synthetic diagnostic...')
 
 % Here we define many snapshots will be used
 numSnapshots = 0;
@@ -2638,9 +2617,9 @@ lambda = 1E2*lambda; % in cm
 
 % Camera parameters
 camera_params = struct;
-camera_params.Riw = 1.05;% inner wall radius in meters
-camera_params.NX = 3;
-camera_params.NY = 2;
+camera_params.Riw = 1.0;% inner wall radius in meters
+camera_params.NX = 40;
+camera_params.NY = 35;
 camera_params.size = [0.25,0.2]; % [horizontal size, vertical size] in meters
 camera_params.focal_length = 0.35; % In meters
 camera_params.position = [2.38,0.0]; % [R,Z] in meters
@@ -2655,7 +2634,7 @@ camera_params.vertical_angle_view = ...
     atan2(0.5*camera_params.size(2),camera_params.focal_length); % in radians
 camera_params.pixel_grid = setupCameraPixelGrid(camera_params,false);
 
-for ss=1:1
+for ss=2:2
     q = abs(ST.params.species.q(ss));
     m = ST.params.species.m(ss);
     Ro = ST.params.fields.Ro;
@@ -2818,18 +2797,12 @@ for ss=1:1
                     
                     % Here we calculate the critical chi
                     xi = 2*pi./(3*lambda*kappa(pp)*gtmp(pp)^3);
-                    co = gtmp(pp);
-                    
-                    chic = zeros(1,N);
-                    for ll=1:N
-                        p = [co^3/3, 0, co, -pi/(3*xi(ll))];
-                        r = roots(p);
-                        bool = imag(r) == 0;
-                        chic(ll) = max(r(bool));
-                    end
+
+                    D = ( 0.5*(sqrt(4 + (pi./xi).^2) - pi./xi) ).^(1/3);
+                    chic = (1./D - D)/gtmp(pp);
                     % Here we calculate the critical chi
                     
-                    psic = (0.75*kappa(pp)*lambda(end)/pi).^(1/3);
+                    psic = (0.75*kappa(pp)*lambda/pi).^(1/3);
                     
                     % Next, we determine to which wavelengths, if any, the
                     % particles will contribute to.
@@ -2837,14 +2810,12 @@ for ss=1:1
                     reject_psi = psi > psic;
                     reject = reject_chi | reject_psi;
                     II = find(reject == false);
- 
-%                     if ~isempty(II)
-                        Psyn_tmp = Psyn(lambda(II),kappa(pp),gtmp(pp),chi,psi);
-                        contributing = find(Psyn_tmp > 0);
-                        P{ii,jj}(II(contributing)) = P{ii,jj}(II(contributing)) + Psyn_tmp(contributing);
-                        
+                    
+                    Psyn_tmp = Psyn(lambda(II),kappa(pp),gtmp(pp),chi,psi);
+                    contributing = find(Psyn_tmp > 0);
+                    P{ii,jj}(II(contributing)) = P{ii,jj}(II(contributing)) + Psyn_tmp(contributing);
+                    
 %                         counter(ii,jj) = counter(ii,jj) + 1;
-%                     end
                 end
                 
                 figure(fh)
@@ -2870,6 +2841,4 @@ for ss=1:1
     ylabel('$x$-axis of detector','FontSize',14,'Interpreter','latex')
     xlabel('$y$-axis of detector','FontSize',14,'Interpreter','latex')
 end
-
-% delete(poolobj);
 end

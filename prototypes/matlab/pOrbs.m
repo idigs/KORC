@@ -2809,6 +2809,9 @@ if isfield(ST.PP,'k')
     bool = imag(r) == 0;
     chi_max = max(r(bool));
     
+    D = ()^1.5
+    chi_max_root = (1/D - D)/gammap(Ind);
+    
     chi = linspace(-chi_max,chi_max,Nchi);
     
     for ii=1:Nchi
