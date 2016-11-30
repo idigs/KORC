@@ -273,8 +273,6 @@ set(h6,'name','Energy statistics','numbertitle','off')
 % catch
 %     error('Something went wrong: energyConservation')
 % end
-
-
 end
 
 function PAD = pitchAngleDiagnostic(ST,nbins)
@@ -2619,11 +2617,11 @@ SD = struct;
 
 % poolobj = gcp('nocreate');
 % if isempty(poolobj)
-%     poolobj = parpool(5);
+%     poolobj = parpool(2);
 % end
 
 % Here we define many snapshots will be used
-numSnapshots = 10;
+numSnapshots = 0;
 it1 = ST.params.simulation.num_snapshots + 1 - numSnapshots;
 it2 = ST.params.simulation.num_snapshots + 1;
 
@@ -2641,8 +2639,8 @@ lambda = 1E2*lambda; % in cm
 % Camera parameters
 camera_params = struct;
 camera_params.Riw = 1.05;% inner wall radius in meters
-camera_params.NX = 35;
-camera_params.NY = 30;
+camera_params.NX = 3;
+camera_params.NY = 2;
 camera_params.size = [0.25,0.2]; % [horizontal size, vertical size] in meters
 camera_params.focal_length = 0.35; % In meters
 camera_params.position = [2.38,0.0]; % [R,Z] in meters
@@ -2747,7 +2745,10 @@ for ss=1:1
     k = k/1E2;
     
     xcam = 1E2*[camera_params.position(1);0;camera_params.position(2)];
+    
     anticlockwise_rotation = @(t,x) [cos(t),-sin(t);sin(t),cos(t)]*x;
+%     anticlockwise_rotation = @(t,x) [x(1)*cos(t) - x(2)*sin(t), x(1)*sin(t) + x(2)*cos(t)];
+    
     % functions for calculating the radiation power density
     fx = @(g,x,p) g*x/sqrt( 1 + (g*p)^2 );
     zeta = @(l,k,g,p) (2*pi./(3*k*l))*(1/g^2 + p^2)^1.5;
@@ -2763,12 +2764,16 @@ for ss=1:1
     
     fh = figure;
     
+    counter = zeros(camera_params.NX,camera_params.NY);
     Ptot = zeros(camera_params.NX,camera_params.NY);
     P = cell(camera_params.NX,camera_params.NY);
+    
     for ii=1:camera_params.NX
         for jj=1:camera_params.NY
+            
             P{ii,jj} = zeros(1,N);
             I = [ip_in_pixel{1,ii,jj},ip_in_pixel{2,ii,jj}];
+            
             if ~isempty(I)
                 Ptmp = Prad(I);
                 xtmp = X(:,I);
@@ -2777,6 +2782,7 @@ for ss=1:1
                 gtmp = gammae(I);
                 kappa = k(I);
                 
+                % Rotation angles
                 anticlockwise = ...
                     [rotation_angles{1,ii,jj},rotation_angles{2,ii,jj}];
                 
@@ -2784,9 +2790,8 @@ for ss=1:1
                 clockwise(clockwise<0) = clockwise(clockwise<0) + 2*pi;
                 
                 angle = anticlockwise - clockwise;
+                % Rotation angles
                 
-%                 chi = zeros(numel(I),1);
-%                 psi = zeros(numel(I),1);
                 for pp=1:numel(I)
                     xtmp(1:2,pp) = anticlockwise_rotation(angle(pp),xtmp(1:2,pp));
                     vtmp(1:2,pp) = anticlockwise_rotation(angle(pp),vtmp(1:2,pp));
@@ -2822,11 +2827,9 @@ for ss=1:1
                         bool = imag(r) == 0;
                         chic(ll) = max(r(bool));
                     end
-                    
                     % Here we calculate the critical chi
                     
-%                     chic = sqrt(0.25*gtmp(pp)*kappa(pp)*lambda/pi);
-                    psic = (0.75*kappa(pp)*lambda/pi).^(1/3);
+                    psic = (0.75*kappa(pp)*lambda(end)/pi).^(1/3);
                     
                     % Next, we determine to which wavelengths, if any, the
                     % particles will contribute to.
@@ -2835,11 +2838,13 @@ for ss=1:1
                     reject = reject_chi | reject_psi;
                     II = find(reject == false);
  
-                    if ~isempty(II)
+%                     if ~isempty(II)
                         Psyn_tmp = Psyn(lambda(II),kappa(pp),gtmp(pp),chi,psi);
                         contributing = find(Psyn_tmp > 0);
                         P{ii,jj}(II(contributing)) = P{ii,jj}(II(contributing)) + Psyn_tmp(contributing);
-                    end
+                        
+%                         counter(ii,jj) = counter(ii,jj) + 1;
+%                     end
                 end
                 
                 figure(fh)
@@ -2866,5 +2871,5 @@ for ss=1:1
     xlabel('$y$-axis of detector','FontSize',14,'Interpreter','latex')
 end
 
-%  delete(poolobj);
+% delete(poolobj);
 end
