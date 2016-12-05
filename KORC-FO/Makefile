@@ -50,7 +50,7 @@ endif
 	OMP_LIB_FLAGS =
 endif
 
-BINARIES = $(addprefix $(OBJ)/, korc_types.o    constants.o	korc_HDF5.o	korc_hpc.o  rnd_numbers.o	korc_fields.o	korc_coords.o	korc_interp.o	initialize.o    finalize.o	korc_units.o   korc_ppusher.o	main.o)
+BINARIES = $(addprefix $(OBJ)/, korc_types.o    korc_constants.o	korc_collisions.o	korc_HDF5.o	korc_hpc.o  rnd_numbers.o	korc_fields.o	korc_coords.o	korc_interp.o	initialize.o    finalize.o	korc_units.o   korc_ppusher.o	main.o)
 
 
 all: $(BIN)/KORC-FO
@@ -58,7 +58,7 @@ all: $(BIN)/KORC-FO
 $(OBJ)/korc_types.o: $(SRC)/korc_types.f90
 	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $<		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
-$(OBJ)/constants.o: $(SRC)/constants.f90
+$(OBJ)/korc_constants.o: $(SRC)/korc_constants.f90
 	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $<		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
 $(OBJ)/rnd_numbers.o: $(SRC)/rnd_numbers.f90
@@ -83,6 +83,9 @@ $(OBJ)/korc_interp.o: $(SRC)/korc_interp.f90
 	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$<		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
 $(OBJ)/korc_coords.o: $(SRC)/korc_coords.f90
+	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$<		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
+
+$(OBJ)/korc_collisions.o: $(SRC)/korc_collisions.f90
 	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$<		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
 $(OBJ)/korc_ppusher.o: $(SRC)/korc_ppusher.f90

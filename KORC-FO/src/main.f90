@@ -7,6 +7,7 @@ program main
 	use korc_fields
 	use korc_ppusher
 	use korc_interp
+	use korc_collisions
 	use initialize
 	use finalize
 
@@ -38,7 +39,9 @@ program main
 
 	call initialize_particle_pusher(params)
 
-	call normalize_variables(params,spp,EB,cparams)
+	call normalize_variables(params,spp,EB)
+
+	call normalize_collisions_params(params,cparams)
 
 	call initialize_interpolant(params,EB)
 
@@ -89,7 +92,9 @@ program main
 	call finalize_interpolant(params)
 
 	! DEALLOCATION OF VARIABLES
-	call deallocate_variables(params,EB,spp,cparams)
+	call deallocate_variables(params,EB,spp)
+
+	call deallocate_collisions_params(cparams)
 
 	call finalize_communications(params)
 	! * * * FINALIZING SIMULATION * * * 

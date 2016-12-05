@@ -1,7 +1,7 @@
 module initialize
 
     use korc_types
-    use constants
+    use korc_constants
     use korc_hpc
     use korc_HDF5
     use korc_interp
@@ -14,6 +14,10 @@ module initialize
 	PUBLIC :: initialize_korc_parameters, initialize_particles, initialize_fields
 
     contains
+
+! * * * * * * * * * * * *  * * * * * * * * * * * * * !
+! ** SUBROUTINES FOR INITIALIZING KORC PARAMETERS ** !
+! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
 subroutine set_paths(params)
 	implicit none
@@ -38,6 +42,7 @@ subroutine load_korc_params(params)
 	REAL(rp) :: dt
 	LOGICAL :: radiation
 	LOGICAL :: collisions
+	CHARACTER(MAX_STRING_LENGTH) :: collisions_model
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
 	LOGICAL :: poloidal_flux
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
@@ -48,7 +53,7 @@ subroutine load_korc_params(params)
 
 	NAMELIST /input_parameters/ magnetic_field_model,poloidal_flux,&
 			magnetic_field_filename,t_steps,dt,output_cadence,num_species,&
-			pic_algorithm,radiation,collisions,num_impurity_species
+			pic_algorithm,radiation,collisions,collisions_model
 	
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=input_parameters)
@@ -60,13 +65,13 @@ subroutine load_korc_params(params)
 	params%num_snapshots = t_steps/output_cadence
 	params%dt = dt
 	params%num_species = num_species
-	params%num_impurity_species = num_impurity_species
 	params%magnetic_field_model = TRIM(magnetic_field_model)
 	params%poloidal_flux = poloidal_flux
 	params%magnetic_field_filename = TRIM(magnetic_field_filename)
 	params%pic_algorithm = pic_algorithm
 	params%radiation = radiation
 	params%collisions = collisions
+	params%collisions_model = TRIM(collisions_model)
 
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'("* * * * * SIMULATION PARAMETERS * * * * *")')
@@ -80,6 +85,7 @@ subroutine load_korc_params(params)
 		write(6,'("Magnetic field model: ",A100)') TRIM(params%magnetic_field_filename)
 		write(6,'("Radiation losses included: ",L1)') params%radiation
 		write(6,'("collisions losses included: ",L1)') params%collisions
+		write(6,'("collisions model: ",A50)') TRIM(params%collisions_model)
 	end if	
 end subroutine load_korc_params
 
@@ -311,7 +317,7 @@ end subroutine set_up_particles_ic
 
 
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
-! * * * SUBROUTINES FOR INITIALIZING PARTICLES * * * !
+! ** SUBROUTINES FOR INITIALIZING COMMUNICATIONS  ** !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
 subroutine initialize_communications(params)
@@ -352,6 +358,10 @@ subroutine initialization_sanity_check(params)
 !$OMP END PARALLEL
 end subroutine initialization_sanity_check
 
+
+! * * * * * * * * * * * *  * * * * * * * * * * * * * !
+! * * *  SUBROUTINES FOR INITIALIZING FIELDS   * * * !
+! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
 subroutine initialize_fields(params,F)
 	implicit none
@@ -409,60 +419,5 @@ subroutine initialize_fields(params,F)
 		call korc_abort()
 	end if
 end subroutine initialize_fields
-
-
-subroutine initialize_collision_params(params,cparams)
-	implicit none
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(COLLISION_PARAMS), INTENT(OUT) :: cparams
-	REAL(rp) :: Te ! Background electron temperature in eV
-	REAL(rp) :: ne! Background electron density in 1/m^3
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zo ! Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zj ! Atomic number of each impurity: Z=1 for D, Z=10 for Ne
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: nz ! Impurity densities
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: IZj ! Ionization energy of impurity in eV
-
-	NAMELIST /collision_parameters/ Te,ne,Zo,Zj,nz,IZj
-
-	cparams%num_impurity_species = params%num_impurity_species
-
-	ALLOCATE(Zj(params%num_impurity_species))
-	ALLOCATE(Zo(params%num_impurity_species))
-	ALLOCATE(nz(params%num_impurity_species))
-	ALLOCATE(IZj(params%num_impurity_species))
-
-	ALLOCATE(cparams%Zj(params%num_impurity_species))
-	ALLOCATE(cparams%Zo(params%num_impurity_species))
-	ALLOCATE(cparams%nz(params%num_impurity_species))
-	ALLOCATE(cparams%neb(params%num_impurity_species))
-	ALLOCATE(cparams%IZj(params%num_impurity_species))
-	ALLOCATE(cparams%Ee_IZj(params%num_impurity_species))
-
-	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-	read(default_unit_open,nml=collision_parameters)
-	close(default_unit_open)
-
-	cparams%Te = Te*C_E
-	cparams%ne = ne
-	cparams%nH = ne
-
-	cparams%Zj = Zj
-	cparams%Zo = Zo
-	cparams%nz = nz
-	cparams%IZj = C_E*IZj
-
-	cparams%nef = ne + sum(cparams%Zj*cparams%nz)
-	cparams%neb = (cparams%Zo-cparams%Zj)*cparams%nz
-
-	cparams%rD = SQRT( C_E0*cparams%Te/(cparams%ne*C_E**2) )
-	cparams%re = C_E**2/( 4.0_rp*C_PI*C_E0*C_ME*C_C**2 )
-	cparams%Ee_IZj = C_ME*C_C**2/cparams%IZj
-
-
-	DEALLOCATE(Zj)
-	DEALLOCATE(Zo)
-	DEALLOCATE(nz)
-	DEALLOCATE(IZj)
-end subroutine initialize_collision_params
 
 end module initialize

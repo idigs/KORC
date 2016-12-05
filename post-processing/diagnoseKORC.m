@@ -1602,7 +1602,7 @@ function P = synchrotronSpectrum(ST,filtered)
 disp('Calculating spectrum of synchrotron radiation...')
 P = struct;
 
-numSnapshots = 3;
+numSnapshots = 50;
 it1 = ST.params.simulation.num_snapshots + 1 - numSnapshots;
 it2 = ST.params.simulation.num_snapshots + 1;
 
@@ -1610,9 +1610,12 @@ geometry = 'cylindrical';
 
 upper_integration_limit = 200.0;
 
-N = 500;
-lambda_min = 450E-9;% in meters
-lambda_max = 950E-9;% in meters
+N = 250;
+lambda_min = 1E-9;% in meters
+lambda_max = 5000E-9;% in meters
+% 
+% lambda_min = 450E-9;% in meters
+% lambda_max = 950E-9;% in meters
 % lambda_min = 907E-9;% in meters
 % lambda_max = 917E-9;% in meters
 % lambda_min = 742E-9;% in meters
@@ -2127,7 +2130,7 @@ Riw = 1; % in meters
 
 % Radial and vertical position of the camera
 Rc = 2.38; % in meters
-Zc = 0.076; % in meters
+Zc = 0.0; % in meters
 % Zc = 0;
 
 np = numel(gammap);
@@ -2600,9 +2603,14 @@ SD = struct;
 disp('Starting synchrotron synthetic diagnostic...')
 
 % Here we define many snapshots will be used
-numSnapshots = 0;
+numSnapshots = 5;
 it1 = ST.params.simulation.num_snapshots + 1 - numSnapshots;
 it2 = ST.params.simulation.num_snapshots + 1;
+
+lch = 1E2;
+lchnm = 1E7;
+Pch = 1E-7;
+
 
 % Simulation parameters
 num_species = double(ST.params.simulation.num_species);
@@ -2613,7 +2621,7 @@ N = 150;
 lambda_min = 1E-9;% in meters
 lambda_max = 5000E-9;% in meters
 lambda = linspace(lambda_min,lambda_max,N);
-lambda = 1E2*lambda; % in cm
+lambda = lch*lambda; % in cm
 
 % Camera parameters
 camera_params = struct;
@@ -2634,7 +2642,7 @@ camera_params.vertical_angle_view = ...
     atan2(0.5*camera_params.size(2),camera_params.focal_length); % in radians
 camera_params.pixel_grid = setupCameraPixelGrid(camera_params,false);
 
-for ss=2:2
+for ss=1:1
     q = abs(ST.params.species.q(ss));
     m = ST.params.species.m(ss);
     Ro = ST.params.fields.Ro;
@@ -2721,9 +2729,9 @@ for ss=2:2
     
     X = 1E2*X;
     V = 1E2*V;
-    k = k/1E2;
+    k = k/lch;
     
-    xcam = 1E2*[camera_params.position(1);0;camera_params.position(2)];
+    xcam = lch*[camera_params.position(1);0;camera_params.position(2)];
     
     anticlockwise_rotation = @(t,x) [cos(t),-sin(t);sin(t),cos(t)]*x;
 %     anticlockwise_rotation = @(t,x) [x(1)*cos(t) - x(2)*sin(t), x(1)*sin(t) + x(2)*cos(t)];
@@ -2744,6 +2752,8 @@ for ss=2:2
     fh = figure;
     
     counter = zeros(camera_params.NX,camera_params.NY);
+    psi_detector = zeros(camera_params.NX,camera_params.NY,2);
+    chi_detector = zeros(camera_params.NX,camera_params.NY,2);
     Ptot = zeros(camera_params.NX,camera_params.NY);
     P = cell(camera_params.NX,camera_params.NY);
     
@@ -2770,7 +2780,8 @@ for ss=2:2
                 
                 angle = anticlockwise - clockwise;
                 % Rotation angles
-                
+                chi = zeros(1,numel(I));
+                psi = zeros(1,numel(I));
                 for pp=1:numel(I)
                     xtmp(1:2,pp) = anticlockwise_rotation(angle(pp),xtmp(1:2,pp));
                     vtmp(1:2,pp) = anticlockwise_rotation(angle(pp),vtmp(1:2,pp));
@@ -2792,12 +2803,12 @@ for ss=2:2
                     
                     % No apriori assumption on the value of psi or chi is
                     % made here. We use the osculating plane, n and V.
-                    chi = abs( acos(dot(nperp,v_unit(:,pp))) );
-                    psi = pi/2 - aa;
+                    chi(pp) = abs( acos(dot(nperp,v_unit(:,pp))) );
+                    psi(pp) = pi/2 - aa;
                     
                     % Here we calculate the critical chi
                     xi = 2*pi./(3*lambda*kappa(pp)*gtmp(pp)^3);
-
+                    
                     D = ( 0.5*(sqrt(4 + (pi./xi).^2) - pi./xi) ).^(1/3);
                     chic = (1./D - D)/gtmp(pp);
                     % Here we calculate the critical chi
@@ -2806,22 +2817,20 @@ for ss=2:2
                     
                     % Next, we determine to which wavelengths, if any, the
                     % particles will contribute to.
-                    reject_chi = chi > chic;
-                    reject_psi = psi > psic;
+                    reject_chi = chi(pp) > chic;
+                    reject_psi = psi(pp) > psic;
                     reject = reject_chi | reject_psi;
                     II = find(reject == false);
                     
-                    Psyn_tmp = Psyn(lambda(II),kappa(pp),gtmp(pp),chi,psi);
+                    Psyn_tmp = Psyn(lambda(II),kappa(pp),gtmp(pp),chi(pp),psi(pp));
                     contributing = find(Psyn_tmp > 0);
                     P{ii,jj}(II(contributing)) = P{ii,jj}(II(contributing)) + Psyn_tmp(contributing);
-                    
-%                         counter(ii,jj) = counter(ii,jj) + 1;
                 end
                 
                 figure(fh)
                 hold on
-                plot(lambda,P{ii,jj})
-                xlabel('$\lambda$ (cm)','FontSize',14,'Interpreter','latex')
+                plot(lambda/lchnm,Pch*P{ii,jj}/lchnm)
+                xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
                 ylabel('$P_{syn}(\lambda)$','FontSize',14,'Interpreter','latex')
                 hold off
                 
@@ -2829,15 +2838,31 @@ for ss=2:2
 %                 Ptot(ii,jj) = P{ii,jj}(end);
 %                 Ptot(ii,jj) = sum(Prad(I));
                 
+                counter(ii,jj) = numel(I);   
+
+                psi_detector(ii,jj,1) = mean(psi);
+                psi_detector(ii,jj,2) = std(psi);
+                chi_detector(ii,jj,1) = mean(chi);
+                chi_detector(ii,jj,2) = std(chi);
             end
+            
             disp(['Pixel (' num2str(ii) ',' num2str(jj) ') out of ' num2str(camera_params.NX*camera_params.NY)])
         end
     end
     
     figure;
+    subplot(2,1,1)
     contourf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot,15)
     colormap(jet)
-    view([90,-90])
+    view([90,90])
+    ylabel('$x$-axis of detector','FontSize',14,'Interpreter','latex')
+    xlabel('$y$-axis of detector','FontSize',14,'Interpreter','latex')
+    
+    subplot(2,1,2)
+    surf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,counter,...
+        'LineStyle','none')
+    colormap(jet)
+    view([90,90])
     ylabel('$x$-axis of detector','FontSize',14,'Interpreter','latex')
     xlabel('$y$-axis of detector','FontSize',14,'Interpreter','latex')
 end

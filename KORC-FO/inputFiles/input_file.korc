@@ -1,11 +1,11 @@
 &input_parameters
-        t_steps = 284000 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+        t_steps = 100 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
         dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
-        output_cadence = 2840 ! 1400 for saving each 100 gyro-periods
+        output_cadence = 10 ! 1400 for saving each 100 gyro-periods
         num_species = 1
-        num_impurity_species = 1
         radiation = .FALSE.
         collisions = .FALSE.
+		collisions_model = 'NONE' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
         magnetic_field_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
                                                                                 ! For 'ANALYTICAL', the magnetic field is calculated based on
                                                                                 ! the parameters given in the "analytic_mag_field_params" section.
@@ -24,7 +24,7 @@
         r = 0.5 !
         Eo = 25.0E6 ! Initial energy in eV
         etao = 10.0  ! Initial pitch angle
-        ppp = 50000 ! Number of particles per process (mpi)
+        ppp = 5000 ! Number of particles per process (mpi)
         q = -1.0 ! Electric charge
         m = 1.0 ! In units of electron mass
 /
@@ -41,11 +41,21 @@
         qo = 1.6 ! Safety factor at the separatrix (r=a)
 /
 
-&collision_parameters
+&CollisionParamsMultipleSpecies
+		num_impurity_species = 2
         Te = 1.5 ! Background electron temperature in eV
         ne = 1.0E20 ! Background electron density in 1/m^3
-        Zo = 18.0 ! Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
-        Zj = 1.0 ! Average charge state of each impurity
-        nz = 5.0E18 ! Impurity densities
-        IZj = 15.7596 ! Ionization energy of impurity in eV
+        Zo = 1.0, 9.0 ! Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
+        Zj = 1.0, 9.0 ! Average charge state of each impurity
+        nz = 5.0E18, 4.0E18 ! Impurity densities
+        IZj = 15.7596, 14.7596 ! Ionization energy of impurity in eV
+/
+
+&CollisionParamsSingleSpecies
+        Te = 1.5 ! Background electron temperature in eV
+        ne = 1.0E20 ! Background electron density in 1/m^3
+        Zo = 1.0, 9.0 ! Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
+        Zj = 1.0, 9.0 ! Average charge state of each impurity
+        nz = 5.0E18, 4.0E18 ! Impurity densities
+        IZj = 15.7596, 14.7596 ! Ionization energy of impurity in eV
 /

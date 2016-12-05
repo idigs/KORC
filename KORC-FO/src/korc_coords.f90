@@ -1,7 +1,7 @@
 module korc_coords
 
     use korc_types
-    use constants
+    use korc_constants
 
     implicit none
 

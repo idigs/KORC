@@ -1,7 +1,7 @@
 module korc_units
 
     use korc_types
-    use constants
+    use korc_constants
 
     implicit none
 
@@ -55,12 +55,11 @@ subroutine define_time_step(params)
 end subroutine define_time_step
 
 
-subroutine normalize_variables(params,spp,F,cparams)
+subroutine normalize_variables(params,spp,F)
     implicit none
 	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
 	TYPE(FIELDS), INTENT(INOUT) :: F
-	TYPE(COLLISION_PARAMS), INTENT(INOUT) :: cparams
 	INTEGER :: ii ! Iterator(s)
 
 !	Normalize params variables
@@ -110,19 +109,7 @@ subroutine normalize_variables(params,spp,F,cparams)
 		F%X%R = F%X%R/params%cpp%length
 		! Nothing to do for the PHI component
 		F%X%Z = F%X%Z/params%cpp%length
-	end if
-
-!	Normalize collision parameters
-	cparams%Te = cparams%Te/params%cpp%temperature
-	cparams%ne = cparams%ne/params%cpp%density
-	cparams%nH = cparams%nH/params%cpp%density
-	cparams%nef = cparams%nef/params%cpp%density
-	cparams%neb = cparams%neb/params%cpp%density
-	if (ALLOCATED(cparams%nz)) cparams%nz = cparams%nz/params%cpp%density
-	if (ALLOCATED(cparams%IZj)) cparams%IZj = cparams%IZj/params%cpp%energy
-	cparams%rD = cparams%rD/params%cpp%length
-	cparams%re = cparams%re/params%cpp%length
-
+	end if	
 end subroutine normalize_variables
 
 end module korc_units

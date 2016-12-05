@@ -2710,7 +2710,7 @@ if isfield(ST.PP,'k')
     [~,Jmin] = min(k_app);
     [~,Jmax] = max(k_app);
     
-    Ind = Imax;
+    Ind = Imin;
     
     lambda_min = 1E2*lambda_min; % in cm
     
@@ -2784,8 +2784,9 @@ if isfield(ST.PP,'k')
     Psyn_psi_chi = zeros(Npsi,Nchi);
     Psyn_chi_lambda = zeros(Nchi,N);
     
-%     [~,I] = max(P.Psyn(Ind,:));
-    I = N;
+    [~,I] = max(P.Psyn(Ind,:)); 
+    I = floor(I/2);
+%     I = N;
     
     psi_critical = (P.lambda(Ind,I)/P.lambdac(Ind)).^(1/3)/gammap(Ind);
     chi_max = sqrt( P.lambda(Ind,I)/(3*P.lambdac(Ind)) )/gammap(Ind); % 0.42;% (24 degrees) 3 percent of error between x and sin(x)
@@ -2809,8 +2810,8 @@ if isfield(ST.PP,'k')
     bool = imag(r) == 0;
     chi_max = max(r(bool));
     
-    D = ()^1.5
-    chi_max_root = (1/D - D)/gammap(Ind);
+%     D = ()^1.5
+%     chi_max_root = (1/D - D)/gammap(Ind);
     
     chi = linspace(-chi_max,chi_max,Nchi);
     
