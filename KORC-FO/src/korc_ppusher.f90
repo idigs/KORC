@@ -58,11 +58,10 @@ subroutine radiation_force(spp,U,E,B,Frad)
 end subroutine radiation_force
 
 
-subroutine advance_particles_velocity(params,EB,cparams,spp,dt,bool)
+subroutine advance_particles_velocity(params,EB,spp,dt,bool)
     implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(FIELDS), INTENT(IN) :: EB
-	TYPE(COLLISION_PARAMS), INTENT(IN) :: cparams
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
     LOGICAL, INTENT(IN) :: bool
 	REAL(rp), INTENT(IN) :: dt
@@ -136,7 +135,7 @@ subroutine advance_particles_velocity(params,EB,cparams,spp,dt,bool)
 				end if
 
 				if (params%collisions) then
-					call collision_force(spp(ii),cparams,U_os,Fcoll)
+					call collision_force(spp(ii),U_os,Fcoll)
 					U_RC = U_RC + a*Fcoll/spp(ii)%q
 				end if
 

@@ -69,13 +69,13 @@ program main
         params%time = REAL(it,rp)*params%dt
 
 		if ( modulo(it,params%output_cadence) .EQ. 0_ip ) then
-            call advance_particles_velocity(params,EB,cparams,spp,params%dt,.TRUE.)
+            call advance_particles_velocity(params,EB,spp,params%dt,.TRUE.)
 		    call advance_particles_position(params,EB,spp,params%dt)
 
 			write(6,'("Saving snapshot: ",I15)') it/params%output_cadence
 			call save_simulation_outputs(params,spp,EB,it)
         else
-            call advance_particles_velocity(params,EB,cparams,spp,params%dt,.FALSE.)
+            call advance_particles_velocity(params,EB,spp,params%dt,.FALSE.)
 		    call advance_particles_position(params,EB,spp,params%dt)
         end if
 

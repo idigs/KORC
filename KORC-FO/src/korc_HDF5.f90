@@ -23,14 +23,6 @@ module korc_HDF5
 	  module procedure isave_to_hdf5, rsave_to_hdf5
 	END INTERFACE
 
-!	INTERFACE save_2d_array_to_hdf5
-!		module procedure rsave_2d_array_to_hdf5
-!	END INTERFACE
-
-!	INTERFACE save_1d_array_to_hdf5
-!		module procedure isave_1d_array_to_hdf5, rsave_1d_array_to_hdf5
-!	END INTERFACE
-
 	PRIVATE :: save_to_hdf5,isave_to_hdf5, rsave_to_hdf5, isave_1d_array_to_hdf5,&
 				rsave_1d_array_to_hdf5,&
 				rsave_2d_array_to_hdf5,load_from_hdf5,iload_from_hdf5,&

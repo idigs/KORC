@@ -5,8 +5,6 @@ module korc_collisions
 
 	implicit none
 
-	PUBLIC :: initialize_collision_params
-
 	TYPE, PUBLIC :: COLLISION_PARAMS
 		INTEGER :: num_impurity_species
 		REAL(rp) :: Te ! Background electron temperature in eV
@@ -25,11 +23,65 @@ module korc_collisions
 		REAL(rp) :: re ! Classical electron radius
 	END TYPE COLLISION_PARAMS
 
+	TYPE(COLLISION_PARAMS), PRIVATE :: cparams_ms
+
+	PUBLIC :: initialize_collision_params
+
 	contains
 
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 ! * SUBROUTINES FOR INITIALIZING COLLISIONS PARAMS * !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
+
+
+subroutine load_params_multiple_species(params)
+	implicit none
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	REAL(rp) :: Te ! Background electron temperature in eV
+	REAL(rp) :: ne! Background electron density in 1/m^3
+	INTEGER :: num_impurity_species
+	REAL(rp), DIMENSION(10) :: Zo ! Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
+	REAL(rp), DIMENSION(10) :: Zj ! Atomic number of each impurity: Z=1 for D, Z=10 for Ne
+	REAL(rp), DIMENSION(10) :: nz ! Impurity densities
+	REAL(rp), DIMENSION(10) :: IZj ! Ionization energy of impurity in eV
+
+	NAMELIST /CollisionParamsMultipleSpecies/ num_impurity_species,Te,ne,Zo,Zj,nz,IZj
+
+
+	if (params%collisions) then
+		open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
+		read(default_unit_open,nml=CollisionParamsMultipleSpecies)
+		close(default_unit_open)
+
+		write(*,nml=CollisionParamsMultipleSpecies)
+
+		cparams_ms%num_impurity_species = num_impurity_species
+
+		ALLOCATE(cparams_ms%Zj(cparams_ms%num_impurity_species))
+		ALLOCATE(cparams_ms%Zo(cparams_ms%num_impurity_species))
+		ALLOCATE(cparams_ms%nz(cparams_ms%num_impurity_species))
+		ALLOCATE(cparams_ms%neb(cparams_ms%num_impurity_species))
+		ALLOCATE(cparams_ms%IZj(cparams_ms%num_impurity_species))
+		ALLOCATE(cparams_ms%Ee_IZj(cparams_ms%num_impurity_species))
+
+		cparams_ms%Te = Te*C_E
+		cparams_ms%ne = ne
+		cparams_ms%nH = ne
+
+		cparams_ms%Zj = Zj(1:cparams_ms%num_impurity_species)
+		cparams_ms%Zo = Zo(1:cparams_ms%num_impurity_species)
+		cparams_ms%nz = nz(1:cparams_ms%num_impurity_species)
+		cparams_ms%IZj = C_E*IZj(1:cparams_ms%num_impurity_species)
+
+		cparams_ms%nef = ne + sum(cparams_ms%Zj*cparams_ms%nz)
+		cparams_ms%neb = (cparams_ms%Zo-cparams_ms%Zj)*cparams_ms%nz
+
+		cparams_ms%rD = SQRT( C_E0*cparams_ms%Te/(cparams_ms%ne*C_E**2) )
+		cparams_ms%re = C_E**2/( 4.0_rp*C_PI*C_E0*C_ME*C_C**2 )
+		cparams_ms%Ee_IZj = C_ME*C_C**2/cparams_ms%IZj
+	end if
+end subroutine load_params_multiple_species
+
 
 subroutine initialize_collision_params(params,cparams)
 	implicit none
@@ -51,7 +103,7 @@ subroutine initialize_collision_params(params,cparams)
 		read(default_unit_open,nml=CollisionParamsMultipleSpecies)
 		close(default_unit_open)
 
-	!	write(*,nml=CollisionParamsMultipleSpecies)
+		write(*,nml=CollisionParamsMultipleSpecies)
 
 		cparams%num_impurity_species = num_impurity_species
 
@@ -83,7 +135,8 @@ end subroutine initialize_collision_params
 subroutine normalize_collisions_params(params,cparams)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(COLLISION_PARAMS), INTENT(OUT) :: cparams	
+	TYPE(COLLISION_PARAMS), INTENT(INOUT) :: cparams	
+
 	if (params%collisions) then
 		cparams%Te = cparams%Te/params%cpp%temperature
 		cparams%ne = cparams%ne/params%cpp%density
