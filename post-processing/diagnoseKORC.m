@@ -2611,15 +2611,14 @@ lch = 1E2;
 lchnm = 1E7;
 Pch = 1E-7;
 
-
 % Simulation parameters
 num_species = double(ST.params.simulation.num_species);
 
 % Resolution in wavelength
 N = 150;
 % Wavelength range (450 nm - 950 nm for visible light).
-lambda_min = 1E-9;% in meters
-lambda_max = 5000E-9;% in meters
+lambda_min = 450E-9;% in meters
+lambda_max = 950E-9;% in meters
 lambda = linspace(lambda_min,lambda_max,N);
 lambda = lch*lambda; % in cm
 
@@ -2692,7 +2691,7 @@ for ss=1:1
     
     % This angle is used as the primer criterium for deciding whether the
     % particle is seen by the camera or not.
-    threshold_angle = (3*k*lambda(end)/(4*pi)).^(1/3);
+    threshold_angle = (3*k*lambda(end)/(2*pi)).^(1/3);
     
     [ip,theta_f] = findVisibleParticles(X,V,threshold_angle,camera_params,false);
     
@@ -2813,7 +2812,7 @@ for ss=1:1
                     chic = (1./D - D)/gtmp(pp);
                     % Here we calculate the critical chi
                     
-                    psic = (0.75*kappa(pp)*lambda/pi).^(1/3);
+                    psic = (1.5*kappa(pp)*lambda/pi).^(1/3);
                     
                     % Next, we determine to which wavelengths, if any, the
                     % particles will contribute to.

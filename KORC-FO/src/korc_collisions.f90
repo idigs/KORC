@@ -25,7 +25,9 @@ module korc_collisions
 
 	TYPE(COLLISION_PARAMS), PRIVATE :: cparams_ms
 
-	PUBLIC :: initialize_collision_params
+	PUBLIC :: initialize_collision_params,normalize_collisions_params,&
+				collision_force,deallocate_collisions_params,save_collision_params
+	PRIVATE :: load_params_ms,normalize_params_ms,deallocate_params_ms
 
 	contains
 
@@ -34,7 +36,7 @@ module korc_collisions
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
 
-subroutine load_params_multiple_species(params)
+subroutine load_params_ms(params)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp) :: Te ! Background electron temperature in eV
@@ -53,7 +55,7 @@ subroutine load_params_multiple_species(params)
 		read(default_unit_open,nml=CollisionParamsMultipleSpecies)
 		close(default_unit_open)
 
-		write(*,nml=CollisionParamsMultipleSpecies)
+!		write(*,nml=CollisionParamsMultipleSpecies)
 
 		cparams_ms%num_impurity_species = num_impurity_species
 
@@ -80,81 +82,46 @@ subroutine load_params_multiple_species(params)
 		cparams_ms%re = C_E**2/( 4.0_rp*C_PI*C_E0*C_ME*C_C**2 )
 		cparams_ms%Ee_IZj = C_ME*C_C**2/cparams_ms%IZj
 	end if
-end subroutine load_params_multiple_species
+end subroutine load_params_ms
 
 
-subroutine initialize_collision_params(params,cparams)
+subroutine initialize_collision_params(params)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(COLLISION_PARAMS), INTENT(OUT) :: cparams
-	REAL(rp) :: Te ! Background electron temperature in eV
-	REAL(rp) :: ne! Background electron density in 1/m^3
-	INTEGER :: num_impurity_species
-	REAL(rp), DIMENSION(10) :: Zo ! Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
-	REAL(rp), DIMENSION(10) :: Zj ! Atomic number of each impurity: Z=1 for D, Z=10 for Ne
-	REAL(rp), DIMENSION(10) :: nz ! Impurity densities
-	REAL(rp), DIMENSION(10) :: IZj ! Ionization energy of impurity in eV
 
-	NAMELIST /CollisionParamsMultipleSpecies/ num_impurity_species,Te,ne,Zo,Zj,nz,IZj
-
-
-	if (params%collisions) then
-		open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-		read(default_unit_open,nml=CollisionParamsMultipleSpecies)
-		close(default_unit_open)
-
-		write(*,nml=CollisionParamsMultipleSpecies)
-
-		cparams%num_impurity_species = num_impurity_species
-
-		ALLOCATE(cparams%Zj(cparams%num_impurity_species))
-		ALLOCATE(cparams%Zo(cparams%num_impurity_species))
-		ALLOCATE(cparams%nz(cparams%num_impurity_species))
-		ALLOCATE(cparams%neb(cparams%num_impurity_species))
-		ALLOCATE(cparams%IZj(cparams%num_impurity_species))
-		ALLOCATE(cparams%Ee_IZj(cparams%num_impurity_species))
-
-		cparams%Te = Te*C_E
-		cparams%ne = ne
-		cparams%nH = ne
-
-		cparams%Zj = Zj(1:cparams%num_impurity_species)
-		cparams%Zo = Zo(1:cparams%num_impurity_species)
-		cparams%nz = nz(1:cparams%num_impurity_species)
-		cparams%IZj = C_E*IZj(1:cparams%num_impurity_species)
-
-		cparams%nef = ne + sum(cparams%Zj*cparams%nz)
-		cparams%neb = (cparams%Zo-cparams%Zj)*cparams%nz
-
-		cparams%rD = SQRT( C_E0*cparams%Te/(cparams%ne*C_E**2) )
-		cparams%re = C_E**2/( 4.0_rp*C_PI*C_E0*C_ME*C_C**2 )
-		cparams%Ee_IZj = C_ME*C_C**2/cparams%IZj
-	end if
+	call load_params_ms(params)
 end subroutine initialize_collision_params
 
-subroutine normalize_collisions_params(params,cparams)
+
+subroutine normalize_params_ms(params)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(COLLISION_PARAMS), INTENT(INOUT) :: cparams	
+
+		cparams_ms%Te = cparams_ms%Te/params%cpp%temperature
+		cparams_ms%ne = cparams_ms%ne/params%cpp%density
+		cparams_ms%nH = cparams_ms%nH/params%cpp%density
+		cparams_ms%nef = cparams_ms%nef/params%cpp%density
+		cparams_ms%neb = cparams_ms%neb/params%cpp%density
+		if (ALLOCATED(cparams_ms%nz)) cparams_ms%nz = cparams_ms%nz/params%cpp%density
+		if (ALLOCATED(cparams_ms%IZj)) cparams_ms%IZj = cparams_ms%IZj/params%cpp%energy
+		cparams_ms%rD = cparams_ms%rD/params%cpp%length
+		cparams_ms%re = cparams_ms%re/params%cpp%length
+end subroutine normalize_params_ms
+
+
+subroutine normalize_collisions_params(params)
+	implicit none
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
 	if (params%collisions) then
-		cparams%Te = cparams%Te/params%cpp%temperature
-		cparams%ne = cparams%ne/params%cpp%density
-		cparams%nH = cparams%nH/params%cpp%density
-		cparams%nef = cparams%nef/params%cpp%density
-		cparams%neb = cparams%neb/params%cpp%density
-		if (ALLOCATED(cparams%nz)) cparams%nz = cparams%nz/params%cpp%density
-		if (ALLOCATED(cparams%IZj)) cparams%IZj = cparams%IZj/params%cpp%energy
-		cparams%rD = cparams%rD/params%cpp%length
-		cparams%re = cparams%re/params%cpp%length
+		call normalize_params_ms(params)
 	end if
 end subroutine normalize_collisions_params
 
 
-subroutine collision_force(spp,cparams,U,Fcoll)
+subroutine collision_force(spp,U,Fcoll)
     implicit none
 	TYPE(SPECIES), INTENT(IN) :: spp
-	TYPE(COLLISION_PARAMS), INTENT(IN) :: cparams
 	REAL(rp), DIMENSION(3), INTENT(IN) :: U
 	REAL(rp), DIMENSION(3), INTENT(OUT) :: Fcoll
 	REAL(rp), DIMENSION(3) :: V, Fcolle, Fcolli
@@ -166,43 +133,55 @@ subroutine collision_force(spp,cparams,U,Fcoll)
 	V = U/gamma
 	
 	tmp = (gamma - 1.0_rp)*sqrt(gamma + 1.0_rp)
-	Clog_ef = log(0.5_rp*tmp*(cparams%rD/cparams%re)/gamma)
-	ae = cparams%nef*Clog_ef
-	do ppi=1,cparams%num_impurity_species
-		Clog_eb = log(tmp*cparams%Ee_IZj(ppi))
-		ae = ae + cparams%neb(ppi)*Clog_eb
+	Clog_ef = log(0.5_rp*tmp*(cparams_ms%rD/cparams_ms%re)/gamma)
+	ae = cparams_ms%nef*Clog_ef
+	do ppi=1,cparams_ms%num_impurity_species
+		Clog_eb = log(tmp*cparams_ms%Ee_IZj(ppi))
+		ae = ae + cparams_ms%neb(ppi)*Clog_eb
 	end do
 
 	tmp = (gamma**2 - 1.0_rp)/gamma
-	Clog_eH = log( tmp*(cparams%rD/cparams%re) )
-	ai = cparams%nH*Clog_eH
-	do ppi=1,cparams%num_impurity_species
-		Clog_eZj = log( cparams%rD/(cparams%Zj(ppi)*cparams%re*cparams%Ee_IZj(ppi)) )
-		Clog_eZo = log(tmp*cparams%Ee_IZj(ppi))
+	Clog_eH = log( tmp*(cparams_ms%rD/cparams_ms%re) )
+	ai = cparams_ms%nH*Clog_eH
+	do ppi=1,cparams_ms%num_impurity_species
+		Clog_eZj = log( cparams_ms%rD/(cparams_ms%Zj(ppi)*cparams_ms%re*cparams_ms%Ee_IZj(ppi)) )
+		Clog_eZo = log(tmp*cparams_ms%Ee_IZj(ppi))
 		ai = ai + &
-			cparams%nz(ppi)*(Clog_eZj*cparams%Zj(ppi)**2 + Clog_eZo*cparams%Zo(ppi)**2)
+			cparams_ms%nz(ppi)*(Clog_eZj*cparams_ms%Zj(ppi)**2 + Clog_eZo*cparams_ms%Zo(ppi)**2)
 	end do
 
 	tmp = gamma*(gamma + 1.0_rp)/(sqrt(DOT_PRODUCT(U,U))**3)
-	Fcolle = -4.0_rp*C_PI*ae*spp%m*(cparams%re**2)*tmp*U
+	Fcolle = -4.0_rp*C_PI*ae*spp%m*(cparams_ms%re**2)*tmp*U
 
 	tmp = gamma/(sqrt(DOT_PRODUCT(U,U))**3)
-	Fcolli = -4.0_rp*C_PI*ai*spp%m*(cparams%re**2)*tmp*U
+	Fcolli = -4.0_rp*C_PI*ai*spp%m*(cparams_ms%re**2)*tmp*U
 
 	Fcoll = Fcolle + Fcolli
 end subroutine collision_force
 
 
-subroutine deallocate_collisions_params(cparams)
+subroutine save_collision_params()
 	implicit none
-	TYPE(COLLISION_PARAMS), INTENT(OUT) :: cparams	
 
-	if (ALLOCATED(cparams%Zj)) DEALLOCATE(cparams%Zj)
-	if (ALLOCATED(cparams%Zo)) DEALLOCATE(cparams%Zo)
-	if (ALLOCATED(cparams%nz)) DEALLOCATE(cparams%nz)
-	if (ALLOCATED(cparams%neb)) DEALLOCATE(cparams%neb)
-	if (ALLOCATED(cparams%IZj)) DEALLOCATE(cparams%IZj)
-	if (ALLOCATED(cparams%Zj)) DEALLOCATE(cparams%Ee_IZj)
+end save_collision_params
+
+
+subroutine deallocate_params_ms()
+	implicit none
+
+	if (ALLOCATED(cparams_ms%Zj)) DEALLOCATE(cparams_ms%Zj)
+	if (ALLOCATED(cparams_ms%Zo)) DEALLOCATE(cparams_ms%Zo)
+	if (ALLOCATED(cparams_ms%nz)) DEALLOCATE(cparams_ms%nz)
+	if (ALLOCATED(cparams_ms%neb)) DEALLOCATE(cparams_ms%neb)
+	if (ALLOCATED(cparams_ms%IZj)) DEALLOCATE(cparams_ms%IZj)
+	if (ALLOCATED(cparams_ms%Zj)) DEALLOCATE(cparams_ms%Ee_IZj)
+end subroutine deallocate_params_ms
+
+
+subroutine deallocate_collisions_params()
+	implicit none
+
+	call deallocate_params_ms()
 end subroutine deallocate_collisions_params
 
 end module korc_collisions

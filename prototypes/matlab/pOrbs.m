@@ -2788,7 +2788,7 @@ if isfield(ST.PP,'k')
     I = floor(I/2);
 %     I = N;
     
-    psi_critical = (P.lambda(Ind,I)/P.lambdac(Ind)).^(1/3)/gammap(Ind);
+    psi_critical = (3*P.lambda(Ind,I)/P.lambdac(Ind)).^(1/3)/gammap(Ind);
     chi_max = sqrt( P.lambda(Ind,I)/(3*P.lambdac(Ind)) )/gammap(Ind); % 0.42;% (24 degrees) 3 percent of error between x and sin(x)
     
     lambda = P.lambda(Ind,:);

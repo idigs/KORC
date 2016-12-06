@@ -31,7 +31,7 @@ program main
 
 	call initialize_particles(params,EB,spp) ! Initialize particles
 
-	call initialize_collision_params(params,cparams)
+	call initialize_collision_params(params)
 
 	call compute_charcs_plasma_params(params,spp,EB)
 
@@ -41,7 +41,7 @@ program main
 
 	call normalize_variables(params,spp,EB)
 
-	call normalize_collisions_params(params,cparams)
+	call normalize_collisions_params(params)
 
 	call initialize_interpolant(params,EB)
 
@@ -54,7 +54,7 @@ program main
 	! *** BEYOND THIS POINT VARIABLES ARE DIMENSIONLESS ***
 	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
 
-	call advance_particles_velocity(params,EB,cparams,spp,0.0_rp,.TRUE.)
+	call advance_particles_velocity(params,EB,spp,0.0_rp,.TRUE.)
 
 	! Save initial condition
 	call save_simulation_outputs(params,spp,EB,0_ip)
@@ -94,7 +94,7 @@ program main
 	! DEALLOCATION OF VARIABLES
 	call deallocate_variables(params,EB,spp)
 
-	call deallocate_collisions_params(cparams)
+	call deallocate_collisions_params()
 
 	call finalize_communications(params)
 	! * * * FINALIZING SIMULATION * * * 

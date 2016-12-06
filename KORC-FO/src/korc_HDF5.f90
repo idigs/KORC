@@ -2,7 +2,7 @@ module korc_HDF5
 
 	use korc_types
 	use korc_constants
-	use korc_collisions
+	use korc_collisions ! We use the subroutine contained this module to save the collision parameters
 	use HDF5
 
 	implicit none
