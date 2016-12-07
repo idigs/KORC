@@ -2247,9 +2247,6 @@ xo = X(1,:);
 yo = X(2,:);
 zo = X(3,:);
 
-% Ro = sqrt(sum(X(1:2,:).^2,1));
-% y_camera = -camera_params.focal_length*(zo - camera_params.position(2))./(camera_params.position(1) - Ro);
-
 v = sqrt(sum(V.^2,1));
 vox = V(1,:)./v;
 voy = V(2,:)./v;
@@ -2271,7 +2268,6 @@ discriminant = b.^2 - 4*a.*c;
 discriminantiw = b.^2 - 4*a.*ciw;
 
 INDEX = (discriminant < 0) | (discriminantiw >= 0); % this particles are discarded
-% discarded(INDEX) = true;
 II = find(INDEX == false);
 
 xp = 0.5*(-b(II) + sqrt(discriminant(II)))./a(II);
@@ -2525,9 +2521,6 @@ for ii=1:camera_params.NY
     psi_range(:,ii) = atan2([yedges(ii);yedges(ii+1)],camera_params.focal_length);
 end
 
-% threshold_angle = ...
-%     acos(-Rcam/sqrt(camera_params.Riw^2 + Rcam^2));
-
 threshold_angle = atan2(camera_params.Riw,-Rcam);
 threshold_radius = sqrt( camera_params.Riw^2 + Rcam^2 );
 
@@ -2603,7 +2596,7 @@ SD = struct;
 disp('Starting synchrotron synthetic diagnostic...')
 
 % Here we define many snapshots will be used
-numSnapshots = 5;
+numSnapshots = 1;
 it1 = ST.params.simulation.num_snapshots + 1 - numSnapshots;
 it2 = ST.params.simulation.num_snapshots + 1;
 
@@ -2625,8 +2618,8 @@ lambda = lch*lambda; % in cm
 % Camera parameters
 camera_params = struct;
 camera_params.Riw = 1.0;% inner wall radius in meters
-camera_params.NX = 40;
-camera_params.NY = 35;
+camera_params.NX = 20;
+camera_params.NY = 18;
 camera_params.size = [0.25,0.2]; % [horizontal size, vertical size] in meters
 camera_params.focal_length = 0.35; % In meters
 camera_params.position = [2.38,0.0]; % [R,Z] in meters
@@ -2640,6 +2633,10 @@ camera_params.horizontal_angle_view = ...
 camera_params.vertical_angle_view = ...
     atan2(0.5*camera_params.size(2),camera_params.focal_length); % in radians
 camera_params.pixel_grid = setupCameraPixelGrid(camera_params,false);
+
+clockwise_rotation = @(t,x) [cos(t),sin(t);-sin(t),cos(t)]*x;
+anticlockwise_rotation = @(t,x) [cos(t),-sin(t);sin(t),cos(t)]*x;
+%     anticlockwise_rotation = @(t,x) [x(1)*cos(t) - x(2)*sin(t), x(1)*sin(t) + x(2)*cos(t)];
 
 for ss=1:1
     q = abs(ST.params.species.q(ss));
@@ -2697,7 +2694,6 @@ for ss=1:1
     
     clear threshold_angle
     
-    clockwise_rotation = @(t,x) [cos(t),sin(t);-sin(t),cos(t)]*x;
     % Here we drop the particles that are not seen by the camera
     theta_f(~ip) = [];
     X(:,~ip) = [];
@@ -2732,13 +2728,10 @@ for ss=1:1
     
     xcam = lch*[camera_params.position(1);0;camera_params.position(2)];
     
-    anticlockwise_rotation = @(t,x) [cos(t),-sin(t);sin(t),cos(t)]*x;
-%     anticlockwise_rotation = @(t,x) [x(1)*cos(t) - x(2)*sin(t), x(1)*sin(t) + x(2)*cos(t)];
-    
     % functions for calculating the radiation power density
     fx = @(g,x,p) g*x/sqrt( 1 + (g*p)^2 );
     zeta = @(l,k,g,p) (2*pi./(3*k*l))*(1/g^2 + p^2)^1.5;
-    Po = @(l,k,g,p) -(4*pi*c*q^2./(k*l.^4)).*(1/g^2 + p^2)^2;
+    Po = @(l,k,g,p) -(4*pi*c*qe^2./(k*l.^4)).*(1/g^2 + p^2)^2;
     K13 = @(x) besselk(1/3,x);
     K23 = @(x) besselk(2/3,x);
     arg = @(l,k,g,x,p) 1.5*zeta(l,k,g,p)*(fx(g,x,p) + fx(g,x,p).^3/3);
@@ -2782,16 +2775,20 @@ for ss=1:1
                 chi = zeros(1,numel(I));
                 psi = zeros(1,numel(I));
                 for pp=1:numel(I)
-                    xtmp(1:2,pp) = anticlockwise_rotation(angle(pp),xtmp(1:2,pp));
-                    vtmp(1:2,pp) = anticlockwise_rotation(angle(pp),vtmp(1:2,pp));
-                    bi(1:2,pp) = anticlockwise_rotation(angle(pp),bi(1:2,pp));
+%                     xtmp(1:2,pp) = anticlockwise_rotation(angle(pp),xtmp(1:2,pp));
+%                     vtmp(1:2,pp) = anticlockwise_rotation(angle(pp),vtmp(1:2,pp));
+%                     bi(1:2,pp) = anticlockwise_rotation(angle(pp),bi(1:2,pp));
+                    xcam_tmp = xcam;
+                    xcam_tmp(1:2) = clockwise_rotation(angle(pp),xcam(1:2));
                     
                     v_unit = vtmp/sqrt(vtmp(:,pp)'*vtmp(:,pp));
                     
-                    n = xcam - xtmp(:,pp);
+%                     n = xcam - xtmp(:,pp);
+                    n = xcam_tmp - xtmp(:,pp);
                     n = n/sqrt(n'*n);
                     
-                    ndotBinormal = dot(n,bi(:,pp));
+%                     ndotBinormal = dot(n,bi(:,pp));
+                    ndotBinormal = n(1)*bi(1,pp) + n(2)*bi(2,pp) + n(3)*bi(3,pp);
                     aa = acos(ndotBinormal);
                     if aa > pi/2
                         aa = aa - pi/2;
@@ -2802,7 +2799,8 @@ for ss=1:1
                     
                     % No apriori assumption on the value of psi or chi is
                     % made here. We use the osculating plane, n and V.
-                    chi(pp) = abs( acos(dot(nperp,v_unit(:,pp))) );
+%                     chi(pp) = abs( acos(dot(nperp,v_unit(:,pp))) );
+                    chi(pp) = abs( acos(nperp(1)*v_unit(1,pp) + nperp(2)*v_unit(2,pp) + nperp(3)*v_unit(3,pp) ) );
                     psi(pp) = pi/2 - aa;
                     
                     % Here we calculate the critical chi
@@ -2828,7 +2826,7 @@ for ss=1:1
                 
                 figure(fh)
                 hold on
-                plot(lambda/lchnm,Pch*P{ii,jj}/lchnm)
+                plot(lchnm*lambda,Pch*P{ii,jj}/lchnm)
                 xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
                 ylabel('$P_{syn}(\lambda)$','FontSize',14,'Interpreter','latex')
                 hold off
@@ -2851,9 +2849,12 @@ for ss=1:1
     
     figure;
     subplot(2,1,1)
-    contourf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot,15)
+%     contourf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot,15)
+    surf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot,...
+        'LineStyle','none')
     colormap(jet)
     view([90,90])
+    box on
     ylabel('$x$-axis of detector','FontSize',14,'Interpreter','latex')
     xlabel('$y$-axis of detector','FontSize',14,'Interpreter','latex')
     
@@ -2862,6 +2863,7 @@ for ss=1:1
         'LineStyle','none')
     colormap(jet)
     view([90,90])
+    box on
     ylabel('$x$-axis of detector','FontSize',14,'Interpreter','latex')
     xlabel('$y$-axis of detector','FontSize',14,'Interpreter','latex')
 end

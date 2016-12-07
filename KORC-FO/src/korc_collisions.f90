@@ -5,7 +5,10 @@ module korc_collisions
 
 	implicit none
 
-	TYPE, PUBLIC :: COLLISION_PARAMS
+	CHARACTER(LEN=*), PRIVATE, PARAMETER :: MODEL1 = 'SINGLE_SPECIES'
+	CHARACTER(LEN=*), PRIVATE, PARAMETER :: MODEL2 = 'MULTIPLE_SPECIES'
+
+	TYPE, PRIVATE :: PARAMS_MS
 		INTEGER :: num_impurity_species
 		REAL(rp) :: Te ! Background electron temperature in eV
 		REAL(rp) :: ne ! Background electron density in 1/m^3
@@ -21,9 +24,25 @@ module korc_collisions
 
 		REAL(rp) :: rD ! Debye length
 		REAL(rp) :: re ! Classical electron radius
-	END TYPE COLLISION_PARAMS
+	END TYPE PARAMS_MS
 
-	TYPE(COLLISION_PARAMS), PRIVATE :: cparams_ms
+	TYPE, PRIVATE :: PARAMS_SS
+		REAL(rp) :: Te ! Electron temperature
+		REAL(rp) :: Ti ! Ion temperature
+		REAL(rp) :: ne ! Background electron density
+		REAL(rp) :: Zeff ! Effective atomic number of ions
+		REAL(rp) :: rD ! Debye radius
+		REAL(rp) :: re ! Classical electron radius
+		REAL(rp) :: CoulombLog ! Coulomb logarithm
+		REAL(rp) :: VTe ! Thermal velocity of background electrons
+		REAL(rp) :: delta ! delta parameter
+		REAL(rp) :: Gammac ! Gamma factor
+		REAL(rp) :: Tau ! Collisional time
+		REAL(rp) :: ED ! Dreicer electric field
+	END TYPE PARAMS_SS
+
+	TYPE(PARAMS_MS), PRIVATE :: cparams_ms
+	TYPE(PARAMS_SS), PRIVATE :: cparams_ss
 
 	PUBLIC :: initialize_collision_params,normalize_collisions_params,&
 				collision_force,deallocate_collisions_params,save_collision_params
@@ -50,46 +69,74 @@ subroutine load_params_ms(params)
 	NAMELIST /CollisionParamsMultipleSpecies/ num_impurity_species,Te,ne,Zo,Zj,nz,IZj
 
 
-	if (params%collisions) then
-		open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-		read(default_unit_open,nml=CollisionParamsMultipleSpecies)
-		close(default_unit_open)
+	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
+	read(default_unit_open,nml=CollisionParamsMultipleSpecies)
+	close(default_unit_open)
 
-!		write(*,nml=CollisionParamsMultipleSpecies)
+!	write(*,nml=CollisionParamsMultipleSpecies)
 
-		cparams_ms%num_impurity_species = num_impurity_species
+	cparams_ms%num_impurity_species = num_impurity_species
 
-		ALLOCATE(cparams_ms%Zj(cparams_ms%num_impurity_species))
-		ALLOCATE(cparams_ms%Zo(cparams_ms%num_impurity_species))
-		ALLOCATE(cparams_ms%nz(cparams_ms%num_impurity_species))
-		ALLOCATE(cparams_ms%neb(cparams_ms%num_impurity_species))
-		ALLOCATE(cparams_ms%IZj(cparams_ms%num_impurity_species))
-		ALLOCATE(cparams_ms%Ee_IZj(cparams_ms%num_impurity_species))
+	ALLOCATE(cparams_ms%Zj(cparams_ms%num_impurity_species))
+	ALLOCATE(cparams_ms%Zo(cparams_ms%num_impurity_species))
+	ALLOCATE(cparams_ms%nz(cparams_ms%num_impurity_species))
+	ALLOCATE(cparams_ms%neb(cparams_ms%num_impurity_species))
+	ALLOCATE(cparams_ms%IZj(cparams_ms%num_impurity_species))
+	ALLOCATE(cparams_ms%Ee_IZj(cparams_ms%num_impurity_species))
 
-		cparams_ms%Te = Te*C_E
-		cparams_ms%ne = ne
-		cparams_ms%nH = ne
+	cparams_ms%Te = Te*C_E
+	cparams_ms%ne = ne
+	cparams_ms%nH = ne
 
-		cparams_ms%Zj = Zj(1:cparams_ms%num_impurity_species)
-		cparams_ms%Zo = Zo(1:cparams_ms%num_impurity_species)
-		cparams_ms%nz = nz(1:cparams_ms%num_impurity_species)
-		cparams_ms%IZj = C_E*IZj(1:cparams_ms%num_impurity_species)
+	cparams_ms%Zj = Zj(1:cparams_ms%num_impurity_species)
+	cparams_ms%Zo = Zo(1:cparams_ms%num_impurity_species)
+	cparams_ms%nz = nz(1:cparams_ms%num_impurity_species)
+	cparams_ms%IZj = C_E*IZj(1:cparams_ms%num_impurity_species)
 
-		cparams_ms%nef = ne + sum(cparams_ms%Zj*cparams_ms%nz)
-		cparams_ms%neb = (cparams_ms%Zo-cparams_ms%Zj)*cparams_ms%nz
+	cparams_ms%nef = ne + sum(cparams_ms%Zj*cparams_ms%nz)
+	cparams_ms%neb = (cparams_ms%Zo-cparams_ms%Zj)*cparams_ms%nz
 
-		cparams_ms%rD = SQRT( C_E0*cparams_ms%Te/(cparams_ms%ne*C_E**2) )
-		cparams_ms%re = C_E**2/( 4.0_rp*C_PI*C_E0*C_ME*C_C**2 )
-		cparams_ms%Ee_IZj = C_ME*C_C**2/cparams_ms%IZj
-	end if
+	cparams_ms%rD = SQRT( C_E0*cparams_ms%Te/(cparams_ms%ne*C_E**2) )
+	cparams_ms%re = C_E**2/( 4.0_rp*C_PI*C_E0*C_ME*C_C**2 )
+	cparams_ms%Ee_IZj = C_ME*C_C**2/cparams_ms%IZj
 end subroutine load_params_ms
+
+
+subroutine load_params_ss(params)
+	implicit none
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	REAL(rp) :: Te ! Electron temperature
+	REAL(rp) :: Ti ! Ion temperature
+	REAL(rp) :: ne ! Background electron density
+	REAL(rp) :: Zeff ! Effective atomic number of ions
+
+	NAMELIST /CollisionParamsSingleSpecies/ Te, Ti, ne, Zeff
+
+
+	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
+	read(default_unit_open,nml=CollisionParamsMultipleSpecies)
+	close(default_unit_open)
+
+	write(*,nml=CollisionParamsSingleSpecies)
+
+	
+end subroutine load_params_ss
 
 
 subroutine initialize_collision_params(params)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
-	call load_params_ms(params)
+	if (params%collisions) then
+		SELECT CASE (TRIM(params%collisions_model))
+			CASE (MODEL1)
+				write(6,'("Something to be done")')
+			CASE (MODEL2)
+				call load_params_ms(params)
+			CASE DEFAULT
+				write(6,'("Default case")')
+		END SELECT
+	end if
 end subroutine initialize_collision_params
 
 
@@ -97,15 +144,15 @@ subroutine normalize_params_ms(params)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
-		cparams_ms%Te = cparams_ms%Te/params%cpp%temperature
-		cparams_ms%ne = cparams_ms%ne/params%cpp%density
-		cparams_ms%nH = cparams_ms%nH/params%cpp%density
-		cparams_ms%nef = cparams_ms%nef/params%cpp%density
-		cparams_ms%neb = cparams_ms%neb/params%cpp%density
-		if (ALLOCATED(cparams_ms%nz)) cparams_ms%nz = cparams_ms%nz/params%cpp%density
-		if (ALLOCATED(cparams_ms%IZj)) cparams_ms%IZj = cparams_ms%IZj/params%cpp%energy
-		cparams_ms%rD = cparams_ms%rD/params%cpp%length
-		cparams_ms%re = cparams_ms%re/params%cpp%length
+	cparams_ms%Te = cparams_ms%Te/params%cpp%temperature
+	cparams_ms%ne = cparams_ms%ne/params%cpp%density
+	cparams_ms%nH = cparams_ms%nH/params%cpp%density
+	cparams_ms%nef = cparams_ms%nef/params%cpp%density
+	cparams_ms%neb = cparams_ms%neb/params%cpp%density
+	if (ALLOCATED(cparams_ms%nz)) cparams_ms%nz = cparams_ms%nz/params%cpp%density
+	if (ALLOCATED(cparams_ms%IZj)) cparams_ms%IZj = cparams_ms%IZj/params%cpp%energy
+	cparams_ms%rD = cparams_ms%rD/params%cpp%length
+	cparams_ms%re = cparams_ms%re/params%cpp%length
 end subroutine normalize_params_ms
 
 
@@ -114,7 +161,14 @@ subroutine normalize_collisions_params(params)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
 	if (params%collisions) then
-		call normalize_params_ms(params)
+		SELECT CASE (TRIM(params%collisions_model))
+			CASE (MODEL1)
+				write(6,'("Something to be done")')
+			CASE (MODEL2)
+				call normalize_params_ms(params)
+			CASE DEFAULT
+				write(6,'("Default case")')
+		END SELECT
 	end if
 end subroutine normalize_collisions_params
 
@@ -254,9 +308,15 @@ subroutine save_collision_params(params)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
 	if (params%collisions) then
-		call save_params_ms(params)
+		SELECT CASE (TRIM(params%collisions_model))
+			CASE (MODEL1)
+				write(6,'("Something to be done")')
+			CASE (MODEL2)
+				call save_params_ms(params)
+			CASE DEFAULT
+				write(6,'("Default case")')
+		END SELECT
 	end if
-
 end subroutine save_collision_params
 
 
@@ -272,10 +332,20 @@ subroutine deallocate_params_ms()
 end subroutine deallocate_params_ms
 
 
-subroutine deallocate_collisions_params()
+subroutine deallocate_collisions_params(params)
 	implicit none
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
-	call deallocate_params_ms()
+	if (params%collisions) then
+		SELECT CASE (TRIM(params%collisions_model))
+			CASE (MODEL1)
+				write(6,'("Something to be done")')
+			CASE (MODEL2)
+				call deallocate_params_ms()
+			CASE DEFAULT
+				write(6,'("Default case")')
+		END SELECT
+	end if
 end subroutine deallocate_collisions_params
 
 end module korc_collisions

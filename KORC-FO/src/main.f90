@@ -16,7 +16,6 @@ program main
 	TYPE(KORC_PARAMS) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE :: spp
 	TYPE(FIELDS) :: EB
-	TYPE(COLLISION_PARAMS) :: cparams
 	INTEGER(ip) :: it ! Iterator(s)
 	REAL(rp) :: t1, t2 ! variables for timing the simulation
 
@@ -96,7 +95,7 @@ program main
 	! DEALLOCATION OF VARIABLES
 	call deallocate_variables(params,EB,spp)
 
-	call deallocate_collisions_params()
+	call deallocate_collisions_params(params)
 
 	call finalize_communications(params)
 	! * * * FINALIZING SIMULATION * * * 

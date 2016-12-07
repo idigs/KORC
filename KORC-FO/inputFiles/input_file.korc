@@ -5,7 +5,7 @@
         num_species = 1
         radiation = .FALSE.
         collisions = .TRUE.
-		collisions_model = 'NONE' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
+		collisions_model = 'MULTIPLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
         magnetic_field_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
                                                                                 ! For 'ANALYTICAL', the magnetic field is calculated based on
                                                                                 ! the parameters given in the "analytic_mag_field_params" section.

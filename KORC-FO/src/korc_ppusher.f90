@@ -74,7 +74,6 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 	INTEGER :: ii, pp ! Iterators
 
 	do ii = 1,params%num_species
-
 		if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
 			call interp_analytical_field(spp(ii)%vars, EB)
 			if (TRIM(EB%electric_field_mode) .EQ. 'PULSE') then 
