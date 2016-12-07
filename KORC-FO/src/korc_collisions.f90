@@ -1,7 +1,7 @@
 module korc_collisions
-
 	use korc_types
 	use korc_constants
+	use korc_HDF5
 
 	implicit none
 
@@ -160,10 +160,104 @@ subroutine collision_force(spp,U,Fcoll)
 end subroutine collision_force
 
 
-subroutine save_collision_params()
+subroutine save_params_ms(params)
 	implicit none
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	CHARACTER(MAX_STRING_LENGTH) :: filename
+	CHARACTER(MAX_STRING_LENGTH) :: gname
+	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: attr_array
+	CHARACTER(MAX_STRING_LENGTH) :: dset
+	CHARACTER(MAX_STRING_LENGTH) :: attr
+	INTEGER(HID_T) :: h5file_id
+	INTEGER(HID_T) :: group_id
+	INTEGER :: h5error
+	REAL(rp) :: units
 
-end save_collision_params
+	if (params%mpi_params%rank .EQ. 0) then
+		filename = TRIM(params%path_to_outputs) // "simulation_parameters.h5"
+		call h5fopen_f(TRIM(filename), H5F_ACC_RDWR_F, h5file_id, h5error)
+
+		gname = "collision_params"
+		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
+
+		ALLOCATE(attr_array(cparams_ms%num_impurity_species))
+
+		dset = TRIM(gname) // "/num_impurity_species"
+		attr = "Number of impurity species"
+		call save_to_hdf5(h5file_id,dset,cparams_ms%num_impurity_species,attr)
+
+		dset = TRIM(gname) // "/Te"
+		attr = "Background electron temperature in eV"
+		units = params%cpp%temperature/C_E
+		call save_to_hdf5(h5file_id,dset,units*cparams_ms%Te,attr)
+
+		dset = TRIM(gname) // "/ne"
+		attr = "Background electron density in m^-3"
+		units = params%cpp%density
+		call save_to_hdf5(h5file_id,dset,units*cparams_ms%ne,attr)
+
+		dset = TRIM(gname) // "/nH"
+		attr = "Background proton density in m^-3"
+		units = params%cpp%density
+		call save_to_hdf5(h5file_id,dset,units*cparams_ms%nH,attr)
+
+		dset = TRIM(gname) // "/nef"
+		attr = "Free electron density in m^-3"
+		units = params%cpp%density
+		call save_to_hdf5(h5file_id,dset,units*cparams_ms%nef,attr)
+
+		dset = TRIM(gname) // "/neb"
+		attr_array(1) = "Bound electron density per impurity in m^-3"
+		units = params%cpp%density
+		call save_1d_array_to_hdf5(h5file_id,dset,units*cparams_ms%neb,attr_array)
+
+		dset = TRIM(gname) // "/Zo"
+		attr_array(1) = "Full nuclear charge of impurities"
+		call save_1d_array_to_hdf5(h5file_id,dset,cparams_ms%Zo,attr_array)
+
+		dset = TRIM(gname) // "/Zj"
+		attr_array(1) = "Average charge state of impurities"
+		call save_1d_array_to_hdf5(h5file_id,dset,cparams_ms%Zj,attr_array)
+
+		dset = TRIM(gname) // "/nz"
+		attr_array(1) = "Density of impurities in m^-3"
+		units = params%cpp%density
+		call save_1d_array_to_hdf5(h5file_id,dset,units*cparams_ms%nz,attr_array)
+
+		dset = TRIM(gname) // "/IZj"
+		attr_array(1) = " Ionization energy of impurities in eV"
+		units = params%cpp%energy/C_E
+		call save_1d_array_to_hdf5(h5file_id,dset,units*cparams_ms%IZj,attr_array)
+
+		dset = TRIM(gname) // "/rD"
+		attr = "Debye length in m"
+		units = params%cpp%length
+		call save_to_hdf5(h5file_id,dset,units*cparams_ms%rD,attr)
+
+		dset = TRIM(gname) // "/re"
+		attr = "Classical electron radius in m"
+		units = params%cpp%length
+		call save_to_hdf5(h5file_id,dset,units*cparams_ms%re,attr)
+
+		DEALLOCATE(attr_array)	
+	
+		call h5gclose_f(group_id, h5error)
+
+		call h5fclose_f(h5file_id, h5error)
+	end if
+	
+end subroutine save_params_ms
+
+
+subroutine save_collision_params(params)
+	implicit none
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+
+	if (params%collisions) then
+		call save_params_ms(params)
+	end if
+
+end subroutine save_collision_params
 
 
 subroutine deallocate_params_ms()

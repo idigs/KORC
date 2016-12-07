@@ -43,16 +43,18 @@ program main
 
 	call normalize_collisions_params(params)
 
+	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
+	! *** BEYOND THIS POINT VARIABLES ARE DIMENSIONLESS ***
+	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
+
 	call initialize_interpolant(params,EB)
 
 	call set_up_particles_ic(params,EB,spp)
 	! * * * INITIALIZATION STAGE * * *
 
-	call save_simulation_parameters(params,spp,EB,cparams)
+	call save_simulation_parameters(params,spp,EB)
 
-	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
-	! *** BEYOND THIS POINT VARIABLES ARE DIMENSIONLESS ***
-	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
+	call save_collision_params(params)
 
 	call advance_particles_velocity(params,EB,spp,0.0_rp,.TRUE.)
 

@@ -46,7 +46,7 @@
         Te = 1.5 ! Background electron temperature in eV
         ne = 1.0E20 ! Background electron density in 1/m^3
         Zo = 1.0, 9.0 ! Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
-        Zj = 1.0, 9.0 ! Average charge state of each impurity
+        Zj = 1.0, 8.0 ! Average charge state of each impurity
         nz = 5.0E18, 4.0E18 ! Impurity densities
         IZj = 15.7596, 14.7596 ! Ionization energy of impurity in eV
 /

@@ -2,7 +2,6 @@ module korc_HDF5
 
 	use korc_types
 	use korc_constants
-	use korc_collisions ! We use the subroutine contained this module to save the collision parameters
 	use HDF5
 
 	implicit none
@@ -20,17 +19,20 @@ module korc_HDF5
 	END INTERFACE
 
 	INTERFACE save_to_hdf5
-	  module procedure isave_to_hdf5, rsave_to_hdf5
+	  module procedure isave_to_hdf5,rsave_to_hdf5
 	END INTERFACE
 
-	PRIVATE :: save_to_hdf5,isave_to_hdf5, rsave_to_hdf5, isave_1d_array_to_hdf5,&
-				rsave_1d_array_to_hdf5,&
-				rsave_2d_array_to_hdf5,load_from_hdf5,iload_from_hdf5,&
-				rload_from_hdf5,rload_array_from_hdf5,rload_1d_array_from_hdf5,&
-				rload_3d_array_from_hdf5,rload_2d_array_from_hdf5
+	INTERFACE save_1d_array_to_hdf5
+	  module procedure isave_1d_array_to_hdf5,rsave_1d_array_to_hdf5
+	END INTERFACE
+
+	PRIVATE :: isave_to_hdf5,rsave_to_hdf5,isave_1d_array_to_hdf5,&
+				rsave_1d_array_to_hdf5,rsave_2d_array_to_hdf5,load_from_hdf5,&
+				iload_from_hdf5,rload_from_hdf5,rload_array_from_hdf5,&
+				rload_1d_array_from_hdf5,rload_3d_array_from_hdf5,rload_2d_array_from_hdf5
 				
 	PUBLIC :: initialize_HDF5, finalize_HDF5, save_simulation_parameters,&
-                load_field_data_from_hdf5
+                load_field_data_from_hdf5,save_to_hdf5,save_1d_array_to_hdf5
 
 contains
 
@@ -592,12 +594,11 @@ subroutine rsave_2d_array_to_hdf5(h5file_id,dset,rdata,attr)
 end subroutine rsave_2d_array_to_hdf5
 
 
-subroutine save_simulation_parameters(params,spp,F,cparams)
+subroutine save_simulation_parameters(params,spp,F)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
 	TYPE(FIELDS), INTENT(IN) :: F
-	TYPE(COLLISION_PARAMS), INTENT(IN) :: cparams
 	CHARACTER(MAX_STRING_LENGTH) :: filename
 	CHARACTER(MAX_STRING_LENGTH) :: gname
 	CHARACTER(MAX_STRING_LENGTH) :: dset
@@ -690,7 +691,7 @@ subroutine save_simulation_parameters(params,spp,F,cparams)
 
 		dset = TRIM(gname) // "/ppp"
 		attr_array(1) = "Particles per (mpi) process"
-		call isave_1d_array_to_hdf5(h5file_id,dset,spp(:)%ppp,attr_array)
+		call isave_1d_array_to_hdf5(h5file_id,dset,spp%ppp,attr_array)
 
 		dset = TRIM(gname) // "/q"
 		attr_array(1) = "Electric charge"
@@ -850,75 +851,6 @@ subroutine save_simulation_parameters(params,spp,F,cparams)
 		call save_to_hdf5(h5file_id,dset,params%cpp%temperature,attr)
 
 		call h5gclose_f(group_id, h5error)
-
-		! Collision parameters
-		if (params%collisions) then
-			gname = "collision_params"
-			call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
-
-			ALLOCATE(attr_array(cparams%num_impurity_species))
-
-			dset = TRIM(gname) // "/num_impurity_species"
-			attr = "Number of impurity species"
-			call save_to_hdf5(h5file_id,dset,cparams%num_impurity_species,attr)
-
-			dset = TRIM(gname) // "/Te"
-			attr = "Background electron temperature in eV"
-			units = params%cpp%temperature/C_E
-			call save_to_hdf5(h5file_id,dset,units*cparams%Te,attr)
-
-			dset = TRIM(gname) // "/ne"
-			attr = "Background electron density in m^-3"
-			units = params%cpp%density
-			call save_to_hdf5(h5file_id,dset,units*cparams%ne,attr)
-
-			dset = TRIM(gname) // "/nH"
-			attr = "Background proton density in m^-3"
-			units = params%cpp%density
-			call save_to_hdf5(h5file_id,dset,units*cparams%nH,attr)
-
-			dset = TRIM(gname) // "/nef"
-			attr = "Free electron density in m^-3"
-			units = params%cpp%density
-			call save_to_hdf5(h5file_id,dset,units*cparams%nef,attr)
-
-			dset = TRIM(gname) // "/neb"
-			attr_array(1) = "Bound electron density per impurity in m^-3"
-			units = params%cpp%density
-			call rsave_1d_array_to_hdf5(h5file_id,dset,units*cparams%neb,attr_array)
-
-			dset = TRIM(gname) // "/Zo"
-			attr_array(1) = "Full nuclear charge of impurities"
-			call rsave_1d_array_to_hdf5(h5file_id,dset,cparams%Zo,attr_array)
-
-			dset = TRIM(gname) // "/Zj"
-			attr_array(1) = "Average charge state of impurities"
-			call rsave_1d_array_to_hdf5(h5file_id,dset,cparams%Zj,attr_array)
-
-			dset = TRIM(gname) // "/nz"
-			attr_array(1) = "Density of impurities in m^-3"
-			units = params%cpp%density
-			call rsave_1d_array_to_hdf5(h5file_id,dset,units*cparams%nz,attr_array)
-
-			dset = TRIM(gname) // "/IZj"
-			attr_array(1) = " Ionization energy of impurities in eV"
-			units = params%cpp%energy/C_E
-			call  rsave_1d_array_to_hdf5(h5file_id,dset,units*cparams%IZj,attr_array)
-
-			dset = TRIM(gname) // "/rD"
-			attr = "Debye length in m"
-			units = params%cpp%length
-			call save_to_hdf5(h5file_id,dset,units*cparams%rD,attr)
-
-			dset = TRIM(gname) // "/re"
-			attr = "Classical electron radius in m"
-			units = params%cpp%length
-			call save_to_hdf5(h5file_id,dset,units*cparams%re,attr)
-
-			call h5gclose_f(group_id, h5error)
-
-			DEALLOCATE(attr_array)
-		end if
 
 		call h5fclose_f(h5file_id, h5error)
 	end if
