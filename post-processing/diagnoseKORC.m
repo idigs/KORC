@@ -41,7 +41,9 @@ ST.data = loadData(ST);
 
 % ST.VS = identifyVisibleParticles(ST);
 
-ST.SD = syntheticDiagnosticSynchrotron(ST);
+% ST.SD = syntheticDiagnosticSynchrotron(ST);
+
+ST.SD = syntheticDiagnosticSynchrotronSimple(ST);
 
 % save('energy_limit','ST')
 end
@@ -2425,8 +2427,10 @@ if option
     hold off
     
     % Main line of sight
+    max_lenght = 2*Rmax;
+    
     line_x = zeros(1,N);
-    line_y = linspace(-camera_params.focal_length,Rmax,N);
+    line_y = linspace(-camera_params.focal_length,max_lenght,N);
     
     line_x_r = line_x*cos(a) - line_y*sin(a);
     line_y_r = line_x*sin(a) + line_y*cos(a);
@@ -2441,7 +2445,7 @@ if option
     
     % Cone of sight min
     line_x = zeros(1,N);
-    line_y = linspace(0,Rmax+camera_params.focal_length,N);
+    line_y = linspace(0,max_lenght+camera_params.focal_length,N);
     
     b = camera_params.horizontal_angle_view;
     
@@ -2466,7 +2470,7 @@ if option
     
     % Cone of sight max
     line_x = zeros(1,N);
-    line_y = linspace(0,Rmax+camera_params.focal_length,N);
+    line_y = linspace(0,max_lenght+camera_params.focal_length,N);
     
     line_x_r = line_x*cos(b) - line_y*sin(b);
     line_y_r = line_x*sin(b) + line_y*cos(b);
@@ -2491,7 +2495,7 @@ end
 
 end
 
-function [rotation_angle,ip_in_pixel] = findRotationAngles(X,camera_params)
+function [rotation_angle,ip_in_pixel] = findRotationAngles(X,camera_params,option)
 disp('Calculating rotation angles...')
 % Here we compute the rotation angles in the toroidal direction based on
 % the pixel array of the camera.
@@ -2566,8 +2570,10 @@ for ii=1:camera_params.NX
         in(intersect(I,II)) = [];
     end
     
-%     hold on;plot(xp(ip),yp(ip),'k.','MarkerSize',2);hold off
-%     hold on;plot(xn(in),yn(in),'b.','MarkerSize',2);hold off
+    if option
+        hold on;plot(xp(ip),yp(ip),'k.','MarkerSize',2);hold off
+        hold on;plot(xn(in),yn(in),'b.','MarkerSize',2);hold off
+    end
     
     for jj=1:camera_params.NY
         I1 = find(psi >= psi_range(1,jj));
@@ -2596,7 +2602,7 @@ SD = struct;
 disp('Starting synchrotron synthetic diagnostic...')
 
 % Here we define many snapshots will be used
-numSnapshots = 1;
+numSnapshots = 10;
 it1 = ST.params.simulation.num_snapshots + 1 - numSnapshots;
 it2 = ST.params.simulation.num_snapshots + 1;
 
@@ -2618,15 +2624,15 @@ lambda = lch*lambda; % in cm
 % Camera parameters
 camera_params = struct;
 camera_params.Riw = 1.0;% inner wall radius in meters
-camera_params.NX = 20;
-camera_params.NY = 18;
-camera_params.size = [0.25,0.2]; % [horizontal size, vertical size] in meters
-camera_params.focal_length = 0.35; % In meters
-camera_params.position = [2.38,0.0]; % [R,Z] in meters
+camera_params.NX = 40;
+camera_params.NY = 40;
+camera_params.size = [0.25,0.25]; % [horizontal size, vertical size] in meters
+camera_params.focal_length = 0.45; % In meters
+camera_params.position = [2.4,0.0]; % [R,Z] in meters
 % The angle defined by the detector plane (pixel array) and the x-axis of a
 % coordinate system where phi = 0, the toroidal angle, corresponds to the
 % y-axis, and phi = 90 corresponds to the x-axis
-camera_params.incline = 55; % in degrees
+camera_params.incline = 50; % in degrees
 camera_params.incline = deg2rad(camera_params.incline);
 camera_params.horizontal_angle_view = ...
     atan2(0.5*camera_params.size(1),camera_params.focal_length); % in radians
@@ -2715,7 +2721,7 @@ for ss=1:1
     
     clear ip theta_f
     
-    [rotation_angles,ip_in_pixel] = findRotationAngles(X,camera_params);
+    [rotation_angles,ip_in_pixel] = findRotationAngles(X,camera_params,false);
     
     % % % % Beyond this point all variables are in cgs units % % % %
     c = 1E2*ST.params.scales.v;
@@ -2757,60 +2763,62 @@ for ss=1:1
             
             if ~isempty(I)
                 Ptmp = Prad(I);
-                xtmp = X(:,I);
-                vtmp = V(:,I);
-                bi = binormal(:,I);
-                gtmp = gammae(I);
-                kappa = k(I);
+                X_pix = X(:,I);
+                V_pix = V(:,I);
+                binormal_pix = binormal(:,I);
+                gamma_pix = gammae(I);
+                kappa_pix = k(I);
                 
                 % Rotation angles
                 anticlockwise = ...
                     [rotation_angles{1,ii,jj},rotation_angles{2,ii,jj}];
                 
-                clockwise = atan2(xtmp(2,:),xtmp(1,:));
+                clockwise = atan2(X_pix(2,:),X_pix(1,:));
                 clockwise(clockwise<0) = clockwise(clockwise<0) + 2*pi;
                 
                 angle = anticlockwise - clockwise;
                 % Rotation angles
                 chi = zeros(1,numel(I));
                 psi = zeros(1,numel(I));
+                
+                v_unit = normc(V_pix);
+                
+                xcam_tmp = [X_pix(1,:).*cos(angle) + X_pix(2,:).*sin(angle);...
+                    -X_pix(1,:).*sin(angle) + X_pix(2,:).*cos(angle);...
+                    X_pix(3,:)];
+                
+                n = xcam_tmp - X_pix;
+                n = normc(n);
+                ndotBinormal = dot(n,binormal_pix,1);
+                
+                aa = acos(ndotBinormal);
+                II = aa > pi/2;
+                
+                psi = zeros(size(aa));
+                psi(II) = aa(II) - pi/2;
+                psi(~II) = pi/2 - aa(~II);
+
                 for pp=1:numel(I)
 %                     xtmp(1:2,pp) = anticlockwise_rotation(angle(pp),xtmp(1:2,pp));
 %                     vtmp(1:2,pp) = anticlockwise_rotation(angle(pp),vtmp(1:2,pp));
 %                     bi(1:2,pp) = anticlockwise_rotation(angle(pp),bi(1:2,pp));
-                    xcam_tmp = xcam;
-                    xcam_tmp(1:2) = clockwise_rotation(angle(pp),xcam(1:2));
-                    
-                    v_unit = vtmp/sqrt(vtmp(:,pp)'*vtmp(:,pp));
-                    
-%                     n = xcam - xtmp(:,pp);
-                    n = xcam_tmp - xtmp(:,pp);
-                    n = n/sqrt(n'*n);
-                    
-%                     ndotBinormal = dot(n,bi(:,pp));
-                    ndotBinormal = n(1)*bi(1,pp) + n(2)*bi(2,pp) + n(3)*bi(3,pp);
-                    aa = acos(ndotBinormal);
-                    if aa > pi/2
-                        aa = aa - pi/2;
-                    end
-                    
-                    nperp = n - ndotBinormal*bi(:,pp);
-                    nperp = nperp/sqrt(nperp'*nperp);
+
+                    nperp = n(:,pp) - ndotBinormal(pp)*binormal_pix(:,pp);
+                    nperp = nperp/sqrt(dot(nperp,nperp));
                     
                     % No apriori assumption on the value of psi or chi is
                     % made here. We use the osculating plane, n and V.
-%                     chi(pp) = abs( acos(dot(nperp,v_unit(:,pp))) );
-                    chi(pp) = abs( acos(nperp(1)*v_unit(1,pp) + nperp(2)*v_unit(2,pp) + nperp(3)*v_unit(3,pp) ) );
-                    psi(pp) = pi/2 - aa;
+                    chi(pp) = abs( acos(dot(nperp,v_unit(:,pp))) );
+%                     chi(pp) = abs( acos(nperp(1)*v_unit(1,pp) + nperp(2)*v_unit(2,pp) + nperp(3)*v_unit(3,pp) ) );
                     
                     % Here we calculate the critical chi
-                    xi = 2*pi./(3*lambda*kappa(pp)*gtmp(pp)^3);
+                    xi = 2*pi./(3*lambda*kappa_pix(pp)*gamma_pix(pp)^3);
                     
                     D = ( 0.5*(sqrt(4 + (pi./xi).^2) - pi./xi) ).^(1/3);
-                    chic = (1./D - D)/gtmp(pp);
+                    chic = (1./D - D)/gamma_pix(pp);
                     % Here we calculate the critical chi
                     
-                    psic = (1.5*kappa(pp)*lambda/pi).^(1/3);
+                    psic = (1.5*kappa_pix(pp)*lambda/pi).^(1/3);
                     
                     % Next, we determine to which wavelengths, if any, the
                     % particles will contribute to.
@@ -2819,7 +2827,7 @@ for ss=1:1
                     reject = reject_chi | reject_psi;
                     II = find(reject == false);
                     
-                    Psyn_tmp = Psyn(lambda(II),kappa(pp),gtmp(pp),chi(pp),psi(pp));
+                    Psyn_tmp = Psyn(lambda(II),kappa_pix(pp),gamma_pix(pp),chi(pp),psi(pp));
                     contributing = find(Psyn_tmp > 0);
                     P{ii,jj}(II(contributing)) = P{ii,jj}(II(contributing)) + Psyn_tmp(contributing);
                 end
@@ -2837,10 +2845,10 @@ for ss=1:1
                 
                 counter(ii,jj) = numel(I);   
 
-                psi_detector(ii,jj,1) = mean(psi);
-                psi_detector(ii,jj,2) = std(psi);
-                chi_detector(ii,jj,1) = mean(chi);
-                chi_detector(ii,jj,2) = std(chi);
+%                 psi_detector(ii,jj,1) = mean(psi);
+%                 psi_detector(ii,jj,2) = std(psi);
+%                 chi_detector(ii,jj,1) = mean(chi);
+%                 chi_detector(ii,jj,2) = std(chi);
             end
             
             disp(['Pixel (' num2str(ii) ',' num2str(jj) ') out of ' num2str(camera_params.NX*camera_params.NY)])
@@ -2852,6 +2860,232 @@ for ss=1:1
 %     contourf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot,15)
     surf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot,...
         'LineStyle','none')
+    colormap(jet)
+    view([90,90])
+    box on
+    ylabel('$x$-axis of detector','FontSize',14,'Interpreter','latex')
+    xlabel('$y$-axis of detector','FontSize',14,'Interpreter','latex')
+    
+    subplot(2,1,2)
+    surf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,counter,...
+        'LineStyle','none')
+    colormap(jet)
+    view([90,90])
+    box on
+    ylabel('$x$-axis of detector','FontSize',14,'Interpreter','latex')
+    xlabel('$y$-axis of detector','FontSize',14,'Interpreter','latex')
+end
+end
+
+function SD = syntheticDiagnosticSynchrotronSimple(ST)
+% Synthetic diagnostic of camera for synchrotron radiation.
+SD = struct;
+disp('Starting synchrotron synthetic diagnostic...')
+
+% Here we define many snapshots will be used
+numSnapshots = 10;
+it1 = ST.params.simulation.num_snapshots + 1 - numSnapshots;
+it2 = ST.params.simulation.num_snapshots + 1;
+
+lch = 1E2;
+lchnm = 1E7;
+Pch = 1E-7;
+
+% Simulation parameters
+num_species = double(ST.params.simulation.num_species);
+
+% Resolution in wavelength
+N = 150;
+% Wavelength range (450 nm - 950 nm for visible light).
+lambda_min = 450E-9;% in meters
+lambda_max = 2000E-9;% in meters
+lambda = linspace(lambda_min,lambda_max,N);
+lambda = lch*lambda; % in cm
+
+% Camera parameters
+camera_params = struct;
+camera_params.Riw = 1.0;% inner wall radius in meters
+camera_params.NX = 40;
+camera_params.NY = 40;
+camera_params.size = [0.25,0.25]; % [horizontal size, vertical size] in meters
+camera_params.focal_length = 0.45; % In meters
+camera_params.position = [2.4,0.0]; % [R,Z] in meters
+% The angle defined by the detector plane (pixel array) and the x-axis of a
+% coordinate system where phi = 0, the toroidal angle, corresponds to the
+% y-axis, and phi = 90 corresponds to the x-axis
+camera_params.incline = 50; % in degrees
+camera_params.incline = deg2rad(camera_params.incline);
+camera_params.horizontal_angle_view = ...
+    atan2(0.5*camera_params.size(1),camera_params.focal_length); % in radians
+camera_params.vertical_angle_view = ...
+    atan2(0.5*camera_params.size(2),camera_params.focal_length); % in radians
+camera_params.pixel_grid = setupCameraPixelGrid(camera_params,false);
+
+clockwise_rotation = @(t,x) [cos(t),sin(t);-sin(t),cos(t)]*x;
+anticlockwise_rotation = @(t,x) [cos(t),-sin(t);sin(t),cos(t)]*x;
+%     anticlockwise_rotation = @(t,x) [x(1)*cos(t) - x(2)*sin(t), x(1)*sin(t) + x(2)*cos(t)];
+
+for ss=1:1
+    q = abs(ST.params.species.q(ss));
+    m = ST.params.species.m(ss);
+    Ro = ST.params.fields.Ro;
+    
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag(:,it1:it2),2));
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta(it1:it2) < 90,2) );
+    bool = pin;% & passing;
+    
+    X = [];
+    V = [];
+    gammae = [];
+    Prad = [];
+    eta = [];
+    B = [];
+    E = [];
+    for ii=it1:it2
+        X = [X,ST.data.(['sp' num2str(ss)]).X(:,bool,ii)];
+        V = [V,ST.data.(['sp' num2str(ss)]).V(:,bool,ii)];
+        gammae = [gammae;ST.data.(['sp' num2str(ss)]).gamma(bool,ii)];
+        eta = [eta;pi*ST.data.(['sp' num2str(ss)]).eta(bool,ii)/180];
+        Prad = [Prad;abs(ST.data.(['sp' num2str(ss)]).Prad(bool,ii))];
+        B = [B,ST.data.(['sp' num2str(ss)]).B(:,bool,ii)];
+        try
+            E = [E,ST.data.(['sp' num2str(ss)]).B(:,bool,ii)];
+        catch
+            E = zeros(size(B));
+        end
+    end
+    numPart = numel(eta);
+    
+    vec = zeros(numPart,1);
+    binormal = zeros(size(B));
+    for ii=1:numPart
+        VxE = cross(squeeze(V(:,ii)),squeeze(E(:,ii)));
+        VxB = cross(squeeze(V(:,ii)),squeeze(B(:,ii)));
+        VxVxB = cross(squeeze(V(:,ii)),VxB);
+        aux = VxE + VxVxB;
+        vec(ii) = sqrt( aux'*aux );
+        binormal(:,ii) = VxE + VxVxB;
+        binormal(:,ii) = binormal(:,ii)/sqrt(binormal(:,ii)'*binormal(:,ii));
+    end
+    
+    v = squeeze( sqrt( sum(V.^2,1) ) )';
+    k = q*vec./(m*gammae.*v.^3); % Actual curvature
+    
+    clear VxE VxB VxVxB aux E B v
+    
+    % This angle is used as the primer criterium for deciding whether the
+    % particle is seen by the camera or not.
+    threshold_angle = (3*k*lambda(end)/(2*pi)).^(1/3);
+    
+    [ip,theta_f] = findVisibleParticles(X,V,threshold_angle,camera_params,false);
+    
+    clear threshold_angle
+    
+    % Here we drop the particles that are not seen by the camera
+    theta_f(~ip) = [];
+    X(:,~ip) = [];
+    V(:,~ip) = [];
+    binormal(:,~ip) = [];
+    gammae(~ip) = [];
+    k(~ip) = [];
+    eta(~ip) = [];
+    Prad(~ip) = [];
+    
+    numPart = numel(gammae); % Here we re-calculate the number of visible particles
+    
+    for ii=1:numPart
+        X(1:2,ii) = clockwise_rotation(theta_f(ii),X(1:2,ii));
+        V(1:2,ii) = clockwise_rotation(theta_f(ii),V(1:2,ii));
+        binormal(1:2,ii) = ...
+            clockwise_rotation(theta_f(ii),binormal(1:2,ii));
+    end
+    
+    clear ip theta_f
+    
+    [rotation_angles,ip_in_pixel] = findRotationAngles(X,camera_params,false);
+    
+    % % % % Beyond this point all variables are in cgs units % % % %
+    c = 1E2*ST.params.scales.v;
+    qe = 3E9*q;
+    m = 1E3*m;
+    
+    X = 1E2*X;
+    V = 1E2*V;
+    k = k/lch;
+    
+    xcam = lch*[camera_params.position(1);0;camera_params.position(2)];
+    
+    % functions for calculating the radiation power density
+    zeta = @(g,p,k,l) (2*pi./(3*l*k.*g.^3)).*(1 + (g.*p).^2).^1.5;
+    Po = @(g,k,l) 8*pi*c*qe^2./(3*k.*(l*g).^4);
+    K13 = @(x) besselk(1/3,x);
+    K23 = @(x) besselk(2/3,x);
+
+    counter = zeros(camera_params.NX,camera_params.NY);
+    Ptot = zeros(camera_params.NX,camera_params.NY);
+    P = cell(camera_params.NX,camera_params.NY);
+    fh = figure;
+    for ii=1:camera_params.NX
+        for jj=1:camera_params.NY
+            
+            P{ii,jj} = zeros(1,N);
+            I = [ip_in_pixel{1,ii,jj},ip_in_pixel{2,ii,jj}];
+            
+            if ~isempty(I)
+                X_pix = X(:,I);
+                binormal_pix = binormal(:,I);
+                gamma_pix = gammae(I)';
+                kappa_pix = k(I)';
+                
+                % Rotation angles
+                anticlockwise = ...
+                    [rotation_angles{1,ii,jj},rotation_angles{2,ii,jj}];
+                
+                clockwise = atan2(X_pix(2,:),X_pix(1,:));
+                clockwise(clockwise<0) = clockwise(clockwise<0) + 2*pi;
+                
+                angle = anticlockwise - clockwise;
+                
+                xcam_tmp = [X_pix(1,:).*cos(angle) + X_pix(2,:).*sin(angle);...
+                    -X_pix(1,:).*sin(angle) + X_pix(2,:).*cos(angle);...
+                    X_pix(3,:)];
+                
+                n = xcam_tmp - X_pix;
+                n = normc(n);
+                ndotBinormal = dot(n,binormal_pix,1);
+                aa = acos(ndotBinormal);
+                II = aa > pi/2;
+                
+                psi = zeros(size(aa));
+                psi(II) = aa(II) - pi/2;
+                psi(~II) = pi/2 - aa(~II);
+
+                for ll=1:N
+                    P_tmp = ...
+                        Po(gamma_pix,kappa_pix,lambda(ll)).*(1+(gamma_pix.*psi).^2).^2.*( K23(zeta(gamma_pix,psi,kappa_pix,lambda(ll))).^2 + ...
+                        K13(zeta(gamma_pix,psi,kappa_pix,lambda(ll))).^2.*(gamma_pix.*psi).^2./(1+(gamma_pix.*psi).^2) );
+                    P{ii,jj}(ll) = sum(P_tmp);
+                end
+                                
+                Ptot(ii,jj) = trapz(lambda,P{ii,jj});
+                counter(ii,jj) = numel(I);
+                
+                figure(fh)
+                hold on
+                plot(lchnm*lambda,Pch*P{ii,jj}/lchnm)
+                xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
+                ylabel('$P_{syn}(\lambda)$','FontSize',14,'Interpreter','latex')
+                hold off
+            end
+            disp(['Pixel (' num2str(ii) ',' num2str(jj) ') out of ' num2str(camera_params.NX*camera_params.NY)])
+        end
+    end
+    
+    figure;
+    subplot(2,1,1)
+    contourf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot,15)
+%     surf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot,...
+%         'LineStyle','none')
     colormap(jet)
     view([90,90])
     box on
