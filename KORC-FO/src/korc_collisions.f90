@@ -114,13 +114,31 @@ subroutine load_params_ss(params)
 
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-	read(default_unit_open,nml=CollisionParamsMultipleSpecies)
+	read(default_unit_open,nml=CollisionParamsSingleSpecies)
 	close(default_unit_open)
 
 	write(*,nml=CollisionParamsSingleSpecies)
 
-	
-	
+	cparams_ss%Te = Te*C_E;
+	cparams_ss%Ti = Ti*C_E;
+	cparams_ss%ne = ne;
+	cparams_ss%Zeff = Zeff;
+
+	cparams_ss%rD = &
+	SQRT(C_E0*cparams_ss%Te/(cparams_ss%ne*C_E**2*(cparams_ss%Te/cparams_ss%Ti)))
+
+	cparams_ss%re = C_E**2/(4.0_rp*C_PI*C_E0*C_ME*C_C**2)
+	cparams_ss%CoulombLog = 25.3_rp - 1.15_rp*LOG10(1E-3_rp*cparams_ss%ne) +&
+	2.3_rp*LOG10(cparams_ss%Te/C_E)
+
+	cparams_ss%VTe = SQRT(2.0_rp*cparams_ss%Te/C_ME)
+	cparams_ss%delta = cparams_ss%VTe/C_C
+	cparams_ss%Gammac = &
+	cparams_ss%ne*C_E**4*cparams_ss%CoulombLog/(4.0_rp*C_PI*C_E0**2)
+
+	cparams_ss%Tau = C_ME**2*C_C**3/cparams_ss%Gammac
+	cparams_ss%ED = &
+	cparams_ss%ne*C_E**3*cparams_ss%CoulombLog/(4.0_rp*C_PI*C_E0**2*cparams_ss%Te)
 end subroutine load_params_ss
 
 
@@ -131,7 +149,7 @@ subroutine initialize_collision_params(params)
 	if (params%collisions) then
 		SELECT CASE (TRIM(params%collisions_model))
 			CASE (MODEL1)
-				write(6,'("Something to be done")')
+				call load_params_ss(params)
 			CASE (MODEL2)
 				call load_params_ms(params)
 			CASE DEFAULT
