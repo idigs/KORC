@@ -2594,13 +2594,13 @@ end
 
 end
 
-function SD = syntheticDiagnosticSynchrotron(ST,detailed)
+function SD = syntheticDiagnosticSynchrotron(ST,compare)
 % Synthetic diagnostic of camera for synchrotron radiation.
 SD = struct;
 disp('Starting synchrotron synthetic diagnostic...')
 
 % Here we define many snapshots will be used
-numSnapshots = 40;
+numSnapshots = 50;
 it1 = ST.params.simulation.num_snapshots + 1 - numSnapshots;
 it2 = ST.params.simulation.num_snapshots + 1;
 
@@ -2612,18 +2612,18 @@ Pch = 1E-7;
 num_species = double(ST.params.simulation.num_species);
 
 % Resolution in wavelength
-N = 100;
+N = 75;
 % Wavelength range (450 nm - 950 nm for visible light).
-lambda_min = 450E-9;% in meters
-lambda_max = 950E-9;% in meters
+lambda_min = 742E-9;% in meters
+lambda_max = 752E-9;% in meters
 lambda = linspace(lambda_min,lambda_max,N);
 lambda = lch*lambda; % in cm
 
 % Camera parameters
 camera_params = struct;
 camera_params.Riw = 1.0;% inner wall radius in meters
-camera_params.NX = 30;
-camera_params.NY = 30;
+camera_params.NX = 35;
+camera_params.NY = 35;
 camera_params.size = [0.25,0.25]; % [horizontal size, vertical size] in meters
 camera_params.focal_length = 0.40; % In meters
 camera_params.position = [2.4,0.0]; % [R,Z] in meters
@@ -2841,7 +2841,7 @@ for ss=1:num_species
     
     fh = figure;
     subplot(4,4,[1,2,5,6])
-%     contourf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot,15)
+%     contourf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot_psi_chi,10)
     surf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot_psi_chi,...
         'LineStyle','none')
     colormap(jet)
@@ -2850,7 +2850,7 @@ for ss=1:num_species
     xlabel('$y$-axis of detector','FontSize',14,'Interpreter','latex')
     
     subplot(4,4,[3,4,7,8])
-%     contourf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot,15)
+%     contourf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot_psi,10)
     surf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot_psi,...
         'LineStyle','none')
     colormap(jet)
@@ -2891,6 +2891,7 @@ for ss=1:num_species
     hold on
     plot(lchnm*lambda,Psyn_mean/N,'k','LineWidth',3)
     hold off
+    box on
     xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
     ylabel('$P_{syn}(\lambda,\psi,\chi)$','FontSize',14,'Interpreter','latex')
     
@@ -2909,6 +2910,7 @@ for ss=1:num_species
     hold on
     plot(lchnm*lambda,Psyn_mean/N,'k','LineWidth',3)
     hold off
+    box on
     xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
     ylabel('$P_{syn}(\lambda,\psi)$','FontSize',14,'Interpreter','latex')
 end

@@ -3,7 +3,7 @@ module korc_collisions
 	use korc_constants
 	use korc_HDF5
 
-	implicit none
+	IMPLICIT NONE
 
 	CHARACTER(LEN=*), PRIVATE, PARAMETER :: MODEL1 = 'SINGLE_SPECIES'
 	CHARACTER(LEN=*), PRIVATE, PARAMETER :: MODEL2 = 'MULTIPLE_SPECIES'
@@ -38,7 +38,8 @@ module korc_collisions
 		REAL(rp) :: delta ! delta parameter
 		REAL(rp) :: Gammac ! Gamma factor
 		REAL(rp) :: Tau ! Collisional time
-		REAL(rp) :: ED ! Dreicer electric field
+		REAL(rp) :: Ec ! Critical electric field
+		REAL(rp) :: dTau ! Subcycling time step in collisional time units (Tau)
 	END TYPE PARAMS_SS
 
 	TYPE(PARAMS_MS), PRIVATE :: cparams_ms
@@ -46,7 +47,9 @@ module korc_collisions
 
 	PUBLIC :: initialize_collision_params,normalize_collisions_params,&
 				collision_force,deallocate_collisions_params,save_collision_params
-	PRIVATE :: load_params_ms,normalize_params_ms,deallocate_params_ms
+	PRIVATE :: load_params_ms,load_params_ss,normalize_params_ms,&
+				normalize_params_ss,save_params_ms,save_params_ss,&
+				deallocate_params_ms
 
 	contains
 
@@ -56,7 +59,7 @@ module korc_collisions
 
 
 subroutine load_params_ms(params)
-	implicit none
+	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp) :: Te ! Background electron temperature in eV
 	REAL(rp) :: ne! Background electron density in 1/m^3
@@ -103,29 +106,31 @@ end subroutine load_params_ms
 
 
 subroutine load_params_ss(params)
-	implicit none
+	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp) :: Te ! Electron temperature
 	REAL(rp) :: Ti ! Ion temperature
 	REAL(rp) :: ne ! Background electron density
 	REAL(rp) :: Zeff ! Effective atomic number of ions
+	REAL(rp) :: dTau ! Subcycling time step in collisional time units (Tau)
 
-	NAMELIST /CollisionParamsSingleSpecies/ Te, Ti, ne, Zeff
+	NAMELIST /CollisionParamsSingleSpecies/ Te, Ti, ne, Zeff, dTau
 
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=CollisionParamsSingleSpecies)
 	close(default_unit_open)
 
-	write(*,nml=CollisionParamsSingleSpecies)
+!	write(*,nml=CollisionParamsSingleSpecies)
 
-	cparams_ss%Te = Te*C_E;
-	cparams_ss%Ti = Ti*C_E;
-	cparams_ss%ne = ne;
-	cparams_ss%Zeff = Zeff;
+	cparams_ss%Te = Te*C_E
+	cparams_ss%Ti = Ti*C_E
+	cparams_ss%ne = ne
+	cparams_ss%Zeff = Zeff
+	cparams_ss%dTau = dTau
 
 	cparams_ss%rD = &
-	SQRT(C_E0*cparams_ss%Te/(cparams_ss%ne*C_E**2*(cparams_ss%Te/cparams_ss%Ti)))
+	SQRT(C_E0*cparams_ss%Te/(cparams_ss%ne*C_E**2*(1.0_rp + cparams_ss%Te/cparams_ss%Ti)))
 
 	cparams_ss%re = C_E**2/(4.0_rp*C_PI*C_E0*C_ME*C_C**2)
 	cparams_ss%CoulombLog = 25.3_rp - 1.15_rp*LOG10(1E-3_rp*cparams_ss%ne) +&
@@ -137,13 +142,13 @@ subroutine load_params_ss(params)
 	cparams_ss%ne*C_E**4*cparams_ss%CoulombLog/(4.0_rp*C_PI*C_E0**2)
 
 	cparams_ss%Tau = C_ME**2*C_C**3/cparams_ss%Gammac
-	cparams_ss%ED = &
-	cparams_ss%ne*C_E**3*cparams_ss%CoulombLog/(4.0_rp*C_PI*C_E0**2*cparams_ss%Te)
+	cparams_ss%Ec = &
+	cparams_ss%ne*C_E**3*cparams_ss%CoulombLog/(4.0_rp*C_PI*C_E0**2*C_ME*C_C**2)
 end subroutine load_params_ss
 
 
 subroutine initialize_collision_params(params)
-	implicit none
+	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
 	if (params%collisions) then
@@ -160,7 +165,7 @@ end subroutine initialize_collision_params
 
 
 subroutine normalize_params_ms(params)
-	implicit none
+	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
 	cparams_ms%Te = cparams_ms%Te/params%cpp%temperature
@@ -175,14 +180,31 @@ subroutine normalize_params_ms(params)
 end subroutine normalize_params_ms
 
 
+subroutine normalize_params_ss(params)
+	IMPLICIT NONE
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+
+	cparams_ss%Te = cparams_ss%Te/params%cpp%temperature
+	cparams_ss%Ti = cparams_ss%Ti/params%cpp%temperature
+	cparams_ss%ne = cparams_ss%ne/params%cpp%density
+	cparams_ss%rD = cparams_ss%rD/params%cpp%length
+	cparams_ss%re = cparams_ss%re/params%cpp%length
+	cparams_ss%VTe = cparams_ss%VTe/params%cpp%velocity
+	cparams_ss%Gammac = &
+	cparams_ss%Gammac*params%cpp%time/(params%cpp%mass**2*params%cpp%velocity**3)
+	cparams_ss%Tau = cparams_ss%Tau/params%cpp%time
+	cparams_ss%Ec = cparams_ss%Ec/params%cpp%Eo
+end subroutine normalize_params_ss
+
+
 subroutine normalize_collisions_params(params)
-	implicit none
+	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
 	if (params%collisions) then
 		SELECT CASE (TRIM(params%collisions_model))
 			CASE (MODEL1)
-				write(6,'("Something to be done")')
+				call normalize_params_ss(params)
 			CASE (MODEL2)
 				call normalize_params_ms(params)
 			CASE DEFAULT
@@ -193,7 +215,7 @@ end subroutine normalize_collisions_params
 
 
 subroutine collision_force(spp,U,Fcoll)
-    implicit none
+    IMPLICIT NONE
 	TYPE(SPECIES), INTENT(IN) :: spp
 	REAL(rp), DIMENSION(3), INTENT(IN) :: U
 	REAL(rp), DIMENSION(3), INTENT(OUT) :: Fcoll
@@ -232,9 +254,76 @@ subroutine collision_force(spp,U,Fcoll)
 	Fcoll = Fcolle + Fcolli
 end subroutine collision_force
 
+! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
+! * FUNCTIONS OF COLLISION OPERATOR FOR SINGLE-SPECIES PLASMAS * !
+! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
+
+function psi(v)
+	IMPLICIT NONE
+	REAL(rp), INTENT(IN) :: v
+	REAL(rp) :: psi
+	REAL(rp) :: x
+
+	x = v/cparams_ss%VTe
+	psi = 0.5_rp*(ERF(x) - 2.0_rp*x*EXP(-x**2)/SQRT(C_PI))/x**2
+end function psi
+
+function CA(v)
+	IMPLICIT NONE
+	REAL(rp), INTENT(IN) :: v
+	REAL(rp) :: CA
+
+	CA  = cparams_ss%Gammac*psi(v)/v
+end function CA
+
+function CF(v)
+	IMPLICIT NONE
+	REAL(rp), INTENT(IN) :: v
+	REAL(rp) :: CF
+
+	CF  = cparams_ss%Gammac*psi(v)/cparams_ss%Te
+end function CF
+
+function CB(v)
+	IMPLICIT NONE
+	REAL(rp), INTENT(IN) :: v
+	REAL(rp) :: CB
+	REAL(rp) :: x
+
+	x = v/cparams_ss%VTe
+	CB  = (0.5_rp*cparams_ss%Gammac/v)*( cparams_ss%Zeff + ERF(x) -&
+			psi(v) + 0.5_rp*cparams_ss%delta**4*x**2 )
+end function CB
+
+function fun(v)
+	IMPLICIT NONE
+	REAL(rp), INTENT(IN) :: v
+	REAL(rp) :: fun
+	REAL(rp) :: x
+
+	x = v/cparams_ss%VTe
+	fun = 2.0_rp*( 1.0_rp/x + x )*EXP(-x**2)/SQRT(C_PI) - ERF(x)/x**2 - psi(v)
+end function fun
+
+
+subroutine include_collisions(params,B,U)
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	REAL(rp), DIMENSION(3), INTENT(IN) :: B
+	REAL(rp), DIMENSION(3), INTENT(INOUT) :: U
+	REAL(rp) :: g ! Gamma factor
+	REAL(rp) :: v ! Velocity magnitude
+	REAL(rp) :: p ! Magnitude of dimensionless momentum U
+
+	p = SQRT(DOT_PRODUCT(U,U))
+	g = SQRT(1.0_rp + DOT_PRODUCT(U,U))
+	v = SQRT(DOT_PRODUCT(U,U))/g
+
+	
+end subroutine include_collisions
+
 
 subroutine save_params_ms(params)
-	implicit none
+	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	CHARACTER(MAX_STRING_LENGTH) :: filename
 	CHARACTER(MAX_STRING_LENGTH) :: gname
@@ -318,18 +407,109 @@ subroutine save_params_ms(params)
 
 		call h5fclose_f(h5file_id, h5error)
 	end if
-	
 end subroutine save_params_ms
 
 
+subroutine save_params_ss(params)
+	IMPLICIT NONE
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	CHARACTER(MAX_STRING_LENGTH) :: filename
+	CHARACTER(MAX_STRING_LENGTH) :: gname
+	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: attr_array
+	CHARACTER(MAX_STRING_LENGTH) :: dset
+	CHARACTER(MAX_STRING_LENGTH) :: attr
+	INTEGER(HID_T) :: h5file_id
+	INTEGER(HID_T) :: group_id
+	INTEGER :: h5error
+	REAL(rp) :: units
+
+
+	if (params%mpi_params%rank .EQ. 0) then
+		filename = TRIM(params%path_to_outputs) // "simulation_parameters.h5"
+		call h5fopen_f(TRIM(filename), H5F_ACC_RDWR_F, h5file_id, h5error)
+
+		gname = "collision_params"
+		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
+
+		ALLOCATE(attr_array(cparams_ms%num_impurity_species))
+
+		dset = TRIM(gname) // "/Te"
+		attr = "Background electron temperature in eV"
+		units = params%cpp%temperature/C_E
+		call save_to_hdf5(h5file_id,dset,units*cparams_ss%Te,attr)
+
+		dset = TRIM(gname) // "/Ti"
+		attr = "Background ion temperature in eV"
+		units = params%cpp%temperature/C_E
+		call save_to_hdf5(h5file_id,dset,units*cparams_ss%Ti,attr)
+
+		dset = TRIM(gname) // "/ne"
+		attr = "Background electron density in m^-3"
+		units = params%cpp%density
+		call save_to_hdf5(h5file_id,dset,units*cparams_ss%ne,attr)
+
+		dset = TRIM(gname) // "/Zeff"
+		attr = "Effective nuclear charge of impurities"
+		call save_to_hdf5(h5file_id,dset,cparams_ss%Zeff,attr)
+
+		dset = TRIM(gname) // "/rD"
+		attr = "Debye length in m"
+		units = params%cpp%length
+		call save_to_hdf5(h5file_id,dset,units*cparams_ss%rD,attr)
+
+		dset = TRIM(gname) // "/re"
+		attr = "Classical electron radius in m"
+		units = params%cpp%length
+		call save_to_hdf5(h5file_id,dset,units*cparams_ss%re,attr)
+
+		dset = TRIM(gname) // "/Clog"
+		attr = "Coulomb logarithm"
+		call save_to_hdf5(h5file_id,dset,cparams_ss%CoulombLog,attr)
+
+		dset = TRIM(gname) // "/VTe"
+		attr = "Background electron temperature"
+		units = params%cpp%velocity
+		call save_to_hdf5(h5file_id,dset,units*cparams_ss%VTe,attr)
+
+		dset = TRIM(gname) // "/delta"
+		attr = "Delta parameter VTe/C"
+		call save_to_hdf5(h5file_id,dset,cparams_ss%delta,attr)
+
+		dset = TRIM(gname) // "/Gamma"
+		attr = "Gamma coefficient"
+		units = (params%cpp%mass**2*params%cpp%velocity**3)/params%cpp%time
+		call save_to_hdf5(h5file_id,dset,units*cparams_ss%Gammac,attr)
+
+		dset = TRIM(gname) // "/Tau"
+		attr = "Collisional time in s"
+		units = params%cpp%time
+		call save_to_hdf5(h5file_id,dset,units*cparams_ss%Tau,attr)
+
+		dset = TRIM(gname) // "/dTau"
+		attr = "Subcycling time step in s"
+		units = params%cpp%time
+		call save_to_hdf5(h5file_id,dset,units*cparams_ss%dTau*cparams_ss%Tau,attr)
+
+		dset = TRIM(gname) // "/Ec"
+		attr = "Critical electric field"
+		units = params%cpp%Eo
+		call save_to_hdf5(h5file_id,dset,units*cparams_ss%Ec,attr)
+
+		call h5gclose_f(group_id, h5error)
+
+		call h5fclose_f(h5file_id, h5error)
+	end if
+end subroutine save_params_ss
+
+
 subroutine save_collision_params(params)
-	implicit none
+	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
 	if (params%collisions) then
 		SELECT CASE (TRIM(params%collisions_model))
 			CASE (MODEL1)
-				write(6,'("Something to be done")')
+				call save_params_ss(params)
 			CASE (MODEL2)
 				call save_params_ms(params)
 			CASE DEFAULT
@@ -340,7 +520,7 @@ end subroutine save_collision_params
 
 
 subroutine deallocate_params_ms()
-	implicit none
+	IMPLICIT NONE
 
 	if (ALLOCATED(cparams_ms%Zj)) DEALLOCATE(cparams_ms%Zj)
 	if (ALLOCATED(cparams_ms%Zo)) DEALLOCATE(cparams_ms%Zo)
@@ -352,7 +532,7 @@ end subroutine deallocate_params_ms
 
 
 subroutine deallocate_collisions_params(params)
-	implicit none
+	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
 	if (params%collisions) then

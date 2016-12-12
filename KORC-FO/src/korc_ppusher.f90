@@ -133,16 +133,20 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 					U_RC = U_RC + a*Frad/spp(ii)%q
 				end if
 
-				if (params%collisions) then
-					call collision_force(spp(ii),U_os,Fcoll)
-					U_RC = U_RC + a*Fcoll/spp(ii)%q
-				end if
+!				if (params%collisions .AND. &
+!				(TRIM(params%collisions_model) .EQ. 'MULTIPLE_SPECIES')) then
+!					call collision_force(spp(ii),U_os,Fcoll)
+!					U_RC = U_RC + a*Fcoll/spp(ii)%q
+!				end if
 
 				U = U_L + U_RC - U
 				if (params%radiation .OR. params%collisions) then
 					gamma = sqrt( 1.0_rp + DOT_PRODUCT(U,U) )
 				end if
-				
+
+				if (params%collisions) then
+					call include_collisions(params,spp(ii)%vars%B(:,pp),U)
+				end if
 				! ! ! Splitting operator for including radiation and collisions
 
 		        spp(ii)%vars%V(:,pp) = U/gamma

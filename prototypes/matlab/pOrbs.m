@@ -191,7 +191,7 @@ end
 
 % parametricShift(ST);
 
-ST.P = synchrotronSpectrum(ST);
+% ST.P = synchrotronSpectrum(ST);
 
 munlock
 
@@ -925,9 +925,9 @@ end
 function cOp = initializeCollisionOperators(ST)
 cOp = struct;
 
-cOp.Te = 2.0*ST.params.qe; % Background electron temperature in Joules
+cOp.Te = 10.0*ST.params.qe; % Background electron temperature in Joules
 cOp.Ti = cOp.Te; % Background ion temperature in Joules
-cOp.ne = 5.0E19; % Background electron density in 1/m^3
+cOp.ne = 1.0E21; % Background electron density in 1/m^3
 cOp.Zeff = 10.0; % Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
 cOp.rD = ...
     sqrt( ST.params.ep*cOp.Te/(cOp.ne*ST.params.qe^2*(1 + cOp.Zeff*cOp.Te/cOp.Ti)) );
@@ -937,7 +937,7 @@ cOp.VTe = sqrt(2*cOp.Te/ST.params.me);
 cOp.delta = cOp.VTe/ST.params.c;
 cOp.Gamma = cOp.ne*ST.params.qe^4*cOp.Clog/(4*pi*ST.params.ep^2);
 cOp.Tau = ST.params.me^2*ST.params.c^3/cOp.Gamma;
-cOp.ED = cOp.ne*ST.params.qe^3*cOp.Clog/(4*pi*ST.params.ep^2*cOp.Te);
+cOp.ED = cOp.ne*ST.params.qe^3*cOp.Clog/(4*pi*ST.params.ep^2*ST.params.me*ST.params.c^2);
 
 Ef = analyticalE([ST.B.Ro,0,0]);
 cOp.Vc = cOp.VTe*sqrt(0.5*cOp.ED/sqrt(Ef*Ef'));
@@ -971,9 +971,8 @@ cOp.CF = @(v) cOp.Gamma*cOp.psi(v)/cOp.Te;
 cOp.CB = @(v) (0.5*cOp.Gamma./v).*( cOp.Zeff + ...
     erf(cOp.x(v)) - cOp.psi(v) + 0.5*cOp.delta^4*cOp.x(v).^2 );
 
-cOp.fun = @(v) 3*exp(-cOp.x(v).^2)./(cOp.x(v)*sqrt(pi)) + ...
-    2*cOp.x(v).*exp(-cOp.x(v).^2)/sqrt(pi) - ...
-    1.5*erf(cOp.x(v))./cOp.x(v).^2;
+cOp.fun = @(v) 2*(1./cOp.x(v) + cOp.x(v)).*exp(-cOp.x(v).^2)/sqrt(pi) - ...
+    erf(cOp.x(v))./cOp.x(v).^2 - cOp.psi(v);
 
 cOp.timeStep = @(v) 2*cOp.CA(v)./cOp.CF(v).^2;
 
@@ -1051,7 +1050,7 @@ CA = ST.cOp.CA(v);
 CB = ST.cOp.CB(v);
 CF = ST.cOp.CF(v);
 
-dp = ( -CF + 2*CA/p + ST.cOp.Gamma*ST.cOp.fun(v)/(gammap*p^2) )*dt + ...
+dp = ( -CF + 2*CA/p + ST.cOp.Gamma*ST.cOp.fun(v)/(p^2*sqrt(1 + p^2)) )*dt + ...
     sqrt(2*CA)*dWp;
 
 % dxi = -2*xi*CB*dt/p^2 - sqrt(2*CB*(1 - xi^2))*dWxi/p;
@@ -1251,12 +1250,12 @@ for ii=2:ST.params.numSnapshots
 %             V_eff = U_eff/gamma_eff;
 %         end
         
-        F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
-            cross(B,cross(B,V_eff)) );
-        vec = E + cross(V_eff,B);
-        F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
+%         F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
+%             cross(B,cross(B,V_eff)) );
+%         vec = E + cross(V_eff,B);
+%         F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
 
-        U_R = U_R + a*( F2 + F3 );
+%         U_R = U_R + a*( F2 + F3 );
         U = U_L + U_R - U; % Comment or uncomment
         
         if mod((ii-1)*ST.params.cadence + jj,ST.cOp.subcyclingIter) == 0

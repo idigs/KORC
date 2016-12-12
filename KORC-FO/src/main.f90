@@ -66,8 +66,8 @@ program main
 	call advance_particles_position(params,EB,spp,0.5_rp*params%dt)
 
 	do it=1,params%t_steps
-
         params%time = REAL(it,rp)*params%dt
+		params%it = it
 
 		if ( modulo(it,params%output_cadence) .EQ. 0_ip ) then
             call advance_particles_velocity(params,EB,spp,params%dt,.TRUE.)
@@ -79,7 +79,6 @@ program main
             call advance_particles_velocity(params,EB,spp,params%dt,.FALSE.)
 		    call advance_particles_position(params,EB,spp,params%dt)
         end if
-
 	end do
 	
 	t2 = MPI_WTIME()

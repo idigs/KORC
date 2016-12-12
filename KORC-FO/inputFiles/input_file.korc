@@ -5,7 +5,7 @@
         num_species = 1
         radiation = .FALSE.
         collisions = .TRUE.
-		collisions_model = 'MULTIPLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
+		collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
         magnetic_field_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
                                                                                 ! For 'ANALYTICAL', the magnetic field is calculated based on
                                                                                 ! the parameters given in the "analytic_mag_field_params" section.
@@ -56,4 +56,5 @@
 		Ti = 2.0 ! Background ion temperature in eV
         ne = 5.0E19 ! Background electron density in 1/m^3
 		Zeff = 10.0; ! Effective atomic number
+		dTau = 0.01 ! Subcycling time step in collisional time units (Tau)
 /

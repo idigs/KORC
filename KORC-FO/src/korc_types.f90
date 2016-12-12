@@ -77,6 +77,7 @@ TYPE, PUBLIC :: KORC_PARAMS
 	LOGICAL :: restart
 	REAL(rp) :: dt
 	REAL(rp) :: time
+	INTEGER(ip) :: it
 	INTEGER(ip) :: t_steps
 	INTEGER(ip) :: output_cadence
 	INTEGER(ip) :: num_snapshots
