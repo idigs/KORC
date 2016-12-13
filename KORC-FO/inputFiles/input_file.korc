@@ -55,6 +55,6 @@
         Te = 2.0 ! Background electron temperature in eV
 		Ti = 2.0 ! Background ion temperature in eV
         ne = 5.0E19 ! Background electron density in 1/m^3
-		Zeff = 10.0; ! Effective atomic number
+		Zeff = 10.0 ! Effective atomic number
 		dTau = 0.01 ! Subcycling time step in collisional time units (Tau)
 /

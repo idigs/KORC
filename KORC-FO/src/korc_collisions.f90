@@ -49,7 +49,7 @@ module korc_collisions
 				collision_force,deallocate_collisions_params,save_collision_params
 	PRIVATE :: load_params_ms,load_params_ss,normalize_params_ms,&
 				normalize_params_ss,save_params_ms,save_params_ss,&
-				deallocate_params_ms
+				deallocate_params_ms,cross,unitVectors,CA,CB,CF,fun
 
 	contains
 
@@ -254,6 +254,7 @@ subroutine collision_force(spp,U,Fcoll)
 	Fcoll = Fcolle + Fcolli
 end subroutine collision_force
 
+
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
 ! * FUNCTIONS OF COLLISION OPERATOR FOR SINGLE-SPECIES PLASMAS * !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
@@ -305,11 +306,49 @@ function fun(v)
 	fun = 2.0_rp*( 1.0_rp/x + x )*EXP(-x**2)/SQRT(C_PI) - ERF(x)/x**2 - psi(v)
 end function fun
 
+function cross(a,b)
+	REAL(rp), DIMENSION(3), INTENT(IN) :: a
+	REAL(rp), DIMENSION(3), INTENT(IN) :: b
+	REAL(rp), DIMENSION(3) :: cross
 
-subroutine include_collisions(params,B,U)
+	cross(1) = a(2)*b(3) - a(3)*b(2)
+	cross(2) = a(3)*b(1) - a(1)*b(3)
+	cross(3) = a(1)*b(2) - a(2)*b(1)
+end function cross
+
+subroutine unitVectors(B,b1,b2,b3)
+    IMPLICIT NONE
+    REAL(rp), DIMENSION(3), INTENT(IN) :: B
+	REAL(rp), DIMENSION(3), INTENT(OUT) :: b1
+	REAL(rp), DIMENSION(3), INTENT(OUT) :: b2
+	REAL(rp), DIMENSION(3), INTENT(OUT) :: b3
+
+    b1 = B/SQRT(DOT_PRODUCT(B,B))
+
+    b2 = cross(b1,(/0.0_rp,0.0_rp,1.0_rp/))
+    b2 = b2/SQRT(DOT_PRODUCT(b2,b2))
+
+    b3 = cross(b1,b2)
+    b3 = b3/SQRT(DOT_PRODUCT(b3,b3))
+end subroutine unitVectors
+
+! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
+! * FUNCTIONS OF COLLISION OPERATOR FOR SINGLE-SPECIES PLASMAS * !
+! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
+
+
+subroutine include_collisions(params,B,U,dt)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), DIMENSION(3), INTENT(IN) :: B
 	REAL(rp), DIMENSION(3), INTENT(INOUT) :: U
+	REAL(rp), INTENT(IN) :: dt
+	REAL(rp), DIMENSION(3) :: b1, b2, b3
+	REAL(rp), DIMENSION(3) :: x = (/1.0_rp,0.0_rp,0.0_rp/)
+	REAL(rp), DIMENSION(3) :: y = (/0.0_rp,1.0_rp,0.0_rp/)
+	REAL(rp), DIMENSION(3) :: z = (/0.0_rp,0.0_rp,1.0_rp/)
+	REAL(rp) :: U1, U2, U3
+	REAL(rp) :: dp, dxi, dphi, dWp, dWtheta, dWxi, rnd_num1, rnd_num2
+	REAL(rp) :: xi ! cosine of pitch angle
 	REAL(rp) :: g ! Gamma factor
 	REAL(rp) :: v ! Velocity magnitude
 	REAL(rp) :: p ! Magnitude of dimensionless momentum U
@@ -318,7 +357,44 @@ subroutine include_collisions(params,B,U)
 	g = SQRT(1.0_rp + DOT_PRODUCT(U,U))
 	v = SQRT(DOT_PRODUCT(U,U))/g
 
-	
+	call unitVectors(B,b1,b2,b3)
+
+	U1 = DOT_PRODUCT(U,b1);
+	U2 = DOT_PRODUCT(U,b2);
+	U3 = DOT_PRODUCT(U,b3);
+
+	xi = U1/(g*v)
+
+	call RANDOM_NUMBER(rnd_num1)
+	call RANDOM_NUMBER(rnd_num2)
+	dWp =  &
+	SQRT(dt)*SQRT(-2.0_rp*LOG(1.0_rp-rnd_num1))*COS(2.0_rp*C_PI*rnd_num2);
+
+	call RANDOM_NUMBER(rnd_num1)
+	dWtheta = C_PI*rnd_num1*SQRT(dt);
+
+	call RANDOM_NUMBER(rnd_num1)
+	dWxi = rnd_num1*SQRT(dt);
+
+!CA = ST.cOp.CA(v);
+!CB = ST.cOp.CB(v);
+!CF = ST.cOp.CF(v);
+!	dp = ( -CF + 2*CA/p + ST.cOp.Gamma*ST.cOp.fun(v)/(p^2*sqrt(1 + p^2)) )*dt + ...
+!    sqrt(2*CA)*dWp;
+!dxi = -2*xi*CB*dt/p^2 - sqrt(2*CB*(1 - xi^2))*dWxi/p;
+!dphi = sqrt(2*CB)*dWphi/(p*sqrt(1 - xi^2));
+!if ~isfinite(dphi)
+!    dphi = 0;
+!end
+!dpitch = acos(xi + dxi);
+
+!dU1 = dp*cos(dpitch);
+!dU2 = dp*sin(dpitch)*cos(dphi);
+!dU3 = dp*sin(dpitch)*sin(dphi);
+
+!U(1) = (U1+dU1)*(b1*x') + (U2+dU2)*(b2*x') + (U3+dU3)*(b3*x');
+!U(2) = (U1+dU1)*(b1*y') + (U2+dU2)*(b2*y') + (U3+dU3)*(b3*y');
+!U(3) = (U1+dU1)*(b1*z') + (U2+dU2)*(b2*z') + (U3+dU3)*(b3*z');
 end subroutine include_collisions
 
 

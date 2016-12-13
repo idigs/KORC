@@ -1039,11 +1039,12 @@ U1 = gammap*V*b1';
 U2 = gammap*V*b2';
 U3 = gammap*V*b3';
 
-% xi = b1*V'/sqrt(V*V');
-pitch = acos(b1*V'/sqrt(V*V'));
+xi = U1/(gammap*v);
+pitch = acos(xi);
 
 dWp = sqrt(dt)*sqrt(-2*log(1-rand))*cos(rand);
 dWtheta = random('uniform',0,pi,1)*sqrt(dt);
+dWxi = random('uniform',0,1,1)*sqrt(dt);
 dWphi = random('uniform',0,2*pi,1)*sqrt(dt);
 
 CA = ST.cOp.CA(v);
@@ -1053,16 +1054,14 @@ CF = ST.cOp.CF(v);
 dp = ( -CF + 2*CA/p + ST.cOp.Gamma*ST.cOp.fun(v)/(p^2*sqrt(1 + p^2)) )*dt + ...
     sqrt(2*CA)*dWp;
 
-% dxi = -2*xi*CB*dt/p^2 - sqrt(2*CB*(1 - xi^2))*dWxi/p;
+dxi = -2*xi*CB*dt/p^2 - sqrt(2*CB*(1 - xi^2))*dWxi/p;
 
-dpitch = sqrt(2*CB)*dWtheta/p;
-
-if pitch > 1E-2
-    dphi = sqrt(2*CB)*dWphi/(p*sin(pitch));
-    dpitch = dpitch + CB*cot(pitch)*dt/p^2;
-else
+dphi = sqrt(2*CB)*dWphi/(p*sqrt(1 - xi^2));
+if ~isfinite(dphi)
     dphi = 0;
 end
+
+dpitch = acos(xi + dxi);
 
 x = [1,0,0];
 y = [0,1,0];
@@ -1216,8 +1215,6 @@ for ii=2:ST.params.numSnapshots
         % % % Leap-frog scheme for Lorentz force % % %
         U_hs = U_L + 0.5*a*(E + cross(V,B)); % Half step for velocity
         
-%         [U_hs,dummyWcoll] = collisionOperator(ST,XX,U_hs/sqrt( 1 + U_hs*U_hs' ),dt);
-        
         % % % % % % % % % % % % % % %
         % Radiation losses operator
         vmag = sqrt( V*V' );
@@ -1236,38 +1233,32 @@ for ii=2:ST.params.numSnapshots
         s = 1/(1 + t*t'); % variable 's' in paper
         
         U_L = s*(up + (up*t')*t + cross(up,t));
-        V = U_L/gamma;
+%         U = U_L; % Comment or uncomment
         % % % Leap-frog scheme for Lorentz force % % %
         
-        % % % Leap-frog scheme for the radiation damping force % % %
+%         % % % Leap-frog scheme for the radiation damping force % % %
         U_eff = 0.5*(U_L + U);
         gamma_eff = sqrt(1 + U_eff*U_eff');
         V_eff = U_eff/gamma_eff;
-
-%         if mod((ii-1)*ST.params.cadence + jj,ST.cOp.subcyclingIter) == 0
-%             [U_eff,dummyWcoll] = collisionOperator(ST,XX,V_eff,dt);
-%             gamma_eff = sqrt(1 + U_eff*U_eff');
-%             V_eff = U_eff/gamma_eff;
-%         end
         
-%         F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
-%             cross(B,cross(B,V_eff)) );
-%         vec = E + cross(V_eff,B);
-%         F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
+        F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
+            cross(B,cross(B,V_eff)) );
+        vec = E + cross(V_eff,B);
+        F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
 
-%         U_R = U_R + a*( F2 + F3 );
-        U = U_L + U_R - U; % Comment or uncomment
+        U_R = U_R + a*( F2 + F3 );
+        U = U_L + U_R - U;
+%         % % % Leap-frog scheme for the radiation damping force % % %
         
+        % % % Collisions % % %
         if mod((ii-1)*ST.params.cadence + jj,ST.cOp.subcyclingIter) == 0
             [U,dummyWcoll] = collisionOperator(ST,XX,U/sqrt( 1 + U*U' ),dt*ST.cOp.subcyclingIter);
         end
+        % % % Collisions % % %
         
         gamma = sqrt( 1 + U*U' ); % Comment or uncomment
         V = U/gamma; % Comment or uncomment
-        
-%         U = U_L; % Comment or uncomment
-        % % % Leap-frog scheme for the radiation damping force % % %fcoll
-        
+
         zeta_previous = atan2(XX(2),XX(1));
         if zeta_previous < 0
             zeta_previous = zeta_previous + 2*pi;
