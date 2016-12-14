@@ -35,7 +35,7 @@ else
 	FC = mpif90
 
 	FCDEFINEFLAGS =-DDOUBLE_PRECISION	-DHDF5_DOUBLE_PRESICION	-UH5_DEBUG_API
-	FCFLAGS =-cpp	-J$(MOD)	-fopenmp	-g	-fbacktrace
+	FCFLAGS =-cpp	-J$(MOD)	-fopenmp	-O2
 endif
 
 	HDF5_INSTALL =../HDF5
@@ -50,7 +50,7 @@ endif
 	OMP_LIB_FLAGS =
 endif
 
-BINARIES = $(addprefix $(OBJ)/, korc_types.o    korc_constants.o	korc_HDF5.o	korc_collisions.o	korc_hpc.o  rnd_numbers.o	korc_fields.o	korc_coords.o	korc_interp.o	initialize.o    finalize.o	korc_units.o   korc_ppusher.o	main.o)
+BINARIES = $(addprefix $(OBJ)/, korc_types.o    korc_constants.o	korc_HDF5.o	korc_collisions.o	korc_hpc.o  rnd_numbers.o	korc_fields.o	korc_coords.o	korc_interp.o	korc_initialize.o    korc_finalize.o	korc_units.o   korc_ppusher.o	main.o)
 
 
 all: $(BIN)/KORC-FO
@@ -64,10 +64,10 @@ $(OBJ)/korc_constants.o: $(SRC)/korc_constants.f90
 $(OBJ)/rnd_numbers.o: $(SRC)/rnd_numbers.f90
 	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $<  	$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
-$(OBJ)/initialize.o: $(SRC)/initialize.f90
+$(OBJ)/korc_initialize.o: $(SRC)/korc_initialize.f90
 	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $<  	$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
-$(OBJ)/finalize.o: $(SRC)/finalize.f90
+$(OBJ)/korc_finalize.o: $(SRC)/korc_finalize.f90
 	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $<  	$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
 
 $(OBJ)/korc_hpc.o: $(SRC)/korc_hpc.f90

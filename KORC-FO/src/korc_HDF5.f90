@@ -19,7 +19,7 @@ module korc_HDF5
 	END INTERFACE
 
 	INTERFACE save_to_hdf5
-	  module procedure isave_to_hdf5,rsave_to_hdf5
+	  module procedure isave_to_hdf5,ip_save_to_hdf5,rsave_to_hdf5
 	END INTERFACE
 
 	INTERFACE save_1d_array_to_hdf5
@@ -306,6 +306,54 @@ subroutine rload_3d_array_from_hdf5(h5file_id,dset,rdata,attr)
 
 	! * * * Read data from file * * *
 end subroutine rload_3d_array_from_hdf5
+
+
+subroutine ip_save_to_hdf5(h5file_id,dset,ip_data,attr)
+	implicit none
+	INTEGER(HID_T), INTENT(IN) :: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
+	INTEGER(ip), INTENT(IN) :: ip_data
+	INTEGER :: idata
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, INTENT(IN) :: attr
+	CHARACTER(4) :: aname = "Info"
+	INTEGER(HID_T) :: dset_id
+	INTEGER(HID_T) :: dspace_id
+	INTEGER(HID_T) :: aspace_id
+	INTEGER(HID_T) :: attr_id
+	INTEGER(HID_T) :: atype_id
+	INTEGER(HSIZE_T), DIMENSION(1) :: dims = (/1/)
+	INTEGER(HSIZE_T), DIMENSION(1) :: adims = (/1/)
+	INTEGER :: rank = 1
+	INTEGER :: arank = 1
+	INTEGER(SIZE_T) :: tmplen
+	INTEGER(SIZE_T) :: attrlen
+	INTEGER :: h5error
+
+	idata = INT(ip_data,idef)
+
+	! * * * Write data to file * * *
+	call h5screate_simple_f(rank,dims,dspace_id,h5error)
+	call h5dcreate_f(h5file_id, TRIM(dset), H5T_NATIVE_INTEGER, dspace_id, dset_id, h5error)
+	call h5dwrite_f(dset_id, H5T_NATIVE_INTEGER, idata, dims, h5error)
+
+	if (PRESENT(attr)) then
+		! * * * Write attribute of data to file * * *
+		attrlen = LEN_TRIM(attr)
+		call h5screate_simple_f(arank,adims,aspace_id,h5error)
+		call h5tcopy_f(H5T_NATIVE_CHARACTER, atype_id, h5error)
+		call h5tset_size_f(atype_id, attrlen, h5error)
+		call h5acreate_f(dset_id, aname, atype_id, aspace_id, attr_id, h5error)
+		call h5awrite_f(attr_id, atype_id, attr, adims, h5error)
+
+		call h5aclose_f(attr_id, h5error)
+		call h5sclose_f(aspace_id, h5error)
+		! * * * Write attribute of data to file * * *
+	end if
+
+	call h5sclose_f(dspace_id, h5error)
+	call h5dclose_f(dset_id, h5error)
+	! * * * Write data to file * * *
+end subroutine ip_save_to_hdf5
 
 
 subroutine isave_to_hdf5(h5file_id,dset,idata,attr)

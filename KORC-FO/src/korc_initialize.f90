@@ -1,4 +1,4 @@
-module initialize
+module korc_initialize
 
     use korc_types
     use korc_constants
@@ -420,4 +420,4 @@ subroutine initialize_fields(params,F)
 	end if
 end subroutine initialize_fields
 
-end module initialize
+end module korc_initialize

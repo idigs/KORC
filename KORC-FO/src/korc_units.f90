@@ -1,5 +1,4 @@
 module korc_units
-
     use korc_types
     use korc_constants
 
@@ -20,20 +19,20 @@ subroutine compute_charcs_plasma_params(params,spp,F)
 	params%cpp%Bo = F%Bo
 
 	! Non-relativistic cyclotron frequency
-	spp(:)%wc = ( abs(spp(:)%q)/spp(:)%m )*params%cpp%Bo
+	spp(:)%wc = ( ABS(spp(:)%q)/spp(:)%m )*params%cpp%Bo
 
 	! Relativistic cyclotron frequency
-	spp(:)%wc_r =  abs(spp(:)%q)*params%cpp%Bo/( spp(:)%gammao*spp(:)%m )
+	spp(:)%wc_r =  ABS(spp(:)%q)*params%cpp%Bo/( spp(:)%gammao*spp(:)%m )
 
 
-	ind = maxloc(spp(:)%wc,1) ! Index to maximum cyclotron frequency
+	ind = MAXLOC(spp(:)%wc,1) ! Index to maximum cyclotron frequency
 	params%cpp%time = 1.0_rp/spp(ind)%wc
 
-	ind = maxloc(spp(:)%wc_r,1) ! Index to maximum relativistic cyclotron frequency
+	ind = MAXLOC(spp(:)%wc_r,1) ! Index to maximum relativistic cyclotron frequency
 	params%cpp%time_r = 1.0_rp/spp(ind)%wc_r
 
 	params%cpp%mass = spp(ind)%m
-	params%cpp%charge = abs(spp(ind)%q)
+	params%cpp%charge = ABS(spp(ind)%q)
 	params%cpp%length = params%cpp%velocity*params%cpp%time
 	params%cpp%energy = params%cpp%mass*params%cpp%velocity**2
 	params%cpp%Eo = params%cpp%velocity*params%cpp%Bo

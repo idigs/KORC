@@ -1,5 +1,4 @@
-module finalize
-
+module korc_finalize
 	use korc_types
 	use korc_hpc
 
@@ -44,4 +43,4 @@ subroutine deallocate_variables(params,F,spp)
     end if
 end subroutine deallocate_variables
 
-end module finalize
+end module korc_finalize

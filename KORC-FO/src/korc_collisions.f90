@@ -257,6 +257,18 @@ subroutine collision_force(spp,U,Fcoll)
 end subroutine collision_force
 
 
+subroutine define_collisions_time_step(params)
+	IMPLICIT NONE
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+
+	cparams_ss%subcycling_iterations = FLOOR((cparams_ss%dTau*cparams_ss%Tau)/params%dt)
+
+	write(6,'("* * * * * * * SUBCYCLING FOR COLLISIONS * * * * * * *")')
+	write(6,'("Number of KORC iterations per collision: ",I16)') cparams_ss%subcycling_iterations
+	write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * * * *")')
+end subroutine define_collisions_time_step
+
+
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
 ! * FUNCTIONS OF COLLISION OPERATOR FOR SINGLE-SPECIES PLASMAS * !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
@@ -339,15 +351,15 @@ end subroutine unitVectors
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
 
 
-subroutine include_collisions(params,B,U,dt)
+subroutine include_collisions(params,B,U)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), DIMENSION(3), INTENT(IN) :: B
 	REAL(rp), DIMENSION(3), INTENT(INOUT) :: U
-	REAL(rp), INTENT(IN) :: dt
 	REAL(rp), DIMENSION(3) :: b1, b2, b3
 	REAL(rp), DIMENSION(3) :: x = (/1.0_rp,0.0_rp,0.0_rp/)
 	REAL(rp), DIMENSION(3) :: y = (/0.0_rp,1.0_rp,0.0_rp/)
 	REAL(rp), DIMENSION(3) :: z = (/0.0_rp,0.0_rp,1.0_rp/)
+	REAL(rp) :: dt
     REAL(rp) :: rnd_num1, rnd_num2
 	REAL(rp) :: U1, U2, U3
 	REAL(rp) :: dU1, dU2, dU3
@@ -359,50 +371,59 @@ subroutine include_collisions(params,B,U,dt)
 	REAL(rp) :: v ! Velocity magnitude
 	REAL(rp) :: p ! Magnitude of dimensionless momentum U
 
-	p = SQRT(DOT_PRODUCT(U,U))
-	g = SQRT(1.0_rp + DOT_PRODUCT(U,U))
-	v = SQRT(DOT_PRODUCT(U,U))/g
+	if (MODULO(params%it,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
+!		write(6,'("Iteration: ",I16)') params%it
+		dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt
 
-	call unitVectors(B,b1,b2,b3)
+		p = SQRT(DOT_PRODUCT(U,U))
+		g = SQRT(1.0_rp + DOT_PRODUCT(U,U))
+		v = p/g
 
-	U1 = DOT_PRODUCT(U,b1);
-	U2 = DOT_PRODUCT(U,b2);
-	U3 = DOT_PRODUCT(U,b3);
+		call unitVectors(B,b1,b2,b3)
 
-	xi = U1/(g*v)
+		U1 = DOT_PRODUCT(U,b1);
+		U2 = DOT_PRODUCT(U,b2);
+		U3 = DOT_PRODUCT(U,b3);
 
-	call RANDOM_NUMBER(rnd_num1)
-	call RANDOM_NUMBER(rnd_num2)
-	dWp =  &
-	SQRT(dt)*SQRT(-2.0_rp*LOG(1.0_rp-rnd_num1))*COS(2.0_rp*C_PI*rnd_num2);
+		xi = U1/(g*v)
 
-	call RANDOM_NUMBER(rnd_num1)
-	dWphi = 2.0_rp*C_PI*rnd_num1*SQRT(dt);
+		call RANDOM_NUMBER(rnd_num1)
+		call RANDOM_NUMBER(rnd_num2)
+		dWp =  &
+		SQRT(dt)*SQRT(-2.0_rp*LOG(1.0_rp-rnd_num1))*COS(2.0_rp*C_PI*rnd_num2);
 
-	call RANDOM_NUMBER(rnd_num1)
-	dWxi = rnd_num1*SQRT(dt);
+		call RANDOM_NUMBER(rnd_num1)
+		dWphi = 2.0_rp*C_PI*rnd_num1*SQRT(dt);
+
+		call RANDOM_NUMBER(rnd_num1)
+		dWxi = rnd_num1*SQRT(dt);
 
 
-	dp = ( -CF(v) + 2.0_rp*CA(v)/p + cparams_ss%Gammac*fun(v)/(p**2*SQRT(1.0_rp + p**2)) )*dt +&
-    SQRT(2.0_rp*CA(v))*dWp
+		dp = ( -CF(v) + 2.0_rp*CA(v)/p + cparams_ss%Gammac*fun(v)/(p**2*SQRT(1.0_rp + p**2)) )*dt&
+			 + SQRT(2.0_rp*CA(v))*dWp
 
-    dxi = -2.0_rp*xi*CB(v)*dt/p**2 - SQRT(2.0_rp*CB(v)*(1.0_rp - xi**2))*dWxi/p
+		dxi = -2.0_rp*xi*CB(v)*dt/p**2 - SQRT(2.0_rp*CB(v)*(1.0_rp - xi**2))*dWxi/p
 
-    dphi = SQRT(2.0_rp*CB(v))*dWphi/(p*SQRT(1.0_rp - xi**2))
-    if ((dphi .GE. infinity) .OR. ISNAN(dphi)) then
-        dphi = 0.0_rp
-    end if
+		dphi = SQRT(2.0_rp*CB(v))*dWphi/(p*SQRT(1.0_rp - xi**2))
+		if ((dphi .GE. infinity) .OR. ISNAN(dphi)) then
+		    dphi = 0.0_rp
+		end if
 
-    pitch = ACOS(xi + dxi);
+		pitch = ACOS(xi + dxi);
 
-    dU1 = dp*COS(pitch);
-    dU2 = dp*SIN(pitch)*COS(dphi);
-    dU3 = dp*SIN(pitch)*SIN(dphi);
+		dU1 = dp*COS(pitch);
+		dU2 = dp*SIN(pitch)*COS(dphi);
+		dU3 = dp*SIN(pitch)*SIN(dphi);
 
-    
-    U(1) = (U1+dU1)*DOT_PRODUCT(b1,x) + (U2+dU2)*DOT_PRODUCT(b2,x) + (U3+dU3)*DOT_PRODUCT(b3,x)
-    U(2) = (U1+dU1)*DOT_PRODUCT(b1,y) + (U2+dU2)*DOT_PRODUCT(b2,y) + (U3+dU3)*DOT_PRODUCT(b3,y)
-    U(3) = (U1+dU1)*DOT_PRODUCT(b1,z) + (U2+dU2)*DOT_PRODUCT(b3,z) + (U3+dU3)*DOT_PRODUCT(b3,z)
+		write(6,'("dU1,dU2,dU3: ",3F20.16)') dU1,dU2,dU3
+		
+		U(1) = (U1+dU1)*DOT_PRODUCT(b1,x) + (U2+dU2)*DOT_PRODUCT(b2,x)&
+			+ (U3+dU3)*DOT_PRODUCT(b3,x)
+		U(2) = (U1+dU1)*DOT_PRODUCT(b1,y) + (U2+dU2)*DOT_PRODUCT(b2,y)&
+			+ (U3+dU3)*DOT_PRODUCT(b3,y)
+		U(3) = (U1+dU1)*DOT_PRODUCT(b1,z) + (U2+dU2)*DOT_PRODUCT(b3,z)&
+			+ (U3+dU3)*DOT_PRODUCT(b3,z)
+	end if
 end subroutine include_collisions
 
 
@@ -574,6 +595,10 @@ subroutine save_params_ss(params)
 		units = params%cpp%time
 		call save_to_hdf5(h5file_id,dset,units*cparams_ss%dTau*cparams_ss%Tau,attr)
 
+		dset = TRIM(gname) // "/subcycling_iterations"
+		attr = "KORC iterations per collision"
+		call save_to_hdf5(h5file_id,dset,cparams_ss%subcycling_iterations,attr)
+
 		dset = TRIM(gname) // "/Ec"
 		attr = "Critical electric field"
 		units = params%cpp%Eo
@@ -622,7 +647,7 @@ subroutine deallocate_collisions_params(params)
 	if (params%collisions) then
 		SELECT CASE (TRIM(params%collisions_model))
 			CASE (MODEL1)
-				write(6,'("Something to be done")')
+!				write(6,'("Something to be done")')
 			CASE (MODEL2)
 				call deallocate_params_ms()
 			CASE DEFAULT

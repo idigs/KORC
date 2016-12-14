@@ -13,7 +13,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
 % ST.RT = radialTransport(ST);
 
@@ -41,7 +41,7 @@ ST.data = loadData(ST);
 
 % ST.VS = identifyVisibleParticles(ST);
 
-ST.SD = syntheticDiagnosticSynchrotron(ST,false);
+% ST.SD = syntheticDiagnosticSynchrotron(ST,false);
 
 % save('energy_limit','ST')
 end
@@ -60,7 +60,7 @@ for ii=1:length(info.Groups)
     end
 end
 
-% params.simulation.num_snapshots = 93;
+% params.simulation.num_snapshots = 500;
 % params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 end
 
@@ -143,12 +143,18 @@ st2 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_specie
 st3 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
 st4 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
 
-h1 = figure('Visible',ST.visible);
-h2 = figure('Visible',ST.visible);
-h3 = figure('Visible',ST.visible);
-h4 = figure('Visible',ST.visible);
-h5 = figure('Visible',ST.visible);
-h6 = figure('Visible',ST.visible);
+if ST.visible
+    visible = 'on';
+else
+    visible = 'off';
+end
+
+h1 = figure('Visible',visible);
+h2 = figure('Visible',visible);
+h3 = figure('Visible',visible);
+h4 = figure('Visible',visible);
+h5 = figure('Visible',visible);
+h6 = figure('Visible',visible);
 
 set(h1,'name','Energy conservation','numbertitle','off')
 set(h2,'name','Velocity components','numbertitle','off')
@@ -166,7 +172,6 @@ set(h6,'name','Energy statistics','numbertitle','off')
         for ii=1:size(tmp,1)
             tmp(ii,:) = ...
                 ( gammap(ii,:) - gammap(ii,1) )./gammap(ii,1);
-%             tmp(ii,:) = ST.data.(['sp' num2str(ss)]).gamma(ii,:)./ST.data.(['sp' num2str(ss)]).gamma(ii,1);
         end
         err(:,ss) = mean(tmp,1);
 %         maxerr(:,ss) = max(tmp,[],1);

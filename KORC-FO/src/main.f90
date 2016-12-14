@@ -8,8 +8,8 @@ program main
 	use korc_ppusher
 	use korc_interp
 	use korc_collisions
-	use initialize
-	use finalize
+	use korc_initialize
+	use korc_finalize
 
 	implicit none
 
@@ -35,6 +35,8 @@ program main
 	call compute_charcs_plasma_params(params,spp,EB)
 
 	call define_time_step(params)
+
+	call define_collisions_time_step(params)
 
 	call initialize_particle_pusher(params)
 
