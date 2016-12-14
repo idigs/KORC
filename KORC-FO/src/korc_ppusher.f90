@@ -147,7 +147,7 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 				! ! ! Splitting operator for including radiation and collisions
 
 				if (params%radiation .OR. params%collisions) then
-					gamma = sqrt( 1.0_rp + DOT_PRODUCT(U,U) )
+					gamma = SQRT( 1.0_rp + DOT_PRODUCT(U,U) )
 				end if
 		        spp(ii)%vars%V(:,pp) = U/gamma
 				spp(ii)%vars%gamma(pp) = gamma

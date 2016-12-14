@@ -927,7 +927,7 @@ cOp = struct;
 
 cOp.Te = 10.0*ST.params.qe; % Background electron temperature in Joules
 cOp.Ti = cOp.Te; % Background ion temperature in Joules
-cOp.ne = 1.0E21; % Background electron density in 1/m^3
+cOp.ne = 1.0E23; % Background electron density in 1/m^3
 cOp.Zeff = 10.0; % Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
 cOp.rD = ...
     sqrt( ST.params.ep*cOp.Te/(cOp.ne*ST.params.qe^2*(1 + cOp.Zeff*cOp.Te/cOp.Ti)) );
@@ -1070,6 +1070,9 @@ z = [0,0,1];
 dU1 = dp*cos(dpitch);
 dU2 = dp*sin(dpitch)*cos(dphi);
 dU3 = dp*sin(dpitch)*sin(dphi);
+
+
+disp(['Collisions: ' num2str(U1) ' , ' num2str(U2) ' , ' num2str(U3)])
 
 U(1) = (U1+dU1)*(b1*x') + (U2+dU2)*(b2*x') + (U3+dU3)*(b3*x');
 U(2) = (U1+dU1)*(b1*y') + (U2+dU2)*(b2*y') + (U3+dU3)*(b3*y');

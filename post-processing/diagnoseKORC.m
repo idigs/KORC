@@ -19,7 +19,7 @@ energyConservation(ST);
 
 % ST.CP = confined_particles(ST);
 
-% ST.PAD = pitchAngleDiagnostic(ST,30);
+ST.PAD = pitchAngleDiagnostic(ST,30);
 
 % ST.MMD = magneticMomentDiagnostic(ST,70);
 
@@ -60,7 +60,7 @@ for ii=1:length(info.Groups)
     end
 end
 
-% params.simulation.num_snapshots = 500;
+% params.simulation.num_snapshots = 400;
 % params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 end
 

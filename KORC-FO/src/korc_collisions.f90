@@ -415,13 +415,13 @@ subroutine include_collisions(params,B,U)
 		dU2 = dp*SIN(pitch)*COS(dphi);
 		dU3 = dp*SIN(pitch)*SIN(dphi);
 
-		write(6,'("dU1,dU2,dU3: ",3F20.16)') dU1,dU2,dU3
+!		write(6,'("xi,pitch,dU1,dU2,dU3: ",6F25.16)') U(1),U(2),U(3),U1,U2,U3
 		
 		U(1) = (U1+dU1)*DOT_PRODUCT(b1,x) + (U2+dU2)*DOT_PRODUCT(b2,x)&
 			+ (U3+dU3)*DOT_PRODUCT(b3,x)
 		U(2) = (U1+dU1)*DOT_PRODUCT(b1,y) + (U2+dU2)*DOT_PRODUCT(b2,y)&
 			+ (U3+dU3)*DOT_PRODUCT(b3,y)
-		U(3) = (U1+dU1)*DOT_PRODUCT(b1,z) + (U2+dU2)*DOT_PRODUCT(b3,z)&
+		U(3) = (U1+dU1)*DOT_PRODUCT(b1,z) + (U2+dU2)*DOT_PRODUCT(b2,z)&
 			+ (U3+dU3)*DOT_PRODUCT(b3,z)
 	end if
 end subroutine include_collisions

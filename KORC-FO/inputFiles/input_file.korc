@@ -1,8 +1,8 @@
 &input_parameters
-        t_steps = 500000 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+        t_steps = 1000000 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
         dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
         output_cadence = 10000 ! 1400 for saving each 100 gyro-periods
-        num_species = 1
+        num_species = 3
         radiation = .FALSE.
         collisions = .TRUE.
 		collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
@@ -18,15 +18,15 @@
 /
 
 &plasma_species
-        runaway = .FALSE. !
-        Ro = 1.5 !
-        Zo = 0.0 !
-        r = 0.3 !
-        Eo = 10.0E6 ! Initial energy in eV
-        etao = 10.0  ! Initial pitch angle
-        ppp = 2 ! Number of particles per process (mpi)
-        q = -1.0 ! Electric charge
-        m = 1.0 ! In units of electron mass
+        runaway = .FALSE., .FALSE., .FALSE. !
+        Ro = 1.5, 1.5, 1.5 !
+        Zo = 0.0, 0.0, 0.0 !
+        r = 0.3, 0.3, 0.3 !
+        Eo = 10.0E6, 10.0E6, 10.0E6 ! Initial energy in eV
+        etao = 5.0, 10.0, 15.0  ! Initial pitch angle
+        ppp = 100, 100, 100 ! Number of particles per process (mpi)
+        q = -1.0, -1.0, -1.0 ! Electric charge
+        m = 1.0, 1.0, 1.0 ! In units of electron mass
 /
 
 &analytic_mag_field_params
@@ -52,9 +52,9 @@
 /
 
 &CollisionParamsSingleSpecies
-        Te = 10.0 ! Background electron temperature in eV
-		Ti = 10.0 ! Background ion temperature in eV
-        ne = 1.0E21 ! Background electron density in 1/m^3
+        Te = 2.0 ! Background electron temperature in eV
+		Ti = 2.0 ! Background ion temperature in eV
+        ne = 2.0E20 ! Background electron density in 1/m^3
 		Zeff = 10.0 ! Effective atomic number
-		dTau = 1E-4 ! Subcycling time step in collisional time units (Tau)
+		dTau = 1E-3 ! Subcycling time step in collisional time units (Tau)
 /
