@@ -7,6 +7,7 @@ module korc_collisions
 
 	CHARACTER(LEN=*), PRIVATE, PARAMETER :: MODEL1 = 'SINGLE_SPECIES'
 	CHARACTER(LEN=*), PRIVATE, PARAMETER :: MODEL2 = 'MULTIPLE_SPECIES'
+    REAL(rp), PRIVATE, PARAMETER :: infinity = HUGE(1.0_rp)
 
 	TYPE, PRIVATE :: PARAMS_MS
 		INTEGER :: num_impurity_species
@@ -40,6 +41,7 @@ module korc_collisions
 		REAL(rp) :: Tau ! Collisional time
 		REAL(rp) :: Ec ! Critical electric field
 		REAL(rp) :: dTau ! Subcycling time step in collisional time units (Tau)
+        INTEGER(ip) :: subcycling_iterations
 	END TYPE PARAMS_SS
 
 	TYPE(PARAMS_MS), PRIVATE :: cparams_ms
@@ -346,8 +348,12 @@ subroutine include_collisions(params,B,U,dt)
 	REAL(rp), DIMENSION(3) :: x = (/1.0_rp,0.0_rp,0.0_rp/)
 	REAL(rp), DIMENSION(3) :: y = (/0.0_rp,1.0_rp,0.0_rp/)
 	REAL(rp), DIMENSION(3) :: z = (/0.0_rp,0.0_rp,1.0_rp/)
+    REAL(rp) :: rnd_num1, rnd_num2
 	REAL(rp) :: U1, U2, U3
-	REAL(rp) :: dp, dxi, dphi, dWp, dWtheta, dWxi, rnd_num1, rnd_num2
+	REAL(rp) :: dU1, dU2, dU3
+	REAL(rp) :: dp, dxi, dphi
+	REAL(rp) :: dWp, dWphi, dWxi
+	REAL(rp) :: pitch
 	REAL(rp) :: xi ! cosine of pitch angle
 	REAL(rp) :: g ! Gamma factor
 	REAL(rp) :: v ! Velocity magnitude
@@ -371,30 +377,32 @@ subroutine include_collisions(params,B,U,dt)
 	SQRT(dt)*SQRT(-2.0_rp*LOG(1.0_rp-rnd_num1))*COS(2.0_rp*C_PI*rnd_num2);
 
 	call RANDOM_NUMBER(rnd_num1)
-	dWtheta = C_PI*rnd_num1*SQRT(dt);
+	dWphi = 2.0_rp*C_PI*rnd_num1*SQRT(dt);
 
 	call RANDOM_NUMBER(rnd_num1)
 	dWxi = rnd_num1*SQRT(dt);
 
-!CA = ST.cOp.CA(v);
-!CB = ST.cOp.CB(v);
-!CF = ST.cOp.CF(v);
-!	dp = ( -CF + 2*CA/p + ST.cOp.Gamma*ST.cOp.fun(v)/(p^2*sqrt(1 + p^2)) )*dt + ...
-!    sqrt(2*CA)*dWp;
-!dxi = -2*xi*CB*dt/p^2 - sqrt(2*CB*(1 - xi^2))*dWxi/p;
-!dphi = sqrt(2*CB)*dWphi/(p*sqrt(1 - xi^2));
-!if ~isfinite(dphi)
-!    dphi = 0;
-!end
-!dpitch = acos(xi + dxi);
 
-!dU1 = dp*cos(dpitch);
-!dU2 = dp*sin(dpitch)*cos(dphi);
-!dU3 = dp*sin(dpitch)*sin(dphi);
+	dp = ( -CF(v) + 2.0_rp*CA(v)/p + cparams_ss%Gammac*fun(v)/(p**2*SQRT(1.0_rp + p**2)) )*dt +&
+    SQRT(2.0_rp*CA(v))*dWp
 
-!U(1) = (U1+dU1)*(b1*x') + (U2+dU2)*(b2*x') + (U3+dU3)*(b3*x');
-!U(2) = (U1+dU1)*(b1*y') + (U2+dU2)*(b2*y') + (U3+dU3)*(b3*y');
-!U(3) = (U1+dU1)*(b1*z') + (U2+dU2)*(b2*z') + (U3+dU3)*(b3*z');
+    dxi = -2.0_rp*xi*CB(v)*dt/p**2 - SQRT(2.0_rp*CB(v)*(1.0_rp - xi**2))*dWxi/p
+
+    dphi = SQRT(2.0_rp*CB(v))*dWphi/(p*SQRT(1.0_rp - xi**2))
+    if ((dphi .GE. infinity) .OR. ISNAN(dphi)) then
+        dphi = 0.0_rp
+    end if
+
+    pitch = ACOS(xi + dxi);
+
+    dU1 = dp*COS(pitch);
+    dU2 = dp*SIN(pitch)*COS(dphi);
+    dU3 = dp*SIN(pitch)*SIN(dphi);
+
+    
+    U(1) = (U1+dU1)*DOT_PRODUCT(b1,x) + (U2+dU2)*DOT_PRODUCT(b2,x) + (U3+dU3)*DOT_PRODUCT(b3,x)
+    U(2) = (U1+dU1)*DOT_PRODUCT(b1,y) + (U2+dU2)*DOT_PRODUCT(b2,y) + (U3+dU3)*DOT_PRODUCT(b3,y)
+    U(3) = (U1+dU1)*DOT_PRODUCT(b1,z) + (U2+dU2)*DOT_PRODUCT(b3,z) + (U3+dU3)*DOT_PRODUCT(b3,z)
 end subroutine include_collisions
 
 

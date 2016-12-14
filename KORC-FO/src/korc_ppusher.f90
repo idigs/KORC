@@ -145,7 +145,7 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 				end if
 
 				if (params%collisions) then
-!					call include_collisions(params,spp(ii)%vars%B(:,pp),U,dt)
+					call include_collisions(params,spp(ii)%vars%B(:,pp),U,dt)
 				end if
 				! ! ! Splitting operator for including radiation and collisions
 
