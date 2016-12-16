@@ -1,7 +1,7 @@
 &input_parameters
-        t_steps = 1000000 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+        t_steps = 300000000 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
         dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
-        output_cadence = 10000 ! 1400 for saving each 100 gyro-periods
+        output_cadence = 1000000 ! 1400 for saving each 100 gyro-periods
         num_species = 3
         radiation = .FALSE.
         collisions = .TRUE.
@@ -53,8 +53,8 @@
 
 &CollisionParamsSingleSpecies
         Te = 2.0 ! Background electron temperature in eV
-		Ti = 2.0 ! Background ion temperature in eV
+	Ti = 2.0 ! Background ion temperature in eV
         ne = 2.0E20 ! Background electron density in 1/m^3
-		Zeff = 10.0 ! Effective atomic number
-		dTau = 1E-3 ! Subcycling time step in collisional time units (Tau)
+	Zeff = 10.0 ! Effective atomic number
+	dTau = 1E-3 ! Subcycling time step in collisional time units (Tau)
 /

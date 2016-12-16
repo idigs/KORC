@@ -191,7 +191,7 @@ end
 
 % parametricShift(ST);
 
-% ST.P = synchrotronSpectrum(ST);
+ST.P = synchrotronSpectrum(ST);
 
 munlock
 
@@ -1236,31 +1236,31 @@ for ii=2:ST.params.numSnapshots
         s = 1/(1 + t*t'); % variable 's' in paper
         
         U_L = s*(up + (up*t')*t + cross(up,t));
-%         U = U_L; % Comment or uncomment
+        U = U_L; % Comment or uncomment
         % % % Leap-frog scheme for Lorentz force % % %
         
-%         % % % Leap-frog scheme for the radiation damping force % % %
+% %         % % % Leap-frog scheme for the radiation damping force % % %
         U_eff = 0.5*(U_L + U);
         gamma_eff = sqrt(1 + U_eff*U_eff');
         V_eff = U_eff/gamma_eff;
+%         
+%         F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
+%             cross(B,cross(B,V_eff)) );
+%         vec = E + cross(V_eff,B);
+%         F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
+% 
+%         U_R = U_R + a*( F2 + F3 );
+%         U = U_L + U_R - U;
+% %         % % % Leap-frog scheme for the radiation damping force % % %
+%         
+%         % % % Collisions % % %
+%         if mod((ii-1)*ST.params.cadence + jj,ST.cOp.subcyclingIter) == 0
+%             [U,dummyWcoll] = collisionOperator(ST,XX,U/sqrt( 1 + U*U' ),dt*ST.cOp.subcyclingIter);
+%         end
+%         % % % Collisions % % %        
+%         gamma = sqrt( 1 + U*U' ); % Comment or uncomment
         
-        F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
-            cross(B,cross(B,V_eff)) );
-        vec = E + cross(V_eff,B);
-        F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
-
-        U_R = U_R + a*( F2 + F3 );
-        U = U_L + U_R - U;
-%         % % % Leap-frog scheme for the radiation damping force % % %
-        
-        % % % Collisions % % %
-        if mod((ii-1)*ST.params.cadence + jj,ST.cOp.subcyclingIter) == 0
-            [U,dummyWcoll] = collisionOperator(ST,XX,U/sqrt( 1 + U*U' ),dt*ST.cOp.subcyclingIter);
-        end
-        % % % Collisions % % %
-        
-        gamma = sqrt( 1 + U*U' ); % Comment or uncomment
-        V = U/gamma; % Comment or uncomment
+        V = U/gamma;
 
         zeta_previous = atan2(XX(2),XX(1));
         if zeta_previous < 0

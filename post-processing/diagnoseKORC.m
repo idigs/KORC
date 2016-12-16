@@ -1,25 +1,28 @@
-function ST = diagnoseKORC(path,visible)
+function ST = diagnoseKORC(path,visible,range)
 close all
 
 ST = struct;
 ST.path = path;
 ST.visible = visible;
 
+ST.range = range;
+ST.num_snapshots = ST.range(2) - ST.range(1) + 1;
+
 ST.params = loadSimulationParameters(ST);
 
 ST.time = ...
     ST.params.simulation.dt*double(ST.params.simulation.output_cadence)*...
-    double(0:1:ST.params.simulation.num_snapshots);
+    double(ST.range(1):1:ST.range(2));
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
 % ST.RT = radialTransport(ST);
 
 % ST.CP = confined_particles(ST);
 
-ST.PAD = pitchAngleDiagnostic(ST,30);
+% ST.PAD = pitchAngleDiagnostic(ST,30);
 
 % ST.MMD = magneticMomentDiagnostic(ST,70);
 
@@ -39,9 +42,7 @@ ST.PAD = pitchAngleDiagnostic(ST,30);
 
 % ST.P = synchrotronSpectrum(ST,true);
 
-% ST.VS = identifyVisibleParticles(ST);
-
-% ST.SD = syntheticDiagnosticSynchrotron(ST,false);
+ST.SD = syntheticDiagnosticSynchrotron(ST,false);
 
 % save('energy_limit','ST')
 end
@@ -59,9 +60,6 @@ for ii=1:length(info.Groups)
             h5read(info.Filename,['/' name '/' subname]);
     end
 end
-
-% params.simulation.num_snapshots = 400;
-% params.simulation.t_steps = params.simulation.output_cadence*params.simulation.num_snapshots;
 end
 
 function data = loadData(ST)
@@ -73,21 +71,23 @@ else
     list = {'X','V','B'};
 end
 
+it = ST.range(1):1:ST.range(2);
+
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
     for ss=1:ST.params.simulation.num_species
         tnp = double(ST.params.species.ppp(ss)*ST.params.simulation.nmpi);
         
         data.(['sp' num2str(ss)]).(list{ll}) = ...
-            zeros(3,tnp,ST.params.simulation.num_snapshots+1);
+            zeros(3,tnp,ST.num_snapshots);
         
         for ff=1:ST.params.simulation.nmpi
             filename = [ST.path 'file_' num2str(ff-1) '.h5'];
             indi = (ff - 1)*double(ST.params.species.ppp(ss)) + 1;
             indf = ff*double(ST.params.species.ppp(ss));
-            for ii=1:(ST.params.simulation.num_snapshots+1)
+            for ii=1:ST.num_snapshots
                 dataset = ...
-                    ['/' num2str((ii-1)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
+                    ['/' num2str(it(ii)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
                     '/' list{ll}];
                 
                 data.(['sp' num2str(ss)]).(list{ll})(:,indi:indf,ii) = ...
@@ -99,8 +99,8 @@ for ll=1:length(list)
 end
 
 
-list = {'eta','gamma','Prad','Pin','flag','mu'};
-% list = {'eta','gamma','Prad','flag'};
+% list = {'eta','gamma','Prad','Pin','flag','mu'};
+list = {'eta','gamma','Prad','flag'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -108,9 +108,9 @@ for ll=1:length(list)
         tnp = double(ST.params.species.ppp(ss)*ST.params.simulation.nmpi);
         
         data.(['sp' num2str(ss)]).(list{ll}) = ...
-            zeros(tnp,ST.params.simulation.num_snapshots);
+            zeros(tnp,ST.num_snapshots);
         
-        for ii=1:(ST.params.simulation.num_snapshots+1)           
+        for ii=1:ST.num_snapshots
             for ff=1:ST.params.simulation.nmpi
                 
                 filename = [ST.path 'file_' num2str(ff-1) '.h5'];
@@ -118,7 +118,7 @@ for ll=1:length(list)
                 indf = ff*double(ST.params.species.ppp(ss));
                 
                 dataset = ...
-                    ['/' num2str((ii-1)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
+                    ['/' num2str(it(ii)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
                     '/' list{ll}];
                 
                 data.(['sp' num2str(ss)]).(list{ll})(indi:indf,ii) = ...
@@ -133,28 +133,21 @@ end
 end
 
 function energyConservation(ST)
+err = zeros(ST.num_snapshots,ST.params.simulation.num_species);
+maxerr = zeros(ST.num_snapshots,ST.params.simulation.num_species);
+minerr = zeros(ST.num_snapshots,ST.params.simulation.num_species);
 
-err = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
-maxerr = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
-minerr = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
+st1 = zeros(ST.num_snapshots,ST.params.simulation.num_species);
+st2 = zeros(ST.num_snapshots,ST.params.simulation.num_species);
+st3 = zeros(ST.num_snapshots,ST.params.simulation.num_species);
+st4 = zeros(ST.num_snapshots,ST.params.simulation.num_species);
 
-st1 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
-st2 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
-st3 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
-st4 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
-
-if ST.visible
-    visible = 'on';
-else
-    visible = 'off';
-end
-
-h1 = figure('Visible',visible);
-h2 = figure('Visible',visible);
-h3 = figure('Visible',visible);
-h4 = figure('Visible',visible);
-h5 = figure('Visible',visible);
-h6 = figure('Visible',visible);
+h1 = figure('Visible',ST.visible);
+h2 = figure('Visible',ST.visible);
+h3 = figure('Visible',ST.visible);
+h4 = figure('Visible',ST.visible);
+h5 = figure('Visible',ST.visible);
+h6 = figure('Visible',ST.visible);
 
 set(h1,'name','Energy conservation','numbertitle','off')
 set(h2,'name','Velocity components','numbertitle','off')
@@ -287,22 +280,22 @@ N = 10;
 tmax = max(ST.time);
 tmin = min(ST.time);
 
-mean_fx = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
-std_fx = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
-skewness_fx = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
-kurtosis_fx = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
+mean_fx = zeros(ST.params.simulation.num_species,ST.num_snapshots);
+std_fx = zeros(ST.params.simulation.num_species,ST.num_snapshots);
+skewness_fx = zeros(ST.params.simulation.num_species,ST.num_snapshots);
+kurtosis_fx = zeros(ST.params.simulation.num_species,ST.num_snapshots);
 
-mean_fz = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
-std_fz = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
-skewness_fz = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
-kurtosis_fz = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
+mean_fz = zeros(ST.params.simulation.num_species,ST.num_snapshots);
+std_fz = zeros(ST.params.simulation.num_species,ST.num_snapshots);
+skewness_fz = zeros(ST.params.simulation.num_species,ST.num_snapshots);
+kurtosis_fz = zeros(ST.params.simulation.num_species,ST.num_snapshots);
 
-stats = zeros(2,ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
+stats = zeros(2,ST.params.simulation.num_species,ST.num_snapshots);
 
-fx = zeros(ST.params.simulation.num_species,nbins,ST.params.simulation.num_snapshots+1);
-x = zeros(ST.params.simulation.num_species,nbins,ST.params.simulation.num_snapshots+1);
-fz = zeros(ST.params.simulation.num_species,nbins,ST.params.simulation.num_snapshots+1);
-z = zeros(ST.params.simulation.num_species,nbins,ST.params.simulation.num_snapshots+1);
+fx = zeros(ST.params.simulation.num_species,nbins,ST.num_snapshots);
+x = zeros(ST.params.simulation.num_species,nbins,ST.num_snapshots);
+fz = zeros(ST.params.simulation.num_species,nbins,ST.num_snapshots);
+z = zeros(ST.params.simulation.num_species,nbins,ST.num_snapshots);
 
 if ST.visible
     h1 = figure('Visible','on');
@@ -348,7 +341,7 @@ for ss=1:ST.params.simulation.num_species
         skewness_fz(ss,:) = skewness(Eo,0,1);
         kurtosis_fz(ss,:) = kurtosis(Eo,1,1);
         
-        for ii=1:ST.params.simulation.num_snapshots+1
+        for ii=1:ST.num_snapshots
             minVal = min(min( eta(:,ii) ));
             maxVal = max(max( eta(:,ii) ));
             x(ss,:,ii) = linspace(minVal,maxVal,nbins);
@@ -398,32 +391,6 @@ for ss=1:ST.params.simulation.num_species
     axis on
     xlabel('Time (s)','Interpreter','latex','FontSize',16)
     ylabel('std($\Delta |\theta|/\theta_0$) ($\%$)','Interpreter','latex','FontSize',16)
-    
-    
-%     tmp = ...
-%         ST.data.(['sp' num2str(ss)]).gamma(bool,:)*ST.params.species.m(ss)*ST.params.scales.v^2/abs(ST.params.species.q(ss));
-%     tmp = tmp/1E6;
-%     if ~isempty(tmp)
-%         minVal = min(min( tmp ));
-%         maxVal = max(max( tmp ));
-%         y = linspace(minVal,maxVal,nbins);
-%         fy = zeros(nbins,ST.params.simulation.num_snapshots+1);
-%         for ii=1:ST.params.simulation.num_snapshots+1
-%             [fy(:,ii),~] = hist(tmp(:,ii),y);
-%         end
-%     end
-%     
-%     figure(h0)
-%     subplot(double(ST.params.simulation.num_species),1,double(ss))
-%     if ~isempty(tmp)
-%         surf(ST.time,y,log10(fy),'LineStyle','none')
-%         axis([tmin tmax minVal maxVal])
-%     end
-%     box on
-%     axis on
-%     xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',16)
-%     ylabel('$\mathcal{E}(t)$ (MeV)','Interpreter','latex','FontSize',16)
-%     colormap(jet(256))
 end
 
 if ST.visible
@@ -480,7 +447,7 @@ ylabel('kurtosis($\theta$)','Interpreter','latex','FontSize',16)
 box on
 grid on
 
-offset = floor(double(ST.params.simulation.num_snapshots+1)/N);
+offset = floor(double(ST.num_snapshots)/N);
 
 % z = linspace(-4,4,100);
 % fz = exp( -0.5*z.^2 )/sqrt(2*pi);
@@ -535,52 +502,6 @@ for ii=1:N
     grid on
 end
 
-
-% % % Poloidal angle distribution function % %
-% 
-% ft = zeros(ST.params.simulation.num_species,nbins,N);
-% t = zeros(ST.params.simulation.num_species,nbins,N);
-% 
-% for ii=1:N
-%     it = ii*offset;
-%     for ss=1:ST.params.simulation.num_species
-% %         I = find( any(ST.data.sp3.eta > 90, 2) == 0 );
-% %         X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,I,it));
-%         X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,:,it));
-%         theta = atan2(X(3,:), sqrt(X(1,:).^2 + X(2,:).^2) - ST.params.fields.Ro);
-%         theta(theta < 0) = theta(theta < 0) + 2*pi;
-%         theta = (180/pi)*theta;
-%         [ft(ss,:,ii),t(ss,:,ii)] = hist(theta,nbins);
-%         dt = mean(diff(t(ss,:,ii)));
-%         ft(ss,:,ii) = ft(ss,:,ii)/(sum(ft(ss,:,ii))*dt);
-%     end
-% end
-% 
-% barcolor = [1,0,0;0,1,0;0,0,1;0.5,0.5,1.0;1.0,0.2,0.2];
-% 
-% h4 = figure('Visible',ST.visible);
-% set(h4,'name','PDF poloidal angle','numbertitle','off')
-% for ii=1:N
-%     it = ii*offset;
-%     nc = floor(N/2);
-%     nr = floor(N/nc);
-%     figure(h4)
-%     subplot(nr,nc,ii)
-%     hold on
-%     for ss=1:ST.params.simulation.num_species
-%         plot(t(ss,:,ii),ft(ss,:,ii),'o:')
-% %         bar(t(ss,:,ii),ft(ss,:,ii),'FaceColor',barcolor(ss,:))
-%     end
-%     currentAxis = gca;
-% %     set(currentAxis.Children(:),'FaceAlpha',0.2);
-%     hold off
-%     xlim([0 360])
-%     title(['Time: ' num2str(ST.time(it))],'Interpreter','latex','FontSize',11)
-%     xlabel('$\theta$','Interpreter','latex','FontSize',16)
-%     box on
-%     grid on
-% end
-
 saveas(h,[ST.path 'variability'],'fig')
 % saveas(h0,[ST.path 'Energy_PDF_vs_time'],'fig')
 saveas(h1,[ST.path 'pitch_vs_time'],'fig')
@@ -598,12 +519,12 @@ MMD = struct;
 tmax = max(ST.time);
 tmin = min(ST.time);
 
-mean_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
-std_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
-skewness_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
-kurtosis_f = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
+mean_f = zeros(ST.params.simulation.num_species,ST.num_snapshots);
+std_f = zeros(ST.params.simulation.num_species,ST.num_snapshots);
+skewness_f = zeros(ST.params.simulation.num_species,ST.num_snapshots);
+kurtosis_f = zeros(ST.params.simulation.num_species,ST.num_snapshots);
 
-fx = zeros(ST.params.simulation.num_species,numBins,ST.params.simulation.num_snapshots+1);
+fx = zeros(ST.params.simulation.num_species,numBins,ST.num_snapshots);
 x = zeros(ST.params.simulation.num_species,numBins);
 
 if ST.visible
@@ -630,7 +551,7 @@ for ss=1:ST.params.simulation.num_species
         maxVal = max(max( tmp ));
         x(ss,:) = linspace(minVal,maxVal,numBins);
         
-        for ii=1:ST.params.simulation.num_snapshots+1
+        for ii=1:ST.num_snapshots
             try
                 [fx(ss,:,ii),~] = hist(tmp(:,ii),x(ss,:));
                 fx(ss,:,ii) = fx(ss,:,ii)/( trapz(x(ss,:),fx(ss,:,ii)) );
@@ -694,7 +615,7 @@ end
 
 function poloidalPlaneDistributions(ST,nbins)
 N = 3;
-offset = floor(double(ST.params.simulation.num_snapshots+1)/N);
+offset = floor(double(ST.num_snapshots)/N);
 
 for ss=1:ST.params.simulation.num_species
     for ii=1:N
@@ -814,10 +735,10 @@ Ro = ST.params.fields.Ro; % Major radius in meters.
 lambda = ST.params.fields.lambda;
 qo = ST.params.fields.qo;
 
-st1 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
-st2 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
-st3 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
-st4 = zeros(ST.params.simulation.num_snapshots+1,ST.params.simulation.num_species);
+st1 = zeros(ST.num_snapshots,ST.params.simulation.num_species);
+st2 = zeros(ST.num_snapshots,ST.params.simulation.num_species);
+st3 = zeros(ST.num_snapshots,ST.params.simulation.num_species);
+st4 = zeros(ST.num_snapshots,ST.params.simulation.num_species);
 
 h = figure('Visible',ST.visible);
 set(h,'name','Angular momentum conservation','numbertitle','off')
@@ -831,12 +752,12 @@ for ss=1:ST.params.simulation.num_species
     m = ST.params.species.m(ss);
     q = ST.params.species.q(ss);
     
-    I = zeros(num_part,ST.params.simulation.num_snapshots+1);
-    err = zeros(1,ST.params.simulation.num_snapshots+1);
-    minerr = zeros(1,ST.params.simulation.num_snapshots+1);
-    maxerr = zeros(1,ST.params.simulation.num_snapshots+1);
+    I = zeros(num_part,ST.num_snapshots);
+    err = zeros(1,ST.num_snapshots);
+    minerr = zeros(1,ST.num_snapshots);
+    maxerr = zeros(1,ST.num_snapshots);
     
-    for ii=1:ST.params.simulation.num_snapshots+1
+    for ii=1:ST.num_snapshots
         X = squeeze( ST.data.(['sp' num2str(ss)]).X(:,pin,ii) );
         V = squeeze( ST.data.(['sp' num2str(ss)]).V(:,pin,ii) );
         gammap = squeeze( ST.data.(['sp' num2str(ss)]).gamma(pin,ii) )';
@@ -1152,7 +1073,7 @@ axis square
 xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',16)
 ylabel('$\%$ of confined RE','Interpreter','latex','FontSize',16)
 saveas(h0,[ST.path 'particle_loss'],'fig')
-close(h0)
+% close(h0)
 
 h1=figure;
 set(h1,'Visible',ST.visible,'name','IC','numbertitle','off')
@@ -1171,8 +1092,6 @@ for ss=1:ST.params.simulation.num_species
     subplot(1,2,1)
     hold on
     plot(R,Z,'s','MarkerSize',4,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
-%     plot(R,Z,'.','MarkerSize',10,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
-%     plot3(R,Z,Prad,'s','MarkerSize',4,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
     hold off
     legends{ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
 end
@@ -1225,7 +1144,7 @@ axis square
 xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
 ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
 saveas(h1,[ST.path 'IC'],'fig')
-close(h1)
+% close(h1)
 end
 
 function energyLimit(ST)
@@ -1400,9 +1319,9 @@ for ss=1:ST.params.simulation.num_species
     gammap = ST.data.(['sp' num2str(ss)]).gamma(bool,:);
     eta = pi*ST.data.(['sp' num2str(ss)]).eta(bool,:)/180;
     
-    gammapo = repmat(ST.params.species.gammao(ss),S,ST.params.simulation.num_snapshots+1);
+    gammapo = repmat(ST.params.species.gammao(ss),S,ST.num_snapshots);
     vo = ST.params.scales.v*sqrt(1 - 1./gammapo.^2);
-    etao = pi*repmat(ST.params.species.etao(ss),S,ST.params.simulation.num_snapshots+1)/180;
+    etao = pi*repmat(ST.params.species.etao(ss),S,ST.num_snapshots)/180;
     
 %     gammapo = gammap;
 %     etao = eta;
@@ -1525,8 +1444,8 @@ function stackedPlots(ST,nbins)
 tmax = max(ST.time);
 tmin = min(ST.time);
 
-fx = zeros(ST.params.simulation.num_species,nbins,ST.params.simulation.num_snapshots+1);
-Prad = zeros(ST.params.simulation.num_species,ST.params.simulation.num_snapshots+1);
+fx = zeros(ST.params.simulation.num_species,nbins,ST.num_snapshots);
+Prad = zeros(ST.params.simulation.num_species,ST.num_snapshots);
 x = zeros(ST.params.simulation.num_species,nbins);
 
 h2 = figure;
@@ -1540,7 +1459,7 @@ for ss=1:ST.params.simulation.num_species
     maxVal = max(max( data ));
     x(ss,:) = linspace(minVal,maxVal,nbins);
     
-    for ii=1:ST.params.simulation.num_snapshots+1
+    for ii=1:ST.num_snapshots
         [fx(ss,:,ii),~] = hist(data(:,ii),x(ss,:));
         Prad(ss,ii) = mean(diff(x(ss,:)))*sum(x(ss,:).*fx(ss,:,ii));
     end
@@ -1606,10 +1525,6 @@ end
 function P = synchrotronSpectrum(ST,filtered)
 disp('Calculating spectrum of synchrotron radiation...')
 P = struct;
-
-numSnapshots = 50;
-it1 = ST.params.simulation.num_snapshots + 1 - numSnapshots;
-it2 = ST.params.simulation.num_snapshots + 1;
 
 geometry = 'cylindrical';
 
@@ -1693,8 +1608,8 @@ for ss=1:num_species
         Psyn = zeros(NZ,NR);
     end
     
-    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag(:,1:end),2));
-    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta(1:end) < 90,2) );
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
     bool = pin;% & passing;
     
     X = [];
@@ -1702,7 +1617,7 @@ for ss=1:num_species
     gammap = [];
     Prad = [];
     eta = [];
-    for ii=it1:it2
+    for ii=1:ST.num_snapshots
         X = [X,ST.data.(['sp' num2str(ss)]).X(:,bool,ii)];
         V = [V,ST.data.(['sp' num2str(ss)]).V(:,bool,ii)];
         gammap = [gammap;ST.data.(['sp' num2str(ss)]).gamma(bool,ii)];
@@ -2001,131 +1916,6 @@ else
 end
 
 disp('Spectrum of synchrotron radiation: done!')
-end
-
-function VS = identifyVisibleParticles_prototype(ST)
-VS = struct;
-
-% Radial position of inner wall
-Riw = 1; % in meters
-
-% Radial and vertical position of the camera
-Rc = 2.38; % in meters
-Zc = 0.076; % in meters
-
-it = ST.params.simulation.num_snapshots + 1;
-
-num_species = double(ST.params.simulation.num_species);
-
-h = figure;
-numPanels = ceil(sqrt(num_species));
-
-for ss=1:num_species
-    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2)); % confined particles
-    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) ); % passing particles
-    % If bool = pin & passing, we consider confined passing particles
-    % If bool = pin, we consider passing and trapped particles
-    bool = pin;
-    np = numel(find(bool == 1));
-    
-    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,it));
-    V = squeeze(ST.data.(['sp' num2str(ss)]).V(:,bool,it));
-    gammap = ST.data.(['sp' num2str(ss)]).gamma(bool,it);
-    
-    % mea = maximum emission angle of synchrotron radiation
-    mea = 1./gammap; % in rad. \psi ~ 1/\gamma
-    
-    xo = X(1,:);
-    yo = X(2,:);
-    zo = X(3,:);
-    
-    v = sqrt(sum(V.^2,1));
-    vox = V(1,:)./v;
-    voy = V(2,:)./v;
-    voz = V(3,:)./v;
-    
-    % First we find the Z position where V hits the wall at Rc
-    theta_f = zeros(1,np);
-    Z_f = zeros(1,np);
-    hitInnerWall = true(1,np);
-    for ii=1:np
-        p = zeros(1,3);
-        
-        % polinomial coefficients p(1)*x^2 + p(2)*x + p(3) = 0
-        p(1) = vox(ii)^2 + voy(ii)^2;
-        p(2) = 2*(xo(ii)*vox(ii) + yo(ii)*voy(ii));
-        p(3) = xo(ii)^2 + yo(ii)^2 - Rc^2;
-        
-        r = roots(p);
-        if all(r>0) || all(r<0)
-            error(['Something wrong at ii=' num2str(ii)])
-        end        
-        t = max(r);
-        Z_f(ii) = zo(ii) + voz(ii)*t;
-        theta_f(ii) = atan2(yo(ii) + voy(ii)*t,xo(ii) + vox(ii)*t);
-        if (theta_f(ii) < 0)
-            theta_f(ii) = theta_f(ii) + 2*pi;
-        end
-        
-        p(3) = xo(ii)^2 + yo(ii)^2 - Riw^2;
-        r = roots(p);
-        if isreal(r) && any(r>0)
-            hitInnerWall(ii) = false;
-        end
-    end
-    
-    Ro = sqrt(xo(~hitInnerWall).^2 + yo(~hitInnerWall).^2);
-    Zo = zo(~hitInnerWall);
-    figure(h);
-    subplot(numPanels,numPanels,ss)
-    plot(Ro,Zo,'r.')
-    axis equal
-    
-    xo(~hitInnerWall) = [];
-    yo(~hitInnerWall) = [];
-    zo(~hitInnerWall) = [];
-    vox(~hitInnerWall) = [];
-    voy(~hitInnerWall) = [];
-    voz(~hitInnerWall) = [];
-    theta_f(~hitInnerWall) = [];
-    mea(~hitInnerWall) = [];
-    
-    nvp = numel(find(hitInnerWall == false));
-    
-    Ro = sqrt(xo.^2 + yo.^2);
-    figure(h);
-    subplot(numPanels,numPanels,ss)
-    hold on
-    plot(Ro,zo,'k.')
-    hold off
-    
-    % Then, we calculate the angle between V and the position of the camera
-    xc = Rc*cos(theta_f);
-    yc = Rc*sin(theta_f);
-    
-    ax = xc - xo;
-    ay = yc - yo;
-    az = Zc - zo;
-    
-    a = sqrt(ax.^2 + ay.^2 + az.^2);
-    
-    ax = ax./a;
-    ay = ay./a;
-    az = az./a;
-    
-    angle = acos(ax.*vox + ay.*voy + az.*voz)';
-    visible = angle < mea;
-    
-    Ro = sqrt(xo(visible).^2 + yo(visible).^2);
-    figure(h);
-    subplot(numPanels,numPanels,ss)
-    hold on
-    plot(Ro,zo(visible),'g.','MarkerSize',18)
-    hold off
-    
-end
-
-
 end
 
 function [vp,psi,camPos] = identifyVisibleParticles(X,V,gammap,option)
@@ -2604,11 +2394,6 @@ function SD = syntheticDiagnosticSynchrotron(ST,compare)
 SD = struct;
 disp('Starting synchrotron synthetic diagnostic...')
 
-% Here we define many snapshots will be used
-numSnapshots = 50;
-it1 = ST.params.simulation.num_snapshots + 1 - numSnapshots;
-it2 = ST.params.simulation.num_snapshots + 1;
-
 lch = 1E2;
 lchnm = 1E7;
 Pch = 1E-7;
@@ -2617,10 +2402,10 @@ Pch = 1E-7;
 num_species = double(ST.params.simulation.num_species);
 
 % Resolution in wavelength
-N = 75;
+N = 100;
 % Wavelength range (450 nm - 950 nm for visible light).
-lambda_min = 742E-9;% in meters
-lambda_max = 752E-9;% in meters
+lambda_min = 450E-9;% in meters
+lambda_max = 950E-9;% in meters
 lambda = linspace(lambda_min,lambda_max,N);
 lambda = lch*lambda; % in cm
 
@@ -2651,8 +2436,8 @@ for ss=1:num_species
     m = ST.params.species.m(ss);
     Ro = ST.params.fields.Ro;
     
-    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag(:,it1:it2),2));
-    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta(it1:it2) < 90,2) );
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
     bool = pin;% & passing;
     
     X = [];
@@ -2662,7 +2447,7 @@ for ss=1:num_species
     eta = [];
     B = [];
     E = [];
-    for ii=it1:it2
+    for ii=1:ST.num_snapshots
         X = [X,ST.data.(['sp' num2str(ss)]).X(:,bool,ii)];
         V = [V,ST.data.(['sp' num2str(ss)]).V(:,bool,ii)];
         gammae = [gammae;ST.data.(['sp' num2str(ss)]).gamma(bool,ii)];
@@ -2776,21 +2561,7 @@ for ss=1:num_species
                 clockwise(clockwise<0) = clockwise(clockwise<0) + 2*pi;
                 
                 angle = anticlockwise - clockwise;
-                % Rotation angles
-                
-%                 X_pix = [X(1,I).*cos(angle) - X(2,I).*sin(angle);...
-%                     X(1,I).*sin(angle) + X(2,I).*cos(angle);...
-%                     X(3,I)];
-%                 v_unit = [V(1,I).*cos(angle) - V(2,I).*sin(angle);...
-%                     V(1,I).*sin(angle) + V(2,I).*cos(angle);...
-%                     V(3,I)];
-%                 binormal_pix = ...
-%                     [binormal(1,I).*cos(angle) - binormal(2,I).*sin(angle);...
-%                     binormal(1,I).*sin(angle) + binormal(2,I).*cos(angle);...
-%                     binormal(3,I)];                
-%                 v_unit = normc(v_unit);
-%                 n = normc(repmat(xcam,1,numel(I)) - X_pix);
-                
+                % Rotation angles                
                 X_pix= X(:,I);
                 v_unit = normc(V(:,I));
                 binormal_pix = binormal(:,I);
@@ -2918,5 +2689,7 @@ for ss=1:num_species
     box on
     xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
     ylabel('$P_{syn}(\lambda,\psi)$','FontSize',14,'Interpreter','latex')
+    
+    saveas(fh,[ST.path 'SyntheticDiagnostic_ss_' num2str(ss)],'fig')
 end
 end
