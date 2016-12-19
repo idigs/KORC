@@ -6,6 +6,7 @@ module korc_initialize
     use korc_HDF5
     use korc_interp
     use rnd_numbers
+	use korc_initialize_particles
 
     implicit none
 	
@@ -121,6 +122,8 @@ subroutine initialize_particles(params,F,spp)
 	INTEGER :: ii,jj ! Iterator
 
 	NAMELIST /plasma_species/ ppp, q, m, Eo, etao, runaway, Ro, Zo, r
+
+	call initialize_avalanche_params(params)
 
 	! Allocate array containing variables of particles for each species
 	ALLOCATE(spp(params%num_species))

@@ -330,7 +330,7 @@ for ss=1:ST.params.simulation.num_species
 %     catch
 %     end
     
-    if ~isempty(eta)
+    if ~isempty(eta)surf
         mean_fx(ss,:) = mean(eta,1);
         std_fx(ss,:) = std(eta,0,1);
         skewness_fx(ss,:) = skewness(eta,0,1);
@@ -2404,16 +2404,16 @@ num_species = double(ST.params.simulation.num_species);
 % Resolution in wavelength
 N = 100;
 % Wavelength range (450 nm - 950 nm for visible light).
-lambda_min = 450E-9;% in meters
-lambda_max = 950E-9;% in meters
+lambda_min = 742E-9;% in meters
+lambda_max = 752E-9;% in meters
 lambda = linspace(lambda_min,lambda_max,N);
 lambda = lch*lambda; % in cm
 
 % Camera parameters
 camera_params = struct;
 camera_params.Riw = 1.0;% inner wall radius in meters
-camera_params.NX = 35;
-camera_params.NY = 35;
+camera_params.NX = 50;
+camera_params.NY = 50;
 camera_params.size = [0.25,0.25]; % [horizontal size, vertical size] in meters
 camera_params.focal_length = 0.40; % In meters
 camera_params.position = [2.4,0.0]; % [R,Z] in meters
@@ -2617,8 +2617,7 @@ for ss=1:num_species
     
     fh = figure;
     subplot(4,4,[1,2,5,6])
-%     contourf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot_psi_chi,10)
-    surf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot_psi_chi,...
+    surfc(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot_psi_chi,...
         'LineStyle','none')
     colormap(jet)
     box on; axis square; view([90,90])
@@ -2626,8 +2625,7 @@ for ss=1:num_species
     xlabel('$y$-axis of detector','FontSize',14,'Interpreter','latex')
     
     subplot(4,4,[3,4,7,8])
-%     contourf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot_psi,10)
-    surf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot_psi,...
+    surfc(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot_psi,...
         'LineStyle','none')
     colormap(jet)
     box on; axis square; view([90,90])
@@ -2635,7 +2633,7 @@ for ss=1:num_species
     xlabel('$y$-axis of detector','FontSize',14,'Interpreter','latex')
     
     subplot(4,4,[9,13])
-    surf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,counter_psi_chi,...
+    surfc(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,counter_psi_chi,...
         'LineStyle','none')
     colormap(jet); colorbar('Location','southoutside')
     box on; axis square; view([90,90])
@@ -2644,7 +2642,7 @@ for ss=1:num_species
     title('$P_{syn}(\lambda,\psi,\chi)$','FontSize',14,'Interpreter','latex')
     
     subplot(4,4,[10,14])
-    surf(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,counter_psi,...
+    surfc(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,counter_psi,...
         'LineStyle','none')
     colormap(jet); colorbar('Location','southoutside')    
     box on; axis square; view([90,90])
@@ -2690,6 +2688,6 @@ for ss=1:num_species
     xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
     ylabel('$P_{syn}(\lambda,\psi)$','FontSize',14,'Interpreter','latex')
     
-    saveas(fh,[ST.path 'SyntheticDiagnostic_ss_' num2str(ss)],'fig')
+    saveas(fh,[ST.path 'SyntheticDiagnostic_HD747nm_ss_' num2str(ss)],'fig')
 end
 end

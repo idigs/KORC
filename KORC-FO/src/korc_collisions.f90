@@ -102,7 +102,7 @@ subroutine load_params_ms(params)
 	cparams_ms%neb = (cparams_ms%Zo-cparams_ms%Zj)*cparams_ms%nz
 
 	cparams_ms%rD = SQRT( C_E0*cparams_ms%Te/(cparams_ms%ne*C_E**2) )
-	cparams_ms%re = C_E**2/( 4.0_rp*C_PI*C_E0*C_ME*C_C**2 )
+	cparams_ms%re = C_RE
 	cparams_ms%Ee_IZj = C_ME*C_C**2/cparams_ms%IZj
 end subroutine load_params_ms
 

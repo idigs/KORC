@@ -1,8 +1,8 @@
 module korc_constants
 
-    use korc_types
+	USE korc_types
 
-    implicit none
+	IMPLICIT NONE
 
 	REAL(rp), PARAMETER :: C_PI = 4.0_rp*ATAN(1.0_rp)
 	REAL(rp), PARAMETER :: C_E = 1.602176E-19_rp !Electron charge in C (absolute value)
@@ -14,5 +14,5 @@ module korc_constants
 	REAL(rp), PARAMETER :: C_MU = 4.0_rp*C_PI*1E-7_rp !Vacuum permeability in N/A^2
 	REAL(rp), PARAMETER :: C_E0 = 1.0_rp/(C_MU*C_C**2) !8.854E-12_rp !Vacuum permittivity in C^2/(N*m^2)
 	REAL(rp), PARAMETER :: C_Ke = 1.0_rp/(4.0_rp*C_PI*C_E0) ! Coulomb constant in N*m^2/C^2
-
+	REAL(rp), PARAMETER :: C_RE = 	C_E**2/( 4.0_rp*C_PI*C_E0*C_ME*C_C**2 ) ! Classical electron radius
 end module korc_constants
