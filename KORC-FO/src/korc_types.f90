@@ -83,7 +83,6 @@ TYPE, PUBLIC :: KORC_PARAMS
 	INTEGER(ip) :: output_cadence
 	INTEGER(ip) :: num_snapshots
 	INTEGER :: num_species
-	INTEGER :: pic_algorithm
 	LOGICAL :: radiation
 	LOGICAL :: collisions
 	CHARACTER(MAX_STRING_LENGTH) :: collisions_model

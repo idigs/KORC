@@ -7,7 +7,7 @@ clc
 NE = 300;
 NP = 300;
 
-Npcls = 1E6;
+Npcls = 5E5;
 
 pitch_min = 0; % in degrees
 pitch_max = 20; % in degrees
@@ -51,17 +51,13 @@ E = linspace(Er,Emax,NE);
 p = sqrt( (E/c).^2 - (me*c)^2 );
 p = p/(me*c);
 
-pitch_max = pi*pitch_max/180;
+pitch_max = pitch_max;
 pitch = linspace(-pitch_max,pitch_max,NP);
 
 % % % FRE(p,chi) % % %
 fo = alpha/cz;
-n = alpha*cz -1;
-eo = 15;
-Vol = cz*alpha*(1 - exp(-eo))/eo;
 C1 = 0.5*alpha;
 C2 = 1/cz - C1;
-C3 = 0.5*alpha/cz;
 
 % Bidimensional PDFs
 F = @(x,y) fo*y.*exp( -y.*(C2*x + C1./x) )./x;
@@ -71,7 +67,7 @@ fRE = zeros(NE,NP);
 fc = zeros(NE,NP);
 for ii=1:NE
     for jj=1:NP
-        x = cos(pitch(jj));
+        x = cos(deg2rad(pitch(jj)));
         fRE(ii,jj) = F(x,p(ii));
     end
 end
@@ -84,10 +80,10 @@ p_sampled = zeros(1,Nsamples);
 
 pitch_sampled(1) = 0.0;
 [~,I] = max(fRE(:,1));
-p_sampled(1) = p(I);
+p_sampled(1) = pr;
 
-sigma_p = 1;
-sigma_pitch = 0.1;
+sigma_p = 1.0;
+sigma_pitch = 1.0;
 
 ii=2;
 while (ii <= Nsamples)
@@ -97,7 +93,7 @@ while (ii <= Nsamples)
         pitch_test = pitch_sampled(ii-1) + random('norm',0,sigma_pitch);
     end
     
-    chi_test = cos(pitch_test);
+    chi_test = cos(deg2rad(pitch_test));
     p_test = p_sampled(ii-1) + random('norm',0,sigma_p);
     while (p_test < pr) || (p_test > pmax)
         p_test = p_sampled(ii-1) + random('norm',0,sigma_p);
@@ -109,7 +105,7 @@ while (ii <= Nsamples)
 %     p_test = random('unif',pr,pmax);
     
     %
-    chi_sampled = cos(pitch_sampled(ii-1));
+    chi_sampled = cos(deg2rad(pitch_sampled(ii-1)));
     ratio = F(chi_test,p_test)/F(chi_sampled,p_sampled(ii-1));
     
     if ( ratio >= 1.0 )
@@ -124,14 +120,14 @@ while (ii <= Nsamples)
         ii  = ii + 1;
     end
 end
-p_sampled(1:Npcls) = [];
-pitch_sampled(1:Npcls) = [];
+% p_sampled(1:Npcls) = [];
+% pitch_sampled(1:Npcls) = [];
 
 pitch_sampled(pitch_sampled<0)  = -pitch_sampled(pitch_sampled<0);
 
 h = figure;
 subplot(2,1,1)
-histogram2((180/pi)*pitch_sampled,p_sampled,...
+histogram2(pitch_sampled,p_sampled,...
     'FaceColor','flat','Normalization','pdf','LineStyle','none',...
     'DisplayStyle','tile')
 colormap(jet)
@@ -142,7 +138,6 @@ xlabel('$\theta$','Interpreter','latex')
 ylabel('$p$ ($m_ec$)','Interpreter','latex')
 %% Bidimensional distribution (plot)
 % Figures
-pitch = (180/pi)*pitch; % degrees
 E = 1E-6*E/qe; % MeV
 
 % A = log10(fRE);

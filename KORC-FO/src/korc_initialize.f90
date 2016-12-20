@@ -6,7 +6,8 @@ module korc_initialize
     use korc_HDF5
     use korc_interp
     use rnd_numbers
-	use korc_initialize_particles
+
+	use korc_avalanche ! external module
 
     implicit none
 	
@@ -50,11 +51,10 @@ subroutine load_korc_params(params)
 	INTEGER(ip) :: output_cadence
 	INTEGER :: num_species
 	INTEGER :: num_impurity_species
-	INTEGER :: pic_algorithm
 
 	NAMELIST /input_parameters/ magnetic_field_model,poloidal_flux,&
 			magnetic_field_filename,t_steps,dt,output_cadence,num_species,&
-			pic_algorithm,radiation,collisions,collisions_model
+			radiation,collisions,collisions_model
 	
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=input_parameters)
@@ -69,7 +69,6 @@ subroutine load_korc_params(params)
 	params%magnetic_field_model = TRIM(magnetic_field_model)
 	params%poloidal_flux = poloidal_flux
 	params%magnetic_field_filename = TRIM(magnetic_field_filename)
-	params%pic_algorithm = pic_algorithm
 	params%radiation = radiation
 	params%collisions = collisions
 	params%collisions_model = TRIM(collisions_model)
@@ -123,8 +122,6 @@ subroutine initialize_particles(params,F,spp)
 
 	NAMELIST /plasma_species/ ppp, q, m, Eo, etao, runaway, Ro, Zo, r
 
-	call initialize_avalanche_params(params)
-
 	! Allocate array containing variables of particles for each species
 	ALLOCATE(spp(params%num_species))
 
@@ -171,6 +168,11 @@ subroutine initialize_particles(params,F,spp)
 		ALLOCATE( spp(ii)%vars%flag(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%AUX(spp(ii)%ppp) )
 
+!		spp(ii)%vars%gamma = spp(ii)%gammao ! Monoenergetic
+!		spp(ii)%vars%eta = spp(ii)%etao ! Mono-pitch-angle
+
+		call get_avalanche_PDF_params(params,spp(ii)%vars%gamma,spp(ii)%vars%eta)
+
 		! Initialize to zero
 		spp(ii)%vars%X = 0.0_rp
 		spp(ii)%vars%V = 0.0_rp
@@ -178,8 +180,6 @@ subroutine initialize_particles(params,F,spp)
 		spp(ii)%vars%Y = 0.0_rp
 		spp(ii)%vars%E = 0.0_rp
 		spp(ii)%vars%B = 0.0_rp
-		spp(ii)%vars%gamma = 0.0_rp
-		spp(ii)%vars%eta = 0.0_rp
 		spp(ii)%vars%mu = 0.0_rp
 		spp(ii)%vars%Prad = 0.0_rp
 		spp(ii)%vars%Pin = 0.0_rp
@@ -237,12 +237,6 @@ subroutine set_up_particles_ic(params,F,spp)
 
 		call init_u_random(10986546_8)
 
-!        open(unit=default_unit_write,file='/Users/Leopo/Documents/MATLAB/KORK/KORC-FO/rnd.dat',status='UNKNOWN',form='formatted')
-!        call u_random(dummy)
-!        write(default_unit_write,'(F20.16)') dummy
-!        close(default_unit_write)
-!        call korc_abort()
-
 		! Initial condition of uniformly distributed particles on a disk in the xz-plane
 		! A unique velocity direction
 		call init_random_seed()
@@ -261,29 +255,18 @@ subroutine set_up_particles_ic(params,F,spp)
 		Xo(2,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*cos(zeta)
 		Xo(3,:) = spp(ii)%Zo + spp(ii)%r*sqrt(radius)*sin(theta)
 
-!		do jj=1,spp(ii)%ppp
-!			Xo(1,jj) = (spp(ii)%Ro - spp(ii)%r) + &
-!					2.0_rp*spp(ii)%r*REAL(MODULO(jj,201_idef),rp)/201.0_rp
-!			Xo(2,jj) = 0.0_rp
-!			Xo(3,jj) = spp(ii)%r - &
-!					2.0_rp*spp(ii)%r*FLOOR(REAL(jj,rp)/201.0_rp)/201.0_rp
-!		end do
-
 		spp(ii)%vars%X(1,:) = Xo(1,:)
 		spp(ii)%vars%X(2,:) = Xo(2,:)
 		spp(ii)%vars%X(3,:) = Xo(3,:)
-
-		! Monoenergetic distribution
-		spp(ii)%vars%gamma(:) = spp(ii)%gammao
 
 		call init_random_seed()
 		call RANDOM_NUMBER(angle)
 		angle = 2.0_rp*C_PI*angle
 
 		Vo = sqrt( 1.0_rp - 1.0_rp/(spp(ii)%vars%gamma(:)**2) )
-        V1 = Vo*cos(C_PI*spp(ii)%etao/180.0_rp)
-        V2 = Vo*sin(C_PI*spp(ii)%etao/180.0_rp)*cos(angle)
-        V3 = Vo*sin(C_PI*spp(ii)%etao/180.0_rp)*sin(angle)
+        V1 = Vo*cos(C_PI*spp(ii)%vars%eta/180.0_rp)
+        V2 = Vo*sin(C_PI*spp(ii)%vars%eta/180.0_rp)*cos(angle)
+        V3 = Vo*sin(C_PI*spp(ii)%vars%eta/180.0_rp)*sin(angle)
 
         call unitVectors(params,Xo,F,b1,b2,b3)
 
