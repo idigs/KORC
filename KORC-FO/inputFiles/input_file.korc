@@ -4,8 +4,8 @@
 	output_cadence = 30000 ! 1400 for saving each 100 gyro-periods
 	num_species = 1
 	radiation = .FALSE.
-	collisions = .FALSE.
-		collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
+	collisions = .TRUE.
+	collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
 	magnetic_field_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
 										! For 'ANALYTICAL', the magnetic field is calculated based on
 										! the parameters given in the "analytic_mag_field_params" section.
@@ -20,8 +20,8 @@
 	runaway = .FALSE. !
 	Ro = 1.5 !
 	Zo = 0.0 !
-	r = 0.3 !
-	Eo = 1.6E6 ! Initial energy in eV
+	r = 0.4 !
+	Eo = 18.0E6 ! Initial energy in eV
 	etao = 5.0  ! Initial pitch angle
 	ppp = 1000000 ! Number of particles per process (mpi)
 	q = -1.0 ! Electric charge
@@ -51,19 +51,18 @@
 /
 
 &CollisionParamsSingleSpecies
-	Te = 2.0 ! Background electron temperature in eV
-	Ti = 2.0 ! Background ion temperature in eV
-	ne = 2.0E20 ! Background electron density in 1/m^3
-	Zeff = 10.0 ! Effective atomic number
-	dTau = 1E-3 ! Subcycling time step in collisional time units (Tau)
+	Te = 1.5 ! Background electron temperature in eV
+	Ti = 1.5 ! Background ion temperature in eV
+	ne = 3.9E19 ! Background electron density in 1/m^3
+	Zeff = 5.0 ! Effective atomic number
+	dTau = 5E-3 ! Subcycling time step in collisional time units (Tau)
 /
 
 &AvalancheGenerationPDF
 	max_pitch_angle = 20 ! Maximum pitch angle of sampled PDF in degrees
 	max_energy  = 60E6 ! Maximum energy of sampled PDF in MeV
-	ne = 5.0E19 ! Background electron density in m^-3
-	Zeff = 1.0 ! Effective atomic number of ions
-	Ec = 0.15 ! Critical electric field in V/m
-	Epar = 1.5 ! Parallel electric field in V/m
-	Te = 10.0 ! Background electron temperature in eV
+	ne = 3.9E19 ! Background electron density in m^-3
+	Zeff = 5.0 ! Effective atomic number of ions
+	Epar = 2.0 ! Parallel electric field in V/m
+	Te = 1.5 ! Background electron temperature in eV
 /
