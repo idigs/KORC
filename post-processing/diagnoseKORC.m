@@ -2404,8 +2404,8 @@ num_species = double(ST.params.simulation.num_species);
 % Resolution in wavelength
 N = 100;
 % Wavelength range (450 nm - 950 nm for visible light).
-lambda_min = 450E-9;% in meters
-lambda_max = 950E-9;% in meters
+lambda_min = 400E-9;% in meters
+lambda_max = 900E-9;% in meters
 lambda = linspace(lambda_min,lambda_max,N);
 lambda = lch*lambda; % in cm
 
@@ -2413,10 +2413,10 @@ lambda = lch*lambda; % in cm
 camera_params = struct;
 camera_params.Riw = 0.4;% inner wall radius in meters
 camera_params.NX = 50;
-camera_params.NY = 50;
-camera_params.size = [0.45,0.45]; % [horizontal size, vertical size] in meters
-camera_params.focal_length = 0.45; % In meters
-camera_params.position = [1.1,0.0]; % [R,Z] in meters
+camera_params.NY = 40;
+camera_params.size = [0.45,0.50]; % [horizontal size, vertical size] in meters
+camera_params.focal_length = 0.40; % In meters
+camera_params.position = [1.0,0.0]; % [R,Z] in meters
 % The angle defined by the detector plane (pixel array) and the x-axis of a
 % coordinate system where phi = 0, the toroidal angle, corresponds to the
 % y-axis, and phi = 90 corresponds to the x-axis
@@ -2426,7 +2426,7 @@ camera_params.horizontal_angle_view = ...
     atan2(0.5*camera_params.size(1),camera_params.focal_length); % in radians
 camera_params.vertical_angle_view = ...
     atan2(0.5*camera_params.size(2),camera_params.focal_length); % in radians
-camera_params.pixel_grid = setupCameraPixelGrid(camera_params,true);
+camera_params.pixel_grid = setupCameraPixelGrid(camera_params,false);
 
 clockwise_rotation = @(t,x) [cos(t),sin(t);-sin(t),cos(t)]*x;
 anticlockwise_rotation = @(t,x) [cos(t),-sin(t);sin(t),cos(t)]*x;
@@ -2508,7 +2508,7 @@ for ss=1:num_species
     
     clear ip theta_f
     
-    [rotation_angles,ip_in_pixel] = findRotationAngles(X,camera_params,true);
+    [rotation_angles,ip_in_pixel] = findRotationAngles(X,camera_params,false);
     
     % % % % Beyond this point all variables are in cgs units % % % %
     c = 1E2*ST.params.scales.v;

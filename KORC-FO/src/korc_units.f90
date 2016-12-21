@@ -16,7 +16,7 @@ subroutine compute_charcs_plasma_params(params,spp,F)
 	INTEGER :: ind
 
 	params%cpp%velocity = C_C
-	params%cpp%Bo = F%Bo
+	params%cpp%Bo = ABS(F%Bo)
 
 	! Non-relativistic cyclotron frequency
 	spp(:)%wc = ( ABS(spp(:)%q)/spp(:)%m )*params%cpp%Bo
