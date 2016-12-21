@@ -168,10 +168,10 @@ subroutine initialize_particles(params,F,spp)
 		ALLOCATE( spp(ii)%vars%flag(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%AUX(spp(ii)%ppp) )
 
-!		spp(ii)%vars%gamma = spp(ii)%gammao ! Monoenergetic
-!		spp(ii)%vars%eta = spp(ii)%etao ! Mono-pitch-angle
+		spp(ii)%vars%gamma = spp(ii)%gammao ! Monoenergetic
+		spp(ii)%vars%eta = spp(ii)%etao ! Mono-pitch-angle
 
-		call get_avalanche_PDF_params(params,spp(ii)%vars%gamma,spp(ii)%vars%eta)
+!		call get_avalanche_PDF_params(params,spp(ii)%vars%gamma,spp(ii)%vars%eta)
 
 		! Initialize to zero
 		spp(ii)%vars%X = 0.0_rp

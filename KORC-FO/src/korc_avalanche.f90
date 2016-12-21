@@ -77,15 +77,55 @@ SUBROUTINE sample_distribution(params,g,eta)
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: g
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: eta
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: p
-	REAL(rp) :: chi, chi_test, eta_test, p_test, ratio, rand_unif
+	REAL(rp) :: chi, chi_test
+	REAL(rp) :: p_buffer, p_test
+	REAL(rp) :: eta_buffer, eta_test
+	REAL(rp) :: ratio, rand_unif
 	INTEGER :: ii,ppp
 
 	ppp = SIZE(g)
 	ALLOCATE(p(ppp))
-	eta(1) = 0.0_rp
+
+	eta_buffer = 0.0_rp
+	call RANDOM_SEED()
 	call RANDOM_NUMBER(rand_unif)
-	p(1) = aval_params%min_p +&
-			(aval_params%max_p - aval_params%min_p)*rand_unif
+	p_buffer = aval_params%min_p +&
+		(aval_params%max_p - aval_params%min_p)*rand_unif
+
+	ii=2
+	do while (ii .LE. 100000)
+		eta_test = eta_buffer + random_norm(0.0_rp,1.0_rp)
+		do while (ABS(eta_test) .GT. aval_params%max_pitch_angle)
+			eta_test = eta_buffer + random_norm(0.0_rp,1.0_rp)
+		end do
+		chi_test = COS(C_PI*eta_test/180.0_rp)
+		chi = COS(C_PI*eta_buffer/180.0_rp)	
+
+		p_test = p_buffer + random_norm(0.0_rp,1.0_rp)
+		do while ((p_test.LT.aval_params%min_p).OR.(p_test.GT.aval_params%max_p))
+			p_test = p_buffer + random_norm(0.0_rp,1.0_rp)
+		end do
+
+		ratio = fRE(chi_test,p_test)/fRE(chi,p_buffer)
+
+		if (ratio .GE. 1.0_rp) then
+			p_buffer = p_test
+			eta_buffer = eta_test
+			ii = ii + 1
+		else 
+			call RANDOM_NUMBER(rand_unif)
+			if (rand_unif .LT. ratio) then
+				p_buffer = p_test
+				eta_buffer = eta_test
+				ii = ii + 1
+			end if
+		end if
+	end do	
+
+	eta(1) = eta_buffer
+	call RANDOM_SEED()
+	call RANDOM_NUMBER(rand_unif)
+	p(1) = p_buffer
 
 	ii=2
 	do while (ii .LE. ppp)
