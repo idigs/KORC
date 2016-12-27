@@ -11,6 +11,8 @@ program main
 	use korc_initialize
 	use korc_finalize
 
+	use korc_synthetic_camera
+
 	implicit none
 
 	TYPE(KORC_PARAMS) :: params
@@ -31,6 +33,8 @@ program main
 	call initialize_particles(params,EB,spp) ! Initialize particles
 
 	call initialize_collision_params(params)
+
+	call initialize_synthetic_camera(params) ! Synthetic camera
 
 	call compute_charcs_plasma_params(params,spp,EB)
 
@@ -60,7 +64,7 @@ program main
 	call advance_particles_velocity(params,EB,spp,0.0_rp,.TRUE.)
 
 	! Save initial condition
-	call save_simulation_outputs(params,spp,EB,0_ip)
+	call save_simulation_outputs(params,spp,EB)
 
 	t1 = MPI_WTIME()
 
@@ -76,7 +80,9 @@ program main
 		    call advance_particles_position(params,EB,spp,params%dt)
 
 			write(6,'("Saving snapshot: ",I15)') it/params%output_cadence
-			call save_simulation_outputs(params,spp,EB,it)
+			call save_simulation_outputs(params,spp,EB)
+
+			call synthetic_camera(params,spp)
         else
             call advance_particles_velocity(params,EB,spp,params%dt,.FALSE.)
 		    call advance_particles_position(params,EB,spp,params%dt)
@@ -84,7 +90,6 @@ program main
 	end do
 	
 	t2 = MPI_WTIME()
-	write(6,'("MPI: ",I2," Total time: ",F20.16)') params%mpi_params%rank, t2 - t1
 
 	call timing_KORC(params,t1,t2)
 

@@ -83,8 +83,11 @@ subroutine initialize_interpolant(params,F)
 	TYPE(FIELDS), INTENT(IN) :: F
 
 	if (params%magnetic_field_model .EQ. 'EXTERNAL') then
-
-		write(6,'("* * * * INITIALIZING INTERPOLANT * * * *")')
+		
+		if (params%mpi_params%rank .EQ. 0) then
+			write(6,'(/,"* * * * * * * * * * * * * * * * * * * * *")')
+			write(6,'("* * * * INITIALIZING  INTERPOLANT * * * *")')
+		end if
 
 		if (.NOT. params%poloidal_flux) then
 			interp3d%NR = F%dims(1)
@@ -143,9 +146,16 @@ subroutine initialize_interpolant(params,F)
 			call EZspline_error(ezerr)
 		end if
 
-		write(6,'("* * * * INTERPOLANT  INITIALIZED * * * *")')
+		if (params%mpi_params%rank .EQ. 0) then
+			write(6,'("* * * * INTERPOLANT   INITIALIZED * * * *")')
+			write(6,'("* * * * * * * * * * * * * * * * * * * * *",/)')
+		end if
 	else
-		write(6,'("* * * * USING ANALYTICAL MAGNETIC FIELD * * * *")')
+		if (params%mpi_params%rank .EQ. 0) then
+			write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * *")')
+			write(6,'("* * * * USING ANALYTICAL MAGNETIC FIELD * * * *")')
+			write(6,'("* * * * * * * * * * * * * * * * * * * * * * * *",/)')
+		end if
 	end if
 end subroutine initialize_interpolant
 

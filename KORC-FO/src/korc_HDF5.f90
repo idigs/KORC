@@ -906,12 +906,11 @@ subroutine save_simulation_parameters(params,spp,F)
 end subroutine save_simulation_parameters
 
 
-subroutine save_simulation_outputs(params,spp,F,it)
+subroutine save_simulation_outputs(params,spp,F)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
 	TYPE(FIELDS), INTENT(IN) :: F
-	INTEGER(ip), INTENT(IN) :: it
 	CHARACTER(MAX_STRING_LENGTH) :: filename
 	CHARACTER(MAX_STRING_LENGTH) :: gname
 	CHARACTER(MAX_STRING_LENGTH) :: subgname
@@ -934,13 +933,13 @@ subroutine save_simulation_outputs(params,spp,F,it)
 	call h5fopen_f(TRIM(filename), H5F_ACC_RDWR_F, h5file_id, h5error)
 
     ! Create group 'it'
-	write(tmp_str,'(I18)') it
+	write(tmp_str,'(I18)') params%it
 	gname = TRIM(ADJUSTL(tmp_str))
 	call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
     
 	dset = TRIM(gname) // "/time"
 	attr = "Simulation time in secs"
-	call save_to_hdf5(h5file_id,dset,REAL(it,rp)*params%dt*params%cpp%time,attr)
+	call save_to_hdf5(h5file_id,dset,REAL(params%it,rp)*params%dt*params%cpp%time,attr)
 
     do ii=1,params%num_species
         write(tmp_str,'(I18)') ii

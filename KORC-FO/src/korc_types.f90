@@ -77,8 +77,8 @@ TYPE, PUBLIC :: KORC_PARAMS
 	INTEGER :: num_omp_threads
 	LOGICAL :: restart
 	REAL(rp) :: dt
-	REAL(rp) :: time
-	INTEGER(ip) :: it
+	REAL(rp) :: time = 0.0_rp
+	INTEGER(ip) :: it = 0_ip
 	INTEGER(ip) :: t_steps
 	INTEGER(ip) :: output_cadence
 	INTEGER(ip) :: num_snapshots

@@ -30,9 +30,11 @@ subroutine set_paths(params)
 	call get_command_argument(1,params%path_to_inputs)
 	call get_command_argument(2,params%path_to_outputs)
 
-	write(6,'("* * * * * PATHS * * * * *")')
-	write(6,'("The input file is:",A50)') TRIM(params%path_to_inputs)
-	write(6,'("The output folder is:",A50)') TRIM(params%path_to_outputs)
+	if (params%mpi_params%rank .EQ. 0) then
+		write(6,'(/,"* * * * * PATHS * * * * *")')
+		write(6,'("The input file is:",A50)') TRIM(params%path_to_inputs)
+		write(6,'("The output folder is:",A50,/)') TRIM(params%path_to_outputs)
+	end if
 end subroutine set_paths
 
 
@@ -74,7 +76,7 @@ subroutine load_korc_params(params)
 	params%collisions_model = TRIM(collisions_model)
 
 	if (params%mpi_params%rank .EQ. 0) then
-		write(6,'("* * * * * SIMULATION PARAMETERS * * * * *")')
+		write(6,'(/,"* * * * * SIMULATION PARAMETERS * * * * *")')
 		write(6,'("Number of time steps: ",I16)') params%t_steps
 		write(6,'("Output cadence: ",I16)') params%output_cadence
 		write(6,'("Number of outputs: ",I16)') params%num_snapshots
@@ -86,6 +88,7 @@ subroutine load_korc_params(params)
 		write(6,'("Radiation losses included: ",L1)') params%radiation
 		write(6,'("collisions losses included: ",L1)') params%collisions
 		write(6,'("collisions model: ",A50)') TRIM(params%collisions_model)
+		write(6,'(/)')
 	end if	
 end subroutine load_korc_params
 
@@ -94,9 +97,17 @@ subroutine initialize_korc_parameters(params)
 	use korc_types
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(OUT) :: params
+	INTEGER :: mpierr
+
+	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
 	call set_paths(params)
+
+	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+
 	call load_korc_params(params)
+
+	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 end subroutine initialize_korc_parameters
 
 
@@ -324,19 +335,16 @@ subroutine initialization_sanity_check(params)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	CHARACTER(MAX_STRING_LENGTH) :: env_variable
-	INTEGER :: ierr
+	INTEGER :: ierr, mpierr
 	LOGICAL :: flag = .FALSE.
 
-	if (params%mpi_params%rank .EQ. 0) then
-		write(6,'("* * * SANITY CHECK * * *")')
-	end if
-
-	call GET_ENVIRONMENT_VARIABLE("OMP_PLACES",env_variable)
+!	call GET_ENVIRONMENT_VARIABLE("OMP_PLACES",env_variable)
 !	call GET_ENVIRONMENT_VARIABLE("GOMP_CPU_AFFINITY",env_variable)
-	write(6,*) TRIM(env_variable)
+!	write(6,*) TRIM(env_variable)
 
-!$OMP PARALLEL SHARED(params) PRIVATE(ierr,flag)
 	call MPI_INITIALIZED(flag, ierr)
+
+!$OMP PARALLEL SHARED(params) FIRSTPRIVATE(ierr,flag)
 	!$OMP CRITICAL
 	write(6,'("MPI: ",I3," OMP/of: ",I3," / ",I3," Procs: ",I3," Init: ",l1)') &
 	params%mpi_params%rank,OMP_GET_THREAD_NUM(),OMP_GET_NUM_THREADS(),OMP_GET_NUM_PROCS(),flag

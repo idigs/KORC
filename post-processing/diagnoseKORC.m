@@ -2411,16 +2411,16 @@ lambda = lch*lambda; % in cm
 
 % Camera parameters
 camera_params = struct;
-camera_params.Riw = 0.4;% inner wall radius in meters
-camera_params.NX = 50;
-camera_params.NY = 40;
-camera_params.size = [0.45,0.50]; % [horizontal size, vertical size] in meters
+camera_params.Riw = 1.0;% inner wall radius in meters
+camera_params.NX = 35;
+camera_params.NY = 35;
+camera_params.size = [0.25,0.25]; % [horizontal size, vertical size] in meters
 camera_params.focal_length = 0.40; % In meters
-camera_params.position = [1.0,0.0]; % [R,Z] in meters
+camera_params.position = [2.4,0.0]; % [R,Z] in meters
 % The angle defined by the detector plane (pixel array) and the x-axis of a
 % coordinate system where phi = 0, the toroidal angle, corresponds to the
 % y-axis, and phi = 90 corresponds to the x-axis
-camera_params.incline = 50; % in degrees
+camera_params.incline = 55; % in degrees
 camera_params.incline = deg2rad(camera_params.incline);
 camera_params.horizontal_angle_view = ...
     atan2(0.5*camera_params.size(1),camera_params.focal_length); % in radians
@@ -2688,6 +2688,6 @@ for ss=1:num_species
     xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
     ylabel('$P_{syn}(\lambda,\psi)$','FontSize',14,'Interpreter','latex')
     
-    saveas(fh,[ST.path 'SyntheticDiagnostic_HD747nm_ss_' num2str(ss)],'fig')
+    saveas(fh,[ST.path 'SyntheticDiagnostic_ss_' num2str(ss)],'fig')
 end
 end

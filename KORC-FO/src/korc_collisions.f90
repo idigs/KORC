@@ -263,9 +263,11 @@ subroutine define_collisions_time_step(params)
 
 	cparams_ss%subcycling_iterations = FLOOR((cparams_ss%dTau*cparams_ss%Tau)/params%dt)
 
-	write(6,'("* * * * * * * SUBCYCLING FOR COLLISIONS * * * * * * *")')
-	write(6,'("Number of KORC iterations per collision: ",I16)') cparams_ss%subcycling_iterations
-	write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * * * *")')
+	if (params%mpi_params%rank .EQ. 0) then
+		write(6,'(/,"* * * * * * * SUBCYCLING FOR COLLISIONS * * * * * * *")')
+		write(6,'("Number of KORC iterations per collision: ",I16)') cparams_ss%subcycling_iterations
+		write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * * * *",/)')
+	end if
 end subroutine define_collisions_time_step
 
 

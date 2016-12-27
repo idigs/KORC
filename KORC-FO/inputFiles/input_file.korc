@@ -1,7 +1,7 @@
 &input_parameters
-	t_steps = 155000 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	t_steps = 100 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
 	dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
-	output_cadence = 3100 ! 1400 for saving each 100 gyro-periods
+	output_cadence = 25 ! 1400 for saving each 100 gyro-periods
 	num_species = 1
 	radiation = .TRUE.
 	collisions = .TRUE.
@@ -23,7 +23,7 @@
 	r = 0.4 !
 	Eo = 18.0E6 ! Initial energy in eV
 	etao = 5.0  ! Initial pitch angle
-	ppp = 100000 ! Number of particles per process (mpi)
+	ppp = 100 ! Number of particles per process (mpi)
 	q = -1.0 ! Electric charge
 	m = 1.0 ! In units of electron mass
 /
@@ -57,6 +57,7 @@
 	Zeff = 5.0 ! Effective atomic number
 	dTau = 5E-3 ! Subcycling time step in collisional time units (Tau)
 /
+
 &AvalancheGenerationPDF
 	max_pitch_angle = 20 ! Maximum pitch angle of sampled PDF in degrees
 	max_energy  = 60E6 ! Maximum energy of sampled PDF in MeV
@@ -64,4 +65,16 @@
 	Zeff = 5.0 ! Effective atomic number of ions
 	Epar = 2.0 ! Parallel electric field in V/m
 	Te = 1.5 ! Background electron temperature in eV
+/
+
+&SyntheticCamera
+	Riw = 1.0 ! Radial position of inner wall
+	num_pixels = 35, 35 ! Number of pixels (X,Y)
+	sensor_size = 0.25, 0.25 ! (horizontal,vertical)
+	focal_length = 0.4
+	position = 2.4, 0.0 ! Position of camera (R,Z)
+	incline = 55.0 ! In degrees
+	lambda_min = 400E-9 ! Minimum wavelength in meters
+	lambda_max = 900E-9 ! Maximum wavelength in meters
+	Nlambda = 100 ! Number of discrete wavelengths
 /

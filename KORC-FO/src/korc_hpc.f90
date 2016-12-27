@@ -87,6 +87,8 @@ subroutine timing_KORC(params,t1,t2)
 
 	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
+	write(6,'("MPI: ",I2," Total time: ",F20.16)') params%mpi_params%rank, t2 - t1
+
 	call MPI_GATHER(individual_runtime,1,MPI_DOUBLE_PRECISION,runtime,&
 			1,MPI_DOUBLE_PRECISION,0_idef, MPI_COMM_WORLD, mpierr)
 
@@ -106,7 +108,10 @@ subroutine finalize_mpi(params)
 	LOGICAL :: flag = .FALSE.
 	INTEGER :: mpierr
 
+	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+
 	call MPI_FINALIZE(mpierr)
+
 	call MPI_FINALIZED(flag, mpierr)
 	write(6,'("MPI: ",I2," FINALIZED: ",l)') params%mpi_params%rank, flag
 end subroutine finalize_mpi
