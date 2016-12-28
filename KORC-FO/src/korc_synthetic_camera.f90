@@ -25,9 +25,23 @@ MODULE korc_synthetic_camera
 		REAL(rp), DIMENSION(:), ALLOCATABLE :: lambda
 	END TYPE CAMERA
 
-	TYPE(CAMERA), PRIVATE :: cam
+	TYPE, PRIVATE :: ANGLES
+		REAL(rp), DIMENSION(:), ALLOCATABLE :: eta
+		REAL(rp), DIMENSION(:), ALLOCATABLE :: beta
+		REAL(rp), DIMENSION(:), ALLOCATABLE :: psi
 
-	PRIVATE :: clockwise_rotation,anticlockwise_rotation,ajyik
+		REAL(rp) :: threshold_angle
+		REAL(rp) :: threshold_radius
+	END TYPE ANGLES
+
+	TYPE(CAMERA), PRIVATE :: cam
+	TYPE(ANGLES), PRIVATE :: ang
+	REAL(rp), PRIVATE, PARAMETER :: CGS_C = 1.0E2_rp*C_C
+	REAL(rp), PRIVATE, PARAMETER :: CGS_E = 3.0E9_rp*C_E
+	REAL(rp), PRIVATE, PARAMETER :: CGS_ME = 1.0E3_rp*C_ME
+
+	PRIVATE :: clockwise_rotation,anticlockwise_rotation,cross,&
+				check_if_visible,calculate_rotation_angles,ajyik
 	PUBLIC :: initialize_synthetic_camera,synthetic_camera
 
 	CONTAINS
@@ -67,7 +81,7 @@ SUBROUTINE initialize_synthetic_camera(params)
 	cam%sensor_size = sensor_size
 	cam%focal_length = focal_length
 	cam%position = position
-	cam%incline = incline
+	cam%incline = C_PI*incline/180.0_rp
 	cam%horizontal_angle_view = ATAN2(0.5_rp*cam%sensor_size(1),cam%focal_length)
 	cam%vertical_angle_view = ATAN2(0.5_rp*cam%sensor_size(2),cam%focal_length)
 
@@ -110,6 +124,27 @@ SUBROUTINE initialize_synthetic_camera(params)
 		cam%pixels_edges_y(ii) = ymin + REAL(ii-1_idef,rp)*DY
 	end do
 	
+	! Initialize ang variables
+	ALLOCATE(ang%eta(cam%num_pixels(1)))
+	ALLOCATE(ang%beta(cam%num_pixels(1)))
+	ALLOCATE(ang%psi(cam%num_pixels(2)+1_idef))
+
+	do ii=1_idef,cam%num_pixels(1)
+		ang%eta(ii) = ABS(ATAN2(cam%pixels_nodes_x(ii),cam%focal_length))
+		if (cam%pixels_edges_x(ii) .LT. 0.0_rp) then
+			ang%beta(ii) = 0.5_rp*C_PI - cam%incline - ang%eta(ii)
+		else
+			ang%beta(ii) = 0.5_rp*C_PI - cam%incline + ang%eta(ii)
+		end if
+	end do
+
+	do ii=1_idef,cam%num_pixels(2)+1_idef
+		ang%psi(ii) = ATAN2(cam%pixels_edges_y(ii),cam%focal_length)
+	end do
+
+	ang%threshold_angle = ATAN2(cam%Riw,-cam%position(1))
+	ang%threshold_radius = SQRT(cam%Riw**2 + cam%position(1)**2)
+
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'("*     Synthetic camera ready!     *")')
 		write(6,'("* * * * * * * * * * * * * * * * * *",/)')
@@ -153,18 +188,115 @@ FUNCTION anticlockwise_rotation(x,t)
 	anticlockwise_rotation(2) = x(1)*SIN(t) + x(2)*COS(t)
 END FUNCTION anticlockwise_rotation
 
+
+FUNCTION besselk(x)
+	IMPLICIT NONE
+	REAL(rp), DIMENSION(2) :: besselk
+	REAL(rp), INTENT(IN) :: x
+	REAL(rp) :: vj1, vj2, vy1, vy2, vi1, vi2
+	! besselk(1) = K1/3(x)
+	! besselk(2) = K2/3(x)
+
+	call ajyik(x,vj1,vj2,vy1,vy2,vi1,vi2,besselk(1),besselk(2))
+END FUNCTION besselk
+
+
+FUNCTION zeta(g,p,k,l)
+	IMPLICIT NONE
+	REAL(rp) :: zeta
+	REAL(rp), INTENT(IN) ::	g
+	REAL(rp), INTENT(IN) :: p
+	REAL(rp), INTENT(IN) :: k
+	REAL(rp), INTENT(IN) :: l
+
+	zeta = (2.0_rp*C_PI/(3.0_rp*l*k*g**3))*(1 + (g*p)**2)**1.5_rp
+END FUNCTION
+
+
+FUNCTION fx(g,p,x)
+	IMPLICIT NONE
+	REAL(rp) :: fx
+	REAL(rp), INTENT(IN) ::	g
+	REAL(rp), INTENT(IN) :: p
+	REAL(rp), INTENT(IN) :: x
+
+	fx = g*x/SQRT(1.0_rp + (g*p)**2)
+END FUNCTION fx
+
+
+FUNCTION Po(g,p,k,l)
+	IMPLICIT NONE
+	REAL(rp) :: Po
+	REAL(rp), INTENT(IN) ::	g
+	REAL(rp), INTENT(IN) :: p
+	REAL(rp), INTENT(IN) :: k
+	REAL(rp), INTENT(IN) :: l
+	
+
+	Po = -(4.0_rp*C_PI*CGS_C*CGS_E**2/(k*(l*g)**4))*(1.0_rp + (g*p)**2)**2
+END FUNCTION Po
+
+
+FUNCTION arg(g,p,k,l,x)
+	IMPLICIT NONE
+	REAL(rp) :: arg
+	REAL(rp), INTENT(IN) ::	g
+	REAL(rp), INTENT(IN) :: p
+	REAL(rp), INTENT(IN) :: k
+	REAL(rp), INTENT(IN) :: l
+	REAL(rp), INTENT(IN) :: x
+	REAL(rp) :: A
+
+	A = fx(g,p,x)
+	arg = 1.5_rp*zeta(g,p,k,l)*(A + A**3/3.0_rp)
+END FUNCTION arg
+
+
+FUNCTION P1(g,p,k,l,x)
+	IMPLICIT NONE
+	REAL(rp) :: P1
+	REAL(rp), INTENT(IN) ::	g
+	REAL(rp), INTENT(IN) :: p
+	REAL(rp), INTENT(IN) :: k
+	REAL(rp), INTENT(IN) :: l
+	REAL(rp), INTENT(IN) :: x
+	REAL(rp), DIMENSION(2) :: BK
+	REAL(rp) :: A
+
+	BK = besselk(zeta(g,p,k,l))
+	A = fx(g,p,x)
+
+	P1 = (g*p)**2*BK(1)*COS(arg(g,p,k,l,x))/(1.0_rp + (g*p)**2)&
+		- 0.5_rp*BK(1)*(1.0_rp + A**2)*COS(arg(g,p,k,l,x))&
+		+ A*BK(2)*SIN(arg(g,p,k,l,x))
+END FUNCTION P1
+
+
+FUNCTION Psyn(g,p,k,l,x)
+	IMPLICIT NONE
+	REAL(rp) :: Psyn
+	REAL(rp), INTENT(IN) ::	g
+	REAL(rp), INTENT(IN) :: p
+	REAL(rp), INTENT(IN) :: k
+	REAL(rp), INTENT(IN) :: l
+	REAL(rp), INTENT(IN) :: x
+
+	Psyn = Po(g,p,k,l)*P1(g,p,k,l,x)
+END FUNCTION Psyn
+
 ! * * * * * * * * * * * * * * * !
 ! * * * * * FUNCTIONS * * * * * !
 ! * * * * * * * * * * * * * * * !
 
 
-SUBROUTINE isVisible(X,V,threshold_angle,bool,angle)
+SUBROUTINE check_if_visible(X,V,threshold_angle,bool,angle,XC)
 	IMPLICIT NONE
 	REAL(rp), DIMENSION(3), INTENT(IN) :: X
 	REAL(rp), DIMENSION(3), INTENT(IN) :: V
 	REAL(rp), INTENT(IN) :: threshold_angle
 	LOGICAL, INTENT(OUT) :: bool
 	REAL(rp), INTENT(OUT) :: angle
+	REAL(rp), DIMENSION(3), OPTIONAL, INTENT(OUT) :: XC
 	REAL(rp), DIMENSION(3) :: vec
 	REAL(rp) :: a, b, c, ciw, dis, disiw
 	REAL(rp) :: sp, sn, s, psi
@@ -185,10 +317,16 @@ SUBROUTINE isVisible(X,V,threshold_angle,bool,angle)
 		sn = 0.5_rp*(-b - SQRT(dis))/a
 		s = MAX(sp,sn)
 		
-		angle = ATAN2(X(2) + s*V(2),X(1) + s*V(1))
-		if (angle.LT.0.0_rp) then
-			angle = angle + 2.0_rp*C_PI
+		! Rotation angle along z-axis so that v is directed to the camera
+		if (PRESENT(XC)) then
+			XC(1) = X(1) + s*V(1)
+			XC(2) = X(2) + s*V(2)
+			XC(3) = X(3) + s*V(3)
+			angle = ATAN2(XC(2),XC(1))
+		else
+			angle = ATAN2(X(2) + s*V(2),X(1) + s*V(1))
 		end if
+		if (angle.LT.0.0_rp) angle = angle + 2.0_rp*C_PI
 	
 		vec(1) = cam%position(1)*COS(angle) - X(1)
 		vec(2) = cam%position(1)*SIN(angle) - X(2)
@@ -200,52 +338,195 @@ SUBROUTINE isVisible(X,V,threshold_angle,bool,angle)
 
 		if (psi.LE.threshold_angle) then
 			bool = .TRUE. ! The particle is visible
-			write(6,'("Visible")')
 		else
 			bool = .FALSE. ! The particle is not visible
 		end if
 	end if
 
-END SUBROUTINE isVisible
+END SUBROUTINE check_if_visible
+
+
+SUBROUTINE calculate_rotation_angles(X,bpa,apa)
+	IMPLICIT NONE
+	REAL(rp), DIMENSION(3), INTENT(IN) :: X
+	LOGICAL, DIMENSION(:,:,:), ALLOCATABLE, INTENT(INOUT) :: bpa
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE, INTENT(INOUT) :: apa
+	REAL(rp) :: R, D, psi
+	REAL(rp) :: a, b, c, dis, xp, xn
+	REAL(rp) :: xtmp, ytmp
+	INTEGER :: ii,jj
+	! bpa(:,:,1) -- > xp
+	! bpa(:,:,2) -- > xn
+		
+	R = SQRT(SUM(X(1:2)**2))
+	D = SQRT( (X(1) - cam%position(1))**2 + X(2) )
+	psi = -ATAN2(X(3) - cam%position(2),D)
+
+	bpa = .TRUE.
+	
+	do ii=1_idef,cam%num_pixels(1)
+		a = 1.0_rp + TAN(ang%beta(ii))**2
+		b = -2.0_rp*TAN(ang%beta(ii))**2*cam%position(1)
+		c = (TAN(ang%beta(ii))*cam%position(1))**2 - R**2
+		dis = b**2 - 4.0_rp*a*c
+		
+		if (dis.GT.0.0_rp) then
+			do jj=1_idef,cam%num_pixels(2)
+
+				if ((psi.GT.ang%psi(jj)).AND.(psi.LE.ang%psi(jj+1_idef))) then
+					xp = 0.5_rp*(-b + SQRT(dis))/a
+					xn = 0.5_rp*(-b - SQRT(dis))/a
+
+					xtmp = xp - cam%position(1)
+					ytmp = SQRT(R**2 - xp**2)
+
+					! Check if particle is behind inner wall
+					if ((ATAN2(ytmp,xtmp).GT.ang%threshold_angle)&
+						.AND.(SQRT(xtmp**2+ytmp**2).GT.ang%threshold_radius)) then
+						bpa(ii,jj,1) = .FALSE.
+					else
+						apa(ii,jj,1) = ATAN2(ytmp,xp)
+						if (apa(ii,jj,1).LT.0.0_rp) apa(ii,jj,1) = apa(ii,jj,1)	+ 2.0_rp*C_PI
+					end if
+
+					xtmp = xn - cam%position(1)
+					ytmp = SQRT(R**2 - xn**2)
+
+					! Check if particle is behind inner wall
+					if ((ATAN2(ytmp,xtmp).GT.ang%threshold_angle)&
+						.AND.(SQRT(xtmp**2+ytmp**2).GT.ang%threshold_radius)) then
+						bpa(ii,jj,2) = .FALSE.
+					else
+						apa(ii,jj,2) = ATAN2(ytmp,xn)
+						if (apa(ii,jj,2).LT.0.0_rp) apa(ii,jj,2) = apa(ii,jj,2)	+ 2.0_rp*C_PI
+					end if
+				else ! Not in pixel (ii,jj)
+					bpa(ii,jj,:) = .FALSE.
+				end if ! Check if in pixel (ii,jj)
+
+			end do ! NY
+		else ! no real solutions
+			bpa(ii,:,:) = .FALSE.
+		end if ! Checking discriminant
+	end do !! NX
+END SUBROUTINE calculate_rotation_angles
 
 
 SUBROUTINE synthetic_camera(params,spp)
 	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
-	REAL(rp), DIMENSION(3) :: binormal
-	REAL(rp), DIMENSION(3) :: X,V
+	REAL(rp), DIMENSION(3) :: binorm, n, nperp
+	REAL(rp), DIMENSION(3) :: X,V, XC
+	LOGICAL, DIMENSION(:,:,:), ALLOCATABLE :: bool_pixel_array
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: angle_pixel_array
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: part_per_pixel
 	REAL(rp) :: q, m, k, u, threshold_angle
+	REAL(rp) :: psi, chi
 	LOGICAL :: bool
-	REAL(rp) :: angle	
-	INTEGER :: ii,pp
+	REAL(rp) :: angle, clockwise
+	INTEGER :: ii,jj,ss,pp
+!	REAL(rp), DIMENSION(100,2) :: dummy
 
-	do ii=1_idef,params%num_species
-		q = ABS(spp(ii)%q)
-		m = spp(ii)%m
 
-		do pp=1_idef,spp(ii)%ppp
-			if ( spp(ii)%vars%flag(pp) .EQ. 1_idef ) then
-				V = spp(ii)%vars%V(:,pp)
-				X = spp(ii)%vars%X(:,pp)
+!	open(unit=default_unit_write,&
+!	file='/home/l8c/Documents/KORC/KORC-FO/test.dat',&
+!	status='UNKNOWN',form='formatted')
+!	do ii=1_idef,100_idef
+!		write(default_unit_write,'(2F25.16)') besselk(REAL(ii,rp)*0.5_rp)
+!	end do
+!	close(default_unit_write)
 
-				binormal = cross(V,spp(ii)%vars%E(:,pp)) +&
-				cross(V,cross(V,spp(ii)%vars%B(:,pp)))
+	ALLOCATE(bool_pixel_array(cam%num_pixels(1),cam%num_pixels(2),2)) ! (NX,NY,2)
+	ALLOCATE(angle_pixel_array(cam%num_pixels(1),cam%num_pixels(2),2)) ! (NX,NY,2)
+	ALLOCATE(part_per_pixel(cam%num_pixels(1),cam%num_pixels(2)))
+
+	part_per_pixel = 0.0_rp
+
+!	open(unit=default_unit_write,&
+!	file='/home/l8c/Documents/KORC/KORC-FO/test.dat',&
+!	status='UNKNOWN',form='formatted')
+
+	do ss=1_idef,params%num_species
+		q = ABS(spp(ss)%q)*params%cpp%charge
+		m = spp(ss)%m*params%cpp%mass
+
+		do pp=1_idef,spp(ss)%ppp
+			if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
+				V = spp(ss)%vars%V(:,pp)*params%cpp%velocity
+				X = spp(ss)%vars%X(:,pp)*params%cpp%length
+
+				binorm = cross(V,spp(ss)%vars%E(:,pp)) +&
+				cross(V,cross(V,spp(ss)%vars%B(:,pp)))
 		
 				u = SQRT(DOT_PRODUCT(V,V))
-				k = q*SQRT(DOT_PRODUCT(binormal,binormal))/(spp(ii)%vars%gamma(pp)*m*u**3)
-				k = k/params%cpp%length ! Now with units (m)
+				k = q*SQRT(DOT_PRODUCT(binorm,binorm))/(spp(ss)%vars%gamma(pp)*m*u**3)
+!				k = k/params%cpp%length ! Now with units (m)
 
-				binormal = binormal/SQRT(DOT_PRODUCT(binormal,binormal))
+				binorm = binorm/SQRT(DOT_PRODUCT(binorm,binorm))
 
 				threshold_angle = (1.5_rp*k*cam%lambda_max/C_PI)**(1.0_rp/3.0_rp) ! In radians
 
-				call isVisible(X*params%cpp%length,V/u,threshold_angle,bool,angle)
+!				call check_if_visible(X*params%cpp%length,V/u,threshold_angle,bool,angle,XC)
+				call check_if_visible(X,V/u,threshold_angle,bool,angle)	
+			
+				if (bool.EQV..TRUE.) then
+					k = k/1.0E2_rp ! Now in CGS
 
-			end if
-		end do
+					X(1:2) = clockwise_rotation(X(1:2),angle)
+!					XC(1:2) = clockwise_rotation(XC(1:2),angle)
+					V(1:2) = clockwise_rotation(V(1:2),angle)
+					binorm(1:2) = clockwise_rotation(binorm(1:2),angle)
 
-	end do
+					call calculate_rotation_angles(X,bool_pixel_array,angle_pixel_array)
+
+
+					do ii=1_idef,cam%num_pixels(1)
+						do jj=1_idef,cam%num_pixels(2)
+							if (bool_pixel_array(ii,jj,1)) then
+								part_per_pixel(ii,jj) = part_per_pixel(ii,jj) + 1.0_rp
+
+								clockwise = ATAN2(X(2),X(1))
+
+								if (clockwise.LT.0.0_rp) clockwise = clockwise + 2.0_rp*C_PI
+
+								angle = angle_pixel_array(ii,jj,1) - clockwise
+
+								XC = (/cam%position(1)*COS(angle),&
+									-cam%position(1)*COS(angle),cam%position(2)/)
+
+								n = XC - X
+								n = n/SQRT(DOT_PRODUCT(n,n))
+
+								psi = ACOS(DOT_PRODUCT(n,binorm))
+								if (psi.GT.0.5_rp*C_PI) psi = psi - 0.5_rp*C_PI
+								if (psi.LT.0.5_rp*C_PI) psi = 0.5_rp*C_PI - psi
+
+								nperp = n - DOT_PRODUCT(n,binorm)*binorm
+								chi = ABS(ACOS(DOT_PRODUCT(nperp,V/u)))
+
+
+							end if
+
+							if (bool_pixel_array(ii,jj,2)) then
+								part_per_pixel(ii,jj) = part_per_pixel(ii,jj) + 1.0_rp
+							end if
+						end do
+					end do
+
+
+				end if ! check if bool == TRUE
+			end if ! if confined
+		end do ! particles
+	end do ! species
+!	do ii=1_idef,cam%num_pixels(1)
+!		write(default_unit_write,'(35F25.16)') part_per_pixel(ii,:)
+!	end do
+!	close(default_unit_write)
+
+	DEALLOCATE(bool_pixel_array)
+	DEALLOCATE(angle_pixel_array)
+	DEALLOCATE(part_per_pixel)
 END SUBROUTINE synthetic_camera
 
 
@@ -313,7 +594,7 @@ SUBROUTINE ajyik( x, vj1, vj2, vy1, vy2, vi1, vi2, vk1, vk2 )
   real ( kind = 8 ) rp2
   real ( kind = 8 ) rq
   real ( kind = 8 ) sk
-  real ( kind = 8 ) sum
+  real ( kind = 8 ) sum_ajyik
   real ( kind = 8 ) uj1
   real ( kind = 8 ) uj2
   real ( kind = 8 ) uu0
@@ -518,20 +799,20 @@ SUBROUTINE ajyik( x, vj1, vj2, vy1, vy2, vi1, vi2, vk1, vk2 )
         gn = gn2
       end if
       a0 = ( 2.0D+00 / x ) ** vl / gn
-      sum = 1.0D+00
+      sum_ajyik = 1.0D+00
       r = 1.0D+00
       do k = 1, 60
         r = 0.25D+00 * r * x2 / ( k * ( k - vl ) )
-        sum = sum + r
+        sum_ajyik = sum_ajyik + r
         if ( abs ( r ) < 1.0D-15 ) then
           exit
         end if
       end do
 
       if ( l == 1 ) then
-        vk1 = 0.5D+00 * uu0 * pi * ( sum * a0 - vi1 )
+        vk1 = 0.5D+00 * uu0 * pi * ( sum_ajyik * a0 - vi1 )
       else
-        vk2 = 0.5D+00 * uu0 * pi * ( sum * a0 - vi2 )
+        vk2 = 0.5D+00 * uu0 * pi * ( sum_ajyik * a0 - vi2 )
       end if
 
     end do
@@ -542,16 +823,16 @@ SUBROUTINE ajyik( x, vj1, vj2, vy1, vy2, vi1, vi2, vk1, vk2 )
 
     do l = 1, 2
       vv = vv0 * l * l
-      sum = 1.0D+00
+      sum_ajyik = 1.0D+00
       r = 1.0D+00
       do k = 1, k0
         r = 0.125D+00 * r * ( vv - ( 2.0D+00 * k - 1.0D+00 ) ** 2 ) / ( k * x )
-        sum = sum + r
+        sum_ajyik = sum_ajyik + r
       end do
       if ( l == 1 ) then
-        vk1 = c0 * sum
+        vk1 = c0 * sum_ajyik
       else
-        vk2 = c0 * sum
+        vk2 = c0 * sum_ajyik
       end if
     end do
 

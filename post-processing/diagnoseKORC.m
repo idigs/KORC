@@ -2688,6 +2688,6 @@ for ss=1:num_species
     xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
     ylabel('$P_{syn}(\lambda,\psi)$','FontSize',14,'Interpreter','latex')
     
-    saveas(fh,[ST.path 'SyntheticDiagnostic_ss_' num2str(ss)],'fig')
+%    saveas(fh,[ST.path 'SyntheticDiagnostic_ss_' num2str(ss)],'fig')
 end
 end
