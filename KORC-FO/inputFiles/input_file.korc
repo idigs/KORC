@@ -1,8 +1,8 @@
 &input_parameters
-	t_steps = 100 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	t_steps = 3801 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
 	dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
-	output_cadence = 55 ! 1400 for saving each 100 gyro-periods
-	num_species = 1
+	output_cadence = 3800 ! 1400 for saving each 100 gyro-periods
+	num_species = 2
 	radiation = .TRUE.
 	collisions = .TRUE.
 	collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
@@ -17,15 +17,15 @@
 /
 
 &plasma_species
-	runaway = .FALSE. !
-	Ro = 1.5 !
-	Zo = 0.0 !
-	r = 0.5 !
-	Eo = 10.0E6 ! Initial energy in eV
-	etao = 10.0  ! Initial pitch angle
-	ppp = 100000 ! Number of particles per process (mpi)
-	q = -1.0 ! Electric charge
-	m = 1.0 ! In units of electron mass
+	runaway = .FALSE., .FALSE. !
+	Ro = 1.4, 1.4 !
+	Zo = 0.0, 0.0 !
+	r = 0.4, 0.4 !
+	Eo = 30.0E6, 30.0E6 ! Initial energy in eV
+	etao = 15.0, 10.0  ! Initial pitch angle
+	ppp = 252, 252 ! Number of particles per process (mpi)
+	q = -1.0, -1.0 ! Electric charge
+	m = 1.0, 1.0 ! In units of electron mass
 /
 
 &analytic_mag_field_params
@@ -69,12 +69,12 @@
 
 &SyntheticCamera
 	Riw = 1.0 ! Radial position of inner wall
-	num_pixels = 50, 35 ! Number of pixels (X,Y)
+	num_pixels = 50, 45 ! Number of pixels (X,Y)
 	sensor_size = 0.25, 0.25 ! (horizontal,vertical)
 	focal_length = 0.4
 	position = 2.4, 0.0 ! Position of camera (R,Z)
 	incline = 55.0 ! In degrees
-	lambda_min = 400E-9 ! Minimum wavelength in meters
-	lambda_max = 900E-9 ! Maximum wavelength in meters
+	lambda_min = 400.0E-9 ! Minimum wavelength in meters
+	lambda_max = 900.0E-9 ! Maximum wavelength in meters
 	Nlambda = 100 ! Number of discrete wavelengths
 /

@@ -26,13 +26,18 @@ module korc_HDF5
 	  module procedure isave_1d_array_to_hdf5,rsave_1d_array_to_hdf5
 	END INTERFACE
 
+	INTERFACE save_2d_array_to_hdf5
+	  module procedure rsave_2d_array_to_hdf5
+	END INTERFACE
+
 	PRIVATE :: isave_to_hdf5,rsave_to_hdf5,isave_1d_array_to_hdf5,&
 				rsave_1d_array_to_hdf5,rsave_2d_array_to_hdf5,load_from_hdf5,&
 				iload_from_hdf5,rload_from_hdf5,rload_array_from_hdf5,&
 				rload_1d_array_from_hdf5,rload_3d_array_from_hdf5,rload_2d_array_from_hdf5
 				
 	PUBLIC :: initialize_HDF5, finalize_HDF5, save_simulation_parameters,&
-                load_field_data_from_hdf5,save_to_hdf5,save_1d_array_to_hdf5
+                load_field_data_from_hdf5,save_to_hdf5,save_1d_array_to_hdf5,&
+				save_2d_array_to_hdf5
 
 contains
 
@@ -685,7 +690,7 @@ subroutine save_simulation_parameters(params,spp,F)
 		dset = TRIM(gname) // "/t_steps"
 		attr_array(1) = "Number of time steps"
 		idata = params%t_steps
-		call isave_1d_array_to_hdf5(h5file_id,dset,idata,attr_array)
+		call save_1d_array_to_hdf5(h5file_id,dset,idata,attr_array)
 
 		dset = TRIM(gname) // "/num_omp_threads"
 		attr = "Number of omp threads"
@@ -694,12 +699,12 @@ subroutine save_simulation_parameters(params,spp,F)
 		dset = TRIM(gname) // "/output_cadence"
 		attr_array(1) = "Cadence of output files"
 		idata = params%output_cadence
-		call isave_1d_array_to_hdf5(h5file_id,dset,idata,attr_array)
+		call save_1d_array_to_hdf5(h5file_id,dset,idata,attr_array)
 
 		dset = TRIM(gname) // "/num_snapshots"
 		attr_array(1) = "Number of outputs for each variable"
 		idata = params%num_snapshots
-		call isave_1d_array_to_hdf5(h5file_id,dset,idata,attr_array)
+		call save_1d_array_to_hdf5(h5file_id,dset,idata,attr_array)
 
 		dset = TRIM(gname) // "/num_species"
 		attr = "Number of particle species"
@@ -739,43 +744,43 @@ subroutine save_simulation_parameters(params,spp,F)
 
 		dset = TRIM(gname) // "/ppp"
 		attr_array(1) = "Particles per (mpi) process"
-		call isave_1d_array_to_hdf5(h5file_id,dset,spp%ppp,attr_array)
+		call save_1d_array_to_hdf5(h5file_id,dset,spp%ppp,attr_array)
 
 		dset = TRIM(gname) // "/q"
 		attr_array(1) = "Electric charge"
-		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%q*params%cpp%charge,attr_array)
+		call save_1d_array_to_hdf5(h5file_id,dset,spp%q*params%cpp%charge,attr_array)
 
 		dset = TRIM(gname) // "/m"
 		attr_array(1) = "Species mass in kg"
-		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%m*params%cpp%mass,attr_array)
+		call save_1d_array_to_hdf5(h5file_id,dset,spp%m*params%cpp%mass,attr_array)
 
 		dset = TRIM(gname) // "/Eo"
 		attr_array(1) = "Initial (average) energy in eV"
-		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%Eo*params%cpp%energy/C_E,attr_array)
+		call save_1d_array_to_hdf5(h5file_id,dset,spp%Eo*params%cpp%energy/C_E,attr_array)
 
 		dset = TRIM(gname) // "/gammao"
 		attr_array(1) = "Initial relativistic gamma."
-		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%gammao,attr_array)
+		call save_1d_array_to_hdf5(h5file_id,dset,spp%gammao,attr_array)
 
 		dset = TRIM(gname) // "/etao"
 		attr_array(1) = "Initial pitch angle in degrees"
-		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%etao,attr_array)
+		call save_1d_array_to_hdf5(h5file_id,dset,spp%etao,attr_array)
 
 		dset = TRIM(gname) // "/wc"
 		attr_array(1) = "Average cyclotron frequency in Hz"
-		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%wc/params%cpp%time,attr_array)
+		call save_1d_array_to_hdf5(h5file_id,dset,spp%wc/params%cpp%time,attr_array)
 
 		dset = TRIM(gname) // "/Ro"
 		attr_array(1) = "Initial radial position of population"
-		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%Ro*params%cpp%length,attr_array)
+		call save_1d_array_to_hdf5(h5file_id,dset,spp%Ro*params%cpp%length,attr_array)
 
 		dset = TRIM(gname) // "/Zo"
 		attr_array(1) = "Initial Z position of population"
-		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%Zo*params%cpp%length,attr_array)
+		call save_1d_array_to_hdf5(h5file_id,dset,spp%Zo*params%cpp%length,attr_array)
 
 		dset = TRIM(gname) // "/r"
 		attr_array(1) = "Radius of initial spatial distribution"
-		call rsave_1d_array_to_hdf5(h5file_id,dset,spp%r*params%cpp%length,attr_array)
+		call save_1d_array_to_hdf5(h5file_id,dset,spp%r*params%cpp%length,attr_array)
 
 		call h5gclose_f(group_id, h5error)
 
@@ -828,21 +833,21 @@ subroutine save_simulation_parameters(params,spp,F)
 
 			dset = TRIM(gname) // "/dims"
 			attr_array(1) = "Mesh dimension of the magnetic field (NR,NPHI,NZ)"
-			call isave_1d_array_to_hdf5(h5file_id,dset,F%dims,attr_array)
+			call save_1d_array_to_hdf5(h5file_id,dset,F%dims,attr_array)
 
 			dset = TRIM(gname) // "/R"
 			attr_array(1) = "Radial position of the magnetic field grid nodes"
-			call rsave_1d_array_to_hdf5(h5file_id,dset,F%X%R*params%cpp%length,attr_array)
+			call save_1d_array_to_hdf5(h5file_id,dset,F%X%R*params%cpp%length,attr_array)
 
 			if (.NOT. params%poloidal_flux) then
 				dset = TRIM(gname) // "/PHI"
 				attr_array(1) = "Azimuthal angle of the magnetic field grid nodes"
-				call rsave_1d_array_to_hdf5(h5file_id,dset,F%X%PHI,attr_array)
+				call save_1d_array_to_hdf5(h5file_id,dset,F%X%PHI,attr_array)
 			end if
 
 			dset = TRIM(gname) // "/Z"
 			attr_array(1) = "Z position of the magnetic field grid nodes"
-			call rsave_1d_array_to_hdf5(h5file_id,dset,F%X%Z*params%cpp%length,attr_array)
+			call save_1d_array_to_hdf5(h5file_id,dset,F%X%Z*params%cpp%length,attr_array)
 
 			DEALLOCATE(attr_array)
 		end if
@@ -959,25 +964,25 @@ subroutine save_simulation_outputs(params,spp,F)
 !	    call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%Rgc)
 
 	    dset = "gamma"
-	    call rsave_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%gamma)
+	    call save_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%gamma)
 
 	    dset = "eta"
-	    call rsave_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%eta)
+	    call save_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%eta)
 
 	    dset = "mu"
 		units = params%cpp%mass*params%cpp%velocity**2/params%cpp%Bo
-	    call rsave_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%mu)
+	    call save_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%mu)
 
 	    dset = "Prad"
 		units = params%cpp%mass*(params%cpp%velocity**3)/params%cpp%length
-	    call rsave_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%Prad)
+	    call save_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%Prad)
 
 	    dset = "Pin"
 		units = params%cpp%mass*(params%cpp%velocity**3)/params%cpp%length
-	    call rsave_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%Pin)
+	    call save_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%Pin)
 
 		dset = "flag"
-		call isave_1d_array_to_hdf5(subgroup_id,dset, spp(ii)%vars%flag)
+		call save_1d_array_to_hdf5(subgroup_id,dset, spp(ii)%vars%flag)
 
 	    dset = "B"
 		units = params%cpp%Bo
@@ -988,7 +993,7 @@ subroutine save_simulation_outputs(params,spp,F)
 	    call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%E)
 
 !	    dset = "AUX"
-!	    call rsave_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%AUX)
+!	    call save_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%AUX)
 
         call h5gclose_f(subgroup_id, h5error)
     end do

@@ -2431,7 +2431,8 @@ camera_params.pixel_grid = setupCameraPixelGrid(camera_params,false);
 clockwise_rotation = @(t,x) [cos(t),sin(t);-sin(t),cos(t)]*x;
 anticlockwise_rotation = @(t,x) [cos(t),-sin(t);sin(t),cos(t)]*x;
 
-for ss=1:num_species
+% for ss=1:num_species
+for ss=3:3
     q = abs(ST.params.species.q(ss));
     m = ST.params.species.m(ss);
     Ro = ST.params.fields.Ro;
@@ -2599,14 +2600,14 @@ for ss=1:num_species
                     P_psi_chi{ii,jj}(ll) = sum(Psyn_tmp(Psyn_tmp > 0));
                     counter_psi_chi(ii,jj) = counter_psi_chi(ii,jj) + numel(find(Psyn_tmp > 0));
                     
-                    Psyn_tmp = ...
-                        Po(gamma_pix,kappa_pix,lambda(ll)).*(1+(gamma_pix.*psi).^2).^2.*( K23(zeta(gamma_pix,psi,kappa_pix,lambda(ll))).^2 + ...
-                        K13(zeta(gamma_pix,psi,kappa_pix,lambda(ll))).^2.*(gamma_pix.*psi).^2./(1+(gamma_pix.*psi).^2) );
-                    P_psi{ii,jj}(ll) = sum(Psyn_tmp);
+%                     Psyn_tmp = ...
+%                         Po(gamma_pix,kappa_pix,lambda(ll)).*(1+(gamma_pix.*psi).^2).^2.*( K23(zeta(gamma_pix,psi,kappa_pix,lambda(ll))).^2 + ...
+%                         K13(zeta(gamma_pix,psi,kappa_pix,lambda(ll))).^2.*(gamma_pix.*psi).^2./(1+(gamma_pix.*psi).^2) );
+%                     P_psi{ii,jj}(ll) = sum(Psyn_tmp);
                 end
                 
                 Ptot_psi_chi(ii,jj) = trapz(lambda,P_psi_chi{ii,jj});
-                Ptot_psi(ii,jj) = trapz(lambda,P_psi{ii,jj});
+%                 Ptot_psi(ii,jj) = trapz(lambda,P_psi{ii,jj});
                 counter_psi(ii,jj) = numel(I);
             end
             
