@@ -6,7 +6,7 @@ MODULE korc_synthetic_camera
 
 	TYPE, PRIVATE :: CAMERA
 		REAL(rp) :: Riw ! Radial position of inner wall
-		INTEGER, DIMENSION(2) :: num_pixels ! Number of pixels (X,Y)
+		INTEGER, DIMENSION(2) :: np ! Number of pixels (X,Y)
 		REAL(rp), DIMENSION(2) :: sensor_size ! In meters (horizontal,vertical)
 		REAL(rp) :: focal_length ! Focal length in meters
 		REAL(rp), DIMENSION(2) :: position ! Position of camera (R,Z)
@@ -40,8 +40,7 @@ MODULE korc_synthetic_camera
 	REAL(rp), PRIVATE, PARAMETER :: CGS_E = 3.0E9_rp*C_E
 	REAL(rp), PRIVATE, PARAMETER :: CGS_ME = 1.0E3_rp*C_ME
 
-	PRIVATE :: clockwise_rotation,anticlockwise_rotation,cross,&
-				check_if_visible,calculate_rotation_angles,ajyik,&
+	PRIVATE :: clockwise_rotation,anticlockwise_rotation,cross,check_if_visible,calculate_rotation_angles,ajyik,&
 				zeta,fx,arg,Po,P1,Psyn,chic,psic,&
 				save_synthetic_camera_params,save_snapshot
 	PUBLIC :: initialize_synthetic_camera,synthetic_camera
@@ -64,8 +63,7 @@ SUBROUTINE initialize_synthetic_camera(params)
 	REAL(rp) :: xmin, xmax, ymin, ymax, DX, DY
 	INTEGER :: ii
 
-	NAMELIST /SyntheticCamera/ Riw,num_pixels,sensor_size,&
-			focal_length,position,incline,lambda_min,lambda_max,Nlambda
+	NAMELIST /SyntheticCamera/ Riw,num_pixels,sensor_size,focal_length,position,incline,lambda_min,lambda_max,Nlambda
 
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'(/,"* * * * * * * * * * * * * * * * * *")')
@@ -79,7 +77,7 @@ SUBROUTINE initialize_synthetic_camera(params)
 !	write(*,nml=SyntheticCamera)
 
 	cam%Riw = Riw
-	cam%num_pixels = num_pixels
+	cam%np = num_pixels
 	cam%sensor_size = sensor_size
 	cam%focal_length = focal_length
 	cam%position = position
@@ -97,41 +95,41 @@ SUBROUTINE initialize_synthetic_camera(params)
 		cam%lambda(ii) = cam%lambda_min + REAL(ii-1_idef,rp)*cam%Dlambda
 	end do
 
-	ALLOCATE(cam%pixels_nodes_x(cam%num_pixels(1)))
-	ALLOCATE(cam%pixels_nodes_y(cam%num_pixels(2)))
-	ALLOCATE(cam%pixels_edges_x(cam%num_pixels(1) + 1))
-	ALLOCATE(cam%pixels_edges_y(cam%num_pixels(2) + 1))
+	ALLOCATE(cam%pixels_nodes_x(cam%np(1)))
+	ALLOCATE(cam%pixels_nodes_y(cam%np(2)))
+	ALLOCATE(cam%pixels_edges_x(cam%np(1) + 1))
+	ALLOCATE(cam%pixels_edges_y(cam%np(2) + 1))
 
 	xmin = -0.5_rp*cam%sensor_size(1)
 	xmax = 0.5_rp*cam%sensor_size(1)
-	DX = cam%sensor_size(1)/REAL(cam%num_pixels(1),rp)
+	DX = cam%sensor_size(1)/REAL(cam%np(1),rp)
 
-	do ii=1_idef,cam%num_pixels(1)
+	do ii=1_idef,cam%np(1)
 		cam%pixels_nodes_x(ii) = xmin + 0.5_rp*DX + REAL(ii-1_idef,rp)*DX
 	end do
 
-	do ii=1_idef,cam%num_pixels(1)+1_idef
+	do ii=1_idef,cam%np(1)+1_idef
 		cam%pixels_edges_x(ii) = xmin + REAL(ii-1_idef,rp)*DX
 	end do
 
 	ymin = cam%position(2) - 0.5_rp*cam%sensor_size(2)
 	ymax = cam%position(2) + 0.5_rp*cam%sensor_size(2)
-	DY = cam%sensor_size(2)/REAL(cam%num_pixels(2),rp)
+	DY = cam%sensor_size(2)/REAL(cam%np(2),rp)
 
-	do ii=1_idef,cam%num_pixels(2)
+	do ii=1_idef,cam%np(2)
 		cam%pixels_nodes_y(ii) = ymin + 0.5_rp*DY + REAL(ii-1_idef,rp)*DY
 	end do
 
-	do ii=1_idef,cam%num_pixels(2)+1_idef
+	do ii=1_idef,cam%np(2)+1_idef
 		cam%pixels_edges_y(ii) = ymin + REAL(ii-1_idef,rp)*DY
 	end do
 	
 	! Initialize ang variables
-	ALLOCATE(ang%eta(cam%num_pixels(1)))
-	ALLOCATE(ang%beta(cam%num_pixels(1)))
-	ALLOCATE(ang%psi(cam%num_pixels(2)+1_idef))
+	ALLOCATE(ang%eta(cam%np(1)))
+	ALLOCATE(ang%beta(cam%np(1)))
+	ALLOCATE(ang%psi(cam%np(2)+1_idef))
 
-	do ii=1_idef,cam%num_pixels(1)
+	do ii=1_idef,cam%np(1)
 		ang%eta(ii) = ABS(ATAN2(cam%pixels_nodes_x(ii),cam%focal_length))
 		if (cam%pixels_edges_x(ii) .LT. 0.0_rp) then
 			ang%beta(ii) = 0.5_rp*C_PI - cam%incline - ang%eta(ii)
@@ -140,7 +138,7 @@ SUBROUTINE initialize_synthetic_camera(params)
 		end if
 	end do
 
-	do ii=1_idef,cam%num_pixels(2)+1_idef
+	do ii=1_idef,cam%np(2)+1_idef
 		ang%psi(ii) = ATAN2(cam%pixels_edges_y(ii),cam%focal_length)
 	end do
 
@@ -270,8 +268,7 @@ FUNCTION P1(g,p,k,l,x)
 	BK = besselk(zeta(g,p,k,l))
 	A = fx(g,p,x)
 
-	P1 = ((g*p)**2)*BK(1)*COS(arg(g,p,k,l,x))/(1.0_rp + (g*p)**2)&
-		- 0.5_rp*BK(1)*(1.0_rp + A**2)*COS(arg(g,p,k,l,x))&
+	P1 = ((g*p)**2)*BK(1)*COS(arg(g,p,k,l,x))/(1.0_rp + (g*p)**2) - 0.5_rp*BK(1)*(1.0_rp + A**2)*COS(arg(g,p,k,l,x))&
 		+ A*BK(2)*SIN(arg(g,p,k,l,x))
 END FUNCTION P1
 
@@ -393,14 +390,14 @@ SUBROUTINE calculate_rotation_angles(X,bpa,apa)
 
 	bpa = .TRUE.
 	
-	do ii=1_idef,cam%num_pixels(1)
+	do ii=1_idef,cam%np(1)
 		a = 1.0_rp + TAN(ang%beta(ii))**2
 		b = -2.0_rp*TAN(ang%beta(ii))**2*cam%position(1)
 		c = (TAN(ang%beta(ii))*cam%position(1))**2 - R**2
 		dis = b**2 - 4.0_rp*a*c
 		
 		if (dis.GT.0.0_rp) then
-			do jj=1_idef,cam%num_pixels(2)
+			do jj=1_idef,cam%np(2)
 
 				if ((psi.GT.ang%psi(jj)).AND.(psi.LE.ang%psi(jj+1_idef))) then
 					xp = 0.5_rp*(-b + SQRT(dis))/a
@@ -410,8 +407,7 @@ SUBROUTINE calculate_rotation_angles(X,bpa,apa)
 					ytmp = SQRT(R**2 - xp**2)
 
 					! Check if particle is behind inner wall
-					if ((ATAN2(ytmp,xtmp).GT.ang%threshold_angle)&
-						.AND.(SQRT(xtmp**2+ytmp**2).GT.ang%threshold_radius)) then
+					if ((ATAN2(ytmp,xtmp).GT.ang%threshold_angle).AND.(SQRT(xtmp**2+ytmp**2).GT.ang%threshold_radius)) then
 						bpa(ii,jj,1) = .FALSE.
 					else
 						apa(ii,jj,1) = ATAN2(ytmp,xp)
@@ -422,8 +418,7 @@ SUBROUTINE calculate_rotation_angles(X,bpa,apa)
 					ytmp = SQRT(R**2 - xn**2)
 
 					! Check if particle is behind inner wall
-					if ((ATAN2(ytmp,xtmp).GT.ang%threshold_angle)&
-						.AND.(SQRT(xtmp**2+ytmp**2).GT.ang%threshold_radius)) then
+					if ((ATAN2(ytmp,xtmp).GT.ang%threshold_angle).AND.(SQRT(xtmp**2+ytmp**2).GT.ang%threshold_radius)) then
 						bpa(ii,jj,2) = .FALSE.
 					else
 						apa(ii,jj,2) = ATAN2(ytmp,xn)
@@ -449,32 +444,29 @@ SUBROUTINE synthetic_camera(params,spp)
 	REAL(rp), DIMENSION(3) :: X, V, XC
 	LOGICAL, DIMENSION(:,:,:), ALLOCATABLE :: bool_pixel_array
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: angle_pixel_array
-	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: part_per_pixel
-	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: Psyn_per_pixel
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: part_pixel
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: Psyn_pixel
 	REAL(rp) :: q, m, k, u, g, l, threshold_angle
 	REAL(rp) :: psi, chi, Psyn_tmp
 	LOGICAL :: bool
 	REAL(rp) :: angle, clockwise
 	INTEGER :: ii,jj,ll,ss,pp
 
-	ALLOCATE(bool_pixel_array(cam%num_pixels(1),cam%num_pixels(2),2)) ! (NX,NY,2)
-	ALLOCATE(angle_pixel_array(cam%num_pixels(1),cam%num_pixels(2),2)) ! (NX,NY,2)
-	ALLOCATE(part_per_pixel(cam%num_pixels(1),cam%num_pixels(2),params%num_species))
-	ALLOCATE(Psyn_per_pixel(cam%num_pixels(1),cam%num_pixels(2),params%num_species))
+	ALLOCATE(bool_pixel_array(cam%np(1),cam%np(2),2)) ! (NX,NY,2)
+	ALLOCATE(angle_pixel_array(cam%np(1),cam%np(2),2)) ! (NX,NY,2)
+	ALLOCATE(part_pixel(cam%np(1),cam%np(2),cam%Nlambda,params%num_species))
+	ALLOCATE(Psyn_pixel(cam%np(1),cam%np(2),cam%Nlambda,params%num_species))
 
-	part_per_pixel = 0.0_rp
-	Psyn_per_pixel = 0.0_rp
+	part_pixel = 0.0_rp
+	Psyn_pixel = 0.0_rp
 
 	do ss=1_idef,params%num_species
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
 
-!$OMP PARALLEL FIRSTPRIVATE(q,m)&
-!$OMP& PRIVATE(binorm,n,nperp,X,XC,V,&
-!$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,&
-!$OMP& threshold_angle,psi,chi,Psyn_tmp,bool,angle,clockwise,&
-!$OMP& ii,jj,ll,pp)&
-!$OMP& SHARED(params,spp,ss,Psyn_per_pixel,part_per_pixel)
+!$OMP PARALLEL FIRSTPRIVATE(q,m) PRIVATE(binorm,n,nperp,X,XC,V,bool_pixel_array,angle_pixel_array,k,u,g,l,&
+!$OMP& threshold_angle,psi,chi,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp)&
+!$OMP& SHARED(params,spp,ss,Psyn_pixel,part_pixel)
 !$OMP DO
 		do pp=1_idef,spp(ss)%ppp
 			if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
@@ -482,8 +474,7 @@ SUBROUTINE synthetic_camera(params,spp)
 				X = spp(ss)%vars%X(:,pp)*params%cpp%length
 				g = spp(ss)%vars%gamma(pp)
 
-				binorm = cross(V,spp(ss)%vars%E(:,pp)) +&
-				cross(V,cross(V,spp(ss)%vars%B(:,pp)))
+				binorm = cross(V,spp(ss)%vars%E(:,pp)) + cross(V,cross(V,spp(ss)%vars%B(:,pp)))
 		
 				u = SQRT(DOT_PRODUCT(V,V))
 				k = q*SQRT(DOT_PRODUCT(binorm,binorm))/(spp(ss)%vars%gamma(pp)*m*u**3)
@@ -507,16 +498,15 @@ SUBROUTINE synthetic_camera(params,spp)
 					if (clockwise.LT.0.0_rp) clockwise = clockwise + 2.0_rp*C_PI
 
 
-					do ii=1_idef,cam%num_pixels(1) ! NX
-						do jj=1_idef,cam%num_pixels(2) ! NY
+					do ii=1_idef,cam%np(1) ! NX
+						do jj=1_idef,cam%np(2) ! NY
 							
 							if (bool_pixel_array(ii,jj,1)) then
-!								part_per_pixel(ii,jj) = part_per_pixel(ii,jj) + 1.0_rp
+!								part_pixel(ii,jj) = part_pixel(ii,jj) + 1.0_rp
 
 								angle = angle_pixel_array(ii,jj,1) - clockwise
 
-								XC = (/cam%position(1)*COS(angle),&
-									-cam%position(1)*SIN(angle),cam%position(2)/)
+								XC = (/cam%position(1)*COS(angle),-cam%position(1)*SIN(angle),cam%position(2)/)
 
 								n = XC - X
 								n = n/SQRT(DOT_PRODUCT(n,n))
@@ -533,23 +523,20 @@ SUBROUTINE synthetic_camera(params,spp)
 									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
 										Psyn_tmp = Psyn(g,psi,k,l,chi)
 										if (Psyn_tmp.GT.0.0_rp) then
-											Psyn_per_pixel(ii,jj,ss) =&
-											Psyn_per_pixel(ii,jj,ss) + Psyn_tmp
+											Psyn_pixel(ii,jj,ll,ss) = Psyn_pixel(ii,jj,ll,ss) + Psyn_tmp
 
-											part_per_pixel(ii,jj,ss) =&
-											part_per_pixel(ii,jj,ss) + 1.0_rp
+											part_pixel(ii,jj,ll,ss) = part_pixel(ii,jj,ll,ss) + 1.0_rp
 										end if
 									end if
 								end do ! Nlambda
 							end if
 
 							if (bool_pixel_array(ii,jj,2)) then
-!								part_per_pixel(ii,jj) = part_per_pixel(ii,jj) + 1.0_rp
+!								part_pixel(ii,jj) = part_pixel(ii,jj) + 1.0_rp
 
 								angle = angle_pixel_array(ii,jj,2) - clockwise
 
-								XC = (/cam%position(1)*COS(angle),&
-									-cam%position(1)*SIN(angle),cam%position(2)/)
+								XC = (/cam%position(1)*COS(angle),-cam%position(1)*SIN(angle),cam%position(2)/)
 
 								n = XC - X
 								n = n/SQRT(DOT_PRODUCT(n,n))
@@ -566,11 +553,9 @@ SUBROUTINE synthetic_camera(params,spp)
 									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
 										Psyn_tmp = Psyn(g,psi,k,l,chi)
 										if (Psyn_tmp.GT.0.0_rp) then
-											Psyn_per_pixel(ii,jj,ss) =&
-											Psyn_per_pixel(ii,jj,ss) + Psyn_tmp
+											Psyn_pixel(ii,jj,ll,ss) = Psyn_pixel(ii,jj,ll,ss) + Psyn_tmp
 
-											part_per_pixel(ii,jj,ss) =&
-											part_per_pixel(ii,jj,ss) + 1.0_rp
+											part_pixel(ii,jj,ll,ss) = part_pixel(ii,jj,ll,ss) + 1.0_rp
 										end if
 									end if
 								end do ! Nlambda
@@ -587,27 +572,28 @@ SUBROUTINE synthetic_camera(params,spp)
 !$OMP END PARALLEL
 	end do ! species
 
-	call save_snapshot(params,part_per_pixel,Psyn_per_pixel)
+	call save_snapshot(params,part_pixel,Psyn_pixel)
 
 !	open(unit=default_unit_write,&
 !	file='/home/l8c/Documents/KORC/KORC-FO/Psyn.dat',&
 !	status='UNKNOWN',form='formatted')
-!	do ii=1_idef,cam%num_pixels(1)
-!		write(default_unit_write,'(45F25.16)') Psyn_per_pixel(ii,:)
+!	do ii=1_idef,cam%np(1)
+!		write(default_unit_write,'(45F25.16)') Psyn_pixel(ii,:)
 !	end do
 !	close(default_unit_write)
 
 !	open(unit=default_unit_write,&
 !	file='/home/l8c/Documents/KORC/KORC-FO/Part.dat',&
 !	status='UNKNOWN',form='formatted')
-!	do ii=1_idef,cam%num_pixels(1)
-!		write(default_unit_write,'(45F25.16)') part_per_pixel(ii,:)
+!	do ii=1_idef,cam%np(1)
+!		write(default_unit_write,'(45F25.16)') part_pixel(ii,:)
 !	end do
 !	close(default_unit_write)
 
 	DEALLOCATE(bool_pixel_array)
 	DEALLOCATE(angle_pixel_array)
-	DEALLOCATE(part_per_pixel)
+	DEALLOCATE(part_pixel)
+    DEALLOCATE(Psyn_pixel)
 END SUBROUTINE synthetic_camera
 
 
@@ -679,7 +665,7 @@ SUBROUTINE save_synthetic_camera_params(params)
 	    call save_1d_array_to_hdf5(h5file_id,dset,units*cam%lambda)
 
 	    dset = TRIM(gname) // "/num_pixels"
-	    call save_1d_array_to_hdf5(h5file_id,dset,cam%num_pixels)
+	    call save_1d_array_to_hdf5(h5file_id,dset,cam%np)
 
 	    dset = TRIM(gname) // "/sensor_size"
 	    call save_1d_array_to_hdf5(h5file_id,dset,cam%sensor_size)
@@ -705,8 +691,7 @@ SUBROUTINE save_synthetic_camera_params(params)
 	end if
 
 	write(tmp_str,'(I18)') params%mpi_params%rank
-	filename = TRIM(params%path_to_outputs) //&
-	"synthetic_camera_snapshots_MPI_"// TRIM(ADJUSTL(tmp_str)) //".h5"
+	filename = TRIM(params%path_to_outputs) //"synthetic_camera_snapshots_MPI_"// TRIM(ADJUSTL(tmp_str)) //".h5"
 	call h5fcreate_f(TRIM(filename), H5F_ACC_TRUNC_F, h5file_id, h5error)
 	call h5fclose_f(h5file_id, h5error)
 END SUBROUTINE save_synthetic_camera_params
@@ -715,8 +700,8 @@ END SUBROUTINE save_synthetic_camera_params
 SUBROUTINE save_snapshot(params,part,Psyn)
 	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE, INTENT(IN) :: part
-	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE, INTENT(IN) :: Psyn
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE, INTENT(IN) :: part
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE, INTENT(IN) :: Psyn
 	INTEGER, INTENT(IN) :: species
 	CHARACTER(MAX_STRING_LENGTH) :: filename
 	CHARACTER(MAX_STRING_LENGTH) :: gname
@@ -733,8 +718,7 @@ SUBROUTINE save_snapshot(params,part,Psyn)
 	REAL(rp) :: units
 
 	write(tmp_str,'(I18)') params%mpi_params%rank
-	filename = TRIM(params%path_to_outputs) //&
-	"synthetic_camera_snapshots_MPI_"// TRIM(ADJUSTL(tmp_str)) //".h5"
+	filename = TRIM(params%path_to_outputs) //"synthetic_camera_snapshots_MPI_"// TRIM(ADJUSTL(tmp_str)) //".h5"
 	call h5fopen_f(TRIM(filename), H5F_ACC_RDWR_F, h5file_id, h5error)
 
     ! Create group 'it'
@@ -751,11 +735,11 @@ SUBROUTINE save_snapshot(params,part,Psyn)
 		subgname = "spp_" // TRIM(ADJUSTL(tmp_str))
 		call h5gcreate_f(group_id, TRIM(subgname), subgroup_id, h5error)
 
-		dset = "part_per_pixel"
-		call save_2d_array_to_hdf5(subgroup_id, dset, part(:,:,ss))
+		dset = "part_pixel"
+		call save_3d_array_to_hdf5(subgroup_id, dset, part(:,:,:,ss))
 
-		dset = "Psyn_per_pixel"
-		call save_2d_array_to_hdf5(subgroup_id, dset, Psyn(:,:,ss))
+		dset = "Psyn_pixel"
+		call save_3d_array_to_hdf5(subgroup_id, dset, Psyn(:,:,:,ss))
 
 
 		call h5gclose_f(subgroup_id, h5error)

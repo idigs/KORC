@@ -191,7 +191,7 @@ end
 
 % parametricShift(ST);
 
-ST.P = synchrotronSpectrum(ST);
+% ST.P = synchrotronSpectrum(ST);
 
 munlock
 
@@ -891,7 +891,7 @@ function E = analyticalE(X)
 narginchk(1,2);
 
 % Parameters of the analytical magnetic field
-Eo = 0.0;
+Eo = -7.0;
 Ro = 1.5; % Major radius in meters.
 % Parameters of the analytical magnetic field
 
@@ -925,10 +925,10 @@ end
 function cOp = initializeCollisionOperators(ST)
 cOp = struct;
 
-cOp.Te = 10.0*ST.params.qe; % Background electron temperature in Joules
+cOp.Te = 1.5*ST.params.qe; % Background electron temperature in Joules
 cOp.Ti = cOp.Te; % Background ion temperature in Joules
-cOp.ne = 1.0E23; % Background electron density in 1/m^3
-cOp.Zeff = 10.0; % Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
+cOp.ne = 3.9E19; % Background electron density in 1/m^3
+cOp.Zeff = 5.0; % Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
 cOp.rD = ...
     sqrt( ST.params.ep*cOp.Te/(cOp.ne*ST.params.qe^2*(1 + cOp.Zeff*cOp.Te/cOp.Ti)) );
 cOp.re = ST.params.qe^2/( 4*pi*ST.params.ep*ST.params.me*ST.params.c^2 );
@@ -1236,29 +1236,29 @@ for ii=2:ST.params.numSnapshots
         s = 1/(1 + t*t'); % variable 's' in paper
         
         U_L = s*(up + (up*t')*t + cross(up,t));
-        U = U_L; % Comment or uncomment
+%         U = U_L; % Comment or uncomment
         % % % Leap-frog scheme for Lorentz force % % %
         
 % %         % % % Leap-frog scheme for the radiation damping force % % %
         U_eff = 0.5*(U_L + U);
         gamma_eff = sqrt(1 + U_eff*U_eff');
         V_eff = U_eff/gamma_eff;
-%         
-%         F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
-%             cross(B,cross(B,V_eff)) );
-%         vec = E + cross(V_eff,B);
-%         F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
-% 
-%         U_R = U_R + a*( F2 + F3 );
-%         U = U_L + U_R - U;
-% %         % % % Leap-frog scheme for the radiation damping force % % %
-%         
-%         % % % Collisions % % %
-%         if mod((ii-1)*ST.params.cadence + jj,ST.cOp.subcyclingIter) == 0
-%             [U,dummyWcoll] = collisionOperator(ST,XX,U/sqrt( 1 + U*U' ),dt*ST.cOp.subcyclingIter);
-%         end
-%         % % % Collisions % % %        
-%         gamma = sqrt( 1 + U*U' ); % Comment or uncomment
+        
+        F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
+            cross(B,cross(B,V_eff)) );
+        vec = E + cross(V_eff,B);
+        F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
+
+        U_R = U_R + a*( F2 + F3 );
+        U = U_L + U_R - U;
+%         % % % Leap-frog scheme for the radiation damping force % % %
+        
+        % % % Collisions % % %
+        if mod((ii-1)*ST.params.cadence + jj,ST.cOp.subcyclingIter) == 0
+            [U,dummyWcoll] = collisionOperator(ST,XX,U/sqrt( 1 + U*U' ),dt*ST.cOp.subcyclingIter);
+        end
+        % % % Collisions % % %        
+        gamma = sqrt( 1 + U*U' ); % Comment or uncomment
         
         V = U/gamma;
 
