@@ -89,8 +89,7 @@ SUBROUTINE sample_distribution(params,g,eta)
 	eta_buffer = 0.0_rp
 	call RANDOM_SEED()
 	call RANDOM_NUMBER(rand_unif)
-	p_buffer = aval_params%min_p +&
-		(aval_params%max_p - aval_params%min_p)*rand_unif
+	p_buffer = aval_params%min_p + (aval_params%max_p - aval_params%min_p)*rand_unif
 
 	ii=2
 	do while (ii .LE. 100000)
@@ -184,8 +183,7 @@ SUBROUTINE initialize_avalanche_params(params)
 	REAL(rp) :: Zeff
 	REAL(rp) :: Epar
 	REAL(rp) :: Te
-	NAMELIST /AvalancheGenerationPDF/ max_pitch_angle,max_energy,&
-	ne,Zeff,Epar,Te
+	NAMELIST /AvalancheGenerationPDF/ max_pitch_angle,max_energy,ne,Zeff,Epar,Te
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=AvalancheGenerationPDF)
@@ -200,24 +198,20 @@ SUBROUTINE initialize_avalanche_params(params)
 	aval_params%Te = Te*C_E ! In Joules
 
 	aval_params%lD = SQRT(C_E0*aval_params%Te/(aval_params%ne*C_E**2))
-	aval_params%bmin =&
-	aval_params%Zeff/(12.0_rp*C_PI*aval_params%ne*aval_params%lD**2)
+	aval_params%bmin = aval_params%Zeff/(12.0_rp*C_PI*aval_params%ne*aval_params%lD**2)
 	aval_params%CoulombLog = LOG(aval_params%lD/aval_params%bmin)
-	aval_params%Tau =&
-	1.0_rp/(4.0_rp*C_PI*C_C*C_RE**2*aval_params%ne*aval_params%CoulombLog)
+	aval_params%Tau = 1.0_rp/(4.0_rp*C_PI*C_C*C_RE**2*aval_params%ne*aval_params%CoulombLog)
 
 	aval_params%Ec = C_ME*C_C/(C_E*aval_params%Tau)
 	aval_params%Epar = Epar
 	aval_params%Ebar = aval_params%Epar/aval_params%Ec
 
-	aval_params%max_p =&
-	SQRT((aval_params%max_energy/(C_ME*C_C**2))**2 - 1.0_rp) ! In units of mec^2
+	aval_params%max_p = SQRT((aval_params%max_energy/(C_ME*C_C**2))**2 - 1.0_rp) ! In units of mec^2
 	aval_params%min_p = SQRT(aval_params%Ebar - 1.0_rp) ! In units of mec^2
 	aval_params%min_energy = SQRT(1.0_rp + aval_params%min_p**2)*C_ME*C_C**2
 
 	aval_params%alpha = (aval_params%Ebar - 1.0_rp)/(1.0_rp + aval_params%Zeff)
-	aval_params%cz =&
-	SQRT(3.0_rp*(aval_params%Zeff + 5.0_rp)/C_PI)*aval_params%CoulombLog
+	aval_params%cz = SQRT(3.0_rp*(aval_params%Zeff + 5.0_rp)/C_PI)*aval_params%CoulombLog
 	aval_params%fo = aval_params%alpha/aval_params%cz
 	aval_params%C1 = 0.5_rp*aval_params%alpha
 	aval_params%C2 = 1.0_rp/aval_params%cz - aval_params%C1

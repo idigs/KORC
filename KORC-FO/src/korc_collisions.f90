@@ -135,17 +135,14 @@ subroutine load_params_ss(params)
 	SQRT(C_E0*cparams_ss%Te/(cparams_ss%ne*C_E**2*(1.0_rp + cparams_ss%Te/cparams_ss%Ti)))
 
 	cparams_ss%re = C_E**2/(4.0_rp*C_PI*C_E0*C_ME*C_C**2)
-	cparams_ss%CoulombLog = 25.3_rp - 1.15_rp*LOG10(1E-3_rp*cparams_ss%ne) +&
-	2.3_rp*LOG10(cparams_ss%Te/C_E)
+	cparams_ss%CoulombLog = 25.3_rp - 1.15_rp*LOG10(1E-3_rp*cparams_ss%ne) + 2.3_rp*LOG10(cparams_ss%Te/C_E)
 
 	cparams_ss%VTe = SQRT(2.0_rp*cparams_ss%Te/C_ME)
 	cparams_ss%delta = cparams_ss%VTe/C_C
-	cparams_ss%Gammac = &
-	cparams_ss%ne*C_E**4*cparams_ss%CoulombLog/(4.0_rp*C_PI*C_E0**2)
+	cparams_ss%Gammac = cparams_ss%ne*C_E**4*cparams_ss%CoulombLog/(4.0_rp*C_PI*C_E0**2)
 
 	cparams_ss%Tau = C_ME**2*C_C**3/cparams_ss%Gammac
-	cparams_ss%Ec = &
-	cparams_ss%ne*C_E**3*cparams_ss%CoulombLog/(4.0_rp*C_PI*C_E0**2*C_ME*C_C**2)
+	cparams_ss%Ec = cparams_ss%ne*C_E**3*cparams_ss%CoulombLog/(4.0_rp*C_PI*C_E0**2*C_ME*C_C**2)
 end subroutine load_params_ss
 
 

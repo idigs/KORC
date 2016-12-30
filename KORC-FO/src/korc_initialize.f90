@@ -54,9 +54,8 @@ subroutine load_korc_params(params)
 	INTEGER :: num_species
 	INTEGER :: num_impurity_species
 
-	NAMELIST /input_parameters/ magnetic_field_model,poloidal_flux,&
-			magnetic_field_filename,t_steps,dt,output_cadence,num_species,&
-			radiation,collisions,collisions_model
+	NAMELIST /input_parameters/ magnetic_field_model,poloidal_flux,magnetic_field_filename,t_steps,dt,&
+            output_cadence,num_species,radiation,collisions,collisions_model
 	
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=input_parameters)

@@ -12,8 +12,7 @@ module korc_ppusher
 	REAL(rp), PRIVATE :: E0 ! Dimensionless vacuum permittivity
 
     PRIVATE :: cross,radiation_force,collision_force
-    PUBLIC :: initialize_particle_pusher,advance_particles_position,&
-				advance_particles_velocity
+    PUBLIC :: initialize_particle_pusher,advance_particles_position,advance_particles_velocity
 
     contains
 
@@ -77,8 +76,7 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 		if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
 			call interp_analytical_field(spp(ii)%vars, EB)
 			if (TRIM(EB%electric_field_mode) .EQ. 'PULSE') then 
-				spp(ii)%vars%E = &
-				EXP(-0.5_rp*((params%time - EB%to)/EB%sig)**2)*spp(ii)%vars%E
+				spp(ii)%vars%E = EXP(-0.5_rp*((params%time - EB%to)/EB%sig)**2)*spp(ii)%vars%E
 			end if
 		else
 			call interp_field(spp(ii)%vars, EB)
@@ -87,8 +85,7 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 	    a = spp(ii)%q*dt/spp(ii)%m
 
 !$OMP PARALLEL FIRSTPRIVATE(a,dt,bool)&
-!$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gammap,sigma,us,gamma,t,s,&
-!$OMP& Frad,Fcoll,U_RC,U_os,tmp,b_unit,B,vpar,vperp,vec,Prad)&
+!$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gammap,sigma,us,gamma,t,s,Frad,Fcoll,U_RC,U_os,tmp,b_unit,B,vpar,vperp,vec,Prad)&
 !$OMP& SHARED(ii,spp)
 !$OMP DO
 		do pp=1,spp(ii)%ppp
@@ -102,24 +99,20 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
                 if (bool) then
 				    !! Instantaneous guiding center
 				    spp(ii)%vars%Rgc(:,pp) = spp(ii)%vars%X(:,pp)&
-				    + gamma*spp(ii)%m*cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%B(:,pp))&
-				    /( spp(ii)%q*B**2 )
+				    + gamma*spp(ii)%m*cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%B(:,pp))/( spp(ii)%q*B**2 )
                 end if
 
 				U_L = U
 				U_RC = U
 
 				! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
-				U_hs = U_L + &
-						0.5_rp*a*( spp(ii)%vars%E(:,pp) + &
-						cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)) )		        
+				U_hs = U_L + 0.5_rp*a*( spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)) )		        
 				tau = 0.5_rp*dt*spp(ii)%q*spp(ii)%vars%B(:,pp)/spp(ii)%m
 				up = U_hs + 0.5_rp*a*spp(ii)%vars%E(:,pp)
 				gammap = sqrt( 1.0_rp + DOT_PRODUCT(up,up) )
 				sigma = gammap**2 - DOT_PRODUCT(tau,tau)
 				us = DOT_PRODUCT(up,tau) ! variable 'u^*' in Vay, J.-L. PoP (2008)
-				gamma = sqrt( 0.5_rp*(sigma + &
-						sqrt( sigma**2 + 4.0_rp*(DOT_PRODUCT(tau,tau) + us**2) )) )
+				gamma = sqrt( 0.5_rp*(sigma + sqrt(sigma**2 + 4.0_rp*(DOT_PRODUCT(tau,tau) + us**2))) )
 				t = tau/gamma
 				s = 1.0_rp/(1.0_rp + DOT_PRODUCT(t,t)) ! variable 's' in Vay, J.-L. PoP (2008)
 		        U_L = s*(up + DOT_PRODUCT(up,t)*t + cross(up,t))
@@ -174,16 +167,13 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 					!! Radiated power
 					tmp = spp(ii)%q**4/(6.0_rp*C_PI*E0*spp(ii)%m**2)
 
-					vec = spp(ii)%vars%E(:,pp) + &
-					cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp))
+					vec = spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp))
 
-					spp(ii)%vars%Prad(pp) = &
-					tmp*( DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%E(:,pp)) + &
+					spp(ii)%vars%Prad(pp) = tmp*( DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%E(:,pp)) + &
 					DOT_PRODUCT(cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)),spp(ii)%vars%E(:,pp)) +&
-					spp(ii)%vars%gamma(pp)**2*( DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%V(:,pp))**2 -&
-					DOT_PRODUCT(vec,vec) ) )
+					spp(ii)%vars%gamma(pp)**2*(DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%V(:,pp))**2 - DOT_PRODUCT(vec,vec)) )
 
-                    spp(ii)%vars%Pin(pp) =  spp(ii)%q*DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%V(:,pp))
+                    spp(ii)%vars%Pin(pp) = spp(ii)%q*DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%V(:,pp))
                 end if
 			end if
 		end do
@@ -207,8 +197,7 @@ subroutine advance_particles_position(params,EB,spp,dt)
 !$OMP DO
 	do pp = 1,spp(ii)%ppp
         if ( spp(ii)%vars%flag(pp) .EQ. 1_idef ) then
-		    spp(ii)%vars%X(:,pp) = spp(ii)%vars%X(:,pp)&
-                                    + dt*spp(ii)%vars%V(:,pp)
+		    spp(ii)%vars%X(:,pp) = spp(ii)%vars%X(:,pp) + dt*spp(ii)%vars%V(:,pp)
         end if
 	end do
 !$OMP END DO
