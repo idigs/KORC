@@ -34,6 +34,10 @@ module korc_HDF5
 	  module procedure rsave_3d_array_to_hdf5
 	END INTERFACE
 
+	INTERFACE save_array_to_hdf5
+	  module procedure isave_1d_array_to_hdf5,rsave_1d_array_to_hdf5,rsave_2d_array_to_hdf5,rsave_3d_array_to_hdf5
+	END INTERFACE
+
 	PRIVATE :: isave_to_hdf5,rsave_to_hdf5,isave_1d_array_to_hdf5,&
 				rsave_1d_array_to_hdf5,rsave_2d_array_to_hdf5,load_from_hdf5,&
 				iload_from_hdf5,rload_from_hdf5,rload_array_from_hdf5,&

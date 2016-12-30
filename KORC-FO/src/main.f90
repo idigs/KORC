@@ -66,6 +66,8 @@ program main
 	! Save initial condition
 	call save_simulation_outputs(params,spp,EB)
 
+	call synthetic_camera(params,spp) ! Synthetic camera
+
 	t1 = MPI_WTIME()
 
 	! Initial half-time particle push
@@ -79,10 +81,10 @@ program main
             call advance_particles_velocity(params,EB,spp,params%dt,.TRUE.)
 		    call advance_particles_position(params,EB,spp,params%dt)
 
-			write(6,'("Saving snapshot: ",I15)') it/params%output_cadence
+			write(6,'("MPI:",I5," Saving snapshot: ",I15)') params%mpi_params%rank, it/params%output_cadence
 			call save_simulation_outputs(params,spp,EB)
 
-			call synthetic_camera(params,spp)
+			call synthetic_camera(params,spp) ! Synthetic camera
         else
             call advance_particles_velocity(params,EB,spp,params%dt,.FALSE.)
 		    call advance_particles_position(params,EB,spp,params%dt)

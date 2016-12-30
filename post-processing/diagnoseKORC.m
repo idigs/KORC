@@ -1760,8 +1760,7 @@ for ss=1:num_species
         c = 1E2*ST.params.scales.v;
         qe = 3E9*q;
         m = 1E3*m;
-        
-        k = k/1E2;
+%         k = k/1E2;
         
         lambdac = (4/3)*pi*(1./gammap).^3./k;
         
@@ -2313,10 +2312,7 @@ for ii=1:camera_params.NX
     end
 end
 
-psi_range = zeros(2,camera_params.NY);
-for ii=1:camera_params.NY
-    psi_range(:,ii) = atan2([yedges(ii);yedges(ii+1)],camera_params.focal_length);
-end
+psi_range = atan2(yedges,camera_params.focal_length);
 
 threshold_angle = atan2(camera_params.Riw,-Rcam);
 threshold_radius = sqrt( camera_params.Riw^2 + Rcam^2 );
@@ -2369,9 +2365,7 @@ for ii=1:camera_params.NX
     end
     
     for jj=1:camera_params.NY
-        I1 = find(psi >= psi_range(1,jj));
-        I2 = find(psi < psi_range(2,jj));
-        ip_in_pixel_y = intersect(I1,I2);
+        ip_in_pixel_y = find((psi>=psi_range(jj)) & (psi<psi_range(jj+1)));
         
         ip_in_pixel{1,ii,jj} = intersect(ip,ip_in_pixel_y);
         ip_in_pixel{2,ii,jj} = intersect(in,ip_in_pixel_y);
@@ -2396,17 +2390,23 @@ disp('Starting synchrotron synthetic diagnostic...')
 
 lch = 1E2;
 lchnm = 1E7;
-Pch = 1E-7;
+Pch_tot = 1E-9;
+Pch_lambda = 1E-5;
 
 % Simulation parameters
 num_species = double(ST.params.simulation.num_species);
 
 % Resolution in wavelength
-N = 100;
+N = 5;
 % Wavelength range (450 nm - 950 nm for visible light).
 lambda_min = 400E-9;% in meters
 lambda_max = 900E-9;% in meters
-lambda = linspace(lambda_min,lambda_max,N);
+Dl = (lambda_max - lambda_min)/N;
+lambda = zeros(1,N);
+for ll=1:N
+    lambda(ll) = lambda_min + Dl*(ll-1);
+end
+% lambda = linspace(lambda_min,lambda_max,N);
 lambda = lch*lambda; % in cm
 
 % Camera parameters
@@ -2431,8 +2431,7 @@ camera_params.pixel_grid = setupCameraPixelGrid(camera_params,false);
 clockwise_rotation = @(t,x) [cos(t),sin(t);-sin(t),cos(t)]*x;
 anticlockwise_rotation = @(t,x) [cos(t),-sin(t);sin(t),cos(t)]*x;
 
-% for ss=1:num_species
-for ss=3:3
+for ss=1:num_species
     q = abs(ST.params.species.q(ss));
     m = ST.params.species.m(ss);
     Ro = ST.params.fields.Ro;
@@ -2477,6 +2476,7 @@ for ss=3:3
     
     v = squeeze( sqrt( sum(V.^2,1) ) )';
     k = q*vec./(m*gammae.*v.^3); % Actual curvature
+    k = k/1E2; % In cm^-1
     
     clear VxE VxB VxVxB aux E B v
     
@@ -2486,7 +2486,7 @@ for ss=3:3
     
     [ip,theta_f] = findVisibleParticles(X,V,threshold_angle,camera_params,false);
     
-    clear threshold_angle
+%     clear threshold_angle
     
     % Here we drop the particles that are not seen by the camera
     theta_f(~ip) = [];
@@ -2507,7 +2507,7 @@ for ss=3:3
             clockwise_rotation(theta_f(ii),binormal(1:2,ii));
     end
     
-    clear ip theta_f
+%     clear ip theta_f
     
     [rotation_angles,ip_in_pixel] = findRotationAngles(X,camera_params,false);
     
@@ -2518,7 +2518,7 @@ for ss=3:3
     
     X = 1E2*X;
     V = 1E2*V;
-    k = k/lch;
+%     k = k/lch;
     
     xcam = lch*[camera_params.position(1);0;camera_params.position(2)];
     
@@ -2548,6 +2548,7 @@ for ss=3:3
     Ptot_psi = zeros(camera_params.NX,camera_params.NY);
     for ii=1:camera_params.NX
         for jj=1:camera_params.NY
+%             disp(['Pixel (' num2str(ii) ',' num2str(jj) ') out of ' num2str(camera_params.NX*camera_params.NY)])
             P_psi_chi{ii,jj} = zeros(1,N);
             P_psi{ii,jj} = zeros(1,N);
             
@@ -2562,17 +2563,23 @@ for ss=3:3
                 clockwise(clockwise<0) = clockwise(clockwise<0) + 2*pi;
                 
                 angle = anticlockwise - clockwise;
-                % Rotation angles                
-                X_pix= X(:,I);
-                v_unit = normc(V(:,I));
-                binormal_pix = binormal(:,I);
+                % Rotation angles
+                X_pix = zeros(3,numel(I));
+                v_unit = zeros(3,numel(I));
+                binormal_pix = zeros(3,numel(I));
+                gamma_pix = zeros(1,numel(I));
+                kappa_pix = zeros(1,numel(I));
+                for kk=1:numel(I)
+                    X_pix(:,kk) = X(:,I(kk));
+                    v_unit(:,kk) = normc(V(:,I(kk)));
+                    binormal_pix(:,kk) = binormal(:,I(kk));
+                    gamma_pix(kk) = gammae(I(kk));
+                    kappa_pix(kk) = k(I(kk));
+                end
                 xcam_tmp = [xcam(1).*cos(angle) + xcam(2).*sin(angle);...
                     -xcam(1).*sin(angle) + xcam(2).*cos(angle);...
                     xcam(3)*ones(size(angle))];
                 n = normc(xcam_tmp - X_pix);
-                
-                gamma_pix = gammae(I);
-                kappa_pix = k(I);
                 
                 ndotBinormal = dot(n,binormal_pix,1);
                 aa = acos(ndotBinormal);
@@ -2581,20 +2588,31 @@ for ss=3:3
                 psi = zeros(size(aa));
                 psi(II) = aa(II) - pi/2;
                 psi(~II) = pi/2 - aa(~II);
-                psi = psi';
+                psi = psi;
                 
                 nperp = normc(n - repmat(ndotBinormal,3,1).*binormal_pix);
                 chi = abs( acos(dot(nperp,v_unit,1)) );
-                chi = chi';
-                
+                chi = chi;
+                                
                 for ll=1:N
                     xi = 2*pi./(3*lambda(ll)*kappa_pix.*gamma_pix.^3);
                     D = ( 0.5*(sqrt(4 + (pi./xi).^2) - pi./xi) ).^(1/3);
                     chic = (1./D - D)./gamma_pix;
                     psic = (1.5*kappa_pix*lambda(ll)/pi).^(1/3);
                     
+
+                    
                     reject = (chi > chic) | (psi > psic);
                     II = find(reject == false);
+                    
+                    if ~isempty(II)
+                        for kk=1:numel(II)
+                            disp(['(X,Y)=' num2str(ii) ',' num2str(jj) ' ll: ' num2str(ll) ' PSI: ' ...
+                                num2str(psic(II)) ' CHI: ' num2str(chic(II))...
+                                ' Psyn: ' num2str( Psyn(gamma_pix(II),psi(II),kappa_pix(II),lambda(ll),chi(II)) )])
+                        end
+                        disp('Stop!')
+                    end
                     
                     Psyn_tmp = Psyn(gamma_pix(II),psi(II),kappa_pix(II),lambda(ll),chi(II));
                     P_psi_chi{ii,jj}(ll) = sum(Psyn_tmp(Psyn_tmp > 0));
@@ -2607,18 +2625,16 @@ for ss=3:3
                 end
                 
                 Ptot_psi_chi(ii,jj) = trapz(lambda,P_psi_chi{ii,jj});
-%                 Ptot_psi(ii,jj) = trapz(lambda,P_psi{ii,jj});
+                Ptot_psi(ii,jj) = trapz(lambda,P_psi{ii,jj});
                 counter_psi(ii,jj) = numel(I);
             end
-            
-            disp(['Pixel (' num2str(ii) ',' num2str(jj) ') out of ' num2str(camera_params.NX*camera_params.NY)])
         end
     end
     
     
     fh = figure;
     subplot(4,4,[1,2,5,6])
-    surfc(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot_psi_chi,...
+    surfc(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Pch_tot*Ptot_psi_chi,...
         'LineStyle','none')
     colormap(jet)
     box on; axis square; view([90,90])
@@ -2626,7 +2642,7 @@ for ss=3:3
     xlabel('$y$-axis of detector','FontSize',14,'Interpreter','latex')
     
     subplot(4,4,[3,4,7,8])
-    surfc(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Ptot_psi,...
+    surfc(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Pch_tot*Ptot_psi,...
         'LineStyle','none')
     colormap(jet)
     box on; axis square; view([90,90])
@@ -2652,33 +2668,33 @@ for ss=3:3
     title('$P_{syn}(\lambda,\psi)$','FontSize',14,'Interpreter','latex')
     
     Psyn_mean = zeros(1,N);
-    subplot(4,4,[11,12])
     for ii=1:camera_params.NX
         for jj=1:camera_params.NY
-            Psyn_mean = Psyn_mean + Pch*P_psi_chi{ii,jj}/lchnm;
+            Psyn_mean = Psyn_mean + Pch_lambda*P_psi_chi{ii,jj};
             
             figure(fh)
+            subplot(4,4,[11,12])
             hold on
-            plot(lchnm*lambda,Pch*P_psi_chi{ii,jj}/lchnm)
+            plot(lchnm*lambda,Pch_lambda*P_psi_chi{ii,jj})
             hold off
         end
     end
-    hold on
-    plot(lchnm*lambda,Psyn_mean/N,'k','LineWidth',3)
-    hold off
+%     hold on
+%     plot(lchnm*lambda,Psyn_mean/N,'k','LineWidth',3)
+%     hold off
     box on
     xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
     ylabel('$P_{syn}(\lambda,\psi,\chi)$','FontSize',14,'Interpreter','latex')
     
     Psyn_mean = zeros(1,N);
-    subplot(4,4,[15,16])
     for ii=1:camera_params.NX
         for jj=1:camera_params.NY
-            Psyn_mean = Psyn_mean + Pch*P_psi{ii,jj}/lchnm;
+            Psyn_mean = Psyn_mean + Pch_lambda*P_psi{ii,jj};
             
             figure(fh)
+            subplot(4,4,[15,16])
             hold on
-            plot(lchnm*lambda,Pch*P_psi{ii,jj}/lchnm)
+            plot(lchnm*lambda,Pch_lambda*P_psi{ii,jj})
             hold off
         end
     end
@@ -2689,6 +2705,6 @@ for ss=3:3
     xlabel('$\lambda$ (nm)','FontSize',14,'Interpreter','latex')
     ylabel('$P_{syn}(\lambda,\psi)$','FontSize',14,'Interpreter','latex')
     
-%    saveas(fh,[ST.path 'SyntheticDiagnostic_ss_' num2str(ss)],'fig')
+   saveas(fh,[ST.path 'SyntheticDiagnostic_ss_' num2str(ss)],'fig')
 end
 end

@@ -399,7 +399,7 @@ SUBROUTINE calculate_rotation_angles(X,bpa,apa)
 		if (dis.GT.0.0_rp) then
 			do jj=1_idef,cam%np(2)
 
-				if ((psi.GT.ang%psi(jj)).AND.(psi.LE.ang%psi(jj+1_idef))) then
+				if ((psi.GE.ang%psi(jj)).AND.(psi.LT.ang%psi(jj+1_idef))) then
 					xp = 0.5_rp*(-b + SQRT(dis))/a
 					xn = 0.5_rp*(-b - SQRT(dis))/a
 
@@ -441,31 +441,34 @@ SUBROUTINE synthetic_camera(params,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
 	REAL(rp), DIMENSION(3) :: binorm, n, nperp
-	REAL(rp), DIMENSION(3) :: X, V, XC
+	REAL(rp), DIMENSION(3) :: X, V, B, E, XC
 	LOGICAL, DIMENSION(:,:,:), ALLOCATABLE :: bool_pixel_array
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: angle_pixel_array
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: part_pixel
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: Psyn_pixel
 	REAL(rp) :: q, m, k, u, g, l, threshold_angle
-	REAL(rp) :: psi, chi, Psyn_tmp
+	REAL(rp) :: psi, chi, beta, Psyn_tmp
 	LOGICAL :: bool
 	REAL(rp) :: angle, clockwise
 	INTEGER :: ii,jj,ll,ss,pp
+
+	write(6,'("MPI:",I5," Synthetic camera diagnostic: ON!")') params%mpi_params%rank
 
 	ALLOCATE(bool_pixel_array(cam%np(1),cam%np(2),2)) ! (NX,NY,2)
 	ALLOCATE(angle_pixel_array(cam%np(1),cam%np(2),2)) ! (NX,NY,2)
 	ALLOCATE(part_pixel(cam%np(1),cam%np(2),cam%Nlambda,params%num_species))
 	ALLOCATE(Psyn_pixel(cam%np(1),cam%np(2),cam%Nlambda,params%num_species))
 
-	part_pixel = 0.0_rp
-	Psyn_pixel = 0.0_rp
-
 	do ss=1_idef,params%num_species
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
 
-!$OMP PARALLEL FIRSTPRIVATE(q,m) PRIVATE(binorm,n,nperp,X,XC,V,bool_pixel_array,angle_pixel_array,k,u,g,l,&
-!$OMP& threshold_angle,psi,chi,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp)&
+		part_pixel = 0.0_rp
+		Psyn_pixel = 0.0_rp
+
+!$OMP PARALLEL FIRSTPRIVATE(q,m) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
+!$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,threshold_angle,&
+!$OMP& psi,chi,beta,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp)&
 !$OMP& SHARED(params,spp,ss,Psyn_pixel,part_pixel)
 !$OMP DO
 		do pp=1_idef,spp(ss)%ppp
@@ -473,12 +476,15 @@ SUBROUTINE synthetic_camera(params,spp)
 				V = spp(ss)%vars%V(:,pp)*params%cpp%velocity
 				X = spp(ss)%vars%X(:,pp)*params%cpp%length
 				g = spp(ss)%vars%gamma(pp)
+				B = spp(ss)%vars%B(:,pp)*params%cpp%Bo
+				E = spp(ss)%vars%E(:,pp)*params%cpp%Eo
 
-				binorm = cross(V,spp(ss)%vars%E(:,pp)) + cross(V,cross(V,spp(ss)%vars%B(:,pp)))
+				binorm = cross(V,E) + cross(V,cross(V,B))
 		
 				u = SQRT(DOT_PRODUCT(V,V))
 				k = q*SQRT(DOT_PRODUCT(binorm,binorm))/(spp(ss)%vars%gamma(pp)*m*u**3)
-
+				k = k/1.0E2_rp ! Now in cm^-1 (CGS)
+!write(6,'("+ P: ",I4," k: ",F25.16)') pp,k
 				binorm = binorm/SQRT(DOT_PRODUCT(binorm,binorm))
 
 				threshold_angle = (1.5_rp*k*cam%lambda_max/C_PI)**(1.0_rp/3.0_rp) ! In radians
@@ -486,7 +492,6 @@ SUBROUTINE synthetic_camera(params,spp)
 				call check_if_visible(X,V/u,threshold_angle,bool,angle)	
 			
 				if (bool.EQV..TRUE.) then
-					k = k/1.0E2_rp ! Now in cm^-1 (CGS)
 
 					X(1:2) = clockwise_rotation(X(1:2),angle)
 					V(1:2) = clockwise_rotation(V(1:2),angle)
@@ -497,13 +502,10 @@ SUBROUTINE synthetic_camera(params,spp)
 					clockwise = ATAN2(X(2),X(1))
 					if (clockwise.LT.0.0_rp) clockwise = clockwise + 2.0_rp*C_PI
 
-
 					do ii=1_idef,cam%np(1) ! NX
 						do jj=1_idef,cam%np(2) ! NY
 							
 							if (bool_pixel_array(ii,jj,1)) then
-!								part_pixel(ii,jj) = part_pixel(ii,jj) + 1.0_rp
-
 								angle = angle_pixel_array(ii,jj,1) - clockwise
 
 								XC = (/cam%position(1)*COS(angle),-cam%position(1)*SIN(angle),cam%position(2)/)
@@ -511,20 +513,24 @@ SUBROUTINE synthetic_camera(params,spp)
 								n = XC - X
 								n = n/SQRT(DOT_PRODUCT(n,n))
 
-								psi = ACOS(DOT_PRODUCT(n,binorm))
-								if (psi.GT.0.5_rp*C_PI) psi = psi - 0.5_rp*C_PI
-								if (psi.LT.0.5_rp*C_PI) psi = 0.5_rp*C_PI - psi
+								beta = ACOS(DOT_PRODUCT(n,binorm))
+								if (beta.GT.0.5_rp*C_PI) psi = beta - 0.5_rp*C_PI
+								if (beta.LT.0.5_rp*C_PI) psi = 0.5_rp*C_PI - beta
 
 								nperp = n - DOT_PRODUCT(n,binorm)*binorm
+								nperp = nperp/SQRT(DOT_PRODUCT(nperp,nperp))
 								chi = ABS(ACOS(DOT_PRODUCT(nperp,V/u)))
+
+!write(6,'("+ P: ",I4,"(X,Y)=(",2I3,") ll:",I3," PSI: ",F25.16," CHI: ",F25.16)') pp,ii,jj,ll,chic(g,k,l),psic(k,l)
 
 								do ll=1_idef,cam%Nlambda ! Nlambda
 									l = cam%lambda(ll)
 									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
+!write(6,'("+ P: ",I4,"(X,Y)=(",2I3,") ll:",I3," PSI: ",F25.16," CHI: ",F25.16)') pp,ii,jj,ll,psic(k,l),chic(g,k,l)
 										Psyn_tmp = Psyn(g,psi,k,l,chi)
+!write(6,'("+ P: ",I4,"(X,Y)=(",2I3,") ll:",I3," Psyn: ",F25.16)') pp,ii,jj,ll,Psyn_tmp
 										if (Psyn_tmp.GT.0.0_rp) then
-											Psyn_pixel(ii,jj,ll,ss) = Psyn_pixel(ii,jj,ll,ss) + Psyn_tmp
-
+											Psyn_pixel(ii,jj,ll,ss) = Psyn_tmp
 											part_pixel(ii,jj,ll,ss) = part_pixel(ii,jj,ll,ss) + 1.0_rp
 										end if
 									end if
@@ -532,8 +538,6 @@ SUBROUTINE synthetic_camera(params,spp)
 							end if
 
 							if (bool_pixel_array(ii,jj,2)) then
-!								part_pixel(ii,jj) = part_pixel(ii,jj) + 1.0_rp
-
 								angle = angle_pixel_array(ii,jj,2) - clockwise
 
 								XC = (/cam%position(1)*COS(angle),-cam%position(1)*SIN(angle),cam%position(2)/)
@@ -541,20 +545,22 @@ SUBROUTINE synthetic_camera(params,spp)
 								n = XC - X
 								n = n/SQRT(DOT_PRODUCT(n,n))
 
-								psi = ACOS(DOT_PRODUCT(n,binorm))
-								if (psi.GT.0.5_rp*C_PI) psi = psi - 0.5_rp*C_PI
-								if (psi.LT.0.5_rp*C_PI) psi = 0.5_rp*C_PI - psi
+								beta = ACOS(DOT_PRODUCT(n,binorm))
+								if (beta.GT.0.5_rp*C_PI) psi = beta - 0.5_rp*C_PI
+								if (beta.LT.0.5_rp*C_PI) psi = 0.5_rp*C_PI - beta
 
 								nperp = n - DOT_PRODUCT(n,binorm)*binorm
+								nperp = nperp/SQRT(DOT_PRODUCT(nperp,nperp))
 								chi = ABS(ACOS(DOT_PRODUCT(nperp,V/u)))
 
 								do ll=1_idef,cam%Nlambda ! Nlambda
 									l = cam%lambda(ll)
 									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
+!write(6,'("- P: ",I4,"(X,Y)=(",2I3,") ll:",I3," PSI: ",F25.16," CHI: ",F25.16)') pp,ii,jj,ll,psic(k,l),chic(g,k,l)
 										Psyn_tmp = Psyn(g,psi,k,l,chi)
+!write(6,'("- P: ",I4,"(X,Y)=(",2I3,") ll:",I3," Psyn: ",F25.16)') pp,ii,jj,ll,Psyn_tmp
 										if (Psyn_tmp.GT.0.0_rp) then
-											Psyn_pixel(ii,jj,ll,ss) = Psyn_pixel(ii,jj,ll,ss) + Psyn_tmp
-
+											Psyn_pixel(ii,jj,ll,ss) = Psyn_tmp
 											part_pixel(ii,jj,ll,ss) = part_pixel(ii,jj,ll,ss) + 1.0_rp
 										end if
 									end if
@@ -572,28 +578,19 @@ SUBROUTINE synthetic_camera(params,spp)
 !$OMP END PARALLEL
 	end do ! species
 
+!	* * * * * * IMPORTANT * * * * * *
+!	* * * * * * * * * * * * * * * * *
+!	Here Psyn has units of (erg/s)cm
+!	* * * * * * * * * * * * * * * * *
+!	* * * * * * IMPORTANT * * * * * *
+
 	call save_snapshot(params,part_pixel,Psyn_pixel)
-
-!	open(unit=default_unit_write,&
-!	file='/home/l8c/Documents/KORC/KORC-FO/Psyn.dat',&
-!	status='UNKNOWN',form='formatted')
-!	do ii=1_idef,cam%np(1)
-!		write(default_unit_write,'(45F25.16)') Psyn_pixel(ii,:)
-!	end do
-!	close(default_unit_write)
-
-!	open(unit=default_unit_write,&
-!	file='/home/l8c/Documents/KORC/KORC-FO/Part.dat',&
-!	status='UNKNOWN',form='formatted')
-!	do ii=1_idef,cam%np(1)
-!		write(default_unit_write,'(45F25.16)') part_pixel(ii,:)
-!	end do
-!	close(default_unit_write)
 
 	DEALLOCATE(bool_pixel_array)
 	DEALLOCATE(angle_pixel_array)
 	DEALLOCATE(part_pixel)
     DEALLOCATE(Psyn_pixel)
+	write(6,'("MPI:",I5," Synthetic camera diagnostic: OFF!")') params%mpi_params%rank
 END SUBROUTINE synthetic_camera
 
 
@@ -661,7 +658,7 @@ SUBROUTINE save_synthetic_camera_params(params)
 		call save_to_hdf5(h5file_id,dset,cam%Nlambda,attr)
 
 	    dset = TRIM(gname) // "/lambda"
-		units = 1.0E7_rp
+		units = 1.0E-2_rp
 	    call save_1d_array_to_hdf5(h5file_id,dset,units*cam%lambda)
 
 	    dset = TRIM(gname) // "/num_pixels"
@@ -736,11 +733,11 @@ SUBROUTINE save_snapshot(params,part,Psyn)
 		call h5gcreate_f(group_id, TRIM(subgname), subgroup_id, h5error)
 
 		dset = "part_pixel"
-		call save_3d_array_to_hdf5(subgroup_id, dset, part(:,:,:,ss))
+		call save_array_to_hdf5(subgroup_id, dset, part(:,:,:,ss))
 
 		dset = "Psyn_pixel"
-		call save_3d_array_to_hdf5(subgroup_id, dset, Psyn(:,:,:,ss))
-
+		units = 1.0E-5_rp ! (Watts)(m^-1)(steradian^-1)
+		call save_array_to_hdf5(subgroup_id, dset, units*Psyn(:,:,:,ss))
 
 		call h5gclose_f(subgroup_id, h5error)
 	end do
