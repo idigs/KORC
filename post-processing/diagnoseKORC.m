@@ -42,7 +42,7 @@ ST.data = loadData(ST);
 
 % ST.P = synchrotronSpectrum(ST,true);
 
-ST.SD = syntheticDiagnosticSynchrotron(ST,false);
+% ST.SD = syntheticDiagnosticSynchrotron(ST,false);
 
 % save('energy_limit','ST')
 end

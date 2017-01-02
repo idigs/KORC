@@ -99,8 +99,8 @@ for ss=1:ST.params.simulation.num_species
                 Npart_lambda(ii,jj,:) = Npart_lambda(ii,jj,:) + ...
                     ST.data.(['sp' num2str(ss)]).part_pixel(ii,jj,:,it);
                 
-                Psyn(ii,jj) = trapz(lambda,ST.data.(['sp' num2str(ss)]).Psyn_pixel(ii,jj,:,it));
-                Npart(ii,jj) = sum(ST.data.(['sp' num2str(ss)]).part_pixel(ii,jj,:,it));
+                Psyn(ii,jj) = Psyn(ii,jj) + trapz(lambda,ST.data.(['sp' num2str(ss)]).Psyn_pixel(ii,jj,:,it));
+                Npart(ii,jj) = Npart(ii,jj) + sum(ST.data.(['sp' num2str(ss)]).part_pixel(ii,jj,:,it));
             end
         end
     end
@@ -154,7 +154,7 @@ for ss=1:ST.params.simulation.num_species
     ylabel('Number of RE','FontSize',12,'Interpreter','latex')
     xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
     
-    saveas(h,[ST.path 'SyntheticCameraFortran_ss_' num2str(ss)],'fig')
+%     saveas(h,[ST.path 'SyntheticCameraFortran_ss_' num2str(ss)],'fig')
 end
 end
 

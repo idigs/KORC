@@ -521,14 +521,10 @@ SUBROUTINE synthetic_camera(params,spp)
 								nperp = nperp/SQRT(DOT_PRODUCT(nperp,nperp))
 								chi = ABS(ACOS(DOT_PRODUCT(nperp,V/u)))
 
-!write(6,'("+ P: ",I4,"(X,Y)=(",2I3,") ll:",I3," PSI: ",F25.16," CHI: ",F25.16)') pp,ii,jj,ll,chic(g,k,l),psic(k,l)
-
 								do ll=1_idef,cam%Nlambda ! Nlambda
 									l = cam%lambda(ll)
 									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
-!write(6,'("+ P: ",I4,"(X,Y)=(",2I3,") ll:",I3," PSI: ",F25.16," CHI: ",F25.16)') pp,ii,jj,ll,psic(k,l),chic(g,k,l)
 										Psyn_tmp = Psyn(g,psi,k,l,chi)
-!write(6,'("+ P: ",I4,"(X,Y)=(",2I3,") ll:",I3," Psyn: ",F25.16)') pp,ii,jj,ll,Psyn_tmp
 										if (Psyn_tmp.GT.0.0_rp) then
 											Psyn_pixel(ii,jj,ll,ss) = Psyn_tmp
 											part_pixel(ii,jj,ll,ss) = part_pixel(ii,jj,ll,ss) + 1.0_rp
@@ -556,9 +552,7 @@ SUBROUTINE synthetic_camera(params,spp)
 								do ll=1_idef,cam%Nlambda ! Nlambda
 									l = cam%lambda(ll)
 									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
-!write(6,'("- P: ",I4,"(X,Y)=(",2I3,") ll:",I3," PSI: ",F25.16," CHI: ",F25.16)') pp,ii,jj,ll,psic(k,l),chic(g,k,l)
 										Psyn_tmp = Psyn(g,psi,k,l,chi)
-!write(6,'("- P: ",I4,"(X,Y)=(",2I3,") ll:",I3," Psyn: ",F25.16)') pp,ii,jj,ll,Psyn_tmp
 										if (Psyn_tmp.GT.0.0_rp) then
 											Psyn_pixel(ii,jj,ll,ss) = Psyn_tmp
 											part_pixel(ii,jj,ll,ss) = part_pixel(ii,jj,ll,ss) + 1.0_rp

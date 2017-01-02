@@ -125,12 +125,14 @@ subroutine initialize_particles(params,F,spp)
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Eo
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: etao
 	LOGICAL, DIMENSION(:), ALLOCATABLE :: runaway
+	LOGICAL, DIMENSION(:), ALLOCATABLE :: monoenergetic
+	LOGICAL, DIMENSION(:), ALLOCATABLE :: monopitch
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Ro
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zo
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: r
 	INTEGER :: ii,jj ! Iterator
 
-	NAMELIST /plasma_species/ ppp, q, m, Eo, etao, runaway, Ro, Zo, r
+	NAMELIST /plasma_species/ ppp, q, m, Eo, etao, runaway, monoenergetic, monopitch, Ro, Zo, r
 
 	! Allocate array containing variables of particles for each species
 	ALLOCATE(spp(params%num_species))
@@ -141,9 +143,10 @@ subroutine initialize_particles(params,F,spp)
 	ALLOCATE(Eo(params%num_species))
 	ALLOCATE(etao(params%num_species))
 	ALLOCATE(runaway(params%num_species))
+	ALLOCATE(monoenergetic(params%num_species))
+	ALLOCATE(monopitch(params%num_species))
 	ALLOCATE(Ro(params%num_species))
 	ALLOCATE(Zo(params%num_species))
-
 	ALLOCATE(r(params%num_species))
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
@@ -154,6 +157,8 @@ subroutine initialize_particles(params,F,spp)
 		spp(ii)%Eo = Eo(ii)*C_E
 		spp(ii)%etao = etao(ii)
 		spp(ii)%runaway = runaway(ii)
+		spp(ii)%monoenergetic = monoenergetic(ii)
+		spp(ii)%monopitch = monopitch(ii)
 		spp(ii)%q = q(ii)*C_E
 		spp(ii)%m = m(ii)*C_ME
 		spp(ii)%ppp = ppp(ii)
@@ -178,10 +183,18 @@ subroutine initialize_particles(params,F,spp)
 		ALLOCATE( spp(ii)%vars%flag(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%AUX(spp(ii)%ppp) )
 
-		spp(ii)%vars%gamma = spp(ii)%gammao ! Monoenergetic
-		spp(ii)%vars%eta = spp(ii)%etao ! Mono-pitch-angle
+        if (spp(ii)%monoenergetic .AND. spp(ii)%monopitch) then
+		    spp(ii)%vars%gamma = spp(ii)%gammao ! Monoenergetic
+		    spp(ii)%vars%eta = spp(ii)%etao ! Mono-pitch-angle
+        else
+            write(6,'("Initializing avalanche population...")')
+            call get_avalanche_PDF_params(params,spp(ii)%vars%gamma,spp(ii)%vars%eta)
 
-!		call get_avalanche_PDF_params(params,spp(ii)%vars%gamma,spp(ii)%vars%eta)
+            spp(ii)%gammao = SUM(spp(ii)%vars%gamma)/SIZE(spp(ii)%vars%gamma)
+            spp(ii)%etao = SUM(spp(ii)%vars%eta)/SIZE(spp(ii)%vars%eta)
+
+            spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%gammao - spp(ii)%m*C_C**2
+        end if
 
 		! Initialize to zero
 		spp(ii)%vars%X = 0.0_rp
@@ -203,6 +216,8 @@ subroutine initialize_particles(params,F,spp)
 	DEALLOCATE(Eo)
 	DEALLOCATE(etao)
 	DEALLOCATE(runaway)
+	DEALLOCATE(monoenergetic)
+	DEALLOCATE(monopitch)
 	DEALLOCATE(Ro)
 	DEALLOCATE(Zo)
 	DEALLOCATE(r)

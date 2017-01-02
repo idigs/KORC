@@ -1,8 +1,8 @@
 &input_parameters
-	t_steps = 217500 ! 217500 
+	t_steps = 2 ! 217500 
 	dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
 	output_cadence = 4350 ! 1400 for saving each 100 gyro-periods
-	num_species = 1
+	num_species = 5
 	radiation = .FALSE.
 	collisions = .FALSE.
 	collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
@@ -17,15 +17,17 @@
 /
 
 &plasma_species
-	runaway = .FALSE. !
-	Ro = 1.43 !
-	Zo = 0.0 !
-	r = 0.425 !
-	Eo = 20.0E6 ! Initial energy in eV
-	etao = 10.0  ! Initial pitch angle
-	ppp = 10000 ! Number of particles per process (mpi)
-	q = -1.0 ! Electric charge
-	m = 1.0 ! In units of electron mass
+	runaway = .FALSE., .FALSE., .FALSE., .FALSE., .FALSE. !
+    monoenergetic = .FALSE., .FALSE., .FALSE., .FALSE., .FALSE. !
+    monopitch = .FALSE., .FALSE., .FALSE., .FALSE., .FALSE. !
+	Ro = 1.43, 1.43, 1.43, 1.43, 1.43 !
+	Zo = 0.0, 0.0, 0.0, 0.0, 0.0 !
+	r = 0.425, 0.425, 0.425, 0.425, 0.425 !
+	Eo = 20.0E6, 20.0E6, 20.0E6, 20.0E6, 20.0E6 ! Initial energy in eV
+	etao = 10.0, 10.0, 10.0, 10.0, 10.0  ! Initial pitch angle
+	ppp = 2000, 2000, 2000, 2000, 2000 ! Number of particles per process (mpi)
+	q = -1.0, -1.0, -1.0, -1.0, -1.0 ! Electric charge
+	m = 1.0, 1.0, 1.0, 1.0, 1.0 ! In units of electron mass
 /
 
 &analytic_mag_field_params
@@ -69,8 +71,8 @@
 
 &SyntheticCamera
 	Riw = 1.0 ! Radial position of inner wall
-	num_pixels = 35, 35 ! Number of pixels (X,Y)
-	sensor_size = 0.25, 0.25 ! (horizontal,vertical)
+	num_pixels = 100, 100 ! Number of pixels (X,Y)
+	sensor_size = 0.3, 0.3 ! (horizontal,vertical)
 	focal_length = 0.4
 	position = 2.4, 0.0 ! Position of camera (R,Z)
 	incline = 55.0 ! In degrees

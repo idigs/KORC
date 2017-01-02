@@ -115,6 +115,8 @@ END TYPE PARTICLES
 TYPE, PUBLIC :: SPECIES
 	TYPE(PARTICLES) :: vars
 	LOGICAL :: runaway
+	LOGICAL :: monoenergetic
+	LOGICAL :: monopitch
 	REAL(rp) :: Eo
 	REAL(rp) :: gammao
 	REAL(rp) :: etao
