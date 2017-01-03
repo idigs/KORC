@@ -357,7 +357,7 @@ subroutine interp_analytical_field(prtcls,F)
 end subroutine interp_analytical_field
 
 
-subroutine unitVectors(params,Xo,F,b1,b2,b3)
+subroutine unitVectors(params,Xo,F,b1,b2,b3,flag)
     implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Xo
@@ -365,9 +365,10 @@ subroutine unitVectors(params,Xo,F,b1,b2,b3)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: b1
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: b2
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: b3
+	INTEGER, DIMENSION(:), ALLOCATABLE, OPTIONAL, INTENT(INOUT) :: flag
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: X
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: B
-	INTEGER, DIMENSION(:), ALLOCATABLE :: flag
+	INTEGER, DIMENSION(:), ALLOCATABLE :: local_flag
 	REAL(rp), PARAMETER :: tol = korc_zero
 	INTEGER :: ii, ppp
 
@@ -375,30 +376,30 @@ subroutine unitVectors(params,Xo,F,b1,b2,b3)
 
 	ALLOCATE( X(3,ppp) )
 	ALLOCATE( B(3,ppp) )
-    ALLOCATE( flag(ppp) )
+    ALLOCATE( local_flag(ppp) )
 
-    flag = 1_idef
+    local_flag = 1_idef
 	
 	call init_random_seed()
 
 	if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
-		call cart_to_tor(Xo,F%AB%Ro,X,flag) ! To toroidal coords
-		call analytical_magnetic_field(F,X,B,flag)
+		call cart_to_tor(Xo,F%AB%Ro,X,local_flag) ! To toroidal coords
+		call analytical_magnetic_field(F,X,B,local_flag)
 	else
 		call cart_to_cyl(Xo, X)
         if (params%poloidal_flux) then
-			call check_if_in_domain2D(F,X,flag)
+			call check_if_in_domain2D(F,X,local_flag)
 
-            call calculate_magnetic_field(X,F,B,flag)
+            call calculate_magnetic_field(X,F,B,local_flag)
         else
-			call check_if_in_domain3D(F,X,flag)
+			call check_if_in_domain3D(F,X,local_flag)
 
-            call interp_magnetic_field(X,B,flag)
+            call interp_magnetic_field(X,B,local_flag)
         end if
 	end if
 	
 	do ii=1,ppp
-		if ( flag(ii) .EQ. 1_idef ) then
+		if ( local_flag(ii) .EQ. 1_idef ) then
 			b1(:,ii) = B(:,ii)/sqrt( DOT_PRODUCT(B(:,ii),B(:,ii)) )
 
 		    b2(:,ii) = cross(b1(:,ii),(/0.0_rp,0.0_rp,1.0_rp/))
@@ -409,9 +410,13 @@ subroutine unitVectors(params,Xo,F,b1,b2,b3)
 		end if
 	end do
 
+	if (PRESENT(flag)) then
+		flag = local_flag
+	end if
+
 	DEALLOCATE(X)
 	DEALLOCATE(B)
-    DEALLOCATE(flag)
+    DEALLOCATE(local_flag)
 end subroutine unitVectors
 
 

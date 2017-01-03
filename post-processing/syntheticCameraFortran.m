@@ -62,9 +62,9 @@ for ll=1:length(list)
         data.(['sp' num2str(ss)]).(list{ll}) = zeros(NX,NY,Nl,ST.num_snapshots);
         for ff=1:ST.params.simulation.nmpi
             filename = [ST.path 'synthetic_camera_snapshots_MPI_' num2str(ff-1) '.h5'];
-            for ii=1:ST.num_snapshots
+            for ii=1:numel(it)
                 dataset = ...
-                    ['/' num2str(it(ii)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
+                    ['/' num2str(it(ii)) '/spp_' num2str(ss)...
                     '/' list{ll}];
 %                 tmp = 
                 data.(['sp' num2str(ss)]).(list{ll})(:,:,:,ii) = data.(['sp' num2str(ss)]).(list{ll})(:,:,:,ii) + h5read(filename, dataset);

@@ -66,7 +66,7 @@ program main
 	! Save initial condition
 	call save_simulation_outputs(params,spp,EB)
 
-	call synthetic_camera(params,spp) ! Synthetic camera
+!	call synthetic_camera(params,spp) ! Synthetic camera
 
 	t1 = MPI_WTIME()
 
@@ -84,7 +84,9 @@ program main
 			write(6,'("MPI:",I5," Saving snapshot: ",I15)') params%mpi_params%rank, it/params%output_cadence
 			call save_simulation_outputs(params,spp,EB)
 
-			call synthetic_camera(params,spp) ! Synthetic camera
+			if (params%it.GE.(params%t_steps/2)) then
+				call synthetic_camera(params,spp) ! Synthetic camera
+			end if
         else
             call advance_particles_velocity(params,EB,spp,params%dt,.FALSE.)
 		    call advance_particles_position(params,EB,spp,params%dt)

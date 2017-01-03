@@ -23,6 +23,9 @@ MODULE korc_synthetic_camera
 		INTEGER :: Nlambda
 		REAL(rp) :: Dlambda ! In cm
 		REAL(rp), DIMENSION(:), ALLOCATABLE :: lambda ! In cm
+
+		REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: npart
+		REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: Psyn
 	END TYPE CAMERA
 
 	TYPE, PRIVATE :: ANGLES
@@ -123,6 +126,12 @@ SUBROUTINE initialize_synthetic_camera(params)
 	do ii=1_idef,cam%np(2)+1_idef
 		cam%pixels_edges_y(ii) = ymin + REAL(ii-1_idef,rp)*DY
 	end do
+
+	ALLOCATE(cam%npart(cam%np(1),cam%np(2),cam%Nlambda,params%num_species))
+	ALLOCATE(cam%Psyn(cam%np(1),cam%np(2),cam%Nlambda,params%num_species))
+
+	cam%npart = 0.0_rp
+	cam%Psyn = 0.0_rp
 	
 	! Initialize ang variables
 	ALLOCATE(ang%eta(cam%np(1)))
@@ -572,13 +581,20 @@ SUBROUTINE synthetic_camera(params,spp)
 !$OMP END PARALLEL
 	end do ! species
 
+	cam%npart = cam%npart + part_pixel
+	cam%Psyn = cam%Psyn + Psyn_pixel
+
 !	* * * * * * IMPORTANT * * * * * *
 !	* * * * * * * * * * * * * * * * *
 !	Here Psyn has units of (erg/s)cm
 !	* * * * * * * * * * * * * * * * *
 !	* * * * * * IMPORTANT * * * * * *
 
-	call save_snapshot(params,part_pixel,Psyn_pixel)
+!	call save_snapshot(params,part_pixel,Psyn_pixel)
+
+	if (params%output_cadence*params%num_snapshots.EQ.params%it) then
+		call save_snapshot(params,part_pixel,Psyn_pixel)
+	end if
 
 	DEALLOCATE(bool_pixel_array)
 	DEALLOCATE(angle_pixel_array)

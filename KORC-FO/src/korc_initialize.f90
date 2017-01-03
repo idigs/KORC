@@ -294,7 +294,7 @@ subroutine set_up_particles_ic(params,F,spp)
         V2 = Vo*sin(C_PI*spp(ii)%vars%eta/180.0_rp)*cos(angle)
         V3 = Vo*sin(C_PI*spp(ii)%vars%eta/180.0_rp)*sin(angle)
 
-        call unitVectors(params,Xo,F,b1,b2,b3)
+        call unitVectors(params,Xo,F,b1,b2,b3,spp(ii)%vars%flag)
 
 		do jj=1,spp(ii)%ppp
 			if ( spp(ii)%vars%flag(jj) .EQ. 1_idef ) then

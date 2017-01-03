@@ -477,12 +477,12 @@ for ii=1:N
     hold on
     
     for ss=1:ST.params.simulation.num_species    
-%         xAxis = ( x(ss,:,it) - mean(x(ss,:,it)) )/std(fx(ss,:,it));
-%         f = std(fx(ss,:,it))*squeeze(fx(ss,:,it))/trapz(x(ss,:,it),fx(ss,:,it));
-%         
-%         figure(h3)
-% %         plot(xAxis,f,'o:')
-%         plot(xAxis,log10(f),'o:')
+        xAxis = ( x(ss,:,it) - mean(x(ss,:,it)) )/std(fx(ss,:,it));
+        f = std(fx(ss,:,it))*squeeze(fx(ss,:,it))/trapz(x(ss,:,it),fx(ss,:,it));
+        
+        figure(h3)
+%         plot(xAxis,f,'o:')
+        plot(xAxis,log10(f),'o:')
                 
         xAxis = z(ss,:,it);
         f = squeeze(fz(ss,:,it));
