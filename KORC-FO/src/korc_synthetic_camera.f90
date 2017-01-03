@@ -693,7 +693,6 @@ SUBROUTINE save_snapshot(params,part,Psyn)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE, INTENT(IN) :: part
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE, INTENT(IN) :: Psyn
-	INTEGER, INTENT(IN) :: species
 	CHARACTER(MAX_STRING_LENGTH) :: filename
 	CHARACTER(MAX_STRING_LENGTH) :: gname
 	CHARACTER(MAX_STRING_LENGTH) :: subgname

@@ -66,8 +66,8 @@ for ll=1:length(list)
                 dataset = ...
                     ['/' num2str(it(ii)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
                     '/' list{ll}];
-                
-                data.(['sp' num2str(ss)]).(list{ll})(:,:,:,ii) = h5read(filename, dataset);
+%                 tmp = 
+                data.(['sp' num2str(ss)]).(list{ll})(:,:,:,ii) = data.(['sp' num2str(ss)]).(list{ll})(:,:,:,ii) + h5read(filename, dataset);
             end
         end
     end
@@ -111,7 +111,7 @@ for ss=1:ST.params.simulation.num_species
     
     h = figure;
     subplot(3,2,[1 3])
-    surfc(xAxis,yAxis,Psyn','LineStyle','none')
+    surfc(xAxis,yAxis,log10(Psyn'),'LineStyle','none')
     colormap(jet); hc = colorbar('Location','southoutside');
     xlabel(hc,'$P_{syn}$ (W/sr)','Interpreter','latex','FontSize',12)
     box on; axis square;view([0 -90])
