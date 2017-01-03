@@ -823,8 +823,8 @@ subroutine save_simulation_parameters(params,spp,F)
 		call save_1d_array_to_hdf5(h5file_id,dset,spp%etao,attr_array)
 
 		dset = TRIM(gname) // "/wc"
-		attr_array(1) = "Average cyclotron frequency in Hz"
-		call save_1d_array_to_hdf5(h5file_id,dset,spp%wc/params%cpp%time,attr_array)
+		attr_array(1) = "Average relativistic cyclotron frequency in Hz"
+		call save_1d_array_to_hdf5(h5file_id,dset,spp%wc_r/params%cpp%time,attr_array)
 
 		dset = TRIM(gname) // "/Ro"
 		attr_array(1) = "Initial radial position of population"

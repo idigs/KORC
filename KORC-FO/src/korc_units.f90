@@ -70,6 +70,7 @@ subroutine normalize_variables(params,spp,F)
 		spp(ii)%m = spp(ii)%m/params%cpp%mass
 		spp(ii)%Eo = spp(ii)%Eo/params%cpp%energy
 		spp(ii)%wc = spp(ii)%wc*params%cpp%time
+		spp(ii)%wc_r = spp(ii)%wc_r*params%cpp%time
 		spp(ii)%vars%X = spp(ii)%vars%X/params%cpp%length
 		spp(ii)%vars%V = spp(ii)%vars%V/params%cpp%velocity
 		spp(ii)%vars%Rgc = spp(ii)%vars%Rgc/params%cpp%length

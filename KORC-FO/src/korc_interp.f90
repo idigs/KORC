@@ -192,7 +192,6 @@ subroutine check_if_in_domain2D(F,Y,flag)
 	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
 	INTEGER(ip) :: pp,ss
 
-
     ss = SIZE(Y,2)
 !$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(F,Y,flag)
 !$OMP DO
@@ -253,7 +252,7 @@ subroutine interp_3D_magnetic_field(Y,B,flag)
 			call EZspline_interp(interp3d%R, Y(1,pp), Y(2,pp), Y(3,pp), F(1,pp), ezerr)
 			call EZspline_error(ezerr)
 
-			if (ezerr .EQ. 97) then ! We flag the particle as lost
+			if (ezerr .NE. 0) then ! We flag the particle as lost
 				flag(pp) = 0_idef
 			end if
 
@@ -293,7 +292,7 @@ subroutine calculate_magnetic_field(Y,F,B,flag)
 			call EZspline_derivative(interp2d%A, 0, 1, Y(1,pp), Y(3,pp), A(1,pp), ezerr)
 !			call EZspline_error(ezerr)
 
-			if (ezerr .EQ. 96_idef) then ! We flag the particle as lost
+			if (ezerr .NE. 0) then ! We flag the particle as lost
 				flag(pp) = 0_idef
 			else
 				A(1,pp) = A(1,pp)/Y(1,pp)

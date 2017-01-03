@@ -22,7 +22,7 @@ ST.data = loadData(ST);
 
 % ST.CP = confined_particles(ST);
 
-% ST.PAD = pitchAngleDiagnostic(ST,30);
+ST.PAD = pitchAngleDiagnostic(ST,30);
 
 % ST.MMD = magneticMomentDiagnostic(ST,70);
 
@@ -42,7 +42,7 @@ ST.data = loadData(ST);
 
 % ST.P = synchrotronSpectrum(ST,true);
 
-ST.SD = syntheticDiagnosticSynchrotron(ST,false);
+% ST.SD = syntheticDiagnosticSynchrotron(ST,false);
 
 % save('energy_limit','ST')
 end
@@ -319,7 +319,7 @@ for ss=1:ST.params.simulation.num_species
     
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
     passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
-    bool = pin & passing;
+    bool = pin; % & passing;
     eta = ST.data.(['sp' num2str(ss)]).eta(bool,:);
     Eo = ST.data.(['sp' num2str(ss)]).gamma(bool,:)*m*c^2/q;
     Eo = Eo/1E6;
@@ -330,7 +330,7 @@ for ss=1:ST.params.simulation.num_species
 %     catch
 %     end
     
-    if ~isempty(eta)surf
+    if ~isempty(eta)
         mean_fx(ss,:) = mean(eta,1);
         std_fx(ss,:) = std(eta,0,1);
         skewness_fx(ss,:) = skewness(eta,0,1);
@@ -464,6 +464,7 @@ else
     hh = figure('Visible','off');
 end
 set(hh,'name','PDF energy','NumberTitle','off')
+
 for ii=1:N
     it = ii*offset;
     nc = floor(N/2);
@@ -474,15 +475,14 @@ for ii=1:N
     figure(hh)
     subplot(nr,nc,ii)
     hold on
-%     plot(z,log10(fz),'k')
     
     for ss=1:ST.params.simulation.num_species    
-        xAxis = ( x(ss,:,it) - mean(x(ss,:,it)) )/std(fx(ss,:,it));
-        f = std(fx(ss,:,it))*squeeze(fx(ss,:,it))/trapz(x(ss,:,it),fx(ss,:,it));
-        
-        figure(h3)
-%         plot(xAxis,f,'o:')
-        plot(xAxis,log10(f),'o:')
+%         xAxis = ( x(ss,:,it) - mean(x(ss,:,it)) )/std(fx(ss,:,it));
+%         f = std(fx(ss,:,it))*squeeze(fx(ss,:,it))/trapz(x(ss,:,it),fx(ss,:,it));
+%         
+%         figure(h3)
+% %         plot(xAxis,f,'o:')
+%         plot(xAxis,log10(f),'o:')
                 
         xAxis = z(ss,:,it);
         f = squeeze(fz(ss,:,it));

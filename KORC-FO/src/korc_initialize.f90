@@ -24,7 +24,7 @@ module korc_initialize
 subroutine set_paths(params)
 	implicit none
 	INTEGER :: argn
-	TYPE(KORC_PARAMS), INTENT(OUT) :: params
+	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
 
 	argn = command_argument_count()
 	call get_command_argument(1,params%path_to_inputs)
@@ -95,8 +95,9 @@ end subroutine load_korc_params
 subroutine initialize_korc_parameters(params)
 	use korc_types
 	implicit none
-	TYPE(KORC_PARAMS), INTENT(OUT) :: params
+	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
 	INTEGER :: mpierr
+
 
 	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 

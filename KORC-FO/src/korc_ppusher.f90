@@ -85,12 +85,13 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 	    a = spp(ii)%q*dt/spp(ii)%m
 
 !$OMP PARALLEL FIRSTPRIVATE(a,dt,bool)&
-!$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gammap,sigma,us,gamma,t,s,Frad,Fcoll,U_RC,U_os,tmp,b_unit,B,vpar,vperp,vec,Prad)&
+!$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gammap,&
+!$OMP& sigma,us,gamma,t,s,Frad,Fcoll,U_RC,U_os,&
+!$OMP& tmp,b_unit,B,vpar,vperp,vec,Prad)&
 !$OMP& SHARED(ii,spp)
 !$OMP DO
 		do pp=1,spp(ii)%ppp
 			if ( spp(ii)%vars%flag(pp) .EQ. 1_idef ) then
-				
 				U = spp(ii)%vars%gamma(pp)*spp(ii)%vars%V(:,pp)
 
 				!! Magnitude of magnetic field
