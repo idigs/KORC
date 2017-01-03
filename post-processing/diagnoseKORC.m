@@ -42,7 +42,7 @@ ST.data = loadData(ST);
 
 % ST.P = synchrotronSpectrum(ST,true);
 
-% ST.SD = syntheticDiagnosticSynchrotron(ST,false);
+ST.SD = syntheticDiagnosticSynchrotron(ST,false);
 
 % save('energy_limit','ST')
 end
@@ -2411,16 +2411,16 @@ lambda = lch*lambda; % in cm
 
 % Camera parameters
 camera_params = struct;
-camera_params.Riw = 1.0;% inner wall radius in meters
+camera_params.Riw = 0.4;% inner wall radius in meters
 camera_params.NX = 35;
 camera_params.NY = 35;
-camera_params.size = [0.25,0.25]; % [horizontal size, vertical size] in meters
-camera_params.focal_length = 0.40; % In meters
-camera_params.position = [2.4,0.0]; % [R,Z] in meters
+camera_params.size = [0.4,0.4]; % [horizontal size, vertical size] in meters
+camera_params.focal_length = 0.35; % In meters
+camera_params.position = [1.05,0.0]; % [R,Z] in meters
 % The angle defined by the detector plane (pixel array) and the x-axis of a
 % coordinate system where phi = 0, the toroidal angle, corresponds to the
 % y-axis, and phi = 90 corresponds to the x-axis
-camera_params.incline = 55; % in degrees
+camera_params.incline = 50; % in degrees
 camera_params.incline = deg2rad(camera_params.incline);
 camera_params.horizontal_angle_view = ...
     atan2(0.5*camera_params.size(1),camera_params.focal_length); % in radians
@@ -2548,7 +2548,7 @@ for ss=1:num_species
     Ptot_psi = zeros(camera_params.NX,camera_params.NY);
     for ii=1:camera_params.NX
         for jj=1:camera_params.NY
-%             disp(['Pixel (' num2str(ii) ',' num2str(jj) ') out of ' num2str(camera_params.NX*camera_params.NY)])
+            disp(['Pixel (' num2str(ii) ',' num2str(jj) ') out of ' num2str(camera_params.NX*camera_params.NY)])
             P_psi_chi{ii,jj} = zeros(1,N);
             P_psi{ii,jj} = zeros(1,N);
             
@@ -2605,23 +2605,23 @@ for ss=1:num_species
                     reject = (chi > chic) | (psi > psic);
                     II = find(reject == false);
                     
-                    if ~isempty(II)
-                        for kk=1:numel(II)
-                            disp(['(X,Y)=' num2str(ii) ',' num2str(jj) ' ll: ' num2str(ll) ' PSI: ' ...
-                                num2str(psic(II)) ' CHI: ' num2str(chic(II))...
-                                ' Psyn: ' num2str( Psyn(gamma_pix(II),psi(II),kappa_pix(II),lambda(ll),chi(II)) )])
-                        end
-                        disp('Stop!')
-                    end
+%                     if ~isempty(II)
+%                         for kk=1:numel(II)
+%                             disp(['(X,Y)=' num2str(ii) ',' num2str(jj) ' ll: ' num2str(ll) ' PSI: ' ...
+%                                 num2str(psic(II)) ' CHI: ' num2str(chic(II))...
+%                                 ' Psyn: ' num2str( Psyn(gamma_pix(II),psi(II),kappa_pix(II),lambda(ll),chi(II)) )])
+%                         end
+%                         disp('Stop!')
+%                     end
                     
                     Psyn_tmp = Psyn(gamma_pix(II),psi(II),kappa_pix(II),lambda(ll),chi(II));
                     P_psi_chi{ii,jj}(ll) = sum(Psyn_tmp(Psyn_tmp > 0));
                     counter_psi_chi(ii,jj) = counter_psi_chi(ii,jj) + numel(find(Psyn_tmp > 0));
                     
-%                     Psyn_tmp = ...
-%                         Po(gamma_pix,kappa_pix,lambda(ll)).*(1+(gamma_pix.*psi).^2).^2.*( K23(zeta(gamma_pix,psi,kappa_pix,lambda(ll))).^2 + ...
-%                         K13(zeta(gamma_pix,psi,kappa_pix,lambda(ll))).^2.*(gamma_pix.*psi).^2./(1+(gamma_pix.*psi).^2) );
-%                     P_psi{ii,jj}(ll) = sum(Psyn_tmp);
+                    Psyn_tmp = ...
+                        Po(gamma_pix,kappa_pix,lambda(ll)).*(1+(gamma_pix.*psi).^2).^2.*( K23(zeta(gamma_pix,psi,kappa_pix,lambda(ll))).^2 + ...
+                        K13(zeta(gamma_pix,psi,kappa_pix,lambda(ll))).^2.*(gamma_pix.*psi).^2./(1+(gamma_pix.*psi).^2) );
+                    P_psi{ii,jj}(ll) = sum(Psyn_tmp);
                 end
                 
                 Ptot_psi_chi(ii,jj) = trapz(lambda,P_psi_chi{ii,jj});

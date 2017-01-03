@@ -459,12 +459,12 @@ SUBROUTINE synthetic_camera(params,spp)
 	ALLOCATE(part_pixel(cam%np(1),cam%np(2),cam%Nlambda,params%num_species))
 	ALLOCATE(Psyn_pixel(cam%np(1),cam%np(2),cam%Nlambda,params%num_species))
 
+	part_pixel = 0.0_rp
+	Psyn_pixel = 0.0_rp
+
 	do ss=1_idef,params%num_species
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
-
-		part_pixel = 0.0_rp
-		Psyn_pixel = 0.0_rp
 
 !$OMP PARALLEL FIRSTPRIVATE(q,m) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
 !$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,threshold_angle,&

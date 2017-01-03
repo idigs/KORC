@@ -111,7 +111,7 @@ for ss=1:ST.params.simulation.num_species
     
     h = figure;
     subplot(3,2,[1 3])
-    surfc(xAxis,yAxis,log10(Psyn'),'LineStyle','none')
+    surfc(xAxis,yAxis,Psyn','LineStyle','none')
     colormap(jet); hc = colorbar('Location','southoutside');
     xlabel(hc,'$P_{syn}$ (W/sr)','Interpreter','latex','FontSize',12)
     box on; axis square;view([0 -90])

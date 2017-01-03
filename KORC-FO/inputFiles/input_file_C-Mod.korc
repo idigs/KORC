@@ -1,8 +1,8 @@
 &input_parameters
-	t_steps = 1000000 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	t_steps = 310000 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
 	dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
-	output_cadence = 10000 ! 1400 for saving each 100 gyro-periods
-	num_species = 3
+	output_cadence = 3100 ! 1400 for saving each 100 gyro-periods
+	num_species = 5
 	radiation = .FALSE.
 	collisions = .FALSE.
 	collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
@@ -11,21 +11,23 @@
 										! the parameters given in the "analytic_mag_field_params" section.
 										! For 'EXTERNAL', the magnetic field is loaded from the file
 										! specified in "filename".
-	poloidal_flux = .TRUE.		  ! .TRUE. if using JFIT poloidal flux, .FALSE. if using the
+	poloidal_flux = .TRUE.			 ! .TRUE. if using JFIT poloidal flux, .FALSE. if using the
 										! cylindrical components of the magnetic field
-	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/C-MOD_EFIT.h5" ! "/home/l8c/Documents/KORC/KORC-FO/inputFiles/DIII-D_JFIT.h5"
+	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/C-MOD_EFIT.h5" !
 /
 
 &plasma_species
-	runaway = .FALSE. !
-	Ro = 0.68,0.68,0.68 !
-	Zo = 0.0,0.0,0.0 !
-	r = 0.2,0.2,0.2 !
-	Eo = 18.0E6,18.0E6,18.0E6 ! Initial energy in eV
-	etao = 175.0,170.0,165.0  ! Initial pitch angle
-	ppp = 10000,10000,10000 ! Number of particles per process (mpi)
-	q = -1.0,-1.0,-1.0 ! Electric charge
-	m = 1.0,1.0,1.0 ! In units of electron mass
+	runaway = .FALSE., .FALSE., .FALSE., .FALSE., .FALSE. !
+	monoenergetic = .TRUE., .TRUE., .TRUE., .TRUE., .TRUE. !
+	monopitch = .TRUE., .TRUE., .TRUE., .TRUE., .TRUE. !
+	Ro = 0.68, 0.68, 0.68, 0.68, 0.68 !
+	Zo = 0.0, 0.0, 0.0, 0.0, 0.0 !
+	r = 0.3, 0.3, 0.3, 0.3, 0.3, !
+	Eo = 24.0E6, 24.0E6, 24.0E6, 24.0E6, 24.0E6 ! Initial energy in eV
+	etao = 177.0, 175.0, 174.0, 173.0, 172.0  ! Initial pitch angle
+	ppp = 5000, 5000, 5000, 5000, 5000 ! Number of particles per process (mpi)
+	q = -1.0, -1.0, -1.0, -1.0, -1.0 ! Electric charge
+	m = 1.0, 1.0, 1.0, 1.0, 1.0 ! In units of electron mass
 /
 
 &analytic_mag_field_params
@@ -57,6 +59,7 @@
 	Zeff = 5.0 ! Effective atomic number
 	dTau = 5E-3 ! Subcycling time step in collisional time units (Tau)
 /
+
 &AvalancheGenerationPDF
 	max_pitch_angle = 20 ! Maximum pitch angle of sampled PDF in degrees
 	max_energy  = 60E6 ! Maximum energy of sampled PDF in MeV
@@ -64,4 +67,16 @@
 	Zeff = 5.0 ! Effective atomic number of ions
 	Epar = 2.0 ! Parallel electric field in V/m
 	Te = 1.5 ! Background electron temperature in eV
+/
+
+&SyntheticCamera
+	Riw = 0.4 ! Radial position of inner wall
+	num_pixels = 60, 60 ! Number of pixels (X,Y)
+	sensor_size = 0.4, 0.4 ! (horizontal,vertical)
+	focal_length = 0.35
+	position = 1.05, 0.0 ! Position of camera (R,Z)
+	incline = 50.0 ! In degrees
+	lambda_min = 400.0E-9 ! Minimum wavelength in meters
+	lambda_max = 900.0E-9 ! Maximum wavelength in meters
+	Nlambda = 100 ! Number of discrete wavelengths
 /
