@@ -60,15 +60,12 @@ for ll=1:length(list)
     disp(['Loading ' list{ll}])
     for ss=1:ST.params.simulation.num_species
         data.(['sp' num2str(ss)]).(list{ll}) = zeros(NX,NY,Nl,ST.num_snapshots);
-        for ff=1:ST.params.simulation.nmpi
-            filename = [ST.path 'synthetic_camera_snapshots_MPI_' num2str(ff-1) '.h5'];
-            for ii=1:numel(it)
-                dataset = ...
-                    ['/' num2str(it(ii)) '/spp_' num2str(ss)...
-                    '/' list{ll}];
-%                 tmp = 
-                data.(['sp' num2str(ss)]).(list{ll})(:,:,:,ii) = data.(['sp' num2str(ss)]).(list{ll})(:,:,:,ii) + h5read(filename, dataset);
-            end
+        filename = [ST.path 'synthetic_camera_snapshots.h5'];
+        for ii=1:numel(it)
+            dataset = ...
+                ['/' num2str(it(ii)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
+                '/' list{ll}];
+            data.(['sp' num2str(ss)]).(list{ll})(:,:,:,ii) = h5read(filename, dataset);
         end
     end
 end
@@ -118,19 +115,19 @@ for ss=1:ST.params.simulation.num_species
     ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
     xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
     
-    figure(h);
-    subplot(3,2,5)
-    hold on
-    for ii=1:NX
-        for jj=1:NY
-            plot(lambda,squeeze(Psyn_lambda(ii,jj,:)))
-        end
-    end
-    plot(lambda,Psyn_mean,'k','LineWidth',3)
-    hold off
-    box on;
-    ylabel('$P_{syn}$ (W/(nm$\cdot$sr))','FontSize',12,'Interpreter','latex')
-    xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
+%     figure(h);
+%     subplot(3,2,5)
+%     hold on
+%     for ii=1:NX
+%         for jj=1:NY
+%             plot(lambda,squeeze(Psyn_lambda(ii,jj,:)))
+%         end
+%     end
+%     plot(lambda,Psyn_mean,'k','LineWidth',3)
+%     hold off
+%     box on;
+%     ylabel('$P_{syn}$ (W/(nm$\cdot$sr))','FontSize',12,'Interpreter','latex')
+%     xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
     
     figure(h);
     subplot(3,2,[2 4])
@@ -141,18 +138,18 @@ for ss=1:ST.params.simulation.num_species
     ylabel('$y$-axis','FontSize',14,'Interpreter','latex')
     xlabel('$x$-axis','FontSize',14,'Interpreter','latex')
     
-    figure(h);
-    subplot(3,2,6)
-    hold on
-    for ii=1:NX
-        for jj=1:NY
-            plot(lambda,squeeze(Npart_lambda(ii,jj,:)))
-        end
-    end
-    hold off
-    box on;
-    ylabel('Number of RE','FontSize',12,'Interpreter','latex')
-    xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
+%     figure(h);
+%     subplot(3,2,6)
+%     hold on
+%     for ii=1:NX
+%         for jj=1:NY
+%             plot(lambda,squeeze(Npart_lambda(ii,jj,:)))
+%         end
+%     end
+%     hold off
+%     box on;
+%     ylabel('Number of RE','FontSize',12,'Interpreter','latex')
+%     xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
     
 %     saveas(h,[ST.path 'SyntheticCameraFortran_ss_' num2str(ss)],'fig')
 end

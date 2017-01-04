@@ -2,6 +2,8 @@ MODULE korc_synthetic_camera
 	USE korc_types
 	USE korc_constants
 	USE korc_HDF5
+    USE mpi
+
 	IMPLICIT NONE
 
 	TYPE, PRIVATE :: CAMERA
@@ -49,6 +51,48 @@ MODULE korc_synthetic_camera
 	PUBLIC :: initialize_synthetic_camera,synthetic_camera
 
 	CONTAINS
+
+SUBROUTINE test(params)
+    IMPLICIT NONE
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+    REAL(rp), DIMENSION(3,2,4) :: A, C
+    REAL(rp), DIMENSION(24) :: B, R
+    INTEGER :: ii,jj,kk, ierr
+
+
+    A = 0_rp
+
+    do kk=1_idef,4
+        do jj=1_idef,2
+            do ii=1_idef,3        
+                A(ii,jj,kk) = REAL(ii,rp) + 3_rp*(REAL(jj,rp) - 1.0_rp) + 6.0_rp*(REAL(kk,rp) - 1.0_rp)
+                A(ii,jj,kk) = REAL(params%mpi_params%rank,rp)*A(ii,jj,kk)
+                write(6,'("A(",I1,",",I1,",",I1,")=",F25.16)') ii,jj,kk,A(ii,jj,kk)
+            end do
+        end do
+    end do
+
+    B = RESHAPE(A,(/24/))
+
+    CALL MPI_REDUCE(B,R,24,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,ierr)
+
+    if (params%mpi_params%rank.EQ.0_idef) then
+        do ii=1_idef,24
+            write(6,'("R(",I2,")=",F25.16)') ii,R(ii)
+        end do
+
+
+        C = RESHAPE(B,(/3,2,4/))
+
+        do kk=1_idef,4
+            do jj=1_idef,2
+                do ii=1_idef,3        
+                    write(6,'("C(",I1,",",I1,",",I1,")=",F25.16)') ii,jj,kk,C(ii,jj,kk)
+                end do
+            end do
+        end do
+    end if
+END SUBROUTINE test
 
 
 SUBROUTINE initialize_synthetic_camera(params)
@@ -460,6 +504,8 @@ SUBROUTINE synthetic_camera(params,spp)
 	LOGICAL :: bool
 	REAL(rp) :: angle, clockwise
 	INTEGER :: ii,jj,ll,ss,pp
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: Psyn_send_buffer,Psyn_receive_buffer, npart_send_buffer, npart_receive_buffer
+    INTEGER :: numel, mpierr
 
 	write(6,'("MPI:",I5," Synthetic camera diagnostic: ON!")') params%mpi_params%rank
 
@@ -581,25 +627,43 @@ SUBROUTINE synthetic_camera(params,spp)
 !$OMP END PARALLEL
 	end do ! species
 
-	cam%npart = cam%npart + part_pixel
-	cam%Psyn = cam%Psyn + Psyn_pixel
-
 !	* * * * * * IMPORTANT * * * * * *
 !	* * * * * * * * * * * * * * * * *
 !	Here Psyn has units of (erg/s)cm
 !	* * * * * * * * * * * * * * * * *
 !	* * * * * * IMPORTANT * * * * * *
 
-!	call save_snapshot(params,part_pixel,Psyn_pixel)
+    numel = cam%np(1)*cam%np(2)*cam%Nlambda*params%num_species
 
-	if (params%output_cadence*params%num_snapshots.EQ.params%it) then
-		call save_snapshot(params,part_pixel,Psyn_pixel)
-	end if
+    ALLOCATE(Psyn_send_buffer(numel))
+    ALLOCATE(Psyn_receive_buffer(numel))
+
+    ALLOCATE(npart_send_buffer(numel))
+    ALLOCATE(npart_receive_buffer(numel))
+
+    Psyn_send_buffer = RESHAPE(Psyn_pixel,(/numel/))
+    CALL MPI_REDUCE(Psyn_send_buffer,Psyn_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+
+    npart_send_buffer = RESHAPE(part_pixel,(/numel/))
+    CALL MPI_REDUCE(npart_send_buffer,npart_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+
+    if (params%mpi_params%rank.EQ.0_idef) then
+        Psyn_pixel = RESHAPE(Psyn_receive_buffer,(/cam%np(1),cam%np(2),cam%Nlambda,params%num_species/))
+        part_pixel = RESHAPE(npart_receive_buffer,(/cam%np(1),cam%np(2),cam%Nlambda,params%num_species/))
+        	call save_snapshot(params,part_pixel,Psyn_pixel)
+    end if
+
+    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
 	DEALLOCATE(bool_pixel_array)
 	DEALLOCATE(angle_pixel_array)
 	DEALLOCATE(part_pixel)
     DEALLOCATE(Psyn_pixel)
+
+    DEALLOCATE(Psyn_send_buffer)
+    DEALLOCATE(Psyn_receive_buffer)
+    DEALLOCATE(npart_send_buffer)
+    DEALLOCATE(npart_receive_buffer)
 	write(6,'("MPI:",I5," Synthetic camera diagnostic: OFF!")') params%mpi_params%rank
 END SUBROUTINE synthetic_camera
 
@@ -697,10 +761,11 @@ SUBROUTINE save_synthetic_camera_params(params)
 		call h5fclose_f(h5file_id, h5error)
 	end if
 
-	write(tmp_str,'(I18)') params%mpi_params%rank
-	filename = TRIM(params%path_to_outputs) //"synthetic_camera_snapshots_MPI_"// TRIM(ADJUSTL(tmp_str)) //".h5"
-	call h5fcreate_f(TRIM(filename), H5F_ACC_TRUNC_F, h5file_id, h5error)
-	call h5fclose_f(h5file_id, h5error)
+    if (params%mpi_params%rank.EQ.0_idef) then
+	    filename = TRIM(params%path_to_outputs) //"synthetic_camera_snapshots.h5"
+	    call h5fcreate_f(TRIM(filename), H5F_ACC_TRUNC_F, h5file_id, h5error)
+	    call h5fclose_f(h5file_id, h5error)
+    end if
 END SUBROUTINE save_synthetic_camera_params
 
 
@@ -723,8 +788,7 @@ SUBROUTINE save_snapshot(params,part,Psyn)
 	INTEGER :: ss
 	REAL(rp) :: units
 
-	write(tmp_str,'(I18)') params%mpi_params%rank
-	filename = TRIM(params%path_to_outputs) //"synthetic_camera_snapshots_MPI_"// TRIM(ADJUSTL(tmp_str)) //".h5"
+	filename = TRIM(params%path_to_outputs) //"synthetic_camera_snapshots.h5"
 	call h5fopen_f(TRIM(filename), H5F_ACC_RDWR_F, h5file_id, h5error)
 
     ! Create group 'it'
