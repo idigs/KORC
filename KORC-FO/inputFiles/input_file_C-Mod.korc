@@ -1,7 +1,7 @@
 &input_parameters
-	t_steps = 100 ! 310000 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	t_steps = 310000 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
 	dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
-	output_cadence = 2 ! 3100 ! 1400 for saving each 100 gyro-periods
+	output_cadence = 3100 ! 1400 for saving each 100 gyro-periods
 	num_species = 5
 	radiation = .FALSE.
 	collisions = .FALSE.
@@ -22,9 +22,9 @@
 	monopitch = .TRUE., .TRUE., .TRUE., .TRUE., .TRUE. !
 	Ro = 0.68, 0.68, 0.68, 0.68, 0.68 !
 	Zo = 0.0, 0.0, 0.0, 0.0, 0.0 !
-	r = 0.3, 0.3, 0.3, 0.3, 0.3, !
+	r = 0.16, 0.16, 0.16, 0.16, 0.16, !
 	Eo = 24.0E6, 24.0E6, 24.0E6, 24.0E6, 24.0E6 ! Initial energy in eV
-	etao = 177.0, 175.0, 174.0, 173.0, 172.0  ! Initial pitch angle
+	etao = 176.0, 174.0, 172.0, 170.0, 168.0  ! Initial pitch angle
 	ppp = 20000, 20000, 20000, 20000, 20000 ! Number of particles per process (mpi)
 	q = -1.0, -1.0, -1.0, -1.0, -1.0 ! Electric charge
 	m = 1.0, 1.0, 1.0, 1.0, 1.0 ! In units of electron mass
@@ -70,6 +70,7 @@
 /
 
 &SyntheticCamera
+	aperture = 0.025 ! Aperture of the camera (diameter of lens) in meters
 	Riw = 0.4 ! Radial position of inner wall
 	num_pixels = 60, 60 ! Number of pixels (X,Y)
 	sensor_size = 0.4, 0.4 ! (horizontal,vertical)

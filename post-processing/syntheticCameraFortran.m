@@ -1,9 +1,10 @@
-function ST = syntheticCameraFortran(path,visible,range)
+function ST = syntheticCameraFortran(path,lambdas,visible,range)
 close all
 
 ST = struct;
 ST.path = path;
 ST.visible = visible;
+ST.lambdas = lambdas;
 
 ST.range = range;
 ST.num_snapshots = ST.range(2) - ST.range(1) + 1;
@@ -74,9 +75,19 @@ end
 
 function plotSyntheticCameraAnalysis(ST)
 disp('Plotting snapshots...')
+
+lambda = ST.params.synthetic_camera_params.lambda;
+xAxis = ST.params.synthetic_camera_params.pixels_nodes_x;
+yAxis = ST.params.synthetic_camera_params.pixels_nodes_y;
+
 NX = ST.params.synthetic_camera_params.num_pixels(1);
 NY = ST.params.synthetic_camera_params.num_pixels(2);
-Nl = ST.params.synthetic_camera_params.Nlambda;
+% Nl = ST.params.synthetic_camera_params.Nlambda;
+
+[~,i1] = min(abs(lambda - ST.lambdas(1)));
+[~,i2] = min(abs(lambda - ST.lambdas(2)));
+Nl = i2 - i1 + 1;
+
 for ss=1:ST.params.simulation.num_species
     disp(['Species: ' num2str(ss)])
     Psyn_lambda = zeros(NX,NY,Nl);
@@ -84,27 +95,23 @@ for ss=1:ST.params.simulation.num_species
     Psyn = zeros(NX,NY);
     Npart = zeros(NX,NY);
     
-    lambda = ST.params.synthetic_camera_params.lambda;
-    xAxis = ST.params.synthetic_camera_params.pixels_nodes_x;
-    yAxis = ST.params.synthetic_camera_params.pixels_nodes_y;
-    
     for it=1:ST.num_snapshots
         for ii=1:NX
             for jj=1:NY
                 Psyn_lambda(ii,jj,:) = Psyn_lambda(ii,jj,:) + ...
-                    ST.data.(['sp' num2str(ss)]).Psyn_pixel(ii,jj,:,it);
+                    ST.data.(['sp' num2str(ss)]).Psyn_pixel(ii,jj,i1:i2,it);
                 Npart_lambda(ii,jj,:) = Npart_lambda(ii,jj,:) + ...
-                    ST.data.(['sp' num2str(ss)]).part_pixel(ii,jj,:,it);
+                    ST.data.(['sp' num2str(ss)]).part_pixel(ii,jj,i1:i2,it);
                 
-                Psyn(ii,jj) = Psyn(ii,jj) + trapz(lambda,ST.data.(['sp' num2str(ss)]).Psyn_pixel(ii,jj,:,it));
-                Npart(ii,jj) = Npart(ii,jj) + sum(ST.data.(['sp' num2str(ss)]).part_pixel(ii,jj,:,it));
+                Psyn(ii,jj) = Psyn(ii,jj) + trapz(lambda(i1:i2),ST.data.(['sp' num2str(ss)]).Psyn_pixel(ii,jj,i1:i2,it));
+                Npart(ii,jj) = Npart(ii,jj) + sum(ST.data.(['sp' num2str(ss)]).part_pixel(ii,jj,i1:i2,it));
             end
         end
     end
     
-    lambda = 1E9*lambda;
+    axis_lambda = 1E9*lambda(i1:i2);
     Psyn_lambda = 1E-9*Psyn_lambda;
-    Psyn_mean = squeeze(mean(mean(Psyn_lambda,1),2));
+%     Psyn_mean = squeeze(mean(mean(Psyn_lambda,1),2));
     
     h = figure;
     subplot(3,2,[1 3])
@@ -115,19 +122,19 @@ for ss=1:ST.params.simulation.num_species
     ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
     xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
     
-%     figure(h);
-%     subplot(3,2,5)
-%     hold on
-%     for ii=1:NX
-%         for jj=1:NY
-%             plot(lambda,squeeze(Psyn_lambda(ii,jj,:)))
-%         end
-%     end
+    figure(h);
+    subplot(3,2,5)
+    hold on
+    for ii=1:NX
+        for jj=1:NY
+            plot(axis_lambda,squeeze(Psyn_lambda(ii,jj,:)))
+        end
+    end
 %     plot(lambda,Psyn_mean,'k','LineWidth',3)
-%     hold off
-%     box on;
-%     ylabel('$P_{syn}$ (W/(nm$\cdot$sr))','FontSize',12,'Interpreter','latex')
-%     xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
+    hold off
+    box on;
+    ylabel('$P_{syn}$ (W/(nm$\cdot$sr))','FontSize',12,'Interpreter','latex')
+    xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
     
     figure(h);
     subplot(3,2,[2 4])
@@ -138,20 +145,20 @@ for ss=1:ST.params.simulation.num_species
     ylabel('$y$-axis','FontSize',14,'Interpreter','latex')
     xlabel('$x$-axis','FontSize',14,'Interpreter','latex')
     
-%     figure(h);
-%     subplot(3,2,6)
-%     hold on
-%     for ii=1:NX
-%         for jj=1:NY
-%             plot(lambda,squeeze(Npart_lambda(ii,jj,:)))
-%         end
-%     end
-%     hold off
-%     box on;
-%     ylabel('Number of RE','FontSize',12,'Interpreter','latex')
-%     xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
+    figure(h);
+    subplot(3,2,6)
+    hold on
+    for ii=1:NX
+        for jj=1:NY
+            plot(axis_lambda,squeeze(Npart_lambda(ii,jj,:)))
+        end
+    end
+    hold off
+    box on;
+    ylabel('Number of RE','FontSize',12,'Interpreter','latex')
+    xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
     
-%     saveas(h,[ST.path 'SyntheticCameraFortran_ss_' num2str(ss)],'fig')
+    saveas(h,[ST.path 'SyntheticCameraFortran_ss_' num2str(ss)],'fig')
 end
 end
 

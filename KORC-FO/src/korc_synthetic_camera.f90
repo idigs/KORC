@@ -7,6 +7,7 @@ MODULE korc_synthetic_camera
 	IMPLICIT NONE
 
 	TYPE, PRIVATE :: CAMERA
+		REAL(rp) :: aperture ! Aperture of the camera (diameter of lens) in meters
 		REAL(rp) :: Riw ! Radial position of inner wall
 		INTEGER, DIMENSION(2) :: np ! Number of pixels (X,Y)
 		REAL(rp), DIMENSION(2) :: sensor_size ! In meters (horizontal,vertical)
@@ -98,6 +99,7 @@ END SUBROUTINE test
 SUBROUTINE initialize_synthetic_camera(params)
 	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	REAL(rp) :: aperture ! Aperture of the camera (diameter of lens) in meters
 	REAL(rp) :: Riw ! Radial position of inner wall
 	INTEGER, DIMENSION(2) :: num_pixels ! Number of pixels (X,Y)
 	REAL(rp), DIMENSION(2) :: sensor_size ! (horizontal,vertical)
@@ -110,7 +112,8 @@ SUBROUTINE initialize_synthetic_camera(params)
 	REAL(rp) :: xmin, xmax, ymin, ymax, DX, DY
 	INTEGER :: ii
 
-	NAMELIST /SyntheticCamera/ Riw,num_pixels,sensor_size,focal_length,position,incline,lambda_min,lambda_max,Nlambda
+	NAMELIST /SyntheticCamera/ aperture,Riw,num_pixels,sensor_size,focal_length,&
+			position,incline,lambda_min,lambda_max,Nlambda
 
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'(/,"* * * * * * * * * * * * * * * * * *")')
@@ -123,6 +126,7 @@ SUBROUTINE initialize_synthetic_camera(params)
 
 !	write(*,nml=SyntheticCamera)
 
+	cam%aperture = aperture
 	cam%Riw = Riw
 	cam%np = num_pixels
 	cam%sensor_size = sensor_size
@@ -501,6 +505,7 @@ SUBROUTINE synthetic_camera(params,spp)
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: Psyn_pixel
 	REAL(rp) :: q, m, k, u, g, l, threshold_angle
 	REAL(rp) :: psi, chi, beta, Psyn_tmp
+	REAL(rp) :: area, r
 	LOGICAL :: bool
 	REAL(rp) :: angle, clockwise
 	INTEGER :: ii,jj,ll,ss,pp
@@ -516,14 +521,16 @@ SUBROUTINE synthetic_camera(params,spp)
 
 	part_pixel = 0.0_rp
 	Psyn_pixel = 0.0_rp
+	
+	area = C_PI*(0.5_rp*cam%aperture)**2 ! In m^2
 
 	do ss=1_idef,params%num_species
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
 
-!$OMP PARALLEL FIRSTPRIVATE(q,m) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
+!$OMP PARALLEL FIRSTPRIVATE(q,m,area) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
 !$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,threshold_angle,&
-!$OMP& psi,chi,beta,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp)&
+!$OMP& psi,chi,beta,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp,r)&
 !$OMP& SHARED(params,spp,ss,Psyn_pixel,part_pixel)
 !$OMP DO
 		do pp=1_idef,spp(ss)%ppp
@@ -566,7 +573,8 @@ SUBROUTINE synthetic_camera(params,spp)
 								XC = (/cam%position(1)*COS(angle),-cam%position(1)*SIN(angle),cam%position(2)/)
 
 								n = XC - X
-								n = n/SQRT(DOT_PRODUCT(n,n))
+								r = SQRT(DOT_PRODUCT(n,n))
+								n = n/r
 
 								beta = ACOS(DOT_PRODUCT(n,binorm))
 								if (beta.GT.0.5_rp*C_PI) psi = beta - 0.5_rp*C_PI
@@ -581,7 +589,7 @@ SUBROUTINE synthetic_camera(params,spp)
 									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
 										Psyn_tmp = Psyn(g,psi,k,l,chi)
 										if (Psyn_tmp.GT.0.0_rp) then
-											Psyn_pixel(ii,jj,ll,ss) = Psyn_tmp
+											Psyn_pixel(ii,jj,ll,ss) = (area/r**2)*Psyn_tmp
 											part_pixel(ii,jj,ll,ss) = part_pixel(ii,jj,ll,ss) + 1.0_rp
 										end if
 									end if
@@ -609,7 +617,7 @@ SUBROUTINE synthetic_camera(params,spp)
 									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
 										Psyn_tmp = Psyn(g,psi,k,l,chi)
 										if (Psyn_tmp.GT.0.0_rp) then
-											Psyn_pixel(ii,jj,ll,ss) = Psyn_tmp
+											Psyn_pixel(ii,jj,ll,ss) = (area/r**2)*Psyn_tmp
 											part_pixel(ii,jj,ll,ss) = part_pixel(ii,jj,ll,ss) + 1.0_rp
 										end if
 									end if
@@ -633,37 +641,41 @@ SUBROUTINE synthetic_camera(params,spp)
 !	* * * * * * * * * * * * * * * * *
 !	* * * * * * IMPORTANT * * * * * *
 
-    numel = cam%np(1)*cam%np(2)*cam%Nlambda*params%num_species
+	if (params%mpi_params%nmpi.GT.1_idef) then 
+		numel = cam%np(1)*cam%np(2)*cam%Nlambda*params%num_species
 
-    ALLOCATE(Psyn_send_buffer(numel))
-    ALLOCATE(Psyn_receive_buffer(numel))
+		ALLOCATE(Psyn_send_buffer(numel))
+		ALLOCATE(Psyn_receive_buffer(numel))
+		ALLOCATE(npart_send_buffer(numel))
+		ALLOCATE(npart_receive_buffer(numel))
 
-    ALLOCATE(npart_send_buffer(numel))
-    ALLOCATE(npart_receive_buffer(numel))
+		Psyn_send_buffer = RESHAPE(Psyn_pixel,(/numel/))
+		CALL MPI_REDUCE(Psyn_send_buffer,Psyn_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
 
-    Psyn_send_buffer = RESHAPE(Psyn_pixel,(/numel/))
-    CALL MPI_REDUCE(Psyn_send_buffer,Psyn_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		npart_send_buffer = RESHAPE(part_pixel,(/numel/))
+		CALL MPI_REDUCE(npart_send_buffer,npart_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
 
-    npart_send_buffer = RESHAPE(part_pixel,(/numel/))
-    CALL MPI_REDUCE(npart_send_buffer,npart_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		if (params%mpi_params%rank.EQ.0_idef) then
+		    Psyn_pixel = RESHAPE(Psyn_receive_buffer,(/cam%np(1),cam%np(2),cam%Nlambda,params%num_species/))
+		    part_pixel = RESHAPE(npart_receive_buffer,(/cam%np(1),cam%np(2),cam%Nlambda,params%num_species/))
+		    	call save_snapshot(params,part_pixel,Psyn_pixel)
+		end if
 
-    if (params%mpi_params%rank.EQ.0_idef) then
-        Psyn_pixel = RESHAPE(Psyn_receive_buffer,(/cam%np(1),cam%np(2),cam%Nlambda,params%num_species/))
-        part_pixel = RESHAPE(npart_receive_buffer,(/cam%np(1),cam%np(2),cam%Nlambda,params%num_species/))
-        	call save_snapshot(params,part_pixel,Psyn_pixel)
-    end if
+		DEALLOCATE(Psyn_send_buffer)
+		DEALLOCATE(Psyn_receive_buffer)
+		DEALLOCATE(npart_send_buffer)
+		DEALLOCATE(npart_receive_buffer)
 
-    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+	    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+	else
+		call save_snapshot(params,part_pixel,Psyn_pixel)
+	end if
 
 	DEALLOCATE(bool_pixel_array)
 	DEALLOCATE(angle_pixel_array)
 	DEALLOCATE(part_pixel)
     DEALLOCATE(Psyn_pixel)
 
-    DEALLOCATE(Psyn_send_buffer)
-    DEALLOCATE(Psyn_receive_buffer)
-    DEALLOCATE(npart_send_buffer)
-    DEALLOCATE(npart_receive_buffer)
 	write(6,'("MPI:",I5," Synthetic camera diagnostic: OFF!")') params%mpi_params%rank
 END SUBROUTINE synthetic_camera
 
@@ -688,6 +700,10 @@ SUBROUTINE save_synthetic_camera_params(params)
 
 		gname = "synthetic_camera_params"
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
+
+		dset = TRIM(gname) // "/aperture"
+		attr = "Aperture of the camera (m)"
+		call save_to_hdf5(h5file_id,dset,cam%aperture,attr)
 
 		dset = TRIM(gname) // "/Riw"
 		attr = "Radial position of inner wall (m)"
