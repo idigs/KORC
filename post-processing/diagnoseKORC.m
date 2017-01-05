@@ -68,7 +68,7 @@ data = struct;
 if isfield(ST.params.fields,'dims')
     list = {'X','V','B'};
 else
-    list = {'X','V','B'};
+    list = {'X'};%,'V','B'};
 end
 
 it = ST.range(1):1:ST.range(2);
@@ -99,8 +99,8 @@ for ll=1:length(list)
 end
 
 
-list = {'eta','gamma','Prad','Pin','flag','mu'};
-% list = {'eta','gamma','Prad','flag'};
+% list = {'eta','gamma','Prad','Pin','flag','mu'};
+list = {'flag'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -2420,13 +2420,13 @@ camera_params.position = [1.05,0.0]; % [R,Z] in meters
 % The angle defined by the detector plane (pixel array) and the x-axis of a
 % coordinate system where phi = 0, the toroidal angle, corresponds to the
 % y-axis, and phi = 90 corresponds to the x-axis
-camera_params.incline = 50; % in degrees
+camera_params.incline = 60; % in degrees
 camera_params.incline = deg2rad(camera_params.incline);
 camera_params.horizontal_angle_view = ...
     atan2(0.5*camera_params.size(1),camera_params.focal_length); % in radians
 camera_params.vertical_angle_view = ...
     atan2(0.5*camera_params.size(2),camera_params.focal_length); % in radians
-camera_params.pixel_grid = setupCameraPixelGrid(camera_params,false);
+camera_params.pixel_grid = setupCameraPixelGrid(camera_params,true);
 
 clockwise_rotation = @(t,x) [cos(t),sin(t);-sin(t),cos(t)]*x;
 anticlockwise_rotation = @(t,x) [cos(t),-sin(t);sin(t),cos(t)]*x;

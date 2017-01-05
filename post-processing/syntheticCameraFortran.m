@@ -95,26 +95,21 @@ for ss=1:ST.params.simulation.num_species
     Psyn = zeros(NX,NY);
     Npart = zeros(NX,NY);
     
-    for it=1:ST.num_snapshots
-        for ii=1:NX
-            for jj=1:NY
-                Psyn_lambda(ii,jj,:) = Psyn_lambda(ii,jj,:) + ...
-                    ST.data.(['sp' num2str(ss)]).Psyn_pixel(ii,jj,i1:i2,it);
-                Npart_lambda(ii,jj,:) = Npart_lambda(ii,jj,:) + ...
-                    ST.data.(['sp' num2str(ss)]).part_pixel(ii,jj,i1:i2,it);
-                
-                Psyn(ii,jj) = Psyn(ii,jj) + trapz(lambda(i1:i2),ST.data.(['sp' num2str(ss)]).Psyn_pixel(ii,jj,i1:i2,it));
-                Npart(ii,jj) = Npart(ii,jj) + sum(ST.data.(['sp' num2str(ss)]).part_pixel(ii,jj,i1:i2,it));
-            end
+    for ii=1:NX
+        for jj=1:NY
+            Psyn_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).Psyn_pixel(ii,jj,i1:i2,:),4);
+            Npart_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).part_pixel(ii,jj,i1:i2,:),4);
+            
+            Psyn(ii,jj) = trapz(lambda(i1:i2),Psyn_lambda(ii,jj,:));
+            Npart(ii,jj) = sum(Npart_lambda(ii,jj,:),3);
         end
     end
     
     axis_lambda = 1E9*lambda(i1:i2);
     Psyn_lambda = 1E-9*Psyn_lambda;
-%     Psyn_mean = squeeze(mean(mean(Psyn_lambda,1),2));
     
     h = figure;
-    subplot(3,2,[1 3])
+    subplot(4,2,[1 3])
     surfc(xAxis,yAxis,Psyn','LineStyle','none')
     colormap(jet); hc = colorbar('Location','southoutside');
     xlabel(hc,'$P_{syn}$ (W/sr)','Interpreter','latex','FontSize',12)
@@ -123,21 +118,20 @@ for ss=1:ST.params.simulation.num_species
     xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
     
     figure(h);
-    subplot(3,2,5)
-    hold on
-    for ii=1:NX
-        for jj=1:NY
-            plot(axis_lambda,squeeze(Psyn_lambda(ii,jj,:)))
-        end
-    end
-%     plot(lambda,Psyn_mean,'k','LineWidth',3)
-    hold off
+    subplot(4,2,5)
+%     hold on
+%     for ii=1:NX
+%         for jj=1:NY
+%             plot(axis_lambda,squeeze(Psyn_lambda(ii,jj,:)))
+%         end
+%     end
+%     hold off
     box on;
     ylabel('$P_{syn}$ (W/(nm$\cdot$sr))','FontSize',12,'Interpreter','latex')
     xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
-    
+      
     figure(h);
-    subplot(3,2,[2 4])
+    subplot(4,2,[2 4])
     surfc(xAxis,yAxis,Npart','LineStyle','none')
     colormap(jet);  hc = colorbar('Location','southoutside');
     xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
@@ -146,17 +140,36 @@ for ss=1:ST.params.simulation.num_species
     xlabel('$x$-axis','FontSize',14,'Interpreter','latex')
     
     figure(h);
-    subplot(3,2,6)
-    hold on
-    for ii=1:NX
-        for jj=1:NY
-            plot(axis_lambda,squeeze(Npart_lambda(ii,jj,:)))
-        end
-    end
-    hold off
+    subplot(4,2,6)
+%     hold on
+%     for ii=1:NX
+%         for jj=1:NY
+%             plot(axis_lambda,squeeze(Npart_lambda(ii,jj,:)))
+%         end
+%     end
+%     hold off
     box on;
     ylabel('Number of RE','FontSize',12,'Interpreter','latex')
+    xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')    
+    
+    figure(h);
+    subplot(4,2,[7 8])
+    yyaxis left 
+    set(gca,'YColor',[0,0,1])
+    fy = squeeze(sum(sum(Psyn_lambda,1),2));
+    plot(axis_lambda,fy,'b','LineWidth',2)
+    ylabel('$P_{syn}$ (W/(nm$\cdot$sr))','FontSize',12,'Interpreter','latex')
+    ylim([0 max(fy)])
+    yyaxis right
+    set(gca,'YColor',[1,0,0])
+    fy = squeeze(sum(sum(Npart_lambda,1),2));
+    plot(axis_lambda,fy,'r','LineWidth',2)
+    ylim([0 max(fy)])
+    ylabel('Number of RE','FontSize',12,'Interpreter','latex')
+    box on;
+    xlim([min(axis_lambda) max(axis_lambda)])
     xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
+    
     
     saveas(h,[ST.path 'SyntheticCameraFortran_ss_' num2str(ss)],'fig')
 end

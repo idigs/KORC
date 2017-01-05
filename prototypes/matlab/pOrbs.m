@@ -191,7 +191,7 @@ end
 
 % parametricShift(ST);
 
-% ST.P = synchrotronSpectrum(ST);
+ST.P = synchrotronSpectrum(ST);
 
 munlock
 
