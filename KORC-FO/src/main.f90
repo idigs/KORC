@@ -82,7 +82,7 @@ program main
 		    call advance_particles_position(params,EB,spp,params%dt)
 
 			write(6,'("MPI:",I5," Saving snapshot: ",I15)') params%mpi_params%rank, it/params%output_cadence
-!			call save_simulation_outputs(params,spp,EB)
+			call save_simulation_outputs(params,spp,EB)
 
 			call synthetic_camera(params,spp) ! Synthetic camera
         else
@@ -90,9 +90,6 @@ program main
 		    call advance_particles_position(params,EB,spp,params%dt)
         end if
 	end do
-
-	call advance_particles_velocity(params,EB,spp,0.0_rp,.TRUE.)
-	call save_simulation_outputs(params,spp,EB)
 	
 	t2 = MPI_WTIME()
 

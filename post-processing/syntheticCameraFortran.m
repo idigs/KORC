@@ -157,9 +157,10 @@ for ss=1:ST.params.simulation.num_species
     yyaxis left 
     set(gca,'YColor',[0,0,1])
     fy = squeeze(sum(sum(Psyn_lambda,1),2));
+    fy = fy/max(fy);
     plot(axis_lambda,fy,'b','LineWidth',2)
     ylabel('$P_{syn}$ (W/(nm$\cdot$sr))','FontSize',12,'Interpreter','latex')
-    ylim([0 max(fy)])
+%     ylim([0 max(fy)])
     yyaxis right
     set(gca,'YColor',[1,0,0])
     fy = squeeze(sum(sum(Npart_lambda,1),2));

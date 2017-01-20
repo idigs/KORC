@@ -42,7 +42,7 @@ ST.data = loadData(ST);
 
 % ST.P = synchrotronSpectrum(ST,true);
 
-% ST.SD = syntheticDiagnosticSynchrotron(ST,false);
+ST.SD = syntheticDiagnosticSynchrotron(ST,false);
 
 % save('energy_limit','ST')
 end
@@ -68,7 +68,7 @@ data = struct;
 if isfield(ST.params.fields,'dims')
     list = {'X','V','B'};
 else
-    list = {'X'};%,'V','B'};
+    list = {'X','V','B'};
 end
 
 it = ST.range(1):1:ST.range(2);
@@ -99,8 +99,8 @@ for ll=1:length(list)
 end
 
 
-% list = {'eta','gamma','Prad','Pin','flag','mu'};
-list = {'flag'};
+list = {'eta','gamma','Prad','Pin','flag','mu'};
+% list = {'flag'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -2360,8 +2360,22 @@ for ii=1:camera_params.NX
     end
     
     if option
-        hold on;plot(xp(ip),yp(ip),'k.','MarkerSize',2);hold off
-        hold on;plot(xn(in),yn(in),'b.','MarkerSize',2);hold off
+        hold on;plot(xp(ip),yp(ip),'k.','MarkerSize',1);hold off
+        hold on;plot(xn(in),yn(in),'k.','MarkerSize',1);hold off
+%         INDEX = 1;
+%         if ~isempty(intersect(ip,INDEX))
+%             hold on;plot(xp(INDEX),yp(INDEX),'k.','MarkerSize',8);hold off
+%         end
+%         if ~isempty(intersect(in,INDEX))
+%             hold on;plot(xn(INDEX),yn(INDEX),'k.','MarkerSize',8);hold off
+%         end
+%         INDEX = 107;
+%         if ~isempty(intersect(ip,INDEX))
+%             hold on;plot(xp(INDEX),yp(INDEX),'b.','MarkerSize',8);hold off
+%         end
+%         if ~isempty(intersect(in,INDEX))
+%             hold on;plot(xn(INDEX),yn(INDEX),'b.','MarkerSize',8);hold off
+%         end
     end
     
     for jj=1:camera_params.NY
@@ -2397,7 +2411,7 @@ Pch_lambda = 1E-5;
 num_species = double(ST.params.simulation.num_species);
 
 % Resolution in wavelength
-N = 5;
+N = 50;
 % Wavelength range (450 nm - 950 nm for visible light).
 lambda_min = 400E-9;% in meters
 lambda_max = 900E-9;% in meters
@@ -2411,16 +2425,16 @@ lambda = lch*lambda; % in cm
 
 % Camera parameters
 camera_params = struct;
-camera_params.Riw = 0.4;% inner wall radius in meters
-camera_params.NX = 35;
-camera_params.NY = 35;
+camera_params.Riw = 1.0;% inner wall radius in meters
+camera_params.NX = 40;
+camera_params.NY = 40;
 camera_params.size = [0.4,0.4]; % [horizontal size, vertical size] in meters
-camera_params.focal_length = 0.35; % In meters
-camera_params.position = [1.05,0.0]; % [R,Z] in meters
+camera_params.focal_length = 0.4; % In meters
+camera_params.position = [2.4,0.1]; % [R,Z] in meters
 % The angle defined by the detector plane (pixel array) and the x-axis of a
 % coordinate system where phi = 0, the toroidal angle, corresponds to the
 % y-axis, and phi = 90 corresponds to the x-axis
-camera_params.incline = 60; % in degrees
+camera_params.incline = 50; % in degrees
 camera_params.incline = deg2rad(camera_params.incline);
 camera_params.horizontal_angle_view = ...
     atan2(0.5*camera_params.size(1),camera_params.focal_length); % in radians
@@ -2509,7 +2523,7 @@ for ss=1:num_species
     
 %     clear ip theta_f
     
-    [rotation_angles,ip_in_pixel] = findRotationAngles(X,camera_params,false);
+    [rotation_angles,ip_in_pixel] = findRotationAngles(X,camera_params,true);
     
     % % % % Beyond this point all variables are in cgs units % % % %
     c = 1E2*ST.params.scales.v;

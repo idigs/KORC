@@ -1,8 +1,8 @@
 &input_parameters
-	t_steps = 10 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	t_steps = 1 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
 	dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
-	output_cadence = 1 ! 1400 for saving each 100 gyro-periods
-	num_species = 5
+	output_cadence = 390000 ! 1400 for saving each 100 gyro-periods
+	num_species = 4
 	radiation = .FALSE.
 	collisions = .FALSE.
 	collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
@@ -17,17 +17,17 @@
 /
 
 &plasma_species
-	runaway = .FALSE., .FALSE., .FALSE., .FALSE., .FALSE. !
-	monoenergetic = .TRUE., .TRUE., .TRUE., .TRUE., .TRUE. !
-	monopitch = .TRUE., .TRUE., .TRUE., .TRUE., .TRUE. !
-	Ro = 1.475, 1.475, 1.475, 1.475, 1.475 !
-	Zo = 0.0, 0.0, 0.0, 0.0, 0.0 !
-	r = 0.45, 0.45, 0.45, 0.45, 0.45 !
-	Eo = 24.0E6, 24.0E6, 24.0E6, 24.0E6, 24.0E6 ! Initial energy in eV
-	etao = 177.0, 175.0, 174.0, 173.0, 172.0  ! Initial pitch angle
-	ppp = 20000, 20000, 20000, 20000, 20000 ! Number of particles per process (mpi)
-	q = -1.0, -1.0, -1.0, -1.0, -1.0 ! Electric charge
-	m = 1.0, 1.0, 1.0, 1.0, 1.0 ! In units of electron mass
+        runaway = .FALSE., .FALSE., .FALSE., .FALSE. !
+        monoenergetic = .TRUE., .TRUE., .TRUE., .TRUE. !
+        monopitch = .TRUE., .TRUE., .TRUE., .TRUE. !
+        Ro = 1.4, 1.4, 1.4, 1.4 !
+        Zo = 0.0, 0.0, 0.0, 0.0 !
+        r = 0.25, 0.25, 0.25, 0.25 !
+        Eo = 25.0E6, 25.0E6, 25.0E6, 25.0E6 ! Initial energy in eV
+        etao = 5.0, 10.0, 15.0, 20.0  ! Initial pitch angle
+        ppp = 100000, 100000, 100000, 100000 ! Number of particles per process (mpi)
+        q = -1.0, -1.0, -1.0, -1.0 ! Electric charge
+        m = 1.0, 1.0, 1.0, 1.0 ! In units of electron mass
 /
 
 &analytic_mag_field_params

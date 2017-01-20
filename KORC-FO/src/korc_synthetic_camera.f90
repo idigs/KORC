@@ -547,6 +547,7 @@ SUBROUTINE synthetic_camera(params,spp)
 				k = q*SQRT(DOT_PRODUCT(binorm,binorm))/(spp(ss)%vars%gamma(pp)*m*u**3)
 				k = k/1.0E2_rp ! Now in cm^-1 (CGS)
 !write(6,'("+ P: ",I4," k: ",F25.16)') pp,k
+!write(6,'("+ P: ",I4," k: ",3F25.16)') pp,B
 				binorm = binorm/SQRT(DOT_PRODUCT(binorm,binorm))
 
 				threshold_angle = (1.5_rp*k*cam%lambda_max/C_PI)**(1.0_rp/3.0_rp) ! In radians
@@ -589,7 +590,7 @@ SUBROUTINE synthetic_camera(params,spp)
 									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
 										Psyn_tmp = Psyn(g,psi,k,l,chi)
 										if (Psyn_tmp.GT.0.0_rp) then
-											Psyn_pixel(ii,jj,ll,ss) = (area/r**2)*Psyn_tmp
+											Psyn_pixel(ii,jj,ll,ss) = Psyn_tmp
 											part_pixel(ii,jj,ll,ss) = part_pixel(ii,jj,ll,ss) + 1.0_rp
 										end if
 									end if
@@ -617,7 +618,7 @@ SUBROUTINE synthetic_camera(params,spp)
 									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
 										Psyn_tmp = Psyn(g,psi,k,l,chi)
 										if (Psyn_tmp.GT.0.0_rp) then
-											Psyn_pixel(ii,jj,ll,ss) = (area/r**2)*Psyn_tmp
+											Psyn_pixel(ii,jj,ll,ss) = Psyn_tmp
 											part_pixel(ii,jj,ll,ss) = part_pixel(ii,jj,ll,ss) + 1.0_rp
 										end if
 									end if

@@ -891,7 +891,7 @@ function E = analyticalE(X)
 narginchk(1,2);
 
 % Parameters of the analytical magnetic field
-Eo = -7.0;
+Eo = 0.0;
 Ro = 1.5; % Major radius in meters.
 % Parameters of the analytical magnetic field
 
@@ -1236,7 +1236,7 @@ for ii=2:ST.params.numSnapshots
         s = 1/(1 + t*t'); % variable 's' in paper
         
         U_L = s*(up + (up*t')*t + cross(up,t));
-%         U = U_L; % Comment or uncomment
+        U = U_L; % Comment or uncomment
         % % % Leap-frog scheme for Lorentz force % % %
         
 % %         % % % Leap-frog scheme for the radiation damping force % % %
@@ -1244,21 +1244,21 @@ for ii=2:ST.params.numSnapshots
         gamma_eff = sqrt(1 + U_eff*U_eff');
         V_eff = U_eff/gamma_eff;
         
-        F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
-            cross(B,cross(B,V_eff)) );
-        vec = E + cross(V_eff,B);
-        F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
-
-        U_R = U_R + a*( F2 + F3 );
-        U = U_L + U_R - U;
-%         % % % Leap-frog scheme for the radiation damping force % % %
-        
-        % % % Collisions % % %
-        if mod((ii-1)*ST.params.cadence + jj,ST.cOp.subcyclingIter) == 0
-            [U,dummyWcoll] = collisionOperator(ST,XX,U/sqrt( 1 + U*U' ),dt*ST.cOp.subcyclingIter);
-        end
-        % % % Collisions % % %        
-        gamma = sqrt( 1 + U*U' ); % Comment or uncomment
+%         F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
+%             cross(B,cross(B,V_eff)) );
+%         vec = E + cross(V_eff,B);
+%         F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
+% 
+%         U_R = U_R + a*( F2 + F3 );
+%         U = U_L + U_R - U;
+% %         % % % Leap-frog scheme for the radiation damping force % % %
+%         
+%         % % % Collisions % % %
+%         if mod((ii-1)*ST.params.cadence + jj,ST.cOp.subcyclingIter) == 0
+%             [U,dummyWcoll] = collisionOperator(ST,XX,U/sqrt( 1 + U*U' ),dt*ST.cOp.subcyclingIter);
+%         end
+%         % % % Collisions % % %        
+%         gamma = sqrt( 1 + U*U' ); % Comment or uncomment
         
         V = U/gamma;
 
@@ -2346,7 +2346,7 @@ T2 = lambda^2*wc.*log(1 + (r/lambda).^2)/(2*qo*Ro^2);
 
 
 I = T1 - T2;
-err = 100*(I - I(1))/I(1);
+err = (I - I(1))/I(1);
 
 figure;
 subplot(2,1,1)
@@ -2673,13 +2673,14 @@ function P = synchrotronSpectrum(ST)
 disp('Calculating spectrum of synchrotron radiation...')
 P = struct;
 N = 250;
-Npsi = 35;
-Nchi = 30;
+Npsi = 100;
+Nchi = 100;
 % psi = (pi/180)*linspace(0,15,Npsi);
 
 upper_integration_limit = 200.0;
 
-lambda_min = 1E-9;
+lambda_min = 400E-9;
+lambda_max = 900E-9;
 
 if isfield(ST.PP,'k')
     c = 1E2*ST.params.c;
@@ -2703,9 +2704,11 @@ if isfield(ST.PP,'k')
     [~,Jmin] = min(k_app);
     [~,Jmax] = max(k_app);
     
-    Ind = Imin;
+%     Ind = Imin;
+    Ind = Imax;
     
     lambda_min = 1E2*lambda_min; % in cm
+    lambda_max = 1E2*lambda_max; % in cm
     
     P.lambdac = (4/3)*pi*(Eo./E).^3./k;
     
@@ -2732,7 +2735,7 @@ if isfield(ST.PP,'k')
     C0 = 4*pi*c*qe^2/sqrt(3);
     fun = @(x) besselk(5/3,x);
     for ii=1:ST.params.numSnapshots
-        lambda_max = 4*P.lambdac(ii);
+%         lambda_max = 4*P.lambdac(ii);
         P.lambda(ii,:) = linspace(lambda_min,lambda_max,N);
         P.lambda_app(ii,:) = linspace(lambda_min,P.lambdac_app(ii),N);
         
@@ -2777,10 +2780,11 @@ if isfield(ST.PP,'k')
     Psyn_psi_chi = zeros(Npsi,Nchi);
     Psyn_chi_lambda = zeros(Nchi,N);
     
-    [~,I] = max(P.Psyn(Ind,:)); 
-    I = floor(I/2);
+%     [~,I] = max(P.Psyn(Ind,:)); 
+%     I = floor(I/2);
 %     I = N;
-    
+    [~,I] = min(abs(P.lambda(Ind,:) - 700E-7));
+
     psi_critical = (3*P.lambda(Ind,I)/P.lambdac(Ind)).^(1/3)/gammap(Ind);
     chi_max = sqrt( P.lambda(Ind,I)/(3*P.lambdac(Ind)) )/gammap(Ind); % 0.42;% (24 degrees) 3 percent of error between x and sin(x)
     
@@ -2803,10 +2807,10 @@ if isfield(ST.PP,'k')
     bool = imag(r) == 0;
     chi_max = max(r(bool));
     
-%     D = ()^1.5
-%     chi_max_root = (1/D - D)/gammap(Ind);
-    
     chi = linspace(-chi_max,chi_max,Nchi);
+    
+%     chi = 10*chi;
+%     psi = 2*psi;
     
     for ii=1:Nchi
         x = co*chi(ii);
