@@ -42,7 +42,9 @@ ST.data = loadData(ST);
 
 % ST.P = synchrotronSpectrum(ST,true);
 
-ST.SD = syntheticDiagnosticSynchrotron(ST,false);
+% ST.SD = syntheticDiagnosticSynchrotron(ST,false);
+
+radiationPlane(ST);
 
 % save('energy_limit','ST')
 end
@@ -99,8 +101,8 @@ for ll=1:length(list)
 end
 
 
-list = {'eta','gamma','Prad','Pin','flag','mu'};
-% list = {'flag'};
+% list = {'eta','gamma','Prad','Pin','flag','mu'};
+list = {'eta','flag'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -2722,3 +2724,52 @@ for ss=1:num_species
    saveas(fh,[ST.path 'SyntheticDiagnostic_ss_' num2str(ss)],'fig')
 end
 end
+
+function radiationPlane(ST)
+
+num_species = double(ST.params.simulation.num_species);
+
+% clockwise_rotation = @(t,x) [cos(t),sin(t);-sin(t),cos(t)]*x;
+clockwise_rotation = ...
+    @(t,x) [cos(t).*x(1,:) + sin(t).*x(2,:);-sin(t).*x(1,:) + cos(t).*x(2,:)];
+% anticlockwise_rotation = @(t,x) [cos(t),-sin(t);sin(t),cos(t)]*x;
+
+h = figure;
+for ss=1:num_species
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
+    bool = pin;% & passing;
+    
+    X = [];
+    V = [];
+    for ii=1:ST.num_snapshots
+        X = [X,ST.data.(['sp' num2str(ss)]).X(:,bool,ii)];
+        V = [V,ST.data.(['sp' num2str(ss)]).V(:,bool,ii)];
+    end
+    
+    phi = atan2(X(2,:),X(1,:));
+    phi(phi<0) = 2*pi + phi(phi<0);
+    
+    X(1:2,:) = clockwise_rotation(phi,X(1:2,:));
+    V(1:2,:) = clockwise_rotation(phi,V(1:2,:));
+    V = normc(V);
+    
+    n = [0,-1,0];
+    
+    eta = zeros(1,numel(phi));
+    for ii=1:numel(phi)
+        eta(ii) = acosd(dot(V(:,ii),n));
+    end
+    
+    figure(h)
+    subplot(num_species,1,ss)
+    histogram(eta,'Normalization','probability')
+    title(['$\theta_0=$' num2str(ST.params.species.etao(ss)) ...
+        '$^\circ$, $\bar{\eta}=$' num2str(mean(eta))...
+        '$^\circ$, $\sigma_\eta=$' num2str(std(eta)) '$^\circ$'],...
+        'Interpreter','latex')
+end
+
+end
+
+

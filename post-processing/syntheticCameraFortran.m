@@ -112,7 +112,7 @@ for ss=1:ST.params.simulation.num_species
     subplot(4,2,[1 3])
     surfc(xAxis,yAxis,Psyn','LineStyle','none')
     colormap(jet); hc = colorbar('Location','southoutside');
-    xlabel(hc,'$P_{syn}$ (W/sr)','Interpreter','latex','FontSize',12)
+    xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
     box on; axis square;view([0 -90])
     ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
     xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
@@ -127,7 +127,7 @@ for ss=1:ST.params.simulation.num_species
 %     end
 %     hold off
     box on;
-    ylabel('$P_{syn}$ (W/(nm$\cdot$sr))','FontSize',12,'Interpreter','latex')
+    ylabel('$P_{syn}$ (Photon/s/nm)','FontSize',12,'Interpreter','latex')
     xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
       
     figure(h);
@@ -157,10 +157,10 @@ for ss=1:ST.params.simulation.num_species
     yyaxis left 
     set(gca,'YColor',[0,0,1])
     fy = squeeze(sum(sum(Psyn_lambda,1),2));
-    fy = fy/max(fy);
+%     fy = fy/max(fy);
     plot(axis_lambda,fy,'b','LineWidth',2)
-    ylabel('$P_{syn}$ (W/(nm$\cdot$sr))','FontSize',12,'Interpreter','latex')
-%     ylim([0 max(fy)])
+    ylabel('$P_{syn}$ (Photon/s/nm)','FontSize',12,'Interpreter','latex')
+    ylim([0 max(fy)])
     yyaxis right
     set(gca,'YColor',[1,0,0])
     fy = squeeze(sum(sum(Npart_lambda,1),2));

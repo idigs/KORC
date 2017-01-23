@@ -42,6 +42,7 @@ MODULE korc_synthetic_camera
 
 	TYPE(CAMERA), PRIVATE :: cam
 	TYPE(ANGLES), PRIVATE :: ang
+	REAL(rp), PRIVATE, PARAMETER :: CGS_h = 6.6261E-27_rp ! Planck constant in erg*s
 	REAL(rp), PRIVATE, PARAMETER :: CGS_C = 1.0E2_rp*C_C
 	REAL(rp), PRIVATE, PARAMETER :: CGS_E = 3.0E9_rp*C_E
 	REAL(rp), PRIVATE, PARAMETER :: CGS_ME = 1.0E3_rp*C_ME
@@ -145,6 +146,8 @@ SUBROUTINE initialize_synthetic_camera(params)
 	do ii=1_idef,cam%Nlambda
 		cam%lambda(ii) = cam%lambda_min + REAL(ii-1_idef,rp)*cam%Dlambda
 	end do
+
+	! NOTE: cam%lambda is in cm !!
 
 	ALLOCATE(cam%pixels_nodes_x(cam%np(1)))
 	ALLOCATE(cam%pixels_nodes_y(cam%np(2)))
@@ -505,7 +508,7 @@ SUBROUTINE synthetic_camera(params,spp)
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: Psyn_pixel
 	REAL(rp) :: q, m, k, u, g, l, threshold_angle
 	REAL(rp) :: psi, chi, beta, Psyn_tmp
-	REAL(rp) :: area, r
+	REAL(rp) :: area, r, photon_energy
 	LOGICAL :: bool
 	REAL(rp) :: angle, clockwise
 	INTEGER :: ii,jj,ll,ss,pp
@@ -530,7 +533,7 @@ SUBROUTINE synthetic_camera(params,spp)
 
 !$OMP PARALLEL FIRSTPRIVATE(q,m,area) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
 !$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,threshold_angle,&
-!$OMP& psi,chi,beta,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp,r)&
+!$OMP& psi,chi,beta,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp,r,photon_energy)&
 !$OMP& SHARED(params,spp,ss,Psyn_pixel,part_pixel)
 !$OMP DO
 		do pp=1_idef,spp(ss)%ppp
@@ -590,7 +593,8 @@ SUBROUTINE synthetic_camera(params,spp)
 									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
 										Psyn_tmp = Psyn(g,psi,k,l,chi)
 										if (Psyn_tmp.GT.0.0_rp) then
-											Psyn_pixel(ii,jj,ll,ss) = Psyn_tmp
+											photon_energy = CGS_h*CGS_C/l
+											Psyn_pixel(ii,jj,ll,ss) = Psyn_tmp/photon_energy
 											part_pixel(ii,jj,ll,ss) = part_pixel(ii,jj,ll,ss) + 1.0_rp
 										end if
 									end if
@@ -618,7 +622,8 @@ SUBROUTINE synthetic_camera(params,spp)
 									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
 										Psyn_tmp = Psyn(g,psi,k,l,chi)
 										if (Psyn_tmp.GT.0.0_rp) then
-											Psyn_pixel(ii,jj,ll,ss) = Psyn_tmp
+											photon_energy = CGS_h*CGS_C/l
+											Psyn_pixel(ii,jj,ll,ss) = Psyn_tmp/photon_energy
 											part_pixel(ii,jj,ll,ss) = part_pixel(ii,jj,ll,ss) + 1.0_rp
 										end if
 									end if
@@ -636,11 +641,12 @@ SUBROUTINE synthetic_camera(params,spp)
 !$OMP END PARALLEL
 	end do ! species
 
-!	* * * * * * IMPORTANT * * * * * *
-!	* * * * * * * * * * * * * * * * *
-!	Here Psyn has units of (erg/s)cm
-!	* * * * * * * * * * * * * * * * *
-!	* * * * * * IMPORTANT * * * * * *
+!	* * * * * * * IMPORTANT * * * * * * *
+!	* * * * * * * * * * * * * * * * * * *
+!	Here Psyn has units of (erg/s)(cm^-1) 
+!	or (photons/s)(cm^-1). See above.
+!	* * * * * * * * * * * * * * * * * * *
+!	* * * * * * * IMPORTANT * * * * * * *
 
 	if (params%mpi_params%nmpi.GT.1_idef) then 
 		numel = cam%np(1)*cam%np(2)*cam%Nlambda*params%num_species
@@ -826,7 +832,8 @@ SUBROUTINE save_snapshot(params,part,Psyn)
 		call save_array_to_hdf5(subgroup_id, dset, part(:,:,:,ss))
 
 		dset = "Psyn_pixel"
-		units = 1.0E-5_rp ! (Watts)(m^-1)(steradian^-1)
+!		units = 1.0E-5_rp ! (Watts)(m^-1) Use these units when Psyn is in (erg/s*cm)
+		units = 1.0E2_rp ! (Photons/s)(m^-1) Use these units when Psyn is in (Photons/s)(cm^-1)
 		call save_array_to_hdf5(subgroup_id, dset, units*Psyn(:,:,:,ss))
 
 		call h5gclose_f(subgroup_id, h5error)
