@@ -50,12 +50,14 @@ subroutine load_korc_params(params)
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
 	LOGICAL :: poloidal_flux
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
+	CHARACTER(MAX_STRING_LENGTH) :: outputs_list
 	INTEGER(ip) :: output_cadence
 	INTEGER :: num_species
 	INTEGER :: num_impurity_species
+	INTEGER :: ii,jj
 
 	NAMELIST /input_parameters/ magnetic_field_model,poloidal_flux,magnetic_field_filename,t_steps,dt,&
-            output_cadence,num_species,radiation,collisions,collisions_model
+            output_cadence,num_species,radiation,collisions,collisions_model,outputs_list
 	
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=input_parameters)
@@ -73,6 +75,16 @@ subroutine load_korc_params(params)
 	params%radiation = radiation
 	params%collisions = collisions
 	params%collisions_model = TRIM(collisions_model)
+	params%outputs_list = TRIM(outputs_list)
+
+	ii = 1
+	do while (ii.NE.0)
+		jj = SCAN(params%outputs_list(ii:),",")
+		if (ii.NE.0) then
+			write(6,*) ii,TRIM(params%outputs_list(ii:))
+			ii = ii + 1
+		end if
+	end do
 
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'(/,"* * * * * SIMULATION PARAMETERS * * * * *")')

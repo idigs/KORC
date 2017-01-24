@@ -89,6 +89,7 @@ TYPE, PUBLIC :: KORC_PARAMS
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
 	LOGICAL :: poloidal_flux
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
+	CHARACTER(MAX_STRING_LENGTH) :: outputs_list
 
 	TYPE(KORC_MPI) :: mpi_params
 	TYPE(CHARCS_PARAMS) :: cpp
