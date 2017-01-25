@@ -1,12 +1,12 @@
 &input_parameters
-	t_steps = 2 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	t_steps = 1000 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
 	dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
-	output_cadence = 1 ! 1400 for saving each 100 gyro-periods
+	output_cadence = 100 ! 1400 for saving each 100 gyro-periods
 	num_species = 4
-	radiation = .FALSE.
-	collisions = .FALSE.
+	radiation = .TRUE.
+	collisions = .TRUE.
 	collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
-	magnetic_field_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
+	magnetic_field_model = 'UNIFORM' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
 										! For 'ANALYTICAL', the magnetic field is calculated based on
 										! the parameters given in the "analytic_mag_field_params" section.
 										! For 'EXTERNAL', the magnetic field is loaded from the file
@@ -15,7 +15,7 @@
 	poloidal_flux = .FALSE.			 ! .TRUE. if using JFIT poloidal flux, .FALSE. if using the
 										! cylindrical components of the magnetic field
 	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/C-MOD_EFIT.h5" !
-	outputs_list = '{V}' ! List of outputs '{X,V,E,B,gamma,mu,eta,Prad,Pin,flag}'
+	outputs_list = '{V,gamma,eta,Prad,Pin}' ! List of outputs '{X,V,E,B,gamma,mu,eta,Prad,Pin,flag}'
 /
 
 &plasma_species
@@ -27,7 +27,7 @@
         r = 0.2, 0.2, 0.2, 0.2 !
         Eo = 25.0E6, 25.0E6, 25.0E6, 25.0E6 ! Initial energy in eV
         etao = 5.0, 10.0, 15.0, 20.0  ! Initial pitch angle
-        ppp = 50000, 50000, 50000, 50000 ! Number of particles per process (mpi)
+        ppp = 10, 10, 10, 10 ! Number of particles per process (mpi)
         q = -1.0, -1.0, -1.0, -1.0 ! Electric charge
         m = 1.0, 1.0, 1.0, 1.0 ! In units of electron mass
 /
@@ -57,7 +57,7 @@
 &CollisionParamsSingleSpecies
 	Te = 1.5 ! Background electron temperature in eV
 	Ti = 1.5 ! Background ion temperature in eV
-	ne = 3.9E19 ! Background electron density in 1/m^3
+	ne = 1.0E22 ! Background electron density in 1/m^3
 	Zeff = 5.0 ! Effective atomic number
 	dTau = 5E-3 ! Subcycling time step in collisional time units (Tau)
 /

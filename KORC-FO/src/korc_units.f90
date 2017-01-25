@@ -17,6 +17,7 @@ subroutine compute_charcs_plasma_params(params,spp,F)
 
 	params%cpp%velocity = C_C
 	params%cpp%Bo = ABS(F%Bo)
+	params%cpp%Eo = ABS(params%cpp%velocity*params%cpp%Bo)
 
 	! Non-relativistic cyclotron frequency
 	spp(:)%wc = ( ABS(spp(:)%q)/spp(:)%m )*params%cpp%Bo
@@ -35,7 +36,6 @@ subroutine compute_charcs_plasma_params(params,spp,F)
 	params%cpp%charge = ABS(spp(ind)%q)
 	params%cpp%length = params%cpp%velocity*params%cpp%time
 	params%cpp%energy = params%cpp%mass*params%cpp%velocity**2
-	params%cpp%Eo = params%cpp%velocity*params%cpp%Bo
 
 	params%cpp%density = 1.0_rp/params%cpp%length**3
 	params%cpp%pressure = 0.0_rp
@@ -95,7 +95,7 @@ subroutine normalize_variables(params,spp,F)
 		F%Eo = F%Eo/params%cpp%Eo
         F%to = F%to/params%cpp%time
         F%sig = F%sig/params%cpp%time
-	else
+	else if (params%magnetic_field_model .EQ. 'EXTERNAL') then
 		F%Bo = F%Bo/params%cpp%Bo
 
 		if (ALLOCATED(F%B%R)) F%B%R = F%B%R/params%cpp%Bo
@@ -109,6 +109,9 @@ subroutine normalize_variables(params,spp,F)
 		F%X%R = F%X%R/params%cpp%length
 		! Nothing to do for the PHI component
 		F%X%Z = F%X%Z/params%cpp%length
+	else if (params%magnetic_field_model .EQ. 'UNIFORM') then
+		F%Bo = F%Bo/params%cpp%Bo
+		F%Eo = F%Eo/params%cpp%Eo
 	end if	
 end subroutine normalize_variables
 

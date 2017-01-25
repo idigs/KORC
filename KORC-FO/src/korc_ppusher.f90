@@ -78,6 +78,8 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 			if (TRIM(EB%electric_field_mode) .EQ. 'PULSE') then 
 				spp(ii)%vars%E = EXP(-0.5_rp*((params%time - EB%to)/EB%sig)**2)*spp(ii)%vars%E
 			end if
+		else if (params%magnetic_field_model .EQ. 'UNIFORM') then
+			call uniform_fields(spp(ii)%vars, EB)
 		else
 			call interp_field(spp(ii)%vars, EB)
 		end if
@@ -193,17 +195,19 @@ subroutine advance_particles_position(params,EB,spp,dt)
 	REAL(rp), INTENT(IN) :: dt
 	INTEGER :: ii, pp ! Iterators
 
-    do ii = 1,params%num_species
+	if (params%magnetic_field_model .NE. 'UNIFORM') then
+		do ii = 1,params%num_species
 !$OMP PARALLEL PRIVATE(pp) SHARED(ii,spp,dt,params)
 !$OMP DO
-	do pp = 1,spp(ii)%ppp
-        if ( spp(ii)%vars%flag(pp) .EQ. 1_idef ) then
-		    spp(ii)%vars%X(:,pp) = spp(ii)%vars%X(:,pp) + dt*spp(ii)%vars%V(:,pp)
-        end if
-	end do
+		do pp = 1,spp(ii)%ppp
+		    if ( spp(ii)%vars%flag(pp) .EQ. 1_idef ) then
+				spp(ii)%vars%X(:,pp) = spp(ii)%vars%X(:,pp) + dt*spp(ii)%vars%V(:,pp)
+		    end if
+		end do
 !$OMP END DO
 !$OMP END PARALLEL
-	end do
+		end do
+	end if
 end subroutine advance_particles_position
 
 end module korc_ppusher

@@ -197,7 +197,7 @@ subroutine initialize_particles(params,F,spp)
 	read(default_unit_open,nml=plasma_species)
 	close(default_unit_open)
 
-	do ii=1,params%num_species
+	do ii=1_idef,params%num_species
 		spp(ii)%Eo = Eo(ii)*C_E
 		spp(ii)%etao = etao(ii)
 		spp(ii)%runaway = runaway(ii)
@@ -283,10 +283,9 @@ subroutine set_up_particles_ic(params,F,spp)
 	REAL(rp), DIMENSION(3) :: x = (/1.0_rp,0.0_rp,0.0_rp/)
 	REAL(rp), DIMENSION(3) :: y = (/0.0_rp,1.0_rp,0.0_rp/)
 	REAL(rp), DIMENSION(3) :: z = (/0.0_rp,0.0_rp,1.0_rp/)
-!    REAL(rp), DIMENSION(:), ALLOCATABLE :: dummy
 	INTEGER :: ii,jj ! Iterator
 
-	do ii=1,params%num_species
+	do ii=1_idef,params%num_species
 		ALLOCATE( Xo(3,spp(ii)%ppp) )
 		ALLOCATE( Vo(spp(ii)%ppp) )
 		ALLOCATE( V1(spp(ii)%ppp) )
@@ -302,31 +301,33 @@ subroutine set_up_particles_ic(params,F,spp)
 		ALLOCATE( radius(spp(ii)%ppp) )
 		ALLOCATE( angle(spp(ii)%ppp) )
 
-!		ALLOCATE( dummy(spp(ii)%ppp) ) ! dummy array
+		if (params%magnetic_field_model .EQ. 'UNIFORM') then
+			spp(ii)%vars%X = 0.0_rp
+		else
+			! Initial condition of uniformly distributed particles on a disk in the xz-plane
+			! A unique velocity direction
+			call init_u_random(10986546_8)
 
-		call init_u_random(10986546_8)
+			call init_random_seed()
+			call RANDOM_NUMBER(theta)
+			theta = 2.0_rp*C_PI*theta
 
-		! Initial condition of uniformly distributed particles on a disk in the xz-plane
-		! A unique velocity direction
-		call init_random_seed()
-		call RANDOM_NUMBER(theta)
-		theta = 2.0_rp*C_PI*theta
+			call init_random_seed()
+			call RANDOM_NUMBER(zeta)
+			zeta = 2.0_rp*C_PI*zeta
 
-		call init_random_seed()
-		call RANDOM_NUMBER(zeta)
-		zeta = 2.0_rp*C_PI*zeta
-
-		! Uniform distribution on a disk at a fixed azimuthal theta		
-		call init_random_seed()
-		call RANDOM_NUMBER(radius)
+			! Uniform distribution on a disk at a fixed azimuthal theta		
+			call init_random_seed()
+			call RANDOM_NUMBER(radius)
 		
-		Xo(1,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*sin(zeta)
-		Xo(2,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*cos(zeta)
-		Xo(3,:) = spp(ii)%Zo + spp(ii)%r*sqrt(radius)*sin(theta)
+			Xo(1,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*sin(zeta)
+			Xo(2,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*cos(zeta)
+			Xo(3,:) = spp(ii)%Zo + spp(ii)%r*sqrt(radius)*sin(theta)
 
-		spp(ii)%vars%X(1,:) = Xo(1,:)
-		spp(ii)%vars%X(2,:) = Xo(2,:)
-		spp(ii)%vars%X(3,:) = Xo(3,:)
+			spp(ii)%vars%X(1,:) = Xo(1,:)
+			spp(ii)%vars%X(2,:) = Xo(2,:)
+			spp(ii)%vars%X(3,:) = Xo(3,:)
+		end if
 
 		call init_random_seed()
 		call RANDOM_NUMBER(angle)
@@ -466,8 +467,16 @@ subroutine initialize_fields(params,F)
 			field%str = 'B'
 			call mean_F_field(F,F%Bo,field)
 		end if
+	else if (params%magnetic_field_model .EQ. 'UNIFORM') then
+		! Load the parameters of the analytical magnetic field
+		open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
+		read(default_unit_open,nml=analytic_mag_field_params)
+		close(default_unit_open)
+
+		F%Eo = Eo
+		F%Bo = Bo
 	else
-		write(6,'("ERROR: when initializing fields!")')
+		write(6,'("ERROR: when initializing fields.")')
 		call korc_abort()
 	end if
 end subroutine initialize_fields

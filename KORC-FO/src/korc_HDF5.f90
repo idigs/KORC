@@ -846,17 +846,11 @@ subroutine save_simulation_parameters(params,spp,F)
 		gname = "fields"
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
-		dset = TRIM(gname) // "/Bo"
-		attr = "Toroidal field at the magnetic axis in T"
-		call save_to_hdf5(h5file_id,dset,F%Bo*params%cpp%Bo,attr)
-
-		if (params%poloidal_flux) then
-			dset = TRIM(gname) // "/Ro"
-			attr = "Radial position of magnetic axis"
-			call save_to_hdf5(h5file_id,dset,F%Ro*params%cpp%length,attr)
-		end if
-
 		if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
+			dset = TRIM(gname) // "/Bo"
+			attr = "Toroidal field at the magnetic axis in T"
+			call save_to_hdf5(h5file_id,dset,F%Bo*params%cpp%Bo,attr)
+
 			dset = TRIM(gname) // "/a"
 			attr = "Minor radius in m"
         	call save_to_hdf5(h5file_id,dset,F%AB%a*params%cpp%length,attr)
@@ -895,6 +889,16 @@ subroutine save_simulation_parameters(params,spp,F)
 			attr_array(1) = "Radial position of the magnetic field grid nodes"
 			call save_1d_array_to_hdf5(h5file_id,dset,F%X%R*params%cpp%length,attr_array)
 
+			if (params%poloidal_flux) then
+				dset = TRIM(gname) // "/Bo"
+				attr = "Toroidal field at the magnetic axis in T"
+				call save_to_hdf5(h5file_id,dset,F%Bo*params%cpp%Bo,attr)
+
+				dset = TRIM(gname) // "/Ro"
+				attr = "Radial position of magnetic axis"
+				call save_to_hdf5(h5file_id,dset,F%Ro*params%cpp%length,attr)
+			end if
+
 			if (.NOT. params%poloidal_flux) then
 				dset = TRIM(gname) // "/PHI"
 				attr_array(1) = "Azimuthal angle of the magnetic field grid nodes"
@@ -906,6 +910,14 @@ subroutine save_simulation_parameters(params,spp,F)
 			call save_1d_array_to_hdf5(h5file_id,dset,F%X%Z*params%cpp%length,attr_array)
 
 			DEALLOCATE(attr_array)
+		else if (params%magnetic_field_model .EQ. 'UNIFORM') then
+			dset = TRIM(gname) // "/Bo"
+			attr = "Magnetic field in T"
+			call save_to_hdf5(h5file_id,dset,F%Bo*params%cpp%Bo,attr)
+
+			dset = TRIM(gname) // "/Eo"
+			attr = "Electric field in V/m"
+			call save_to_hdf5(h5file_id,dset,F%Eo*params%cpp%Eo,attr)
 		end if
 
 		call h5gclose_f(group_id, h5error)

@@ -150,11 +150,17 @@ subroutine initialize_interpolant(params,F)
 			write(6,'("* * * * INTERPOLANT   INITIALIZED * * * *")')
 			write(6,'("* * * * * * * * * * * * * * * * * * * * *",/)')
 		end if
-	else
+	else if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
 		if (params%mpi_params%rank .EQ. 0) then
 			write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * *")')
 			write(6,'("* * * * USING ANALYTICAL MAGNETIC FIELD * * * *")')
 			write(6,'("* * * * * * * * * * * * * * * * * * * * * * * *",/)')
+		end if
+	else if (params%magnetic_field_model .EQ. 'UNIFORM') then
+		if (params%mpi_params%rank .EQ. 0) then
+			write(6,'(/,"* * * * * * * * * * *  * * * * * * * * * * *")')
+			write(6,'("* * * * USING UNIFORM MAGNETIC FIELD * * * *")')
+			write(6,'(/,"* * * * * * * * * * *  * * * * * * * * * * *")')
 		end if
 	end if
 end subroutine initialize_interpolant
@@ -357,6 +363,17 @@ subroutine interp_analytical_field(prtcls,F)
 end subroutine interp_analytical_field
 
 
+subroutine uniform_fields(prtcls,F)
+    implicit none
+	TYPE(PARTICLES), INTENT(INOUT) :: prtcls
+	TYPE(FIELDS), INTENT(IN) :: F
+
+	call uniform_magnetic_field(F, prtcls%B)
+
+	call uniform_electric_field(F, prtcls%E)
+end subroutine uniform_fields
+
+
 subroutine unitVectors(params,Xo,F,b1,b2,b3,flag)
     implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
@@ -385,6 +402,8 @@ subroutine unitVectors(params,Xo,F,b1,b2,b3,flag)
 	if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
 		call cart_to_tor(Xo,F%AB%Ro,X,local_flag) ! To toroidal coords
 		call analytical_magnetic_field(F,X,B,local_flag)
+	else if (params%magnetic_field_model .EQ. 'UNIFORM') then
+		call uniform_magnetic_field(F,B)
 	else
 		call cart_to_cyl(Xo, X)
         if (params%poloidal_flux) then

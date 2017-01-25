@@ -5,7 +5,7 @@ module korc_fields
 
     implicit none
 
-	PUBLIC :: analytical_magnetic_field, mean_F_field, check_if_confined
+	PUBLIC :: analytical_magnetic_field,uniform_magnetic_field,mean_F_field,check_if_confined
 
     contains
 
@@ -38,6 +38,26 @@ subroutine analytical_magnetic_field(F,Y,B,flag)
 !$OMP END DO
 !$OMP END PARALLEL
 end subroutine analytical_magnetic_field
+
+
+subroutine uniform_magnetic_field(F,B)
+    implicit none
+	TYPE(FIELDS), INTENT(IN) :: F
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz
+
+	B(1,:) = F%Bo
+	B(2:3,:) = 0.0_rp
+end subroutine uniform_magnetic_field
+
+
+subroutine uniform_electric_field(F,E)
+    implicit none
+	TYPE(FIELDS), INTENT(IN) :: F
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: E ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz
+
+	E(1,:) = F%Eo
+	E(2:3,:) = 0.0_rp
+end subroutine uniform_electric_field
 
 
 subroutine analytical_electric_field(F,Y,E,flag)
