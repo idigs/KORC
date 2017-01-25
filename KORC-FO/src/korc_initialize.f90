@@ -54,7 +54,8 @@ subroutine load_korc_params(params)
 	INTEGER(ip) :: output_cadence
 	INTEGER :: num_species
 	INTEGER :: num_impurity_species
-	INTEGER :: ii,jj
+	INTEGER :: imax,imin,ii,jj,num_outputs
+	INTEGER, DIMENSION(2) :: indices
 
 	NAMELIST /input_parameters/ magnetic_field_model,poloidal_flux,magnetic_field_filename,t_steps,dt,&
             output_cadence,num_species,radiation,collisions,collisions_model,outputs_list
@@ -75,16 +76,46 @@ subroutine load_korc_params(params)
 	params%radiation = radiation
 	params%collisions = collisions
 	params%collisions_model = TRIM(collisions_model)
-	params%outputs_list = TRIM(outputs_list)
 
-	ii = 1
+	! Loading list of output parameters
+	imin = SCAN(outputs_list,'{')
+	imax = SCAN(outputs_list,'}')
+
+	ii = 1_idef
+	jj = 1_idef
+	num_outputs = 1_idef
 	do while (ii.NE.0)
-		jj = SCAN(params%outputs_list(ii:),",")
+		ii = SCAN(outputs_list(jj:),",")
 		if (ii.NE.0) then
-			write(6,*) ii,TRIM(params%outputs_list(ii:))
-			ii = ii + 1
+			jj = jj + ii
+			num_outputs = num_outputs + 1_idef
 		end if
 	end do
+
+	ALLOCATE(params%outputs_list(num_outputs))
+
+	if (num_outputs.GT.1_idef) then
+		indices = 0_idef
+		indices(2) = SCAN(outputs_list,",")
+		params%outputs_list(1) = TRIM(outputs_list(imin+1_idef:indices(2)-1_idef))
+		indices(1) = indices(1) + indices(2) + 1_idef
+		do ii=2_idef,num_outputs
+			indices(2) = SCAN(outputs_list(indices(1):),",")
+			if (indices(2).EQ.0_idef) then
+				params%outputs_list(ii) = TRIM(outputs_list(indices(1):imax-1_idef))
+			else
+				params%outputs_list(ii) = TRIM(outputs_list(indices(1):indices(1)+indices(2)-2_idef))
+				indices(1) = indices(1) + indices(2)
+			end if
+		end do
+	else
+		params%outputs_list(1) = TRIM(outputs_list(imin+1_idef:imax-1_idef))
+	end if
+
+!	do ii=1_idef,SIZE(params%outputs_list)
+!		write(6,*) TRIM(params%outputs_list(ii))
+!	end do
+	! Loading list of output parameters
 
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'(/,"* * * * * SIMULATION PARAMETERS * * * * *")')

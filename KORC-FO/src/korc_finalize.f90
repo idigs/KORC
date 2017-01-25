@@ -16,10 +16,12 @@ end subroutine finalize_communications
 
 subroutine deallocate_variables(params,F,spp)
 	implicit none
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
 	TYPE(FIELDS), INTENT(INOUT) :: F
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
 	INTEGER :: ii ! Iterator
+
+	DEALLOCATE(params%outputs_list)
 
 	do ii=1,params%num_species
 		DEALLOCATE(spp(ii)%vars%X)

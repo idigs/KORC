@@ -1,7 +1,7 @@
 &input_parameters
-	t_steps = 3700000 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	t_steps = 2 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
 	dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
-	output_cadence = 37000 ! 1400 for saving each 100 gyro-periods
+	output_cadence = 1 ! 1400 for saving each 100 gyro-periods
 	num_species = 4
 	radiation = .FALSE.
 	collisions = .FALSE.
@@ -15,7 +15,7 @@
 	poloidal_flux = .FALSE.			 ! .TRUE. if using JFIT poloidal flux, .FALSE. if using the
 										! cylindrical components of the magnetic field
 	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/C-MOD_EFIT.h5" !
-	outputs_list = 'X,V,E,B,gamma,eta,mu,Prad,Pin,flag' ! List of outputs
+	outputs_list = '{V}' ! List of outputs '{X,V,E,B,gamma,mu,eta,Prad,Pin,flag}'
 /
 
 &plasma_species
