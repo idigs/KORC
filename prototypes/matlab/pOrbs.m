@@ -191,7 +191,7 @@ end
 
 % parametricShift(ST);
 
-ST.P = synchrotronSpectrum(ST);
+% ST.P = synchrotronSpectrum(ST);
 
 munlock
 
@@ -803,6 +803,44 @@ function B = analyticalB(X,opt)
 narginchk(1,2);
 
 % Parameters of the analytical magnetic field
+Bo = 2.19;
+Ro = 1.5;
+% Parameters of the analytical magnetic field
+
+if nargin == 2
+    if strcmp(opt,'initialize')
+        B = struct;
+        B.Bo = Bo;
+        B.Ro = Ro;
+    end
+else
+    B = [Bo,0,0];
+end
+
+end
+
+function E = analyticalE(X)
+% Analytical magnetic field
+% X is a vector X(1)=x, X(2)=y, X(3)=z.
+
+narginchk(1,2);
+
+% Parameters of the analytical magnetic field
+Eo = 0.0;
+Ro = 1.5; % Major radius in meters.
+% Parameters of the analytical magnetic field
+
+E = [Eo,0,0];
+
+end
+
+function B = analyticalB_(X,opt)
+% Analytical magnetic field
+% X is a vector X(1)=x, X(2)=y, X(3)=z.
+
+narginchk(1,2);
+
+% Parameters of the analytical magnetic field
 % Bo = 2.19;
 % a = 0.5;% Minor radius in meters.
 % Ro = 1.5; % Major radius in meters.
@@ -884,7 +922,7 @@ end
 
 end
 
-function E = analyticalE(X)
+function E = analyticalE_(X)
 % Analytical magnetic field
 % X is a vector X(1)=x, X(2)=y, X(3)=z.
 
@@ -925,22 +963,22 @@ end
 function cOp = initializeCollisionOperators(ST)
 cOp = struct;
 
-cOp.Te = 1.5*ST.params.qe; % Background electron temperature in Joules
+cOp.Te = 1000.0*ST.params.qe; % Background electron temperature in Joules
 cOp.Ti = cOp.Te; % Background ion temperature in Joules
-cOp.ne = 3.9E19; % Background electron density in 1/m^3
-cOp.Zeff = 5.0; % Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
+cOp.ne = 1.0E25; % Background electron density in 1/m^3
+cOp.Zeff = 13.0; % Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
 cOp.rD = ...
     sqrt( ST.params.ep*cOp.Te/(cOp.ne*ST.params.qe^2*(1 + cOp.Zeff*cOp.Te/cOp.Ti)) );
 cOp.re = ST.params.qe^2/( 4*pi*ST.params.ep*ST.params.me*ST.params.c^2 );
-cOp.Clog = 25.3 - 1.15*log10(1E-3*cOp.ne) + 2.3*log10(cOp.Te/ST.params.qe);
+cOp.Clog = 25.3 - 1.15*log10(1E-6*cOp.ne) + 2.3*log10(cOp.Te/ST.params.qe);
 cOp.VTe = sqrt(2*cOp.Te/ST.params.me);
 cOp.delta = cOp.VTe/ST.params.c;
 cOp.Gamma = cOp.ne*ST.params.qe^4*cOp.Clog/(4*pi*ST.params.ep^2);
 cOp.Tau = ST.params.me^2*ST.params.c^3/cOp.Gamma;
-cOp.ED = cOp.ne*ST.params.qe^3*cOp.Clog/(4*pi*ST.params.ep^2*ST.params.me*ST.params.c^2);
+cOp.Ec = cOp.ne*ST.params.qe^3*cOp.Clog/(4*pi*ST.params.ep^2*ST.params.me*ST.params.c^2);
 
 Ef = analyticalE([ST.B.Ro,0,0]);
-cOp.Vc = cOp.VTe*sqrt(0.5*cOp.ED/sqrt(Ef*Ef'));
+cOp.Vc = cOp.VTe*sqrt(0.5*cOp.Ec/sqrt(Ef*Ef'));
 
 energy = linspace(1E6,50E6,200)*ST.params.qe;
 u = ST.params.c*sqrt(1 - (ST.params.m*ST.params.c^2./energy).^2);
@@ -1236,10 +1274,12 @@ for ii=2:ST.params.numSnapshots
         s = 1/(1 + t*t'); % variable 's' in paper
         
         U_L = s*(up + (up*t')*t + cross(up,t));
-        U = U_L; % Comment or uncomment
+        % % % % % % % % % % % % % % %
+%         U = U_L; % Comment or uncomment
+        % % % % % % % % % % % % % % %
         % % % Leap-frog scheme for Lorentz force % % %
         
-% %         % % % Leap-frog scheme for the radiation damping force % % %
+        % % % Leap-frog scheme for the radiation damping force % % %
         U_eff = 0.5*(U_L + U);
         gamma_eff = sqrt(1 + U_eff*U_eff');
         V_eff = U_eff/gamma_eff;
@@ -1251,14 +1291,15 @@ for ii=2:ST.params.numSnapshots
 % 
 %         U_R = U_R + a*( F2 + F3 );
 %         U = U_L + U_R - U;
-% %         % % % Leap-frog scheme for the radiation damping force % % %
-%         
-%         % % % Collisions % % %
-%         if mod((ii-1)*ST.params.cadence + jj,ST.cOp.subcyclingIter) == 0
-%             [U,dummyWcoll] = collisionOperator(ST,XX,U/sqrt( 1 + U*U' ),dt*ST.cOp.subcyclingIter);
-%         end
-%         % % % Collisions % % %        
-%         gamma = sqrt( 1 + U*U' ); % Comment or uncomment
+        % % % Leap-frog scheme for the radiation damping force % % %
+        
+        % % % Collisions % % %
+        if mod((ii-1)*ST.params.cadence + jj,ST.cOp.subcyclingIter) == 0
+            [U,dummyWcoll] = collisionOperator(ST,XX,U/sqrt( 1 + U*U' ),dt*ST.cOp.subcyclingIter);
+        end
+%         % % % Collisions % % %  
+        gamma = sqrt( 1 + U*U' ); % Comment or uncomment
+        
         
         V = U/gamma;
 
@@ -1267,7 +1308,7 @@ for ii=2:ST.params.numSnapshots
             zeta_previous = zeta_previous + 2*pi;
         end
         
-        XX = XX + dt*V; % Advance position
+%         XX = XX + dt*V; % Advance position
         
         zeta_current = atan2(XX(2),XX(1));
         if zeta_current < 0
@@ -2210,10 +2251,6 @@ if isfield(ST.PP,'X')
     zeta(zeta<0) = zeta(zeta<0) + 2*pi;
     locs = find(abs(diff(zeta)) > 6);
     
-    t = linspace(0,2*pi,100);
-    x95 = ST.B.Ro + ST.B.a*cos(t);
-    y95 = ST.B.a*sin(t);
-    
     figure
     plot(R(locs),Z(locs),'r.','MarkerSize',15)
     hold on
@@ -2221,28 +2258,22 @@ if isfield(ST.PP,'X')
         plot(Rgc(locs),Zgc(locs),'k.','MarkerSize',15)
     end
     hold off
-    % try
-    %     pol_angle = atan2(Z - ST.B.Ro(2),R - ST.B.Ro(1));
-    % %     pol_angle(pol_angle<0) = pol_angle(pol_angle<0) + 2*pi;
-    %     locs = find(abs(diff(pol_angle)) > 6);
-    %     hold on
-    %     plot(R(locs(1):locs(2)),Z(locs(1):locs(2)),'k')
-    %     if isfield(ST.PP,'R')
-    %         plot(Rgc(locs(1):locs(2)),Zgc(locs(1):locs(2)),'g')
-    %     end
-    %     hold off
-    % catch
-    hold on
-    plot(R,X(:,3),'k',x95,y95,'b',ST.B.Ro,0,'bx')
-    if isfield(ST.PP,'R')
-        plot(Rgc,Zgc,'g','LineWidth',2)
+    try
+        t = linspace(0,2*pi,100);
+        x95 = ST.B.Ro + ST.B.a*cos(t);
+        y95 = ST.B.a*sin(t);
+        hold on
+        plot(R,X(:,3),'k',x95,y95,'b',ST.B.Ro,0,'bx')
+        if isfield(ST.PP,'R')
+            plot(Rgc,Zgc,'g','LineWidth',2)
+        end
+        hold off
+        axis equal
+        xlabel('R [m]','Interpreter','latex','FontSize',16)
+        ylabel('Z [m]','Interpreter','latex','FontSize',16)
+        title('Poincare plot','Interpreter','latex','FontSize',16)
+    catch
     end
-    hold off
-    % end
-    axis equal
-    xlabel('R [m]','Interpreter','latex','FontSize',16)
-    ylabel('Z [m]','Interpreter','latex','FontSize',16)
-    title('Poincare plot','Interpreter','latex','FontSize',16)
 end
 end
 

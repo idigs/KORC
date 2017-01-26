@@ -16,7 +16,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
 % ST.RT = radialTransport(ST);
 
@@ -44,7 +44,9 @@ ST.data = loadData(ST);
 
 % ST.SD = syntheticDiagnosticSynchrotron(ST,false);
 
-radiationPlane(ST);
+% radiationPlane(ST);
+
+calculateTemperatureComponents(ST);
 
 % save('energy_limit','ST')
 end
@@ -67,11 +69,8 @@ end
 function data = loadData(ST)
 data = struct;
 
-if isfield(ST.params.fields,'dims')
-    list = {'X','V','B'};
-else
-    list = {'X','V','B'};
-end
+% list = {'X','V','B'};
+list = {'V'};
 
 it = ST.range(1):1:ST.range(2);
 
@@ -102,7 +101,7 @@ end
 
 
 % list = {'eta','gamma','Prad','Pin','flag','mu'};
-list = {'eta','flag'};
+list = {'gamma','eta','Prad','Pin'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -159,15 +158,24 @@ set(h5,'name','Energy gain/loss','numbertitle','off')
 set(h6,'name','Energy statistics','numbertitle','off')
 % try
     for ss=1:ST.params.simulation.num_species
-        pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+        m = ST.params.species.m(ss);
+        q = abs(ST.params.species.q(ss));
+        c = ST.params.scales.v;
+        
+        
+        %         pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+        pin = true(1,size(ST.data.(['sp' num2str(ss)]).gamma,1));
 %         passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
 %         bool = pin & passing;
+
         gammap = ST.data.(['sp' num2str(ss)]).gamma(pin,:);
         tmp = zeros(size(gammap));
         for ii=1:size(tmp,1)
-            tmp(ii,:) = ...
-                ( gammap(ii,:) - gammap(ii,1) )./gammap(ii,1);
+%             tmp(ii,:) = ...
+%                 100*( gammap(ii,:) - gammap(ii,1) )./gammap(ii,1);
+            tmp(ii,:) = (gammap(ii,:)*m*c^2/q)/1E6;
         end
+        
         err(:,ss) = mean(tmp,1);
 %         maxerr(:,ss) = max(tmp,[],1);
 %         minerr(:,ss) = min(tmp,[],1);
@@ -189,10 +197,10 @@ set(h6,'name','Energy statistics','numbertitle','off')
         minPin = Pin + std(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),0,1);
         maxPin = Pin - std(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),0,1);
         
-        eta = ST.data.(['sp' num2str(ss)]).eta(pin,:);
+        eta = deg2rad(ST.data.(['sp' num2str(ss)]).eta(pin,:));
         V = sqrt(1 - 1./gammap.^2); % in units of the speed of light
-        Vpar = mean((V.*cos(eta)).^2,1);
-        Vperp = mean((V.*sin(eta)).^2,1);
+        Vpar = mean(V.*cos(eta),1);
+        Vperp = mean(V.*sin(eta),1);
         
         figure(h1)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
@@ -211,12 +219,12 @@ set(h6,'name','Energy statistics','numbertitle','off')
         
         figure(h2)
         subplot(double(ST.params.simulation.num_species),1,double(ss))
-        plot(ST.time,Vpar-Vperp,'k-')
+        plot(ST.time,Vpar./Vperp,'k-')
 %         plot(time,Vpar,'k-',time,Vperp,'r-')
         box on
         grid on
         xlabel('Time (s)','Interpreter','latex','FontSize',16)
-        ylabel('$v_\parallel$, $v_\perp$ ($c$)','Interpreter','latex','FontSize',16)
+        ylabel('$v_\parallel/v_\perp$ ($c$)','Interpreter','latex','FontSize',16)
         saveas(h2,[ST.path 'velocity_components'],'fig')
 
         figure(h6)
@@ -2768,6 +2776,39 @@ for ss=1:num_species
         '$^\circ$, $\bar{\eta}=$' num2str(mean(eta))...
         '$^\circ$, $\sigma_\eta=$' num2str(std(eta)) '$^\circ$'],...
         'Interpreter','latex')
+end
+
+end
+
+
+function calculateTemperatureComponents(ST)
+num_species = double(ST.params.simulation.num_species);
+num_snapshots = double(ST.num_snapshots)
+c = ST.params.scales.v;
+
+h = figure;
+for ss=1:num_species
+    m = ST.params.species.m(ss);
+    q = abs(ST.params.species.q(ss));    
+    
+    Tpar = zeros(1,num_snapshots);
+    Tperp = zeros(1,num_snapshots);
+    for ii=1:num_snapshots
+        Vpar = ST.data.(['sp' num2str(ss)]).V(1,:,ii);
+        Upar = mean(Vpar);
+        
+        Vperp = sqrt(sum(ST.data.(['sp' num2str(ss)]).V(2:3,:,ii).^2,1));
+        Uperp = mean(Vperp);
+        
+        Tpar(ii) = m*mean((Vpar - Upar).^2)/q;
+        Tperp(ii) = m*mean((Vperp - Uperp).^2)/q;
+    end
+    
+    subplot(num_species,1,ss)
+    plot(ST.time,Tpar,'r',ST.time,Tperp,'b')
+    xlim([min(ST.time) max(ST.time)])
+    xlabel('Time (s)','Interpreter','latex','FontSize',14)
+    ylabel('$T_{RE}$ (eV)','Interpreter','latex','FontSize',14)
 end
 
 end

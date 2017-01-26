@@ -40,6 +40,7 @@ module korc_collisions
 		REAL(rp) :: Gammac ! Gamma factor
 		REAL(rp) :: Tau ! Collisional time
 		REAL(rp) :: Ec ! Critical electric field
+		REAL(rp) :: ED ! Dreicer electric field
 		REAL(rp) :: dTau ! Subcycling time step in collisional time units (Tau)
         INTEGER(ip) :: subcycling_iterations
 	END TYPE PARAMS_SS
@@ -135,7 +136,7 @@ subroutine load_params_ss(params)
 	SQRT(C_E0*cparams_ss%Te/(cparams_ss%ne*C_E**2*(1.0_rp + cparams_ss%Te/cparams_ss%Ti)))
 
 	cparams_ss%re = C_E**2/(4.0_rp*C_PI*C_E0*C_ME*C_C**2)
-	cparams_ss%CoulombLog = 25.3_rp - 1.15_rp*LOG10(1E-3_rp*cparams_ss%ne) + 2.3_rp*LOG10(cparams_ss%Te/C_E)
+	cparams_ss%CoulombLog = 25.3_rp - 1.15_rp*LOG10(1E-6_rp*cparams_ss%ne) + 2.3_rp*LOG10(cparams_ss%Te/C_E)
 
 	cparams_ss%VTe = SQRT(2.0_rp*cparams_ss%Te/C_ME)
 	cparams_ss%delta = cparams_ss%VTe/C_C
@@ -143,6 +144,7 @@ subroutine load_params_ss(params)
 
 	cparams_ss%Tau = C_ME**2*C_C**3/cparams_ss%Gammac
 	cparams_ss%Ec = cparams_ss%ne*C_E**3*cparams_ss%CoulombLog/(4.0_rp*C_PI*C_E0**2*C_ME*C_C**2)
+	cparams_ss%ED = cparams_ss%ne*C_E**3*cparams_ss%CoulombLog/(4.0_rp*C_PI*C_E0**2*cparams_ss%Te)
 end subroutine load_params_ss
 
 
@@ -193,6 +195,7 @@ subroutine normalize_params_ss(params)
 	cparams_ss%Gammac*params%cpp%time/(params%cpp%mass**2*params%cpp%velocity**3)
 	cparams_ss%Tau = cparams_ss%Tau/params%cpp%time
 	cparams_ss%Ec = cparams_ss%Ec/params%cpp%Eo
+	cparams_ss%ED = cparams_ss%ED/params%cpp%Eo
 end subroutine normalize_params_ss
 
 
@@ -258,7 +261,7 @@ subroutine define_collisions_time_step(params)
 	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
-	cparams_ss%subcycling_iterations = FLOOR((cparams_ss%dTau*cparams_ss%Tau)/params%dt)
+	cparams_ss%subcycling_iterations = FLOOR((cparams_ss%dTau*cparams_ss%Tau)/params%dt,ip)
 
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'(/,"* * * * * * * SUBCYCLING FOR COLLISIONS * * * * * * *")')
@@ -602,6 +605,11 @@ subroutine save_params_ss(params)
 		attr = "Critical electric field"
 		units = params%cpp%Eo
 		call save_to_hdf5(h5file_id,dset,units*cparams_ss%Ec,attr)
+
+		dset = TRIM(gname) // "/ED"
+		attr = "Dreicer electric field"
+		units = params%cpp%Eo
+		call save_to_hdf5(h5file_id,dset,units*cparams_ss%ED,attr)
 
 		call h5gclose_f(group_id, h5error)
 
