@@ -201,7 +201,7 @@ subroutine check_if_in_domain2D(F,Y,flag)
     ss = SIZE(Y,2)
 !$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(F,Y,flag)
 !$OMP DO
-	do pp=1,ss
+	do pp=1_idef,ss
         if ( flag(pp) .EQ. 1_idef ) then
 			call EZspline_isInDomain(interp2d%A, Y(1,pp), Y(3,pp), ezerr)
 			if (ezerr .NE. 0) then
@@ -226,7 +226,7 @@ subroutine check_if_in_domain3D(F,Y,flag)
     ss = SIZE(Y,2)
 !$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(F,Y,flag)
 !$OMP DO
-	do pp=1,ss
+	do pp=1_idef,ss
         if ( flag(pp) .EQ. 1_idef ) then
 			call EZspline_isInDomain3_r8(interp3d%R, Y(1,pp), Y(2,pp), Y(3,pp), ezerr)
 			if (ezerr .NE. 0) then
@@ -253,7 +253,7 @@ subroutine interp_3D_magnetic_field(Y,B,flag)
 	ALLOCATE(F(3,ss))
 !$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(interp3d,F,Y,B,flag)
 !$OMP DO
-	do pp=1,ss
+	do pp=1_idef,ss
 		if ( flag(pp) .EQ. 1_idef ) then
 			call EZspline_interp(interp3d%R, Y(1,pp), Y(2,pp), Y(3,pp), F(1,pp), ezerr)
 			call EZspline_error(ezerr)
@@ -293,7 +293,7 @@ subroutine calculate_magnetic_field(Y,F,B,flag)
 	ALLOCATE(A(3,ss))
 !$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(interp2d,F,Y,A,B,flag)
 !$OMP DO
-	do pp=1,ss
+	do pp=1_idef,ss
 		if ( flag(pp) .EQ. 1_idef ) then
 			call EZspline_derivative(interp2d%A, 0, 1, Y(1,pp), Y(3,pp), A(1,pp), ezerr)
 !			call EZspline_error(ezerr)
@@ -319,7 +319,7 @@ subroutine calculate_magnetic_field(Y,F,B,flag)
 !$OMP END PARALLEL
 
 !	open(unit=default_unit_write,file='/home/l8c/Documents/KORC/KORC-FO/interpolation.dat',status='UNKNOWN',form='formatted')
-!    do pp=1,ss
+!    do pp=1_idef,ss
 !	        write(default_unit_write,'(F20.16,T22,F20.16,T44,F20.16)') Y(1,pp), Y(3,pp), A(1,pp)
 !    end do
 !    close(default_unit_write)
@@ -417,7 +417,7 @@ subroutine unitVectors(params,Xo,F,b1,b2,b3,flag)
         end if
 	end if
 	
-	do ii=1,ppp
+	do ii=1_idef,ppp
 		if ( local_flag(ii) .EQ. 1_idef ) then
 			b1(:,ii) = B(:,ii)/sqrt( DOT_PRODUCT(B(:,ii),B(:,ii)) )
 

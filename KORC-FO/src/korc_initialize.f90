@@ -125,7 +125,7 @@ subroutine load_korc_params(params)
 		write(6,'("Time step in fraction of relativistic gyro-period: ",F15.10)') params%dt
 		write(6,'("Number of electron populations: ",I16)') params%num_species
 		write(6,'("Magnetic field model: ",A50)') TRIM(params%magnetic_field_model)
-		write(6,'("Using (JFIT) poloidal flux: ", L1)') params%poloidal_flux
+		write(6,'("USINg (JFIT) poloidal flux: ", L1)') params%poloidal_flux
 		write(6,'("Magnetic field model: ",A100)') TRIM(params%magnetic_field_filename)
 		write(6,'("Radiation losses included: ",L1)') params%radiation
 		write(6,'("collisions losses included: ",L1)') params%collisions
@@ -169,14 +169,14 @@ subroutine initialize_particles(params,F,spp)
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Eo
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: etao
 	LOGICAL, DIMENSION(:), ALLOCATABLE :: runaway
-	LOGICAL, DIMENSION(:), ALLOCATABLE :: monoenergetic
-	LOGICAL, DIMENSION(:), ALLOCATABLE :: monopitch
+	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: energy_distribution
+	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: pitch_distribution
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Ro
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zo
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: r
 	INTEGER :: ii,jj ! Iterator
 
-	NAMELIST /plasma_species/ ppp, q, m, Eo, etao, runaway, monoenergetic, monopitch, Ro, Zo, r
+	NAMELIST /plasma_species/ ppp, q, m, Eo, etao, runaway, energy_distribution, pitch_distribution, Ro, Zo, r
 
 	! Allocate array containing variables of particles for each species
 	ALLOCATE(spp(params%num_species))
@@ -187,8 +187,8 @@ subroutine initialize_particles(params,F,spp)
 	ALLOCATE(Eo(params%num_species))
 	ALLOCATE(etao(params%num_species))
 	ALLOCATE(runaway(params%num_species))
-	ALLOCATE(monoenergetic(params%num_species))
-	ALLOCATE(monopitch(params%num_species))
+	ALLOCATE(energy_distribution(params%num_species))
+	ALLOCATE(pitch_distribution(params%num_species))
 	ALLOCATE(Ro(params%num_species))
 	ALLOCATE(Zo(params%num_species))
 	ALLOCATE(r(params%num_species))
@@ -201,8 +201,8 @@ subroutine initialize_particles(params,F,spp)
 		spp(ii)%Eo = Eo(ii)*C_E
 		spp(ii)%etao = etao(ii)
 		spp(ii)%runaway = runaway(ii)
-		spp(ii)%monoenergetic = monoenergetic(ii)
-		spp(ii)%monopitch = monopitch(ii)
+		spp(ii)%energy_distribution = TRIM(energy_distribution(ii))
+		spp(ii)%pitch_distribution = TRIM(pitch_distribution(ii))
 		spp(ii)%q = q(ii)*C_E
 		spp(ii)%m = m(ii)*C_ME
 		spp(ii)%ppp = ppp(ii)
@@ -211,7 +211,7 @@ subroutine initialize_particles(params,F,spp)
 		spp(ii)%Zo = Zo(ii)
 		spp(ii)%r = r(ii)
 
-		spp(ii)%gammao = (spp(ii)%Eo + spp(ii)%m*C_C**2)/(spp(ii)%m*C_C**2)
+		spp(ii)%go = (spp(ii)%Eo + spp(ii)%m*C_C**2)/(spp(ii)%m*C_C**2)
 
 		ALLOCATE( spp(ii)%vars%X(3,spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%V(3,spp(ii)%ppp) )
@@ -219,7 +219,7 @@ subroutine initialize_particles(params,F,spp)
 		ALLOCATE( spp(ii)%vars%Y(3,spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%E(3,spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%B(3,spp(ii)%ppp) )
-		ALLOCATE( spp(ii)%vars%gamma(spp(ii)%ppp) )
+		ALLOCATE( spp(ii)%vars%g(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%eta(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%mu(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%Prad(spp(ii)%ppp) )
@@ -227,18 +227,34 @@ subroutine initialize_particles(params,F,spp)
 		ALLOCATE( spp(ii)%vars%flag(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%AUX(spp(ii)%ppp) )
 
-        if (spp(ii)%monoenergetic .AND. spp(ii)%monopitch) then
-		    spp(ii)%vars%gamma = spp(ii)%gammao ! Monoenergetic
-		    spp(ii)%vars%eta = spp(ii)%etao ! Mono-pitch-angle
-        else
-            write(6,'("Initializing avalanche population...")')
-            call get_avalanche_PDF_params(params,spp(ii)%vars%gamma,spp(ii)%vars%eta)
+		SELECT CASE (TRIM(spp(ii)%energy_distribution))
+			CASE ('MONOENERGETIC')
+				spp(ii)%vars%g = spp(ii)%go ! Monoenergetic
+			CASE ('AVALANCHE')
+				call get_avalanche_PDF_params(params,spp(ii)%vars%g,spp(ii)%vars%eta)
+				spp(ii)%go = SUM(spp(ii)%vars%g)/SIZE(spp(ii)%vars%g)
+				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
+			CASE DEFAULT
+				if (params%mpi_params%rank .EQ. 0) then
+					write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * * *")')
+					write(6,'("The energy distribution will be: ",A50)') TRIM(spp(ii)%energy_distribution)
+					write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * * *")')
+				end if
+		END SELECT
 
-            spp(ii)%gammao = SUM(spp(ii)%vars%gamma)/SIZE(spp(ii)%vars%gamma)
-            spp(ii)%etao = SUM(spp(ii)%vars%eta)/SIZE(spp(ii)%vars%eta)
-
-            spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%gammao - spp(ii)%m*C_C**2
-        end if
+		SELECT CASE (TRIM(spp(ii)%pitch_distribution))
+			CASE ('MONOPITCH')
+				spp(ii)%vars%eta = spp(ii)%etao ! Mono-pitch-angle
+			CASE ('AVALANCHE')
+				spp(ii)%etao = SUM(spp(ii)%vars%eta)/SIZE(spp(ii)%vars%eta)
+			CASE DEFAULT
+				if (params%mpi_params%rank .EQ. 0) then
+					write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * * *")')
+					write(6,'("The energy distribution will be: ",A50)') TRIM(spp(ii)%pitch_distribution)
+					write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * * *")')
+				end if
+		END SELECT
+	
 
 		! Initialize to zero
 		spp(ii)%vars%X = 0.0_rp
@@ -260,12 +276,20 @@ subroutine initialize_particles(params,F,spp)
 	DEALLOCATE(Eo)
 	DEALLOCATE(etao)
 	DEALLOCATE(runaway)
-	DEALLOCATE(monoenergetic)
-	DEALLOCATE(monopitch)
 	DEALLOCATE(Ro)
 	DEALLOCATE(Zo)
 	DEALLOCATE(r)
 end subroutine initialize_particles
+
+
+subroutine thermal_distribution(params,g,eta)
+	implicit none
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: g
+	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: eta
+	REAL(rp) :: Vth ! Thermal velocity
+
+end subroutine thermal_distribution
 
 
 subroutine set_up_particles_ic(params,F,spp) 
@@ -279,10 +303,11 @@ subroutine set_up_particles_ic(params,F,spp)
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: V3
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: b1, b2, b3
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Xo
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: theta, zeta, radius, angle ! temporary vars
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: theta, zeta, R ! temporary vars
 	REAL(rp), DIMENSION(3) :: x = (/1.0_rp,0.0_rp,0.0_rp/)
 	REAL(rp), DIMENSION(3) :: y = (/0.0_rp,1.0_rp,0.0_rp/)
 	REAL(rp), DIMENSION(3) :: z = (/0.0_rp,0.0_rp,1.0_rp/)
+	REAL(rp) :: Vth ! Thermal velocity
 	INTEGER :: ii,jj ! Iterator
 
 	do ii=1_idef,params%num_species
@@ -298,9 +323,9 @@ subroutine set_up_particles_ic(params,F,spp)
 		
 		ALLOCATE( theta(spp(ii)%ppp) )
 		ALLOCATE( zeta(spp(ii)%ppp) )
-		ALLOCATE( radius(spp(ii)%ppp) )
-		ALLOCATE( angle(spp(ii)%ppp) )
+		ALLOCATE( R(spp(ii)%ppp) )
 
+		! * * * * INITIALIZE POSITION * * * * 
 		if (params%magnetic_field_model .EQ. 'UNIFORM') then
 			spp(ii)%vars%X = 0.0_rp
 		else
@@ -318,48 +343,90 @@ subroutine set_up_particles_ic(params,F,spp)
 
 			! Uniform distribution on a disk at a fixed azimuthal theta		
 			call init_random_seed()
-			call RANDOM_NUMBER(radius)
+			call RANDOM_NUMBER(R)
 		
-			Xo(1,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*sin(zeta)
-			Xo(2,:) = ( spp(ii)%Ro + spp(ii)%r*sqrt(radius)*cos(theta) )*cos(zeta)
-			Xo(3,:) = spp(ii)%Zo + spp(ii)%r*sqrt(radius)*sin(theta)
+			Xo(1,:) = ( spp(ii)%Ro + spp(ii)%r*SQRT(R)*COS(theta) )*SIN(zeta)
+			Xo(2,:) = ( spp(ii)%Ro + spp(ii)%r*SQRT(R)*COS(theta) )*COS(zeta)
+			Xo(3,:) = spp(ii)%Zo + spp(ii)%r*SQRT(R)*SIN(theta)
 
 			spp(ii)%vars%X(1,:) = Xo(1,:)
 			spp(ii)%vars%X(2,:) = Xo(2,:)
 			spp(ii)%vars%X(3,:) = Xo(3,:)
 		end if
 
-		call init_random_seed()
-		call RANDOM_NUMBER(angle)
-		angle = 2.0_rp*C_PI*angle
 
-		Vo = sqrt( 1.0_rp - 1.0_rp/(spp(ii)%vars%gamma(:)**2) )
-        V1 = Vo*cos(C_PI*spp(ii)%vars%eta/180.0_rp)
-        V2 = Vo*sin(C_PI*spp(ii)%vars%eta/180.0_rp)*cos(angle)
-        V3 = Vo*sin(C_PI*spp(ii)%vars%eta/180.0_rp)*sin(angle)
+		! * * * * INITIALIZE VELOCITY * * * * 
+		if ((TRIM(spp(ii)%energy_distribution)).EQ.'THERMAL') then
+			Vth = SQRT(2.0_rp*spp(ii)%Eo/spp(ii)%m)
 
-        call unitVectors(params,Xo,F,b1,b2,b3,spp(ii)%vars%flag)
+			call init_random_seed()
+			call RANDOM_NUMBER(R)
 
-		do jj=1,spp(ii)%ppp
-			if ( spp(ii)%vars%flag(jj) .EQ. 1_idef ) then
-				spp(ii)%vars%V(1,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),x) + &
-		                                V2(jj)*DOT_PRODUCT(b2(:,jj),x) + &
-		                                V3(jj)*DOT_PRODUCT(b3(:,jj),x)
+			call init_random_seed()
+			call RANDOM_NUMBER(theta)
+			theta = 2.0_rp*C_PI*theta
 
-				spp(ii)%vars%V(2,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),y) + &
-		                                V2(jj)*DOT_PRODUCT(b2(:,jj),y) + &
-		                                V3(jj)*DOT_PRODUCT(b3(:,jj),y)
+			spp(ii)%vars%V(2,:) = Vth*SQRT( -LOG(1.0_rp - R) )*COS(theta)
+			spp(ii)%vars%V(3,:) = Vth*SQRT( -LOG(1.0_rp - R) )*SIN(theta)
 
-				spp(ii)%vars%V(3,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),z) + &
-		                                V2(jj)*DOT_PRODUCT(b2(:,jj),z) + &
-		                                V3(jj)*DOT_PRODUCT(b3(:,jj),z)
-			end if
-		end do
+			call init_random_seed()
+			call RANDOM_NUMBER(R)
+
+			call init_random_seed()
+			call RANDOM_NUMBER(theta)
+			theta = 2.0_rp*C_PI*theta
+
+			spp(ii)%vars%V(1,:) = Vth*SQRT( -LOG(1.0_rp - R) )*COS(theta)
+
+			Vo = SQRT(SUM(spp(ii)%vars%V**2,1))
+
+			spp(ii)%vars%g = 1.0_rp/SQRT( 1.0_rp - Vo**2)
+
+			do jj=1_idef,spp(ii)%ppp
+				if (Vo(jj).GT.korc_zero) then
+					spp(ii)%vars%eta(jj) = ACOS(DOT_PRODUCT(x,spp(ii)%vars%V(:,jj)/Vo(jj)))
+				else
+					spp(ii)%vars%eta(jj) = 0.0_rp
+				end if
+			end do
+
+			do jj=1_idef,spp(ii)%ppp
+				if (ISNAN(spp(ii)%vars%g(jj))) then
+					WRITE(6,*) spp(ii)%vars%V(:,jj)
+				end if
+			end do
+		else
+			call init_random_seed()
+			call RANDOM_NUMBER(theta)
+			theta = 2.0_rp*C_PI*theta
+
+			Vo = SQRT( 1.0_rp - 1.0_rp/(spp(ii)%vars%g(:)**2) )
+		    V1 = Vo*COS(C_PI*spp(ii)%vars%eta/180.0_rp)
+		    V2 = Vo*SIN(C_PI*spp(ii)%vars%eta/180.0_rp)*COS(theta)
+		    V3 = Vo*SIN(C_PI*spp(ii)%vars%eta/180.0_rp)*SIN(theta)
+
+		    call unitVectors(params,Xo,F,b1,b2,b3,spp(ii)%vars%flag)
+
+			do jj=1_idef,spp(ii)%ppp
+				if ( spp(ii)%vars%flag(jj) .EQ. 1_idef ) then
+					spp(ii)%vars%V(1,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),x) + &
+				                            V2(jj)*DOT_PRODUCT(b2(:,jj),x) + &
+				                            V3(jj)*DOT_PRODUCT(b3(:,jj),x)
+
+					spp(ii)%vars%V(2,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),y) + &
+				                            V2(jj)*DOT_PRODUCT(b2(:,jj),y) + &
+				                            V3(jj)*DOT_PRODUCT(b3(:,jj),y)
+
+					spp(ii)%vars%V(3,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),z) + &
+				                            V2(jj)*DOT_PRODUCT(b2(:,jj),z) + &
+				                            V3(jj)*DOT_PRODUCT(b3(:,jj),z)
+				end if
+			end do
+		end if
 
 		DEALLOCATE(theta)
 		DEALLOCATE(zeta)
-		DEALLOCATE(radius)
-		DEALLOCATE(angle)	
+		DEALLOCATE(R)
 		DEALLOCATE(Xo)
 		DEALLOCATE(Vo)
 		DEALLOCATE(V1)
@@ -446,7 +513,7 @@ subroutine initialize_fields(params,F)
 		F%Ro = major_radius
 		F%AB%qa = qa
 		F%AB%qo = qo
-		F%AB%lambda = F%AB%a/sqrt(qa/qo - 1.0_rp)
+		F%AB%lambda = F%AB%a/SQRT(qa/qo - 1.0_rp)
 		F%AB%Bpo = F%AB%lambda*F%AB%Bo/(F%AB%qo*F%AB%Ro)
 
 		F%Eo = Eo

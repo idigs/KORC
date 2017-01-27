@@ -23,7 +23,7 @@ subroutine compute_charcs_plasma_params(params,spp,F)
 	spp(:)%wc = ( ABS(spp(:)%q)/spp(:)%m )*params%cpp%Bo
 
 	! Relativistic cyclotron frequency
-	spp(:)%wc_r =  ABS(spp(:)%q)*params%cpp%Bo/( spp(:)%gammao*spp(:)%m )
+	spp(:)%wc_r =  ABS(spp(:)%q)*params%cpp%Bo/( spp(:)%go*spp(:)%m )
 
 
 	ind = MAXLOC(spp(:)%wc,1) ! Index to maximum cyclotron frequency
@@ -65,7 +65,7 @@ subroutine normalize_variables(params,spp,F)
 	params%dt = params%dt/params%cpp%time
 
 !	Normalize particle variables
-	do ii=1,size(spp)
+	do ii=1_idef,size(spp)
 		spp(ii)%q = spp(ii)%q/params%cpp%charge
 		spp(ii)%m = spp(ii)%m/params%cpp%mass
 		spp(ii)%Eo = spp(ii)%Eo/params%cpp%energy

@@ -156,7 +156,7 @@ SUBROUTINE sample_distribution(params,g,eta)
 		end if
 	end do	
 
-	do ii=1,ppp
+	do ii=1_idef,ppp
 		if (eta(ii).LT.0.0_rp) then
 			eta(ii) = -eta(ii)
 		end if
@@ -165,7 +165,7 @@ SUBROUTINE sample_distribution(params,g,eta)
 	g = SQRT(1.0_rp + p**2)
 
 !	open(unit=default_unit_write,file='/home/l8c/Documents/KORC/KORC-FO/fRE.dat',status='UNKNOWN',form='formatted')
-!    do ii=1,ppp
+!    do ii=1_idef,ppp
 !	        write(default_unit_write,'(F20.16,T22,F20.16)') eta(ii), p(ii)
 !    end do
 !    close(default_unit_write)

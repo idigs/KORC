@@ -103,7 +103,7 @@ TYPE, PUBLIC :: PARTICLES
     REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Y ! Position in alternative coordinate system, i.e. cylindrical or toroidal coordinates.
     REAL(rp), DIMENSION(:,:), ALLOCATABLE :: E ! Auxiliar vector for fields interpolations
     REAL(rp), DIMENSION(:,:), ALLOCATABLE :: B ! Auxiliar vector for fields interpolations
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: gamma ! Gamma relativistic
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: g ! Gamma relativistic
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: eta ! Pitch angle
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: mu ! Instantaneous magnetic moment
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Prad ! Radiated power (in Watts/electron)
@@ -116,10 +116,10 @@ END TYPE PARTICLES
 TYPE, PUBLIC :: SPECIES
 	TYPE(PARTICLES) :: vars
 	LOGICAL :: runaway
-	LOGICAL :: monoenergetic
-	LOGICAL :: monopitch
+	CHARACTER(MAX_STRING_LENGTH) :: energy_distribution
+	CHARACTER(MAX_STRING_LENGTH) :: pitch_distribution
 	REAL(rp) :: Eo
-	REAL(rp) :: gammao
+	REAL(rp) :: go
 	REAL(rp) :: etao
 	REAL(rp) :: wc
 	REAL(rp) :: wc_r

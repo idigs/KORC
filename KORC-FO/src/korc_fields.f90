@@ -23,7 +23,7 @@ subroutine analytical_magnetic_field(F,Y,B,flag)
 
 !$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,Bp,Bt,eta,q) SHARED(F,Y,B,flag)
 !$OMP DO
-	do pp=1,ss
+	do pp=1_idef,ss
         if ( flag(pp) .EQ. 1_idef ) then
 		    eta = Y(1,pp)/F%Ro
             q = F%AB%qo*(1.0_rp + (Y(1,pp)/F%AB%lambda)**2)
@@ -74,7 +74,7 @@ subroutine analytical_electric_field(F,Y,E,flag)
 		ss = SIZE(Y,2)
 !$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,Ezeta,eta) SHARED(F,Y,E,flag)
 !$OMP DO
-		do pp=1,ss
+		do pp=1_idef,ss
             if ( flag(pp) .EQ. 1_idef ) then
 			    eta = Y(1,pp)/F%Ro		
 			    Ezeta = F%Eo/( 1.0_rp + eta*cos(Y(2,pp)) )
@@ -117,7 +117,7 @@ subroutine check_if_confined(F,Y,flag)
     ss = SIZE(Y,2)
 !$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(F,Y,flag)
 !$OMP DO
-	do pp=1,ss
+	do pp=1_idef,ss
         if ( flag(pp) .EQ. 1_idef ) then
             if (Y(1,pp) .GT. F%AB%a) then
                 flag(pp) = 0_idef

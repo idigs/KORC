@@ -19,7 +19,7 @@ subroutine cart_to_cyl(X,Xcyl)
 
 !$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(X,Xcyl)
 !$OMP DO
-	do pp=1,ss
+	do pp=1_idef,ss
 		Xcyl(1,pp) = sqrt(X(1,pp)**2 + X(2,pp)**2)
 		Xcyl(2,pp) = atan2(X(2,pp), X(1,pp))
 		Xcyl(2,pp) = modulo(Xcyl(2,pp), 2.0_rp*C_PI)
@@ -42,7 +42,7 @@ subroutine cart_to_tor(X,Ro,Xtor,flag)
 
 !$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(X,Xtor,flag)
 !$OMP DO
-	do pp=1,ss
+	do pp=1_idef,ss
         if ( flag(pp) .EQ. 1_idef ) then
 		    Xtor(1,pp) = sqrt( (sqrt(X(1,pp)**2 + X(2,pp)**2) - Ro)**2 + X(3,pp)**2 )
 		    Xtor(2,pp) = atan2(X(3,pp), sqrt(X(1,pp)**2 + X(2,pp)**2) - Ro)

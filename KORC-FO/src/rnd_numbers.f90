@@ -87,7 +87,7 @@ subroutine rand_real_array(rrand)
 	INTEGER(8) :: irand64
     INTEGER :: ii ! Iterator
 
-    do ii=1,SIZE(rrand)
+    do ii=1_idef,SIZE(rrand)
         	call rand_int64(irand64)	
         rrand(ii) = rcoeff*REAL(irand64,rp) + 0.5_rp
     end do

@@ -1,10 +1,10 @@
 &input_parameters
-	t_steps = 100000000 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	t_steps = 2 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
 	dt = 0.01 ! Time step as fraction of non-relativistic gyro-period
-	output_cadence = 100000 ! 1400 for saving each 100 gyro-periods
+	output_cadence = 1 ! 1400 for saving each 100 gyro-periods
 	num_species = 2
 	radiation = .FALSE.
-	collisions = .TRUE.
+	collisions = .FALSE.
 	collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
 	magnetic_field_model = 'UNIFORM' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
 										! For 'ANALYTICAL', the magnetic field is calculated based on
@@ -15,17 +15,18 @@
 	poloidal_flux = .FALSE.			 ! .TRUE. if using JFIT poloidal flux, .FALSE. if using the
 										! cylindrical components of the magnetic field
 	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/C-MOD_EFIT.h5" !
-	outputs_list = '{V,gamma,eta,Prad,Pin}' ! List of outputs '{X,V,E,B,gamma,mu,eta,Prad,Pin,flag}'
+	outputs_list = '{V,g,eta,Prad,Pin}' ! List of outputs '{X,V,E,B,gamma,mu,eta,Prad,Pin,flag}'
 /
 
 &plasma_species
         runaway = .FALSE., .FALSE. !
-        monoenergetic = .TRUE., .TRUE. !
-        monopitch = .TRUE., .TRUE. !
+        energy_distribution = 'THERMAL','MONOENERGETIC' ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE'
+        pitch_distribution = 'MONOPITCH','MONOPITCH' ! Options are: 'MONOPITCH', 'AVALANCHE'. When energy_distribution='THERMAL', the pitch
+														! angles correspond to those of a thermalized distribution.
         Ro = 1.46, 1.46 !
         Zo = 0.0, 0.0 !
         r = 0.2, 0.2 !
-        Eo = 1.0E6, 1.0E6 ! Initial energy in eV
+        Eo = 50.0E3, 1.0E6 ! Initial energy in eV
         etao = 10.0, 45.0  ! Initial pitch angle
         ppp = 1000, 1000 ! Number of particles per process (mpi)
         q = -1.0, -1.0 ! Electric charge

@@ -73,7 +73,7 @@ program main
 	! Initial half-time particle push
 	call advance_particles_position(params,EB,spp,0.5_rp*params%dt)
 
-	do it=1,params%t_steps
+	do it=1_ip,params%t_steps
         params%time = REAL(it,rp)*params%dt
 		params%it = it
 

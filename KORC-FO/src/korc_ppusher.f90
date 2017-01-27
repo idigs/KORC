@@ -42,16 +42,16 @@ subroutine radiation_force(spp,U,E,B,Frad)
 	REAL(rp), DIMENSION(3), INTENT(IN) :: U, E, B
 	REAL(rp), DIMENSION(3), INTENT(OUT) :: Frad
 	REAL(rp), DIMENSION(3) :: F1, F2, F3, V, vec
-	REAL(rp) :: gamma, tmp
+	REAL(rp) :: g, tmp
 	
-	gamma = sqrt(1.0_rp + DOT_PRODUCT(U,U))
-	V = U/gamma
+	g = SQRT(1.0_rp + DOT_PRODUCT(U,U))
+	V = U/g
 
 	tmp = spp%q**4/(6.0_rp*C_PI*E0*spp%m**2)
 
 	F2 = tmp*( DOT_PRODUCT(E,V)*E + cross(E,B) + cross(B,cross(B,V)) )
 	vec = E + cross(V,B)
-	F3 = (tmp*gamma**2)*( DOT_PRODUCT(E,V)**2 - DOT_PRODUCT(vec,vec) )*V
+	F3 = (tmp*g**2)*( DOT_PRODUCT(E,V)**2 - DOT_PRODUCT(vec,vec) )*V
 
 	Frad = F2 + F3
 end subroutine radiation_force
@@ -64,8 +64,8 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
     LOGICAL, INTENT(IN) :: bool
 	REAL(rp), INTENT(IN) :: dt
-	REAL(rp) :: Prad, B, vpar, vperp, tmp ! diagnostics and temporary variables
-	REAL(rp) :: a, gammap, sigma, us, gamma, s ! variables of leapfrog of Vay, J.-L. PoP (2008)
+	REAL(rp) :: Prad, B, v, vpar, vperp, tmp ! diagnostics and temporary variables
+	REAL(rp) :: a, gp, sigma, us, g, s ! variables of leapfrog of Vay, J.-L. PoP (2008)
 	REAL(rp), DIMENSION(3) :: U_L, U_hs, tau, up, t
 	REAL(rp), DIMENSION(3) :: U, U_RC, U_os
 	REAL(rp), DIMENSION(3) :: Frad, Fcoll
@@ -87,22 +87,22 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 	    a = spp(ii)%q*dt/spp(ii)%m
 
 !$OMP PARALLEL FIRSTPRIVATE(a,dt,bool)&
-!$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gammap,&
-!$OMP& sigma,us,gamma,t,s,Frad,Fcoll,U_RC,U_os,&
-!$OMP& tmp,b_unit,B,vpar,vperp,vec,Prad)&
+!$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gp,&
+!$OMP& sigma,us,g,t,s,Frad,Fcoll,U_RC,U_os,&
+!$OMP& tmp,b_unit,B,vpar,v,vperp,vec,Prad)&
 !$OMP& SHARED(ii,spp)
 !$OMP DO
-		do pp=1,spp(ii)%ppp
+		do pp=1_idef,spp(ii)%ppp
 			if ( spp(ii)%vars%flag(pp) .EQ. 1_idef ) then
-				U = spp(ii)%vars%gamma(pp)*spp(ii)%vars%V(:,pp)
+				U = spp(ii)%vars%g(pp)*spp(ii)%vars%V(:,pp)
 
 				!! Magnitude of magnetic field
-				B = sqrt( DOT_PRODUCT(spp(ii)%vars%B(:,pp),spp(ii)%vars%B(:,pp)) )
+				B = SQRT( DOT_PRODUCT(spp(ii)%vars%B(:,pp),spp(ii)%vars%B(:,pp)) )
 
                 if (bool) then
 				    !! Instantaneous guiding center
 				    spp(ii)%vars%Rgc(:,pp) = spp(ii)%vars%X(:,pp)&
-				    + gamma*spp(ii)%m*cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%B(:,pp))/( spp(ii)%q*B**2 )
+				    + g*spp(ii)%m*cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%B(:,pp))/( spp(ii)%q*B**2 )
                 end if
 
 				U_L = U
@@ -112,11 +112,11 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 				U_hs = U_L + 0.5_rp*a*( spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)) )		        
 				tau = 0.5_rp*dt*spp(ii)%q*spp(ii)%vars%B(:,pp)/spp(ii)%m
 				up = U_hs + 0.5_rp*a*spp(ii)%vars%E(:,pp)
-				gammap = sqrt( 1.0_rp + DOT_PRODUCT(up,up) )
-				sigma = gammap**2 - DOT_PRODUCT(tau,tau)
+				gp = SQRT( 1.0_rp + DOT_PRODUCT(up,up) )
+				sigma = gp**2 - DOT_PRODUCT(tau,tau)
 				us = DOT_PRODUCT(up,tau) ! variable 'u^*' in Vay, J.-L. PoP (2008)
-				gamma = sqrt( 0.5_rp*(sigma + sqrt(sigma**2 + 4.0_rp*(DOT_PRODUCT(tau,tau) + us**2))) )
-				t = tau/gamma
+				g = SQRT( 0.5_rp*(sigma + SQRT(sigma**2 + 4.0_rp*(DOT_PRODUCT(tau,tau) + us**2))) )
+				t = tau/g
 				s = 1.0_rp/(1.0_rp + DOT_PRODUCT(t,t)) ! variable 's' in Vay, J.-L. PoP (2008)
 		        U_L = s*(up + DOT_PRODUCT(up,t)*t + cross(up,t))
 				! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
@@ -143,40 +143,48 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 				! ! ! Splitting operator for including radiation and collisions
 
 				if (params%radiation .OR. params%collisions) then
-					gamma = SQRT( 1.0_rp + DOT_PRODUCT(U,U) )
+					g = SQRT( 1.0_rp + DOT_PRODUCT(U,U) )
 				end if
-		        spp(ii)%vars%V(:,pp) = U/gamma
-				spp(ii)%vars%gamma(pp) = gamma
+		        spp(ii)%vars%V(:,pp) = U/g
+				spp(ii)%vars%g(pp) = g
 		    
                 if (bool) then
 				    !! Parallel unit vector
 				    b_unit = spp(ii)%vars%B(:,pp)/B
 
-				    !! Parallel and perpendicular components of velocity
-				    vpar = DOT_PRODUCT(spp(ii)%vars%V(:,pp), b_unit)
-				    vperp =  DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)) - vpar**2
-				    if ( vperp .GE. korc_zero ) then
-					    vperp = sqrt( vperp )
-				    else
-					    vperp = 0.0_rp
-				    end if
+					v = SQRT(DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)))
+					if (v.GT.korc_zero) then
+						!! Parallel and perpendicular components of velocity
+						vpar = DOT_PRODUCT(spp(ii)%vars%V(:,pp), b_unit)
+						vperp =  DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)) - vpar**2
+						if ( vperp .GE. korc_zero ) then
+							vperp = SQRT( vperp )
+						else
+							vperp = 0.0_rp
+						end if
 
-				    !! Pitch angle
-		            spp(ii)%vars%eta(pp) = 180.0_rp*modulo(atan2(vperp,vpar), 2.0_rp*C_PI)/C_PI
+						!! Pitch angle
+				        spp(ii)%vars%eta(pp) = 180.0_rp*MODULO(ATAN2(vperp,vpar), 2.0_rp*C_PI)/C_PI
 
-				    !! Magnetic moment
-				    spp(ii)%vars%mu(pp) = 0.5_rp*spp(ii)%m*gamma*vperp**2/B
+						!! Magnetic moment
+						spp(ii)%vars%mu(pp) = 0.5_rp*spp(ii)%m*g*vperp**2/B
 
-					!! Radiated power
-					tmp = spp(ii)%q**4/(6.0_rp*C_PI*E0*spp(ii)%m**2)
+						!! Radiated power
+						tmp = spp(ii)%q**4/(6.0_rp*C_PI*E0*spp(ii)%m**2)
 
-					vec = spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp))
+						vec = spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp))
 
-					spp(ii)%vars%Prad(pp) = tmp*( DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%E(:,pp)) + &
-					DOT_PRODUCT(cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)),spp(ii)%vars%E(:,pp)) +&
-					spp(ii)%vars%gamma(pp)**2*(DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%V(:,pp))**2 - DOT_PRODUCT(vec,vec)) )
+						spp(ii)%vars%Prad(pp) = tmp*( DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%E(:,pp)) + &
+						DOT_PRODUCT(cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)),spp(ii)%vars%E(:,pp)) +&
+						spp(ii)%vars%g(pp)**2*(DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%V(:,pp))**2 - DOT_PRODUCT(vec,vec)) )
 
-                    spp(ii)%vars%Pin(pp) = spp(ii)%q*DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%V(:,pp))
+		                spp(ii)%vars%Pin(pp) = spp(ii)%q*DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%V(:,pp))
+					else
+				        spp(ii)%vars%eta(pp) = 0.0_rp
+						spp(ii)%vars%mu(pp) = 0.0_rp
+						spp(ii)%vars%Prad(pp) = 0.0_rp
+		                spp(ii)%vars%Pin(pp) = 0.0_rp
+					end if
                 end if
 			end if
 		end do

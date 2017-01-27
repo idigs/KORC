@@ -540,14 +540,14 @@ SUBROUTINE synthetic_camera(params,spp)
 			if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
 				V = spp(ss)%vars%V(:,pp)*params%cpp%velocity
 				X = spp(ss)%vars%X(:,pp)*params%cpp%length
-				g = spp(ss)%vars%gamma(pp)
+				g = spp(ss)%vars%g(pp)
 				B = spp(ss)%vars%B(:,pp)*params%cpp%Bo
 				E = spp(ss)%vars%E(:,pp)*params%cpp%Eo
 
 				binorm = cross(V,E) + cross(V,cross(V,B))
 		
 				u = SQRT(DOT_PRODUCT(V,V))
-				k = q*SQRT(DOT_PRODUCT(binorm,binorm))/(spp(ss)%vars%gamma(pp)*m*u**3)
+				k = q*SQRT(DOT_PRODUCT(binorm,binorm))/(spp(ss)%vars%g(pp)*m*u**3)
 				k = k/1.0E2_rp ! Now in cm^-1 (CGS)
 !write(6,'("+ P: ",I4," k: ",F25.16)') pp,k
 !write(6,'("+ P: ",I4," k: ",3F25.16)') pp,B

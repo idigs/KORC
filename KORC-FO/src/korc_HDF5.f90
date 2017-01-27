@@ -452,8 +452,8 @@ subroutine isave_1d_array_to_hdf5(h5file_id,dset,idata,attr)
 		! * * * Write attribute of data to file * * *
 		tmplen = 0
 		attrlen = 0
-		do rr=1,arank
-			do dd=1,adims(rr)
+		do rr=1_idef,arank
+			do dd=1_idef,adims(rr)
 				tmplen = LEN_TRIM(attr(dd))
 				if ( tmplen .GT. attrlen) then
 					attrlen = tmplen
@@ -577,8 +577,8 @@ subroutine rsave_1d_array_to_hdf5(h5file_id,dset,rdata,attr)
 		! * * * Write attribute of data to file * * *
 		tmplen = 0
 		attrlen = 0
-		do rr=1,arank
-			do dd=1,adims(rr)
+		do rr=1_idef,arank
+			do dd=1_idef,adims(rr)
 				tmplen = LEN_TRIM(attr(dd))
 				if ( tmplen .GT. attrlen) then
 					attrlen = tmplen
@@ -814,9 +814,9 @@ subroutine save_simulation_parameters(params,spp,F)
 		attr_array(1) = "Initial (average) energy in eV"
 		call save_1d_array_to_hdf5(h5file_id,dset,spp%Eo*params%cpp%energy/C_E,attr_array)
 
-		dset = TRIM(gname) // "/gammao"
-		attr_array(1) = "Initial relativistic gamma."
-		call save_1d_array_to_hdf5(h5file_id,dset,spp%gammao,attr_array)
+		dset = TRIM(gname) // "/go"
+		attr_array(1) = "Initial relativistic g factor."
+		call save_1d_array_to_hdf5(h5file_id,dset,spp%go,attr_array)
 
 		dset = TRIM(gname) // "/etao"
 		attr_array(1) = "Initial pitch angle in degrees"
@@ -1014,7 +1014,7 @@ subroutine save_simulation_outputs(params,spp,F)
 	attr = "Simulation time in secs"
 	call save_to_hdf5(h5file_id,dset,REAL(params%it,rp)*params%dt*params%cpp%time,attr)
 
-    do ii=1,params%num_species
+    do ii=1_idef,params%num_species
         write(tmp_str,'(I18)') ii
 	    subgname = "spp_" // TRIM(ADJUSTL(tmp_str))
 	    call h5gcreate_f(group_id, TRIM(subgname), subgroup_id, h5error)
@@ -1033,9 +1033,9 @@ subroutine save_simulation_outputs(params,spp,F)
 					dset = "Rgc"
 					units = params%cpp%length
 					call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%Rgc)
-				CASE('gamma')
-					dset = "gamma"
-				    call save_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%gamma)
+				CASE('g')
+					dset = "g"
+				    call save_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%g)
 				CASE('eta')
 					dset = "eta"
 				    call save_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%eta)
@@ -1183,8 +1183,8 @@ subroutine load_field_data_from_hdf5(params,F)
 		dset = "/PSIp"
         ALLOCATE( A(F%dims(1)*F%dims(3)) )
 		call rload_array_from_hdf5(h5file_id,dset,A)
-        do ir=1,F%dims(1)
-            do iz=1,F%dims(3)
+        do ir=1_idef,F%dims(1)
+            do iz=1_idef,F%dims(3)
 	            F%PSIp(ir,iz) = A(iz + (ir-1)*F%dims(3))
             end do
         end do

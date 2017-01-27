@@ -232,7 +232,7 @@ subroutine collision_force(spp,U,Fcoll)
 	tmp = (gamma - 1.0_rp)*sqrt(gamma + 1.0_rp)
 	Clog_ef = log(0.5_rp*tmp*(cparams_ms%rD/cparams_ms%re)/gamma)
 	ae = cparams_ms%nef*Clog_ef
-	do ppi=1,cparams_ms%num_impurity_species
+	do ppi=1_idef,cparams_ms%num_impurity_species
 		Clog_eb = log(tmp*cparams_ms%Ee_IZj(ppi))
 		ae = ae + cparams_ms%neb(ppi)*Clog_eb
 	end do
@@ -240,7 +240,7 @@ subroutine collision_force(spp,U,Fcoll)
 	tmp = (gamma**2 - 1.0_rp)/gamma
 	Clog_eH = log( tmp*(cparams_ms%rD/cparams_ms%re) )
 	ai = cparams_ms%nH*Clog_eH
-	do ppi=1,cparams_ms%num_impurity_species
+	do ppi=1_idef,cparams_ms%num_impurity_species
 		Clog_eZj = log( cparams_ms%rD/(cparams_ms%Zj(ppi)*cparams_ms%re*cparams_ms%Ee_IZj(ppi)) )
 		Clog_eZo = log(tmp*cparams_ms%Ee_IZj(ppi))
 		ai = ai + &

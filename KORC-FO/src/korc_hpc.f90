@@ -43,7 +43,7 @@ subroutine initialize_mpi(params)
 	ALLOCATE(DIMS(NDIMS))
 	ALLOCATE(PERIODS(NDIMS))
 	! This loop isn't necessary but helps to do things more general in the future
-	do ii=1,NDIMS
+	do ii=1_idef,NDIMS
 		DIMS(ii) = params%mpi_params%nmpi
 		PERIODS(ii) = .TRUE.
 	end do
