@@ -378,7 +378,7 @@ subroutine set_up_particles_ic(params,F,spp)
 
 			spp(ii)%vars%V(1,:) = Vth*SQRT( -LOG(1.0_rp - R) )*COS(theta)
 
-			Vo = SQRT(SUM(spp(ii)%vars%V**2,1))
+			Vo = SQRT(spp(ii)%vars%V(1,:)**2 + spp(ii)%vars%V(2,:)**2 + spp(ii)%vars%V(3,:)**2)
 
 			spp(ii)%vars%g = 1.0_rp/SQRT( 1.0_rp - Vo**2)
 
@@ -392,7 +392,7 @@ subroutine set_up_particles_ic(params,F,spp)
 
 			do jj=1_idef,spp(ii)%ppp
 				if (ISNAN(spp(ii)%vars%g(jj))) then
-					WRITE(6,*) spp(ii)%vars%V(:,jj)
+					WRITE(6,*) spp(ii)%vars%g(jj), spp(ii)%vars%V(:,jj)
 				end if
 			end do
 		else
