@@ -47,7 +47,7 @@ MODULE korc_synthetic_camera
 	REAL(rp), PRIVATE, PARAMETER :: CGS_E = 3.0E9_rp*C_E
 	REAL(rp), PRIVATE, PARAMETER :: CGS_ME = 1.0E3_rp*C_ME
 
-	PRIVATE :: clockwise_rotation,anticlockwise_rotation,cross,check_if_visible,calculate_rotation_angles,ajyik,&
+	PRIVATE :: clockwise_rotation,anticlockwise_rotation,cross,check_if_visible,calculate_rotation_angles,ajyik,ikv,&
 				zeta,fx,arg,Po,P1,Psyn,chic,psic,&
 				save_synthetic_camera_params,save_snapshot
 	PUBLIC :: initialize_synthetic_camera,synthetic_camera
@@ -1155,7 +1155,6 @@ SUBROUTINE ajyik( x, vj1, vj2, vy1, vy2, vi1, vi2, vk1, vk2 )
 
   return
 END SUBROUTINE ajyik
-
 
 
 END MODULE korc_synthetic_camera
