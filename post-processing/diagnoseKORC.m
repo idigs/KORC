@@ -16,7 +16,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
 % ST.RT = radialTransport(ST);
 
@@ -46,7 +46,7 @@ energyConservation(ST);
 
 % radiationPlane(ST);
 
-calculateTemperatureComponents(ST);
+% calculateTemperatureComponents(ST);
 
 % save('energy_limit','ST')
 end
@@ -101,7 +101,7 @@ end
 
 
 % list = {'eta','gamma','Prad','Pin','flag','mu'};
-list = {'gamma','eta','Prad','Pin'};
+list = {'g','eta'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -164,11 +164,11 @@ set(h6,'name','Energy statistics','numbertitle','off')
         
         
         %         pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
-        pin = true(1,size(ST.data.(['sp' num2str(ss)]).gamma,1));
+        pin = true(1,size(ST.data.(['sp' num2str(ss)]).g,1));
 %         passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
 %         bool = pin & passing;
 
-        gammap = ST.data.(['sp' num2str(ss)]).gamma(pin,:);
+        gammap = ST.data.(['sp' num2str(ss)]).g(pin,:);
         tmp = zeros(size(gammap));
         for ii=1:size(tmp,1)
 %             tmp(ii,:) = ...
@@ -331,7 +331,7 @@ for ss=1:ST.params.simulation.num_species
     passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
     bool = pin; % & passing;
     eta = ST.data.(['sp' num2str(ss)]).eta(bool,:);
-    Eo = ST.data.(['sp' num2str(ss)]).gamma(bool,:)*m*c^2/q;
+    Eo = ST.data.(['sp' num2str(ss)]).g(bool,:)*m*c^2/q;
     Eo = Eo/1E6;
     
 %     try
@@ -770,7 +770,7 @@ for ss=1:ST.params.simulation.num_species
     for ii=1:ST.num_snapshots
         X = squeeze( ST.data.(['sp' num2str(ss)]).X(:,pin,ii) );
         V = squeeze( ST.data.(['sp' num2str(ss)]).V(:,pin,ii) );
-        gammap = squeeze( ST.data.(['sp' num2str(ss)]).gamma(pin,ii) )';
+        gammap = squeeze( ST.data.(['sp' num2str(ss)]).g(pin,ii) )';
         
         
         % Toroidal coordinates
@@ -865,7 +865,7 @@ for ss=1:ST.params.simulation.num_species
     aux = find(pin == 1);
     
     Bo = squeeze( sqrt( sum(ST.data.(['sp' num2str(ss)]).B(:,pin,1).^2,1) ) );
-    gammap = ST.data.(['sp' num2str(ss)]).gamma(pin,1)';
+    gammap = ST.data.(['sp' num2str(ss)]).g(pin,1)';
     wc = abs(q)*Bo./(gammap*m);
     Tc = 2*pi./wc;
     I = zeros(size(Bo));
@@ -1172,7 +1172,7 @@ legends = cell(1,ST.params.simulation.num_species);
 for ss=1:ST.params.simulation.num_species   
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
     
-    energy = mean(ST.data.(['sp' num2str(ss)]).gamma(pin,:),1);
+    energy = mean(ST.data.(['sp' num2str(ss)]).g(pin,:),1);
     energy = ST.params.species.m(ss)*ST.params.scales.v^2*energy/ST.params.scales.q;
     energy = energy/1E6;
     pitch = mean(ST.data.(['sp' num2str(ss)]).eta(pin,:),1);
@@ -1326,10 +1326,10 @@ for ss=1:ST.params.simulation.num_species
     
     V = ST.data.(['sp' num2str(ss)]).V(:,bool,:);
     v = squeeze( sqrt( sum(V.^2,1) ) );
-    gammap = ST.data.(['sp' num2str(ss)]).gamma(bool,:);
+    gammap = ST.data.(['sp' num2str(ss)]).g(bool,:);
     eta = pi*ST.data.(['sp' num2str(ss)]).eta(bool,:)/180;
     
-    gammapo = repmat(ST.params.species.gammao(ss),S,ST.num_snapshots);
+    gammapo = repmat(ST.params.species.go(ss),S,ST.num_snapshots);
     vo = ST.params.scales.v*sqrt(1 - 1./gammapo.^2);
     etao = pi*repmat(ST.params.species.etao(ss),S,ST.num_snapshots)/180;
     
@@ -1509,7 +1509,7 @@ for ss=1:ST.params.simulation.num_species
     
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
     eta = ST.data.(['sp' num2str(ss)]).eta(pin,:);
-    Et = ST.data.(['sp' num2str(ss)]).gamma(pin,:)*m*ST.params.scales.v^2/(abs(q)*1E6);
+    Et = ST.data.(['sp' num2str(ss)]).g(pin,:)*m*ST.params.scales.v^2/(abs(q)*1E6);
     Eo = ST.params.species.Eo(ss)/1E6;
     etao = ST.params.species.etao(ss);
 
@@ -1630,7 +1630,7 @@ for ss=1:num_species
     for ii=1:ST.num_snapshots
         X = [X,ST.data.(['sp' num2str(ss)]).X(:,bool,ii)];
         V = [V,ST.data.(['sp' num2str(ss)]).V(:,bool,ii)];
-        gammap = [gammap;ST.data.(['sp' num2str(ss)]).gamma(bool,ii)];
+        gammap = [gammap;ST.data.(['sp' num2str(ss)]).g(bool,ii)];
         eta = [eta;pi*ST.data.(['sp' num2str(ss)]).eta(bool,ii)/180];
         Prad = [Prad;abs(ST.data.(['sp' num2str(ss)]).Prad(bool,ii))];
     end
@@ -1764,7 +1764,7 @@ for ss=1:num_species
         % % % % NO CUTOFF % % %
 %         k = ...
 %             q*ST.params.fields.Bo*sin(pi*ST.params.species.etao(ss)/180)...
-%             /(ST.params.species.gammao(ss)*ST.params.species.m(ss)*v(1))*ones(size(v));
+%             /(ST.params.species.go(ss)*ST.params.species.m(ss)*v(1))*ones(size(v));
         
         % % % % Beyond this point all variables are in cgs units % % % %
         c = 1E2*ST.params.scales.v;
@@ -2474,7 +2474,7 @@ for ss=1:num_species
     for ii=1:ST.num_snapshots
         X = [X,ST.data.(['sp' num2str(ss)]).X(:,bool,ii)];
         V = [V,ST.data.(['sp' num2str(ss)]).V(:,bool,ii)];
-        gammae = [gammae;ST.data.(['sp' num2str(ss)]).gamma(bool,ii)];
+        gammae = [gammae;ST.data.(['sp' num2str(ss)]).g(bool,ii)];
         eta = [eta;pi*ST.data.(['sp' num2str(ss)]).eta(bool,ii)/180];
         Prad = [Prad;abs(ST.data.(['sp' num2str(ss)]).Prad(bool,ii))];
         B = [B,ST.data.(['sp' num2str(ss)]).B(:,bool,ii)];

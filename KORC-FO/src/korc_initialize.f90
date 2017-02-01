@@ -12,8 +12,8 @@ module korc_initialize
     implicit none
 	
 
-	PRIVATE :: set_paths, load_korc_params, initialization_sanity_check, unitVectors
-	PUBLIC :: initialize_korc_parameters, initialize_particles, initialize_fields
+	PRIVATE :: set_paths,load_korc_params,initialization_sanity_check,unitVectors,random_norm,fth,iso_thermal_distribution
+	PUBLIC :: initialize_korc_parameters,initialize_particles,initialize_fields
 
     contains
 
@@ -282,14 +282,93 @@ subroutine initialize_particles(params,F,spp)
 end subroutine initialize_particles
 
 
-subroutine thermal_distribution(params,g,eta)
-	implicit none
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: g
-	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: eta
-	REAL(rp) :: Vth ! Thermal velocity
+FUNCTION fth(Vth,V)
+	IMPLICIT NONE
+	REAL(rp), DIMENSION(3), INTENT(IN) :: V
+    REAL(rp), INTENT(IN) :: Vth
+	REAL(rp) :: fth
 
-end subroutine thermal_distribution
+!    fth = (1.0_rp/Vth**3)*EXP(-0.5_rp*SUM(V**2)/Vth**2)/(2.0_rp*C_PI)**1.5_rp
+    fth = EXP(-0.5_rp*SUM(V**2)/Vth**2)
+END FUNCTION fth
+
+
+FUNCTION random_norm(mean,sigma)
+	REAL(rp), INTENT(IN) :: mean
+	REAL(rp), INTENT(IN) :: sigma
+	REAL(rp) :: random_norm
+	REAL(rp) :: rand1, rand2
+
+	call RANDOM_NUMBER(rand1)
+	call RANDOM_NUMBER(rand2)
+
+	random_norm = SQRT(-2.0_rp*LOG(1.0_rp-rand1))*COS(2.0_rp*C_PI*rand2);
+END FUNCTION random_norm
+
+
+subroutine iso_thermal_distribution(params,spp)
+    implicit none
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+    TYPE(SPECIES), INTENT(INOUT) :: spp
+    REAL(rp) :: Vth, sv
+    REAL(rp) :: ratio, rand_unif
+    REAL(rp), DIMENSION(3) :: V, U
+    REAL(rp), DIMENSION(3) :: b = (/1.0_rp,0.0_rp,0.0_rp/)
+	INTEGER :: ii,ppp
+
+    Vth = SQRT(spp%Eo*ABS(spp%q)/spp%m)
+    ppp = spp%ppp
+
+    V = (/0.0,0.0,0.0/)
+    sv = 0.05_rp
+
+    ii=2_idef
+	do while (ii .LE. 1000_idef)
+		U(1) = V(1) + random_norm(0.0_rp,sv)
+		U(2) = V(2) + random_norm(0.0_rp,sv)
+		U(3) = V(3) + random_norm(0.0_rp,sv)
+
+		ratio = fth(Vth,U)/fth(Vth,V)
+
+		if (ratio .GE. 1.0_rp) then
+			V = U
+			ii = ii + 1_idef
+		else 
+			call RANDOM_NUMBER(rand_unif)
+			if (ratio .GT. rand_unif) then
+				V = U
+				ii = ii + 1_idef
+			end if
+		end if
+	end do	
+
+    spp%vars%V(:,1) = V
+    ii=2_idef
+	do while (ii .LE. ppp)
+		U(1) = spp%vars%V(1,ii-1) + random_norm(0.0_rp,sv)
+		U(2) = spp%vars%V(2,ii-1) + random_norm(0.0_rp,sv)
+		U(3) = spp%vars%V(3,ii-1) + random_norm(0.0_rp,sv)
+
+		ratio = fth(Vth,U)/fth(Vth,spp%vars%V(:,ii-1))
+
+		if (ratio .GE. 1.0_rp) then
+			spp%vars%V(:,ii) = U
+			ii = ii + 1_idef
+		else 
+			call RANDOM_NUMBER(rand_unif)
+			if (ratio .GT. rand_unif) then
+				spp%vars%V(:,ii) = U
+				ii = ii + 1_idef
+			end if
+		end if
+	end do
+
+    do ii=1_idef,ppp
+        spp%vars%g(ii) = 1.0_rp/SQRT(1.0_rp - SUM(spp%vars%V(:,ii)**2,1))
+        spp%vars%eta(ii) = ACOS(DOT_PRODUCT(b,spp%vars%V(:,ii)/SQRT(SUM(spp%vars%V(:,ii)**2,1))))
+    end do
+    
+end subroutine iso_thermal_distribution
 
 
 subroutine set_up_particles_ic(params,F,spp) 
@@ -307,7 +386,6 @@ subroutine set_up_particles_ic(params,F,spp)
 	REAL(rp), DIMENSION(3) :: x = (/1.0_rp,0.0_rp,0.0_rp/)
 	REAL(rp), DIMENSION(3) :: y = (/0.0_rp,1.0_rp,0.0_rp/)
 	REAL(rp), DIMENSION(3) :: z = (/0.0_rp,0.0_rp,1.0_rp/)
-	REAL(rp) :: Vth ! Thermal velocity
 	INTEGER :: ii,jj ! Iterator
 
 	do ii=1_idef,params%num_species
@@ -357,44 +435,7 @@ subroutine set_up_particles_ic(params,F,spp)
 
 		! * * * * INITIALIZE VELOCITY * * * * 
 		if ((TRIM(spp(ii)%energy_distribution)).EQ.'THERMAL') then
-			Vth = SQRT(2.0_rp*spp(ii)%Eo/spp(ii)%m)
-
-			call init_random_seed()
-			call RANDOM_NUMBER(R)
-
-			call init_random_seed()
-			call RANDOM_NUMBER(theta)
-			theta = 2.0_rp*C_PI*theta
-
-			spp(ii)%vars%V(2,:) = Vth*SQRT( -LOG(1.0_rp - R) )*COS(theta)
-			spp(ii)%vars%V(3,:) = Vth*SQRT( -LOG(1.0_rp - R) )*SIN(theta)
-
-			call init_random_seed()
-			call RANDOM_NUMBER(R)
-
-			call init_random_seed()
-			call RANDOM_NUMBER(theta)
-			theta = 2.0_rp*C_PI*theta
-
-			spp(ii)%vars%V(1,:) = Vth*SQRT( -LOG(1.0_rp - R) )*COS(theta)
-
-			Vo = SQRT(spp(ii)%vars%V(1,:)**2 + spp(ii)%vars%V(2,:)**2 + spp(ii)%vars%V(3,:)**2)
-
-			spp(ii)%vars%g = 1.0_rp/SQRT( 1.0_rp - Vo**2)
-
-			do jj=1_idef,spp(ii)%ppp
-				if (Vo(jj).GT.korc_zero) then
-					spp(ii)%vars%eta(jj) = ACOS(DOT_PRODUCT(x,spp(ii)%vars%V(:,jj)/Vo(jj)))
-				else
-					spp(ii)%vars%eta(jj) = 0.0_rp
-				end if
-			end do
-
-			do jj=1_idef,spp(ii)%ppp
-				if (ISNAN(spp(ii)%vars%g(jj))) then
-					WRITE(6,*) spp(ii)%vars%g(jj), spp(ii)%vars%V(:,jj)
-				end if
-			end do
+            call iso_thermal_distribution(params,spp(ii))
 		else
 			call init_random_seed()
 			call RANDOM_NUMBER(theta)

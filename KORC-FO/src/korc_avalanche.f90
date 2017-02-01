@@ -31,7 +31,7 @@ MODULE korc_avalanche
 	TYPE(AVALANCHE_PDF_PARAMS), PRIVATE :: aval_params
 
 	PUBLIC :: get_avalanche_PDF_params
-	PRIVATE :: initialize_avalanche_params,save_avalanche_params
+	PRIVATE :: initialize_avalanche_params,save_avalanche_params,random_norm,fRE,sample_distribution
 
 	CONTAINS
 
@@ -58,6 +58,7 @@ FUNCTION fRE(x,p)
 	fRE = aval_params%fo*p*EXP(-p*(aval_params%C2*x + aval_params%C1/x))/x
 END FUNCTION fRE
 
+
 FUNCTION random_norm(mean,sigma)
 	REAL(rp), INTENT(IN) :: mean
 	REAL(rp), INTENT(IN) :: sigma
@@ -68,7 +69,7 @@ FUNCTION random_norm(mean,sigma)
 	call RANDOM_NUMBER(rand2)
 
 	random_norm = SQRT(-2.0_rp*LOG(1.0_rp-rand1))*COS(2.0_rp*C_PI*rand2);
-END FUNCTION
+END FUNCTION random_norm
 
 
 SUBROUTINE sample_distribution(params,g,eta)
@@ -91,8 +92,8 @@ SUBROUTINE sample_distribution(params,g,eta)
 	call RANDOM_NUMBER(rand_unif)
 	p_buffer = aval_params%min_p + (aval_params%max_p - aval_params%min_p)*rand_unif
 
-	ii=2
-	do while (ii .LE. 100000)
+	ii=2_idef
+	do while (ii .LE. 100000_idef)
 		eta_test = eta_buffer + random_norm(0.0_rp,1.0_rp)
 		do while (ABS(eta_test) .GT. aval_params%max_pitch_angle)
 			eta_test = eta_buffer + random_norm(0.0_rp,1.0_rp)
@@ -110,13 +111,13 @@ SUBROUTINE sample_distribution(params,g,eta)
 		if (ratio .GE. 1.0_rp) then
 			p_buffer = p_test
 			eta_buffer = eta_test
-			ii = ii + 1
+			ii = ii + 1_idef
 		else 
 			call RANDOM_NUMBER(rand_unif)
 			if (rand_unif .LT. ratio) then
 				p_buffer = p_test
 				eta_buffer = eta_test
-				ii = ii + 1
+				ii = ii + 1_idef
 			end if
 		end if
 	end do	
@@ -126,7 +127,7 @@ SUBROUTINE sample_distribution(params,g,eta)
 	call RANDOM_NUMBER(rand_unif)
 	p(1) = p_buffer
 
-	ii=2
+	ii=2_idef
 	do while (ii .LE. ppp)
 		eta_test = eta(ii-1) + random_norm(0.0_rp,1.0_rp)
 		do while (ABS(eta_test) .GT. aval_params%max_pitch_angle)
@@ -145,13 +146,13 @@ SUBROUTINE sample_distribution(params,g,eta)
 		if (ratio .GE. 1.0_rp) then
 			p(ii) = p_test
 			eta(ii) = eta_test
-			ii = ii + 1
+			ii = ii + 1_idef
 		else 
 			call RANDOM_NUMBER(rand_unif)
 			if (rand_unif .LT. ratio) then
 				p(ii) = p_test
 				eta(ii) = eta_test
-				ii = ii + 1
+				ii = ii + 1_idef
 			end if
 		end if
 	end do	
@@ -164,12 +165,6 @@ SUBROUTINE sample_distribution(params,g,eta)
 
 	g = SQRT(1.0_rp + p**2)
 
-!	open(unit=default_unit_write,file='/home/l8c/Documents/KORC/KORC-FO/fRE.dat',status='UNKNOWN',form='formatted')
-!    do ii=1_idef,ppp
-!	        write(default_unit_write,'(F20.16,T22,F20.16)') eta(ii), p(ii)
-!    end do
-!    close(default_unit_write)
-	
 	DEALLOCATE(p)
 END SUBROUTINE sample_distribution
 
