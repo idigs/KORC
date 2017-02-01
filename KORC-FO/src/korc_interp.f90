@@ -2,7 +2,6 @@ module korc_interp
 
     use korc_types
     use korc_coords
-    use korc_fields
     use rnd_numbers
     use EZspline_obj	! psplines module
     use EZspline		! psplines module
@@ -58,23 +57,10 @@ module korc_interp
 	  module procedure interp_3D_magnetic_field
 	END INTERFACE
 
-    PUBLIC :: interp_field, interp_analytical_field, unitVectors,&
-				initialize_interpolant, finalize_interpolant
-	PRIVATE :: interp_magnetic_field, interp_3D_magnetic_field, cross,&
-				check_if_in_domain2D, check_if_in_domain3D
+    PUBLIC :: interp_field,initialize_interpolant,finalize_interpolant
+	PRIVATE :: interp_magnetic_field,interp_3D_magnetic_field,check_if_in_domain2D,check_if_in_domain3D
 
     contains
-
-
-function cross(a,b)
-	REAL(rp), DIMENSION(3), INTENT(IN) :: a
-	REAL(rp), DIMENSION(3), INTENT(IN) :: b
-	REAL(rp), DIMENSION(3) :: cross
-
-	cross(1) = a(2)*b(3) - a(3)*b(2)
-	cross(2) = a(3)*b(1) - a(1)*b(3)
-	cross(3) = a(1)*b(2) - a(2)*b(1)
-end function cross
 
 
 subroutine initialize_interpolant(params,F)
@@ -346,97 +332,5 @@ subroutine interp_field(prtcls,F)
 		call calculate_magnetic_field(prtcls%Y,F,prtcls%B,prtcls%flag)
 	end if
 end subroutine interp_field
-
-
-subroutine interp_analytical_field(prtcls,F)
-    implicit none
-	TYPE(PARTICLES), INTENT(INOUT) :: prtcls
-	TYPE(FIELDS), INTENT(IN) :: F
-
-	call cart_to_tor(prtcls%X, F%AB%Ro, prtcls%Y, prtcls%flag)
-
-	call check_if_confined(F, prtcls%Y, prtcls%flag)
-
-	call analytical_magnetic_field(F, prtcls%Y, prtcls%B, prtcls%flag)
-
-	call analytical_electric_field(F, prtcls%Y, prtcls%E, prtcls%flag)
-end subroutine interp_analytical_field
-
-
-subroutine uniform_fields(prtcls,F)
-    implicit none
-	TYPE(PARTICLES), INTENT(INOUT) :: prtcls
-	TYPE(FIELDS), INTENT(IN) :: F
-
-	call uniform_magnetic_field(F, prtcls%B)
-
-	call uniform_electric_field(F, prtcls%E)
-end subroutine uniform_fields
-
-
-subroutine unitVectors(params,Xo,F,b1,b2,b3,flag)
-    implicit none
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Xo
-	TYPE(FIELDS), INTENT(IN) :: F
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: b1
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: b2
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: b3
-	INTEGER, DIMENSION(:), ALLOCATABLE, OPTIONAL, INTENT(INOUT) :: flag
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: X
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: B
-	INTEGER, DIMENSION(:), ALLOCATABLE :: local_flag
-	REAL(rp), PARAMETER :: tol = korc_zero
-	INTEGER :: ii, ppp
-
-	ppp = SIZE(Xo,2) ! Number of particles
-
-	ALLOCATE( X(3,ppp) )
-	ALLOCATE( B(3,ppp) )
-    ALLOCATE( local_flag(ppp) )
-
-    local_flag = 1_idef
-	
-	call init_random_seed()
-
-	if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
-		call cart_to_tor(Xo,F%AB%Ro,X,local_flag) ! To toroidal coords
-		call analytical_magnetic_field(F,X,B,local_flag)
-	else if (params%magnetic_field_model .EQ. 'UNIFORM') then
-		call uniform_magnetic_field(F,B)
-	else
-		call cart_to_cyl(Xo, X)
-        if (params%poloidal_flux) then
-			call check_if_in_domain2D(F,X,local_flag)
-
-            call calculate_magnetic_field(X,F,B,local_flag)
-        else
-			call check_if_in_domain3D(F,X,local_flag)
-
-            call interp_magnetic_field(X,B,local_flag)
-        end if
-	end if
-	
-	do ii=1_idef,ppp
-		if ( local_flag(ii) .EQ. 1_idef ) then
-			b1(:,ii) = B(:,ii)/sqrt( DOT_PRODUCT(B(:,ii),B(:,ii)) )
-
-		    b2(:,ii) = cross(b1(:,ii),(/0.0_rp,0.0_rp,1.0_rp/))
-		    b2(:,ii) = b2(:,ii)/sqrt( DOT_PRODUCT(b2(:,ii),b2(:,ii)) )
-
-		    b3(:,ii) = cross(b1(:,ii),b2(:,ii))
-		    b3(:,ii) = b3(:,ii)/sqrt( DOT_PRODUCT(b3(:,ii),b3(:,ii)) )
-		end if
-	end do
-
-	if (PRESENT(flag)) then
-		flag = local_flag
-	end if
-
-	DEALLOCATE(X)
-	DEALLOCATE(B)
-    DEALLOCATE(local_flag)
-end subroutine unitVectors
-
 
 end module korc_interp

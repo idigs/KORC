@@ -4,7 +4,7 @@ module korc_initialize
     use korc_constants
     use korc_hpc
     use korc_HDF5
-    use korc_interp
+    use korc_fields
     use rnd_numbers
 
 	use korc_avalanche ! external module
@@ -255,7 +255,6 @@ subroutine initialize_particles(params,F,spp)
 				end if
 		END SELECT
 	
-
 		! Initialize to zero
 		spp(ii)%vars%X = 0.0_rp
 		spp(ii)%vars%V = 0.0_rp
@@ -288,7 +287,6 @@ FUNCTION fth(Vth,V)
     REAL(rp), INTENT(IN) :: Vth
 	REAL(rp) :: fth
 
-!    fth = (1.0_rp/Vth**3)*EXP(-0.5_rp*SUM(V**2)/Vth**2)/(2.0_rp*C_PI)**1.5_rp
     fth = EXP(-0.5_rp*SUM(V**2)/Vth**2)
 END FUNCTION fth
 
@@ -319,7 +317,7 @@ subroutine iso_thermal_distribution(params,spp)
     Vth = SQRT(spp%Eo*ABS(spp%q)/spp%m)
     ppp = spp%ppp
 
-    V = (/0.0,0.0,0.0/)
+    V = (/0.0_rp,0.0_rp,0.0_rp/)
     sv = 0.05_rp
 
     ii=2_idef
@@ -367,7 +365,6 @@ subroutine iso_thermal_distribution(params,spp)
         spp%vars%g(ii) = 1.0_rp/SQRT(1.0_rp - SUM(spp%vars%V(:,ii)**2,1))
         spp%vars%eta(ii) = ACOS(DOT_PRODUCT(b,spp%vars%V(:,ii)/SQRT(SUM(spp%vars%V(:,ii)**2,1))))
     end do
-    
 end subroutine iso_thermal_distribution
 
 
@@ -542,51 +539,50 @@ subroutine initialize_fields(params,F)
 	NAMELIST /analytic_mag_field_params/ Bo,minor_radius,major_radius,&
 			qa,qo,electric_field_mode,Eo,pulse_maximum,pulse_duration
 
-	if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
-		! Load the parameters of the analytical magnetic field
-		open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-		read(default_unit_open,nml=analytic_mag_field_params)
-		close(default_unit_open)
+	SELECT CASE (TRIM(params%magnetic_field_model))
+		CASE('ANALYTICAL')
+			! Load the parameters of the analytical magnetic field
+			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
+			read(default_unit_open,nml=analytic_mag_field_params)
+			close(default_unit_open)
 
-		F%AB%Bo = Bo
-		F%AB%a = minor_radius
-		F%AB%Ro = major_radius
-		F%Ro = major_radius
-		F%AB%qa = qa
-		F%AB%qo = qo
-		F%AB%lambda = F%AB%a/SQRT(qa/qo - 1.0_rp)
-		F%AB%Bpo = F%AB%lambda*F%AB%Bo/(F%AB%qo*F%AB%Ro)
+			F%AB%Bo = Bo
+			F%AB%a = minor_radius
+			F%AB%Ro = major_radius
+			F%Ro = major_radius
+			F%AB%qa = qa
+			F%AB%qo = qo
+			F%AB%lambda = F%AB%a/SQRT(qa/qo - 1.0_rp)
+			F%AB%Bpo = F%AB%lambda*F%AB%Bo/(F%AB%qo*F%AB%Ro)
 
-		F%Eo = Eo
-		F%Bo = F%AB%Bo
+			F%Eo = Eo
+			F%Bo = F%AB%Bo
 
-        F%electric_field_mode = TRIM(electric_field_mode)
-		F%to = pulse_maximum
-		F%sig = pulse_duration
-	else if (params%magnetic_field_model .EQ. 'EXTERNAL') then
-		! Load the magnetic field from an external HDF5 file
-        call load_dim_data_from_hdf5(params,F%dims)
+		    F%electric_field_mode = TRIM(electric_field_mode)
+			F%to = pulse_maximum
+			F%sig = pulse_duration
+		CASE('EXTERNAL')
+			! Load the magnetic field from an external HDF5 file
+		    call load_dim_data_from_hdf5(params,F%dims)
 
-       	call ALLOCATE_FIELDS_ARRAYS(F,params%poloidal_flux)
+		   	call ALLOCATE_FIELDS_ARRAYS(F,params%poloidal_flux)
 
-        call load_field_data_from_hdf5(params,F)
+		    call load_field_data_from_hdf5(params,F)
 
-		if (.NOT. params%poloidal_flux) then
-			field%str = 'B'
-			call mean_F_field(F,F%Bo,field)
-		end if
-	else if (params%magnetic_field_model .EQ. 'UNIFORM') then
-		! Load the parameters of the analytical magnetic field
-		open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-		read(default_unit_open,nml=analytic_mag_field_params)
-		close(default_unit_open)
+			if (.NOT. params%poloidal_flux) then
+				field%str = 'B'
+				call mean_F_field(F,F%Bo,field)
+			end if
+		CASE('UNIFORM')
+			! Load the parameters of the analytical magnetic field
+			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
+			read(default_unit_open,nml=analytic_mag_field_params)
+			close(default_unit_open)
 
-		F%Eo = Eo
-		F%Bo = Bo
-	else
-		write(6,'("ERROR: when initializing fields.")')
-		call korc_abort()
-	end if
+			F%Eo = Eo
+			F%Bo = Bo
+		CASE DEFAULT
+	END SELECT
 end subroutine initialize_fields
 
 end module korc_initialize

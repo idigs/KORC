@@ -1,11 +1,14 @@
 module korc_fields
-
     use korc_types
 	use korc_hpc
+	use korc_coords
+	use korc_interp
 
     implicit none
 
-	PUBLIC :: analytical_magnetic_field,uniform_magnetic_field,mean_F_field,check_if_confined
+	PUBLIC :: mean_F_field,get_fields
+	PRIVATE :: analytical_magnetic_field,analytical_electric_field,uniform_magnetic_field,uniform_electric_field,&
+				check_if_confined,uniform_fields,cross
 
     contains
 
@@ -129,4 +132,109 @@ subroutine check_if_confined(F,Y,flag)
 end subroutine check_if_confined
 
 
+subroutine analytical_fields(prtcls,F)
+    implicit none
+	TYPE(PARTICLES), INTENT(INOUT) :: prtcls
+	TYPE(FIELDS), INTENT(IN) :: F
+
+	call cart_to_tor(prtcls%X, F%AB%Ro, prtcls%Y, prtcls%flag)
+
+	call check_if_confined(F, prtcls%Y, prtcls%flag)
+
+	call analytical_magnetic_field(F, prtcls%Y, prtcls%B, prtcls%flag)
+
+	call analytical_electric_field(F, prtcls%Y, prtcls%E, prtcls%flag)
+end subroutine analytical_fields
+
+
+subroutine uniform_fields(prtcls,F)
+    implicit none
+	TYPE(PARTICLES), INTENT(INOUT) :: prtcls
+	TYPE(FIELDS), INTENT(IN) :: F
+
+	call uniform_magnetic_field(F, prtcls%B)
+
+	call uniform_electric_field(F, prtcls%E)
+end subroutine uniform_fields
+
+
+function cross(a,b)
+	REAL(rp), DIMENSION(3), INTENT(IN) :: a
+	REAL(rp), DIMENSION(3), INTENT(IN) :: b
+	REAL(rp), DIMENSION(3) :: cross
+
+	cross(1) = a(2)*b(3) - a(3)*b(2)
+	cross(2) = a(3)*b(1) - a(1)*b(3)
+	cross(3) = a(1)*b(2) - a(2)*b(1)
+end function cross
+
+
+subroutine unitVectors(params,Xo,F,b1,b2,b3,flag)
+    implicit none
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Xo
+	TYPE(FIELDS), INTENT(IN) :: F
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: b1
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: b2
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: b3
+	INTEGER, DIMENSION(:), ALLOCATABLE, OPTIONAL, INTENT(INOUT) :: flag
+	TYPE(PARTICLES) :: prtcls
+	REAL(rp), PARAMETER :: tol = korc_zero
+	INTEGER :: ii, ppp
+
+	ppp = SIZE(Xo,2) ! Number of particles
+
+	ALLOCATE( prtcls%X(3,ppp) )
+	ALLOCATE( prtcls%Y(3,ppp) )
+	ALLOCATE( prtcls%B(3,ppp) )
+	ALLOCATE( prtcls%E(3,ppp) )
+    ALLOCATE( prtcls%flag(ppp) )
+
+	prtcls%X = Xo
+    prtcls%flag = 1_idef
+	
+	call init_random_seed()
+
+	call get_fields(params,prtcls,F)
+	
+	do ii=1_idef,ppp
+		if ( prtcls%flag(ii) .EQ. 1_idef ) then
+			b1(:,ii) = prtcls%B(:,ii)/SQRT( DOT_PRODUCT(prtcls%B(:,ii),prtcls%B(:,ii)) )
+
+		    b2(:,ii) = cross(b1(:,ii),(/0.0_rp,0.0_rp,1.0_rp/))
+		    b2(:,ii) = b2(:,ii)/SQRT( DOT_PRODUCT(b2(:,ii),b2(:,ii)) )
+
+		    b3(:,ii) = cross(b1(:,ii),b2(:,ii))
+		    b3(:,ii) = b3(:,ii)/SQRT( DOT_PRODUCT(b3(:,ii),b3(:,ii)) )
+		end if
+	end do
+
+	if (PRESENT(flag)) then
+		flag = prtcls%flag
+	end if
+
+	DEALLOCATE( prtcls%X )
+	DEALLOCATE( prtcls%Y )
+	DEALLOCATE( prtcls%B )
+	DEALLOCATE( prtcls%E )
+    DEALLOCATE( prtcls%flag )
+end subroutine unitVectors
+
+
+subroutine get_fields(params,prtcls,F)
+	implicit none
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(PARTICLES), INTENT(INOUT) :: prtcls
+	TYPE(FIELDS), INTENT(IN) :: F
+
+	SELECT CASE (TRIM(params%magnetic_field_model))
+		CASE('ANALYTICAL')
+			call analytical_fields(prtcls, F)
+		CASE('EXTERNAL')
+			call interp_field(prtcls, F)
+		CASE('UNIFORM')
+			call uniform_fields(prtcls, F)
+		CASE DEFAULT
+	END SELECT
+end subroutine get_fields
 end module korc_fields

@@ -73,16 +73,7 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 	INTEGER :: ii, pp ! Iterators
 
 	do ii = 1,params%num_species
-		if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
-			call interp_analytical_field(spp(ii)%vars, EB)
-			if (TRIM(EB%electric_field_mode) .EQ. 'PULSE') then 
-				spp(ii)%vars%E = EXP(-0.5_rp*((params%time - EB%to)/EB%sig)**2)*spp(ii)%vars%E
-			end if
-		else if (params%magnetic_field_model .EQ. 'UNIFORM') then
-			call uniform_fields(spp(ii)%vars, EB)
-		else
-			call interp_field(spp(ii)%vars, EB)
-		end if
+		call get_fields(params,spp(ii)%vars, EB)
 
 	    a = spp(ii)%q*dt/spp(ii)%m
 

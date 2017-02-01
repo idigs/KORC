@@ -16,7 +16,9 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
+
+angularMomentum(ST);
 
 % ST.RT = radialTransport(ST);
 
@@ -27,8 +29,6 @@ ST.data = loadData(ST);
 % ST.MMD = magneticMomentDiagnostic(ST,70);
 
 % poloidalPlaneDistributions(ST,25);
-
-% angularMomentum(ST);
 
 % ST.CMF = changeOfMagneticField(ST)
 
@@ -69,8 +69,7 @@ end
 function data = loadData(ST)
 data = struct;
 
-% list = {'X','V','B'};
-list = {'V'};
+list = {'X','V','B'};
 
 it = ST.range(1):1:ST.range(2);
 
@@ -100,8 +99,8 @@ for ll=1:length(list)
 end
 
 
-% list = {'eta','gamma','Prad','Pin','flag','mu'};
-list = {'g','eta'};
+list = {'eta','g','Prad','Pin','flag'};
+% list = {'g','eta'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -163,7 +162,7 @@ set(h6,'name','Energy statistics','numbertitle','off')
         c = ST.params.scales.v;
         
         
-        %         pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+%         pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
         pin = true(1,size(ST.data.(['sp' num2str(ss)]).g,1));
 %         passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
 %         bool = pin & passing;
@@ -171,9 +170,8 @@ set(h6,'name','Energy statistics','numbertitle','off')
         gammap = ST.data.(['sp' num2str(ss)]).g(pin,:);
         tmp = zeros(size(gammap));
         for ii=1:size(tmp,1)
-%             tmp(ii,:) = ...
-%                 100*( gammap(ii,:) - gammap(ii,1) )./gammap(ii,1);
-            tmp(ii,:) = (gammap(ii,:)*m*c^2/q)/1E6;
+            tmp(ii,:) = 100*( gammap(ii,:) - gammap(ii,1) )./gammap(ii,1);
+%             tmp(ii,:) = (gammap(ii,:)*m*c^2/q)/1E6;
         end
         
         err(:,ss) = mean(tmp,1);
