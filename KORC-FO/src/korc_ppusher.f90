@@ -112,26 +112,22 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 		        U_L = s*(up + DOT_PRODUCT(up,t)*t + cross(up,t))
 				! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
 
-				! ! ! Splitting operator for including radiation and collisions
+				! ! ! Splitting operator for including radiation
 				U_os = 0.5_rp*(U_L + U)
 
 				if (params%radiation) then
 					call radiation_force(spp(ii),U_os,spp(ii)%vars%E(:,pp),spp(ii)%vars%B(:,pp),Frad)
 					U_RC = U_RC + a*Frad/spp(ii)%q
 				end if
+				! ! ! Splitting operator for including radiation
 
-!				if (params%collisions .AND. &
-!				(TRIM(params%collisions_model) .EQ. 'MULTIPLE_SPECIES')) then
-!					call collision_force(spp(ii),U_os,Fcoll)
-!					U_RC = U_RC + a*Fcoll/spp(ii)%q
-!				end if
+!				U = U_L + U_RC - U
 
-				U = U_L + U_RC - U
-
+				! ! ! Stochastic differential equations for including collisions
 				if (params%collisions) then
 					call include_collisions(params,spp(ii)%vars%B(:,pp),U)
 				end if
-				! ! ! Splitting operator for including radiation and collisions
+				! ! ! Stochastic differential equations for including collisions
 
 				if (params%radiation .OR. params%collisions) then
 					g = SQRT( 1.0_rp + DOT_PRODUCT(U,U) )

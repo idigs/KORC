@@ -217,6 +217,11 @@ end subroutine normalize_collisions_params
 
 
 subroutine collision_force(spp,U,Fcoll)
+!				if (params%collisions .AND. &
+!				(TRIM(params%collisions_model) .EQ. 'MULTIPLE_SPECIES')) then
+!					call collision_force(spp(ii),U_os,Fcoll)
+!					U_RC = U_RC + a*Fcoll/spp(ii)%q
+!				end if
     IMPLICIT NONE
 	TYPE(SPECIES), INTENT(IN) :: spp
 	REAL(rp), DIMENSION(3), INTENT(IN) :: U
@@ -263,7 +268,7 @@ subroutine define_collisions_time_step(params)
 
 	cparams_ss%subcycling_iterations = FLOOR((cparams_ss%dTau*cparams_ss%Tau)/params%dt,ip)
 
-	if (params%mpi_params%rank .EQ. 0) then
+	if (params%collisions .AND. (params%mpi_params%rank .EQ. 0)) then
 		write(6,'(/,"* * * * * * * SUBCYCLING FOR COLLISIONS * * * * * * *")')
 		write(6,'("Number of KORC iterations per collision: ",I16)') cparams_ss%subcycling_iterations
 		write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * * * *",/)')
@@ -274,7 +279,6 @@ end subroutine define_collisions_time_step
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
 ! * FUNCTIONS OF COLLISION OPERATOR FOR SINGLE-SPECIES PLASMAS * !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
-
 function psi(v)
 	IMPLICIT NONE
 	REAL(rp), INTENT(IN) :: v
@@ -285,6 +289,7 @@ function psi(v)
 	psi = 0.5_rp*(ERF(x) - 2.0_rp*x*EXP(-x**2)/SQRT(C_PI))/x**2
 end function psi
 
+
 function CA(v)
 	IMPLICIT NONE
 	REAL(rp), INTENT(IN) :: v
@@ -293,6 +298,7 @@ function CA(v)
 	CA  = cparams_ss%Gammac*psi(v)/v
 end function CA
 
+
 function CF(v)
 	IMPLICIT NONE
 	REAL(rp), INTENT(IN) :: v
@@ -300,6 +306,7 @@ function CF(v)
 
 	CF  = cparams_ss%Gammac*psi(v)/cparams_ss%Te
 end function CF
+
 
 function CB(v)
 	IMPLICIT NONE
@@ -312,6 +319,7 @@ function CB(v)
 			psi(v) + 0.5_rp*cparams_ss%delta**4*x**2 )
 end function CB
 
+
 function fun(v)
 	IMPLICIT NONE
 	REAL(rp), INTENT(IN) :: v
@@ -322,6 +330,7 @@ function fun(v)
 	fun = 2.0_rp*( 1.0_rp/x + x )*EXP(-x**2)/SQRT(C_PI) - ERF(x)/x**2 - psi(v)
 end function fun
 
+
 function cross(a,b)
 	REAL(rp), DIMENSION(3), INTENT(IN) :: a
 	REAL(rp), DIMENSION(3), INTENT(IN) :: b
@@ -331,6 +340,7 @@ function cross(a,b)
 	cross(2) = a(3)*b(1) - a(1)*b(3)
 	cross(3) = a(1)*b(2) - a(2)*b(1)
 end function cross
+
 
 subroutine unitVectors(B,b1,b2,b3)
     IMPLICIT NONE
@@ -347,7 +357,6 @@ subroutine unitVectors(B,b1,b2,b3)
     b3 = cross(b1,b2)
     b3 = b3/SQRT(DOT_PRODUCT(b3,b3))
 end subroutine unitVectors
-
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
 ! * FUNCTIONS OF COLLISION OPERATOR FOR SINGLE-SPECIES PLASMAS * !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
@@ -373,8 +382,8 @@ subroutine include_collisions(params,B,U)
 	REAL(rp) :: v ! Velocity magnitude
 	REAL(rp) :: p ! Magnitude of dimensionless momentum U
 
-	if (MODULO(params%it,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
-!		write(6,'("Iteration: ",I16)') params%it
+	if (MODULO(params%it+1_ip,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
+!		write(6,'("Collision at iteration: ",I16)') params%it
 		dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt
 
 		p = SQRT(DOT_PRODUCT(U,U))

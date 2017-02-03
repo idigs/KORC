@@ -18,7 +18,7 @@ ST.data = loadData(ST);
 
 energyConservation(ST);
 
-angularMomentum(ST);
+% angularMomentum(ST);
 
 % ST.RT = radialTransport(ST);
 
@@ -69,7 +69,7 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {'X','V','B'};
+list = {'V'};
 
 it = ST.range(1):1:ST.range(2);
 

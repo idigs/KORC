@@ -22,7 +22,7 @@ Vth = Vth/c;
 vmax = 0.8;
 v = linspace(0,vmax,NV);
 
-f = @(x,y,z) (1/Vth^3)*exp(-0.5*(x.^2 + y.^2 + z.^2)/Vth^2)/(2*pi)^1.5;
+f = @(x,y,z) exp(-0.5*(x.^2 + y.^2 + z.^2)/Vth^2);
 %% Sampling of distribution
 Nsamples = 2*Npcls;
 

@@ -12,7 +12,7 @@ module korc_initialize
     implicit none
 	
 
-	PRIVATE :: set_paths,load_korc_params,initialization_sanity_check,unitVectors,random_norm,fth,iso_thermal_distribution
+	PRIVATE :: set_paths,load_korc_params,initialization_sanity_check,unitVectors,random_norm,fth_1V,fth_3V,iso_thermal_distribution
 	PUBLIC :: initialize_korc_parameters,initialize_particles,initialize_fields
 
     contains
@@ -237,8 +237,8 @@ subroutine initialize_particles(params,F,spp)
 			CASE DEFAULT
 				if (params%mpi_params%rank .EQ. 0) then
 					write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * * *")')
-					write(6,'("The energy distribution will be: ",A50)') TRIM(spp(ii)%energy_distribution)
-					write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * * *")')
+					write(6,'("Energy distribution of species ",I4 " is: ",A50)') ii,TRIM(spp(ii)%energy_distribution)
+					write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * *",/)')
 				end if
 		END SELECT
 
@@ -251,7 +251,7 @@ subroutine initialize_particles(params,F,spp)
 				if (params%mpi_params%rank .EQ. 0) then
 					write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * * *")')
 					write(6,'("The energy distribution will be: ",A50)') TRIM(spp(ii)%pitch_distribution)
-					write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * * *")')
+					write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * *",/)')
 				end if
 		END SELECT
 	
@@ -281,14 +281,24 @@ subroutine initialize_particles(params,F,spp)
 end subroutine initialize_particles
 
 
-FUNCTION fth(Vth,V)
+FUNCTION fth_3V(Vth,V)
 	IMPLICIT NONE
 	REAL(rp), DIMENSION(3), INTENT(IN) :: V
     REAL(rp), INTENT(IN) :: Vth
-	REAL(rp) :: fth
+	REAL(rp) :: fth_3V
 
-    fth = EXP(-0.5_rp*SUM(V**2)/Vth**2)
-END FUNCTION fth
+    fth_3V = EXP(-0.5_rp*DOT_PRODUCT(V,V)/Vth**2.0_rp)
+END FUNCTION fth_3V
+
+
+FUNCTION fth_1V(Vth,V)
+	IMPLICIT NONE
+	REAL(rp), INTENT(IN) :: V
+    REAL(rp), INTENT(IN) :: Vth
+	REAL(rp) :: fth_1V
+
+    fth_1V = EXP(-0.5_rp*(V/Vth)**2)
+END FUNCTION fth_1V
 
 
 FUNCTION random_norm(mean,sigma)
@@ -308,25 +318,35 @@ subroutine iso_thermal_distribution(params,spp)
     implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
     TYPE(SPECIES), INTENT(INOUT) :: spp
-    REAL(rp) :: Vth, sv
+    REAL(rp) :: Vmax,Vth, sv
     REAL(rp) :: ratio, rand_unif
     REAL(rp), DIMENSION(3) :: V, U
     REAL(rp), DIMENSION(3) :: b = (/1.0_rp,0.0_rp,0.0_rp/)
 	INTEGER :: ii,ppp
 
+	Vmax = 0.8_rp
     Vth = SQRT(spp%Eo*ABS(spp%q)/spp%m)
     ppp = spp%ppp
 
     V = (/0.0_rp,0.0_rp,0.0_rp/)
-    sv = 0.05_rp
+    sv = Vth/10.0_rp
 
     ii=2_idef
 	do while (ii .LE. 1000_idef)
 		U(1) = V(1) + random_norm(0.0_rp,sv)
+		do while (ABS(U(1)) .GT. Vmax)
+			U(1) = V(1) + random_norm(0.0_rp,sv)
+		end do
 		U(2) = V(2) + random_norm(0.0_rp,sv)
+		do while (ABS(U(2)) .GT. Vmax)
+			U(2) = V(2) + random_norm(0.0_rp,sv)
+		end do
 		U(3) = V(3) + random_norm(0.0_rp,sv)
+		do while (ABS(U(3)) .GT. Vmax)
+			U(3) = V(3) + random_norm(0.0_rp,sv)
+		end do
 
-		ratio = fth(Vth,U)/fth(Vth,V)
+		ratio = fth_3V(Vth,U)/fth_3V(Vth,V)
 
 		if (ratio .GE. 1.0_rp) then
 			V = U
@@ -344,10 +364,19 @@ subroutine iso_thermal_distribution(params,spp)
     ii=2_idef
 	do while (ii .LE. ppp)
 		U(1) = spp%vars%V(1,ii-1) + random_norm(0.0_rp,sv)
+		do while (ABS(U(1)) .GT. Vmax)
+			U(1) = spp%vars%V(1,ii-1) + random_norm(0.0_rp,sv)
+		end do
 		U(2) = spp%vars%V(2,ii-1) + random_norm(0.0_rp,sv)
+		do while (ABS(U(2)) .GT. Vmax)
+			U(2) = spp%vars%V(2,ii-1) + random_norm(0.0_rp,sv)
+		end do
 		U(3) = spp%vars%V(3,ii-1) + random_norm(0.0_rp,sv)
+		do while (ABS(U(3)) .GT. Vmax)
+			U(3) = spp%vars%V(3,ii-1) + random_norm(0.0_rp,sv)
+		end do
 
-		ratio = fth(Vth,U)/fth(Vth,spp%vars%V(:,ii-1))
+		ratio = fth_3V(Vth,U)/fth_3V(Vth,spp%vars%V(:,ii-1))
 
 		if (ratio .GE. 1.0_rp) then
 			spp%vars%V(:,ii) = U

@@ -132,29 +132,29 @@ subroutine check_if_confined(F,Y,flag)
 end subroutine check_if_confined
 
 
-subroutine analytical_fields(prtcls,F)
+subroutine analytical_fields(vars,F)
     implicit none
-	TYPE(PARTICLES), INTENT(INOUT) :: prtcls
+	TYPE(PARTICLES), INTENT(INOUT) :: vars
 	TYPE(FIELDS), INTENT(IN) :: F
 
-	call cart_to_tor(prtcls%X, F%AB%Ro, prtcls%Y, prtcls%flag)
+	call cart_to_tor(vars%X, F%AB%Ro, vars%Y, vars%flag)
 
-	call check_if_confined(F, prtcls%Y, prtcls%flag)
+	call check_if_confined(F, vars%Y, vars%flag)
 
-	call analytical_magnetic_field(F, prtcls%Y, prtcls%B, prtcls%flag)
+	call analytical_magnetic_field(F, vars%Y, vars%B, vars%flag)
 
-	call analytical_electric_field(F, prtcls%Y, prtcls%E, prtcls%flag)
+	call analytical_electric_field(F, vars%Y, vars%E, vars%flag)
 end subroutine analytical_fields
 
 
-subroutine uniform_fields(prtcls,F)
+subroutine uniform_fields(vars,F)
     implicit none
-	TYPE(PARTICLES), INTENT(INOUT) :: prtcls
+	TYPE(PARTICLES), INTENT(INOUT) :: vars
 	TYPE(FIELDS), INTENT(IN) :: F
 
-	call uniform_magnetic_field(F, prtcls%B)
+	call uniform_magnetic_field(F, vars%B)
 
-	call uniform_electric_field(F, prtcls%E)
+	call uniform_electric_field(F, vars%E)
 end subroutine uniform_fields
 
 
@@ -178,28 +178,28 @@ subroutine unitVectors(params,Xo,F,b1,b2,b3,flag)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: b2
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: b3
 	INTEGER, DIMENSION(:), ALLOCATABLE, OPTIONAL, INTENT(INOUT) :: flag
-	TYPE(PARTICLES) :: prtcls
+	TYPE(PARTICLES) :: vars
 	REAL(rp), PARAMETER :: tol = korc_zero
 	INTEGER :: ii, ppp
 
 	ppp = SIZE(Xo,2) ! Number of particles
 
-	ALLOCATE( prtcls%X(3,ppp) )
-	ALLOCATE( prtcls%Y(3,ppp) )
-	ALLOCATE( prtcls%B(3,ppp) )
-	ALLOCATE( prtcls%E(3,ppp) )
-    ALLOCATE( prtcls%flag(ppp) )
+	ALLOCATE( vars%X(3,ppp) )
+	ALLOCATE( vars%Y(3,ppp) )
+	ALLOCATE( vars%B(3,ppp) )
+	ALLOCATE( vars%E(3,ppp) )
+    ALLOCATE( vars%flag(ppp) )
 
-	prtcls%X = Xo
-    prtcls%flag = 1_idef
+	vars%X = Xo
+    vars%flag = 1_idef
 	
 	call init_random_seed()
 
-	call get_fields(params,prtcls,F)
+	call get_fields(params,vars,F)
 	
 	do ii=1_idef,ppp
-		if ( prtcls%flag(ii) .EQ. 1_idef ) then
-			b1(:,ii) = prtcls%B(:,ii)/SQRT( DOT_PRODUCT(prtcls%B(:,ii),prtcls%B(:,ii)) )
+		if ( vars%flag(ii) .EQ. 1_idef ) then
+			b1(:,ii) = vars%B(:,ii)/SQRT( DOT_PRODUCT(vars%B(:,ii),vars%B(:,ii)) )
 
 		    b2(:,ii) = cross(b1(:,ii),(/0.0_rp,0.0_rp,1.0_rp/))
 		    b2(:,ii) = b2(:,ii)/SQRT( DOT_PRODUCT(b2(:,ii),b2(:,ii)) )
@@ -210,30 +210,30 @@ subroutine unitVectors(params,Xo,F,b1,b2,b3,flag)
 	end do
 
 	if (PRESENT(flag)) then
-		flag = prtcls%flag
+		flag = vars%flag
 	end if
 
-	DEALLOCATE( prtcls%X )
-	DEALLOCATE( prtcls%Y )
-	DEALLOCATE( prtcls%B )
-	DEALLOCATE( prtcls%E )
-    DEALLOCATE( prtcls%flag )
+	DEALLOCATE( vars%X )
+	DEALLOCATE( vars%Y )
+	DEALLOCATE( vars%B )
+	DEALLOCATE( vars%E )
+    DEALLOCATE( vars%flag )
 end subroutine unitVectors
 
 
-subroutine get_fields(params,prtcls,F)
+subroutine get_fields(params,vars,F)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(PARTICLES), INTENT(INOUT) :: prtcls
+	TYPE(PARTICLES), INTENT(INOUT) :: vars
 	TYPE(FIELDS), INTENT(IN) :: F
 
 	SELECT CASE (TRIM(params%magnetic_field_model))
 		CASE('ANALYTICAL')
-			call analytical_fields(prtcls, F)
+			call analytical_fields(vars, F)
 		CASE('EXTERNAL')
-			call interp_field(prtcls, F)
+			call interp_field(vars, F)
 		CASE('UNIFORM')
-			call uniform_fields(prtcls, F)
+			call uniform_fields(vars, F)
 		CASE DEFAULT
 	END SELECT
 end subroutine get_fields
