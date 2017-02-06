@@ -1,12 +1,12 @@
 &input_parameters
-	t_steps = 10000 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	t_steps = 1 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
 	dt = 1.0 ! Time step as fraction of non-relativistic gyro-period
 	output_cadence = 100 ! 1400 for saving each 100 gyro-periods
 	num_species = 2
 	radiation = .FALSE.
-	collisions = .TRUE.
+	collisions = .FALSE.
 	collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
-	magnetic_field_model = 'UNIFORM' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
+	magnetic_field_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
 										! For 'ANALYTICAL', the magnetic field is calculated based on
 										! the parameters given in the "analytic_mag_field_params" section.
 										! For 'EXTERNAL', the magnetic field is loaded from the file
@@ -20,15 +20,15 @@
 
 &plasma_species
         runaway = .FALSE., .FALSE. !
-        energy_distribution = 'THERMAL','MONOENERGETIC' ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE'
+        energy_distribution = 'MONOENERGETIC','MONOENERGETIC' ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE'
         pitch_distribution = 'MONOPITCH','MONOPITCH' ! Options are: 'MONOPITCH', 'AVALANCHE'. When energy_distribution='THERMAL', the pitch
 														! angles correspond to those of a thermalized distribution.
-        Ro = 1.46, 1.46 !
+        Ro = 1.5, 1.5 !
         Zo = 0.0, 0.0 !
         r = 0.2, 0.2 !
-        Eo = 10.0E3, 10.0E3 ! Initial energy in eV
+        Eo = 10.0E6, 10.0E6 ! Initial energy in eV
         etao = 5.0, 10.0  ! Initial pitch angle
-        ppp = 5000, 5000 ! Number of particles per process (mpi)
+        ppp = 1000, 1000 ! Number of particles per process (mpi)
         q = -1.0, -1.0 ! Electric charge
         m = 1.0, 1.0 ! In units of electron mass
 /

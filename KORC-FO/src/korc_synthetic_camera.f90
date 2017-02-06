@@ -48,9 +48,8 @@ MODULE korc_synthetic_camera
 	REAL(rp), PRIVATE, PARAMETER :: CGS_E = 3.0E9_rp*C_E
 	REAL(rp), PRIVATE, PARAMETER :: CGS_ME = 1.0E3_rp*C_ME
 
-	PRIVATE :: clockwise_rotation,anticlockwise_rotation,cross,check_if_visible,calculate_rotation_angles,ajyik,ikv,&
-				zeta,fx,arg,Po,P1,Psyn,chic,psic,&
-				save_synthetic_camera_params,save_snapshot
+	PRIVATE :: clockwise_rotation,anticlockwise_rotation,cross,check_if_visible,calculate_rotation_angles,&
+				zeta,fx,arg,Po,P1,Psyn,chic,psic,save_synthetic_camera_params,save_snapshot,besselkv,besselk
 	PUBLIC :: initialize_synthetic_camera,synthetic_camera
 
 	CONTAINS
@@ -96,6 +95,34 @@ SUBROUTINE test(params)
         end do
     end if
 END SUBROUTINE test
+
+
+SUBROUTINE testbesselkv()
+	IMPLICIT NONE
+	REAL(rp) :: v
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: x
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: R
+	INTEGER :: nx
+	INTEGER :: ii
+
+	nx = 1000
+	v = 5.0_rp/3.0_rp
+
+	ALLOCATE(x(nx))
+	ALLOCATE(R(nx))
+
+	do ii=1_idef,nx
+		x(ii) = REAL(ii,rp)*0.01_rp
+	end do
+	
+	do ii=1_idef,1_idef
+		R(ii) = besselkv(v,x(ii))
+!		write(6,'(2F25.16)') x(ii), R(ii)
+	end do
+
+	DEALLOCATE(x)
+	DEALLOCATE(R)
+END SUBROUTINE testbesselkv
 
 
 SUBROUTINE initialize_synthetic_camera(params)
@@ -212,6 +239,8 @@ SUBROUTINE initialize_synthetic_camera(params)
 	end if
 
 	call save_synthetic_camera_params(params)
+
+	call testbesselkv()
 END SUBROUTINE initialize_synthetic_camera
 
 
@@ -262,6 +291,32 @@ FUNCTION besselk(x)
 
 	call ajyik(x,vj1,vj2,vy1,vy2,vi1,vi2,besselk(1),besselk(2))
 END FUNCTION besselk
+
+
+FUNCTION besselkv(v,x)
+	IMPLICIT NONE
+	REAL(rp) :: v
+	REAL(rp) :: x
+	REAL(rp) :: vm
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: bi
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: di
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: bk
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: dk
+	REAL(rp) :: besselkv
+	INTEGER :: n
+
+	n = INT(v)
+	ALLOCATE(bi(n))
+	ALLOCATE(di(n))
+	ALLOCATE(bk(n))
+	ALLOCATE(dk(n))
+
+	call ikv(v,x,vm,bi,di,bk,dk)
+
+	besselkv = bk(n)
+
+	write(6,*) vm,bi,di,bk,dk
+END FUNCTION besselkv
 
 
 FUNCTION zeta(g,p,k,l)

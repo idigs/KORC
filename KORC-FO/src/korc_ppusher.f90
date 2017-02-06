@@ -121,7 +121,7 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 				end if
 				! ! ! Splitting operator for including radiation
 
-!				U = U_L + U_RC - U
+				U = U_L + U_RC - U
 
 				! ! ! Stochastic differential equations for including collisions
 				if (params%collisions) then

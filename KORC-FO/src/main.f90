@@ -34,7 +34,7 @@ program main
 
 	call initialize_collision_params(params)
 
-!	call initialize_synthetic_camera(params) ! Synthetic camera
+	call initialize_synthetic_camera(params) ! Synthetic camera
 
 	call compute_charcs_plasma_params(params,spp,EB)
 
