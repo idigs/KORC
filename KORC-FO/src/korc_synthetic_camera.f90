@@ -4,6 +4,7 @@ MODULE korc_synthetic_camera
 	USE korc_HDF5
     USE mpi
 	USE special_functions
+    USE special_fun
 
 	IMPLICIT NONE
 
@@ -104,6 +105,7 @@ SUBROUTINE testbesselkv()
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: R
 	INTEGER :: nx
 	INTEGER :: ii
+    REAL(4) :: xnu,ri,rk,rip,rkp
 
 	nx = 1000
 	v = 5.0_rp/3.0_rp
@@ -115,9 +117,9 @@ SUBROUTINE testbesselkv()
 		x(ii) = REAL(ii,rp)*0.01_rp
 	end do
 	
-	do ii=1_idef,1_idef
-		R(ii) = besselkv(v,x(ii))
-!		write(6,'(2F25.16)') x(ii), R(ii)
+	do ii=1_idef,nx
+        call bessik(REAL(x(ii),4),REAL(v,4),ri,rk,rip,rkp)
+		write(6,'(F25.16)') rk
 	end do
 
 	DEALLOCATE(x)
@@ -239,8 +241,6 @@ SUBROUTINE initialize_synthetic_camera(params)
 	end if
 
 	call save_synthetic_camera_params(params)
-
-	call testbesselkv()
 END SUBROUTINE initialize_synthetic_camera
 
 
@@ -314,8 +314,6 @@ FUNCTION besselkv(v,x)
 	call ikv(v,x,vm,bi,di,bk,dk)
 
 	besselkv = bk(n)
-
-	write(6,*) vm,bi,di,bk,dk
 END FUNCTION besselkv
 
 

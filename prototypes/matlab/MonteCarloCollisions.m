@@ -1,5 +1,5 @@
 function CO = MonteCarloCollisions(DT,numIt,np,Te,ne,Zeff)
-% CO = MonteCarloCollisions(5E-2,100,1000.0,1E19,1.0);
+% CO = MonteCarloCollisions(1E-2,5,1E4,10E3,1E19,1.0);
 close all
 
 CO.params = struct;
@@ -31,7 +31,13 @@ CO = initializeCollisionOperators(CO);
 
 CO = normalize(CO);
 
-V = SampleThermalDistribution(CO);
+parametricStudy(CO);
+
+Vo = ThermalDistribution(CO);
+V = Vo;
+% V = zeros(3,CO.np);
+% V(1,:) = 0.1344;
+% V(2,:) = 0.1344;
 
 h = figure;
 subplot(2,1,1)
@@ -44,13 +50,13 @@ fx = exp(-0.5*x.^2/CO.VTe^2)/(CO.VTe*sqrt(2*pi));
 hold on;plot(x,fx);hold off
 hold off
 
-
-
 for ii=1:CO.numIt
     for pp=1:CO.np
         V(:,pp) = collisionOperator(CO,V(:,pp)',CO.cop.dt);
     end
 end
+
+U = sqrt(sum(V.^2,1));
 
 figure(h);
 subplot(2,1,2)
@@ -58,6 +64,7 @@ hold on
 histogram(V(1,:),'Normalization','pdf')
 histogram(V(2,:),'Normalization','pdf')
 histogram(V(3,:),'Normalization','pdf')
+histogram(U,'Normalization','pdf')
 hold off
 
 end
@@ -88,7 +95,7 @@ CO.cop.Vc = CO.cop.VTe*sqrt(0.5*CO.cop.Ec/sqrt(Ef*Ef'));
 
 CO.cop.c = CO.params.c;
 
-Ek = linspace(1.0E3,1E6,1000)*CO.params.qe; % Kinetic energy
+Ek = linspace(1.0,10E6,1E6)*CO.params.qe; % Kinetic energy
 Er = CO.params.me*CO.params.c^2; % Rest energy
 ET = Ek + Er; % Total energy
 u = CO.params.c*sqrt(1 - Er^2./ET.^2);
@@ -148,27 +155,27 @@ CO.cop.h = @(v) -CO.cop.CF(v) + ...
     2*CO.cop.CA(v)./(v.*CO.cop.g(v)) + CO.cop.Gamma*CO.cop.f(v);
 
 Ek = 1E-6*Ek/CO.params.qe;
-Ek = u;
+xAxis = u;
 
 figure;
 subplot(3,2,1);
-plot(Ek,CO.cop.CA(u));
+plot(xAxis,CO.cop.CA(u));
 ylabel('$C_A$ ($e B_0/m_e^3 c^2 $)','Interpreter','latex')
 xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
 subplot(3,2,2);
-plot(Ek,CO.cop.CB(u));
+plot(xAxis,CO.cop.CB(u));
 ylabel('$C_B$ ($e B_0/m_e^3 c^2 $)','Interpreter','latex')
 xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
 subplot(3,2,3);
-plot(Ek,CO.cop.CF(u));
+plot(xAxis,CO.cop.CF(u));
 ylabel('$C_F$ ($e B_0/m_e^2 c $)','Interpreter','latex')
 xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
 subplot(3,2,4);
-plot(Ek,CO.cop.g(u));
-ylabel('$f(v)$','Interpreter','latex')
+semilogx(Ek,u);
+ylabel('$v$ ($c$)','Interpreter','latex')
 xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
 subplot(3,2,[5 6]);
-plot(Ek,CO.cop.h(u),'b',Ek,CO.cop.h(u)+CO.cop.CF(u),'r');
+plot(xAxis,CO.cop.h(u),'b',xAxis,CO.cop.h(u)+CO.cop.CF(u),'r');
 ylabel('Drag (blue)','Interpreter','latex')
 xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
 end
@@ -209,6 +216,64 @@ end
 
 end
 
+function V = ThermalDistribution(CO)
+vmax = 1.0; % A fraction of the speed of light
+sv = CO.VTe/5;
+
+f = @(U) exp(-0.5*(U/CO.VTe).^2); % VTe = sqrt(T/m)
+
+V = zeros(3,CO.np);
+V(:,1) = CO.VTe;
+
+for jj=1:3
+    ii=2;
+    while (ii <= CO.np)
+        U = V(jj,ii-1) + random('norm',0,sv);
+        ratio = f(U)/f(V(jj,ii-1));
+        
+        if ( ratio >= 1.0 )
+            V(jj,ii) = U;
+            ii  = ii + 1;
+        elseif (ratio > random('uniform',0,1))
+            V(jj,ii) = U;
+            ii  = ii + 1;
+        end
+    end
+end
+
+end
+
+function parametricStudy(CO)
+Ek = linspace(1.0,10E6,1E6)*CO.params.qe; % Kinetic energy
+Er = CO.params.me*CO.params.c^2; % Rest energy
+ET = Ek + Er; % Total energy
+u = CO.params.c*sqrt(1 - Er^2./ET.^2);
+
+u = u/CO.norm.v; % Normalization
+xi = 1.0;
+dt = linspace(1E-4,0.1,1E3);
+
+p = @(v) CO.cop.g(v).*v;
+
+upperb1 = @(xi,v) -2*xi.*CO.cop.CB(v)./p(v).^2;
+upperb2 = @(xi,v) -sqrt(2*CO.cop.CB(v).*(1 - xi.^2))./p(v); 
+
+
+Ek = Ek/CO.params.qe;
+Ek = Ek/1E6;
+
+figure
+subplot(2,1,1)
+semilogy(u,upperb1(1.0,u),'b',u,upperb1(0.9,u),'r',u,upperb1(0.8,u),'g',...
+    u,upperb1(0.7,u),'c')
+subplot(2,1,2)
+semilogy(u,upperb2(1.0,u),'b',u,upperb2(0.9,u),'r',u,upperb2(0.8,u),'g',...
+    u,upperb2(0.7,u),'c')
+
+
+
+end
+
 function U = collisionOperator(CO,V,dt)
 % This function calculates the random kicks due to collisions
 U = zeros(1,3);
@@ -225,19 +290,16 @@ if v > 0
     xi = U1/p;
     A = acos(xi);
     
-    R = random('normal',0,dt,1,3);   
-    dWp = R(1);
-    dWxi = R(2);
-    dWphi = R(3);
-%     dWxi = random('uniform',0,1,1)*sqrt(dt);
-%     dWphi = random('uniform',0,2*pi,1)*sqrt(dt);
+    dWp = random('normal',0,dt);
+    dWxi = random('uniform',0,1,1)*sqrt(dt);
+    dWphi = random('uniform',0,2*pi,1)*sqrt(dt);
     
     CA = CO.cop.CA(v);
     CB = CO.cop.CB(v);
     
-    dp = CO.cop.h(v)*dt + sqrt(2*CA)*dWp;
+    dp = CO.cop.h(v)*dt;% + sqrt(2*CA)*dWp;
     
-    dxi = -2*xi*CB*dt/p^2 - sqrt(2*CB*(1 - xi^2))*dWxi/p;
+    dxi = -2*xi*CB*dt/p^2;% - sqrt(2*CB*(1 - xi^2))*dWxi/p;
     
     dA = (CB*cot(A)/p^2)*dt + sqrt(2*CB)*dWxi/p;
     dB = sqrt(2*CB)*dWphi/(p*sin(A));
@@ -246,6 +308,21 @@ if v > 0
     if ~isfinite(dphi)
         dphi = 0;
     end
+    
+%     f1 = @(dt) CO.cop.h(v)*dt + sqrt(2*CA)*sqrt(dt);
+%     f2 = @(dt) CO.cop.h(v)*dt;
+%     f3 = @(dt) -2*xi*CB*dt/p^2 - sqrt(2*CB*(1 - xi^2))*sqrt(dt)/p;
+%     f4 = @(dt) -2*xi*CB*dt/p^2;
+%     f5 = @(dt) sqrt(2*CB)*sqrt(dt)/(p*sqrt(1 - xi^2));
+%     
+%     t = linspace(1E-4,0.1,1E3);
+%     figure
+%     subplot(3,1,1)
+%     plot(t,f1(t),'k',t,f2(t),'r')
+%     subplot(3,1,2)
+%     plot(t,f3(t),'k',t,f4(t),'r')
+%     subplot(3,1,3)
+%     plot(t,f5(t))
     
     pitch = acos(xi + dxi);
     

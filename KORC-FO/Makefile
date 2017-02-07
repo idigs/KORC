@@ -50,62 +50,13 @@ endif
 	OMP_LIB_FLAGS =
 endif
 
-BINARIES = $(addprefix $(OBJ)/, special_functions.o	korc_types.o    korc_constants.o	korc_HDF5.o		korc_synthetic_camera.o	korc_collisions.o	korc_hpc.o  rnd_numbers.o	korc_coords.o	korc_interp.o	korc_fields.o	korc_avalanche.o	korc_initialize.o    korc_finalize.o	korc_units.o   korc_ppusher.o	main.o)
+BINARIES = $(addprefix $(OBJ)/, special_functions.o	korc_types.o    korc_constants.o    	korc_HDF5.o   special_fun_modules.o special_fun_subroutines.o   korc_synthetic_camera.o	korc_collisions.o	korc_hpc.o  rnd_numbers.o	korc_coords.o	korc_interp.o	korc_fields.o	korc_avalanche.o    	korc_initialize.o    korc_finalize.o    	korc_units.o   korc_ppusher.o	main.o)
 
 
 all: $(BIN)/KORC-FO
 
-$(OBJ)/special_functions.o: $(SRC)/special_functions.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $<		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
-
-$(OBJ)/korc_types.o: $(SRC)/korc_types.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $<		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
-
-$(OBJ)/korc_constants.o: $(SRC)/korc_constants.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $<		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
-
-$(OBJ)/rnd_numbers.o: $(SRC)/rnd_numbers.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $<  	$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
-
-$(OBJ)/korc_avalanche.o: $(SRC)/korc_avalanche.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $<  	$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
-
-$(OBJ)/korc_initialize.o: $(SRC)/korc_initialize.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $<  	$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
-
-$(OBJ)/korc_finalize.o: $(SRC)/korc_finalize.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $<  	$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
-
-$(OBJ)/korc_hpc.o: $(SRC)/korc_hpc.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$<		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
-
-$(OBJ)/korc_HDF5.o: $(SRC)/korc_HDF5.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)    $<		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
-
-$(OBJ)/korc_fields.o: $(SRC)/korc_fields.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$<		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
-
-$(OBJ)/korc_interp.o: $(SRC)/korc_interp.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$<		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
-
-$(OBJ)/korc_coords.o: $(SRC)/korc_coords.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$<		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
-
-$(OBJ)/korc_synthetic_camera.o: $(SRC)/korc_synthetic_camera.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$<		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
-
-$(OBJ)/korc_collisions.o: $(SRC)/korc_collisions.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$<		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
-
-$(OBJ)/korc_ppusher.o: $(SRC)/korc_ppusher.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$<		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
-
-$(OBJ)/korc_units.o: $(SRC)/korc_units.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$<		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
-
-$(OBJ)/main.o: $(SRC)/main.f90
-	$(FC)	-c	$(FCFLAGS)	$(FCDEFINEFLAGS)	$<		$(INCLUDES)	$(INCLUDES_HDF5)	$(LIB_FLAGS)	-o	$@
-
+$(OBJ)/%.o : $(SRC)/%.f90
+	$(FC)   -c  $(FCFLAGS)  $(FCDEFINEFLAGS)    $<  $(INCLUDES) $(INCLUDES_HDF5)    $(LIB_FLAGS)    -o  $@
 
 $(BIN)/KORC-FO: $(BINARIES)
 	$(FC)	$(FCFLAGS)  $(BINARIES)	-o	$@	$(LIB_FLAGS)	$(LIBSHDF5)	$(LIB)	$(OMP_LIB_FLAGS)
