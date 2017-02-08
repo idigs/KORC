@@ -4401,7 +4401,7 @@ MODULE nr
 END MODULE nr
 
 
-MODULE special_fun
+MODULE special_functions
     IMPLICIT NONE
     
     CONTAINS
@@ -4535,4 +4535,4 @@ SUBROUTINE bessik(x,xnu,ri,rk,rip,rkp)
 	rkp=xnu*xi*rkmu-rk1
 	END SUBROUTINE bessik
 
-END MODULE special_fun
+END MODULE special_functions

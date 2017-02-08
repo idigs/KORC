@@ -3,8 +3,7 @@ MODULE korc_synthetic_camera
 	USE korc_constants
 	USE korc_HDF5
     USE mpi
-	USE special_functions
-    USE special_fun
+    USE special_functions
 
 	IMPLICIT NONE
 
@@ -50,7 +49,7 @@ MODULE korc_synthetic_camera
 	REAL(rp), PRIVATE, PARAMETER :: CGS_ME = 1.0E3_rp*C_ME
 
 	PRIVATE :: clockwise_rotation,anticlockwise_rotation,cross,check_if_visible,calculate_rotation_angles,&
-				zeta,fx,arg,Po,P1,Psyn,chic,psic,save_synthetic_camera_params,save_snapshot,besselkv,besselk
+				zeta,fx,arg,Po,P1,Psyn,chic,psic,save_synthetic_camera_params,save_snapshot,besselk
 	PUBLIC :: initialize_synthetic_camera,synthetic_camera
 
 	CONTAINS
@@ -108,7 +107,7 @@ SUBROUTINE testbesselkv()
     REAL(4) :: xnu,ri,rk,rip,rkp
 
 	nx = 1000
-	v = 5.0_rp/3.0_rp
+	v = 1.0_rp/3.0_rp
 
 	ALLOCATE(x(nx))
 	ALLOCATE(R(nx))
@@ -281,40 +280,16 @@ FUNCTION anticlockwise_rotation(x,t)
 END FUNCTION anticlockwise_rotation
 
 
-FUNCTION besselk(x)
+FUNCTION besselk(v,x)
 	IMPLICIT NONE
-	REAL(rp), DIMENSION(2) :: besselk
+	REAL(rp) :: besselk
 	REAL(rp), INTENT(IN) :: x
-	REAL(rp) :: vj1, vj2, vy1, vy2, vi1, vi2
-	! besselk(1) = K1/3(x)
-	! besselk(2) = K2/3(x)
+	REAL(rp), INTENT(IN) :: v
+	REAL(4) :: ri,rk,rip,rkp
 
-	call ajyik(x,vj1,vj2,vy1,vy2,vi1,vi2,besselk(1),besselk(2))
+	call bessik(REAL(x,4),REAL(v,4),ri,rk,rip,rkp)
+	besselk = REAL(rk,rp)
 END FUNCTION besselk
-
-
-FUNCTION besselkv(v,x)
-	IMPLICIT NONE
-	REAL(rp) :: v
-	REAL(rp) :: x
-	REAL(rp) :: vm
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: bi
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: di
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: bk
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: dk
-	REAL(rp) :: besselkv
-	INTEGER :: n
-
-	n = INT(v)
-	ALLOCATE(bi(n))
-	ALLOCATE(di(n))
-	ALLOCATE(bk(n))
-	ALLOCATE(dk(n))
-
-	call ikv(v,x,vm,bi,di,bk,dk)
-
-	besselkv = bk(n)
-END FUNCTION besselkv
 
 
 FUNCTION zeta(g,p,k,l)
@@ -376,14 +351,21 @@ FUNCTION P1(g,p,k,l,x)
 	REAL(rp), INTENT(IN) :: k
 	REAL(rp), INTENT(IN) :: l
 	REAL(rp), INTENT(IN) :: x
-	REAL(rp), DIMENSION(2) :: BK
+	REAL(rp) :: BK13
+	REAL(rp) :: BK23
+	REAL(rp) :: v
 	REAL(rp) :: A
 
-	BK = besselk(zeta(g,p,k,l))
+	v = 1.0_rp/3.0_rp
+	BK13 = besselk(v,zeta(g,p,k,l))
+
+	v = 2.0_rp/3.0_rp
+	BK23 = besselk(v,zeta(g,p,k,l))
+
 	A = fx(g,p,x)
 
-	P1 = ((g*p)**2)*BK(1)*COS(arg(g,p,k,l,x))/(1.0_rp + (g*p)**2) - 0.5_rp*BK(1)*(1.0_rp + A**2)*COS(arg(g,p,k,l,x))&
-		+ A*BK(2)*SIN(arg(g,p,k,l,x))
+	P1 = ((g*p)**2)*BK13*COS(arg(g,p,k,l,x))/(1.0_rp + (g*p)**2) - 0.5_rp*BK13*(1.0_rp + A**2)*COS(arg(g,p,k,l,x))&
+		+ A*BK23*SIN(arg(g,p,k,l,x))
 END FUNCTION P1
 
 
