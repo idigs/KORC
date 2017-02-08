@@ -49,7 +49,8 @@ MODULE korc_synthetic_camera
 	REAL(rp), PRIVATE, PARAMETER :: CGS_ME = 1.0E3_rp*C_ME
 
 	PRIVATE :: clockwise_rotation,anticlockwise_rotation,cross,check_if_visible,calculate_rotation_angles,&
-				zeta,fx,arg,Po,P1,Psyn,chic,psic,save_synthetic_camera_params,save_snapshot,besselk
+				zeta,fx,arg,Po,P1,Psyn,chic,psic,save_synthetic_camera_params,save_snapshot,besselk,&
+				spectral_angular_density,spectral_density
 	PUBLIC :: initialize_synthetic_camera,synthetic_camera
 
 	CONTAINS
@@ -532,7 +533,7 @@ SUBROUTINE calculate_rotation_angles(X,bpa,apa)
 END SUBROUTINE calculate_rotation_angles
 
 
-SUBROUTINE synthetic_camera(params,spp)
+SUBROUTINE spectral_angular_density(params,spp)
 	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
@@ -550,8 +551,6 @@ SUBROUTINE synthetic_camera(params,spp)
 	INTEGER :: ii,jj,ll,ss,pp
     REAL(rp), DIMENSION(:), ALLOCATABLE :: Psyn_send_buffer,Psyn_receive_buffer, npart_send_buffer, npart_receive_buffer
     INTEGER :: numel, mpierr
-
-	write(6,'("MPI:",I5," Synthetic camera diagnostic: ON!")') params%mpi_params%rank
 
 	ALLOCATE(bool_pixel_array(cam%np(1),cam%np(2),2)) ! (NX,NY,2)
 	ALLOCATE(angle_pixel_array(cam%np(1),cam%np(2),2)) ! (NX,NY,2)
@@ -585,8 +584,7 @@ SUBROUTINE synthetic_camera(params,spp)
 				u = SQRT(DOT_PRODUCT(V,V))
 				k = q*SQRT(DOT_PRODUCT(binorm,binorm))/(spp(ss)%vars%g(pp)*m*u**3)
 				k = k/1.0E2_rp ! Now in cm^-1 (CGS)
-!write(6,'("+ P: ",I4," k: ",F25.16)') pp,k
-!write(6,'("+ P: ",I4," k: ",3F25.16)') pp,B
+
 				binorm = binorm/SQRT(DOT_PRODUCT(binorm,binorm))
 
 				threshold_angle = (1.5_rp*k*cam%lambda_max/C_PI)**(1.0_rp/3.0_rp) ! In radians
@@ -718,6 +716,110 @@ SUBROUTINE synthetic_camera(params,spp)
 	DEALLOCATE(angle_pixel_array)
 	DEALLOCATE(part_pixel)
     DEALLOCATE(Psyn_pixel)
+END SUBROUTINE spectral_angular_density
+
+
+SUBROUTINE spectral_density(params,spp)
+	IMPLICIT NONE
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
+	REAL(rp), DIMENSION(3) :: binorm
+	REAL(rp), DIMENSION(3) :: X, V, B, E
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: part
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: Psyn
+	REAL(rp) :: q, m, k, u, g, l
+	REAL(rp) :: photon_energy
+	INTEGER :: ii,jj,ll,ss,pp
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: send_buffer,receive_buffer
+    INTEGER :: numel, mpierr
+
+	ALLOCATE(part(cam%np(1),cam%np(2),cam%Nlambda,params%num_species))
+	ALLOCATE(Psyn(cam%np(1),cam%np(2),cam%Nlambda,params%num_species))
+
+	part_pixel = 0.0_rp
+	Psyn_pixel = 0.0_rp
+	
+	do ss=1_idef,params%num_species
+		q = ABS(spp(ss)%q)*params%cpp%charge
+		m = spp(ss)%m*params%cpp%mass
+
+!$OMP PARALLEL FIRSTPRIVATE(q,m) PRIVATE(binorm,X,V,B,E,&
+!$OMP& k,u,g,l,ii,jj,ll,pp,photon_energy)&
+!$OMP& SHARED(params,spp,ss,Psyn_pixel,part_pixel)
+!$OMP DO
+		do pp=1_idef,spp(ss)%ppp
+			if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
+				V = spp(ss)%vars%V(:,pp)*params%cpp%velocity
+				X = spp(ss)%vars%X(:,pp)*params%cpp%length
+				g = spp(ss)%vars%g(pp)
+				B = spp(ss)%vars%B(:,pp)*params%cpp%Bo
+				E = spp(ss)%vars%E(:,pp)*params%cpp%Eo
+
+				binorm = cross(V,E) + cross(V,cross(V,B))
+		
+				u = SQRT(DOT_PRODUCT(V,V))
+				k = q*SQRT(DOT_PRODUCT(binorm,binorm))/(spp(ss)%vars%g(pp)*m*u**3)
+				k = k/1.0E2_rp ! Now in cm^-1 (CGS)
+
+
+			end if ! if confined
+		end do ! particles
+!$OMP END DO
+!$OMP END PARALLEL
+	end do ! species
+
+!	* * * * * * * IMPORTANT * * * * * * *
+!	* * * * * * * * * * * * * * * * * * *
+!	Here Psyn has units of (erg/s)(cm^-1) 
+!	or (photons/s)(cm^-1). See above.
+!	* * * * * * * * * * * * * * * * * * *
+!	* * * * * * * IMPORTANT * * * * * * *
+
+!	if (params%mpi_params%nmpi.GT.1_idef) then 
+!		numel = cam%np(1)*cam%np(2)*cam%Nlambda*params%num_species
+
+!		ALLOCATE(Psyn_send_buffer(numel))
+!		ALLOCATE(Psyn_receive_buffer(numel))
+!		ALLOCATE(npart_send_buffer(numel))
+!		ALLOCATE(npart_receive_buffer(numel))
+
+!		Psyn_send_buffer = RESHAPE(Psyn_pixel,(/numel/))
+!		CALL MPI_REDUCE(Psyn_send_buffer,Psyn_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+
+!		npart_send_buffer = RESHAPE(part_pixel,(/numel/))
+!		CALL MPI_REDUCE(npart_send_buffer,npart_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+
+!		if (params%mpi_params%rank.EQ.0_idef) then
+!		    Psyn_pixel = RESHAPE(Psyn_receive_buffer,(/cam%np(1),cam%np(2),cam%Nlambda,params%num_species/))
+!		    part_pixel = RESHAPE(npart_receive_buffer,(/cam%np(1),cam%np(2),cam%Nlambda,params%num_species/))
+!		    	call save_snapshot(params,part_pixel,Psyn_pixel)
+!		end if
+
+!		DEALLOCATE(Psyn_send_buffer)
+!		DEALLOCATE(Psyn_receive_buffer)
+!		DEALLOCATE(npart_send_buffer)
+!		DEALLOCATE(npart_receive_buffer)
+
+!	    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+!	else
+!		call save_snapshot(params,part_pixel,Psyn_pixel)
+!	end if
+
+	DEALLOCATE(part)
+    DEALLOCATE(Psyn)
+END SUBROUTINE spectral_density
+
+
+SUBROUTINE synthetic_camera(params,spp)
+	IMPLICIT NONE
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
+
+	write(6,'("MPI:",I5," Synthetic camera diagnostic: ON!")') params%mpi_params%rank
+
+	call spectral_angular_density(params,spp)
+
+	call spectral_density(params,spp)
 
 	write(6,'("MPI:",I5," Synthetic camera diagnostic: OFF!")') params%mpi_params%rank
 END SUBROUTINE synthetic_camera
