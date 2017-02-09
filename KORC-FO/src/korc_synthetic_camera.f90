@@ -824,7 +824,7 @@ SUBROUTINE spectral_density(params,spp)
 				end do
 
 				do ii=jj,cam%Nlambda
-					P(ii) = (4.0_rp*C_PI/SQRT(3.0_rp))*(CGS_C*CGS_E**2)*P_integral(z(ii))/(g**2*cam%lambda(ii)**3)
+					P(ii) = (4.0_rp*C_PI/SQRT(3.0_rp))*(CGS_C*CGS_E**2)*IntK(5.0_rp/3.0_rp,z(ii))/(g**2*cam%lambda(ii)**3)
 				end do
 
 				write(6,*) P

@@ -26,7 +26,7 @@
         Ro = 1.5, 1.5 !
         Zo = 0.0, 0.0 !
         r = 0.2, 0.2 !
-        Eo = 65.0E6, 10.0E6 ! Initial energy in eV
+        Eo = 65.0E6, 40.0E6 ! Initial energy in eV
         etao = 5.0, 10.0  ! Initial pitch angle
         ppp = 1, 1 ! Number of particles per process (mpi)
         q = -1.0, -1.0 ! Electric charge
