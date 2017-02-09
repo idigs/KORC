@@ -50,7 +50,7 @@ MODULE korc_synthetic_camera
 
 	PRIVATE :: clockwise_rotation,anticlockwise_rotation,cross,check_if_visible,calculate_rotation_angles,&
 				zeta,fx,arg,Po,P1,Psyn,chic,psic,save_synthetic_camera_params,save_snapshot,besselk,&
-				spectral_angular_density,spectral_density
+				spectral_angular_density,spectral_density,IntK,IntLim
 	PUBLIC :: initialize_synthetic_camera,synthetic_camera
 
 	CONTAINS
@@ -407,6 +407,52 @@ FUNCTION psic(k,l)
 	psic = (1.5_rp*k*l/C_PI)**(1.0_rp/3.0_rp)
 END FUNCTION psic
 
+
+FUNCTION IntK(v,x)
+	IMPLICIT NONE
+	REAL(rp) :: IntK
+	REAL(rp), INTENT(IN) :: v
+	REAL(rp), INTENT(IN) :: x
+
+	IntK = (C_PI/SQRT(2.0_rp))*(1.0_rp - 0.25_rp*(4.0_rp*v**2 - 1.0_rp))*(1 - ERF(SQRT(x))) +&
+			0.25_rp*(4.0_rp*v**2 - 1.0_rp)*SQRT(0.5_rp*C_PI/x)*EXP(-x)
+END FUNCTION IntK
+
+
+FUNCTION IntLim(x)
+	IMPLICIT NONE
+	REAL(rp) :: IntLim
+	REAL(rp), INTENT(IN) :: x
+
+	IF (x .LT. 0.5_rp) THEN
+		IntLim = (2.16_rp/2.0_rp**(2.0_rp/3.0_rp))*x**(1.0_rp/3.0_rp)
+	ELSE IF ((x .GE. 0.5_rp).AND.(x .LT. 2.5_rp)) THEN
+		IntLim = 0.72_rp*(x + 1.0_rp)
+	ELSE
+		IntLim = x
+	END IF
+END FUNCTION IntLim
+
+
+FUNCTION P_integral(z)
+	IMPLICIT NONE
+	REAL(rp) :: P_integral
+	REAL(rp), INTENT(IN) :: z
+	REAL(rp) :: a
+
+	IF (z .LT. 0.5_rp) THEN
+		a = (2.16_rp/2.0_rp**(2.0_rp/3.0_rp))*z**(1.0_rp/3.0_rp)
+		! Numerical integration
+		P_integral = P_integral + IntK(5.0_rp/3.0_rp,a)
+	ELSE IF ((z .GE. 0.5_rp).AND.(z .LT. 2.5_rp)) THEN
+		a = 0.72_rp*(z + 1.0_rp)
+		! Numerical integration
+		P_integral = P_integral + IntK(5.0_rp/3.0_rp,a)
+	ELSE
+		P_integral = IntK(5.0_rp/3.0_rp,z)
+	END IF
+END FUNCTION P_integral
+
 ! * * * * * * * * * * * * * * * !
 ! * * * * * FUNCTIONS * * * * * !
 ! * * * * * * * * * * * * * * * !
@@ -725,27 +771,32 @@ SUBROUTINE spectral_density(params,spp)
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
 	REAL(rp), DIMENSION(3) :: binorm
 	REAL(rp), DIMENSION(3) :: X, V, B, E
-	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: part
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: P
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: z
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: np
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: Psyn
-	REAL(rp) :: q, m, k, u, g, l
+	REAL(rp) :: q, m, k, u, g, lc
 	REAL(rp) :: photon_energy
 	INTEGER :: ii,jj,ll,ss,pp
     REAL(rp), DIMENSION(:), ALLOCATABLE :: send_buffer,receive_buffer
     INTEGER :: numel, mpierr
 
-	ALLOCATE(part(cam%np(1),cam%np(2),cam%Nlambda,params%num_species))
+	ALLOCATE(np(cam%np(1),cam%np(2),cam%Nlambda,params%num_species))
 	ALLOCATE(Psyn(cam%np(1),cam%np(2),cam%Nlambda,params%num_species))
+	ALLOCATE(P(cam%Nlambda))
+	ALLOCATE(z(cam%Nlambda))
 
-	part_pixel = 0.0_rp
-	Psyn_pixel = 0.0_rp
+	np = 0.0_rp
+	Psyn = 0.0_rp
+	P = 0.0_rp
 	
 	do ss=1_idef,params%num_species
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
 
 !$OMP PARALLEL FIRSTPRIVATE(q,m) PRIVATE(binorm,X,V,B,E,&
-!$OMP& k,u,g,l,ii,jj,ll,pp,photon_energy)&
-!$OMP& SHARED(params,spp,ss,Psyn_pixel,part_pixel)
+!$OMP& k,u,g,lc,ii,jj,ll,pp,photon_energy,z,P)&
+!$OMP& SHARED(params,spp,ss,Psyn,np)
 !$OMP DO
 		do pp=1_idef,spp(ss)%ppp
 			if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
@@ -761,6 +812,22 @@ SUBROUTINE spectral_density(params,spp)
 				k = q*SQRT(DOT_PRODUCT(binorm,binorm))/(spp(ss)%vars%g(pp)*m*u**3)
 				k = k/1.0E2_rp ! Now in cm^-1 (CGS)
 
+				lc = (4.0_rp*C_PI/3.0_rp)/(k*g**3)
+				z = lc/cam%lambda
+
+				jj = cam%Nlambda - MINLOC(z,1,mask=z.GT.2.5_rp) + 1_idef
+
+				ii = 1_idef
+				do while (ii.LT.jj)
+					write(6,'("TEST",I3,/)'), jj
+					ii = ii + 1_idef
+				end do
+
+				do ii=jj,cam%Nlambda
+					P(ii) = (4.0_rp*C_PI/SQRT(3.0_rp))*(CGS_C*CGS_E**2)*P_integral(z(ii))/(g**2*cam%lambda(ii)**3)
+				end do
+
+				write(6,*) P
 
 			end if ! if confined
 		end do ! particles
@@ -805,8 +872,10 @@ SUBROUTINE spectral_density(params,spp)
 !		call save_snapshot(params,part_pixel,Psyn_pixel)
 !	end if
 
-	DEALLOCATE(part)
+	DEALLOCATE(np)
     DEALLOCATE(Psyn)
+	DEALLOCATE(P)
+	DEALLOCATE(z)
 END SUBROUTINE spectral_density
 
 
