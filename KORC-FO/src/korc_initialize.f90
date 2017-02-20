@@ -430,7 +430,7 @@ subroutine set_up_particles_ic(params,F,spp)
 		ALLOCATE( R(spp(ii)%ppp) )
 
 		! * * * * INITIALIZE POSITION * * * * 
-		if (params%magnetic_field_model .EQ. 'UNIFORM') then
+		if (TRIM(params%magnetic_field_model) .EQ. 'UNIFORM') then
 			spp(ii)%vars%X = 0.0_rp
 		else
 			! Initial condition of uniformly distributed particles on a disk in the xz-plane

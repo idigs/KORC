@@ -7,10 +7,23 @@ MODULE korc_synthetic_camera
 
 	IMPLICIT NONE
 
+	TYPE, PRIVATE :: POLOIDAL_PLANE
+		REAL(rp), DIMENSION(:), ALLOCATABLE :: nodes_R ! In meters
+		REAL(rp), DIMENSION(:), ALLOCATABLE :: nodes_Z ! In meters
+
+		REAL(rp) :: DR
+		REAL(rp) :: DZ	
+		REAL(rp) :: Rmax, Rmin
+		REAL(rp) :: Zmax, Zmin
+
+		INTEGER, DIMENSION(2) :: grid_dims ! Number of pixels (R,Z)
+	END TYPE POLOIDAL_PLANE
+
+
 	TYPE, PRIVATE :: CAMERA
 		REAL(rp) :: aperture ! Aperture of the camera (diameter of lens) in meters
 		REAL(rp) :: Riw ! Radial position of inner wall
-		INTEGER, DIMENSION(2) :: np ! Number of pixels (X,Y)
+		INTEGER, DIMENSION(2) :: num_pixels ! Number of pixels (X,Y)
 		REAL(rp), DIMENSION(2) :: sensor_size ! In meters (horizontal,vertical)
 		REAL(rp) :: focal_length ! Focal length in meters
 		REAL(rp), DIMENSION(2) :: position ! Position of camera (R,Z)
@@ -27,9 +40,6 @@ MODULE korc_synthetic_camera
 		INTEGER :: Nlambda
 		REAL(rp) :: Dlambda ! In cm
 		REAL(rp), DIMENSION(:), ALLOCATABLE :: lambda ! In cm
-
-		REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: npart
-		REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: Psyn
 	END TYPE CAMERA
 
 	TYPE, PRIVATE :: ANGLES
@@ -43,6 +53,9 @@ MODULE korc_synthetic_camera
 
 	TYPE(CAMERA), PRIVATE :: cam
 	TYPE(ANGLES), PRIVATE :: ang
+	TYPE(POLOIDAL_PLANE), PRIVATE :: pplane
+
+	REAL(rp), PRIVATE, PARAMETER :: Tol = 1.0E-5_rp
 	REAL(rp), PRIVATE, PARAMETER :: CGS_h = 6.6261E-27_rp ! Planck constant in erg*s
 	REAL(rp), PRIVATE, PARAMETER :: CGS_C = 1.0E2_rp*C_C
 	REAL(rp), PRIVATE, PARAMETER :: CGS_E = 3.0E9_rp*C_E
@@ -50,10 +63,13 @@ MODULE korc_synthetic_camera
 
 	PRIVATE :: clockwise_rotation,anticlockwise_rotation,cross,check_if_visible,calculate_rotation_angles,&
 				zeta,fx,arg,Po,P1,Psyn,chic,psic,save_synthetic_camera_params,save_snapshot,besselk,&
-				spectral_angular_density,spectral_density,IntK,IntLim
+				spectral_angular_density,spectral_density,IntK,trapz
 	PUBLIC :: initialize_synthetic_camera,synthetic_camera
 
 	CONTAINS
+
+! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  !
+! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  !
 
 SUBROUTINE test(params)
     IMPLICIT NONE
@@ -127,9 +143,14 @@ SUBROUTINE testbesselkv()
 END SUBROUTINE testbesselkv
 
 
-SUBROUTINE initialize_synthetic_camera(params)
+! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  !
+! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  !
+
+
+SUBROUTINE initialize_synthetic_camera(params,F)
 	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(FIELDS), INTENT(IN) :: F
 	REAL(rp) :: aperture ! Aperture of the camera (diameter of lens) in meters
 	REAL(rp) :: Riw ! Radial position of inner wall
 	INTEGER, DIMENSION(2) :: num_pixels ! Number of pixels (X,Y)
@@ -159,7 +180,7 @@ SUBROUTINE initialize_synthetic_camera(params)
 
 	cam%aperture = aperture
 	cam%Riw = Riw
-	cam%np = num_pixels
+	cam%num_pixels = num_pixels
 	cam%sensor_size = sensor_size
 	cam%focal_length = focal_length
 	cam%position = position
@@ -179,47 +200,41 @@ SUBROUTINE initialize_synthetic_camera(params)
 
 	! NOTE: cam%lambda is in cm !!
 
-	ALLOCATE(cam%pixels_nodes_x(cam%np(1)))
-	ALLOCATE(cam%pixels_nodes_y(cam%np(2)))
-	ALLOCATE(cam%pixels_edges_x(cam%np(1) + 1))
-	ALLOCATE(cam%pixels_edges_y(cam%np(2) + 1))
+	ALLOCATE(cam%pixels_nodes_x(cam%num_pixels(1)))
+	ALLOCATE(cam%pixels_nodes_y(cam%num_pixels(2)))
+	ALLOCATE(cam%pixels_edges_x(cam%num_pixels(1) + 1))
+	ALLOCATE(cam%pixels_edges_y(cam%num_pixels(2) + 1))
 
 	xmin = -0.5_rp*cam%sensor_size(1)
 	xmax = 0.5_rp*cam%sensor_size(1)
-	DX = cam%sensor_size(1)/REAL(cam%np(1),rp)
+	DX = cam%sensor_size(1)/REAL(cam%num_pixels(1),rp)
 
-	do ii=1_idef,cam%np(1)
+	do ii=1_idef,cam%num_pixels(1)
 		cam%pixels_nodes_x(ii) = xmin + 0.5_rp*DX + REAL(ii-1_idef,rp)*DX
 	end do
 
-	do ii=1_idef,cam%np(1)+1_idef
+	do ii=1_idef,cam%num_pixels(1)+1_idef
 		cam%pixels_edges_x(ii) = xmin + REAL(ii-1_idef,rp)*DX
 	end do
 
 	ymin = cam%position(2) - 0.5_rp*cam%sensor_size(2)
 	ymax = cam%position(2) + 0.5_rp*cam%sensor_size(2)
-	DY = cam%sensor_size(2)/REAL(cam%np(2),rp)
+	DY = cam%sensor_size(2)/REAL(cam%num_pixels(2),rp)
 
-	do ii=1_idef,cam%np(2)
+	do ii=1_idef,cam%num_pixels(2)
 		cam%pixels_nodes_y(ii) = ymin + 0.5_rp*DY + REAL(ii-1_idef,rp)*DY
 	end do
 
-	do ii=1_idef,cam%np(2)+1_idef
+	do ii=1_idef,cam%num_pixels(2)+1_idef
 		cam%pixels_edges_y(ii) = ymin + REAL(ii-1_idef,rp)*DY
 	end do
-
-	ALLOCATE(cam%npart(cam%np(1),cam%np(2),cam%Nlambda,params%num_species))
-	ALLOCATE(cam%Psyn(cam%np(1),cam%np(2),cam%Nlambda,params%num_species))
-
-	cam%npart = 0.0_rp
-	cam%Psyn = 0.0_rp
 	
 	! Initialize ang variables
-	ALLOCATE(ang%eta(cam%np(1)))
-	ALLOCATE(ang%beta(cam%np(1)))
-	ALLOCATE(ang%psi(cam%np(2)+1_idef))
+	ALLOCATE(ang%eta(cam%num_pixels(1)))
+	ALLOCATE(ang%beta(cam%num_pixels(1)))
+	ALLOCATE(ang%psi(cam%num_pixels(2)+1_idef))
 
-	do ii=1_idef,cam%np(1)
+	do ii=1_idef,cam%num_pixels(1)
 		ang%eta(ii) = ABS(ATAN2(cam%pixels_nodes_x(ii),cam%focal_length))
 		if (cam%pixels_edges_x(ii) .LT. 0.0_rp) then
 			ang%beta(ii) = 0.5_rp*C_PI - cam%incline - ang%eta(ii)
@@ -228,7 +243,7 @@ SUBROUTINE initialize_synthetic_camera(params)
 		end if
 	end do
 
-	do ii=1_idef,cam%np(2)+1_idef
+	do ii=1_idef,cam%num_pixels(2)+1_idef
 		ang%psi(ii) = ATAN2(cam%pixels_edges_y(ii),cam%focal_length)
 	end do
 
@@ -239,6 +254,39 @@ SUBROUTINE initialize_synthetic_camera(params)
 		write(6,'("*     Synthetic camera ready!     *")')
 		write(6,'("* * * * * * * * * * * * * * * * * *",/)')
 	end if
+
+
+	! Initialize poloidal plane parameters
+	
+	pplane%grid_dims = num_pixels
+	ALLOCATE(pplane%nodes_R(pplane%grid_dims(1)))
+	ALLOCATE(pplane%nodes_Z(pplane%grid_dims(2)))
+
+	! * * * * * * * ALL IN METERS * * * * * * * 
+
+	IF (TRIM(params%magnetic_field_model) .EQ. 'ANALYTICAL') THEN
+		pplane%Rmin = F%Ro - F%AB%a
+		pplane%Rmax = F%Ro + F%AB%a
+		pplane%Zmin = -F%AB%a
+		pplane%Zmax = F%AB%a
+	ELSE
+		pplane%Rmin = MINVAL(F%X%R)
+		pplane%Rmax = MAXVAL(F%X%R)
+		pplane%Zmin = MINVAL(F%X%Z)
+		pplane%Zmax = MAXVAL(F%X%Z)
+	END IF	
+
+	pplane%DR = (pplane%Rmax - pplane%Rmin)/REAL(pplane%grid_dims(1),rp)
+	pplane%DZ = (pplane%Zmax - pplane%Zmin)/REAL(pplane%grid_dims(2),rp)
+
+	do ii=1_idef,pplane%grid_dims(1)
+		pplane%nodes_R(ii) = pplane%Rmin + 0.5_rp*pplane%DR + REAL(ii-1_idef,rp)*pplane%DR
+	end do
+
+	do ii=1_idef,pplane%grid_dims(2)
+		pplane%nodes_Z(ii) = pplane%Zmin + 0.5_rp*pplane%DZ + REAL(ii-1_idef,rp)*pplane%DZ
+	end do
+	! * * * * * * * ALL IN METERS * * * * * * * 
 
 	call save_synthetic_camera_params(params)
 END SUBROUTINE initialize_synthetic_camera
@@ -419,19 +467,43 @@ FUNCTION IntK(v,x)
 END FUNCTION IntK
 
 
-FUNCTION IntLim(x)
+FUNCTION trapz(a,b)
 	IMPLICIT NONE
-	REAL(rp) :: IntLim
-	REAL(rp), INTENT(IN) :: x
+	REAL(rp), INTENT(IN) :: a
+	REAL(rp), INTENT(IN) :: b
+	REAL(rp) :: trapz
+	REAL(rp) :: Iold, Inew, rerr
+	REAL(rp) :: v,h,z
+	INTEGER :: ii,jj,npoints
+	LOGICAL :: flag
+	
+	v = 5.0_rp/3.0_rp
 
-	IF (x .LT. 0.5_rp) THEN
-		IntLim = (2.16_rp/2.0_rp**(2.0_rp/3.0_rp))*x**(1.0_rp/3.0_rp)
-	ELSE IF ((x .GE. 0.5_rp).AND.(x .LT. 2.5_rp)) THEN
-		IntLim = 0.72_rp*(x + 1.0_rp)
-	ELSE
-		IntLim = x
-	END IF
-END FUNCTION IntLim
+	h = b - a
+	trapz = 0.5*(besselk(v,a) + besselk(v,b))
+	
+	ii = 1_idef
+	flag = .TRUE.
+	do while (flag)
+		Iold = trapz*h
+
+		ii = ii + 1_idef
+		npoints = 2_idef**(ii-2_idef)
+		h = 0.5_rp*(b-a)/REAL(npoints,rp)
+
+		do jj=1_idef,npoints
+			z = a + h + 2.0_rp*(REAL(jj,rp) - 1.0_rp)*h
+			trapz = trapz + besselk(v,z)
+		end do
+
+		Inew = trapz*h
+
+		rerr = ABS((Inew - Iold)/Iold)
+
+		flag = .NOT.(rerr.LT.Tol)
+	end do
+	trapz = Inew
+END FUNCTION trapz
 
 
 FUNCTION P_integral(z)
@@ -442,11 +514,11 @@ FUNCTION P_integral(z)
 
 	IF (z .LT. 0.5_rp) THEN
 		a = (2.16_rp/2.0_rp**(2.0_rp/3.0_rp))*z**(1.0_rp/3.0_rp)
-		! Numerical integration
+		P_integral = P_integral + trapz(z,a)
 		P_integral = P_integral + IntK(5.0_rp/3.0_rp,a)
 	ELSE IF ((z .GE. 0.5_rp).AND.(z .LT. 2.5_rp)) THEN
 		a = 0.72_rp*(z + 1.0_rp)
-		! Numerical integration
+		P_integral = P_integral + trapz(z,a)
 		P_integral = P_integral + IntK(5.0_rp/3.0_rp,a)
 	ELSE
 		P_integral = IntK(5.0_rp/3.0_rp,z)
@@ -533,14 +605,14 @@ SUBROUTINE calculate_rotation_angles(X,bpa,apa)
 
 	bpa = .TRUE.
 	
-	do ii=1_idef,cam%np(1)
+	do ii=1_idef,cam%num_pixels(1)
 		a = 1.0_rp + TAN(ang%beta(ii))**2
 		b = -2.0_rp*TAN(ang%beta(ii))**2*cam%position(1)
 		c = (TAN(ang%beta(ii))*cam%position(1))**2 - R**2
 		dis = b**2 - 4.0_rp*a*c
 		
 		if (dis.GT.0.0_rp) then
-			do jj=1_idef,cam%np(2)
+			do jj=1_idef,cam%num_pixels(2)
 
 				if ((psi.GE.ang%psi(jj)).AND.(psi.LT.ang%psi(jj+1_idef))) then
 					xp = 0.5_rp*(-b + SQRT(dis))/a
@@ -595,13 +667,13 @@ SUBROUTINE spectral_angular_density(params,spp)
 	LOGICAL :: bool
 	REAL(rp) :: angle, clockwise
 	INTEGER :: ii,jj,ll,ss,pp
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: Psyn_send_buffer,Psyn_receive_buffer, npart_send_buffer, npart_receive_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: Psyn_send_buffer,Psyn_receive_buffer, np_send_buffer, np_receive_buffer
     INTEGER :: numel, mpierr
 
-	ALLOCATE(bool_pixel_array(cam%np(1),cam%np(2),2)) ! (NX,NY,2)
-	ALLOCATE(angle_pixel_array(cam%np(1),cam%np(2),2)) ! (NX,NY,2)
-	ALLOCATE(part_pixel(cam%np(1),cam%np(2),cam%Nlambda,params%num_species))
-	ALLOCATE(Psyn_pixel(cam%np(1),cam%np(2),cam%Nlambda,params%num_species))
+	ALLOCATE(bool_pixel_array(cam%num_pixels(1),cam%num_pixels(2),2)) ! (NX,NY,2)
+	ALLOCATE(angle_pixel_array(cam%num_pixels(1),cam%num_pixels(2),2)) ! (NX,NY,2)
+	ALLOCATE(part_pixel(cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species))
+	ALLOCATE(Psyn_pixel(cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species))
 
 	part_pixel = 0.0_rp
 	Psyn_pixel = 0.0_rp
@@ -648,8 +720,8 @@ SUBROUTINE spectral_angular_density(params,spp)
 					clockwise = ATAN2(X(2),X(1))
 					if (clockwise.LT.0.0_rp) clockwise = clockwise + 2.0_rp*C_PI
 
-					do ii=1_idef,cam%np(1) ! NX
-						do jj=1_idef,cam%np(2) ! NY
+					do ii=1_idef,cam%num_pixels(1) ! NX
+						do jj=1_idef,cam%num_pixels(2) ! NY
 							
 							if (bool_pixel_array(ii,jj,1)) then
 								angle = angle_pixel_array(ii,jj,1) - clockwise
@@ -729,29 +801,29 @@ SUBROUTINE spectral_angular_density(params,spp)
 !	* * * * * * * IMPORTANT * * * * * * *
 
 	if (params%mpi_params%nmpi.GT.1_idef) then 
-		numel = cam%np(1)*cam%np(2)*cam%Nlambda*params%num_species
+		numel = cam%num_pixels(1)*cam%num_pixels(2)*cam%Nlambda*params%num_species
 
 		ALLOCATE(Psyn_send_buffer(numel))
 		ALLOCATE(Psyn_receive_buffer(numel))
-		ALLOCATE(npart_send_buffer(numel))
-		ALLOCATE(npart_receive_buffer(numel))
+		ALLOCATE(np_send_buffer(numel))
+		ALLOCATE(np_receive_buffer(numel))
 
 		Psyn_send_buffer = RESHAPE(Psyn_pixel,(/numel/))
 		CALL MPI_REDUCE(Psyn_send_buffer,Psyn_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
 
-		npart_send_buffer = RESHAPE(part_pixel,(/numel/))
-		CALL MPI_REDUCE(npart_send_buffer,npart_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		np_send_buffer = RESHAPE(part_pixel,(/numel/))
+		CALL MPI_REDUCE(np_send_buffer,np_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
 
 		if (params%mpi_params%rank.EQ.0_idef) then
-		    Psyn_pixel = RESHAPE(Psyn_receive_buffer,(/cam%np(1),cam%np(2),cam%Nlambda,params%num_species/))
-		    part_pixel = RESHAPE(npart_receive_buffer,(/cam%np(1),cam%np(2),cam%Nlambda,params%num_species/))
+		    Psyn_pixel = RESHAPE(Psyn_receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species/))
+		    part_pixel = RESHAPE(np_receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species/))
 		    	call save_snapshot(params,part_pixel,Psyn_pixel)
 		end if
 
 		DEALLOCATE(Psyn_send_buffer)
 		DEALLOCATE(Psyn_receive_buffer)
-		DEALLOCATE(npart_send_buffer)
-		DEALLOCATE(npart_receive_buffer)
+		DEALLOCATE(np_send_buffer)
+		DEALLOCATE(np_receive_buffer)
 
 	    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 	else
@@ -772,19 +844,20 @@ SUBROUTINE spectral_density(params,spp)
 	REAL(rp), DIMENSION(3) :: binorm
 	REAL(rp), DIMENSION(3) :: X, V, B, E
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: P
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: z
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: zeta
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: np
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: Psyn
+	REAL(rp) :: R, Z
 	REAL(rp) :: q, m, k, u, g, lc
 	REAL(rp) :: photon_energy
 	INTEGER :: ii,jj,ll,ss,pp
     REAL(rp), DIMENSION(:), ALLOCATABLE :: send_buffer,receive_buffer
     INTEGER :: numel, mpierr
 
-	ALLOCATE(np(cam%np(1),cam%np(2),cam%Nlambda,params%num_species))
-	ALLOCATE(Psyn(cam%np(1),cam%np(2),cam%Nlambda,params%num_species))
+	ALLOCATE(np(cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species))
+	ALLOCATE(Psyn(cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species))
 	ALLOCATE(P(cam%Nlambda))
-	ALLOCATE(z(cam%Nlambda))
+	ALLOCATE(zeta(cam%Nlambda))
 
 	np = 0.0_rp
 	Psyn = 0.0_rp
@@ -795,7 +868,7 @@ SUBROUTINE spectral_density(params,spp)
 		m = spp(ss)%m*params%cpp%mass
 
 !$OMP PARALLEL FIRSTPRIVATE(q,m) PRIVATE(binorm,X,V,B,E,&
-!$OMP& k,u,g,lc,ii,jj,ll,pp,photon_energy,z,P)&
+!$OMP& k,u,g,lc,ii,jj,ll,pp,photon_energy,zeta,P,R,Z)&
 !$OMP& SHARED(params,spp,ss,Psyn,np)
 !$OMP DO
 		do pp=1_idef,spp(ss)%ppp
@@ -813,21 +886,22 @@ SUBROUTINE spectral_density(params,spp)
 				k = k/1.0E2_rp ! Now in cm^-1 (CGS)
 
 				lc = (4.0_rp*C_PI/3.0_rp)/(k*g**3)
-				z = lc/cam%lambda
+				zeta = lc/cam%lambda
 
-				jj = cam%Nlambda - MINLOC(z,1,mask=z.GT.2.5_rp) + 1_idef
+!				jj = cam%Nlambda - MINLOC(zeta,1,mask=zeta.GT.2.5_rp) + 1_idef
 
-				ii = 1_idef
-				do while (ii.LT.jj)
-					write(6,'("TEST",I3,/)'), jj
-					ii = ii + 1_idef
+				do ii=1_idef,cam%Nlambda
+					P(ii) = (4.0_rp*C_PI/SQRT(3.0_rp))*(CGS_C*CGS_E**2)*P_integral(zeta(ii))/(g**2*cam%lambda(ii)**3)
 				end do
 
-				do ii=jj,cam%Nlambda
-					P(ii) = (4.0_rp*C_PI/SQRT(3.0_rp))*(CGS_C*CGS_E**2)*IntK(5.0_rp/3.0_rp,z(ii))/(g**2*cam%lambda(ii)**3)
-				end do
+				R = SQRT(SUM(X(1:2)**2))
+				Z = X(3)
+				
+				ii = FLOOR((R - pplane%Rmin)/pplane%DR)
+				jj = FLOOR((Z + ABS(pplane%Zmin))/pplane%DZ)
+			
+				write(6,*) ii,jj
 
-				write(6,*) P
 
 			end if ! if confined
 		end do ! particles
@@ -875,7 +949,7 @@ SUBROUTINE spectral_density(params,spp)
 	DEALLOCATE(np)
     DEALLOCATE(Psyn)
 	DEALLOCATE(P)
-	DEALLOCATE(z)
+	DEALLOCATE(zeta)
 END SUBROUTINE spectral_density
 
 
@@ -966,7 +1040,7 @@ SUBROUTINE save_synthetic_camera_params(params)
 	    call save_1d_array_to_hdf5(h5file_id,dset,units*cam%lambda)
 
 	    dset = TRIM(gname) // "/num_pixels"
-	    call save_1d_array_to_hdf5(h5file_id,dset,cam%np)
+	    call save_1d_array_to_hdf5(h5file_id,dset,cam%num_pixels)
 
 	    dset = TRIM(gname) // "/sensor_size"
 	    call save_1d_array_to_hdf5(h5file_id,dset,cam%sensor_size)
@@ -987,6 +1061,22 @@ SUBROUTINE save_synthetic_camera_params(params)
 	    call save_1d_array_to_hdf5(h5file_id,dset,cam%pixels_edges_y)
 
 		call h5gclose_f(group_id, h5error)
+
+
+		gname = "poloidal_plane_params"
+		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
+
+	    dset = TRIM(gname) // "/grid_dims"
+	    call save_1d_array_to_hdf5(h5file_id,dset,pplane%grid_dims)
+
+	    dset = TRIM(gname) // "/nodes_R"
+	    call save_1d_array_to_hdf5(h5file_id,dset,pplane%nodes_R)
+
+	    dset = TRIM(gname) // "/nodes_Z"
+	    call save_1d_array_to_hdf5(h5file_id,dset,pplane%nodes_Z)
+
+		call h5gclose_f(group_id, h5error)
+
 
 		call h5fclose_f(h5file_id, h5error)
 	end if
