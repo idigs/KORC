@@ -90,15 +90,15 @@ hold off
 
 %% Spectral density of radiated power
 N = 1E3;
-amax = 10;
+amax = 15;
 amin = 1E-3;
 a = linspace(amin,amax,N);
 P = zeros(N,N);
 ac = zeros(1,N);
-Tol = 1E-2;
+Tol = 1E-3;
 
 I = @(v,z) pi*(1 - 0.25*(4*v.^2 - 1)).*(1 - erf(sqrt(z)))/sqrt(2) + ...
-    0.25*(4*v.^2 - 1)*sqrt(0.5*pi./z)*exp(-z);
+    0.25*(4*v.^2 - 1)*sqrt(0.5*pi./z).*exp(-z);
 
 for jj=1:N-1
     for ii=jj+1:N
@@ -106,5 +106,12 @@ for jj=1:N-1
     end
     D = abs(1 - P(jj,jj+1:end)./P(jj,end));
     [~,index] = find(D < Tol,1);
-    ac(jj) = a(index+jj);
+    ac(jj) = a(index+jj-1);
 end
+
+y = linspace(0,amax,10);
+
+figure;
+plot(a,ac,'b',y,y,'r--')
+ylabel('$a$','Interpreter','latex')
+xlabel('$\lambda_c/\lambda$','Interpreter','latex')

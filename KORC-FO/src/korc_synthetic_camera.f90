@@ -63,7 +63,7 @@ MODULE korc_synthetic_camera
 
 	PRIVATE :: clockwise_rotation,anticlockwise_rotation,cross,check_if_visible,calculate_rotation_angles,&
 				zeta,fx,arg,Po,P1,Psyn,chic,psic,save_synthetic_camera_params,save_snapshot,besselk,&
-				spectral_angular_density,spectral_density,IntK,trapz
+				spectral_angular_density,spectral_density,IntK,trapz,save_snapshot_var
 	PUBLIC :: initialize_synthetic_camera,synthetic_camera
 
 	CONTAINS
@@ -655,6 +655,7 @@ SUBROUTINE spectral_angular_density(params,spp)
 	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
+	CHARACTER(MAX_STRING_LENGTH) :: var_name
 	REAL(rp), DIMENSION(3) :: binorm, n, nperp
 	REAL(rp), DIMENSION(3) :: X, V, B, E, XC
 	LOGICAL, DIMENSION(:,:,:), ALLOCATABLE :: bool_pixel_array
@@ -669,6 +670,7 @@ SUBROUTINE spectral_angular_density(params,spp)
 	INTEGER :: ii,jj,ll,ss,pp
     REAL(rp), DIMENSION(:), ALLOCATABLE :: Psyn_send_buffer,Psyn_receive_buffer, np_send_buffer, np_receive_buffer
     INTEGER :: numel, mpierr
+	REAL(rp) :: units
 
 	ALLOCATE(bool_pixel_array(cam%num_pixels(1),cam%num_pixels(2),2)) ! (NX,NY,2)
 	ALLOCATE(angle_pixel_array(cam%num_pixels(1),cam%num_pixels(2),2)) ! (NX,NY,2)
@@ -817,7 +819,14 @@ SUBROUTINE spectral_angular_density(params,spp)
 		if (params%mpi_params%rank.EQ.0_idef) then
 		    Psyn_pixel = RESHAPE(Psyn_receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species/))
 		    part_pixel = RESHAPE(np_receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species/))
-		    	call save_snapshot(params,part_pixel,Psyn_pixel)
+!		    	call save_snapshot(params,part_pixel,Psyn_pixel)
+			var_name = 'np_pixel'
+			call save_snapshot_var(params,part_pixel,var_name)
+
+			var_name = 'Psyn_pixel'
+	!		units = 1.0E-5_rp ! (Watts)(m^-1) Use these units when Psyn is in (erg/s*cm)
+			units = 1.0E2_rp ! (Photons/s)(m^-1) Use these units when Psyn is in (Photons/s)(cm^-1)
+			call save_snapshot_var(params,Psyn_pixel,var_name)
 		end if
 
 		DEALLOCATE(Psyn_send_buffer)
@@ -827,7 +836,14 @@ SUBROUTINE spectral_angular_density(params,spp)
 
 	    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 	else
-		call save_snapshot(params,part_pixel,Psyn_pixel)
+!		call save_snapshot(params,part_pixel,Psyn_pixel)
+		var_name = 'np_pixel'
+		call save_snapshot_var(params,part_pixel,var_name)
+
+		var_name = 'Psyn_pixel'
+!		units = 1.0E-5_rp ! (Watts)(m^-1) Use these units when Psyn is in (erg/s*cm)
+		units = 1.0E2_rp ! (Photons/s)(m^-1) Use these units when Psyn is in (Photons/s)(cm^-1)
+		call save_snapshot_var(params,Psyn_pixel,var_name)
 	end if
 
 	DEALLOCATE(bool_pixel_array)
@@ -841,6 +857,7 @@ SUBROUTINE spectral_density(params,spp)
 	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
+	CHARACTER(MAX_STRING_LENGTH) :: var_name
 	REAL(rp), DIMENSION(3) :: binorm
 	REAL(rp), DIMENSION(3) :: X, V, B, E
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: P
@@ -851,11 +868,12 @@ SUBROUTINE spectral_density(params,spp)
 	REAL(rp) :: q, m, k, u, g, lc
 	REAL(rp) :: photon_energy
 	INTEGER :: ii,jj,ll,ss,pp
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: send_buffer,receive_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: Psyn_send_buffer,Psyn_receive_buffer,np_send_buffer,np_receive_buffer
     INTEGER :: numel, mpierr
+	REAL(rp) :: units
 
-	ALLOCATE(np(cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species))
-	ALLOCATE(Psyn(cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species))
+	ALLOCATE(np(pplane%grid_dims(1),pplane%grid_dims(2),cam%Nlambda,params%num_species))
+	ALLOCATE(Psyn(pplane%grid_dims(1),pplane%grid_dims(2),cam%Nlambda,params%num_species))
 	ALLOCATE(P(cam%Nlambda))
 	ALLOCATE(zeta(cam%Nlambda))
 
@@ -897,10 +915,11 @@ SUBROUTINE spectral_density(params,spp)
 				R = SQRT(SUM(X(1:2)**2))
 				Z = X(3)
 				
-				ii = FLOOR((R - pplane%Rmin)/pplane%DR)
-				jj = FLOOR((Z + ABS(pplane%Zmin))/pplane%DZ)
-			
-				write(6,*) ii,jj
+				ii = FLOOR((R - pplane%Rmin)/pplane%DR) + 1_idef
+				jj = FLOOR((Z + ABS(pplane%Zmin))/pplane%DZ) + 1_idef
+
+				Psyn(ii,jj,:,ss) = Psyn(ii,jj,:,ss) + P
+				np(ii,jj,:,ss) = np(ii,jj,:,ss) + 1_idef
 
 
 			end if ! if confined
@@ -916,35 +935,48 @@ SUBROUTINE spectral_density(params,spp)
 !	* * * * * * * * * * * * * * * * * * *
 !	* * * * * * * IMPORTANT * * * * * * *
 
-!	if (params%mpi_params%nmpi.GT.1_idef) then 
-!		numel = cam%np(1)*cam%np(2)*cam%Nlambda*params%num_species
+	if (params%mpi_params%nmpi.GT.1_idef) then 
+		numel = pplane%grid_dims(1)*pplane%grid_dims(2)*cam%Nlambda*params%num_species
 
-!		ALLOCATE(Psyn_send_buffer(numel))
-!		ALLOCATE(Psyn_receive_buffer(numel))
-!		ALLOCATE(npart_send_buffer(numel))
-!		ALLOCATE(npart_receive_buffer(numel))
+		ALLOCATE(Psyn_send_buffer(numel))
+		ALLOCATE(Psyn_receive_buffer(numel))
+		ALLOCATE(np_send_buffer(numel))
+		ALLOCATE(np_receive_buffer(numel))
 
-!		Psyn_send_buffer = RESHAPE(Psyn_pixel,(/numel/))
-!		CALL MPI_REDUCE(Psyn_send_buffer,Psyn_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		Psyn_send_buffer = RESHAPE(Psyn,(/numel/))
+		CALL MPI_REDUCE(Psyn_send_buffer,Psyn_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
 
-!		npart_send_buffer = RESHAPE(part_pixel,(/numel/))
-!		CALL MPI_REDUCE(npart_send_buffer,npart_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		np_send_buffer = RESHAPE(np,(/numel/))
+		CALL MPI_REDUCE(np_send_buffer,np_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
 
-!		if (params%mpi_params%rank.EQ.0_idef) then
-!		    Psyn_pixel = RESHAPE(Psyn_receive_buffer,(/cam%np(1),cam%np(2),cam%Nlambda,params%num_species/))
-!		    part_pixel = RESHAPE(npart_receive_buffer,(/cam%np(1),cam%np(2),cam%Nlambda,params%num_species/))
-!		    	call save_snapshot(params,part_pixel,Psyn_pixel)
-!		end if
+		if (params%mpi_params%rank.EQ.0_idef) then
+		    Psyn = RESHAPE(Psyn_receive_buffer,(/pplane%grid_dims(1),pplane%grid_dims(2),cam%Nlambda,params%num_species/))
+		    np = RESHAPE(np_receive_buffer,(/pplane%grid_dims(1),pplane%grid_dims(2),cam%Nlambda,params%num_species/))
 
-!		DEALLOCATE(Psyn_send_buffer)
-!		DEALLOCATE(Psyn_receive_buffer)
-!		DEALLOCATE(npart_send_buffer)
-!		DEALLOCATE(npart_receive_buffer)
+			var_name = 'np_pplane'
+		    	call save_snapshot_var(params,np,var_name)
 
-!	    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-!	else
-!		call save_snapshot(params,part_pixel,Psyn_pixel)
-!	end if
+			var_name = 'Psyn_pplane'
+			units = 1.0E-5_rp ! (Watts)(m^-1) Use these units when Psyn is in (erg/s*cm)
+!			units = 1.0E2_rp ! (Photons/s)(m^-1) Use these units when Psyn is in (Photons/s)(cm^-1)
+		    	call save_snapshot_var(params,Psyn,var_name)
+		end if
+
+		DEALLOCATE(Psyn_send_buffer)
+		DEALLOCATE(Psyn_receive_buffer)
+		DEALLOCATE(np_send_buffer)
+		DEALLOCATE(np_receive_buffer)
+
+	    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+	else
+		var_name = 'np_pplane'
+		call save_snapshot_var(params,np,var_name)
+
+		var_name = 'Psyn_pplane'
+		units = 1.0E-5_rp ! (Watts)(m^-1) Use these units when Psyn is in (erg/s*cm)
+!		units = 1.0E2_rp ! (Photons/s)(m^-1) Use these units when Psyn is in (Photons/s)(cm^-1)
+		call save_snapshot_var(params,Psyn,var_name)
+	end if
 
 	DEALLOCATE(np)
     DEALLOCATE(Psyn)
@@ -1140,5 +1172,66 @@ SUBROUTINE save_snapshot(params,part,Psyn)
 
 	call h5fclose_f(h5file_id, h5error)
 END SUBROUTINE save_snapshot
+
+
+SUBROUTINE save_snapshot_var(params,var,var_name)
+	IMPLICIT NONE
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE, INTENT(IN) :: var
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: var_name
+	CHARACTER(MAX_STRING_LENGTH) :: filename
+	CHARACTER(MAX_STRING_LENGTH) :: gname
+	CHARACTER(MAX_STRING_LENGTH) :: subgname
+	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: attr_array
+	CHARACTER(MAX_STRING_LENGTH) :: dset
+	CHARACTER(MAX_STRING_LENGTH) :: attr
+	INTEGER(HID_T) :: h5file_id
+	INTEGER(HID_T) :: group_id
+	INTEGER(HID_T) :: subgroup_id
+	CHARACTER(19) :: tmp_str
+	INTEGER :: h5error
+	INTEGER :: ss
+	REAL(rp) :: units
+	LOGICAL :: object_exists
+
+	filename = TRIM(params%path_to_outputs) //"synthetic_camera_snapshots.h5"
+	call h5fopen_f(TRIM(filename), H5F_ACC_RDWR_F, h5file_id, h5error)
+
+    ! Create group 'it' if it doesn't exist
+	write(tmp_str,'(I18)') params%it
+	gname = TRIM(ADJUSTL(tmp_str))
+	call h5lexists_f(h5file_id,TRIM(gname),object_exists,h5error)
+
+	if (.NOT.object_exists) then
+		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
+		
+		dset = TRIM(gname) // "/time"
+		attr = "Simulation time in secs"
+		call save_to_hdf5(h5file_id,dset,REAL(params%it,rp)*params%dt*params%cpp%time,attr)
+	else
+		call h5gopen_f(h5file_id, TRIM(gname), group_id, h5error)
+	end if
+
+	do ss=1_idef,params%num_species
+		write(tmp_str,'(I18)') ss
+		subgname = "spp_" // TRIM(ADJUSTL(tmp_str))
+		call h5lexists_f(group_id,TRIM(subgname),object_exists,h5error)
+
+		if (.NOT.object_exists) then
+			call h5gcreate_f(group_id, TRIM(subgname), subgroup_id, h5error)
+		else
+			call h5gopen_f(group_id, TRIM(subgname), subgroup_id, h5error)
+		end if
+
+		dset = TRIM(var_name)
+		call save_array_to_hdf5(subgroup_id, dset, var(:,:,:,ss))
+
+		call h5gclose_f(subgroup_id, h5error)
+	end do	
+
+	call h5gclose_f(group_id, h5error)
+
+	call h5fclose_f(h5file_id, h5error)
+END SUBROUTINE save_snapshot_var
 
 END MODULE korc_synthetic_camera
