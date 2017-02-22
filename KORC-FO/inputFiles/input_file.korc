@@ -1,7 +1,7 @@
 &input_parameters
-	t_steps = 1 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
-	dt = 1.0 ! Time step as fraction of non-relativistic gyro-period
-	output_cadence = 100 ! 1400 for saving each 100 gyro-periods
+	t_steps = 3700000 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	dt = 1E-2 ! Time step as fraction of non-relativistic gyro-period
+	output_cadence = 37000 ! 1400 for saving each 100 gyro-periods
 	num_species = 2
 	radiation = .FALSE.
 	collisions = .FALSE.
@@ -15,7 +15,7 @@
 	poloidal_flux = .FALSE.			 ! .TRUE. if using JFIT poloidal flux, .FALSE. if using the
 										! cylindrical components of the magnetic field
 	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/C-MOD_EFIT.h5" !
-	outputs_list = '{V,g,eta,Pin,Prad,flag}' ! List of outputs '{X,V,E,B,gamma,mu,eta,Prad,Pin,flag}'
+	outputs_list = '{}' ! List of outputs '{X,V,E,B,gamma,mu,eta,Prad,Pin,flag}'
 /
 
 &plasma_species
@@ -23,12 +23,12 @@
         energy_distribution = 'MONOENERGETIC','MONOENERGETIC' ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE'
         pitch_distribution = 'MONOPITCH','MONOPITCH' ! Options are: 'MONOPITCH', 'AVALANCHE'. When energy_distribution='THERMAL', the pitch
 														! angles correspond to those of a thermalized distribution.
-        Ro = 1.5, 1.5 !
+        Ro = 1.46, 1.46 !
         Zo = 0.0, 0.0 !
-        r = 0.5, 0.5 !
-        Eo = 80.0E6, 80.0E6 ! Initial energy in eV
+        r = 0.2, 0.2 !
+        Eo = 25.0E6, 25.0E6 ! Initial energy in eV
         etao = 5.0, 10.0  ! Initial pitch angle
-        ppp = 100, 1 ! Number of particles per process (mpi)
+        ppp = 5000, 5000 ! Number of particles per process (mpi)
         q = -1.0, -1.0 ! Electric charge
         m = 1.0, 1.0 ! In units of electron mass
 /
@@ -79,7 +79,7 @@
 	focal_length = 0.4
 	position = 2.4, 0.0 ! Position of camera (R,Z)
 	incline = 55.0 ! In degrees
-	lambda_min = 1.0E-9 ! Minimum wavelength in meters
-	lambda_max = 1000.0E-9 ! Maximum wavelength in meters
+	lambda_min = 400.0E-9 ! Minimum wavelength in meters
+	lambda_max = 900.0E-9 ! Maximum wavelength in meters
 	Nlambda = 500 ! Number of discrete wavelengths
 /

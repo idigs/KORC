@@ -16,7 +16,9 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-plotSyntheticCameraAnalysis(ST)
+% plotSyntheticCameraAnalysis(ST)
+
+generateFigures(ST)
 
 end
 
@@ -49,7 +51,7 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {'Psyn_pixel','part_pixel'};
+list = {'Psyn_pixel','np_pixel','Psyn_pplane','np_pplane'};
 
 it = ST.range(1):1:ST.range(2);
 
@@ -82,7 +84,11 @@ yAxis = ST.params.synthetic_camera_params.pixels_nodes_y;
 
 NX = ST.params.synthetic_camera_params.num_pixels(1);
 NY = ST.params.synthetic_camera_params.num_pixels(2);
-% Nl = ST.params.synthetic_camera_params.Nlambda;
+
+RAxis = ST.params.poloidal_plane_params.nodes_R;
+ZAxis = ST.params.poloidal_plane_params.nodes_Z;
+NR = ST.params.poloidal_plane_params.grid_dims(1);
+NZ = ST.params.poloidal_plane_params.grid_dims(1);
 
 [~,i1] = min(abs(lambda - ST.lambdas(1)));
 [~,i2] = min(abs(lambda - ST.lambdas(2)));
@@ -90,27 +96,43 @@ Nl = i2 - i1 + 1;
 
 for ss=1:ST.params.simulation.num_species
     disp(['Species: ' num2str(ss)])
-    Psyn_lambda = zeros(NX,NY,Nl);
-    Npart_lambda = zeros(NX,NY,Nl);
-    Psyn = zeros(NX,NY);
-    Npart = zeros(NX,NY);
+    Psyn_lambda_pixel = zeros(NX,NY,Nl);
+    np_lambda_pixel = zeros(NX,NY,Nl);
+    Psyn_pixel = zeros(NX,NY);
+    np_pixel = zeros(NX,NY);
+    
+    Psyn_lambda_pplane = zeros(NX,NY,Nl);
+    np_lambda_pplane = zeros(NX,NY,Nl);
+    Psyn_pplane = zeros(NX,NY);
+    np_pplane = zeros(NX,NY);
     
     for ii=1:NX
         for jj=1:NY
-            Psyn_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).Psyn_pixel(ii,jj,i1:i2,:),4);
-            Npart_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).part_pixel(ii,jj,i1:i2,:),4);
+            Psyn_lambda_pixel(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).Psyn_pixel(ii,jj,i1:i2,:),4);
+            np_lambda_pixel(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).np_pixel(ii,jj,i1:i2,:),4);
             
-            Psyn(ii,jj) = trapz(lambda(i1:i2),Psyn_lambda(ii,jj,:));
-            Npart(ii,jj) = sum(Npart_lambda(ii,jj,:),3);
+            Psyn_pixel(ii,jj) = trapz(lambda(i1:i2),Psyn_lambda_pixel(ii,jj,:));
+            np_pixel(ii,jj) = sum(np_lambda_pixel(ii,jj,:),3);
         end
     end
     
+    for ii=1:NR
+        for jj=1:NZ
+            Psyn_lambda_pplane(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).Psyn_pplane(ii,jj,i1:i2,:),4);
+            np_lambda_pplane(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).np_pplane(ii,jj,i1:i2,:),4);
+            
+            Psyn_pplane(ii,jj) = trapz(lambda(i1:i2),Psyn_lambda_pplane(ii,jj,:));
+            np_pplane(ii,jj) = sum(np_lambda_pplane(ii,jj,:),3);
+        end
+    end
+    
+    % Convert from m to nm
     axis_lambda = 1E9*lambda(i1:i2);
-    Psyn_lambda = 1E-9*Psyn_lambda;
+    Psyn_lambda_pixel = 1E-9*Psyn_lambda_pixel;
     
     h = figure;
     subplot(4,2,[1 3])
-    surfc(xAxis,yAxis,Psyn','LineStyle','none')
+    surfc(xAxis,yAxis,Psyn_pixel','LineStyle','none')
     colormap(jet); hc = colorbar('Location','southoutside');
     xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
     box on; axis square;view([0 -90])
@@ -122,7 +144,7 @@ for ss=1:ST.params.simulation.num_species
 %     hold on
 %     for ii=1:NX
 %         for jj=1:NY
-%             plot(axis_lambda,squeeze(Psyn_lambda(ii,jj,:)))
+%             plot(axis_lambda,squeeze(Psyn_lambda_pixel(ii,jj,:)))
 %         end
 %     end
 %     hold off
@@ -132,7 +154,7 @@ for ss=1:ST.params.simulation.num_species
       
     figure(h);
     subplot(4,2,[2 4])
-    surfc(xAxis,yAxis,Npart','LineStyle','none')
+    surfc(xAxis,yAxis,np_pixel','LineStyle','none')
     colormap(jet);  hc = colorbar('Location','southoutside');
     xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
     box on; axis square;view([0 -90])
@@ -144,7 +166,7 @@ for ss=1:ST.params.simulation.num_species
 %     hold on
 %     for ii=1:NX
 %         for jj=1:NY
-%             plot(axis_lambda,squeeze(Npart_lambda(ii,jj,:)))
+%             plot(axis_lambda,squeeze(np_lambda_pixel(ii,jj,:)))
 %         end
 %     end
 %     hold off
@@ -156,14 +178,14 @@ for ss=1:ST.params.simulation.num_species
     subplot(4,2,[7 8])
     yyaxis left 
     set(gca,'YColor',[0,0,1])
-    fy = squeeze(sum(sum(Psyn_lambda,1),2));
+    fy = squeeze(sum(sum(Psyn_lambda_pixel,1),2));
 %     fy = fy/max(fy);
     plot(axis_lambda,fy,'b','LineWidth',2)
     ylabel('$P_{syn}$ (Photon/s/nm)','FontSize',12,'Interpreter','latex')
     ylim([0 max(fy)])
     yyaxis right
     set(gca,'YColor',[1,0,0])
-    fy = squeeze(sum(sum(Npart_lambda,1),2));
+    fy = squeeze(sum(sum(np_lambda_pixel,1),2));
     plot(axis_lambda,fy,'r','LineWidth',2)
     ylim([0 max(fy)])
     ylabel('Number of RE','FontSize',12,'Interpreter','latex')
@@ -171,8 +193,186 @@ for ss=1:ST.params.simulation.num_species
     xlim([min(axis_lambda) max(axis_lambda)])
     xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
     
+%     saveas(h,[ST.path 'SyntheticCameraFortran_pixel_ss_' num2str(ss)],'fig')
     
-    saveas(h,[ST.path 'SyntheticCameraFortran_ss_' num2str(ss)],'fig')
+    
+    g = figure;
+    subplot(4,2,[1 3])
+    surfc(RAxis,ZAxis,Psyn_pplane','LineStyle','none')
+    colormap(jet); hc = colorbar('Location','southoutside');
+    xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
+    box on; axis square;view([0 -90])
+    ylabel('$Z$-axis','FontSize',12,'Interpreter','latex')
+    xlabel('$R$-axis','FontSize',12,'Interpreter','latex')
+    
+    figure(g);
+    subplot(4,2,5)
+    hold on
+    for ii=1:NR
+        for jj=1:NZ
+            plot(axis_lambda,squeeze(Psyn_lambda_pplane(ii,jj,:)))
+        end
+    end
+    hold off
+    box on;
+    ylabel('$P_{syn}$ (Photon/s/nm)','FontSize',12,'Interpreter','latex')
+    xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
+      
+    figure(g);
+    subplot(4,2,[2 4])
+    surfc(RAxis,ZAxis,np_pplane','LineStyle','none')
+    colormap(jet);  hc = colorbar('Location','southoutside');
+    xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
+    box on; axis square;view([0 -90])
+    ylabel('$Z$-axis','FontSize',14,'Interpreter','latex')
+    xlabel('$R$-axis','FontSize',14,'Interpreter','latex')
+    
+    figure(g);
+    subplot(4,2,6)
+    hold on
+    for ii=1:NR
+        for jj=1:NZ
+            plot(axis_lambda,squeeze(np_lambda_pplane(ii,jj,:)))
+        end
+    end
+    hold off
+    box on;
+    ylabel('Number of RE','FontSize',12,'Interpreter','latex')
+    xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')    
+    
+    figure(g);
+    subplot(4,2,[7 8])
+    yyaxis left 
+    set(gca,'YColor',[0,0,1])
+    fy = squeeze(sum(sum(Psyn_lambda_pplane,1),2));
+    fy = fy/max(fy);
+    plot(axis_lambda,fy,'b','LineWidth',2)
+    ylabel('$P_{syn}$ (Photon/s/nm)','FontSize',12,'Interpreter','latex')
+    ylim([0 max(fy)])
+    yyaxis right
+    set(gca,'YColor',[1,0,0])
+    fy = squeeze(sum(sum(np_lambda_pplane,1),2));
+    plot(axis_lambda,fy,'r','LineWidth',2)
+    ylim([0 max(fy)])
+    ylabel('Number of RE','FontSize',12,'Interpreter','latex')
+    box on;
+    xlim([min(axis_lambda) max(axis_lambda)])
+    xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
+    
+%     saveas(g,[ST.path 'SyntheticCameraFortran_pplane_ss_' num2str(ss)],'fig')
 end
 end
 
+function generateFigures(ST)
+disp('Plotting snapshots...')
+
+lambda = ST.params.synthetic_camera_params.lambda;
+xAxis = ST.params.synthetic_camera_params.pixels_nodes_x;
+yAxis = ST.params.synthetic_camera_params.pixels_nodes_y;
+
+NX = ST.params.synthetic_camera_params.num_pixels(1);
+NY = ST.params.synthetic_camera_params.num_pixels(2);
+
+RAxis = ST.params.poloidal_plane_params.nodes_R;
+ZAxis = ST.params.poloidal_plane_params.nodes_Z;
+NR = ST.params.poloidal_plane_params.grid_dims(1);
+NZ = ST.params.poloidal_plane_params.grid_dims(1);
+
+[~,i1] = min(abs(lambda - ST.lambdas(1)));
+[~,i2] = min(abs(lambda - ST.lambdas(2)));
+Nl = i2 - i1 + 1;
+
+for ss=1:ST.params.simulation.num_species
+    disp(['Species: ' num2str(ss)])
+    Psyn_lambda_pixel = zeros(NX,NY,Nl);
+    np_lambda_pixel = zeros(NX,NY,Nl);
+    Psyn_pixel = zeros(NX,NY);
+    np_pixel = zeros(NX,NY);
+    
+    Psyn_lambda_pplane = zeros(NX,NY,Nl);
+    np_lambda_pplane = zeros(NX,NY,Nl);
+    Psyn_pplane = zeros(NX,NY);
+    np_pplane = zeros(NX,NY);
+    
+    for ii=1:NX
+        for jj=1:NY
+            Psyn_lambda_pixel(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).Psyn_pixel(ii,jj,i1:i2,:),4);
+            np_lambda_pixel(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).np_pixel(ii,jj,i1:i2,:),4);
+            
+            Psyn_pixel(ii,jj) = trapz(lambda(i1:i2),Psyn_lambda_pixel(ii,jj,:));
+            np_pixel(ii,jj) = sum(np_lambda_pixel(ii,jj,:),3);
+        end
+    end
+    
+    for ii=1:NR
+        for jj=1:NZ
+            Psyn_lambda_pplane(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).Psyn_pplane(ii,jj,i1:i2,:),4);
+            np_lambda_pplane(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).np_pplane(ii,jj,i1:i2,:),4);
+            
+            Psyn_pplane(ii,jj) = trapz(lambda(i1:i2),Psyn_lambda_pplane(ii,jj,:));
+            np_pplane(ii,jj) = sum(np_lambda_pplane(ii,jj,:),3);
+        end
+    end
+    
+    % Convert from m to nm
+    axis_lambda = 1E9*lambda(i1:i2);
+    Psyn_lambda_pixel = 1E-9*Psyn_lambda_pixel;
+    
+    h = figure;
+    subplot(2,3,1)
+    surfc(xAxis,yAxis,Psyn_pixel','LineStyle','none')
+    colormap(jet); hc = colorbar('Location','southoutside');
+    xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
+    box on; axis square;view([0 -90])
+    ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
+    xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+    
+    subplot(2,3,2)
+    surfc(RAxis,ZAxis,Psyn_pplane','LineStyle','none')
+    colormap(jet); hc = colorbar('Location','southoutside');
+    xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
+    box on; axis square;view([0 -90])
+    ylabel('$Z$-axis','FontSize',12,'Interpreter','latex')
+    xlabel('$R$-axis','FontSize',12,'Interpreter','latex')
+    
+    subplot(2,3,3)
+    f = squeeze(sum(sum(Psyn_lambda_pixel,1),2));
+    f = f/max(f);
+    g = squeeze(sum(sum(Psyn_lambda_pplane,1),2));
+    g = g/max(g);
+    plot(axis_lambda,f,'b',axis_lambda,g,'r','LineWidth',2)
+    ylabel('$P_{syn}$ (Photon/s/nm)','FontSize',12,'Interpreter','latex')
+    xlim([min(axis_lambda) max(axis_lambda)])
+    xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
+    legend({'$P_{syn}(\lambda,\psi,\chi)$','$P_{syn}(\lambda)$'},'Interpreter','latex')
+      
+    figure(h);
+    subplot(2,3,4)
+    surfc(xAxis,yAxis,np_pixel','LineStyle','none')
+    colormap(jet);  hc = colorbar('Location','southoutside');
+    xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
+    box on; axis square;view([0 -90])
+    ylabel('$y$-axis','FontSize',14,'Interpreter','latex')
+    xlabel('$x$-axis','FontSize',14,'Interpreter','latex')
+    
+    subplot(2,3,5)
+    surfc(RAxis,ZAxis,np_pplane','LineStyle','none')
+    colormap(jet);  hc = colorbar('Location','southoutside');
+    xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
+    box on; axis square;view([0 -90])
+    ylabel('$Z$-axis','FontSize',14,'Interpreter','latex')
+    xlabel('$R$-axis','FontSize',14,'Interpreter','latex')
+    legend({'$P_{syn}(\lambda,\psi,\chi)$','$P_{syn}(\lambda)$'},'Interpreter','latex')
+    
+    subplot(2,3,6)
+    f = squeeze(sum(sum(np_lambda_pixel,1),2));
+    g = squeeze(sum(sum(np_lambda_pplane,1),2));
+    plot(axis_lambda,f,'b',axis_lambda,g,'r','LineWidth',2)
+    ylabel('Number of RE','FontSize',12,'Interpreter','latex')
+    xlim([min(axis_lambda) max(axis_lambda)])
+    xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
+
+    
+%     saveas(g,[ST.path 'SyntheticCameraFortran_pplane_ss_' num2str(ss)],'fig')
+end
+end
