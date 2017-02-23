@@ -73,6 +73,22 @@ for ll=1:length(list)
     end
 end
 
+list={'PTot_pplane'};
+
+for ll=1:length(list)
+    disp(['Loading ' list{ll}])
+    for ss=1:ST.params.simulation.num_species
+        data.(['sp' num2str(ss)]).(list{ll}) = zeros(NX,NY,ST.num_snapshots);
+        filename = [ST.path 'synthetic_camera_snapshots.h5'];
+        for ii=1:numel(it)
+            dataset = ...
+                ['/' num2str(it(ii)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
+                '/' list{ll}];
+            data.(['sp' num2str(ss)]).(list{ll})(:,:,ii) = h5read(filename, dataset);
+        end
+    end
+end
+
 end
 
 function plotSyntheticCameraAnalysis(ST)
@@ -289,11 +305,13 @@ for ss=1:ST.params.simulation.num_species
     Psyn_pixel = zeros(NX,NY);
     np_pixel = zeros(NX,NY);
     
-    Psyn_lambda_pplane = zeros(NX,NY,Nl);
-    np_lambda_pplane = zeros(NX,NY,Nl);
-    Psyn_pplane = zeros(NX,NY);
-    np_pplane = zeros(NX,NY);
-    
+    Psyn_lambda_pplane = zeros(NR,NZ,Nl);
+    np_lambda_pplane = zeros(NR,NZ,Nl);
+    Psyn_pplane = zeros(NR,NZ);
+    np_pplane = zeros(NR,NZ);
+
+    PTot = zeros(NR,NZ);
+        
     for ii=1:NX
         for jj=1:NY
             Psyn_lambda_pixel(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).Psyn_pixel(ii,jj,i1:i2,:),4);
@@ -311,6 +329,8 @@ for ss=1:ST.params.simulation.num_species
             
             Psyn_pplane(ii,jj) = trapz(lambda(i1:i2),Psyn_lambda_pplane(ii,jj,:));
             np_pplane(ii,jj) = sum(np_lambda_pplane(ii,jj,:),3);
+            
+            PTot(ii,jj) = sum(abs(ST.data.(['sp' num2str(ss)]).PTot_pplane(ii,jj,:)),3);
         end
     end
     
@@ -318,61 +338,129 @@ for ss=1:ST.params.simulation.num_species
     axis_lambda = 1E9*lambda(i1:i2);
     Psyn_lambda_pixel = 1E-9*Psyn_lambda_pixel;
     
+    
     h = figure;
+    
+    nt = 100;
+    t = linspace(0,2*pi,nt);
+    x = ST.params.fields.Ro + ST.params.fields.a*cos(t);
+    y = ST.params.fields.a*sin(t);
+    xpixel = zeros(1,nt);
+    ypixel = zeros(1,nt);
+    
+    Rc = ST.params.synthetic_camera_params.position(1);
+    f = ST.params.synthetic_camera_params.focal_length;
+    incline = ST.params.synthetic_camera_params.incline;
+    
+    ax = atan(x./Rc);
+    axo = pi/2 - deg2rad(incline);
+    
+    d = sqrt(Rc^2 + x.^2);
+    ay = atan(y./d);
+    
+    for tt=1:nt
+        xpixel(tt) = -f*tan(axo - ax(tt));
+        ypixel(tt) = -f*tan(ay(tt));
+    end
+    
+    iv = 18;
+    
+    A = PTot';
+    minval = min(min(A));
+    maxval = max(max(A));
+    v = linspace(minval,maxval,21);
+        
+    figure(h);
     subplot(2,3,1)
-    surfc(xAxis,yAxis,Psyn_pixel','LineStyle','none')
+%     surfc(RAxis,ZAxis,PTot','LineStyle','none')
+    contourf(RAxis,ZAxis,A,v(1:iv),'LineStyle','none')
+    hold on;plot(x,y,'w','Linewidth',2);hold off
+    colormap(jet); hc = colorbar('Location','southoutside');
+    xlabel(hc,'$P_{Tot}$ (Watts)','Interpreter','latex','FontSize',12)
+    box on; axis square;view([0 -90])
+    ylabel('$Z$-axis','FontSize',12,'Interpreter','latex')
+    xlabel('$R$-axis','FontSize',12,'Interpreter','latex')
+    
+    
+    A = Psyn_pixel';
+    minval = min(min(A));
+    maxval = max(max(A));
+    v = linspace(minval,maxval,21);
+    
+    figure(h);
+    subplot(2,3,2)
+%     surfc(xAxis,yAxis,A,'LineStyle','none')
+    contourf(xAxis,yAxis,A,v(1:iv),'LineStyle','none')
+    hold on;plot(xpixel,ypixel,'w','Linewidth',2);hold off
     colormap(jet); hc = colorbar('Location','southoutside');
     xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
     box on; axis square;view([0 -90])
     ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
     xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
     
-    subplot(2,3,2)
-    surfc(RAxis,ZAxis,Psyn_pplane','LineStyle','none')
+    
+    A = Psyn_pplane';
+    minval = min(min(A));
+    maxval = max(max(A));
+    v = linspace(minval,maxval,21);
+    
+    figure(h);
+    subplot(2,3,3)
+%     surfc(RAxis,ZAxis,Psyn_pplane','LineStyle','none')
+    contourf(RAxis,ZAxis,A,v(1:iv),'LineStyle','none')
+    hold on;plot(x,y,'w','Linewidth',2);hold off
     colormap(jet); hc = colorbar('Location','southoutside');
     xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
     box on; axis square;view([0 -90])
     ylabel('$Z$-axis','FontSize',12,'Interpreter','latex')
     xlabel('$R$-axis','FontSize',12,'Interpreter','latex')
     
-    subplot(2,3,3)
+    figure(h);
+    subplot(2,3,4)
     f = squeeze(sum(sum(Psyn_lambda_pixel,1),2));
     f = f/max(f);
     g = squeeze(sum(sum(Psyn_lambda_pplane,1),2));
     g = g/max(g);
     plot(axis_lambda,f,'b',axis_lambda,g,'r','LineWidth',2)
-    ylabel('$P_{syn}$ (Photon/s/nm)','FontSize',12,'Interpreter','latex')
+    ylabel('$P_{syn}$ (A.U.)','FontSize',12,'Interpreter','latex')
     xlim([min(axis_lambda) max(axis_lambda)])
     xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
     legend({'$P_{syn}(\lambda,\psi,\chi)$','$P_{syn}(\lambda)$'},'Interpreter','latex')
       
+    
+    A = np_pixel';
+    minval = min(min(A));
+    maxval = max(max(A));
+    v = linspace(minval,maxval,21);
+    
     figure(h);
-    subplot(2,3,4)
-    surfc(xAxis,yAxis,np_pixel','LineStyle','none')
+    subplot(2,3,5)
+%     surfc(xAxis,yAxis,np_pixel','LineStyle','none')
+    contourf(xAxis,yAxis,A,v(1:iv),'LineStyle','none')
+    hold on;plot(xpixel,ypixel,'w','Linewidth',2);hold off
     colormap(jet);  hc = colorbar('Location','southoutside');
     xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
     box on; axis square;view([0 -90])
     ylabel('$y$-axis','FontSize',14,'Interpreter','latex')
     xlabel('$x$-axis','FontSize',14,'Interpreter','latex')
     
-    subplot(2,3,5)
-    surfc(RAxis,ZAxis,np_pplane','LineStyle','none')
+    
+    A = np_pplane';
+    minval = min(min(A));
+    maxval = max(max(A));
+    v = linspace(minval,maxval,21);
+    
+    figure(h);
+    subplot(2,3,6)
+%     surfc(RAxis,ZAxis,np_pplane','LineStyle','none')
+    contourf(RAxis,ZAxis,A,v(1:iv),'LineStyle','none')
+    hold on;plot(x,y,'w','Linewidth',2);hold off
     colormap(jet);  hc = colorbar('Location','southoutside');
     xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
     box on; axis square;view([0 -90])
     ylabel('$Z$-axis','FontSize',14,'Interpreter','latex')
     xlabel('$R$-axis','FontSize',14,'Interpreter','latex')
-    legend({'$P_{syn}(\lambda,\psi,\chi)$','$P_{syn}(\lambda)$'},'Interpreter','latex')
     
-    subplot(2,3,6)
-    f = squeeze(sum(sum(np_lambda_pixel,1),2));
-    g = squeeze(sum(sum(np_lambda_pplane,1),2));
-    plot(axis_lambda,f,'b',axis_lambda,g,'r','LineWidth',2)
-    ylabel('Number of RE','FontSize',12,'Interpreter','latex')
-    xlim([min(axis_lambda) max(axis_lambda)])
-    xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
-
-    
-%     saveas(g,[ST.path 'SyntheticCameraFortran_pplane_ss_' num2str(ss)],'fig')
+    saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
 end
 end

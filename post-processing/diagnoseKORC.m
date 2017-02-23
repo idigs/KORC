@@ -1,4 +1,5 @@
 function ST = diagnoseKORC(path,visible,range)
+% ST = diagnoseKORC('../KORC-FO/outputFiles/','on',[0,100])
 close all
 
 ST = struct;
@@ -16,7 +17,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
 % angularMomentum(ST);
 
@@ -42,7 +43,7 @@ energyConservation(ST);
 
 % ST.P = synchrotronSpectrum(ST,true);
 
-% ST.SD = syntheticDiagnosticSynchrotron(ST,false);
+ST.SD = syntheticDiagnosticSynchrotron(ST,false);
 
 % radiationPlane(ST);
 
@@ -69,7 +70,7 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {'V'};
+list = {'X','V','B'};
 
 it = ST.range(1):1:ST.range(2);
 
@@ -99,7 +100,7 @@ for ll=1:length(list)
 end
 
 
-list = {'eta','g','Prad','Pin','flag'};
+list = {'eta','gamma','Prad','Pin','flag'};
 % list = {'g','eta'};
 
 for ll=1:length(list)
@@ -121,8 +122,13 @@ for ll=1:length(list)
                     ['/' num2str(it(ii)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
                     '/' list{ll}];
                 
-                data.(['sp' num2str(ss)]).(list{ll})(indi:indf,ii) = ...
+                if strcmp(list{ll},'gamma')
+                    data.(['sp' num2str(ss)]).(list{ll})(indi:indf,ii) = ...
                     h5read(filename, dataset);
+                else
+                    data.(['sp' num2str(ss)]).g(indi:indf,ii) = ...
+                    h5read(filename, dataset);
+                end
             end
             
         end
@@ -2434,15 +2440,15 @@ lambda = lch*lambda; % in cm
 % Camera parameters
 camera_params = struct;
 camera_params.Riw = 1.0;% inner wall radius in meters
-camera_params.NX = 40;
-camera_params.NY = 40;
+camera_params.NX = 100;
+camera_params.NY = 100;
 camera_params.size = [0.4,0.4]; % [horizontal size, vertical size] in meters
-camera_params.focal_length = 0.4; % In meters
-camera_params.position = [2.4,0.1]; % [R,Z] in meters
+camera_params.focal_length = 0.5; % In meters
+camera_params.position = [2.4,0.0]; % [R,Z] in meters
 % The angle defined by the detector plane (pixel array) and the x-axis of a
 % coordinate system where phi = 0, the toroidal angle, corresponds to the
 % y-axis, and phi = 90 corresponds to the x-axis
-camera_params.incline = 50; % in degrees
+camera_params.incline = 55; % in degrees
 camera_params.incline = deg2rad(camera_params.incline);
 camera_params.horizontal_angle_view = ...
     atan2(0.5*camera_params.size(1),camera_params.focal_length); % in radians
