@@ -345,23 +345,69 @@ for ss=1:ST.params.simulation.num_species
     t = linspace(0,2*pi,nt);
     x = ST.params.fields.Ro + ST.params.fields.a*cos(t);
     y = ST.params.fields.a*sin(t);
+    
     xpixel = zeros(1,nt);
     ypixel = zeros(1,nt);
     
     Rc = ST.params.synthetic_camera_params.position(1);
+    Zc = ST.params.synthetic_camera_params.position(2);
     f = ST.params.synthetic_camera_params.focal_length;
-    incline = ST.params.synthetic_camera_params.incline;
+    incline = deg2rad(ST.params.synthetic_camera_params.incline);
     
-    ax = atan(x./Rc);
-    axo = pi/2 - deg2rad(incline);
+%     ax = atan(x./Rc);
+%     axo = pi/2 - incline;
+%     d = sqrt(Rc^2 + x.^2);
+%     ay = atan(y./d);
+%     
+%     for tt=1:nt
+%         xpixel(tt) = -f*tan(axo - ax(tt));
+%         ypixel(tt) = -f*tan(ay(tt));
+%     end
     
-    d = sqrt(Rc^2 + x.^2);
-    ay = atan(y./d);
+    % Last closed surface
+    m = -tan(pi/2 - incline);
+    n = tan(incline);
+    
+    xo = m*Rc/(m - n);
+    yo = xo*tan(incline);
+    Ro = sqrt(xo^2 + yo^2);
+
+    xperp = zeros(1,nt);
+    yperp = zeros(1,nt);
     
     for tt=1:nt
-        xpixel(tt) = -f*tan(axo - ax(tt));
-        ypixel(tt) = -f*tan(ay(tt));
+        xtmp = cos(incline)*x(tt);
+        ytmp = sin(incline)*x(tt);
+        d = sqrt( (xtmp - Rc)^2 + ytmp^2 );
+        
+        yperp(tt)= -f*y(tt)/d;
+        
+        xperp(tt) = f*(x(tt)-Ro)/d;
     end
+    % Last closed surface
+    
+    % Magnetic axis
+    xtmp = cos(incline)*ST.params.fields.Ro;
+    ytmp = sin(incline)*ST.params.fields.Ro;
+    d = sqrt( (xtmp - Rc)^2 + ytmp^2 );
+    
+    ymag_axis = 0;  
+    xmag_axis = f*(ST.params.fields.Ro-Ro)/d;
+    % Magnetic axis
+
+    % Initial condition
+    xic = ST.params.species.Ro(ss) + ST.params.species.r(ss)*cos(t);
+    yic = ST.params.species.r(ss)*sin(t);
+        
+    for tt=1:nt
+        xtmp = cos(incline)*xic(tt);
+        ytmp = sin(incline)*xic(tt);
+        d = sqrt( (xtmp - Rc)^2 + ytmp^2 );
+        
+        ypixel(tt)= -f*yic(tt)/d;
+        xpixel(tt) = f*(xic(tt)-Ro)/d;
+    end
+    % Initial condition
     
     iv = 18;
     
@@ -391,7 +437,9 @@ for ss=1:ST.params.simulation.num_species
     subplot(2,3,2)
 %     surfc(xAxis,yAxis,A,'LineStyle','none')
     contourf(xAxis,yAxis,A,v(1:iv),'LineStyle','none')
-    hold on;plot(xpixel,ypixel,'w','Linewidth',2);hold off
+    hold on;plot(xpixel,ypixel,'w--','Linewidth',1);hold off
+    hold on;plot(xperp,yperp,'w','Linewidth',2);hold off
+    hold on;plot(xmag_axis,ymag_axis,'wx','Markersize',6,'LineWidth',2);hold off
     colormap(jet); hc = colorbar('Location','southoutside');
     xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
     box on; axis square;view([0 -90])
@@ -437,7 +485,9 @@ for ss=1:ST.params.simulation.num_species
     subplot(2,3,5)
 %     surfc(xAxis,yAxis,np_pixel','LineStyle','none')
     contourf(xAxis,yAxis,A,v(1:iv),'LineStyle','none')
-    hold on;plot(xpixel,ypixel,'w','Linewidth',2);hold off
+    hold on;plot(xpixel,ypixel,'w--','Linewidth',1);hold off
+    hold on;plot(xperp,yperp,'w','Linewidth',2);hold off
+    hold on;plot(xmag_axis,ymag_axis,'wx','Markersize',6,'LineWidth',2);hold off
     colormap(jet);  hc = colorbar('Location','southoutside');
     xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
     box on; axis square;view([0 -90])
