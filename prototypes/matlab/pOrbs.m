@@ -105,7 +105,7 @@ ST.params.me = 9.109382E-31; % Electron mass
 % Electric and magneticfield
 ST.E = [0,0,0];
 if ST.analytical
-    ST.B = analyticalB([1,1,1],'initialize');
+    [ST.B,~] = analyticalB([1,1,1],true);
     ST.Bo = ST.B.Bo;
 else
     ST.B = loadMagneticField(ST);
@@ -234,7 +234,7 @@ function [b1,b2,b3] = unitVectors(ST,Xo)
 % field.
 
 if ST.analytical
-    B = analyticalB(Xo);
+    [B,~] = analyticalB(Xo,false);
     b = B/sqrt(sum(B.^2));
 else
     B = interpMagField(Xo);
@@ -796,49 +796,13 @@ end
 
 end
 
-function B = analyticalB(X,opt)
+function [B,DBDt] = analyticalB(X,opt,V)
 % Analytical magnetic field
 % X is a vector X(1)=x, X(2)=y, X(3)=z.
+% V is the particle's velocity in cartesian components V(1) = Vx, V(2) =
+% Vy, V(3) = Vz.
 
-narginchk(1,2);
-
-% Parameters of the analytical magnetic field
-Bo = 2.19;
-Ro = 1.5;
-% Parameters of the analytical magnetic field
-
-if nargin == 2
-    if strcmp(opt,'initialize')
-        B = struct;
-        B.Bo = Bo;
-        B.Ro = Ro;
-    end
-else
-    B = [Bo,0,0];
-end
-
-end
-
-function E = analyticalE(X)
-% Analytical magnetic field
-% X is a vector X(1)=x, X(2)=y, X(3)=z.
-
-narginchk(1,2);
-
-% Parameters of the analytical magnetic field
-Eo = 0.0;
-Ro = 1.5; % Major radius in meters.
-% Parameters of the analytical magnetic field
-
-E = [Eo,0,0];
-
-end
-
-function B = analyticalB_(X,opt)
-% Analytical magnetic field
-% X is a vector X(1)=x, X(2)=y, X(3)=z.
-
-narginchk(1,2);
+narginchk(1,3);
 
 % Parameters of the analytical magnetic field
 % Bo = 2.19;
@@ -869,19 +833,16 @@ lamb = a/sqrt(qa/qo - 1);
 Bpo = lamb*Bo/(qo*Ro);
 % Parameters of the analytical magnetic field
 
-if nargin == 2
-    if strcmp(opt,'initialize')
-        B = struct;
-        B.Bo = Bo;
-        B.a = a;% 0.6;% Minor radius in meters.
-        B.Ro = Ro; % Major radius in meters.
-        B.qa = qa; % Safety factor at the separatrix (r=a)
-        B.qo = qo;
-        B.lamb = lamb;
-        B.Bpo = Bpo;
-        disp(['q-factor at magnetic axis: ' num2str(qo)])
-    elseif strcmp(opt,'normalize')
-    end
+if opt == true
+    B = struct;
+    B.Bo = Bo;
+    B.a = a;% 0.6;% Minor radius in meters.
+    B.Ro = Ro; % Major radius in meters.
+    B.qa = qa; % Safety factor at the separatrix (r=a)
+    B.qo = qo;
+    B.lamb = lamb;
+    B.Bpo = Bpo;
+    disp(['q-factor at magnetic axis: ' num2str(qo)])
 else
     % Toroidal coordinates
     % r = radius, theta = poloidal angle, zeta = toroidal angle
@@ -905,6 +866,7 @@ else
     q = qo*(1 + (r/lamb)^2);
 %     q = qo;
     eta = r/Ro;
+    R = Ro*(1 + eta*cos(theta));
     Bp = eta*Bo/(q*(1 + eta*cos(theta)));
     Bt = Bo/( 1 + eta*cos(theta) );
     
@@ -920,17 +882,51 @@ else
     B = [Bx,By,Bz];
 end
 
+if (nargin == 3)
+    drdx = cos(theta)*sin(zeta);
+    drdy = cos(theta)*cos(zeta);
+    drdz = sin(theta);
+    
+    dthetadx = -sin(theta)*sin(zeta)/r;
+    dthetady = -sin(theta)*cos(zeta)/r;
+    dthetadz = cos(theta)/r;
+    
+    dzetadx = cos(zeta)/R;
+    dzetady = -sin(zeta)/R;
+    dzetadz = 0;
+    
+    Cr = V(1)*drdx + V(2)*drdy + V(3)*drdz;
+    Ctheta = V(1)*dthetadx + V(2)*dthetady + V(3)*dthetadz;
+    Czeta = V(1)*dzetadx + V(2)*dzetady + V(3)*dzetadz;
+    
+    dBdr = [-cos(theta)*cos(zeta)*Eo*Ro/R^2,...
+        cos(theta)*sin(zeta)*Bo*Ro/R^2,...
+        0];
+    dBdtheta = [sin(theta)*cos(zeta)*eta*Bo*(Ro/R)^2,...
+        -sin(theta)*sin(zeta)*eta*Bo*(Ro/R)^2,...
+        0];
+    dBdzeta = [-sin(zeta)*Bo*Ro/R,...
+        -cos(zeta)*Bo*Ro/R,...
+        0];
+    
+    DBDt = Cr*dBdr + Ctheta*dBdtheta + Czeta*dBdzeta;
+else
+    DBDt = [0,0,0];
 end
 
-function E = analyticalE_(X)
+end
+
+function [E,DEDt] = analyticalE(B,X,V)
 % Analytical magnetic field
 % X is a vector X(1)=x, X(2)=y, X(3)=z.
+% V is the particle's velocity in cartesian components V(1) = Vx, V(2) =
+% Vy, V(3) = Vz.
 
-narginchk(1,2);
+narginchk(2,3);
 
 % Parameters of the analytical magnetic field
-Eo = 0.0;
-Ro = 1.5; % Major radius in meters.
+Eo = -0.0; % in V/m
+Ro = B.Ro; % Major radius in meters.
 % Parameters of the analytical magnetic field
 
 % Toroidal coordinates
@@ -948,13 +944,46 @@ end
 
 % Poloidal magnetic field
 eta = r/Ro;
-Ezeta = Eo/( 1 + eta*cos(theta) );
+R = Ro*(1 + eta*cos(theta));
+Ezeta = Eo*Ro/R;
 
 Ex = Ezeta*cos(zeta);
 Ey = -Ezeta*sin(zeta);
 Ez = 0;
 
 E = [Ex,Ey,Ez];
+
+if (nargin == 3)
+    drdx = cos(theta)*sin(zeta);
+    drdy = cos(theta)*cos(zeta);
+    drdz = sin(theta);
+    
+    dthetadx = -sin(theta)*sin(zeta)/r;
+    dthetady = -sin(theta)*cos(zeta)/r;
+    dthetadz = cos(theta)/r;
+    
+    dzetadx = cos(zeta)/R;
+    dzetady = -sin(zeta)/R;
+    dzetadz = 0;
+    
+    Cr = V(1)*drdx + V(2)*drdy + V(3)*drdz;
+    Ctheta = V(1)*dthetadx + V(2)*dthetady + V(3)*dthetadz;
+    Czeta = V(1)*dzetadx + V(2)*dzetady + V(3)*dzetadz;
+    
+    dEdr = [-cos(theta)*cos(zeta)*Eo*Ro/R^2,...
+        cos(theta)*sin(zeta)*Eo*Ro/R^2,...
+        0];
+    dEdtheta = [sin(theta)*cos(zeta)*eta*Eo*(Ro/R)^2,...
+        -sin(theta)*sin(zeta)*eta*Eo*(Ro/R)^2,...
+        0];
+    dEdzeta = [-sin(zeta)*Eo*Ro/R,...
+        -cos(zeta)*Eo*Ro/R,...
+        0];
+    
+    DEDt = Cr*dEdr + Ctheta*dEdtheta + Czeta*dEdzeta;
+else
+    DEDt = [0,0,0];
+end
 
 end
 
@@ -977,7 +1006,7 @@ cOp.Gamma = cOp.ne*ST.params.qe^4*cOp.Clog/(4*pi*ST.params.ep^2);
 cOp.Tau = ST.params.me^2*ST.params.c^3/cOp.Gamma;
 cOp.Ec = cOp.ne*ST.params.qe^3*cOp.Clog/(4*pi*ST.params.ep^2*ST.params.me*ST.params.c^2);
 
-Ef = analyticalE([ST.B.Ro,0,0]);
+[Ef,~] = analyticalE(ST.B,[ST.B.Ro,0,0]);
 cOp.Vc = cOp.VTe*sqrt(0.5*cOp.Ec/sqrt(Ef*Ef'));
 
 energy = linspace(1E6,50E6,200)*ST.params.qe;
@@ -1159,7 +1188,7 @@ f2 = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 f3 = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 
 WL = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
-WR = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
+WR = zeros(3,ST.params.numSnapshots); % Synchroton radiated power
 Psyn = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 Wcoll = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 
@@ -1169,8 +1198,12 @@ v(1,:) = ST.params.vo/ST.norm.v;
 q = ST.params.q/ST.norm.q;
 m = ST.params.m/ST.norm.m;
 if ST.analytical
-    B = analyticalB(X(1,:)*ST.norm.l)/ST.Bo;
-    E = analyticalE(X(1,:)*ST.norm.l)/(ST.Bo*ST.norm.v);
+    [B,DBDt] = analyticalB(X(1,:)*ST.norm.l,false);
+    B = B/ST.Bo;
+    DBDt = DBDt*ST.norm.t/(ST.Bo*ST.norm.v);
+    [E,DEDt] = analyticalE(ST.B,X(1,:)*ST.norm.l,v(1,:)*ST.norm.v);
+    E = E/(ST.Bo*ST.norm.v);
+    DEDt = DEDt*ST.norm.t/(ST.Bo*ST.norm.v);
 else
     B = interpMagField(ST,X(1,:)*ST.norm.l)/ST.Bo;
     E = [0,0,0];
@@ -1221,8 +1254,9 @@ F3 = ( gamma^2*q^3/(6*pi*ep*m^2) )*( (E*v(1,:)')^2 - vec*vec' )*v(1,:);
 Psyn(1) = -(2/3)*( Kc*q^2*gamma^4*vmag^4*curv^2 );
 
 WL(1) = q*(E*v(1,:)');
-WR(1) = ( q^4/(6*pi*ep*m^2) )*( E*E' + cross(v(1,:),B)*E' +...
-    gamma^2*( (E*v(1,:)')^2 - vec*vec' ) );
+WR(1,1) = ( q^3/(6*pi*ep*m) )*(gamma*DEDt*v(1,:)');
+WR(2,1) = ( q^4/(6*pi*ep*m^2) )*( E*E' + cross(v(1,:),B)*E' );
+WR(3,1) = ( q^4/(6*pi*ep*m^2) )*( gamma^2*( (E*v(1,:)')^2 - vec*vec' ) );
 
 fL(1) = abs(q)*sqrt( vec*vec' );
 f2(1) = abs(q)*sqrt( F2*F2' );
@@ -1244,8 +1278,12 @@ for ii=2:ST.params.numSnapshots
     for jj=1:ST.params.cadence
         
         if ST.analytical
-            B = analyticalB(XX*ST.norm.l)/ST.Bo;
-            E = analyticalE(XX*ST.norm.l)/(ST.Bo*ST.norm.v);
+            [B,DBDt] = analyticalB(XX*ST.norm.l,false);
+            B = B/ST.Bo;
+            DBDt = DBDt*ST.norm.t/(ST.Bo*ST.norm.v);
+            [E,DEDt] = analyticalE(ST.B,XX*ST.norm.l,V*ST.norm.v);
+            E = E/(ST.Bo*ST.norm.v);
+            DEDt = DEDt*ST.norm.t/(ST.Bo*ST.norm.v);
         else
             B = interpMagField(ST,XX*ST.norm.l)/ST.Bo;
         end
@@ -1284,23 +1322,23 @@ for ii=2:ST.params.numSnapshots
         gamma_eff = sqrt(1 + U_eff*U_eff');
         V_eff = U_eff/gamma_eff;
         
-%         F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
-%             cross(B,cross(B,V_eff)) );
-%         vec = E + cross(V_eff,B);
-%         F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
-% 
-%         U_R = U_R + a*( F2 + F3 );
-%         U = U_L + U_R - U;
+        F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
+            cross(B,cross(B,V_eff)) );
+        vec = E + cross(V_eff,B);
+        F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
+
+        U_R = U_R + a*( F2 + F3 );
+        U = U_L + U_R - U;
         % % % Leap-frog scheme for the radiation damping force % % %
         
-        % % % Collisions % % %
-        if mod((ii-1)*ST.params.cadence + jj,ST.cOp.subcyclingIter) == 0
-            [U,dummyWcoll] = collisionOperator(ST,XX,U/sqrt( 1 + U*U' ),dt*ST.cOp.subcyclingIter);
-        end
+%         % % % Collisions % % %
+%         if mod((ii-1)*ST.params.cadence + jj,ST.cOp.subcyclingIter) == 0
+%             [U,dummyWcoll] = collisionOperator(ST,XX,U/sqrt( 1 + U*U' ),dt*ST.cOp.subcyclingIter);
+%         end
 %         % % % Collisions % % %  
+
         gamma = sqrt( 1 + U*U' ); % Comment or uncomment
-        
-        
+                
         V = U/gamma;
 
         zeta_previous = atan2(XX(2),XX(1));
@@ -1308,7 +1346,7 @@ for ii=2:ST.params.numSnapshots
             zeta_previous = zeta_previous + 2*pi;
         end
         
-%         XX = XX + dt*V; % Advance position
+        XX = XX + dt*V; % Advance position
         
         zeta_current = atan2(XX(2),XX(1));
         if zeta_current < 0
@@ -1369,8 +1407,9 @@ for ii=2:ST.params.numSnapshots
     F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
     
     WL(ii) = q*(E*V_eff');
-    WR(ii) = ( q^4/(6*pi*ep*m^2) )*( E*E' + cross(V_eff,B)*E' +...
-        gamma_eff^2*( (E*V_eff')^2 - vec*vec' ) );
+    WR(1,ii) = ( q^3/(6*pi*ep*m) )*(gamma_eff*DEDt*V_eff');
+    WR(2,ii) = ( q^4/(6*pi*ep*m^2) )*( E*E' + cross(V_eff,B)*E' );
+    WR(3,ii) = ( q^4/(6*pi*ep*m^2) )*( gamma_eff^2*( (E*V_eff')^2 - vec*vec' ) );
     Wcoll(ii) = dummyWcoll;
 end
 
@@ -1470,7 +1509,7 @@ PP.T = T/ST.norm.l; % curvature
 PP.gamma = EK;
 PP.mu = mu;
 
-PP.Psyn = WR*ST.norm.m*ST.norm.v^3/ST.norm.l;
+PP.Psyn = sum(WR,1)*ST.norm.m*ST.norm.v^3/ST.norm.l;
 Psyn = Psyn*ST.norm.m*ST.norm.v^3/ST.norm.l;
 
 
@@ -1534,6 +1573,11 @@ if ST.opt
     ylabel('$|f_3|$','Interpreter','latex','FontSize',16)
     
     figure
+    plot(time,WR(1,:),'r--',time,WR(2,:),'b:',time,WR(3,:),'k')
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('$P_{syn}$ (Watts)','Interpreter','latex','FontSize',16)
+    
+    figure
     subplot(4,1,1)
     plot(time, WL)
     box on
@@ -1559,7 +1603,7 @@ if ST.opt
     grid on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
     ylabel('$|W_R/W_L|$','Interpreter','latex','FontSize',16)
-    disp(['Mean value: ' num2str(mean(WR./WL))])
+    disp(['Mean value: ' num2str(mean(sum(WR,1)./WL))])
 end
 
 if ST.opt
@@ -1618,8 +1662,8 @@ v(1,:) = ST.params.vo/ST.norm.v;
 q = ST.params.q/ST.norm.q;
 m = ST.params.m/ST.norm.m;
 if ST.analytical
-    B = analyticalB(X(1,:)*ST.norm.l)/ST.Bo;
-    E = analyticalE(X(1,:)*ST.norm.l)/(ST.Bo*ST.norm.v);
+    B = analyticalB(X(1,:)*ST.norm.l,false)/ST.Bo;
+    E = analyticalE(ST.B,X(1,:)*ST.norm.l)/(ST.Bo*ST.norm.v);
 else
     B = interpMagField(ST,X(1,:)*ST.norm.l)/ST.Bo;
     E = [0,0,0];
@@ -1727,8 +1771,8 @@ for ii=2:ST.params.numSnapshots
     for jj=1:ST.params.cadence
         
         if ST.analytical
-            B = analyticalB(XX*ST.norm.l)/ST.Bo;
-            E = analyticalE(XX*ST.norm.l)/(ST.Bo*ST.norm.v);
+            B = analyticalB(XX*ST.norm.l,false)/ST.Bo;
+            E = analyticalE(ST.B,XX*ST.norm.l)/(ST.Bo*ST.norm.v);
         else
             B = interpMagField(ST,XX*ST.norm.l)/ST.Bo;
         end
