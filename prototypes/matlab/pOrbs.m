@@ -796,7 +796,7 @@ end
 
 end
 
-function [B,DBDt] = analyticalB(X,opt,V)
+function [B,vxDBDt] = analyticalB(X,opt,V)
 % Analytical magnetic field
 % X is a vector X(1)=x, X(2)=y, X(3)=z.
 % V is the particle's velocity in cartesian components V(1) = Vx, V(2) =
@@ -867,17 +867,17 @@ else
 %     q = qo;
     eta = r/Ro;
     R = Ro*(1 + eta*cos(theta));
-    Bp = eta*Bo/(q*(1 + eta*cos(theta)));
-    Bt = Bo/( 1 + eta*cos(theta) );
+    Btheta = eta*Bo/(q*(1 + eta*cos(theta)));
+    Bzeta = Bo/( 1 + eta*cos(theta) );
     
     % only toroidal magnetic field
 %     Bp = Bo/(1 + eta*cos(theta));
 %     Bt = 0;
     
     
-    Bx = Bt*cos(zeta) - Bp*sin(theta)*sin(zeta);
-    By = -Bt*sin(zeta) - Bp*sin(theta)*cos(zeta);
-    Bz = Bp*cos(theta);
+    Bx = Bzeta*cos(zeta) - Btheta*sin(theta)*sin(zeta);
+    By = -Bzeta*sin(zeta) - Btheta*sin(theta)*cos(zeta);
+    Bz = Btheta*cos(theta);
     
     B = [Bx,By,Bz];
 end
@@ -899,19 +899,31 @@ if (nargin == 3)
     Ctheta = V(1)*dthetadx + V(2)*dthetady + V(3)*dthetadz;
     Czeta = V(1)*dzetadx + V(2)*dzetady + V(3)*dzetadz;
     
-    dBdr = [-cos(theta)*cos(zeta)*Eo*Ro/R^2,...
-        cos(theta)*sin(zeta)*Bo*Ro/R^2,...
-        0];
-    dBdtheta = [sin(theta)*cos(zeta)*eta*Bo*(Ro/R)^2,...
-        -sin(theta)*sin(zeta)*eta*Bo*(Ro/R)^2,...
-        0];
-    dBdzeta = [-sin(zeta)*Bo*Ro/R,...
-        -cos(zeta)*Bo*Ro/R,...
+    dBzetadr = -Bo*Ro*cos(theta)/R^2;
+    dBzetadtheta = sin(theta)*eta*Bo*(Ro/R)^2;
+    
+    dqdr = 2*qo*r/lamb^2;
+    
+    dBthetadr = Bo/(q*R) - r*Bo*cos(theta)/(q*R^2) - r*Bo*dqdr/(q^2*R);
+    dBthetadtheta = eta^2*Bo*sin(theta)/(q*R^2);
+    
+    dBdr = [-sin(theta)*sin(zeta)*dBthetadr + cos(zeta)*dBzetadr,...
+        -sin(theta)*cos(zeta)*dBthetadr - sin(zeta)*dBzetadr,...
+        cos(theta)*dBthetadr];
+    
+    dBdtheta = [-cos(theta)*sin(zeta)*Btheta - sin(theta)*sin(zeta)*dBthetadtheta + cos(zeta)*dBzetadtheta,...
+        -cos(theta)*cos(zeta)*Btheta - sin(theta)*cos(zeta)*dBthetadtheta - sin(zeta)*dBzetadtheta,...
+        sin(theta)*Btheta + cos(theta)*dBthetadtheta];
+    
+    dBdzeta = [-cos(zeta)*sin(theta)*Btheta - sin(zeta)*Bzeta,...
+        sin(theta)*sin(zeta)*Btheta - cos(zeta)*Bzeta,...
         0];
     
     DBDt = Cr*dBdr + Ctheta*dBdtheta + Czeta*dBdzeta;
+    
+    vxDBDt = cross(V,DBDt);
 else
-    DBDt = [0,0,0];
+    vxDBDt = [0,0,0];
 end
 
 end
@@ -970,15 +982,14 @@ if (nargin == 3)
     Ctheta = V(1)*dthetadx + V(2)*dthetady + V(3)*dthetadz;
     Czeta = V(1)*dzetadx + V(2)*dzetady + V(3)*dzetadz;
     
-    dEdr = [-cos(theta)*cos(zeta)*Eo*Ro/R^2,...
-        cos(theta)*sin(zeta)*Eo*Ro/R^2,...
-        0];
-    dEdtheta = [sin(theta)*cos(zeta)*eta*Eo*(Ro/R)^2,...
-        -sin(theta)*sin(zeta)*eta*Eo*(Ro/R)^2,...
-        0];
-    dEdzeta = [-sin(zeta)*Eo*Ro/R,...
-        -cos(zeta)*Eo*Ro/R,...
-        0];
+    dEzetadr = -Eo*Ro*cos(theta)/R^2;
+    dEzetadtheta = sin(theta)*eta*Eo*(Ro/R)^2;
+    
+    dEdr = [cos(zeta)*dEzetadr,-sin(zeta)*dEzetadr,0];
+    
+    dEdtheta = [cos(zeta)*dEzetadtheta,-sin(zeta)*dEzetadtheta,0];
+    
+    dEdzeta = [-sin(zeta)*Ezeta,-cos(zeta)*Ezeta,0];
     
     DEDt = Cr*dEdr + Ctheta*dEdtheta + Czeta*dEdzeta;
 else
@@ -1184,6 +1195,7 @@ mu = zeros(1,ST.params.numSnapshots); % instantaneous magnetic moment
 EK = zeros(1,ST.params.numSnapshots); % kinetic energy
 
 fL = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
+f1 = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 f2 = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 f3 = zeros(1,ST.params.numSnapshots); % Synchroton radiated power
 
@@ -1198,9 +1210,9 @@ v(1,:) = ST.params.vo/ST.norm.v;
 q = ST.params.q/ST.norm.q;
 m = ST.params.m/ST.norm.m;
 if ST.analytical
-    [B,DBDt] = analyticalB(X(1,:)*ST.norm.l,false);
+    [B,vxDBDt] = analyticalB(X(1,:)*ST.norm.l,false,v(1,:)*ST.norm.v);
     B = B/ST.Bo;
-    DBDt = DBDt*ST.norm.t/(ST.Bo*ST.norm.v);
+    vxDBDt = vxDBDt*ST.norm.t/(ST.Bo*ST.norm.v);
     [E,DEDt] = analyticalE(ST.B,X(1,:)*ST.norm.l,v(1,:)*ST.norm.v);
     E = E/(ST.Bo*ST.norm.v);
     DEDt = DEDt*ST.norm.t/(ST.Bo*ST.norm.v);
@@ -1245,6 +1257,7 @@ curv = k(1);
 % Curvature and torsion
 
 % % % Radiation damping force % % %
+F1 = ( q^2*gamma/(6*pi*ep*m) )*(DEDt + vxDBDt);
 F2 = ( q^3/(6*pi*ep*m^2) )*( (E*v(1,:)')*E + cross(E,B) +...
     cross(B,cross(B,v(1,:))) );
 vec = E + cross(v(1,:),B);
@@ -1259,6 +1272,7 @@ WR(2,1) = ( q^4/(6*pi*ep*m^2) )*( E*E' + cross(v(1,:),B)*E' );
 WR(3,1) = ( q^4/(6*pi*ep*m^2) )*( gamma^2*( (E*v(1,:)')^2 - vec*vec' ) );
 
 fL(1) = abs(q)*sqrt( vec*vec' );
+f1(1) = abs(q)*sqrt( F1*F1' );
 f2(1) = abs(q)*sqrt( F2*F2' );
 f3(1) = abs(q)*sqrt( F3*F3' );
 % % % % % % % % % % % % % % % % % % 
@@ -1278,9 +1292,9 @@ for ii=2:ST.params.numSnapshots
     for jj=1:ST.params.cadence
         
         if ST.analytical
-            [B,DBDt] = analyticalB(XX*ST.norm.l,false);
+            [B,vxDBDt] = analyticalB(XX*ST.norm.l,false,V*ST.norm.v);
             B = B/ST.Bo;
-            DBDt = DBDt*ST.norm.t/(ST.Bo*ST.norm.v);
+            vxDBDt = vxDBDt*ST.norm.t/(ST.Bo*ST.norm.v);
             [E,DEDt] = analyticalE(ST.B,XX*ST.norm.l,V*ST.norm.v);
             E = E/(ST.Bo*ST.norm.v);
             DEDt = DEDt*ST.norm.t/(ST.Bo*ST.norm.v);
@@ -1322,12 +1336,13 @@ for ii=2:ST.params.numSnapshots
         gamma_eff = sqrt(1 + U_eff*U_eff');
         V_eff = U_eff/gamma_eff;
         
+        F1 = ( q^2*gamma_eff/(6*pi*ep*m) )*(DEDt + vxDBDt);
         F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
             cross(B,cross(B,V_eff)) );
         vec = E + cross(V_eff,B);
         F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
 
-        U_R = U_R + a*( F2 + F3 );
+        U_R = U_R + a*( F1 + F2 + F3 );
         U = U_L + U_R - U;
         % % % Leap-frog scheme for the radiation damping force % % %
         
@@ -1398,13 +1413,15 @@ for ii=2:ST.params.numSnapshots
 	Psyn(ii) = -(2/3)*( Kc*q^2*gamma^4*vmag^4*curv^2 );
             
     fL(ii) = abs(q)*sqrt( vec*vec' );
+    f1(ii) = abs(q)*sqrt( F1*F1' );
     f2(ii) = abs(q)*sqrt( F2*F2' );
     f3(ii) = abs(q)*sqrt( F3*F3' );
     
-    F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
-        cross(B,cross(B,V_eff)) );
-    vec = E + cross(V_eff,B);
-    F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
+%     F1 = ( q^2*gamma_eff/(6*pi*ep*m) )*(DEDt + vxDBDt);
+%     F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
+%         cross(B,cross(B,V_eff)) );
+%     vec = E + cross(V_eff,B);
+%     F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
     
     WL(ii) = q*(E*V_eff');
     WR(1,ii) = ( q^3/(6*pi*ep*m) )*(gamma_eff*DEDt*V_eff');
@@ -1560,7 +1577,7 @@ if ST.opt
     ylabel('$|F_L|$','Interpreter','latex','FontSize',16)
     title(PP.method,'Interpreter','latex','FontSize',16)
     subplot(3,1,2)
-    plot(time, f2)
+    plot(time, f2,'k-',time, f1,'r-')
     box on
     grid on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
