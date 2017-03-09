@@ -805,30 +805,20 @@ function [B,vxDBDt] = analyticalB(X,opt,V)
 narginchk(1,3);
 
 % Parameters of the analytical magnetic field
+% ITER
+Bo = 5.3;
+Ro = 6.2; % Major radius in meters.
+a = 2.0;% Minor radius in meters.
+qa = 3.0; % Safety factor at the separatrix (r=a)
+qo = 2.4; % Safety factor at the magnetic axis.
+
+% DIII-D
 % Bo = 2.19;
-% a = 0.5;% Minor radius in meters.
 % Ro = 1.5; % Major radius in meters.
-% qa = 3.0; % Safety factor at the separatrix (r=a)
-% co = 0.5; % Extra parameter
-% lamb = a/co;
-% Bpo = (a/Ro)*(Bo/qa)*(1+co^2)/co;
-% qo = lamb*Bo/(Ro*Bpo);
+% a = 0.5;% Minor radius in meters.
+% qa = 2.0; % Safety factor at the separatrix (r=a)
+% qo = 1.6; % Safety factor at the magnetic axis.
 
-% Bo = 2.8;
-% a = 1.2;% Minor radius in meters.
-% Ro = 3.0; % Major radius in meters.
-% qa = 3.0; % Safety factor at the separatrix (r=a)
-% qo = 1.5; % Safety factor at the magnetic axis.
-% lamb = a/sqrt(qa/qo - 1);
-% Bpo = lamb*Bo/(qo*Ro);
-
-% Bo = 2.1;
-% Ro = 1.67; % Major radius in meters.
-Bo = 2.19;
-Ro = 1.5; % Major radius in meters.
-a = 0.5;% Minor radius in meters.
-qa = 2.0; % Safety factor at the separatrix (r=a)
-qo = 1.6; % Safety factor at the magnetic axis.
 lamb = a/sqrt(qa/qo - 1);
 Bpo = lamb*Bo/(qo*Ro);
 % Parameters of the analytical magnetic field
@@ -937,7 +927,7 @@ function [E,DEDt] = analyticalE(B,X,V)
 narginchk(2,3);
 
 % Parameters of the analytical magnetic field
-Eo = -0.0; % in V/m
+Eo = -4.0; % in V/m
 Ro = B.Ro; % Major radius in meters.
 % Parameters of the analytical magnetic field
 
@@ -1577,7 +1567,7 @@ if ST.opt
     ylabel('$|F_L|$','Interpreter','latex','FontSize',16)
     title(PP.method,'Interpreter','latex','FontSize',16)
     subplot(3,1,2)
-    plot(time, f2,'k-',time, f1,'r-')
+    plot(time, f2,'k',time, f1,'r')
     box on
     grid on
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
@@ -1590,7 +1580,7 @@ if ST.opt
     ylabel('$|f_3|$','Interpreter','latex','FontSize',16)
     
     figure
-    plot(time,WR(1,:),'r--',time,WR(2,:),'b:',time,WR(3,:),'k')
+    plot(time,WR(1,:),'r',time,WR(2,:),'b',time,WR(3,:),'k')
     xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
     ylabel('$P_{syn}$ (Watts)','Interpreter','latex','FontSize',16)
     

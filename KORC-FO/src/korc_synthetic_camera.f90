@@ -660,29 +660,40 @@ SUBROUTINE spectral_angular_density(params,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
 	CHARACTER(MAX_STRING_LENGTH) :: var_name
+	LOGICAL, DIMENSION(:,:,:), ALLOCATABLE :: bool_pixel_array
+	LOGICAL :: bool
 	REAL(rp), DIMENSION(3) :: binorm, n, nperp
 	REAL(rp), DIMENSION(3) :: X, V, B, E, XC
-	LOGICAL, DIMENSION(:,:,:), ALLOCATABLE :: bool_pixel_array
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: angle_pixel_array
-	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: part_pixel
-	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: Psyn_pixel
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: np_angular_pixel
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: Psyn_angular_pixel
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: np_lambda_pixel
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: Psyn_lambda_pixel
 	REAL(rp) :: q, m, k, u, g, l, threshold_angle
 	REAL(rp) :: psi, chi, beta, Psyn_tmp
 	REAL(rp) :: area, r, photon_energy
-	LOGICAL :: bool
 	REAL(rp) :: angle, clockwise
-	INTEGER :: ii,jj,ll,ss,pp
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: Psyn_send_buffer,Psyn_receive_buffer, np_send_buffer, np_receive_buffer
-    INTEGER :: numel, mpierr
 	REAL(rp) :: units
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: Psyn_send_buffer,Psyn_receive_buffer, np_send_buffer, np_receive_buffer
+	REAL(rp) :: lc, zeta
+	INTEGER :: ii,jj,ll,ss,pp
+    INTEGER :: numel, mpierr
+
 
 	ALLOCATE(bool_pixel_array(cam%num_pixels(1),cam%num_pixels(2),2)) ! (NX,NY,2)
 	ALLOCATE(angle_pixel_array(cam%num_pixels(1),cam%num_pixels(2),2)) ! (NX,NY,2)
-	ALLOCATE(part_pixel(cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species))
-	ALLOCATE(Psyn_pixel(cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species))
 
-	part_pixel = 0.0_rp
-	Psyn_pixel = 0.0_rp
+	ALLOCATE(np_angular_pixel(cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species))
+	ALLOCATE(Psyn_angular_pixel(cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species))
+
+	ALLOCATE(np_lambda_pixel(cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species))
+	ALLOCATE(Psyn_lambda_pixel(cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species))
+
+	np_angular_pixel = 0.0_rp
+	Psyn_angular_pixel = 0.0_rp
+
+	np_lambda_pixel = 0.0_rp
+	Psyn_lambda_pixel = 0.0_rp
 	
 	area = C_PI*(0.5_rp*cam%aperture)**2 ! In m^2
 
@@ -692,8 +703,9 @@ SUBROUTINE spectral_angular_density(params,spp)
 
 !$OMP PARALLEL FIRSTPRIVATE(q,m,area) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
 !$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,threshold_angle,&
-!$OMP& psi,chi,beta,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp,r,photon_energy)&
-!$OMP& SHARED(params,spp,ss,Psyn_pixel,part_pixel)
+!$OMP& psi,chi,beta,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp,r,photon_energy,&
+!$OMP& lc,zeta)&
+!$OMP& SHARED(params,spp,ss,Psyn_angular_pixel,np_angular_pixel,np_lambda_pixel,Psyn_lambda_pixel)
 !$OMP DO
 		do pp=1_idef,spp(ss)%ppp
 			if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
@@ -708,6 +720,8 @@ SUBROUTINE spectral_angular_density(params,spp)
 				u = SQRT(DOT_PRODUCT(V,V))
 				k = q*SQRT(DOT_PRODUCT(binorm,binorm))/(spp(ss)%vars%g(pp)*m*u**3)
 				k = k/1.0E2_rp ! Now in cm^-1 (CGS)
+
+				lc = (4.0_rp*C_PI/3.0_rp)/(k*g**3) ! Critical wavelength
 
 				binorm = binorm/SQRT(DOT_PRODUCT(binorm,binorm))
 
@@ -748,12 +762,21 @@ SUBROUTINE spectral_angular_density(params,spp)
 
 								do ll=1_idef,cam%Nlambda ! Nlambda
 									l = cam%lambda(ll)
+									photon_energy = CGS_h*CGS_C/l
+									zeta = lc/cam%lambda(ll)
+
+									Psyn_tmp = &
+									(4.0_rp*C_PI/SQRT(3.0_rp))*(CGS_C*CGS_E**2)*P_integral(zeta)/(g**2*cam%lambda(ii)**3)
+
+									Psyn_lambda_pixel(ii,jj,ll,ss) = Psyn_lambda_pixel(ii,jj,ll,ss) + Psyn_tmp/photon_energy
+									np_lambda_pixel(ii,jj,ll,ss) = np_lambda_pixel(ii,jj,ll,ss) + 1.0_rp
+
 									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
 										Psyn_tmp = Psyn(g,psi,k,l,chi)
 										if (Psyn_tmp.GT.0.0_rp) then
-											photon_energy = CGS_h*CGS_C/l
-											Psyn_pixel(ii,jj,ll,ss) = Psyn_tmp/photon_energy
-											part_pixel(ii,jj,ll,ss) = part_pixel(ii,jj,ll,ss) + 1.0_rp
+											Psyn_angular_pixel(ii,jj,ll,ss) = Psyn_angular_pixel(ii,jj,ll,ss) &
+																			+ Psyn_tmp/photon_energy
+											np_angular_pixel(ii,jj,ll,ss) = np_angular_pixel(ii,jj,ll,ss) + 1.0_rp
 										end if
 									end if
 								end do ! Nlambda
@@ -777,12 +800,21 @@ SUBROUTINE spectral_angular_density(params,spp)
 
 								do ll=1_idef,cam%Nlambda ! Nlambda
 									l = cam%lambda(ll)
+									photon_energy = CGS_h*CGS_C/l
+									zeta = lc/cam%lambda(ll)
+
+									Psyn_tmp = &
+									(4.0_rp*C_PI/SQRT(3.0_rp))*(CGS_C*CGS_E**2)*P_integral(zeta)/(g**2*cam%lambda(ii)**3)
+
+									Psyn_lambda_pixel(ii,jj,ll,ss) = Psyn_lambda_pixel(ii,jj,ll,ss) + Psyn_tmp/photon_energy
+									np_lambda_pixel(ii,jj,ll,ss) = np_lambda_pixel(ii,jj,ll,ss) + 1.0_rp
+
 									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
 										Psyn_tmp = Psyn(g,psi,k,l,chi)
 										if (Psyn_tmp.GT.0.0_rp) then
-											photon_energy = CGS_h*CGS_C/l
-											Psyn_pixel(ii,jj,ll,ss) = Psyn_tmp/photon_energy
-											part_pixel(ii,jj,ll,ss) = part_pixel(ii,jj,ll,ss) + 1.0_rp
+											Psyn_angular_pixel(ii,jj,ll,ss) = Psyn_angular_pixel(ii,jj,ll,ss) &
+																			+ Psyn_tmp/photon_energy
+											np_angular_pixel(ii,jj,ll,ss) = np_angular_pixel(ii,jj,ll,ss) + 1.0_rp
 										end if
 									end if
 								end do ! Nlambda
@@ -806,6 +838,9 @@ SUBROUTINE spectral_angular_density(params,spp)
 !	* * * * * * * * * * * * * * * * * * *
 !	* * * * * * * IMPORTANT * * * * * * *
 
+!	units = 1.0E-5_rp ! (Watts)(m^-1) Use these units when Psyn is in (erg/s*cm)
+	units = 1.0E2_rp ! (Photons/s)(m^-1) Use these units when Psyn is in (Photons/s)(cm^-1)
+
 	if (params%mpi_params%nmpi.GT.1_idef) then 
 		numel = cam%num_pixels(1)*cam%num_pixels(2)*cam%Nlambda*params%num_species
 
@@ -814,23 +849,41 @@ SUBROUTINE spectral_angular_density(params,spp)
 		ALLOCATE(np_send_buffer(numel))
 		ALLOCATE(np_receive_buffer(numel))
 
-		Psyn_send_buffer = RESHAPE(Psyn_pixel,(/numel/))
+		Psyn_send_buffer = RESHAPE(Psyn_angular_pixel,(/numel/))
 		CALL MPI_REDUCE(Psyn_send_buffer,Psyn_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
 
-		np_send_buffer = RESHAPE(part_pixel,(/numel/))
+		np_send_buffer = RESHAPE(np_angular_pixel,(/numel/))
 		CALL MPI_REDUCE(np_send_buffer,np_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
 
 		if (params%mpi_params%rank.EQ.0_idef) then
-		    Psyn_pixel = RESHAPE(Psyn_receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species/))
-		    part_pixel = RESHAPE(np_receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species/))
-!		    	call save_snapshot(params,part_pixel,Psyn_pixel)
-			var_name = 'np_pixel'
-			call save_snapshot_var(params,part_pixel,var_name)
+		    Psyn_angular_pixel = RESHAPE(Psyn_receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species/))
+		    np_angular_pixel = RESHAPE(np_receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species/))
 
-			var_name = 'Psyn_pixel'
-	!		units = 1.0E-5_rp ! (Watts)(m^-1) Use these units when Psyn is in (erg/s*cm)
-			units = 1.0E2_rp ! (Photons/s)(m^-1) Use these units when Psyn is in (Photons/s)(cm^-1)
-			call save_snapshot_var(params,Psyn_pixel,var_name)
+			var_name = 'np_angular_pixel'
+			call save_snapshot_var(params,np_angular_pixel,var_name)
+
+			var_name = 'Psyn_angular_pixel'
+			Psyn_angular_pixel = units*Psyn_angular_pixel
+			call save_snapshot_var(params,Psyn_angular_pixel,var_name)
+		end if
+
+
+		Psyn_send_buffer = RESHAPE(Psyn_lambda_pixel,(/numel/))
+		CALL MPI_REDUCE(Psyn_send_buffer,Psyn_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+
+		np_send_buffer = RESHAPE(np_lambda_pixel,(/numel/))
+		CALL MPI_REDUCE(np_send_buffer,np_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+
+		if (params%mpi_params%rank.EQ.0_idef) then
+		    Psyn_lambda_pixel = RESHAPE(Psyn_receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species/))
+		    np_lambda_pixel = RESHAPE(np_receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species/))
+
+			var_name = 'np_lambda_pixel'
+			call save_snapshot_var(params,np_lambda_pixel,var_name)
+
+			var_name = 'Psyn_lambda_pixel'
+			Psyn_lambda_pixel = units*Psyn_lambda_pixel
+			call save_snapshot_var(params,Psyn_lambda_pixel,var_name)
 		end if
 
 		DEALLOCATE(Psyn_send_buffer)
@@ -840,20 +893,29 @@ SUBROUTINE spectral_angular_density(params,spp)
 
 	    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 	else
-!		call save_snapshot(params,part_pixel,Psyn_pixel)
-		var_name = 'np_pixel'
-		call save_snapshot_var(params,part_pixel,var_name)
+		var_name = 'np_angular_pixel'
+		call save_snapshot_var(params,np_angular_pixel,var_name)
 
-		var_name = 'Psyn_pixel'
-!		units = 1.0E-5_rp ! (Watts)(m^-1) Use these units when Psyn is in (erg/s*cm)
-		units = 1.0E2_rp ! (Photons/s)(m^-1) Use these units when Psyn is in (Photons/s)(cm^-1)
-		call save_snapshot_var(params,Psyn_pixel,var_name)
+		var_name = 'np_lambda_pixel'
+		call save_snapshot_var(params,np_lambda_pixel,var_name)
+
+		var_name = 'Psyn_angular_pixel'
+		Psyn_angular_pixel = units*Psyn_angular_pixel
+		call save_snapshot_var(params,Psyn_angular_pixel,var_name)
+
+		var_name = 'Psyn_lambda_pixel'
+		Psyn_lambda_pixel = units*Psyn_lambda_pixel
+		call save_snapshot_var(params,Psyn_lambda_pixel,var_name)
 	end if
 
 	DEALLOCATE(bool_pixel_array)
 	DEALLOCATE(angle_pixel_array)
-	DEALLOCATE(part_pixel)
-    DEALLOCATE(Psyn_pixel)
+
+	DEALLOCATE(np_angular_pixel)
+    DEALLOCATE(Psyn_angular_pixel)
+
+	DEALLOCATE(np_lambda_pixel)
+    DEALLOCATE(Psyn_lambda_pixel)
 END SUBROUTINE spectral_angular_density
 
 
@@ -975,7 +1037,7 @@ SUBROUTINE spectral_density(params,spp)
 		    np = RESHAPE(np_receive_buffer,(/pplane%grid_dims(1),pplane%grid_dims(2),cam%Nlambda,params%num_species/))
 
 			var_name = 'np_pplane'
-		    	call save_snapshot_var(params,np,var_name)
+		    call save_snapshot_var(params,np,var_name)
 
 			var_name = 'Psyn_pplane'
 	    	call save_snapshot_var(params,Psyn,var_name)
@@ -1191,10 +1253,10 @@ SUBROUTINE save_snapshot(params,part,Psyn)
 		subgname = "spp_" // TRIM(ADJUSTL(tmp_str))
 		call h5gcreate_f(group_id, TRIM(subgname), subgroup_id, h5error)
 
-		dset = "part_pixel"
+		dset = "np_angular_pixel"
 		call save_array_to_hdf5(subgroup_id, dset, part(:,:,:,ss))
 
-		dset = "Psyn_pixel"
+		dset = "Psyn_angular_pixel"
 !		units = 1.0E-5_rp ! (Watts)(m^-1) Use these units when Psyn is in (erg/s*cm)
 		units = 1.0E2_rp ! (Photons/s)(m^-1) Use these units when Psyn is in (Photons/s)(cm^-1)
 		call save_array_to_hdf5(subgroup_id, dset, units*Psyn(:,:,:,ss))
