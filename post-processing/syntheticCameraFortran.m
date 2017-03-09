@@ -51,7 +51,7 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {'Psyn_pixel','np_pixel','Psyn_lambda_pixel','np_lambda_pixel','Psyn_pplane','np_pplane'};
+list = {'Psyn_angular_pixel','np_angular_pixel','Psyn_lambda_pixel','np_lambda_pixel','Psyn_pplane','np_pplane'};
 
 it = ST.range(1):1:ST.range(2);
 
@@ -114,8 +114,8 @@ for ss=1:ST.params.simulation.num_species
     disp(['Species: ' num2str(ss)])
     Psyn_lambda_pixel = zeros(NX,NY,Nl);
     np_lambda_pixel = zeros(NX,NY,Nl);
-    Psyn_pixel = zeros(NX,NY);
-    np_pixel = zeros(NX,NY);
+    Psyn_angular_pixel = zeros(NX,NY);
+    np_angular_pixel = zeros(NX,NY);
     
     Psyn_lambda_pplane = zeros(NX,NY,Nl);
     np_lambda_pplane = zeros(NX,NY,Nl);
@@ -124,11 +124,11 @@ for ss=1:ST.params.simulation.num_species
     
     for ii=1:NX
         for jj=1:NY
-            Psyn_lambda_pixel(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).Psyn_pixel(ii,jj,i1:i2,:),4);
-            np_lambda_pixel(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).np_pixel(ii,jj,i1:i2,:),4);
+            Psyn_lambda_pixel(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).Psyn_angular_pixel(ii,jj,i1:i2,:),4);
+            np_lambda_pixel(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).np_angular_pixel(ii,jj,i1:i2,:),4);
             
-            Psyn_pixel(ii,jj) = trapz(lambda(i1:i2),Psyn_lambda_pixel(ii,jj,:));
-            np_pixel(ii,jj) = sum(np_lambda_pixel(ii,jj,:),3);
+            Psyn_angular_pixel(ii,jj) = trapz(lambda(i1:i2),Psyn_lambda_pixel(ii,jj,:));
+            np_angular_pixel(ii,jj) = sum(np_lambda_pixel(ii,jj,:),3);
         end
     end
     
@@ -148,7 +148,7 @@ for ss=1:ST.params.simulation.num_species
     
     h = figure;
     subplot(4,2,[1 3])
-    surfc(xAxis,yAxis,Psyn_pixel','LineStyle','none')
+    surfc(xAxis,yAxis,Psyn_angular_pixel','LineStyle','none')
     colormap(jet); hc = colorbar('Location','eastoutside');
     xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
     box on; axis square;view([0 -90])
@@ -170,7 +170,7 @@ for ss=1:ST.params.simulation.num_species
       
     figure(h);
     subplot(4,2,[2 4])
-    surfc(xAxis,yAxis,np_pixel','LineStyle','none')
+    surfc(xAxis,yAxis,np_angular_pixel','LineStyle','none')
     colormap(jet);  hc = colorbar('Location','eastoutside');
     xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
     box on; axis square;view([0 -90])
@@ -333,8 +333,8 @@ for ss=1:ST.params.simulation.num_species
             Psyn_L3(ii,jj) = trapz(lambda(i1:i2),Psyn_L3_lambda(ii,jj,:));
             np_L3(ii,jj) = sum(np_L3_lambda(ii,jj,:),3);
             
-            Psyn_L4_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).Psyn_pixel(ii,jj,i1:i2,:),4);
-            np_L4_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).np_pixel(ii,jj,i1:i2,:),4);
+            Psyn_L4_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).Psyn_angular_pixel(ii,jj,i1:i2,:),4);
+            np_L4_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).np_angular_pixel(ii,jj,i1:i2,:),4);
             
             Psyn_L4(ii,jj) = trapz(lambda(i1:i2),Psyn_L4_lambda(ii,jj,:));
             np_L4(ii,jj) = sum(np_L4_lambda(ii,jj,:),3);
@@ -522,7 +522,7 @@ for ss=1:ST.params.simulation.num_species
     
     figure(h);
     subplot(4,2,6)
-%     surfc(xAxis,yAxis,np_pixel','LineStyle','none')
+%     surfc(xAxis,yAxis,np_angular_pixel','LineStyle','none')
     contourf(xAxis,yAxis,A,v(1:iv),'LineStyle','none')
     hold on;plot(xpixel,ypixel,'w--','Linewidth',1);hold off
     hold on;plot(xperp,yperp,'w','Linewidth',2);hold off
@@ -560,7 +560,7 @@ for ss=1:ST.params.simulation.num_species
     
     figure(h);
     subplot(4,2,8)
-%     surfc(xAxis,yAxis,np_pixel','LineStyle','none')
+%     surfc(xAxis,yAxis,np_angular_pixel','LineStyle','none')
     contourf(xAxis,yAxis,A,v(1:iv),'LineStyle','none')
     hold on;plot(xpixel,ypixel,'w--','Linewidth',1);hold off
     hold on;plot(xperp,yperp,'w','Linewidth',2);hold off
