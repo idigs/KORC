@@ -359,7 +359,7 @@ for ss=1:ST.params.simulation.num_species
     
     
     h = figure;
-    h.Position(3:4) = [640 860];
+    h.Position(3:4) = [800 860];
     
     nt = 100;
     t = linspace(0,2*pi,nt);
@@ -371,18 +371,8 @@ for ss=1:ST.params.simulation.num_species
     
     Rc = ST.params.synthetic_camera_params.position(1);
     Zc = ST.params.synthetic_camera_params.position(2);
-    f_L4 = ST.params.synthetic_camera_params.focal_length;
+    f = ST.params.synthetic_camera_params.focal_length;
     incline = deg2rad(ST.params.synthetic_camera_params.incline);
-    
-%     ax = atan(x./Rc);
-%     axo = pi/2 - incline;
-%     d = sqrt(Rc^2 + x.^2);
-%     ay = atan(y./d);
-%     
-%     for tt=1:nt
-%         xpixel(tt) = -f*tan(axo - ax(tt));
-%         ypixel(tt) = -f*tan(ay(tt));
-%     end
     
     % Last closed surface
     m = -tan(pi/2 - incline);
@@ -400,11 +390,44 @@ for ss=1:ST.params.simulation.num_species
         ytmp = sin(incline)*x(tt);
         d = sqrt( (xtmp - Rc)^2 + ytmp^2 );
         
-        yperp(tt)= -f_L4*y(tt)/d;
-        
-        xperp(tt) = f_L4*(x(tt)-Ro)/d;
+        yperp(tt)= -f*y(tt)/d;
+        xperp(tt) = f*(x(tt)-Ro)/d;
     end
     % Last closed surface
+    
+    % Inner wall
+    niw = 40;
+    
+    d = sqrt( (xo - Rc)^2 + yo^2 );
+    xc = -f*Ro/d;
+    yc = -f*Zc/d;   
+    
+    tiw = linspace(pi/2,3*pi/2,nt);
+    xiw = ST.params.fields.Ro + ST.params.fields.a*cos(tiw);
+    yiw = ST.params.fields.a*sin(tiw);
+    
+    Xiwo = zeros(2,nt);
+    Xiw = zeros(2,nt,niw);
+       
+    for tt=1:nt
+        xtmp = cos(incline)*xiw(tt);
+        ytmp = sin(incline)*xiw(tt);
+        d = sqrt( (xtmp - Rc)^2 + ytmp^2 );
+        
+        Xiwo(2,tt)= -f*yiw(tt)/d;
+        Xiwo(1,tt) = f*(xiw(tt)-Ro)/d;
+    end
+
+    xtmp = Xiwo(1,:) - xc;
+    ytmp = Xiwo(2,:) - yc;
+
+    rotation_angle = linspace(0,pi,niw);
+    
+    for ii=1:niw
+        Xiw(1,:,ii) = xtmp*cos(rotation_angle(ii)) + xc;
+        Xiw(2,:,ii) = Xiwo(2,:);
+    end
+    % Inner wall
     
     % Magnetic axis
     xtmp = cos(incline)*ST.params.fields.Ro;
@@ -412,7 +435,7 @@ for ss=1:ST.params.simulation.num_species
     d = sqrt( (xtmp - Rc)^2 + ytmp^2 );
     
     ymag_axis = 0;  
-    xmag_axis = f_L4*(ST.params.fields.Ro-Ro)/d;
+    xmag_axis = f*(ST.params.fields.Ro-Ro)/d;
     % Magnetic axis
 
     % Initial condition
@@ -424,8 +447,8 @@ for ss=1:ST.params.simulation.num_species
         ytmp = sin(incline)*xic(tt);
         d = sqrt( (xtmp - Rc)^2 + ytmp^2 );
         
-        ypixel(tt)= -f_L4*yic(tt)/d;
-        xpixel(tt) = f_L4*(xic(tt)-Ro)/d;
+        ypixel(tt)= -f*yic(tt)/d;
+        xpixel(tt) = f*(xic(tt)-Ro)/d;
     end
     % Initial condition
     
@@ -505,12 +528,15 @@ for ss=1:ST.params.simulation.num_species
     subplot(4,2,5)
 %     surfc(xAxis,yAxis,A,'LineStyle','none')
     contourf(xAxis,yAxis,A,v(1:iv),'LineStyle','none')
-    hold on;plot(xpixel,ypixel,'w--','Linewidth',1);hold off
-    hold on;plot(xperp,yperp,'w','Linewidth',2);hold off
-    hold on;plot(xmag_axis,ymag_axis,'wx','Markersize',6,'LineWidth',2);hold off
+    hold on;plot(xpixel,ypixel,'w','Linewidth',0.5);hold off
+        hold on;plot(xperp,yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    for ii=1:niw
+        hold on;plot(Xiw(1,:,ii),Xiw(2,:,ii),'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    end
+    hold on;plot(xmag_axis,ymag_axis,'kx',xc,yc,'kx','Markersize',6,'LineWidth',2);hold off
     colormap(jet); hc = colorbar('Location','eastoutside');
     xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
-    box on; axis square;view([0 -90])
+    box on; axis equal;view([0 -90])
     ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
     xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
     
@@ -524,7 +550,7 @@ for ss=1:ST.params.simulation.num_species
     subplot(4,2,6)
 %     surfc(xAxis,yAxis,np_angular_pixel','LineStyle','none')
     contourf(xAxis,yAxis,A,v(1:iv),'LineStyle','none')
-    hold on;plot(xpixel,ypixel,'w--','Linewidth',1);hold off
+    hold on;plot(xpixel,ypixel,'w','Linewidth',0.5);hold off
     hold on;plot(xperp,yperp,'w','Linewidth',2);hold off
     hold on;plot(xmag_axis,ymag_axis,'wx','Markersize',6,'LineWidth',2);hold off
     colormap(jet);  hc = colorbar('Location','eastoutside');
@@ -543,12 +569,15 @@ for ss=1:ST.params.simulation.num_species
     subplot(4,2,7)
 %     surfc(xAxis,yAxis,A,'LineStyle','none')
     contourf(xAxis,yAxis,A,v(1:iv),'LineStyle','none')
-    hold on;plot(xpixel,ypixel,'w--','Linewidth',1);hold off
-    hold on;plot(xperp,yperp,'w','Linewidth',2);hold off
-    hold on;plot(xmag_axis,ymag_axis,'wx','Markersize',6,'LineWidth',2);hold off
+    hold on;plot(xpixel,ypixel,'w','Linewidth',0.5);hold off
+    hold on;plot(xperp,yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    for ii=1:niw
+        hold on;plot(Xiw(1,:,ii),Xiw(2,:,ii),'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    end
+    hold on;plot(xmag_axis,ymag_axis,'kx',xc,yc,'kx','Markersize',6,'LineWidth',2);hold off
     colormap(jet); hc = colorbar('Location','eastoutside');
     xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
-    box on; axis square;view([0 -90])
+    box on; axis equal;view([0 -90]);%axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
     ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
     xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
     
@@ -562,7 +591,7 @@ for ss=1:ST.params.simulation.num_species
     subplot(4,2,8)
 %     surfc(xAxis,yAxis,np_angular_pixel','LineStyle','none')
     contourf(xAxis,yAxis,A,v(1:iv),'LineStyle','none')
-    hold on;plot(xpixel,ypixel,'w--','Linewidth',1);hold off
+    hold on;plot(xpixel,ypixel,'w','Linewidth',0.5);hold off
     hold on;plot(xperp,yperp,'w','Linewidth',2);hold off
     hold on;plot(xmag_axis,ymag_axis,'wx','Markersize',6,'LineWidth',2);hold off
     colormap(jet);  hc = colorbar('Location','eastoutside');
