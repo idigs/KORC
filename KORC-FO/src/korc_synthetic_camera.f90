@@ -670,7 +670,7 @@ SUBROUTINE spectral_angular_density(params,spp)
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: np_lambda_pixel
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: Psyn_lambda_pixel
 	REAL(rp) :: q, m, k, u, g, l, threshold_angle
-	REAL(rp) :: psi, chi, beta, Psyn_tmp
+	REAL(rp) :: psi, chi, beta, theta, Psyn_tmp
 	REAL(rp) :: area, r, photon_energy
 	REAL(rp) :: angle, clockwise
 	REAL(rp) :: units
@@ -702,7 +702,7 @@ SUBROUTINE spectral_angular_density(params,spp)
 		m = spp(ss)%m*params%cpp%mass
 
 !$OMP PARALLEL FIRSTPRIVATE(q,m,area) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
-!$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,threshold_angle,&
+!$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,threshold_angle,theta,&
 !$OMP& psi,chi,beta,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp,r,photon_energy,&
 !$OMP& lc,zeta)&
 !$OMP& SHARED(params,spp,ss,Psyn_angular_pixel,np_angular_pixel,np_lambda_pixel,Psyn_lambda_pixel)
@@ -760,16 +760,21 @@ SUBROUTINE spectral_angular_density(params,spp)
 								nperp = nperp/SQRT(DOT_PRODUCT(nperp,nperp))
 								chi = ABS(ACOS(DOT_PRODUCT(nperp,V/u)))
 
+								theta = ABS(ACOS(DOT_PRODUCT(n,V/u)))
+
 								do ll=1_idef,cam%Nlambda ! Nlambda
 									l = cam%lambda(ll)
 									photon_energy = CGS_h*CGS_C/l
-									zeta = lc/cam%lambda(ll)
 
-									Psyn_tmp = &
-									(4.0_rp*C_PI/SQRT(3.0_rp))*(CGS_C*CGS_E**2)*P_integral(zeta)/(g**2*cam%lambda(ii)**3)
+									if (theta .LE. threshold_angle) then
+										zeta = lc/cam%lambda(ll)
 
-									Psyn_lambda_pixel(ii,jj,ll,ss) = Psyn_lambda_pixel(ii,jj,ll,ss) + Psyn_tmp/photon_energy
-									np_lambda_pixel(ii,jj,ll,ss) = np_lambda_pixel(ii,jj,ll,ss) + 1.0_rp
+										Psyn_tmp = &
+										(4.0_rp*C_PI/SQRT(3.0_rp))*(CGS_C*CGS_E**2)*P_integral(zeta)/(g**2*cam%lambda(ii)**3)
+
+										Psyn_lambda_pixel(ii,jj,ll,ss) = Psyn_lambda_pixel(ii,jj,ll,ss) + Psyn_tmp/photon_energy
+										np_lambda_pixel(ii,jj,ll,ss) = np_lambda_pixel(ii,jj,ll,ss) + 1.0_rp
+									end if
 
 									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
 										Psyn_tmp = Psyn(g,psi,k,l,chi)
@@ -798,16 +803,21 @@ SUBROUTINE spectral_angular_density(params,spp)
 								nperp = nperp/SQRT(DOT_PRODUCT(nperp,nperp))
 								chi = ABS(ACOS(DOT_PRODUCT(nperp,V/u)))
 
+								theta = ABS(ACOS(DOT_PRODUCT(n,V/u)))
+
 								do ll=1_idef,cam%Nlambda ! Nlambda
 									l = cam%lambda(ll)
 									photon_energy = CGS_h*CGS_C/l
-									zeta = lc/cam%lambda(ll)
 
-									Psyn_tmp = &
-									(4.0_rp*C_PI/SQRT(3.0_rp))*(CGS_C*CGS_E**2)*P_integral(zeta)/(g**2*cam%lambda(ii)**3)
+									if (theta .LE. threshold_angle) then
+										zeta = lc/cam%lambda(ll)
 
-									Psyn_lambda_pixel(ii,jj,ll,ss) = Psyn_lambda_pixel(ii,jj,ll,ss) + Psyn_tmp/photon_energy
-									np_lambda_pixel(ii,jj,ll,ss) = np_lambda_pixel(ii,jj,ll,ss) + 1.0_rp
+										Psyn_tmp = &
+										(4.0_rp*C_PI/SQRT(3.0_rp))*(CGS_C*CGS_E**2)*P_integral(zeta)/(g**2*cam%lambda(ii)**3)
+
+										Psyn_lambda_pixel(ii,jj,ll,ss) = Psyn_lambda_pixel(ii,jj,ll,ss) + Psyn_tmp/photon_energy
+										np_lambda_pixel(ii,jj,ll,ss) = np_lambda_pixel(ii,jj,ll,ss) + 1.0_rp
+									end if
 
 									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
 										Psyn_tmp = Psyn(g,psi,k,l,chi)
