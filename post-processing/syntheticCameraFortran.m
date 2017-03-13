@@ -381,6 +381,10 @@ for ss=1:ST.params.simulation.num_species
     xo = m*Rc/(m - n);
     yo = xo*tan(incline);
     Ro = sqrt(xo^2 + yo^2);
+    
+    d = sqrt( (xo - Rc)^2 + yo^2 );
+    xc = -f*Ro/d;
+    yc = -f*Zc/d;  
 
     xperp = zeros(1,nt);
     yperp = zeros(1,nt);
@@ -391,16 +395,12 @@ for ss=1:ST.params.simulation.num_species
         d = sqrt( (xtmp - Rc)^2 + ytmp^2 );
         
         yperp(tt)= -f*y(tt)/d;
-        xperp(tt) = f*(x(tt)-Ro)/d;
+        xperp(tt) = f*(x(tt)-Ro)/d - xc;
     end
     % Last closed surface
     
     % Inner wall
-    niw = 40;
-    
-    d = sqrt( (xo - Rc)^2 + yo^2 );
-    xc = -f*Ro/d;
-    yc = -f*Zc/d;   
+    niw = 25;
     
     tiw = linspace(pi/2,3*pi/2,nt);
     xiw = ST.params.fields.Ro + ST.params.fields.a*cos(tiw);
@@ -419,12 +419,11 @@ for ss=1:ST.params.simulation.num_species
     end
 
     xtmp = Xiwo(1,:) - xc;
-    ytmp = Xiwo(2,:) - yc;
 
     rotation_angle = linspace(0,pi,niw);
     
     for ii=1:niw
-        Xiw(1,:,ii) = xtmp*cos(rotation_angle(ii)) + xc;
+        Xiw(1,:,ii) = xtmp*cos(rotation_angle(ii));
         Xiw(2,:,ii) = Xiwo(2,:);
     end
     % Inner wall
@@ -435,7 +434,7 @@ for ss=1:ST.params.simulation.num_species
     d = sqrt( (xtmp - Rc)^2 + ytmp^2 );
     
     ymag_axis = 0;  
-    xmag_axis = f*(ST.params.fields.Ro-Ro)/d;
+    xmag_axis = f*(ST.params.fields.Ro-Ro)/d - xc;
     % Magnetic axis
 
     % Initial condition
@@ -448,7 +447,7 @@ for ss=1:ST.params.simulation.num_species
         d = sqrt( (xtmp - Rc)^2 + ytmp^2 );
         
         ypixel(tt)= -f*yic(tt)/d;
-        xpixel(tt) = f*(xic(tt)-Ro)/d;
+        xpixel(tt) = f*(xic(tt)-Ro)/d - xc;
     end
     % Initial condition
     
@@ -527,16 +526,31 @@ for ss=1:ST.params.simulation.num_species
     figure(h);
     subplot(4,2,5)
 %     surfc(xAxis,yAxis,A,'LineStyle','none')
-    contourf(xAxis,yAxis,A,v(1:iv),'LineStyle','none')
+    contourf(xAxis - xc,yAxis,A,v(1:iv),'LineStyle','none')
     hold on;plot(xpixel,ypixel,'w','Linewidth',0.5);hold off
-        hold on;plot(xperp,yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot(xperp,yperp,-xperp,yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
     for ii=1:niw
         hold on;plot(Xiw(1,:,ii),Xiw(2,:,ii),'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
     end
-    hold on;plot(xmag_axis,ymag_axis,'kx',xc,yc,'kx','Markersize',6,'LineWidth',2);hold off
-    colormap(jet); hc = colorbar('Location','eastoutside');
+    a = max(yperp);
+    angle = pi/4;
+    b = a*sin(angle);
+    xb = a*cos(angle);
+    hold on;plot([xmag_axis-xb,-xmag_axis+xb],[b,b],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot([xmag_axis-xb,-xmag_axis+xb],[-b,-b],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    angle = pi/8;
+    b = a*sin(angle);
+    xb = a*cos(angle);
+    hold on;plot([xmag_axis-xb,-xmag_axis+xb],[b,b],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot([xmag_axis-xb,-xmag_axis+xb],[-b,-b],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot([xmag_axis,-xmag_axis],[a,a],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot([xmag_axis,-xmag_axis],[-a,-a],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot(xmag_axis,ymag_axis,'wx',0,yc,'wx','Markersize',6,'LineWidth',2);hold off
+    cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');
+    ax = gca;
+    ax.Color = cm(1,:);
     xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
-    box on; axis equal;view([0 -90])
+    box on; axis equal;view([0 -90]);axis([-max(xAxis - xc) max(xAxis - xc) min(yAxis) max(yAxis)])
     ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
     xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
     
@@ -549,13 +563,31 @@ for ss=1:ST.params.simulation.num_species
     figure(h);
     subplot(4,2,6)
 %     surfc(xAxis,yAxis,np_angular_pixel','LineStyle','none')
-    contourf(xAxis,yAxis,A,v(1:iv),'LineStyle','none')
+    contourf(xAxis - xc,yAxis,A,v(1:iv),'LineStyle','none')
     hold on;plot(xpixel,ypixel,'w','Linewidth',0.5);hold off
-    hold on;plot(xperp,yperp,'w','Linewidth',2);hold off
-    hold on;plot(xmag_axis,ymag_axis,'wx','Markersize',6,'LineWidth',2);hold off
-    colormap(jet);  hc = colorbar('Location','eastoutside');
+    hold on;plot(xperp,yperp,-xperp,yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    for ii=1:niw
+        hold on;plot(Xiw(1,:,ii),Xiw(2,:,ii),'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    end
+    a = max(yperp);
+    angle = pi/4;
+    b = a*sin(angle);
+    xb = a*cos(angle);
+    hold on;plot([xmag_axis-xb,-xmag_axis+xb],[b,b],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot([xmag_axis-xb,-xmag_axis+xb],[-b,-b],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    angle = pi/8;
+    b = a*sin(angle);
+    xb = a*cos(angle);
+    hold on;plot([xmag_axis-xb,-xmag_axis+xb],[b,b],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot([xmag_axis-xb,-xmag_axis+xb],[-b,-b],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot([xmag_axis,-xmag_axis],[a,a],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot([xmag_axis,-xmag_axis],[-a,-a],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot(xmag_axis,ymag_axis,'wx',0,yc,'wx','Markersize',6,'LineWidth',2);hold off
+    cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');
+    ax = gca;
+    ax.Color = cm(1,:);
     xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
-    box on; axis square;view([0 -90])
+    box on; axis equal;view([0 -90]);axis([-max(xAxis - xc) max(xAxis - xc) min(yAxis) max(yAxis)])
     ylabel('$y$-axis','FontSize',14,'Interpreter','latex')
     xlabel('$x$-axis','FontSize',14,'Interpreter','latex')
     
@@ -568,16 +600,31 @@ for ss=1:ST.params.simulation.num_species
     figure(h);
     subplot(4,2,7)
 %     surfc(xAxis,yAxis,A,'LineStyle','none')
-    contourf(xAxis,yAxis,A,v(1:iv),'LineStyle','none')
+    contourf(xAxis - xc,yAxis,A,v(1:iv),'LineStyle','none')
     hold on;plot(xpixel,ypixel,'w','Linewidth',0.5);hold off
-    hold on;plot(xperp,yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot(xperp,yperp,-xperp,yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
     for ii=1:niw
         hold on;plot(Xiw(1,:,ii),Xiw(2,:,ii),'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
     end
-    hold on;plot(xmag_axis,ymag_axis,'kx',xc,yc,'kx','Markersize',6,'LineWidth',2);hold off
-    colormap(jet); hc = colorbar('Location','eastoutside');
+    a = max(yperp);
+    angle = pi/4;
+    b = a*sin(angle);
+    xb = a*cos(angle);
+    hold on;plot([xmag_axis-xb,-xmag_axis+xb],[b,b],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot([xmag_axis-xb,-xmag_axis+xb],[-b,-b],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    angle = pi/8;
+    b = a*sin(angle);
+    xb = a*cos(angle);
+    hold on;plot([xmag_axis-xb,-xmag_axis+xb],[b,b],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot([xmag_axis-xb,-xmag_axis+xb],[-b,-b],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot([xmag_axis,-xmag_axis],[a,a],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot([xmag_axis,-xmag_axis],[-a,-a],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot(xmag_axis,ymag_axis,'wx',0,yc,'wx','Markersize',6,'LineWidth',2);hold off
+    cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');
+    ax = gca;
+    ax.Color = cm(1,:);
     xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
-    box on; axis equal;view([0 -90]);%axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
+    box on; axis equal;view([0 -90]);axis([-max(xAxis - xc) max(xAxis - xc) min(yAxis) max(yAxis)])
     ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
     xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
     
@@ -590,13 +637,31 @@ for ss=1:ST.params.simulation.num_species
     figure(h);
     subplot(4,2,8)
 %     surfc(xAxis,yAxis,np_angular_pixel','LineStyle','none')
-    contourf(xAxis,yAxis,A,v(1:iv),'LineStyle','none')
+    contourf(xAxis - xc,yAxis,A,v(1:iv),'LineStyle','none')
     hold on;plot(xpixel,ypixel,'w','Linewidth',0.5);hold off
-    hold on;plot(xperp,yperp,'w','Linewidth',2);hold off
-    hold on;plot(xmag_axis,ymag_axis,'wx','Markersize',6,'LineWidth',2);hold off
-    colormap(jet);  hc = colorbar('Location','eastoutside');
+    hold on;plot(xperp,yperp,-xperp,yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    for ii=1:niw
+        hold on;plot(Xiw(1,:,ii),Xiw(2,:,ii),'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    end
+    a = max(yperp);
+    angle = pi/4;
+    b = a*sin(angle);
+    xb = a*cos(angle);
+    hold on;plot([xmag_axis-xb,-xmag_axis+xb],[b,b],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot([xmag_axis-xb,-xmag_axis+xb],[-b,-b],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    angle = pi/8;
+    b = a*sin(angle);
+    xb = a*cos(angle);
+    hold on;plot([xmag_axis-xb,-xmag_axis+xb],[b,b],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot([xmag_axis-xb,-xmag_axis+xb],[-b,-b],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot([xmag_axis,-xmag_axis],[a,a],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot([xmag_axis,-xmag_axis],[-a,-a],'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    hold on;plot(xmag_axis,ymag_axis,'wx',0,yc,'wx','Markersize',6,'LineWidth',2);hold off
+    cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');
+    ax = gca;
+    ax.Color = cm(1,:);
     xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
-    box on; axis square;view([0 -90])
+    box on; axis equal;view([0 -90]);axis([-max(xAxis - xc) max(xAxis - xc) min(yAxis) max(yAxis)])
     ylabel('$y$-axis','FontSize',14,'Interpreter','latex')
     xlabel('$x$-axis','FontSize',14,'Interpreter','latex')
     
