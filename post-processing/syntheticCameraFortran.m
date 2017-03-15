@@ -299,8 +299,11 @@ lc = 4*pi/(3*k*g^3);
 z = lc./l;
 
 BK53 = @(x) besselk(5/3,x);
-IntBKv = @(nu,x) (pi/sqrt(2))*(1 - 0.25*(4*nu^2 -1))*(1 - erf(sqrt(x))) + ...
+% IntBKv = @(nu,x) (pi/sqrt(2))*(1 - 0.25*(4*nu^2 -1))*(1 - erf(sqrt(x))) + ...
+%     0.25*(4*nu^2 - 1)*sqrt(0.5*pi./x).*exp(-x);
+IntBKv = @(nu,x) (pi/sqrt(2))*(1 - 0.25*(4*nu^2 -1))*erfc(sqrt(x)) + ...
     0.25*(4*nu^2 - 1)*sqrt(0.5*pi./x).*exp(-x);
+% fun = @(x) 1 - erf(sqrt(x));
 
 for ii=1:numel(z)
     if (z(ii) < 0.5)
