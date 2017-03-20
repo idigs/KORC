@@ -626,6 +626,7 @@ for ss=1:ST.params.simulation.num_species
     ylabel('$y$-axis','FontSize',14,'Interpreter','latex')
     xlabel('$x$-axis','FontSize',14,'Interpreter','latex')
     
+%     iv = 16;
     
     A = Psyn_L4';
     minval = min(min(A));
