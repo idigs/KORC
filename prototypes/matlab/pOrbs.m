@@ -65,7 +65,7 @@ function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,
 % ST = pOrbs('fields/SIESTA.txt','SIESTA','2D',[100,99,149],[5E5,1E-2,10],[-1,1],[1.6,0,-0.5],[0.99,0]);
 % ST = pOrbs('fields/SIESTA_2.txt','SIESTA','3D',[100,99,149],[5E5,1E-2,10],[-1,1],[1.6,0,-0.5],[0.99,30]);
 % name='fields/bfield_tracing/d3d_bfield_tracing-3E-3.dat';
-% ST = pOrbs(name,'SIESTA','3D',[100,79,149],[1E7,1E-2,1],[-1,1],[1.5,0,-0.5],[0.99,30]);
+% ST = pOrbs(name,'SIESTA','3D',[100,79,149],[5E1,1E-2,20,1E-3],[-1,1],[1.5,0,-0.5],[40E6,10]);
 % USING RAW FILES
 % ST = pOrbs('jfit_165365_1400.mat','RAW','2D',[],[1E5,1E-2,10],[-1,1],[1.82,0,-0.4928],[0.99,70]);
 
@@ -108,7 +108,7 @@ if ST.analytical
     [ST.B,~] = analyticalB([1,1,1],true);
     ST.Bo = ST.B.Bo;
 else
-    ST.B = loadMagneticField(ST);
+    ST.B = loadMagneticField(ST,true);
     ST.Bo = ST.B.Bo;
 end
 
@@ -170,7 +170,9 @@ end
 
 ST.time = ST.time;%/(2*pi/ST.params.wc);
 
-ST.cOp = initializeCollisionOperators(ST);
+% ST.cOp = initializeCollisionOperators(ST);
+
+ST_tmp = ST;
 
 ST.PP = particlePusherLeapfrog(ST);
 
@@ -237,7 +239,7 @@ if ST.analytical
     [B,~] = analyticalB(Xo,false);
     b = B/sqrt(sum(B.^2));
 else
-    B = interpMagField(Xo);
+    B = interpMagField(ST,Xo);
     b = B/sqrt(sum(B.^2));
 end
 
@@ -250,221 +252,226 @@ b3 = cross(b1,b2);
 b3 = b3/sqrt(b3*b3');
 end
 
-function B = loadMagneticField(ST)
+function B = loadMagneticField(ST,flag)
 % All quantities in SI units
-B = struct;
-B.fileType = ST.fileType;
-
-data = load(ST.pathToBField);
-
-switch ST.fileType
-    case 'RAW' % This option changes quite frequently
-        
-        B.R = data(:,1);
-        B.Z = data(:,3);
-        
-%         B.Ro = [B.R(1), B.Z(1)]; % This defines the position
-        
-        B.BR = data(:,4);
-        B.Bphi = - data(:,5); % minus sign
-        B.BZ = data(:,6);
-        
-        B.B = sqrt(B.BR.^2 + B.BZ.^2 + B.Bphi.^2);
-        
-    case 'SIESTA'
-        if strcmp(ST.ND,'2D')
-            NR = ST.res(1);
-            Nphi = ST.res(2);
-            NZ = ST.res(3);
+if flag
+    name = 'SIESTA_3E-3';
+    load(name);
+else
+    B = struct;
+    B.fileType = ST.fileType;
+    data = load(ST.pathToBField);
+    
+    switch ST.fileType
+        case 'RAW' % This option changes quite frequently
             
-            R = data(:,1);
-            Z = data(:,2);
+            B.R = data(:,1);
+            B.Z = data(:,3);
             
-            B.Ro = [R(1), Z(1)]; % This defines the position
+            %         B.Ro = [B.R(1), B.Z(1)]; % This defines the position
             
-            R = reshape(R,NR,Nphi,NZ);
-            Z = reshape(Z,NR,Nphi,NZ);
-            
-            BR = data(:,4);
-            BZ = data(:,5);
-            Bphi = data(:,6);
-            
-            BR = reshape(BR,NR,Nphi,NZ);
-            Bphi = reshape(Bphi,NR,Nphi,NZ);
-            BZ = reshape(BZ,NR,Nphi,NZ);
-            
-            B.NR = NR;
-            B.NZ = NZ;
-            
-            B.R = squeeze(R(:,1,:));
-            B.Z = squeeze(Z(:,1,:));
-            
-            B.BR = squeeze(BR(:,1,:));
-            B.Bphi = squeeze(Bphi(:,1,:));
-            B.BZ = squeeze(BZ(:,1,:));
-            
-            B.B = sqrt(BR.^2 + BZ.^2 + Bphi.^2);
-            
-            B.Bo = mean(mean(mean(B.B)));
-            
-        elseif strcmp(ST.ND,'3D')
-            B.NR = ST.res(1);
-            B.Nphi = ST.res(2);
-            B.NZ = ST.res(3);
-            
-            R = data(:,1);
-            Z = data(:,2);
-%             phi = data(:,3);
-            phi = ((0:1:B.Nphi-1) + 0.5)*(2*pi/B.Nphi);
-            
-            B.Ro = [R(1), Z(1)]; % This defines the position
-            
-            R = reshape(R,B.NR,B.Nphi,B.NZ);
-%             phi = reshape(phi,B.NR,B.Nphi,B.NZ);
-            Z = reshape(Z,B.NR,B.Nphi,B.NZ);
-            
-            BR = data(:,4);
-            BZ = data(:,5);
-            Bphi = data(:,6);
-            
-            BR = reshape(BR,B.NR,B.Nphi,B.NZ);
-            Bphi = reshape(Bphi,B.NR,B.Nphi,B.NZ);
-            BZ = reshape(BZ,B.NR,B.Nphi,B.NZ);
-            
-            B.R = zeros(B.NR,B.NZ,B.Nphi);
-            B.phi = zeros(B.NR,B.NZ,B.Nphi);
-            B.Z = zeros(B.NR,B.NZ,B.Nphi);
-            B.BR = zeros(B.NR,B.NZ,B.Nphi);
-            B.Bphi = zeros(B.NR,B.NZ,B.Nphi);
-            B.BZ = zeros(B.NR,B.NZ,B.Nphi);
-            
-            for iphi=1:B.Nphi
-                B.R(:,:,iphi) = squeeze(R(:,iphi,:));
-%                 B.phi(:,:,iphi) = squeeze(phi(:,iphi,:));
-                B.phi(:,:,iphi) = phi(iphi);
-                B.Z(:,:,iphi) = squeeze(Z(:,iphi,:));
-                
-                B.BR(:,:,iphi) = squeeze(BR(:,iphi,:));
-                B.Bphi(:,:,iphi) = squeeze(Bphi(:,iphi,:));
-                B.BZ(:,:,iphi) = squeeze(BZ(:,iphi,:));
-            end
+            B.BR = data(:,4);
+            B.Bphi = - data(:,5); % minus sign
+            B.BZ = data(:,6);
             
             B.B = sqrt(B.BR.^2 + B.BZ.^2 + B.Bphi.^2);
             
-            B.Bo = mean(mean(mean(B.B)));
-        else
-            error('Please use 2D or 3D fields');
-        end
-        
-    case 'VMEC'
-        
-        if strcmp(ST.ND,'2D')
-            B.NR = ST.res(1);
-            B.NZ = ST.res(2);
-            
-            B.R = data(:,1);
-            B.R = reshape(B.R,B.NR,B.NZ);
-            B.Z = data(:,3);
-            B.Z = reshape(B.Z,B.NR,B.NZ);
-            
-            B.BR = data(:,5);
-            B.BR = reshape(B.BR,B.NR,B.NZ);
-            B.Bphi = - data(:,6); % minus sign
-            B.Bphi = reshape(B.Bphi,B.NR,B.NZ);
-            B.BZ = data(:,7);
-            B.BZ = reshape(B.BZ,B.NR,B.NZ);
-            
-        elseif strcmp(ST.ND,'3D')
-            error('Not ready for using 3D fields of VMEC!')
-        else
-            error('Please use 2D or 3D fields');
-        end
-        
-    case 'XPANDER'
-        
-        if strcmp(ST.ND,'2D')
-            B.NR = ST.res(1);
-            B.NZ = ST.res(2);
-            
-            B.R = data(:,1);
-            B.R = reshape(B.R,B.NR,B.NZ);
-            B.Z = data(:,3);
-            B.Z = reshape(B.Z,B.NR,B.NZ);
-            
-            B.BR = data(:,4);
-            B.BR = reshape(B.BR,B.NR,B.NZ);
-            B.Bphi = data(:,5);
-            B.Bphi = reshape(B.Bphi,B.NR,B.NZ);
-            B.BZ = data(:,6);
-            B.BZ = reshape(B.BZ,B.NR,B.NZ);
-            
-            B.P = data(:,7);
-            B.P = reshape(B.P,B.NR,B.NZ);
-        elseif strcmp(ST.ND,'3D')
-            B.NR = ST.res(1);
-            B.Nphi = ST.res(2);
-            B.NZ = ST.res(3);
-            
-            B.R = zeros(B.NR,B.NZ,B.Nphi);
-            B.Z = zeros(B.NR,B.NZ,B.Nphi);
-            B.phi = zeros(B.NR,B.NZ,B.Nphi);
-            
-            phi = ((0:1:B.Nphi-1) + 0.5)*(2*pi/B.Nphi);
-            
-            B.B = zeros(B.NR,B.NZ,B.Nphi); % magnitude
-            B.BR = zeros(B.NR,B.NZ,B.Nphi);
-            B.Bphi = zeros(B.NR,B.NZ,B.Nphi);
-            B.BZ = zeros(B.NR,B.NZ,B.Nphi);
-            B.P = zeros(B.NR,B.NZ,B.Nphi);
-            
-            for iphi = 1:B.Nphi;
-                for iz=1:B.NZ
-                    indi = (iphi-1)*B.NR*B.NZ + (iz-1)*B.NR + 1;
-                    indf = (iphi-1)*B.NR*B.NZ + iz*B.NR;
-                    B.R(:,iz,iphi) = data(indi:indf,1);
-                    B.Z(:,iz,iphi) = data(indi:indf,3);
+        case 'SIESTA'
+            if strcmp(ST.ND,'2D')
+                NR = ST.res(1);
+                Nphi = ST.res(2);
+                NZ = ST.res(3);
+                
+                R = data(:,1);
+                Z = data(:,2);
+                
+                B.Ro = [R(1), Z(1)]; % This defines the position
+                
+                R = reshape(R,NR,Nphi,NZ);
+                Z = reshape(Z,NR,Nphi,NZ);
+                
+                BR = data(:,4);
+                BZ = data(:,5);
+                Bphi = data(:,6);
+                
+                BR = reshape(BR,NR,Nphi,NZ);
+                Bphi = reshape(Bphi,NR,Nphi,NZ);
+                BZ = reshape(BZ,NR,Nphi,NZ);
+                
+                B.NR = NR;
+                B.NZ = NZ;
+                
+                B.R = squeeze(R(:,1,:));
+                B.Z = squeeze(Z(:,1,:));
+                
+                B.BR = squeeze(BR(:,1,:));
+                B.Bphi = squeeze(Bphi(:,1,:));
+                B.BZ = squeeze(BZ(:,1,:));
+                
+                B.B = sqrt(BR.^2 + BZ.^2 + Bphi.^2);
+                
+                B.Bo = mean(mean(mean(B.B)));
+                
+            elseif strcmp(ST.ND,'3D')
+                B.NR = ST.res(1);
+                B.Nphi = ST.res(2);
+                B.NZ = ST.res(3);
+                
+                R = data(:,1);
+                Z = data(:,2);
+                %             phi = data(:,3);
+                phi = ((0:1:B.Nphi-1) + 0.5)*(2*pi/B.Nphi);
+                
+                B.Ro = [R(1), Z(1)]; % This defines the position
+                
+                R = reshape(R,B.NR,B.Nphi,B.NZ);
+                %             phi = reshape(phi,B.NR,B.Nphi,B.NZ);
+                Z = reshape(Z,B.NR,B.Nphi,B.NZ);
+                
+                BR = data(:,4);
+                BZ = data(:,5);
+                Bphi = data(:,6);
+                
+                BR = reshape(BR,B.NR,B.Nphi,B.NZ);
+                Bphi = reshape(Bphi,B.NR,B.Nphi,B.NZ);
+                BZ = reshape(BZ,B.NR,B.Nphi,B.NZ);
+                
+                B.R = zeros(B.NR,B.NZ,B.Nphi);
+                B.phi = zeros(B.NR,B.NZ,B.Nphi);
+                B.Z = zeros(B.NR,B.NZ,B.Nphi);
+                B.BR = zeros(B.NR,B.NZ,B.Nphi);
+                B.Bphi = zeros(B.NR,B.NZ,B.Nphi);
+                B.BZ = zeros(B.NR,B.NZ,B.Nphi);
+                
+                for iphi=1:B.Nphi
+                    B.R(:,:,iphi) = squeeze(R(:,iphi,:));
+                    %                 B.phi(:,:,iphi) = squeeze(phi(:,iphi,:));
+                    B.phi(:,:,iphi) = phi(iphi);
+                    B.Z(:,:,iphi) = squeeze(Z(:,iphi,:));
                     
-                    B.BR(:,iz,iphi) = data(indi:indf,4);
-                    B.Bphi(:,iz,iphi) = - data(indi:indf,5);
-                    B.BZ(:,iz,iphi) = data(indi:indf,6);
-                    
-                    B.P(:,iz,iphi) = data(indi:indf,7);
+                    B.BR(:,:,iphi) = squeeze(BR(:,iphi,:));
+                    B.Bphi(:,:,iphi) = squeeze(Bphi(:,iphi,:));
+                    B.BZ(:,:,iphi) = squeeze(BZ(:,iphi,:));
                 end
-                B.B(:,:,iphi) = sqrt(B.BR(:,:,iphi).^2 + B.BZ(:,:,iphi).^2 + B.Bphi(:,:,iphi).^2);
-                B.phi(:,:,iphi) = phi(iphi);
+                
+                B.B = sqrt(B.BR.^2 + B.BZ.^2 + B.Bphi.^2);
+                
+                B.Bo = mean(mean(mean(B.B)));
+            else
+                error('Please use 2D or 3D fields');
             end
-        else
-            error('Please use 2D or 3D fields');
-        end
-        
-    otherwise
-        error('Unknown file format!')
+            
+        case 'VMEC'
+            
+            if strcmp(ST.ND,'2D')
+                B.NR = ST.res(1);
+                B.NZ = ST.res(2);
+                
+                B.R = data(:,1);
+                B.R = reshape(B.R,B.NR,B.NZ);
+                B.Z = data(:,3);
+                B.Z = reshape(B.Z,B.NR,B.NZ);
+                
+                B.BR = data(:,5);
+                B.BR = reshape(B.BR,B.NR,B.NZ);
+                B.Bphi = - data(:,6); % minus sign
+                B.Bphi = reshape(B.Bphi,B.NR,B.NZ);
+                B.BZ = data(:,7);
+                B.BZ = reshape(B.BZ,B.NR,B.NZ);
+                
+            elseif strcmp(ST.ND,'3D')
+                error('Not ready for using 3D fields of VMEC!')
+            else
+                error('Please use 2D or 3D fields');
+            end
+            
+        case 'XPANDER'
+            
+            if strcmp(ST.ND,'2D')
+                B.NR = ST.res(1);
+                B.NZ = ST.res(2);
+                
+                B.R = data(:,1);
+                B.R = reshape(B.R,B.NR,B.NZ);
+                B.Z = data(:,3);
+                B.Z = reshape(B.Z,B.NR,B.NZ);
+                
+                B.BR = data(:,4);
+                B.BR = reshape(B.BR,B.NR,B.NZ);
+                B.Bphi = data(:,5);
+                B.Bphi = reshape(B.Bphi,B.NR,B.NZ);
+                B.BZ = data(:,6);
+                B.BZ = reshape(B.BZ,B.NR,B.NZ);
+                
+                B.P = data(:,7);
+                B.P = reshape(B.P,B.NR,B.NZ);
+            elseif strcmp(ST.ND,'3D')
+                B.NR = ST.res(1);
+                B.Nphi = ST.res(2);
+                B.NZ = ST.res(3);
+                
+                B.R = zeros(B.NR,B.NZ,B.Nphi);
+                B.Z = zeros(B.NR,B.NZ,B.Nphi);
+                B.phi = zeros(B.NR,B.NZ,B.Nphi);
+                
+                phi = ((0:1:B.Nphi-1) + 0.5)*(2*pi/B.Nphi);
+                
+                B.B = zeros(B.NR,B.NZ,B.Nphi); % magnitude
+                B.BR = zeros(B.NR,B.NZ,B.Nphi);
+                B.Bphi = zeros(B.NR,B.NZ,B.Nphi);
+                B.BZ = zeros(B.NR,B.NZ,B.Nphi);
+                B.P = zeros(B.NR,B.NZ,B.Nphi);
+                
+                for iphi = 1:B.Nphi;
+                    for iz=1:B.NZ
+                        indi = (iphi-1)*B.NR*B.NZ + (iz-1)*B.NR + 1;
+                        indf = (iphi-1)*B.NR*B.NZ + iz*B.NR;
+                        B.R(:,iz,iphi) = data(indi:indf,1);
+                        B.Z(:,iz,iphi) = data(indi:indf,3);
+                        
+                        B.BR(:,iz,iphi) = data(indi:indf,4);
+                        B.Bphi(:,iz,iphi) = - data(indi:indf,5);
+                        B.BZ(:,iz,iphi) = data(indi:indf,6);
+                        
+                        B.P(:,iz,iphi) = data(indi:indf,7);
+                    end
+                    B.B(:,:,iphi) = sqrt(B.BR(:,:,iphi).^2 + B.BZ(:,:,iphi).^2 + B.Bphi(:,:,iphi).^2);
+                    B.phi(:,:,iphi) = phi(iphi);
+                end
+            else
+                error('Please use 2D or 3D fields');
+            end
+            
+        otherwise
+            error('Unknown file format!')
+    end
+    
+    B.B = sqrt(B.BR.^2 + B.BZ.^2 + B.Bphi.^2);
+    
+    % Here the question what should be the characteristic magnetic field
+    % used in the normalization and calculation of the time step.
+    %     B.Bo = max(max(max(B.B)));
+    B.Bo = mean(mean(mean(B.B)));
+    
+    if ST.opt
+        plotLoadedMagneticField(B)
+    end
+    
+    % B.SI = calculateChebyshevInterpolant(ST,B);
+    
+    B.SI = calculatescatteredInterpolant(ST,B);
+    
+    B.R = [];
+    B.Z = [];
+    B.phi = [];
+    
+    B.B = [];
+    B.BR = [];
+    B.Bphi = [];
+    B.BZ = [];
+    B.P = [];
+    
 end
-
-B.B = sqrt(B.BR.^2 + B.BZ.^2 + B.Bphi.^2);
-
-% Here the question what should be the characteristic magnetic field
-% used in the normalization and calculation of the time step.
-%     B.Bo = max(max(max(B.B)));
-B.Bo = mean(mean(mean(B.B)));
-
-if ST.opt
-    plotLoadedMagneticField(B)
-end
-
-% B.SI = calculateChebyshevInterpolant(ST,B);
-
-B.SI = calculatescatteredInterpolant(ST,B);
-
-B.R = [];
-B.Z = [];
-B.phi = [];
-
-B.B = [];
-B.BR = [];
-B.Bphi = [];
-B.BZ = [];
-B.P = [];
 
 end
 
@@ -927,7 +934,7 @@ function [E,DEDt] = analyticalE(B,X,V)
 narginchk(2,3);
 
 % Parameters of the analytical magnetic field
-Eo = -4.0; % in V/m
+Eo = -0.0; % in V/m
 Ro = B.Ro; % Major radius in meters.
 % Parameters of the analytical magnetic field
 
@@ -1209,6 +1216,8 @@ if ST.analytical
 else
     B = interpMagField(ST,X(1,:)*ST.norm.l)/ST.Bo;
     E = [0,0,0];
+    DEDt = [0,0,0];
+    vxDBDt = [0,0,0];
 end
 % dt = ST.params.dt*ST.norm.wc;
 dt = ST.params.dt/ST.norm.t;
