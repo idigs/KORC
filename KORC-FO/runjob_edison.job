@@ -1,24 +1,28 @@
 #!/bin/bash -l
 #SBATCH -J KORC-FO
 #SBATCH -p regular
-#SBATCH --qos=premium
+#SBATCH --qos=normal
 #SBATCH -N 42
-#SBATCH -t 00:25:00
+#SBATCH -t 00:50:00
 #SBATCH -L project,SCRATCH
-#SBATCH -o KORC_INTEL_%j.out 
-#SBATCH -e KORC_INTEL_%j.err
+#SBATCH -o KORC_%j.out 
+#SBATCH -e KORC_%j.err
 
 module load cray-hdf5/1.10.0
 
-## You might want to change the path of the outouts folder
-PATH_TO_SCRATCH='/scratch1/scratchdirs/carbajal'
-FOLDER='60MeV'
-OUTPUT_FOLDER=${PATH_TO_SCRATCH}/${FOLDER}
-
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$opt/cray/hdf5/1.10.0/INTEL/15.0/lib
-
-mkdir ${OUTPUT_FOLDER}
 cd $SLURM_SUBMIT_DIR
 
+## You might want to change the path of the outouts folder
+FILE_ID='10MeV'
+INPUT_FOLDER='SyntheticDiagnostic_pplane_2'
+
+FOLDER_ID=${INPUT_FOLDER}_${FILE_ID}
+PATH_TO_SCRATCH='/scratch1/scratchdirs/carbajal'
+OUTPUT_FOLDER=${PATH_TO_SCRATCH}/${FOLDER_ID}
+
+mkdir ${OUTPUT_FOLDER}
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$opt/cray/hdf5/1.10.0/INTEL/15.0/lib
 export OMP_NUM_THREADS=4
-srun -n 252 -c 4 ./bin/KORC-FO inputFiles/SyntheticDiagnostic/input_file_60MeV.korc ${OUTPUT_FOLDER}/
+
+srun -n 252 -c 4 ./bin/KORC-FO inputFiles/${INPUT_FOLDER}/input_file_${FILE_ID}.korc ${OUTPUT_FOLDER}/
