@@ -3,7 +3,7 @@
 ##SBATCH -p regular
 #SBATCH -p debug
 ##SBATCH --qos=normal
-#SBATCH -N 42 
+#SBATCH -N 42
 #SBATCH -t 00:05:00
 #SBATCH -L project,SCRATCH
 #SBATCH -o KORC_%j.out 
