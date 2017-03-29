@@ -87,13 +87,13 @@ subroutine timing_KORC(params,t1,t2)
 
 	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
-	write(6,'("MPI: ",I2," Total time: ",F25.16)') params%mpi_params%rank, t2 - t1
+	write(6,'("MPI: ",I4," Total time: ",F30.16)') params%mpi_params%rank, t2 - t1
 
 	call MPI_GATHER(individual_runtime,1,MPI_DOUBLE_PRECISION,runtime,&
 			1,MPI_DOUBLE_PRECISION,0_idef, MPI_COMM_WORLD, mpierr)
 
 	if (params%mpi_params%rank .EQ. 0_idef) then
-		write(6,'("The execution time is: ",F25.16)') SUM(runtime)/REAL(params%mpi_params%nmpi,rp)
+		write(6,'("The execution time is: ",F30.16)') SUM(runtime)/REAL(params%mpi_params%nmpi,rp)
 	end if
 
 	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
@@ -113,7 +113,7 @@ subroutine finalize_mpi(params)
 	call MPI_FINALIZE(mpierr)
 
 	call MPI_FINALIZED(flag, mpierr)
-	write(6,'("MPI: ",I2," FINALIZED: ",l)') params%mpi_params%rank, flag
+	write(6,'("MPI: ",I4," FINALIZED: ",l)') params%mpi_params%rank, flag
 end subroutine finalize_mpi
 
 end module korc_hpc

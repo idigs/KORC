@@ -1,4 +1,5 @@
 function ST = syntheticCameraFortran(path,lambdas,visible,range)
+% ST = syntheticCameraFortran('/media/l8c/FantomHD/SimulationOutputs/Avalanche/Z1/',[400E-9,900E-9],'on',[99,100])
 close all
 
 ST = struct;

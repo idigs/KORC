@@ -539,7 +539,7 @@ subroutine initialization_sanity_check(params)
 
 !$OMP PARALLEL SHARED(params) FIRSTPRIVATE(ierr,flag)
 	!$OMP CRITICAL
-	write(6,'("MPI: ",I3," OMP/of: ",I3," / ",I3," Procs: ",I3," Init: ",l1)') &
+	write(6,'("MPI: ",I4," OMP/of: ",I3," / ",I3," Procs: ",I3," Init: ",l1)') &
 	params%mpi_params%rank,OMP_GET_THREAD_NUM(),OMP_GET_NUM_THREADS(),OMP_GET_NUM_PROCS(),flag
 	!$OMP END CRITICAL
 !$OMP END PARALLEL

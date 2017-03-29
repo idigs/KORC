@@ -72,7 +72,7 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {'X','B'};
+list = {};%list = {'X','B'};
 
 it = ST.range(1):1:ST.range(2);
 
