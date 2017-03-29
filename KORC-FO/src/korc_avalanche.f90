@@ -2,6 +2,7 @@ MODULE korc_avalanche
 	USE korc_types
 	USE korc_constants
 	USE korc_HDF5
+	USE korc_hpc
 	IMPLICIT NONE
 
 	TYPE, PRIVATE :: AVALANCHE_PDF_PARAMS
@@ -203,7 +204,7 @@ SUBROUTINE sample_distribution(params,g,eta)
 
 	call RANDOM_SEED()
 	call RANDOM_NUMBER(indices_real)
-	indices = INT(indices_real*REAL(num_samples,rp),idef)
+	indices = INT(indices_real*REAL(num_samples,rp),idef) + 1_idef
 	p = p_samples(indices)
 	eta = eta_samples(indices)
 
@@ -215,11 +216,15 @@ SUBROUTINE sample_distribution(params,g,eta)
 
 	g = SQRT(1.0_rp + p**2)
 
+!	write(6,'("MPI:",I4," Minimum gamma: ",F30.16," "I6)') params%mpi_params%rank,MINVAL(p),indices(MINLOC(p))
+
 	DEALLOCATE(p)
 	DEALLOCATE(p_samples) ! new method
 	DEALLOCATE(eta_samples) ! new method
 	DEALLOCATE(indices_real)
 	DEALLOCATE(indices)
+
+!	call korc_abort()
 END SUBROUTINE sample_distribution
 
 

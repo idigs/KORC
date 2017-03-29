@@ -13,6 +13,8 @@ subroutine korc_abort()
 	implicit none
 	INTEGER :: mpierr
 
+	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+
 	call MPI_ABORT(MPI_COMM_WORLD, -2000, mpierr)
 end subroutine korc_abort
 
