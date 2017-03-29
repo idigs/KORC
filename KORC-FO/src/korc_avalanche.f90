@@ -78,14 +78,25 @@ SUBROUTINE sample_distribution(params,g,eta)
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: g
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: eta
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: p
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: p_samples ! new method
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: eta_samples ! new method
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: indices_real ! new method
+	INTEGER, DIMENSION(:), ALLOCATABLE :: indices ! new method
 	REAL(rp) :: chi, chi_test
 	REAL(rp) :: p_buffer, p_test
 	REAL(rp) :: eta_buffer, eta_test
 	REAL(rp) :: ratio, rand_unif
 	INTEGER :: ii,ppp
+	INTEGER :: num_samples ! new method
 
 	ppp = SIZE(g)
 	ALLOCATE(p(ppp))
+
+	num_samples = 10_idef*ppp
+	ALLOCATE(p_samples(num_samples)) ! new method
+	ALLOCATE(eta_samples(num_samples)) ! new method
+	ALLOCATE(indices_real(ppp)) ! new method
+	ALLOCATE(indices(ppp)) ! new method
 
 	eta_buffer = 0.0_rp
 	call RANDOM_SEED()
@@ -122,40 +133,79 @@ SUBROUTINE sample_distribution(params,g,eta)
 		end if
 	end do	
 
-	eta(1) = eta_buffer
-	call RANDOM_SEED()
-	call RANDOM_NUMBER(rand_unif)
-	p(1) = p_buffer
+!	eta(1) = eta_buffer
+!	call RANDOM_SEED()
+!	call RANDOM_NUMBER(rand_unif)
+!	p(1) = p_buffer
+
+!	ii=2_idef
+!	do while (ii .LE. ppp)
+!		eta_test = eta(ii-1) + random_norm(0.0_rp,1.0_rp)
+!		do while (ABS(eta_test) .GT. aval_params%max_pitch_angle)
+!			eta_test = eta(ii-1) + random_norm(0.0_rp,1.0_rp)
+!		end do
+!		chi_test = COS(C_PI*eta_test/180.0_rp)
+!		chi = COS(C_PI*eta(ii-1)/180.0_rp)	
+
+!		p_test = p(ii-1) + random_norm(0.0_rp,1.0_rp)
+!		do while ((p_test.LT.aval_params%min_p).OR.(p_test.GT.aval_params%max_p))
+!			p_test = p(ii-1) + random_norm(0.0_rp,1.0_rp)
+!		end do
+
+!		ratio = fRE(chi_test,p_test)/fRE(chi,p(ii-1))
+
+!		if (ratio .GE. 1.0_rp) then
+!			p(ii) = p_test
+!			eta(ii) = eta_test
+!			ii = ii + 1_idef
+!		else 
+!			call RANDOM_NUMBER(rand_unif)
+!			if (rand_unif .LT. ratio) then
+!				p(ii) = p_test
+!				eta(ii) = eta_test
+!				ii = ii + 1_idef
+!			end if
+!		end if
+!	end do	
+
+	eta_samples(1) = eta_buffer
+	p_samples(1) = p_buffer
 
 	ii=2_idef
-	do while (ii .LE. ppp)
-		eta_test = eta(ii-1) + random_norm(0.0_rp,1.0_rp)
+	do while (ii .LE. num_samples)
+		eta_test = eta_samples(ii-1) + random_norm(0.0_rp,1.0_rp)
 		do while (ABS(eta_test) .GT. aval_params%max_pitch_angle)
-			eta_test = eta(ii-1) + random_norm(0.0_rp,1.0_rp)
+			eta_test = eta_samples(ii-1) + random_norm(0.0_rp,1.0_rp)
 		end do
 		chi_test = COS(C_PI*eta_test/180.0_rp)
-		chi = COS(C_PI*eta(ii-1)/180.0_rp)	
+		chi = COS(C_PI*eta_samples(ii-1)/180.0_rp)	
 
-		p_test = p(ii-1) + random_norm(0.0_rp,1.0_rp)
+		p_test = p_samples(ii-1) + random_norm(0.0_rp,1.0_rp)
 		do while ((p_test.LT.aval_params%min_p).OR.(p_test.GT.aval_params%max_p))
-			p_test = p(ii-1) + random_norm(0.0_rp,1.0_rp)
+			p_test = p_samples(ii-1) + random_norm(0.0_rp,1.0_rp)
 		end do
 
-		ratio = fRE(chi_test,p_test)/fRE(chi,p(ii-1))
+		ratio = fRE(chi_test,p_test)/fRE(chi,p_samples(ii-1))
 
 		if (ratio .GE. 1.0_rp) then
-			p(ii) = p_test
-			eta(ii) = eta_test
+			p_samples(ii) = p_test
+			eta_samples(ii) = eta_test
 			ii = ii + 1_idef
 		else 
 			call RANDOM_NUMBER(rand_unif)
 			if (rand_unif .LT. ratio) then
-				p(ii) = p_test
-				eta(ii) = eta_test
+				p_samples(ii) = p_test
+				eta_samples(ii) = eta_test
 				ii = ii + 1_idef
 			end if
 		end if
-	end do	
+	end do
+
+	call RANDOM_SEED()
+	call RANDOM_NUMBER(indices_real)
+	indices = INT(indices_real*REAL(num_samples,rp),idef)
+	p = p_samples(indices)
+	eta = eta_samples(indices)
 
 	do ii=1_idef,ppp
 		if (eta(ii).LT.0.0_rp) then
@@ -166,6 +216,10 @@ SUBROUTINE sample_distribution(params,g,eta)
 	g = SQRT(1.0_rp + p**2)
 
 	DEALLOCATE(p)
+	DEALLOCATE(p_samples) ! new method
+	DEALLOCATE(eta_samples) ! new method
+	DEALLOCATE(indices_real)
+	DEALLOCATE(indices)
 END SUBROUTINE sample_distribution
 
 

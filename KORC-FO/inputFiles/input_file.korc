@@ -1,36 +1,36 @@
 &input_parameters
-	t_steps = 3700000 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	t_steps = 1 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
 	dt = 1E-2 ! Time step as fraction of non-relativistic gyro-period
-	output_cadence = 37000 ! 1400 for saving each 100 gyro-periods
-	num_species = 2
+	output_cadence = 1 ! 1400 for saving each 100 gyro-periods
+	num_species = 3
 	radiation = .FALSE.
 	collisions = .FALSE.
 	collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
-	magnetic_field_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
+	magnetic_field_model = 'EXTERNAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
 										! For 'ANALYTICAL', the magnetic field is calculated based on
 										! the parameters given in the "analytic_mag_field_params" section.
 										! For 'EXTERNAL', the magnetic field is loaded from the file
 										! specified in "filename".
 										! 'UNIFORM' A uniform magnetic field used to advance only electrons' velocity.
-	poloidal_flux = .FALSE.			 ! .TRUE. if using JFIT poloidal flux, .FALSE. if using the
+	poloidal_flux = .TRUE.			 ! .TRUE. if using JFIT poloidal flux, .FALSE. if using the
 										! cylindrical components of the magnetic field
-	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/C-MOD_EFIT.h5" !
-	outputs_list = '{}' ! List of outputs '{X,V,E,B,gamma,mu,eta,Prad,Pin,flag}'
+	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/DIII-D_JFIT.h5" !
+	outputs_list = '{X,flag,eta,V,g,Prad,B}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
 /
 
 &plasma_species
-        runaway = .FALSE., .FALSE. !
-        energy_distribution = 'MONOENERGETIC','MONOENERGETIC' ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE'
-        pitch_distribution = 'MONOPITCH','MONOPITCH' ! Options are: 'MONOPITCH', 'AVALANCHE'. When energy_distribution='THERMAL', the pitch
+        runaway = .FALSE., .FALSE., .FALSE. !
+        energy_distribution = 'MONOENERGETIC','MONOENERGETIC','MONOENERGETIC' ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE'
+        pitch_distribution = 'MONOPITCH','MONOPITCH','MONOPITCH' ! Options are: 'MONOPITCH', 'AVALANCHE'. When energy_distribution='THERMAL', the pitch
 														! angles correspond to those of a thermalized distribution.
-        Ro = 1.46, 1.46 !
+        Ro = 1.43, 1.43, 1.43 !
         Zo = 0.0, 0.0 !
-        r = 0.2, 0.2 !
-        Eo = 25.0E6, 25.0E6 ! Initial energy in eV
-        etao = 5.0, 10.0  ! Initial pitch angle
-        ppp = 5000, 5000 ! Number of particles per process (mpi)
-        q = -1.0, -1.0 ! Electric charge
-        m = 1.0, 1.0 ! In units of electron mass
+        r = 0.2, 0.2, 0.2 !
+        Eo = 20.0E6, 20.0E6, 20.0E6 ! Initial energy in eV
+        etao = 10.0, 20.0, 60  ! Initial pitch angle
+        ppp = 5000, 5000, 5000 ! Number of particles per process (mpi)
+        q = -1.0, -1.0, -1.0 ! Electric charge
+        m = 1.0, 1.0, 1.0 ! In units of electron mass
 /
 
 &analytic_mag_field_params

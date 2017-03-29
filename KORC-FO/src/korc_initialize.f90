@@ -32,8 +32,8 @@ subroutine set_paths(params)
 
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'(/,"* * * * * PATHS * * * * *")')
-		write(6,'("The input file is:",A50)') TRIM(params%path_to_inputs)
-		write(6,'("The output folder is:",A50,/)') TRIM(params%path_to_outputs)
+		write(6,'("The input file is:",A70)') TRIM(params%path_to_inputs)
+		write(6,'("The output folder is:",A70,/)') TRIM(params%path_to_outputs)
 	end if
 end subroutine set_paths
 

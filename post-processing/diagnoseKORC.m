@@ -43,11 +43,13 @@ ST.data = loadData(ST);
 
 % ST.P = synchrotronSpectrum(ST,true);
 
-ST.SD = syntheticDiagnosticSynchrotron(ST,false);
+% ST.SD = syntheticDiagnosticSynchrotron(ST,false);
 
 % radiationPlane(ST);
 
 % calculateTemperatureComponents(ST);
+
+avalancheDiagnostic(ST);
 
 % save('energy_limit','ST')
 end
@@ -70,7 +72,7 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {'X','V','B'};
+list = {'X','B'};
 
 it = ST.range(1):1:ST.range(2);
 
@@ -99,8 +101,7 @@ for ll=1:length(list)
     end
 end
 
-
-list = {'eta','gamma','Prad','Pin','flag'};
+list = {'g','flag','eta'};
 % list = {'g','eta'};
 
 for ll=1:length(list)
@@ -122,13 +123,9 @@ for ll=1:length(list)
                     ['/' num2str(it(ii)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
                     '/' list{ll}];
                 
-                if strcmp(list{ll},'gamma')
-                    data.(['sp' num2str(ss)]).(list{ll})(indi:indf,ii) = ...
+                data.(['sp' num2str(ss)]).(list{ll})(indi:indf,ii) = ...
                     h5read(filename, dataset);
-                else
-                    data.(['sp' num2str(ss)]).g(indi:indf,ii) = ...
-                    h5read(filename, dataset);
-                end
+                
             end
             
         end
@@ -1100,12 +1097,11 @@ for ss=1:ST.params.simulation.num_species
     X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,1));
     R = sqrt( sum(X(1:2,:).^2,1) );
     Z = X(3,:);
-    Prad = squeeze(abs(ST.data.(['sp' num2str(ss)]).Prad(bool,end)));
 
     figure(h1)
     subplot(1,2,1)
     hold on
-    plot(R,Z,'s','MarkerSize',4,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+    plot(R,Z,'o','MarkerSize',2,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
     hold off
     legends{ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
 end
@@ -1138,7 +1134,7 @@ for ss=ST.params.simulation.num_species:-1:1
     figure(h1)
     subplot(1,2,2)
     hold on
-    plot(R,Z,'s','MarkerSize',6,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+    plot(R,Z,'o','MarkerSize',2,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
 %     plot(R,Z,'.','MarkerSize',10,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
     hold off
     legends{ST.params.simulation.num_species + 1 -ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
@@ -2215,7 +2211,7 @@ if option
     plot(camera_params.position(1),0,'ko','MarkerSize',5)
     hold off
     
-    N = 10;
+    N = 100;
     ccd_x = linspace(xmin,xmax,N);
     ccd_y = -camera_params.focal_length*ones(1,N);
     
@@ -2440,8 +2436,8 @@ lambda = lch*lambda; % in cm
 % Camera parameters
 camera_params = struct;
 camera_params.Riw = 1.0;% inner wall radius in meters
-camera_params.NX = 100;
-camera_params.NY = 100;
+camera_params.NX = 20;
+camera_params.NY = 20;
 camera_params.size = [0.4,0.4]; % [horizontal size, vertical size] in meters
 camera_params.focal_length = 0.5; % In meters
 camera_params.position = [2.4,0.0]; % [R,Z] in meters
@@ -2818,3 +2814,48 @@ end
 end
 
 
+function avalancheDiagnostic(ST)
+nbins_E = 50;
+nbins_pitch = 50;
+
+for ss=1:ST.params.simulation.num_species
+    q = abs(ST.params.species.q(ss));
+    m = ST.params.species.m(ss);
+    Ro = ST.params.fields.Ro;
+    c = ST.params.scales.v;
+    
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
+    bool = pin;% & passing;
+    
+    g = [];
+    eta = [];
+    for ii=1:ST.num_snapshots
+        g = [g;ST.data.(['sp' num2str(ss)]).g(bool,ii)];
+        eta = [eta;ST.data.(['sp' num2str(ss)]).eta(bool,ii)];
+    end
+    
+    E = g*m*c^2;
+    E = E/(q*1E6);
+    p = sqrt(g.^2 - 1);
+    
+    figure
+    histogram2(eta,E,[nbins_pitch,nbins_E],'FaceColor','flat','Normalization','probability','LineStyle','none');
+    view([0 90])
+    cmp = colormap(jet);
+    xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
+    ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
+    
+    pperp = sin(deg2rad(eta)).*p;
+    pparallel = cos(deg2rad(eta)).*p;
+    
+    figure
+    histogram2(pparallel,pperp,[nbins_pitch,nbins_E],'FaceColor','flat','Normalization','probability','LineStyle','none');
+    view([0 90])
+    cmp = colormap(jet);
+    xlabel('$p_\parallel$ ($mc$)','FontSize',14,'Interpreter','latex')
+    ylabel('$p_\perp$ ($mc$)','FontSize',14,'Interpreter','latex')
+    
+end
+
+end
