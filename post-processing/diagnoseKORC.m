@@ -2815,8 +2815,8 @@ end
 
 
 function avalancheDiagnostic(ST)
-nbins_E = 50;
-nbins_pitch = 50;
+nbins_E = 100;
+nbins_pitch = 100;
 
 for ss=1:ST.params.simulation.num_species
     q = abs(ST.params.species.q(ss));

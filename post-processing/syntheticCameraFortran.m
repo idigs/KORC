@@ -498,18 +498,16 @@ for ss=1:ST.params.simulation.num_species
     end
     % Initial condition
     
-    iv = 18;
-    
     A = Psyn_L1';
     minval = min(min(A));
-    maxval = max(max(A));
-    v = linspace(minval,maxval,21);
+    maxval = 0.9*max(max(A));
+    v = linspace(minval,maxval,25);
         
     figure(h);
     subplot(4,2,1)
-    contourf(RAxis,ZAxis,A,v(1:iv),'LineStyle','none')
+    contourf(RAxis,ZAxis,A,v,'LineStyle','none')
     hold on;plot(x,y,'w','Linewidth',2);hold off
-    colormap(jet); hc = colorbar('Location','eastoutside');
+    colormap(jet); hc = colorbar('Location','eastoutside');caxis([0,maxval]);
     xlabel(hc,'$P_{Tot}$ (Watts)','Interpreter','latex','FontSize',12)
     box on; axis square;view([0 -90])
     ylabel('$Z$-axis','FontSize',12,'Interpreter','latex')
@@ -534,14 +532,14 @@ for ss=1:ST.params.simulation.num_species
         
     A = Psyn_L2';
     minval = min(min(A));
-    maxval = max(max(A));
-    v = linspace(minval,maxval,21);
+    maxval = 0.7*max(max(A));
+    v = linspace(minval,maxval,25);
     
     figure(h);
     subplot(4,2,3)
-    contourf(RAxis,ZAxis,A,v(1:iv),'LineStyle','none')
+    contourf(RAxis,ZAxis,A,v,'LineStyle','none')
     hold on;plot(x,y,'w','Linewidth',2);hold off
-    colormap(jet); hc = colorbar('Location','eastoutside');
+    colormap(jet); hc = colorbar('Location','eastoutside');caxis([0,maxval]);
     xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
     box on; axis square;view([0 -90])
     ylabel('$Z$-axis','FontSize',12,'Interpreter','latex')
@@ -550,14 +548,14 @@ for ss=1:ST.params.simulation.num_species
     
     A = np_L2';
     minval = min(min(A));
-    maxval = max(max(A));
-    v = linspace(minval,maxval,21);
+    maxval = 0.7*max(max(A));
+    v = linspace(minval,maxval,25);
     
     figure(h);
     subplot(4,2,4)
-    contourf(RAxis,ZAxis,A,v(1:iv),'LineStyle','none')
+    contourf(RAxis,ZAxis,A,v,'LineStyle','none')
     hold on;plot(x,y,'w','Linewidth',2);hold off
-    colormap(jet);  hc = colorbar('Location','eastoutside');
+    colormap(jet);  hc = colorbar('Location','eastoutside');caxis([0,maxval]);
     xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
     box on; axis square;view([0 -90])
     ylabel('$Z$-axis','FontSize',14,'Interpreter','latex')
@@ -566,12 +564,12 @@ for ss=1:ST.params.simulation.num_species
     
     A = Psyn_L3';
     minval = min(min(A));
-    maxval = max(max(A));
-    v = linspace(minval,maxval,21);
+    maxval = 0.7*max(max(A));
+    v = linspace(minval,maxval,25);
     
     figure(h);
     subplot(4,2,5)
-    contourf(xAxis - xc,yAxis,A,v(1:iv),'LineStyle','none')
+    contourf(xAxis - xc,yAxis,A,v,'LineStyle','none')
     hold on;plot(xpixel,ypixel,'w','Linewidth',0.5);hold off
     hold on;plot(xperp,yperp,-xperp,yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
     for ii=1:niw
@@ -586,7 +584,7 @@ for ss=1:ST.params.simulation.num_species
     hold on;plot([xmag_axis,-xmag_axis],[a,a],[xmag_axis,-xmag_axis],[-a,-a],...
         'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
     hold on;plot(xmag_axis,ymag_axis,'wx',0,yc,'wx','Markersize',6,'LineWidth',2);hold off
-    cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');
+    cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
     ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
     xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
     ymin=min(yAxis);ymax=max(yAxis);xmin=xmag_axis-abs(ymin);xmax=xmag_axis+abs(ymax);
@@ -598,12 +596,12 @@ for ss=1:ST.params.simulation.num_species
    
     A = np_L3';
     minval = min(min(A));
-    maxval = max(max(A));
-    v = linspace(minval,maxval,21);
+    maxval = 0.7*max(max(A));
+    v = linspace(minval,maxval,25);
     
     figure(h);
     subplot(4,2,6)
-    contourf(xAxis - xc,yAxis,A,v(1:iv),'LineStyle','none')
+    contourf(xAxis - xc,yAxis,A,v,'LineStyle','none')
     hold on;plot(xpixel,ypixel,'w','Linewidth',0.5);hold off
     hold on;plot(xperp,yperp,-xperp,yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
     for ii=1:niw
@@ -618,7 +616,7 @@ for ss=1:ST.params.simulation.num_species
     hold on;plot([xmag_axis,-xmag_axis],[a,a],[xmag_axis,-xmag_axis],[-a,-a],...
         'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
     hold on;plot(xmag_axis,ymag_axis,'wx',0,yc,'wx','Markersize',6,'LineWidth',2);hold off
-    cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');
+    cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
     ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
     xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
     ymin=min(yAxis);ymax=max(yAxis);xmin=xmag_axis-abs(ymin);xmax=xmag_axis+abs(ymax);
@@ -627,16 +625,14 @@ for ss=1:ST.params.simulation.num_species
     ylabel('$y$-axis','FontSize',14,'Interpreter','latex')
     xlabel('$x$-axis','FontSize',14,'Interpreter','latex')
     
-%     iv = 16;
-    
     A = Psyn_L4';
     minval = min(min(A));
-    maxval = max(max(A));
-    v = linspace(minval,maxval,21);
+    maxval = 0.7*max(max(A));
+    v = linspace(minval,maxval,25);
     
     figure(h);
     subplot(4,2,7)
-    contourf(xAxis - xc,yAxis,A,v(1:iv),'LineStyle','none')
+    contourf(xAxis - xc,yAxis,A,v,'LineStyle','none')
     hold on;plot(xpixel,ypixel,'w','Linewidth',0.5);hold off
     hold on;plot(xperp,yperp,-xperp,yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
     for ii=1:niw
@@ -651,7 +647,7 @@ for ss=1:ST.params.simulation.num_species
     hold on;plot([xmag_axis,-xmag_axis],[a,a],[xmag_axis,-xmag_axis],[-a,-a],...
         'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
     hold on;plot(xmag_axis,ymag_axis,'wx',0,yc,'wx','Markersize',6,'LineWidth',2);hold off
-    cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');
+    cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
     ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
     xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
     ymin=min(yAxis);ymax=max(yAxis);xmin=xmag_axis-abs(ymin);xmax=xmag_axis+abs(ymax);
@@ -663,12 +659,12 @@ for ss=1:ST.params.simulation.num_species
    
     A = np_L4';
     minval = min(min(A));
-    maxval = max(max(A));
-    v = linspace(minval,maxval,21);
+    maxval = 0.7*max(max(A));
+    v = linspace(minval,maxval,25);
     
     figure(h);
     subplot(4,2,8)
-    contourf(xAxis - xc,yAxis,A,v(1:iv),'LineStyle','none')
+    contourf(xAxis - xc,yAxis,A,v,'LineStyle','none')
     hold on;plot(xpixel,ypixel,'w','Linewidth',0.5);hold off
     hold on;plot(xperp,yperp,-xperp,yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
     for ii=1:niw
@@ -683,7 +679,7 @@ for ss=1:ST.params.simulation.num_species
     hold on;plot([xmag_axis,-xmag_axis],[a,a],[xmag_axis,-xmag_axis],[-a,-a],...
         'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
     hold on;plot(xmag_axis,ymag_axis,'wx',0,yc,'wx','Markersize',6,'LineWidth',2);hold off
-    cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');
+    cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
     ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
     xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
     ymin=min(yAxis);ymax=max(yAxis);xmin=xmag_axis-abs(ymin);xmax=xmag_axis+abs(ymax);
