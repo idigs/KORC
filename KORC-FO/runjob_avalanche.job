@@ -14,7 +14,7 @@ module load cray-hdf5/1.10.0
 cd $SLURM_SUBMIT_DIR
 
 ## You might want to change the path of the outouts folder
-FILE_ID='avalanche_Z5'
+FILE_ID='avalanche'
 INPUT_FOLDER='Avalanche'
 
 FOLDER_ID=${INPUT_FOLDER}_${FILE_ID}

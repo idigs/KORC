@@ -962,6 +962,7 @@ SUBROUTINE spectral_density(params,spp)
 	np = 0.0_rp
 	Psyn = 0.0_rp
 	P = 0.0_rp
+	PTot = 0.0_rp
 	
 	do ss=1_idef,params%num_species
 		q = ABS(spp(ss)%q)*params%cpp%charge
