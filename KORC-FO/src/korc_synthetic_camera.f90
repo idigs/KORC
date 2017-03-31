@@ -1055,6 +1055,8 @@ SUBROUTINE spectral_density(params,spp)
 			var_name = 'Psyn_pplane'
 	    	call save_snapshot_var(params,Psyn,var_name)
 
+			PTot = RESHAPE(PTot_receive_buffer,(/pplane%grid_dims(1),pplane%grid_dims(2),params%num_species/))
+
 			units = params%cpp%mass*(params%cpp%velocity**3)/params%cpp%length
 			PTot = units*PTot ! (Watts)
 			var_name = 'PTot_pplane'
