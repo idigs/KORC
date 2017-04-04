@@ -25,7 +25,7 @@ ST.data = loadData(ST);
 
 % ST.CP = confined_particles(ST);
 
-% ST.PAD = pitchAngleDiagnostic(ST,30);
+ST.PAD = pitchAngleDiagnostic(ST,30);
 
 % ST.MMD = magneticMomentDiagnostic(ST,70);
 
@@ -49,7 +49,7 @@ ST.data = loadData(ST);
 
 % calculateTemperatureComponents(ST);
 
-avalancheDiagnostic(ST);
+% avalancheDiagnostic(ST);
 
 % save('energy_limit','ST')
 end
@@ -66,6 +66,20 @@ for ii=1:length(info.Groups)
         params.(name).(subname) = ...
             h5read(info.Filename,['/' name '/' subname]);
     end
+end
+
+try
+    info = h5info([ST.path 'avalanche_parameters.h5']);
+    
+    for ii=1:length(info.Groups)
+        for jj=1:length(info.Groups(ii).Datasets)
+            name = info.Groups(ii).Name(2:end);
+            subname = info.Groups(ii).Datasets(jj).Name;
+            params.(name).(subname) = ...
+                h5read(info.Filename,['/' name '/' subname]);
+        end
+    end
+catch
 end
 end
 
