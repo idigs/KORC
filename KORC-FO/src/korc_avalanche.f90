@@ -50,6 +50,50 @@ SUBROUTINE get_avalanche_PDF_params(params,g,eta)
 END SUBROUTINE get_avalanche_PDF_params
 
 
+SUBROUTINE initialize_avalanche_params(params)
+	IMPLICIT NONE
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	REAL(rp) :: max_pitch_angle
+	REAL(rp) :: max_energy
+	REAL(rp) :: ne
+	REAL(rp) :: Zeff
+	REAL(rp) :: Epar
+	REAL(rp) :: Te
+	NAMELIST /AvalancheGenerationPDF/ max_pitch_angle,max_energy,ne,Zeff,Epar,Te
+
+	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
+	read(default_unit_open,nml=AvalancheGenerationPDF)
+	close(default_unit_open)
+
+!	write(*,nml=AvalancheGenerationPDF)
+
+	aval_params%max_pitch_angle = max_pitch_angle
+	aval_params%max_energy = max_energy*C_E ! In Joules
+	aval_params%ne = ne
+	aval_params%Zeff = Zeff
+	aval_params%Te = Te*C_E ! In Joules
+
+	aval_params%lD = SQRT(C_E0*aval_params%Te/(aval_params%ne*C_E**2))
+	aval_params%bmin = aval_params%Zeff/(12.0_rp*C_PI*aval_params%ne*aval_params%lD**2)
+	aval_params%CoulombLog = LOG(aval_params%lD/aval_params%bmin)
+	aval_params%Tau = 1.0_rp/(4.0_rp*C_PI*C_C*C_RE**2*aval_params%ne*aval_params%CoulombLog)
+
+	aval_params%Ec = C_ME*C_C/(C_E*aval_params%Tau)
+	aval_params%Epar = Epar
+	aval_params%Ebar = aval_params%Epar/aval_params%Ec
+
+	aval_params%max_p = SQRT((aval_params%max_energy/(C_ME*C_C**2))**2 - 1.0_rp) ! In units of mec^2
+	aval_params%min_p = SQRT(aval_params%Ebar - 1.0_rp) ! In units of mec^2
+	aval_params%min_energy = SQRT(1.0_rp + aval_params%min_p**2)*C_ME*C_C**2
+
+	aval_params%alpha = (aval_params%Ebar - 1.0_rp)/(1.0_rp + aval_params%Zeff)
+	aval_params%cz = SQRT(3.0_rp*(aval_params%Zeff + 5.0_rp)/C_PI)*aval_params%CoulombLog
+	aval_params%fo = aval_params%alpha/aval_params%cz
+	aval_params%C1 = 0.5_rp*aval_params%alpha
+	aval_params%C2 = 1.0_rp/aval_params%cz - aval_params%C1
+END SUBROUTINE initialize_avalanche_params
+
+
 FUNCTION fRE(x,p)
 	IMPLICIT NONE
 	REAL(rp), INTENT(IN) :: x ! x = cos(pitch)
@@ -226,50 +270,6 @@ SUBROUTINE sample_distribution(params,g,eta)
 
 !	call korc_abort()
 END SUBROUTINE sample_distribution
-
-
-SUBROUTINE initialize_avalanche_params(params)
-	IMPLICIT NONE
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	REAL(rp) :: max_pitch_angle
-	REAL(rp) :: max_energy
-	REAL(rp) :: ne
-	REAL(rp) :: Zeff
-	REAL(rp) :: Epar
-	REAL(rp) :: Te
-	NAMELIST /AvalancheGenerationPDF/ max_pitch_angle,max_energy,ne,Zeff,Epar,Te
-
-	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-	read(default_unit_open,nml=AvalancheGenerationPDF)
-	close(default_unit_open)
-
-!	write(*,nml=AvalancheGenerationPDF)
-
-	aval_params%max_pitch_angle = max_pitch_angle
-	aval_params%max_energy = max_energy*C_E ! In Joules
-	aval_params%ne = ne
-	aval_params%Zeff = Zeff
-	aval_params%Te = Te*C_E ! In Joules
-
-	aval_params%lD = SQRT(C_E0*aval_params%Te/(aval_params%ne*C_E**2))
-	aval_params%bmin = aval_params%Zeff/(12.0_rp*C_PI*aval_params%ne*aval_params%lD**2)
-	aval_params%CoulombLog = LOG(aval_params%lD/aval_params%bmin)
-	aval_params%Tau = 1.0_rp/(4.0_rp*C_PI*C_C*C_RE**2*aval_params%ne*aval_params%CoulombLog)
-
-	aval_params%Ec = C_ME*C_C/(C_E*aval_params%Tau)
-	aval_params%Epar = Epar
-	aval_params%Ebar = aval_params%Epar/aval_params%Ec
-
-	aval_params%max_p = SQRT((aval_params%max_energy/(C_ME*C_C**2))**2 - 1.0_rp) ! In units of mec^2
-	aval_params%min_p = SQRT(aval_params%Ebar - 1.0_rp) ! In units of mec^2
-	aval_params%min_energy = SQRT(1.0_rp + aval_params%min_p**2)*C_ME*C_C**2
-
-	aval_params%alpha = (aval_params%Ebar - 1.0_rp)/(1.0_rp + aval_params%Zeff)
-	aval_params%cz = SQRT(3.0_rp*(aval_params%Zeff + 5.0_rp)/C_PI)*aval_params%CoulombLog
-	aval_params%fo = aval_params%alpha/aval_params%cz
-	aval_params%C1 = 0.5_rp*aval_params%alpha
-	aval_params%C2 = 1.0_rp/aval_params%cz - aval_params%C1
-END SUBROUTINE initialize_avalanche_params
 
 
 SUBROUTINE save_avalanche_params(params)

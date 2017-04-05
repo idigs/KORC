@@ -989,7 +989,6 @@ SUBROUTINE spectral_density(params,spp)
 				Psyn_lambda(ii,jj,:,ss) = Psyn_lambda(ii,jj,:,ss) + P
 				np(ii,jj,:,ss) = np(ii,jj,:,ss) + 1_idef
 				PTot(ii,jj,ss) = PTot(ii,jj,ss) + spp(ss)%vars%Prad(pp);
-
 			end if ! if confined
 		end do ! particles
 !$OMP END DO

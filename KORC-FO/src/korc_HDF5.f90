@@ -722,10 +722,14 @@ subroutine save_simulation_parameters(params,spp,F)
 	CHARACTER(19) :: tmp_str
 	REAL(rp) :: units
 
-	write(tmp_str,'(I18)') params%mpi_params%rank
-	filename = TRIM(params%path_to_outputs) // "file_" // TRIM(ADJUSTL(tmp_str)) // ".h5"
-	call h5fcreate_f(TRIM(filename), H5F_ACC_TRUNC_F, h5file_id, h5error)
-	call h5fclose_f(h5file_id, h5error)
+	write(6,*) params%outputs_list
+
+	if (SIZE(params%outputs_list).GT.1_idef) then
+		write(tmp_str,'(I18)') params%mpi_params%rank
+		filename = TRIM(params%path_to_outputs) // "file_" // TRIM(ADJUSTL(tmp_str)) // ".h5"
+		call h5fcreate_f(TRIM(filename), H5F_ACC_TRUNC_F, h5file_id, h5error)
+		call h5fclose_f(h5file_id, h5error)
+	end if
 
 	if (params%mpi_params%rank .EQ. 0) then
 		filename = TRIM(params%path_to_outputs) // "simulation_parameters.h5"
@@ -1001,82 +1005,84 @@ subroutine save_simulation_outputs(params,spp,F)
 	REAL(rp) :: units
     INTEGER :: ii,jj
 
-	write(tmp_str,'(I18)') params%mpi_params%rank
-	filename = TRIM(params%path_to_outputs) // "file_" // TRIM(ADJUSTL(tmp_str)) // ".h5"
-	call h5fopen_f(TRIM(filename), H5F_ACC_RDWR_F, h5file_id, h5error)
+	if (SIZE(params%outputs_list).GT.1_idef) then
+		write(tmp_str,'(I18)') params%mpi_params%rank
+		filename = TRIM(params%path_to_outputs) // "file_" // TRIM(ADJUSTL(tmp_str)) // ".h5"
+		call h5fopen_f(TRIM(filename), H5F_ACC_RDWR_F, h5file_id, h5error)
 
-    ! Create group 'it'
-	write(tmp_str,'(I18)') params%it
-	gname = TRIM(ADJUSTL(tmp_str))
-	call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
-    
-	dset = TRIM(gname) // "/time"
-	attr = "Simulation time in secs"
-	call save_to_hdf5(h5file_id,dset,REAL(params%it,rp)*params%dt*params%cpp%time,attr)
+		! Create group 'it'
+		write(tmp_str,'(I18)') params%it
+		gname = TRIM(ADJUSTL(tmp_str))
+		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
+		
+		dset = TRIM(gname) // "/time"
+		attr = "Simulation time in secs"
+		call save_to_hdf5(h5file_id,dset,REAL(params%it,rp)*params%dt*params%cpp%time,attr)
 
-    do ii=1_idef,params%num_species
-        write(tmp_str,'(I18)') ii
-	    subgname = "spp_" // TRIM(ADJUSTL(tmp_str))
-	    call h5gcreate_f(group_id, TRIM(subgname), subgroup_id, h5error)
+		do ii=1_idef,params%num_species
+		    write(tmp_str,'(I18)') ii
+			subgname = "spp_" // TRIM(ADJUSTL(tmp_str))
+			call h5gcreate_f(group_id, TRIM(subgname), subgroup_id, h5error)
 
-		do jj=1_idef,SIZE(params%outputs_list)
-			SELECT CASE (TRIM(params%outputs_list(jj)))
-				CASE ('X')
-					dset = "X"
-					units = params%cpp%length
-					call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%X)
-				CASE('V')
-					dset = "V"
-					units = params%cpp%velocity
-					call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%V)
-				CASE('Rgc')
-					dset = "Rgc"
-					units = params%cpp%length
-					call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%Rgc)
-				CASE('g')
-					dset = "g"
-				    call save_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%g)
-				CASE('eta')
-					dset = "eta"
-				    call save_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%eta)
-				CASE('mu')
-					dset = "mu"
-					units = params%cpp%mass*params%cpp%velocity**2/params%cpp%Bo
-					call save_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%mu)
-				CASE('Prad')
-					dset = "Prad"
-					units = params%cpp%mass*(params%cpp%velocity**3)/params%cpp%length
-					call save_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%Prad)
-				CASE('Pin')
-					dset = "Pin"
-					units = params%cpp%mass*(params%cpp%velocity**3)/params%cpp%length
-					call save_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%Pin)
-				CASE('flag')
-					dset = "flag"
-					call save_1d_array_to_hdf5(subgroup_id,dset, spp(ii)%vars%flag)
-				CASE('B')
-					dset = "B"
-					units = params%cpp%Bo
-					call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%B)
-				CASE('E')
-					dset = "E"
-					units = params%cpp%Eo
-					call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%E)
-				CASE('AUX')
-					dset = "AUX"
-				    call save_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%AUX)
+			do jj=1_idef,SIZE(params%outputs_list)
+				SELECT CASE (TRIM(params%outputs_list(jj)))
+					CASE ('X')
+						dset = "X"
+						units = params%cpp%length
+						call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%X)
+					CASE('V')
+						dset = "V"
+						units = params%cpp%velocity
+						call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%V)
+					CASE('Rgc')
+						dset = "Rgc"
+						units = params%cpp%length
+						call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%Rgc)
+					CASE('g')
+						dset = "g"
+						call save_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%g)
+					CASE('eta')
+						dset = "eta"
+						call save_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%eta)
+					CASE('mu')
+						dset = "mu"
+						units = params%cpp%mass*params%cpp%velocity**2/params%cpp%Bo
+						call save_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%mu)
+					CASE('Prad')
+						dset = "Prad"
+						units = params%cpp%mass*(params%cpp%velocity**3)/params%cpp%length
+						call save_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%Prad)
+					CASE('Pin')
+						dset = "Pin"
+						units = params%cpp%mass*(params%cpp%velocity**3)/params%cpp%length
+						call save_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%Pin)
+					CASE('flag')
+						dset = "flag"
+						call save_1d_array_to_hdf5(subgroup_id,dset, spp(ii)%vars%flag)
+					CASE('B')
+						dset = "B"
+						units = params%cpp%Bo
+						call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%B)
+					CASE('E')
+						dset = "E"
+						units = params%cpp%Eo
+						call rsave_2d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%E)
+					CASE('AUX')
+						dset = "AUX"
+						call save_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%AUX)
 
-				CASE DEFAULT
+					CASE DEFAULT
 				
-			END SELECT
-		end do 
+				END SELECT
+			end do 
 
-        call h5gclose_f(subgroup_id, h5error)
-    end do
+		    call h5gclose_f(subgroup_id, h5error)
+		end do
 
-	call h5gclose_f(group_id, h5error)
+		call h5gclose_f(group_id, h5error)
 
-	call h5fclose_f(h5file_id, h5error)
+		call h5fclose_f(h5file_id, h5error)
+	end if
 end subroutine save_simulation_outputs
 
 

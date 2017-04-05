@@ -347,7 +347,10 @@ Cz = sqrt(3*(Zeff + 5)/pi)*ST.params.avalanche_pdf_params.Clog;
 g = @(p) sqrt(p.^2 + 1);
 eta = @(x) acos(x);
 
-f = @(p,x) p.*exp( -p.*(x/Cz + 0.5*Ehat*(1 - x.^2)./x) )./x;
+f = @(p,x) (Ehat/Cz)*p.*exp( -p.*(x/Cz + 0.5*Ehat*(1 - x.^2)./x) )./x;
+
+% sanityIntegral = integral2(f,pmin,pmax,chimin,1);
+% sanityIntegral = integral2(f,0,500,0,1);
 
 p = linspace(pmin,pmax,Np);
 pitch = linspace(0,pitchmax,Nchi);
@@ -363,8 +366,7 @@ Psyn_p = zeros(numel(l),Np);
 for ll=1:numel(l)
     for pp=1:Np
         for cc=1:Nchi
-            Psyn_p_chi(ll,pp,cc) = ...
-                (Ehat/Cz)*f(p(pp),chi(cc))*singleParticleSpectrum(ST,l(ll),g(p(pp)),eta(chi(cc)));
+            Psyn_p_chi(ll,pp,cc) = f(p(pp),chi(cc))*singleParticleSpectrum(ST,l(ll),g(p(pp)),eta(chi(cc)));
         end
         Psyn_p(ll,pp) = trapz(fliplr(chi),squeeze(Psyn_p_chi(ll,pp,:)));
     end
@@ -436,33 +438,25 @@ for ss=1:ST.params.simulation.num_species
     np_L2 = zeros(NR,NZ);
 
     Psyn_L1 = zeros(NR,NZ);
-        
+    
     for ii=1:NX
         for jj=1:NY
-            np_L3_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).np_lambda_pixel(ii,jj,i1:i2,:),4);
-            np_L3(ii,jj) = sum(np_L3_lambda(ii,jj,:),3);
-            np_L4_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).np_angular_pixel(ii,jj,i1:i2,:),4);
-            np_L4(ii,jj) = sum(np_L4_lambda(ii,jj,:),3);
-            
             if numel(size(ST.data.(['sp' num2str(ss)]).Psyn_lambda_pixel)) == 4
-                tmp = squeeze(ST.data.(['sp' num2str(ss)]).Psyn_lambda_pixel(ii,jj,i1:i2,:)./ST.data.(['sp' num2str(ss)]).np_lambda_pixel(ii,jj,i1:i2,:));
-                Psyn_L3_lambda(ii,jj,:) = sum(tmp,4);
-                I = isnan(Psyn_L3_lambda(ii,jj,:));
-                Psyn_L3_lambda(ii,jj,I) = 0;
+                Psyn_L3_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).Psyn_lambda_pixel(ii,jj,i1:i2,:),4);
+                Psyn_L4_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).Psyn_angular_pixel(ii,jj,i1:i2,:),4);
                 
-                tmp = squeeze(ST.data.(['sp' num2str(ss)]).Psyn_angular_pixel(ii,jj,i1:i2,:)./ST.data.(['sp' num2str(ss)]).np_angular_pixel(ii,jj,i1:i2,:));
-                Psyn_L4_lambda(ii,jj,:) = sum(tmp,4);
-                I = isnan(Psyn_L4_lambda(ii,jj,:));
-                Psyn_L4_lambda(ii,jj,I) = 0;
+                np_L3_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).np_lambda_pixel(ii,jj,i1:i2,:),4);
+                np_L4_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).np_angular_pixel(ii,jj,i1:i2,:),4);
             else
-                Psyn_L3_lambda(ii,jj,:) = squeeze(ST.data.(['sp' num2str(ss)]).Psyn_lambda_pixel(ii,jj,i1:i2)./ST.data.(['sp' num2str(ss)]).np_lambda_pixel(ii,jj,i1:i2));
-                I = isnan(Psyn_L3_lambda(ii,jj,:));
-                Psyn_L3_lambda(ii,jj,I) = 0;
+                Psyn_L3_lambda(ii,jj,:) = ST.data.(['sp' num2str(ss)]).Psyn_lambda_pixel(ii,jj,i1:i2);
+                Psyn_L4_lambda(ii,jj,:) = ST.data.(['sp' num2str(ss)]).Psyn_angular_pixel(ii,jj,i1:i2);
                 
-                Psyn_L4_lambda(ii,jj,:) = squeeze(ST.data.(['sp' num2str(ss)]).Psyn_angular_pixel(ii,jj,i1:i2)./ST.data.(['sp' num2str(ss)]).np_angular_pixel(ii,jj,i1:i2));
-                I = isnan(Psyn_L4_lambda(ii,jj,:));
-                Psyn_L4_lambda(ii,jj,I) = 0;
+                np_L3_lambda(ii,jj,:) = ST.data.(['sp' num2str(ss)]).np_lambda_pixel(ii,jj,i1:i2);
+                np_L4_lambda(ii,jj,:) = ST.data.(['sp' num2str(ss)]).np_angular_pixel(ii,jj,i1:i2);
             end
+            
+            np_L3(ii,jj) = sum(np_L3_lambda(ii,jj,:),3);
+            np_L4(ii,jj) = sum(np_L4_lambda(ii,jj,:),3);
             
             Psyn_L3(ii,jj) = trapz(lambda(i1:i2),Psyn_L3_lambda(ii,jj,:));
             Psyn_L4(ii,jj) = trapz(lambda(i1:i2),Psyn_L4_lambda(ii,jj,:));
@@ -471,31 +465,27 @@ for ss=1:ST.params.simulation.num_species
     
     for ii=1:NR
         for jj=1:NZ
-            np_L2_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).np_pplane(ii,jj,i1:i2,:),4);
-            np_L2(ii,jj) = sum(np_L2_lambda(ii,jj,:),3);
-                        
             if numel(size(ST.data.(['sp' num2str(ss)]).Psyn_pplane)) == 4
-                tmp = squeeze(ST.data.(['sp' num2str(ss)]).Psyn_pplane(ii,jj,i1:i2,:))./squeeze(ST.data.(['sp' num2str(ss)]).np_pplane(ii,jj,i1:i2,:));
-                Psyn_L2_lambda(ii,jj,:) = sum(tmp,4);
-                I = isnan(Psyn_L2_lambda(ii,jj,:));
-                Psyn_L2_lambda(ii,jj,I) = 0;
+                Psyn_L2_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).Psyn_pplane(ii,jj,i1:i2,:),4);
+                np_L2_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).np_pplane(ii,jj,i1:i2,:),4);
+                Psyn_L1(ii,jj) = sum(abs(ST.data.(['sp' num2str(ss)]).PTot_pplane(ii,jj,:)),3);
             else
-                Psyn_L2_lambda(ii,jj,:) = squeeze(ST.data.(['sp' num2str(ss)]).Psyn_pplane(ii,jj,i1:i2))./squeeze(ST.data.(['sp' num2str(ss)]).np_pplane(ii,jj,i1:i2));
-                I = isnan(Psyn_L2_lambda(ii,jj,:));
-                Psyn_L2_lambda(ii,jj,I) = 0;
+                Psyn_L2_lambda(ii,jj,:) = ST.data.(['sp' num2str(ss)]).Psyn_pplane(ii,jj,i1:i2);
+                np_L2_lambda(ii,jj,:) = ST.data.(['sp' num2str(ss)]).np_pplane(ii,jj,i1:i2);
+                Psyn_L1(ii,jj) = abs(ST.data.(['sp' num2str(ss)]).PTot_pplane(ii,jj));
             end
             
-            Psyn_L2(ii,jj) = trapz(lambda(i1:i2),squeeze(Psyn_L2_lambda(ii,jj,:)));
-            
-            Psyn_L1(ii,jj) = sum(abs(ST.data.(['sp' num2str(ss)]).PTot_pplane(ii,jj,:)),3);
+            np_L2(ii,jj) = sum(np_L2_lambda(ii,jj,:),3);
+            Psyn_L2(ii,jj) = trapz(lambda(i1:i2),Psyn_L2_lambda(ii,jj,:)); 
         end
     end
-    
-    
-    Psyn_sp = singleParticleSpectrum(ST,lambda(i1:i2),...
+
+    if isfield(ST.params,'avalanche_pdf_params')
+        Psyn_avg = averagedSpectrum(ST);
+    else
+        Psyn_sp = singleParticleSpectrum(ST,lambda(i1:i2),...
         ST.params.species.go(ss),deg2rad(ST.params.species.etao(ss)));
-    
-%     Psyn_avg = averagedSpectrum(ST);
+    end
     
     % Convert from m to nm
     axis_lambda = 1E9*lambda(i1:i2);
@@ -605,42 +595,37 @@ for ss=1:ST.params.simulation.num_species
     contourf(RAxis,ZAxis,A,v,'LineStyle','none')
     hold on;plot(x,y,'w','Linewidth',2);hold off
     hold on;plot(ST.params.fields.Ro,0,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
-    'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
+        'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
     colormap(jet); hc = colorbar('Location','eastoutside');caxis([0,maxval]);
     xlabel(hc,'$P_{Tot}$ (Watts)','Interpreter','latex','FontSize',12)
     box on; axis square;view([0 -90])
     ylabel('$Z$-axis','FontSize',12,'Interpreter','latex')
     xlabel('$R$-axis','FontSize',12,'Interpreter','latex')
     
-%     figure(h);
-%     subplot(4,2,2)
-%     f_L4 = squeeze(sum(sum(Psyn_L4_lambda,1),2));
-%     f_L4 = f_L4/max(f_L4);
-%     f_L3 = squeeze(sum(sum(Psyn_L3_lambda,1),2));
-%     f_L3 = f_L3/max(f_L3);
-%     f_L2 = squeeze(sum(sum(Psyn_L2_lambda,1),2));
-%     f_L2 = f_L2/max(f_L2);
-%     Psyn_sp = Psyn_sp/max(Psyn_sp);
-% %     plot(axis_lambda,Psyn_sp,'g-.',axis_lambda,f_L2,'r',axis_lambda,f_L3,'k',axis_lambda,f_L4,'b','LineWidth',1)
-%     Psyn_avg = Psyn_avg/max(Psyn_avg);
-%     plot(axis_lambda,Psyn_sp,'g',axis_lambda,Psyn_avg,'c',...
-%         axis_lambda,f_L2,'r',axis_lambda,f_L3,'k',axis_lambda,f_L4,'b','LineWidth',2)
-%     ylabel('$P_{syn}$ (A.U.)','FontSize',12,'Interpreter','latex')
-%     xlim([min(axis_lambda) max(axis_lambda)])
-%     xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
-%     legend({'$P_{syn}(\lambda)$ (single-particle)','$<P_{syn}(\lambda)>$ avalanche','$<P_{syn}(\lambda)>$',...
-%         '$P_{syn}(\lambda)$','$P_{syn}(\lambda,\psi,\chi)$'},'Interpreter','latex')    
-    
-    figure(h);
+
+    figure(h);  
     subplot(4,2,2)
-    f_L2 = squeeze(sum(sum(Psyn_L2_lambda,1),2));
-    plot(axis_lambda,f_L2,'r','LineWidth',1)
+    f_L4 = squeeze(sum(sum(Psyn_L4_lambda,1),2));
+    f_L4 = f_L4/max(f_L4);
+    f_L3 = squeeze(sum(sum(Psyn_L3_lambda,1),2));
+    f_L3 = f_L3/max(f_L3);
+    f_L2 = squeeze(sum(sum(Psyn_L2_lambda,1),2))./squeeze(sum(sum(np_L2_lambda,1),2));
+    figure;plot(axis_lambda,f_L2);
+    f_L2 = f_L2/max(f_L2);
+    if isfield(ST.params,'avalanche_pdf_params')
+        P_theory = Psyn_avg/max(Psyn_avg);
+    else
+        P_theory = Psyn_sp/max(Psyn_sp);
+    end
+    figure(h)
+    plot(axis_lambda,P_theory,'k',axis_lambda,f_L2,'r',axis_lambda,f_L3,'b',axis_lambda,f_L4,'g','LineWidth',1)
     ylabel('$P_{syn}$ (A.U.)','FontSize',12,'Interpreter','latex')
     xlim([min(axis_lambda) max(axis_lambda)])
     xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
-    legend({'$\mathcal{P}_{R}(\lambda)$'},'Interpreter','latex')        
+    legend({'$\mathcal{P}_{R}(\lambda)$ (Theory)','$\mathcal{P}_{R}(\lambda)$',...
+        '$P_R(\lambda)$','$P_R(\lambda,\psi,\chi)$'},'Interpreter','latex')
     
-        
+    
     A = Psyn_L2';
     minval = min(min(A));
     maxval = 0.7*max(max(A));
@@ -651,7 +636,7 @@ for ss=1:ST.params.simulation.num_species
     contourf(RAxis,ZAxis,A,v,'LineStyle','none')
     hold on;plot(x,y,'w','Linewidth',2);hold off
     hold on;plot(ST.params.fields.Ro,0,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
-    'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
+        'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
     colormap(jet); hc = colorbar('Location','eastoutside');caxis([0,maxval]);
     xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
     box on; axis square;view([0 -90])
@@ -687,7 +672,9 @@ for ss=1:ST.params.simulation.num_species
     rescaled_yperp = ST.params.fields.Ro*yperp/xmag_axis;
     
     rescaled_Xiw = ST.params.fields.Ro*(Xiw)/xmag_axis;
-        
+      
+    % % % % % Camera diagnostic % % % % % 
+    
     A = Psyn_L3';
     minval = min(min(A));
     maxval = 0.7*max(max(A));
