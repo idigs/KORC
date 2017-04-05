@@ -25,7 +25,7 @@ ST.data = loadData(ST);
 
 % ST.CP = confined_particles(ST);
 
-ST.PAD = pitchAngleDiagnostic(ST,30);
+% ST.PAD = pitchAngleDiagnostic(ST,30);
 
 % ST.MMD = magneticMomentDiagnostic(ST,70);
 
@@ -49,7 +49,7 @@ ST.PAD = pitchAngleDiagnostic(ST,30);
 
 % calculateTemperatureComponents(ST);
 
-% avalancheDiagnostic(ST);
+avalancheDiagnostic(ST);
 
 % save('energy_limit','ST')
 end
