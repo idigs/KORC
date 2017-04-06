@@ -81,6 +81,20 @@ try
     end
 catch
 end
+
+try
+    info = h5info([ST.path 'synthetic_camera.h5']);
+    for ii=1:length(info.Groups)
+        for jj=1:length(info.Groups(ii).Datasets)
+            name = info.Groups(ii).Name(2:end);
+            subname = info.Groups(ii).Datasets(jj).Name;
+            params.(name).(subname) = ...
+                h5read(info.Filename,['/' name '/' subname]);
+        end
+    end
+catch
+end
+
 end
 
 function data = loadData(ST)
@@ -2794,7 +2808,6 @@ end
 
 end
 
-
 function calculateTemperatureComponents(ST)
 num_species = double(ST.params.simulation.num_species);
 num_snapshots = double(ST.num_snapshots)
@@ -2827,10 +2840,156 @@ end
 
 end
 
+function Psyn = singleParticleSpectrum(ST,lambda,g,eta)
+Psyn = zeros(size(lambda));
+
+q = abs(ST.params.species.q(1));
+m = ST.params.species.m(1);
+c = ST.params.scales.v;
+v = c*sqrt(1-1/g^2);
+ep = 8.854E-12;% Electric permitivity
+
+k = q*ST.params.fields.Bo*sin(eta)/(g*m*v);
+l = lambda; 
+lc = 4*pi/(3*k*g^3);
+
+z = lc./l;
+
+BK53 = @(x) besselk(5/3,x);
+IntBKv = @(nu,x) (pi/sqrt(2))*(1 - 0.25*(4*nu^2 -1))*erfc(sqrt(x)) + ...
+    0.25*(4*nu^2 - 1)*sqrt(0.5*pi./x).*exp(-x);
+
+for ii=1:numel(z)
+    if (z(ii) < 0.5)
+        a = (2.16/2^(2/3))*z(ii)^(1/3);
+        Psyn(ii) = integral(BK53,z(ii),a) + IntBKv(5/3,a);
+    elseif (z(ii) >= 0.5) && (z(ii) < 2.5)
+        a = 0.72*(z(ii) + 1);
+        Psyn(ii) = integral(BK53,z(ii),a) + IntBKv(5/3,a);
+    else
+        Psyn(ii) = IntBKv(5/3,z(ii));
+    end
+end
+
+Psyn = c*q^2*Psyn./(sqrt(3)*ep*g^2*l.^3);
+end
+
+function [Psyn,fRE] = averagedSpectrum(ST,chiAxis,pAxis)
+Np = numel(pAxis);
+Nchi = numel(chiAxis);
+
+q = abs(ST.params.species.q(1));
+m = ST.params.species.m(1);
+c = ST.params.scales.v;
+
+Ebar = ST.params.avalanche_pdf_params.Epar/ST.params.avalanche_pdf_params.Ec;
+Zeff = ST.params.avalanche_pdf_params.Zeff;
+Ehat = (Ebar - 1)/(1 + Zeff);
+Cz = sqrt(3*(Zeff + 5)/pi)*ST.params.avalanche_pdf_params.Clog;
+
+g = @(p) sqrt(p.^2 + 1);
+eta = @(x) acos(x);
+
+f = @(p,x) (Ehat/Cz)*p.*exp( -p.*(x/Cz + 0.5*Ehat*(1 - x.^2)./x) )./x;
+
+% sanityIntegral = integral2(f,pmin,pmax,chimin,1);
+% sanityIntegral = integral2(f,0,500,0,1);
+
+l = ST.params.synthetic_camera_params.lambda;
+Psyn_p_chi = zeros(numel(l),Np,Nchi);
+Psyn_p = zeros(numel(l),Np);
+Psyn = zeros(size(l));
+fRE = zeros(Np,Nchi);
+Psyn_sp = zeros(numel(l),Np,Nchi);
+
+for pp=1:Np
+    for cc=1:Nchi
+        fRE(pp,cc) = f(pAxis(pp),chiAxis(cc));
+    end
+end
+
+for ll=1:numel(l)
+    for pp=1:Np
+        for cc=1:Nchi
+            Psyn_sp(ll,pp,cc) = singleParticleSpectrum(ST,l(ll),g(pAxis(pp)),eta(chiAxis(cc)));
+            Psyn_p_chi(ll,pp,cc) = f(pAxis(pp),chiAxis(cc))*Psyn_sp(ll,pp,cc);
+        end
+        Psyn_p(ll,pp) = trapz(fliplr(chiAxis),squeeze(Psyn_p_chi(ll,pp,:)));
+    end
+    Psyn(ll) = trapz(pAxis,squeeze(Psyn_p(ll,:)));
+end
+
+E = (g(pAxis)*m*c^2/q)/1E6; % MeV
+xAxis = chiAxis;
+yAxis = pAxis;
+lAxis = l/1E-9;
+
+
+offset = floor(numel(l)/4);
+I = 1:offset-1:numel(l);
+
+h = figure;
+for sp=1:numel(I)
+    figure(h)
+    subplot(3,2,sp)
+    contourf(xAxis,yAxis,squeeze(Psyn_p_chi(I(sp),:,:)),17,'LineStyle','none')
+    colormap(jet);
+    colorbar
+    title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
+    xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
+    ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
+end
+
+figure(h)
+subplot(3,2,6)
+A = fRE/max(max(fRE));
+contourf(xAxis,yAxis,A,17,'LineStyle','none')
+colormap(jet);
+colorbar
+xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
+ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
+
+
+h = figure;
+for sp=1:numel(I)
+    figure(h)
+    subplot(3,2,sp)
+    A = squeeze(Psyn_sp(I(sp),:,:));
+%     A = A/max(max(A));
+    v = linspace(1E-7,1E-5,25);
+    contourf(xAxis,yAxis,A,v,'LineStyle','none')
+    colormap(jet);
+    colorbar
+    title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
+    xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
+    ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
+end
+
+figure(h)
+subplot(3,2,6)
+A = fRE/max(max(fRE));
+contourf(xAxis,yAxis,A,17,'LineStyle','none')
+colormap(jet);
+colorbar
+xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
+ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
+
+% figure;
+% surf(E,lAxis,squeeze(Psyn_p),'LineStyle','none');
+% colormap(jet);
+% xlabel('$\lambda$ (nm)','Interpreter','latex')
+% xlabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
+
+
+% figure
+% plot(lAxis,Psyn)
+% xlabel('$\lambda$ (nm)','Interpreter','latex')
+% ylabel('$P_{R}$ (Watts)','Interpreter','latex')
+end
 
 function avalancheDiagnostic(ST)
-nbins_E = 100;
-nbins_pitch = 100;
+nbins_p = 50;
+nbins_chi = 50;
 
 for ss=1:ST.params.simulation.num_species
     q = abs(ST.params.species.q(ss));
@@ -2852,24 +3011,87 @@ for ss=1:ST.params.simulation.num_species
     E = g*m*c^2;
     E = E/(q*1E6);
     p = sqrt(g.^2 - 1);
+    chi = cos(deg2rad(eta));
     
-    figure
-    histogram2(eta,E,[nbins_pitch,nbins_E],'FaceColor','flat','Normalization','probability','LineStyle','none');
-    view([0 90])
-    cmp = colormap(jet);
+    pmax = ST.params.avalanche_pdf_params.max_p;
+    pmin = ST.params.avalanche_pdf_params.min_p;
+    Emin = sqrt(pmin.^2 + 1)*m*c^2/(q*1E6);
+    Emax = sqrt(pmax.^2 + 1)*m*c^2/(q*1E6);
+    Dp = (pmax-pmin)/nbins_p;
+    pAxis = pmin + (0:1:nbins_p-1)*Dp + 0.5*Dp;
+    EAxis = sqrt(pAxis.^2 + 1)*m*c^2/(q*1E6);
+    
+    pitchmax = ST.params.avalanche_pdf_params.max_pitch_angle;
+    pitchmin = 0;
+    Dpitch = (pitchmax - pitchmin)/nbins_chi;
+    pitchAxis = pitchmin + (0:1:nbins_chi-1)*Dpitch + 0.5*Dpitch;
+    
+    chiAxis = cos(deg2rad(pitchAxis));
+%     chimin = cos(pitchmax);
+%     chimax = 1.0;
+%     Dchi = (chimax-chimin)/nbins_chi;
+%     chiAxis = chimin + (0:1:nbins_chi-1)*Dchi + 0.5*Dchi;
+
+    fRE = zeros(nbins_p,nbins_chi);
+    ip = floor((p - pmin)/Dp) + 1;
+    ip(ip>nbins_p) = nbins_p;
+    ichi = floor((eta - pitchmin)/Dpitch) + 1;
+    ichi(ichi>nbins_chi) = nbins_chi;
+      
+    for pp=1:numel(p)
+        fRE(ip(pp),ichi(pp)) = fRE(ip(pp),ichi(pp)) + 1;
+    end
+       
+%     xAxis = pitchAxis;
+%     yAxis = EAxis;
+    xAxis = cos(deg2rad(pitchAxis));
+    yAxis = pAxis;
+    
+    A = fRE/max(max(fRE));
+    
+    figure;
+    contourf(xAxis,yAxis,A,17,'LineStyle','none')
+    colormap(jet);
+    colorbar
+    axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
+    xlabel('$\chi$','FontSize',14,'Interpreter','latex')
+    ylabel('$p$ ($mc$)','FontSize',14,'Interpreter','latex')
+    
+    [~,fRE_theory] = averagedSpectrum(ST,chiAxis,pAxis);
+    
+    fRE = fRE/max(max(fRE));
+    fRE_theory = fRE_theory/max(max(fRE_theory));
+    
+	DfRE = sqrt((fRE_theory - fRE).^2);
+    
+%     xAxis = pitchAxis;
+%     yAxis = EAxis;
+    
+    figure;
+    contourf(xAxis,yAxis,DfRE,17,'LineStyle','none')
+    colormap(jet);
+    colorbar
+    axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
     xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
     ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
     
-    pperp = sin(deg2rad(eta)).*p;
-    pparallel = cos(deg2rad(eta)).*p;
     
-    figure
-    histogram2(pparallel,pperp,[nbins_pitch,nbins_E],'FaceColor','flat','Normalization','probability','LineStyle','none');
-    view([0 90])
-    cmp = colormap(jet);
-    xlabel('$p_\parallel$ ($mc$)','FontSize',14,'Interpreter','latex')
-    ylabel('$p_\perp$ ($mc$)','FontSize',14,'Interpreter','latex')
-    
+%     figure
+%     histogram2(eta,E,[nbins_chi,nbins_p],'FaceColor','flat','Normalization','probability','LineStyle','none');
+%     view([0 90])
+%     cmp = colormap(jet);
+%     xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
+%     ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
+%     
+%     pperp = sin(deg2rad(eta)).*p;
+%     pparallel = cos(deg2rad(eta)).*p;
+%     
+%     figure
+%     histogram2(pparallel,pperp,[nbins_chi,nbins_p],'FaceColor','flat','Normalization','probability','LineStyle','none');
+%     view([0 90])
+%     cmp = colormap(jet);
+%     xlabel('$p_\parallel$ ($mc$)','FontSize',14,'Interpreter','latex')
+%     ylabel('$p_\perp$ ($mc$)','FontSize',14,'Interpreter','latex')
 end
 
 end
