@@ -2908,6 +2908,9 @@ for pp=1:Np
     end
 end
 
+S = trapz(fliplr(chiAxis),trapz(pAxis,fRE));
+fRE = fRE/S;
+
 for ll=1:numel(l)
     for pp=1:Np
         for cc=1:Nchi
@@ -2942,7 +2945,7 @@ end
 
 figure(h)
 subplot(3,2,6)
-A = fRE/max(max(fRE));
+A = fRE;
 contourf(xAxis,yAxis,A,17,'LineStyle','none')
 colormap(jet);
 colorbar
@@ -2955,9 +2958,7 @@ for sp=1:numel(I)
     figure(h)
     subplot(3,2,sp)
     A = squeeze(Psyn_sp(I(sp),:,:));
-%     A = A/max(max(A));
-    v = linspace(1E-7,1E-5,25);
-    contourf(xAxis,yAxis,A,v,'LineStyle','none')
+    contourf(xAxis,yAxis,A,17,'LineStyle','none')
     colormap(jet);
     colorbar
     title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
@@ -2967,7 +2968,7 @@ end
 
 figure(h)
 subplot(3,2,6)
-A = fRE/max(max(fRE));
+A = fRE;
 contourf(xAxis,yAxis,A,17,'LineStyle','none')
 colormap(jet);
 colorbar
@@ -3041,15 +3042,17 @@ for ss=1:ST.params.simulation.num_species
     for pp=1:numel(p)
         fRE(ip(pp),ichi(pp)) = fRE(ip(pp),ichi(pp)) + 1;
     end
-       
+    
+    S = trapz(fliplr(chiAxis),trapz(pAxis,fRE));
+    fRE = fRE/S;
+    
 %     xAxis = pitchAxis;
 %     yAxis = EAxis;
     xAxis = cos(deg2rad(pitchAxis));
     yAxis = pAxis;
     
-    A = fRE/max(max(fRE));
-    
     figure;
+    A = fRE;
     contourf(xAxis,yAxis,A,17,'LineStyle','none')
     colormap(jet);
     colorbar
@@ -3058,10 +3061,7 @@ for ss=1:ST.params.simulation.num_species
     ylabel('$p$ ($mc$)','FontSize',14,'Interpreter','latex')
     
     [~,fRE_theory] = averagedSpectrum(ST,chiAxis,pAxis);
-    
-    fRE = fRE/max(max(fRE));
-    fRE_theory = fRE_theory/max(max(fRE_theory));
-    
+        
 	DfRE = sqrt((fRE_theory - fRE).^2);
     
 %     xAxis = pitchAxis;
