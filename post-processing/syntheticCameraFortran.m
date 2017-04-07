@@ -429,6 +429,10 @@ ZAxis = ST.params.poloidal_plane_params.nodes_Z;
 NR = ST.params.poloidal_plane_params.grid_dims(1);
 NZ = ST.params.poloidal_plane_params.grid_dims(1);
 
+if isempty(ST.lambdas)
+    ST.lambdas = [min(lambda) max(lambda)];
+end
+
 [~,i1] = min(abs(lambda - ST.lambdas(1)));
 [~,i2] = min(abs(lambda - ST.lambdas(2)));
 Nl = i2 - i1 + 1;
@@ -518,8 +522,8 @@ for ss=1:ST.params.simulation.num_species
     end
 
     if isfield(ST.params,'avalanche_pdf_params')
-%         Psyn_avg = averagedSpectrum(ST);
-        Psyn_avg = zeros(1,Nl);
+        Psyn_avg = averagedSpectrum(ST);
+%         Psyn_avg = zeros(1,Nl);
     else
         Psyn_sp = singleParticleSpectrum(ST,lambda(i1:i2),...
         ST.params.species.go(ss),deg2rad(ST.params.species.etao(ss)));

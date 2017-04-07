@@ -2874,7 +2874,7 @@ end
 Psyn = c*q^2*Psyn./(sqrt(3)*ep*g^2*l.^3);
 end
 
-function [Psyn,fRE] = averagedSpectrum(ST,chiAxis,pAxis)
+function [Psyn,fRE] = averagedSpectrum(ST,chiAxis,pAxis,fnum)
 Np = numel(pAxis);
 Nchi = numel(chiAxis);
 
@@ -2897,6 +2897,7 @@ f = @(p,x) (Ehat/Cz)*p.*exp( -p.*(x/Cz + 0.5*Ehat*(1 - x.^2)./x) )./x;
 
 l = ST.params.synthetic_camera_params.lambda;
 Psyn_p_chi = zeros(numel(l),Np,Nchi);
+ddPsyndpchi = zeros(numel(l),Np,Nchi);
 Psyn_p = zeros(numel(l),Np);
 Psyn = zeros(size(l));
 fRE = zeros(Np,Nchi);
@@ -2915,11 +2916,12 @@ for ll=1:numel(l)
     for pp=1:Np
         for cc=1:Nchi
             Psyn_sp(ll,pp,cc) = singleParticleSpectrum(ST,l(ll),g(pAxis(pp)),eta(chiAxis(cc)));
-            Psyn_p_chi(ll,pp,cc) = f(pAxis(pp),chiAxis(cc))*Psyn_sp(ll,pp,cc);
+            Psyn_p_chi(ll,pp,cc) = fRE(pp,cc)*Psyn_sp(ll,pp,cc);
+            ddPsyndpchi(ll,pp,cc) = fnum(pp,cc)*Psyn_sp(ll,pp,cc);
         end
-        Psyn_p(ll,pp) = trapz(fliplr(chiAxis),squeeze(Psyn_p_chi(ll,pp,:)));
+%         Psyn_p(ll,pp) = trapz(fliplr(chiAxis),squeeze(Psyn_p_chi(ll,pp,:)));
     end
-    Psyn(ll) = trapz(pAxis,squeeze(Psyn_p(ll,:)));
+%     Psyn(ll) = trapz(pAxis,squeeze(Psyn_p(ll,:)));
 end
 
 E = (g(pAxis)*m*c^2/q)/1E6; % MeV
@@ -2932,23 +2934,44 @@ offset = floor(numel(l)/4);
 I = 1:offset-1:numel(l);
 
 h = figure;
+hh = figure;
 for sp=1:numel(I)
+    A = squeeze(Psyn_p_chi(I(sp),:,:));
+    AA = squeeze(ddPsyndpchi(I(sp),:,:));
+    cmax = max([max(max(A)) max(max(AA))]);
+    
     figure(h)
-    subplot(3,2,sp)
-    contourf(xAxis,yAxis,squeeze(Psyn_p_chi(I(sp),:,:)),17,'LineStyle','none')
-    colormap(jet);
-    colorbar
+    subplot(3,2,sp)    
+    contourf(xAxis,yAxis,A,17,'LineStyle','none')
+    colormap(jet); colorbar; caxis([0 cmax])
+    title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
+    xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
+    ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
+    
+    figure(hh)
+    subplot(3,2,sp)    
+    contourf(xAxis,yAxis,AA,17,'LineStyle','none')
+    colormap(jet); colorbar; caxis([0 cmax])
     title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
     xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
     ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 end
 
+A = fRE;
+AA = fnum;
+cmax = max([max(max(A)) max(max(AA))]);
+
 figure(h)
 subplot(3,2,6)
-A = fRE;
 contourf(xAxis,yAxis,A,17,'LineStyle','none')
-colormap(jet);
-colorbar
+colormap(jet); colorbar; caxis([0 cmax])
+xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
+ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
+
+figure(hh)
+subplot(3,2,6)
+contourf(xAxis,yAxis,AA,17,'LineStyle','none')
+colormap(jet); colorbar; caxis([0 cmax])
 xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 
@@ -3051,16 +3074,16 @@ for ss=1:ST.params.simulation.num_species
     xAxis = cos(deg2rad(pitchAxis));
     yAxis = pAxis;
     
-    figure;
-    A = fRE;
-    contourf(xAxis,yAxis,A,17,'LineStyle','none')
-    colormap(jet);
-    colorbar
-    axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
-    xlabel('$\chi$','FontSize',14,'Interpreter','latex')
-    ylabel('$p$ ($mc$)','FontSize',14,'Interpreter','latex')
+%     figure;
+%     A = fRE;
+%     contourf(xAxis,yAxis,A,17,'LineStyle','none')
+%     colormap(jet);
+%     colorbar
+%     axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
+%     xlabel('$\chi$','FontSize',14,'Interpreter','latex')
+%     ylabel('$p$ ($mc$)','FontSize',14,'Interpreter','latex')
     
-    [~,fRE_theory] = averagedSpectrum(ST,chiAxis,pAxis);
+    [~,fRE_theory] = averagedSpectrum(ST,chiAxis,pAxis,fRE);
         
 	DfRE = sqrt((fRE_theory - fRE).^2);
     
