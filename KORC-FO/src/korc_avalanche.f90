@@ -127,93 +127,120 @@ SUBROUTINE sample_distribution(params,g,eta)
 	REAL(rp) :: p_buffer, p_test
 	REAL(rp) :: eta_buffer, eta_test
 	REAL(rp) :: ratio, rand_unif
-	INTEGER :: ii,ppp
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: p_samples
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: eta_samples
+	REAL(4), DIMENSION(2) :: tarray
+	REAL(4) :: time_elapsed
+	INTEGER :: ii,ppp,nsamples
+	INTEGER :: mpierr
+
+	call DTIME(tarray,time_elapsed)
+	write(6,'("Time elapsed: ",F15.10)') time_elapsed
 
 	ppp = SIZE(g)
+	nsamples = ppp*params%mpi_params%nmpi
 	ALLOCATE(p(ppp))
 
-	call RANDOM_SEED()
-	call RANDOM_NUMBER(rand_unif)
-	eta_buffer = aval_params%max_pitch_angle*rand_unif
-	call RANDOM_NUMBER(rand_unif)
-	p_buffer = aval_params%min_p + (aval_params%max_p - aval_params%min_p)*rand_unif
+	if (params%mpi_params%rank.EQ.0_idef) then
+		ALLOCATE(p_samples(nsamples))! Number of samples to distribute among all MPI processes
+		ALLOCATE(eta_samples(nsamples))! Number of samples to distribute among all MPI processes
 
-	ii=2_idef
-	do while (ii .LE. 1000000_idef)
-		eta_test = eta_buffer + random_norm(0.0_rp,1.0_rp)
-		do while (ABS(eta_test) .GT. aval_params%max_pitch_angle)
+		call RANDOM_SEED()
+		call RANDOM_NUMBER(rand_unif)
+		eta_buffer = aval_params%max_pitch_angle*rand_unif
+		call RANDOM_NUMBER(rand_unif)
+		p_buffer = aval_params%min_p + (aval_params%max_p - aval_params%min_p)*rand_unif
+
+		ii=2_idef
+		do while (ii .LE. 1000000_idef)
 			eta_test = eta_buffer + random_norm(0.0_rp,1.0_rp)
-		end do
-		chi_test = COS(C_PI*eta_test/180.0_rp)
-		chi = COS(C_PI*eta_buffer/180.0_rp)	
+			do while (ABS(eta_test) .GT. aval_params%max_pitch_angle)
+				eta_test = eta_buffer + random_norm(0.0_rp,1.0_rp)
+			end do
+			chi_test = COS(C_PI*eta_test/180.0_rp)
+			chi = COS(C_PI*eta_buffer/180.0_rp)	
 
-		p_test = p_buffer + random_norm(0.0_rp,1.0_rp)
-		do while ((p_test.LT.aval_params%min_p).OR.(p_test.GT.aval_params%max_p))
 			p_test = p_buffer + random_norm(0.0_rp,1.0_rp)
-		end do
+			do while ((p_test.LT.aval_params%min_p).OR.(p_test.GT.aval_params%max_p))
+				p_test = p_buffer + random_norm(0.0_rp,1.0_rp)
+			end do
 
-		ratio = fRE(chi_test,p_test)/fRE(chi,p_buffer)
+			ratio = fRE(chi_test,p_test)/fRE(chi,p_buffer)
 
-		if (ratio .GE. 1.0_rp) then
-			p_buffer = p_test
-			eta_buffer = eta_test
-			ii = ii + 1_idef
-		else 
-			call RANDOM_NUMBER(rand_unif)
-			if (rand_unif .LT. ratio) then
+			if (ratio .GE. 1.0_rp) then
 				p_buffer = p_test
 				eta_buffer = eta_test
 				ii = ii + 1_idef
+			else 
+				call RANDOM_NUMBER(rand_unif)
+				if (rand_unif .LT. ratio) then
+					p_buffer = p_test
+					eta_buffer = eta_test
+					ii = ii + 1_idef
+				end if
 			end if
-		end if
-	end do	
+		end do	
 
-	eta(1) = eta_buffer
-	call RANDOM_SEED()
-	call RANDOM_NUMBER(rand_unif)
-	p(1) = p_buffer
+		eta_samples(1) = eta_buffer
+		call RANDOM_SEED()
+		call RANDOM_NUMBER(rand_unif)
+		p_samples(1) = p_buffer
 
-	ii=2_idef
-	do while (ii .LE. ppp)
-		eta_test = eta(ii-1) + random_norm(0.0_rp,1.0_rp)
-		do while (ABS(eta_test) .GT. aval_params%max_pitch_angle)
-			eta_test = eta(ii-1) + random_norm(0.0_rp,1.0_rp)
-		end do
-		chi_test = COS(C_PI*eta_test/180.0_rp)
-		chi = COS(C_PI*eta(ii-1)/180.0_rp)	
+		ii=2_idef
+		do while (ii .LE. nsamples)
+			eta_test = eta_samples(ii-1) + random_norm(0.0_rp,1.0_rp)
+			do while (ABS(eta_test) .GT. aval_params%max_pitch_angle)
+				eta_test = eta_samples(ii-1) + random_norm(0.0_rp,1.0_rp)
+			end do
+			chi_test = COS(C_PI*eta_test/180.0_rp)
+			chi = COS(C_PI*eta_samples(ii-1)/180.0_rp)	
 
-		p_test = p(ii-1) + random_norm(0.0_rp,1.0_rp)
-		do while ((p_test.LT.aval_params%min_p).OR.(p_test.GT.aval_params%max_p))
-			p_test = p(ii-1) + random_norm(0.0_rp,1.0_rp)
-		end do
+			p_test = p_samples(ii-1) + random_norm(0.0_rp,1.0_rp)
+			do while ((p_test.LT.aval_params%min_p).OR.(p_test.GT.aval_params%max_p))
+				p_test = p_samples(ii-1) + random_norm(0.0_rp,1.0_rp)
+			end do
 
-		ratio = fRE(chi_test,p_test)/fRE(chi,p(ii-1))
+			ratio = fRE(chi_test,p_test)/fRE(chi,p_samples(ii-1))
 
-		if (ratio .GE. 1.0_rp) then
-			p(ii) = p_test
-			eta(ii) = eta_test
-			ii = ii + 1_idef
-		else 
-			call RANDOM_NUMBER(rand_unif)
-			if (rand_unif .LT. ratio) then
-				p(ii) = p_test
-				eta(ii) = eta_test
+			if (ratio .GE. 1.0_rp) then
+				p_samples(ii) = p_test
+				eta_samples(ii) = eta_test
 				ii = ii + 1_idef
+			else 
+				call RANDOM_NUMBER(rand_unif)
+				if (rand_unif .LT. ratio) then
+					p_samples(ii) = p_test
+					eta_samples(ii) = eta_test
+					ii = ii + 1_idef
+				end if
 			end if
-		end if
-	end do	
+		end do	
 
-	do ii=1_idef,ppp
-		if (eta(ii).LT.0.0_rp) then
-			eta(ii) = -eta(ii)
-		end if
-	end do
+		do ii=1_idef,ppp
+			if (eta_samples(ii).LT.0.0_rp) then
+				eta_samples(ii) = -eta_samples(ii)
+			end if
+		end do
+
+	end if
+
+	CALL MPI_SCATTER(p_samples,ppp,MPI_REAL8,p,ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+
+	CALL MPI_SCATTER(eta_samples,ppp,MPI_REAL8,eta,ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+
+	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
 	g = SQRT(1.0_rp + p**2)
 
 !	write(6,'("MPI:",I4," Minimum gamma: ",F30.16," "I6)') params%mpi_params%rank,MINVAL(p),indices(MINLOC(p))
+	call DTIME(tarray,time_elapsed)
+	write(6,'("Time elapsed: ",F15.10)') time_elapsed
 
 	DEALLOCATE(p)
+	if (params%mpi_params%rank.EQ.0_idef) then
+		DEALLOCATE(p_samples)
+		DEALLOCATE(eta_samples)
+	end if
 END SUBROUTINE sample_distribution
 
 
