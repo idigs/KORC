@@ -1394,7 +1394,7 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: Psyn_lambda
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: PTot
 	REAL(rp) :: R, Z
-	REAL(rp) :: N
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: N, N_send_buffer, N_receive_buffer
 	REAL(rp) :: q, m, k, u, g, lc
 	REAL(rp) :: photon_energy
 	INTEGER :: ii,jj,ll,ss,pp
@@ -1410,6 +1410,7 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	ALLOCATE(PTot(pplane%grid_dims(1),pplane%grid_dims(2),params%num_species))
 	ALLOCATE(P(cam%Nlambda))
 	ALLOCATE(P_lambda(cam%Nlambda,params%num_species))
+	ALLOCATE(N(params%num_species))
 	ALLOCATE(zeta(cam%Nlambda))
 
 	np = 0.0_rp
@@ -1417,11 +1418,12 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	P = 0.0_rp
 	P_lambda = 0.0_rp
 	PTot = 0.0_rp
+
+	N = 0.0_rp
 	
 	do ss=1_idef,params%num_species
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
-		N = 0.0_rp
 !$OMP PARALLEL FIRSTPRIVATE(q,m) PRIVATE(binorm,X,V,B,E,&
 !$OMP& k,u,g,lc,ii,jj,ll,pp,photon_energy,zeta,P,R,Z)&
 !$OMP& SHARED(params,spp,ss,Psyn_lambda,PTot,np,P_lambda,N)
@@ -1447,7 +1449,7 @@ SUBROUTINE integrated_spectral_density(params,spp)
 				end do
 
 				P_lambda(:,ss) = P_lambda(:,ss) + P
-				N = N + 1.0_rp
+				N(ss) = N(ss) + 1.0_rp
 
 				R = SQRT(SUM(X(1:2)**2))
 				Z = X(3)
@@ -1462,9 +1464,6 @@ SUBROUTINE integrated_spectral_density(params,spp)
 		end do ! particles
 !$OMP END DO
 !$OMP END PARALLEL
-
-	P_lambda(:,ss) = P_lambda(:,ss)/N
-
 	end do ! species
 
 !	* * * * * * * IMPORTANT * * * * * * *
@@ -1495,7 +1494,6 @@ SUBROUTINE integrated_spectral_density(params,spp)
 		PTot_send_buffer = RESHAPE(PTot,(/numel/))
 		CALL MPI_REDUCE(PTot_send_buffer,PTot_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
 
-
 		numel = cam%Nlambda*params%num_species
 
 		ALLOCATE(P_send_buffer(numel))
@@ -1504,11 +1502,19 @@ SUBROUTINE integrated_spectral_density(params,spp)
 		P_send_buffer = RESHAPE(P_lambda,(/numel/))
 		CALL MPI_REDUCE(P_send_buffer,P_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
 
+		numel = params%num_species
+
+		ALLOCATE(N_send_buffer(numel))
+		ALLOCATE(N_receive_buffer(numel))
+	
+		N_send_buffer = N
+		CALL MPI_REDUCE(N_send_buffer,N_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
 
 		if (params%mpi_params%rank.EQ.0_idef) then
 		    Psyn_lambda = RESHAPE(Psyn_receive_buffer,(/pplane%grid_dims(1),pplane%grid_dims(2),params%num_species/))
 		    np = RESHAPE(np_receive_buffer,(/pplane%grid_dims(1),pplane%grid_dims(2),params%num_species/))
 		    P_lambda = RESHAPE(P_receive_buffer,(/cam%Nlambda,params%num_species/))
+			N = N_receive_buffer
 
 			var_name = 'np_pplane'
 		    call save_snapshot_var(params,np,var_name)
@@ -1516,6 +1522,9 @@ SUBROUTINE integrated_spectral_density(params,spp)
 			var_name = 'Psyn_pplane'
 		    	call save_snapshot_var(params,Psyn_lambda,var_name)
 
+			do ss=1_idef,params%num_species
+				P_lambda(:,ss) = P_lambda(:,ss)/N(ss)
+			end do
 			var_name = 'P_lambda'
 			call save_snapshot_var(params,P_lambda,var_name)
 
@@ -1527,6 +1536,8 @@ SUBROUTINE integrated_spectral_density(params,spp)
 			call save_snapshot_var(params,PTot,var_name)
 		end if
 
+		DEALLOCATE(N_send_buffer)
+		DEALLOCATE(N_receive_buffer)
 		DEALLOCATE(Psyn_send_buffer)
 		DEALLOCATE(Psyn_receive_buffer)
 		DEALLOCATE(PTot_send_buffer)
@@ -1544,6 +1555,9 @@ SUBROUTINE integrated_spectral_density(params,spp)
 		var_name = 'Psyn_pplane'
 	    call save_snapshot_var(params,Psyn_lambda,var_name)
 
+		do ss=1_idef,params%num_species
+			P_lambda(:,ss) = P_lambda(:,ss)/N(ss)
+		end do
 		var_name = 'P_lambda'
 		call save_snapshot_var(params,P_lambda,var_name)
 
@@ -1558,6 +1572,7 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	DEALLOCATE(PTot)
 	DEALLOCATE(P)
 	DEALLOCATE(P_lambda)
+	DEALLOCATE(N)
 	DEALLOCATE(zeta)
 END SUBROUTINE integrated_spectral_density
 
@@ -1886,7 +1901,7 @@ SUBROUTINE synthetic_camera(params,spp)
 	write(6,'("MPI:",I5," Synthetic camera diagnostic: ON!")') params%mpi_params%rank
 
 	if (cam%integrated_opt) then
-		call integrated_angular_density(params,spp)
+!		call integrated_angular_density(params,spp)
 		call integrated_spectral_density(params,spp)
 	else
 		call angular_density(params,spp)

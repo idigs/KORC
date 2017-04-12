@@ -118,7 +118,10 @@ for ll=1:length(list)
                 dataset = ...
                     ['/' num2str(it(ii)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
                     '/' list{ll}];
-                data.(['sp' num2str(ss)]).(list{ll})(:,:,ii) = h5read(filename, dataset);
+                try
+                    data.(['sp' num2str(ss)]).(list{ll})(:,:,ii) = h5read(filename, dataset);
+                catch
+                end
             end
         end
     end
@@ -687,8 +690,10 @@ for ss=1:ST.params.simulation.num_species
     try
         plot(axis_lambda,P_theory,'k',axis_lambda,f_L2,'r',axis_lambda,f_L3,'b',axis_lambda,f_L4,'g','LineWidth',1)
     catch
-%         plot(axis_lambda,P_theory,'k',axis_lambda,f_L2,'r','LineWidth',1)
-        plot(axis_lambda,P_theory./f_L2,'r','LineWidth',1)
+        figure(h)
+        plot(axis_lambda,P_theory,'k',axis_lambda,f_L2,'r','LineWidth',1)
+
+        figure;plot(axis_lambda,f_L2./P_theory,'r','LineWidth',1)
     end
     ylabel('$P_{syn}$ (A.U.)','FontSize',12,'Interpreter','latex')
     xlim([min(axis_lambda) max(axis_lambda)])

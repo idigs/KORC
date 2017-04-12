@@ -28,7 +28,7 @@
         r = 0.01, 0.01, 0.01 !
         Eo = 20.0E6, 20.0E6, 20.0E6 ! Initial energy in eV
         etao = 10.0, 20.0, 40.0  ! Initial pitch angle
-        ppp = 1, 1, 1 ! Number of particles per process (mpi)
+        ppp = 1000, 1000, 1000 ! Number of particles per process (mpi)
         q = -1.0, -1.0, -1.0 ! Electric charge
         m = 1.0, 1.0, 1.0 ! In units of electron mass
 /
@@ -73,13 +73,14 @@
 /
 
 &SyntheticCamera
-	Riw = 1.0 ! Radial position of inner wall
-	num_pixels = 60, 60 ! Number of pixels (X,Y)
-	sensor_size = 0.3, 0.3 ! (horizontal,vertical)
-	focal_length = 0.4
-	position = 2.4, 0.0 ! Position of camera (R,Z)
-	incline = 55.0 ! In degrees
-	lambda_min = 1.0E-7 ! Minimum wavelength in meters
-	lambda_max = 1.0E-5 ! Maximum wavelength in meters
-	Nlambda = 50 ! Number of discrete wavelengths
+ 	Riw = 1.0 ! Radial position of inner wall
+ 	num_pixels = 75, 75 ! Number of pixels (X,Y)
+ 	sensor_size = 0.4, 0.4 ! (horizontal,vertical)
+ 	focal_length = 0.5
+ 	position = 2.4, 0.0 ! Position of camera (R,Z)
+ 	incline = 55.0 ! In degrees
+ 	lambda_min = 1.0E-7 ! Minimum wavelength in meters
+ 	lambda_max = 1.0E-5 ! Maximum wavelength in meters
+ 	Nlambda = 100 ! Number of discrete wavelengths
+	integrated_opt = .TRUE. ! .TRUE. or .FALSE.
 /
