@@ -86,5 +86,5 @@ info:
 
 clean:
 	@echo	"CLEANING..."
-	rm -f $(MOD)/*.mod $(OBJ)/*.o
+	rm -f $(MOD)/*.mod	$(OBJ)/*.o	$(BIN)/KORC-FO
 

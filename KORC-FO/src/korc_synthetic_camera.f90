@@ -77,6 +77,18 @@ MODULE korc_synthetic_camera
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  !
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *  !
 
+SUBROUTINE test_analytical_formula()
+	IMPLICIT NONE
+	REAL(rp) :: z
+	INTEGER :: ii
+
+	do ii=1_idef,100
+		z = 2.5_rp + REAL((ii-1_idef),rp)*0.5_rp
+		write(6,*) IntK(5.0_rp/3.0_rp,z)
+	end do
+END SUBROUTINE test_analytical_formula
+
+
 SUBROUTINE test(params)
     IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
@@ -519,14 +531,14 @@ FUNCTION P_integral(z)
 	REAL(rp), INTENT(IN) :: z
 	REAL(rp) :: a
 
+	P_integral = 0.0_rp
+
 	IF (z .LT. 0.5_rp) THEN
 		a = (2.16_rp/2.0_rp**(2.0_rp/3.0_rp))*z**(1.0_rp/3.0_rp)
-		P_integral = P_integral + nintegral_besselk(z,a)
-		P_integral = P_integral + IntK(5.0_rp/3.0_rp,a)
+		P_integral = nintegral_besselk(z,a) + IntK(5.0_rp/3.0_rp,a)
 	ELSE IF ((z .GE. 0.5_rp).AND.(z .LT. 2.5_rp)) THEN
 		a = 0.72_rp*(z + 1.0_rp)
-		P_integral = P_integral + nintegral_besselk(z,a)
-		P_integral = P_integral + IntK(5.0_rp/3.0_rp,a)
+		P_integral = nintegral_besselk(z,a) + IntK(5.0_rp/3.0_rp,a)
 	ELSE
 		P_integral = IntK(5.0_rp/3.0_rp,z)
 	END IF
@@ -1409,7 +1421,7 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	do ss=1_idef,params%num_species
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
-
+		N = 0.0_rp
 !$OMP PARALLEL FIRSTPRIVATE(q,m) PRIVATE(binorm,X,V,B,E,&
 !$OMP& k,u,g,lc,ii,jj,ll,pp,photon_energy,zeta,P,R,Z)&
 !$OMP& SHARED(params,spp,ss,Psyn_lambda,PTot,np,P_lambda,N)
@@ -1502,7 +1514,7 @@ SUBROUTINE integrated_spectral_density(params,spp)
 		    call save_snapshot_var(params,np,var_name)
 
 			var_name = 'Psyn_pplane'
-	    	call save_snapshot_var(params,Psyn_lambda,var_name)
+		    	call save_snapshot_var(params,Psyn_lambda,var_name)
 
 			var_name = 'P_lambda'
 			call save_snapshot_var(params,P_lambda,var_name)
@@ -1548,28 +1560,6 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	DEALLOCATE(P_lambda)
 	DEALLOCATE(zeta)
 END SUBROUTINE integrated_spectral_density
-
-! * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-! * * * * MAIN CALL TO SYNTHETIC CAMERA SUBROUTINES * * * * 
-! * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-
-SUBROUTINE synthetic_camera(params,spp)
-	IMPLICIT NONE
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
-
-	write(6,'("MPI:",I5," Synthetic camera diagnostic: ON!")') params%mpi_params%rank
-
-	if (cam%integrated_opt) then
-		call integrated_angular_density(params,spp)
-		call integrated_spectral_density(params,spp)
-	else
-		call angular_density(params,spp)
-		call spectral_density(params,spp)
-	end if
-
-	write(6,'("MPI:",I5," Synthetic camera diagnostic: OFF!")') params%mpi_params%rank
-END SUBROUTINE synthetic_camera
 
 
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -1881,5 +1871,31 @@ SUBROUTINE save_snapshot_var_4d(params,var,var_name)
 
 	call h5fclose_f(h5file_id, h5error)
 END SUBROUTINE save_snapshot_var_4d
+
+
+! * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+! * * * * MAIN CALL TO SYNTHETIC CAMERA SUBROUTINES * * * * 
+! * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+
+SUBROUTINE synthetic_camera(params,spp)
+	IMPLICIT NONE
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
+
+	write(6,'("MPI:",I5," Synthetic camera diagnostic: ON!")') params%mpi_params%rank
+
+	if (cam%integrated_opt) then
+		call integrated_angular_density(params,spp)
+		call integrated_spectral_density(params,spp)
+	else
+		call angular_density(params,spp)
+		call spectral_density(params,spp)
+	end if
+
+!	call test_analytical_formula()
+
+	write(6,'("MPI:",I5," Synthetic camera diagnostic: OFF!")') params%mpi_params%rank
+END SUBROUTINE synthetic_camera
 
 END MODULE korc_synthetic_camera

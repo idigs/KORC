@@ -134,8 +134,8 @@ SUBROUTINE sample_distribution(params,g,eta)
 	INTEGER :: ii,ppp,nsamples
 	INTEGER :: mpierr
 
-	call DTIME(tarray,time_elapsed)
-	write(6,'("Time elapsed: ",F15.10)') time_elapsed
+!	call DTIME(tarray,time_elapsed)
+!	write(6,'("Time elapsed: ",F15.10)') time_elapsed
 
 	ppp = SIZE(g)
 	nsamples = ppp*params%mpi_params%nmpi
@@ -233,8 +233,8 @@ SUBROUTINE sample_distribution(params,g,eta)
 	g = SQRT(1.0_rp + p**2)
 
 !	write(6,'("MPI:",I4," Minimum gamma: ",F30.16," "I6)') params%mpi_params%rank,MINVAL(p),indices(MINLOC(p))
-	call DTIME(tarray,time_elapsed)
-	write(6,'("Time elapsed: ",F15.10)') time_elapsed
+!	call DTIME(tarray,time_elapsed)
+!	write(6,'("Time elapsed: ",F15.10)') time_elapsed
 
 	DEALLOCATE(p)
 	if (params%mpi_params%rank.EQ.0_idef) then

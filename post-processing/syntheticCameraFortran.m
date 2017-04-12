@@ -19,7 +19,9 @@ ST.data = loadData(ST);
 
 % plotSyntheticCameraAnalysis(ST)
 
-generateFigures(ST)
+generateFigures(ST);
+
+% testFunction(ST);
 
 end
 
@@ -328,6 +330,8 @@ lc = 4*pi/(3*k*g^3);
 
 z = lc./l;
 
+% figure;plot(1E9*l,z)
+
 BK53 = @(x) besselk(5/3,x);
 IntBKv = @(nu,x) (pi/sqrt(2))*(1 - 0.25*(4*nu^2 -1))*erfc(sqrt(x)) + ...
     0.25*(4*nu^2 - 1)*sqrt(0.5*pi./x).*exp(-x);
@@ -347,9 +351,14 @@ end
 Psyn = c*q^2*Psyn./(sqrt(3)*ep*g^2*l.^3);
 end
 
-function Psyn = averagedSpectrum(ST)
-Np = 50;
-Nchi = 100;
+function Psyn = averagedSpectrum(ST,Np,Nchi)
+
+narginchk(1,3);
+
+if (nargin == 1)
+    Np = 50;
+    Nchi = 100;
+end
 
 q = abs(ST.params.species.q(1));
 m = ST.params.species.m(1);
@@ -367,16 +376,16 @@ Cz = sqrt(3*(Zeff + 5)/pi)*ST.params.avalanche_pdf_params.Clog;
 g = @(p) sqrt(p.^2 + 1);
 eta = @(x) acos(x);
 
-f = @(p,x) (Ehat/Cz)*p.*exp( -p.*(x/Cz + 0.5*Ehat*(1 - x.^2)./x) )./x;
+fRE = @(p,x) (Ehat/Cz)*p.*exp( -p.*(x/Cz + 0.5*Ehat*(1 - x.^2)./x) )./x;
 
-% sanityIntegral = integral2(f,pmin,pmax,chimin,1);
-% sanityIntegral = integral2(f,0,500,0,1);
+Fo = integral2(fRE,pmin,pmax,chimin,1);
+% Fo = integral2(fRE,0,500,0,1);
+
+f = @(p,x) fRE(p,x)/Fo;
 
 p = linspace(pmin,pmax,Np);
 pitch = linspace(0,pitchmax,Nchi);
 chi = cos(pitch);
-% chi = linspace(chimin,1,Nchi);
-% pitch = eta(chi);
 
 l = ST.params.synthetic_camera_params.lambda;
 Psyn = zeros(size(l));
@@ -386,7 +395,8 @@ Psyn_p = zeros(numel(l),Np);
 for ll=1:numel(l)
     for pp=1:Np
         for cc=1:Nchi
-            Psyn_p_chi(ll,pp,cc) = f(p(pp),chi(cc))*singleParticleSpectrum(ST,l(ll),g(p(pp)),eta(chi(cc)));
+            Psp = singleParticleSpectrum(ST,l(ll),g(p(pp)),eta(chi(cc)));
+            Psyn_p_chi(ll,pp,cc) = f(p(pp),chi(cc))*Psp;
         end
         Psyn_p(ll,pp) = trapz(fliplr(chi),squeeze(Psyn_p_chi(ll,pp,:)));
     end
@@ -408,6 +418,17 @@ lAxis = l/1E-9;
 % plot(lAxis,Psyn)
 % xlabel('$\lambda$ (nm)','Interpreter','latex')
 % ylabel('$P_{R}$ (Watts)','Interpreter','latex')
+end
+
+function testFunction(ST)
+
+h = figure;
+
+for ii=50:50:300
+    Psyn = averagedSpectrum(ST,ii,ii);
+    figure(h); hold on; plot(ST.params.synthetic_camera_params.lambda,Psyn);hold off
+end
+
 end
 
 function generateFigures(ST)
@@ -522,8 +543,7 @@ for ss=1:ST.params.simulation.num_species
     end
 
     if isfield(ST.params,'avalanche_pdf_params')
-        Psyn_avg = averagedSpectrum(ST);
-%         Psyn_avg = zeros(1,Nl);
+        Psyn_avg = averagedSpectrum(ST,50,50);
     else
         Psyn_sp = singleParticleSpectrum(ST,lambda(i1:i2),...
         ST.params.species.go(ss),deg2rad(ST.params.species.etao(ss)));
@@ -655,19 +675,20 @@ for ss=1:ST.params.simulation.num_species
         f_L3 = squeeze(sum(sum(Psyn_L3_lambda,1),2));
         f_L3 = f_L3/max(f_L3);
     end
-    f_L2 = ST.data.(['sp' num2str(ss)]).P_lambda(:,ss);
-%     figure;plot(axis_lambda,f_L2);
-    f_L2 = f_L2/max(f_L2);
+    f_L2 = sum(ST.data.(['sp' num2str(ss)]).P_lambda,2);
     if isfield(ST.params,'avalanche_pdf_params')
-        P_theory = Psyn_avg/max(Psyn_avg);
+        P_theory = Psyn_avg;
+%         P_theory = Psyn_avg/max(Psyn_avg);
     else
-        P_theory = Psyn_sp/max(Psyn_sp);
+        P_theory = Psyn_sp;
+%         P_theory = Psyn_sp/max(Psyn_sp);
     end
     figure(h)
     try
         plot(axis_lambda,P_theory,'k',axis_lambda,f_L2,'r',axis_lambda,f_L3,'b',axis_lambda,f_L4,'g','LineWidth',1)
     catch
-        plot(axis_lambda,P_theory,'k',axis_lambda,f_L2,'r','LineWidth',1)
+%         plot(axis_lambda,P_theory,'k',axis_lambda,f_L2,'r','LineWidth',1)
+        plot(axis_lambda,P_theory./f_L2,'r','LineWidth',1)
     end
     ylabel('$P_{syn}$ (A.U.)','FontSize',12,'Interpreter','latex')
     xlim([min(axis_lambda) max(axis_lambda)])
@@ -871,6 +892,6 @@ for ss=1:ST.params.simulation.num_species
     ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
     xlabel('$x$-axis','FontSize',12,'Interpreter','latex')    
     
-    saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
+%     saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
 end
 end
