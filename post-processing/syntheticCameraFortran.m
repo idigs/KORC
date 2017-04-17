@@ -394,16 +394,29 @@ l = ST.params.synthetic_camera_params.lambda;
 Psyn = zeros(size(l));
 Psyn_p_chi = zeros(numel(l),Np,Nchi);
 Psyn_p = zeros(numel(l),Np);
+Psyn_chi = zeros(numel(l),Nchi);
 
-for ll=1:numel(l)
-    for pp=1:Np
-        for cc=1:Nchi
+% for ll=1:numel(l)
+%     for pp=1:Np
+%         for cc=1:Nchi
+%             Psp = singleParticleSpectrum(ST,l(ll),g(p(pp)),eta(chi(cc)));
+%             Psyn_p_chi(ll,pp,cc) = f(p(pp),chi(cc))*Psp;
+%         end
+%         Psyn_p(ll,pp) = trapz(fliplr(chi),squeeze(Psyn_p_chi(ll,pp,:)));
+%     end
+%     Psyn(ll) = trapz(p,squeeze(Psyn_p(ll,:)));
+% end
+
+
+for ll=1:numel(l)   
+    for cc=1:Nchi
+        for pp=1:Np
             Psp = singleParticleSpectrum(ST,l(ll),g(p(pp)),eta(chi(cc)));
             Psyn_p_chi(ll,pp,cc) = f(p(pp),chi(cc))*Psp;
         end
-        Psyn_p(ll,pp) = trapz(fliplr(chi),squeeze(Psyn_p_chi(ll,pp,:)));
+        Psyn_chi(ll,cc) = trapz(p,squeeze(Psyn_p_chi(ll,:,cc)));
     end
-    Psyn(ll) = trapz(p,squeeze(Psyn_p(ll,:)));
+    Psyn(ll) = trapz(fliplr(chi),squeeze(Psyn_chi(ll,:)));
 end
 
 E = (g(p)*m*c^2/q)/1E6; % MeV
@@ -546,7 +559,7 @@ for ss=1:ST.params.simulation.num_species
     end
 
     if isfield(ST.params,'avalanche_pdf_params')
-        Psyn_avg = averagedSpectrum(ST,50,50);
+        Psyn_avg = averagedSpectrum(ST,40,50);
     else
         Psyn_sp = singleParticleSpectrum(ST,lambda(i1:i2),...
         ST.params.species.go(ss),deg2rad(ST.params.species.etao(ss)));
@@ -693,7 +706,7 @@ for ss=1:ST.params.simulation.num_species
         figure(h)
         plot(axis_lambda,P_theory,'k',axis_lambda,f_L2,'r','LineWidth',1)
 
-        figure;plot(axis_lambda,f_L2./P_theory,'r','LineWidth',1)
+%         figure;plot(axis_lambda,f_L2./P_theory,'r','LineWidth',1)
     end
     ylabel('$P_{syn}$ (A.U.)','FontSize',12,'Interpreter','latex')
     xlim([min(axis_lambda) max(axis_lambda)])
@@ -897,6 +910,6 @@ for ss=1:ST.params.simulation.num_species
     ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
     xlabel('$x$-axis','FontSize',12,'Interpreter','latex')    
     
-%     saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
+   saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
 end
 end

@@ -73,6 +73,7 @@
 /
 
 &SyntheticCamera
+	camera_on = .FALSE. ! .TRUE. or .FALSE.
  	Riw = 1.0 ! Radial position of inner wall
  	num_pixels = 75, 75 ! Number of pixels (X,Y)
  	sensor_size = 0.4, 0.4 ! (horizontal,vertical)

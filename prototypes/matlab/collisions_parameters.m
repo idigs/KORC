@@ -7,7 +7,7 @@ close all
 kB = 1.38E-23; % Boltzmann constant
 Kc = 8.987E9; % Coulomb constant in N*m^2/C^2
 mu0 = (4E-7)*pi; % Magnetic permeability
-e0 = 8.854E-12;% Electric permitivity
+ep0 = 8.854E-12;% Electric permitivity
 c = 2.9979E8; % Speed of light
 qe = 1.602176E-19; % Electron charge
 me = 9.109382E-31; % Electron mass
@@ -16,8 +16,8 @@ me = 9.109382E-31; % Electron mass
 eta = eta*pi/180; % Pitch angle
 
 Te = Te*qe;
-rD = sqrt( e0*Te/(ne*qe^2) );
-re = qe^2/(4*pi*e0*me*c^2);
+rD = sqrt( ep0*Te/(ne*qe^2) );
+re = qe^2/(4*pi*ep0*me*c^2);
 
 % Eo = linspace(0,1E2,1E4) + me*c^2/qe;
 x = linspace(70,80,1E4);

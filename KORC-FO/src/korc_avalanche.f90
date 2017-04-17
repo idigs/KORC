@@ -94,6 +94,14 @@ SUBROUTINE initialize_avalanche_params(params)
 END SUBROUTINE initialize_avalanche_params
 
 
+FUNCTION deg2rad(x)
+	REAL(rp), INTENT(IN) :: x
+	REAL(rp) :: deg2rad
+	
+	deg2rad = C_PI*x/180.0_rp
+END FUNCTION
+
+
 FUNCTION fRE(x,p)
 	IMPLICIT NONE
 	REAL(rp), INTENT(IN) :: x ! x = cos(pitch)
@@ -101,6 +109,7 @@ FUNCTION fRE(x,p)
 	REAL(rp) :: fRE
 	
 	fRE = aval_params%fo*p*EXP(-p*(aval_params%C2*x + aval_params%C1/x))/x
+!	fRE = aval_params%fo*EXP( -p*(aval_params%C2*x + aval_params%C1/x) )/(x*p)
 END FUNCTION fRE
 
 
@@ -157,8 +166,8 @@ SUBROUTINE sample_distribution(params,g,eta)
 			do while (ABS(eta_test) .GT. aval_params%max_pitch_angle)
 				eta_test = eta_buffer + random_norm(0.0_rp,1.0_rp)
 			end do
-			chi_test = COS(C_PI*eta_test/180.0_rp)
-			chi = COS(C_PI*eta_buffer/180.0_rp)	
+			chi_test = COS(deg2rad(eta_test))
+			chi = COS(deg2rad(eta_buffer))
 
 			p_test = p_buffer + random_norm(0.0_rp,1.0_rp)
 			do while ((p_test.LT.aval_params%min_p).OR.(p_test.GT.aval_params%max_p))
@@ -192,8 +201,8 @@ SUBROUTINE sample_distribution(params,g,eta)
 			do while (ABS(eta_test) .GT. aval_params%max_pitch_angle)
 				eta_test = eta_samples(ii-1) + random_norm(0.0_rp,1.0_rp)
 			end do
-			chi_test = COS(C_PI*eta_test/180.0_rp)
-			chi = COS(C_PI*eta_samples(ii-1)/180.0_rp)	
+			chi_test = COS(deg2rad(eta_test))
+			chi = COS(deg2rad(eta_samples(ii-1)))
 
 			p_test = p_samples(ii-1) + random_norm(0.0_rp,1.0_rp)
 			do while ((p_test.LT.aval_params%min_p).OR.(p_test.GT.aval_params%max_p))

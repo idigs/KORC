@@ -17,7 +17,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
 % angularMomentum(ST);
 
@@ -49,7 +49,7 @@ ST.data = loadData(ST);
 
 % calculateTemperatureComponents(ST);
 
-avalancheDiagnostic(ST);
+% avalancheDiagnostic(ST);
 
 % save('energy_limit','ST')
 end
@@ -100,7 +100,7 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {};%list = {'X','B'};
+list = {'X'};
 
 it = ST.range(1):1:ST.range(2);
 
@@ -129,7 +129,7 @@ for ll=1:length(list)
     end
 end
 
-list = {'g','flag','eta'};
+list = {'g','flag','eta','Prad','Pin'};
 % list = {'g','eta'};
 
 for ll=1:length(list)
@@ -218,13 +218,27 @@ set(h6,'name','Energy statistics','numbertitle','off')
             st4(:,ss) = kurtosis(tmp,1,1);
         end
         
-        Prad = mean(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),1);
-        minPrad = Prad + std(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),0,1);
-        maxPrad = Prad - std(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),0,1);
+        try
+            Prad = mean(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),1);
+            minPrad = Prad + std(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),0,1);
+            maxPrad = Prad - std(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,:)),0,1);
+        catch
+            Prad = zeros(size(ST.time));
+            minPrad = 0;
+            maxPrad = 1;
+        end
         
-        Pin = mean(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),1);
-        minPin = Pin + std(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),0,1);
-        maxPin = Pin - std(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),0,1);
+        
+        try
+            Pin = mean(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),1);
+            minPin = Pin + std(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),0,1);
+            maxPin = Pin - std(abs(ST.data.(['sp' num2str(ss)]).Pin(pin,:)),0,1);
+        catch
+            Pin = zeros(size(ST.time));
+            minPin = 0;
+            maxPin = 1;
+        end
+        
         
         eta = deg2rad(ST.data.(['sp' num2str(ss)]).eta(pin,:));
         V = sqrt(1 - 1./gammap.^2); % in units of the speed of light
@@ -2931,8 +2945,8 @@ yAxis = pAxis;
 lAxis = l/1E-9;
 
 
-offset = floor(numel(l)/4);
-I = 1:offset-1:numel(l);
+I = floor(linspace(1,numel(l),15));
+ntiles = ceil(sqrt(numel(I)));
 
 h = figure;
 hh = figure;
@@ -2942,7 +2956,7 @@ for sp=1:numel(I)
     cmax = max(max(A));
     
     figure(h)
-    subplot(3,2,sp)    
+    subplot(ntiles,ntiles,sp)    
     contourf(xAxis,yAxis,A,17,'LineStyle','none')
     colormap(jet); colorbar; caxis([0 cmax])
     title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
@@ -2950,7 +2964,7 @@ for sp=1:numel(I)
     ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
     
     figure(hh)
-    subplot(3,2,sp)    
+    subplot(ntiles,ntiles,sp)    
     contourf(xAxis,yAxis,AA,17,'LineStyle','none')
     colormap(jet); colorbar; caxis([0 cmax])
     title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
@@ -2963,14 +2977,14 @@ AA = fnum;
 cmax = max([max(max(A)) max(max(AA))]);
 
 figure(h)
-subplot(3,2,6)
+subplot(ntiles,ntiles,ntiles^2)
 contourf(xAxis,yAxis,A,17,'LineStyle','none')
 colormap(jet); colorbar; caxis([0 cmax])
 xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 
 figure(hh)
-subplot(3,2,6)
+subplot(ntiles,ntiles,ntiles^2)
 contourf(xAxis,yAxis,AA,17,'LineStyle','none')
 colormap(jet); colorbar; caxis([0 cmax])
 xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
@@ -2980,7 +2994,7 @@ ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 h = figure;
 for sp=1:numel(I)
     figure(h)
-    subplot(3,2,sp)
+    subplot(ntiles,ntiles,sp)
     A = squeeze(Psyn_sp(I(sp),:,:));
     contourf(xAxis,yAxis,A,17,'LineStyle','none')
     colormap(jet);
@@ -2991,7 +3005,7 @@ for sp=1:numel(I)
 end
 
 figure(h)
-subplot(3,2,6)
+subplot(ntiles,ntiles,ntiles^2)
 A = fRE;
 contourf(xAxis,yAxis,A,17,'LineStyle','none')
 colormap(jet);

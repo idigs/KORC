@@ -21,6 +21,7 @@ MODULE korc_synthetic_camera
 
 
 	TYPE, PRIVATE :: CAMERA
+		LOGICAL :: camera_on
 		REAL(rp) :: aperture ! Aperture of the camera (diameter of lens) in meters
 		REAL(rp) :: Riw ! Radial position of inner wall
 		INTEGER, DIMENSION(2) :: num_pixels ! Number of pixels (X,Y)
@@ -179,12 +180,12 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 	REAL(rp) :: lambda_min ! Minimum wavelength in cm
 	REAL(rp) :: lambda_max ! Maximum wavelength in cm
 	INTEGER :: Nlambda
-	LOGICAL :: integrated_opt
+	LOGICAL :: camera_on, integrated_opt
 	REAL(rp) :: xmin, xmax, ymin, ymax, DX, DY
 	INTEGER :: ii
 
-	NAMELIST /SyntheticCamera/ aperture,Riw,num_pixels,sensor_size,focal_length,&
-			position,incline,lambda_min,lambda_max,Nlambda,integrated_opt
+	NAMELIST /SyntheticCamera/ camera_on,aperture,Riw,num_pixels,sensor_size,focal_length,&
+								position,incline,lambda_min,lambda_max,Nlambda,integrated_opt
 
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'(/,"* * * * * * * * * * * * * * * * * *")')
@@ -195,8 +196,9 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 	read(default_unit_open,nml=SyntheticCamera)
 	close(default_unit_open)
 
-!	write(*,nml=SyntheticCamera)
-
+	!	write(*,nml=SyntheticCamera)
+	
+	cam%camera_on = camera_on
 	cam%aperture = aperture
 	cam%Riw = Riw
 	cam%num_pixels = num_pixels
@@ -213,99 +215,101 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 	ALLOCATE(cam%lambda(cam%Nlambda))
 	cam%integrated_opt = integrated_opt
 	
-	do ii=1_idef,cam%Nlambda
-		cam%lambda(ii) = cam%lambda_min + REAL(ii-1_idef,rp)*cam%Dlambda
-	end do
+	if (cam%camera_on) then
+		do ii=1_idef,cam%Nlambda
+			cam%lambda(ii) = cam%lambda_min + REAL(ii-1_idef,rp)*cam%Dlambda
+		end do
 
-	ALLOCATE(cam%pixels_nodes_x(cam%num_pixels(1)))
-	ALLOCATE(cam%pixels_nodes_y(cam%num_pixels(2)))
-	ALLOCATE(cam%pixels_edges_x(cam%num_pixels(1) + 1))
-	ALLOCATE(cam%pixels_edges_y(cam%num_pixels(2) + 1))
+		ALLOCATE(cam%pixels_nodes_x(cam%num_pixels(1)))
+		ALLOCATE(cam%pixels_nodes_y(cam%num_pixels(2)))
+		ALLOCATE(cam%pixels_edges_x(cam%num_pixels(1) + 1))
+		ALLOCATE(cam%pixels_edges_y(cam%num_pixels(2) + 1))
 
-	xmin = -0.5_rp*cam%sensor_size(1)
-	xmax = 0.5_rp*cam%sensor_size(1)
-	DX = cam%sensor_size(1)/REAL(cam%num_pixels(1),rp)
+		xmin = -0.5_rp*cam%sensor_size(1)
+		xmax = 0.5_rp*cam%sensor_size(1)
+		DX = cam%sensor_size(1)/REAL(cam%num_pixels(1),rp)
 
-	do ii=1_idef,cam%num_pixels(1)
-		cam%pixels_nodes_x(ii) = xmin + 0.5_rp*DX + REAL(ii-1_idef,rp)*DX
-	end do
+		do ii=1_idef,cam%num_pixels(1)
+			cam%pixels_nodes_x(ii) = xmin + 0.5_rp*DX + REAL(ii-1_idef,rp)*DX
+		end do
 
-	do ii=1_idef,cam%num_pixels(1)+1_idef
-		cam%pixels_edges_x(ii) = xmin + REAL(ii-1_idef,rp)*DX
-	end do
+		do ii=1_idef,cam%num_pixels(1)+1_idef
+			cam%pixels_edges_x(ii) = xmin + REAL(ii-1_idef,rp)*DX
+		end do
 
-	ymin = cam%position(2) - 0.5_rp*cam%sensor_size(2)
-	ymax = cam%position(2) + 0.5_rp*cam%sensor_size(2)
-	DY = cam%sensor_size(2)/REAL(cam%num_pixels(2),rp)
+		ymin = cam%position(2) - 0.5_rp*cam%sensor_size(2)
+		ymax = cam%position(2) + 0.5_rp*cam%sensor_size(2)
+		DY = cam%sensor_size(2)/REAL(cam%num_pixels(2),rp)
 
-	do ii=1_idef,cam%num_pixels(2)
-		cam%pixels_nodes_y(ii) = ymin + 0.5_rp*DY + REAL(ii-1_idef,rp)*DY
-	end do
+		do ii=1_idef,cam%num_pixels(2)
+			cam%pixels_nodes_y(ii) = ymin + 0.5_rp*DY + REAL(ii-1_idef,rp)*DY
+		end do
 
-	do ii=1_idef,cam%num_pixels(2)+1_idef
-		cam%pixels_edges_y(ii) = ymin + REAL(ii-1_idef,rp)*DY
-	end do
+		do ii=1_idef,cam%num_pixels(2)+1_idef
+			cam%pixels_edges_y(ii) = ymin + REAL(ii-1_idef,rp)*DY
+		end do
 	
-	! Initialize ang variables
-	ALLOCATE(ang%eta(cam%num_pixels(1)))
-	ALLOCATE(ang%beta(cam%num_pixels(1)))
-	ALLOCATE(ang%psi(cam%num_pixels(2)+1_idef))
+		! Initialize ang variables
+		ALLOCATE(ang%eta(cam%num_pixels(1)))
+		ALLOCATE(ang%beta(cam%num_pixels(1)))
+		ALLOCATE(ang%psi(cam%num_pixels(2)+1_idef))
 
-	do ii=1_idef,cam%num_pixels(1)
-		ang%eta(ii) = ABS(ATAN2(cam%pixels_nodes_x(ii),cam%focal_length))
-		if (cam%pixels_edges_x(ii) .LT. 0.0_rp) then
-			ang%beta(ii) = 0.5_rp*C_PI - cam%incline - ang%eta(ii)
-		else
-			ang%beta(ii) = 0.5_rp*C_PI - cam%incline + ang%eta(ii)
+		do ii=1_idef,cam%num_pixels(1)
+			ang%eta(ii) = ABS(ATAN2(cam%pixels_nodes_x(ii),cam%focal_length))
+			if (cam%pixels_edges_x(ii) .LT. 0.0_rp) then
+				ang%beta(ii) = 0.5_rp*C_PI - cam%incline - ang%eta(ii)
+			else
+				ang%beta(ii) = 0.5_rp*C_PI - cam%incline + ang%eta(ii)
+			end if
+		end do
+
+		do ii=1_idef,cam%num_pixels(2)+1_idef
+			ang%psi(ii) = ATAN2(cam%pixels_edges_y(ii),cam%focal_length)
+		end do
+
+		ang%threshold_angle = ATAN2(cam%Riw,-cam%position(1))
+		ang%threshold_radius = SQRT(cam%Riw**2 + cam%position(1)**2)
+
+		if (params%mpi_params%rank .EQ. 0) then
+			write(6,'("*     Synthetic camera ready!     *")')
+			write(6,'("* * * * * * * * * * * * * * * * * *",/)')
 		end if
-	end do
-
-	do ii=1_idef,cam%num_pixels(2)+1_idef
-		ang%psi(ii) = ATAN2(cam%pixels_edges_y(ii),cam%focal_length)
-	end do
-
-	ang%threshold_angle = ATAN2(cam%Riw,-cam%position(1))
-	ang%threshold_radius = SQRT(cam%Riw**2 + cam%position(1)**2)
-
-	if (params%mpi_params%rank .EQ. 0) then
-		write(6,'("*     Synthetic camera ready!     *")')
-		write(6,'("* * * * * * * * * * * * * * * * * *",/)')
-	end if
 
 
-	! Initialize poloidal plane parameters
+		! Initialize poloidal plane parameters
 	
-	pplane%grid_dims = num_pixels
-	ALLOCATE(pplane%nodes_R(pplane%grid_dims(1)))
-	ALLOCATE(pplane%nodes_Z(pplane%grid_dims(2)))
+		pplane%grid_dims = num_pixels
+		ALLOCATE(pplane%nodes_R(pplane%grid_dims(1)))
+		ALLOCATE(pplane%nodes_Z(pplane%grid_dims(2)))
 
-	! * * * * * * * ALL IN METERS * * * * * * * 
+		! * * * * * * * ALL IN METERS * * * * * * * 
 
-	IF (TRIM(params%magnetic_field_model) .EQ. 'ANALYTICAL') THEN
-		pplane%Rmin = F%Ro - F%AB%a
-		pplane%Rmax = F%Ro + F%AB%a
-		pplane%Zmin = -F%AB%a
-		pplane%Zmax = F%AB%a
-	ELSE
-		pplane%Rmin = MINVAL(F%X%R)
-		pplane%Rmax = MAXVAL(F%X%R)
-		pplane%Zmin = MINVAL(F%X%Z)
-		pplane%Zmax = MAXVAL(F%X%Z)
-	END IF	
+		IF (TRIM(params%magnetic_field_model) .EQ. 'ANALYTICAL') THEN
+			pplane%Rmin = F%Ro - F%AB%a
+			pplane%Rmax = F%Ro + F%AB%a
+			pplane%Zmin = -F%AB%a
+			pplane%Zmax = F%AB%a
+		ELSE
+			pplane%Rmin = MINVAL(F%X%R)
+			pplane%Rmax = MAXVAL(F%X%R)
+			pplane%Zmin = MINVAL(F%X%Z)
+			pplane%Zmax = MAXVAL(F%X%Z)
+		END IF	
 
-	pplane%DR = (pplane%Rmax - pplane%Rmin)/REAL(pplane%grid_dims(1),rp)
-	pplane%DZ = (pplane%Zmax - pplane%Zmin)/REAL(pplane%grid_dims(2),rp)
+		pplane%DR = (pplane%Rmax - pplane%Rmin)/REAL(pplane%grid_dims(1),rp)
+		pplane%DZ = (pplane%Zmax - pplane%Zmin)/REAL(pplane%grid_dims(2),rp)
 
-	do ii=1_idef,pplane%grid_dims(1)
-		pplane%nodes_R(ii) = pplane%Rmin + 0.5_rp*pplane%DR + REAL(ii-1_idef,rp)*pplane%DR
-	end do
+		do ii=1_idef,pplane%grid_dims(1)
+			pplane%nodes_R(ii) = pplane%Rmin + 0.5_rp*pplane%DR + REAL(ii-1_idef,rp)*pplane%DR
+		end do
 
-	do ii=1_idef,pplane%grid_dims(2)
-		pplane%nodes_Z(ii) = pplane%Zmin + 0.5_rp*pplane%DZ + REAL(ii-1_idef,rp)*pplane%DZ
-	end do
-	! * * * * * * * ALL IN METERS * * * * * * * 
+		do ii=1_idef,pplane%grid_dims(2)
+			pplane%nodes_Z(ii) = pplane%Zmin + 0.5_rp*pplane%DZ + REAL(ii-1_idef,rp)*pplane%DZ
+		end do
+		! * * * * * * * ALL IN METERS * * * * * * * 
 
-	call save_synthetic_camera_params(params)
+		call save_synthetic_camera_params(params)
+	end if
 END SUBROUTINE initialize_synthetic_camera
 
 
@@ -1958,19 +1962,17 @@ SUBROUTINE synthetic_camera(params,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
 
-	write(6,'("MPI:",I5," Synthetic camera diagnostic: ON!")') params%mpi_params%rank
-
-	if (cam%integrated_opt) then
-		call integrated_angular_density(params,spp)
-		call integrated_spectral_density(params,spp)
-	else
-		call angular_density(params,spp)
-		call spectral_density(params,spp)
+	if (cam%camera_on) then
+		write(6,'("MPI:",I5," Synthetic camera diagnostic: ON!")') params%mpi_params%rank
+		if (cam%integrated_opt) then
+!			call integrated_angular_density(params,spp)
+			call integrated_spectral_density(params,spp)
+		else
+			call angular_density(params,spp)
+			call spectral_density(params,spp)
+		end if
+		write(6,'("MPI:",I5," Synthetic camera diagnostic: OFF!")') params%mpi_params%rank
 	end if
-
-!	call test_analytical_formula()
-
-	write(6,'("MPI:",I5," Synthetic camera diagnostic: OFF!")') params%mpi_params%rank
 END SUBROUTINE synthetic_camera
 
 END MODULE korc_synthetic_camera
