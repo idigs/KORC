@@ -64,7 +64,7 @@ MODULE korc_synthetic_camera
 	REAL(rp), PRIVATE, PARAMETER :: CGS_ME = 1.0E3_rp*C_ME
 
 	INTERFACE save_snapshot_var
-	  module procedure save_snapshot_var_2d,save_snapshot_var_3d,save_snapshot_var_4d
+	  module procedure save_snapshot_var_1d,save_snapshot_var_2d,save_snapshot_var_3d,save_snapshot_var_4d
 	END INTERFACE
 
 	PRIVATE :: clockwise_rotation,anticlockwise_rotation,cross,check_if_visible,calculate_rotation_angles,&
@@ -1708,6 +1708,66 @@ SUBROUTINE save_synthetic_camera_params(params)
 END SUBROUTINE save_synthetic_camera_params
 
 
+SUBROUTINE save_snapshot_var_1d(params,var,var_name)
+IMPLICIT NONE
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: var
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: var_name
+	CHARACTER(MAX_STRING_LENGTH) :: filename
+	CHARACTER(MAX_STRING_LENGTH) :: gname
+	CHARACTER(MAX_STRING_LENGTH) :: subgname
+	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: attr_array
+	CHARACTER(MAX_STRING_LENGTH) :: dset
+	CHARACTER(MAX_STRING_LENGTH) :: attr
+	INTEGER(HID_T) :: h5file_id
+	INTEGER(HID_T) :: group_id
+	INTEGER(HID_T) :: subgroup_id
+	CHARACTER(19) :: tmp_str
+	INTEGER :: h5error
+	INTEGER :: ss
+	LOGICAL :: object_exists
+
+	filename = TRIM(params%path_to_outputs) //"synthetic_camera_snapshots.h5"
+	call h5fopen_f(TRIM(filename), H5F_ACC_RDWR_F, h5file_id, h5error)
+
+    ! Create group 'it' if it doesn't exist
+	write(tmp_str,'(I18)') params%it
+	gname = TRIM(ADJUSTL(tmp_str))
+	call h5lexists_f(h5file_id,TRIM(gname),object_exists,h5error)
+
+	if (.NOT.object_exists) then
+		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
+		
+		dset = TRIM(gname) // "/time"
+		attr = "Simulation time in secs"
+		call save_to_hdf5(h5file_id,dset,REAL(params%it,rp)*params%dt*params%cpp%time,attr)
+	else
+		call h5gopen_f(h5file_id, TRIM(gname), group_id, h5error)
+	end if
+
+	do ss=1_idef,params%num_species
+		write(tmp_str,'(I18)') ss
+		subgname = "spp_" // TRIM(ADJUSTL(tmp_str))
+		call h5lexists_f(group_id,TRIM(subgname),object_exists,h5error)
+
+		if (.NOT.object_exists) then
+			call h5gcreate_f(group_id, TRIM(subgname), subgroup_id, h5error)
+		else
+			call h5gopen_f(group_id, TRIM(subgname), subgroup_id, h5error)
+		end if
+
+		dset = TRIM(var_name)
+		call save_to_hdf5(subgroup_id,dset,var(ss))
+
+		call h5gclose_f(subgroup_id, h5error)
+	end do	
+
+	call h5gclose_f(group_id, h5error)
+
+	call h5fclose_f(h5file_id, h5error)
+END SUBROUTINE save_snapshot_var_1d
+
+
 SUBROUTINE save_snapshot_var_2d(params,var,var_name)
 IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
@@ -1901,7 +1961,7 @@ SUBROUTINE synthetic_camera(params,spp)
 	write(6,'("MPI:",I5," Synthetic camera diagnostic: ON!")') params%mpi_params%rank
 
 	if (cam%integrated_opt) then
-!		call integrated_angular_density(params,spp)
+		call integrated_angular_density(params,spp)
 		call integrated_spectral_density(params,spp)
 	else
 		call angular_density(params,spp)

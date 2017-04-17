@@ -1,5 +1,8 @@
 function cp = collisions_parameters(Te,ne,nz,eta,E,B)
 close all
+% collisions_parameters(2.0,3.9E20,3.9E16,5,0.7427,2.19) ! Avalanche params
+
+
 % Collision parameters for RE in fusion plasmas
 kB = 1.38E-23; % Boltzmann constant
 Kc = 8.987E9; % Coulomb constant in N*m^2/C^2
@@ -57,7 +60,8 @@ Clog_eb = log( aux*(me*c^2/Iz) );
 
 ae = nef*Clog_ef + neb*Clog_eb;
 
-figure
+fig = figure;
+subplot(2,1,1)
 semilogx(Eo,Clog_ef,Eo,Clog_eb,'--')
 xlabel('$\mathcal{E}$ (MeV)','Interpreter','latex','FontSize',16)
 ylabel('$\log{(\Lambda_e)}$','Interpreter','latex','FontSize',16)
@@ -70,7 +74,8 @@ Clog_eZo = log( (me*c^2/Iz)*(gamma.^2 - 1)./gamma );
 
 ai = nH*Clog_eH + nz*(Clog_eZ*Zj^2 + Clog_eZo*Zo^2);
 
-figure
+figure(fig);
+subplot(2,1,2)
 semilogx(Eo,Clog_eH,Eo,Clog_eZ*ones(size(Eo)),'--',Eo,Clog_eZo,':')
 xlabel('$\mathcal{E}$ (MeV)','Interpreter','latex','FontSize',16)
 ylabel('$\log{(\Lambda_i)}$','Interpreter','latex','FontSize',16)
@@ -95,7 +100,8 @@ AC = (gamma/c).^2.*(E*v*cos(eta)/c).^2.*((E*v*cos(eta)/c).^2 - E^2 - (v*B*sin(et
 
 FR = (2*qe^2*re/(3*me*c))*sqrt( A2 + B2 + C2 + 2*AC );
 
-figure
+h = figure;
+subplot(2,1,1)
 loglog(Eo,Fcolle,'r-',Eo,Fcollef,'r:',Eo,Fcolleb,'r--',...
     Eo,Fcolli,'k-',Eo,FcollH,'k:',Eo,FcollZj,'k--',Eo,FcollZo,'k-.',...
     Eo,FE,'b-',Eo,FR,'g-')
@@ -121,7 +127,8 @@ PE = qe*E*v*cos(eta);
 PR = (2*qe^2*re/(3*me*c))*( E^2 + gamma.^2.*((E*v*cos(eta)/c).^2 - E^2 - (v*B*sin(eta)).^2) );
 PR = abs(PR);
 
-h = figure;
+figure(h)
+subplot(2,1,2)
 loglog(Eo,Pcolle,'r-',Eo,Pcollef,'r:',Eo,Pcolleb,'r--',...
     Eo,Pcolli,'k-',Eo,PcollH,'k:',Eo,PcollZj,'k--',Eo,PcollZo,'k-.',...
     Eo,PE,'b-',Eo,PR,'g-')
@@ -131,7 +138,7 @@ box on
 grid on
 
 % eta = (10:10:80)*pi/180;
-eta = linspace(5,80,100)*pi/180;
+eta = linspace(2,45,100)*pi/180;
 N = numel(eta);
 vals = zeros(1,N);
 I = zeros(1,N);
@@ -142,18 +149,21 @@ for ii=1:N
     [~,I(ii)] = min(abs(PR-PE));
     vals(ii) = PE(I(ii));
 end
+
 figure(h)
+subplot(2,1,2)
 hold on
-loglog(Eo(I),vals,'rs')
+loglog(Eo(I),vals,'rs','MarkerSize',2)
 hold off
 
 eta = 180*eta/pi;
 figure
-plot(eta,Eo(I),'ro--')
+plot(eta,Eo(I),'ro-.','MarkerSize',3)
 box on
 grid on
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex','FontSize',16)
 xlabel('$\eta$ ($^\circ$)','Interpreter','latex','FontSize',16)
+title('Energy equilibrium','Interpreter','latex','FontSize',16)
 % Power balance
 
 ae = ae/1E20;

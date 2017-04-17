@@ -2925,7 +2925,8 @@ for ll=1:numel(l)
 end
 
 E = (g(pAxis)*m*c^2/q)/1E6; % MeV
-xAxis = chiAxis;
+% xAxis = chiAxis;
+xAxis = rad2deg(acos(chiAxis));
 yAxis = pAxis;
 lAxis = l/1E-9;
 
@@ -2938,7 +2939,7 @@ hh = figure;
 for sp=1:numel(I)
     A = squeeze(Psyn_p_chi(I(sp),:,:));
     AA = squeeze(ddPsyndpchi(I(sp),:,:));
-    cmax = max([max(max(A)) max(max(AA))]);
+    cmax = max(max(A));
     
     figure(h)
     subplot(3,2,sp)    
@@ -3087,8 +3088,8 @@ for ss=1:ST.params.simulation.num_species
         
 	DfRE = sqrt((fRE_theory - fRE).^2);
     
-%     xAxis = pitchAxis;
-%     yAxis = EAxis;
+    xAxis = pitchAxis;
+    yAxis = EAxis;
     
     figure;
     contourf(xAxis,yAxis,DfRE,17,'LineStyle','none')
