@@ -966,13 +966,18 @@ SUBROUTINE integrated_angular_density(params,spp)
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: Psyn_angular_pixel
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: np_lambda_pixel
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: Psyn_lambda_pixel
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: P_lambda_pixel
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: P_angular_pixel
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: P_l_pixel
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: P_a_pixel
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: np_pixel
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: P_lambda, P_angular
 	REAL(rp) :: q, m, k, u, g, l, threshold_angle
 	REAL(rp) :: psi, chi, beta, theta, Psyn_tmp
 	REAL(rp) :: r, photon_energy
 	REAL(rp) :: angle, clockwise
 	REAL(rp) :: units
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: Psyn_send_buffer,Psyn_receive_buffer, np_send_buffer, np_receive_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: send_buffer, receive_buffer
 	REAL(rp) :: lc, zeta
 	INTEGER :: ii,jj,ll,ss,pp
     INTEGER :: numel, mpierr
@@ -990,11 +995,20 @@ SUBROUTINE integrated_angular_density(params,spp)
 	ALLOCATE(P_lambda(cam%Nlambda))
 	ALLOCATE(P_angular(cam%Nlambda))
 
+	ALLOCATE(P_l_pixel(cam%Nlambda,params%num_species))
+	ALLOCATE(P_a_pixel(cam%Nlambda,params%num_species))
+	ALLOCATE(np_pixel(params%num_species))
+
+
 	np_angular_pixel = 0.0_rp
 	Psyn_angular_pixel = 0.0_rp
 
 	np_lambda_pixel = 0.0_rp
 	Psyn_lambda_pixel = 0.0_rp
+
+	P_l_pixel = 0.0_rp
+	P_a_pixel = 0.0_rp
+	np_pixel = 0.0_rp
 
 	do ss=1_idef,params%num_species
 		q = ABS(spp(ss)%q)*params%cpp%charge
@@ -1004,7 +1018,8 @@ SUBROUTINE integrated_angular_density(params,spp)
 !$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,threshold_angle,theta,&
 !$OMP& psi,chi,beta,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp,r,photon_energy,&
 !$OMP& lc,zeta,P_lambda,P_angular)&
-!$OMP& SHARED(params,spp,ss,Psyn_angular_pixel,np_angular_pixel,np_lambda_pixel,Psyn_lambda_pixel)
+!$OMP& SHARED(params,spp,ss,Psyn_angular_pixel,np_angular_pixel,np_lambda_pixel,Psyn_lambda_pixel,&
+!$OMP& P_l_pixel,P_a_pixel,np_pixel)
 !$OMP DO
 		do pp=1_idef,spp(ss)%ppp
 			if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
@@ -1024,6 +1039,8 @@ SUBROUTINE integrated_angular_density(params,spp)
 				binorm = binorm/SQRT(DOT_PRODUCT(binorm,binorm))
 
 				threshold_angle = (1.5_rp*k*cam%lambda_max/C_PI)**(1.0_rp/3.0_rp) ! In radians
+
+				np_pixel(ss) = np_pixel(ss) + 1.0_rp ! We count all the confined particles.
 
 				call check_if_visible(X,V/u,threshold_angle,bool,angle)	
 			
@@ -1082,8 +1099,11 @@ SUBROUTINE integrated_angular_density(params,spp)
 											P_angular(ll) = 0.0_rp
 										end if
 									end if
-								end do ! Nlambda								
-								
+								end do ! Nlambda	
+
+								P_l_pixel(:,ss)	= P_l_pixel(:,ss) + P_lambda
+								P_a_pixel(:,ss)	= P_a_pixel(:,ss) + P_angular
+
 								Psyn_lambda_pixel(ii,jj,ss) = Psyn_lambda_pixel(ii,jj,ss) + trapz(cam%lambda,P_lambda)
 								Psyn_angular_pixel(ii,jj,ss) = Psyn_angular_pixel(ii,jj,ss) + trapz(cam%lambda,P_angular)
 							end if
@@ -1130,6 +1150,9 @@ SUBROUTINE integrated_angular_density(params,spp)
 									end if
 								end do ! Nlambda
 
+								P_l_pixel(:,ss)	= P_l_pixel(:,ss) + P_lambda
+								P_a_pixel(:,ss)	= P_a_pixel(:,ss) + P_angular
+
 								Psyn_lambda_pixel(ii,jj,ss) = Psyn_lambda_pixel(ii,jj,ss) + trapz(cam%lambda,P_lambda)
 								Psyn_angular_pixel(ii,jj,ss) = Psyn_angular_pixel(ii,jj,ss) + trapz(cam%lambda,P_angular)
 							end if
@@ -1157,50 +1180,130 @@ SUBROUTINE integrated_angular_density(params,spp)
 	if (params%mpi_params%nmpi.GT.1_idef) then 
 		numel = cam%num_pixels(1)*cam%num_pixels(2)*params%num_species
 
-		ALLOCATE(Psyn_send_buffer(numel))
-		ALLOCATE(Psyn_receive_buffer(numel))
-		ALLOCATE(np_send_buffer(numel))
-		ALLOCATE(np_receive_buffer(numel))
+		ALLOCATE(send_buffer(numel))
+		ALLOCATE(receive_buffer(numel))
 
-		Psyn_send_buffer = RESHAPE(Psyn_angular_pixel,(/numel/))
-		CALL MPI_REDUCE(Psyn_send_buffer,Psyn_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
-
-		np_send_buffer = RESHAPE(np_angular_pixel,(/numel/))
-		CALL MPI_REDUCE(np_send_buffer,np_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
-
+		send_buffer = RESHAPE(Psyn_angular_pixel,(/numel/))
+		receive_buffer = 0.0_rp
+		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
 		if (params%mpi_params%rank.EQ.0_idef) then
-		    Psyn_angular_pixel = RESHAPE(Psyn_receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),params%num_species/))
-		    np_angular_pixel = RESHAPE(np_receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),params%num_species/))
-
-			var_name = 'np_angular_pixel'
-			call save_snapshot_var(params,np_angular_pixel,var_name)
+		    Psyn_angular_pixel = RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),params%num_species/))
 
 			var_name = 'Psyn_angular_pixel'
 			call save_snapshot_var(params,Psyn_angular_pixel,var_name)
 		end if
 
+		DEALLOCATE(send_buffer)
+		DEALLOCATE(receive_buffer)
 
-		Psyn_send_buffer = RESHAPE(Psyn_lambda_pixel,(/numel/))
-		CALL MPI_REDUCE(Psyn_send_buffer,Psyn_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		ALLOCATE(send_buffer(numel))
+		ALLOCATE(receive_buffer(numel))
 
-		np_send_buffer = RESHAPE(np_lambda_pixel,(/numel/))
-		CALL MPI_REDUCE(np_send_buffer,np_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
-
+		send_buffer = RESHAPE(np_angular_pixel,(/numel/))
+		receive_buffer = 0.0_rp
+		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
 		if (params%mpi_params%rank.EQ.0_idef) then
-		    Psyn_lambda_pixel = RESHAPE(Psyn_receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),params%num_species/))
-		    np_lambda_pixel = RESHAPE(np_receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),params%num_species/))
+		    np_angular_pixel = RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),params%num_species/))
 
-			var_name = 'np_lambda_pixel'
-			call save_snapshot_var(params,np_lambda_pixel,var_name)
+			var_name = 'np_angular_pixel'
+			call save_snapshot_var(params,np_angular_pixel,var_name)
+		end if
+
+		DEALLOCATE(send_buffer)
+		DEALLOCATE(receive_buffer)
+
+
+		ALLOCATE(send_buffer(numel))
+		ALLOCATE(receive_buffer(numel))
+
+		send_buffer = RESHAPE(Psyn_lambda_pixel,(/numel/))
+		receive_buffer = 0.0_rp
+		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		if (params%mpi_params%rank.EQ.0_idef) then
+		    Psyn_lambda_pixel = RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),params%num_species/))
 
 			var_name = 'Psyn_lambda_pixel'
 			call save_snapshot_var(params,Psyn_lambda_pixel,var_name)
 		end if
 
-		DEALLOCATE(Psyn_send_buffer)
-		DEALLOCATE(Psyn_receive_buffer)
-		DEALLOCATE(np_send_buffer)
-		DEALLOCATE(np_receive_buffer)
+		DEALLOCATE(send_buffer)
+		DEALLOCATE(receive_buffer)
+
+		ALLOCATE(send_buffer(numel))
+		ALLOCATE(receive_buffer(numel))
+
+		send_buffer = RESHAPE(np_lambda_pixel,(/numel/))
+		receive_buffer = 0.0_rp
+		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		if (params%mpi_params%rank.EQ.0_idef) then
+		    np_lambda_pixel = RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),params%num_species/))
+
+			var_name = 'np_lambda_pixel'
+			call save_snapshot_var(params,np_lambda_pixel,var_name)
+		end if
+
+		DEALLOCATE(send_buffer)
+		DEALLOCATE(receive_buffer)
+
+
+
+		numel = params%num_species
+
+		ALLOCATE(send_buffer(numel))
+		ALLOCATE(receive_buffer(numel))
+
+		send_buffer = np_pixel
+		receive_buffer = 0.0_rp
+		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		if (params%mpi_params%rank.EQ.0_idef) then
+		    np_pixel = receive_buffer
+
+	        var_name = 'np_pixel'
+	        call save_snapshot_var(params,np_pixel,var_name)
+		end if
+
+		DEALLOCATE(send_buffer)
+		DEALLOCATE(receive_buffer)
+
+		numel = cam%Nlambda*params%num_species
+		
+		ALLOCATE(send_buffer(numel))
+		ALLOCATE(receive_buffer(numel))
+
+		send_buffer = RESHAPE(P_a_pixel,(/numel/))
+		receive_buffer = 0.0_rp
+		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		if (params%mpi_params%rank.EQ.0_idef) then
+		    P_a_pixel = RESHAPE(receive_buffer,(/cam%Nlambda,params%num_species/))
+
+		        do ss=1_idef,params%num_species
+				P_a_pixel(:,ss) = P_a_pixel(:,ss)/np_pixel(ss)
+		        end do
+		        var_name = 'P_a_pixel'
+		        call save_snapshot_var(params,P_a_pixel,var_name)
+		end if
+
+		DEALLOCATE(send_buffer)
+		DEALLOCATE(receive_buffer)
+
+		ALLOCATE(send_buffer(numel))
+		ALLOCATE(receive_buffer(numel))
+
+		send_buffer = RESHAPE(P_l_pixel,(/numel/))
+		receive_buffer = 0.0_rp
+		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		if (params%mpi_params%rank.EQ.0_idef) then
+		    P_l_pixel = RESHAPE(receive_buffer,(/cam%Nlambda,params%num_species/))
+
+		        do ss=1_idef,params%num_species
+				P_l_pixel(:,ss) = P_l_pixel(:,ss)/np_pixel(ss)
+		        end do
+		        var_name = 'P_l_pixel'
+		        call save_snapshot_var(params,P_l_pixel,var_name)
+		end if
+
+		DEALLOCATE(send_buffer)
+		DEALLOCATE(receive_buffer)
 
 	    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 	else
@@ -1211,11 +1314,20 @@ SUBROUTINE integrated_angular_density(params,spp)
 		call save_snapshot_var(params,np_lambda_pixel,var_name)
 
 		var_name = 'Psyn_angular_pixel'
-		Psyn_angular_pixel = units*Psyn_angular_pixel
 		call save_snapshot_var(params,Psyn_angular_pixel,var_name)
 
 		var_name = 'Psyn_lambda_pixel'
 		call save_snapshot_var(params,Psyn_lambda_pixel,var_name)
+
+
+		var_name = 'np_pixel'
+		call save_snapshot_var(params,np_pixel,var_name)
+
+		var_name = 'P_a_pixel'
+		call save_snapshot_var(params,P_a_pixel,var_name)
+
+		var_name = 'P_l_pixel'
+		call save_snapshot_var(params,P_l_pixel,var_name)
 	end if
 
 	DEALLOCATE(bool_pixel_array)
@@ -1229,6 +1341,10 @@ SUBROUTINE integrated_angular_density(params,spp)
 
 	DEALLOCATE(P_lambda)
 	DEALLOCATE(P_angular)
+
+	DEALLOCATE(P_l_pixel)
+	DEALLOCATE(P_a_pixel)
+	DEALLOCATE(np_pixel)
 END SUBROUTINE integrated_angular_density
 
 
@@ -1393,19 +1509,16 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	REAL(rp), DIMENSION(3) :: X, V, B, E
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: P
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: P_lambda
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: np_lambda
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: zeta
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: np
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: Psyn_lambda
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: PTot
 	REAL(rp) :: R, Z
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: N, N_send_buffer, N_receive_buffer
 	REAL(rp) :: q, m, k, u, g, lc
 	REAL(rp) :: photon_energy
 	INTEGER :: ii,jj,ll,ss,pp
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: Psyn_send_buffer,Psyn_receive_buffer
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: np_send_buffer,np_receive_buffer
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: PTot_send_buffer,PTot_receive_buffer
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: P_send_buffer,P_receive_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: send_buffer, receive_buffer
     INTEGER :: numel, mpierr
 	REAL(rp) :: units
 
@@ -1414,7 +1527,7 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	ALLOCATE(PTot(pplane%grid_dims(1),pplane%grid_dims(2),params%num_species))
 	ALLOCATE(P(cam%Nlambda))
 	ALLOCATE(P_lambda(cam%Nlambda,params%num_species))
-	ALLOCATE(N(params%num_species))
+	ALLOCATE(np_lambda(params%num_species))
 	ALLOCATE(zeta(cam%Nlambda))
 
 	np = 0.0_rp
@@ -1423,14 +1536,14 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	P_lambda = 0.0_rp
 	PTot = 0.0_rp
 
-	N = 0.0_rp
+	np_lambda = 0.0_rp
 	
 	do ss=1_idef,params%num_species
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
 !$OMP PARALLEL FIRSTPRIVATE(q,m) PRIVATE(binorm,X,V,B,E,&
 !$OMP& k,u,g,lc,ii,jj,ll,pp,photon_energy,zeta,P,R,Z)&
-!$OMP& SHARED(params,spp,ss,Psyn_lambda,PTot,np,P_lambda,N)
+!$OMP& SHARED(params,spp,ss,Psyn_lambda,PTot,np,P_lambda,np_lambda)
 !$OMP DO
 		do pp=1_idef,spp(ss)%ppp
 			if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
@@ -1453,7 +1566,7 @@ SUBROUTINE integrated_spectral_density(params,spp)
 				end do
 
 				P_lambda(:,ss) = P_lambda(:,ss) + P
-				N(ss) = N(ss) + 1.0_rp
+				np_lambda(ss) = np_lambda(ss) + 1.0_rp
 
 				R = SQRT(SUM(X(1:2)**2))
 				Z = X(3)
@@ -1480,59 +1593,46 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	if (params%mpi_params%nmpi.GT.1_idef) then 
 		numel = pplane%grid_dims(1)*pplane%grid_dims(2)*params%num_species
 
-		ALLOCATE(Psyn_send_buffer(numel))
-		ALLOCATE(Psyn_receive_buffer(numel))
+		ALLOCATE(send_buffer(numel))
+		ALLOCATE(receive_buffer(numel))
 
-		ALLOCATE(np_send_buffer(numel))
-		ALLOCATE(np_receive_buffer(numel))
-
-		ALLOCATE(PTot_send_buffer(numel))
-		ALLOCATE(PTot_receive_buffer(numel))
-
-		Psyn_send_buffer = RESHAPE(Psyn_lambda,(/numel/))
-		CALL MPI_REDUCE(Psyn_send_buffer,Psyn_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
-
-		np_send_buffer = RESHAPE(np,(/numel/))
-		CALL MPI_REDUCE(np_send_buffer,np_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
-
-		PTot_send_buffer = RESHAPE(PTot,(/numel/))
-		CALL MPI_REDUCE(PTot_send_buffer,PTot_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
-
-		numel = cam%Nlambda*params%num_species
-
-		ALLOCATE(P_send_buffer(numel))
-		ALLOCATE(P_receive_buffer(numel))
-
-		P_send_buffer = RESHAPE(P_lambda,(/numel/))
-		CALL MPI_REDUCE(P_send_buffer,P_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
-
-		numel = params%num_species
-
-		ALLOCATE(N_send_buffer(numel))
-		ALLOCATE(N_receive_buffer(numel))
-	
-		N_send_buffer = N
-		CALL MPI_REDUCE(N_send_buffer,N_receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
-
+		send_buffer = RESHAPE(Psyn_lambda,(/numel/))
+		receive_buffer = 0.0_rp
+		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
 		if (params%mpi_params%rank.EQ.0_idef) then
-		    Psyn_lambda = RESHAPE(Psyn_receive_buffer,(/pplane%grid_dims(1),pplane%grid_dims(2),params%num_species/))
-		    np = RESHAPE(np_receive_buffer,(/pplane%grid_dims(1),pplane%grid_dims(2),params%num_species/))
-		    P_lambda = RESHAPE(P_receive_buffer,(/cam%Nlambda,params%num_species/))
-			N = N_receive_buffer
-
-			var_name = 'np_pplane'
-		    call save_snapshot_var(params,np,var_name)
+		    Psyn_lambda = RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),params%num_species/))
 
 			var_name = 'Psyn_pplane'
-		    	call save_snapshot_var(params,Psyn_lambda,var_name)
+			call save_snapshot_var(params,Psyn_lambda,var_name)
+		end if
 
-			do ss=1_idef,params%num_species
-				P_lambda(:,ss) = P_lambda(:,ss)/N(ss)
-			end do
-			var_name = 'P_lambda'
-			call save_snapshot_var(params,P_lambda,var_name)
+		DEALLOCATE(send_buffer)
+		DEALLOCATE(receive_buffer)
 
-			PTot = RESHAPE(PTot_receive_buffer,(/pplane%grid_dims(1),pplane%grid_dims(2),params%num_species/))
+		ALLOCATE(send_buffer(numel))
+		ALLOCATE(receive_buffer(numel))
+
+		send_buffer = RESHAPE(np,(/numel/))
+		receive_buffer = 0.0_rp
+		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		if (params%mpi_params%rank.EQ.0_idef) then
+		    np = RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),params%num_species/))
+
+			var_name = 'np_pplane'
+			call save_snapshot_var(params,np,var_name)
+		end if
+
+		DEALLOCATE(send_buffer)
+		DEALLOCATE(receive_buffer)
+
+		ALLOCATE(send_buffer(numel))
+		ALLOCATE(receive_buffer(numel))
+
+		send_buffer = RESHAPE(PTot,(/numel/))
+		receive_buffer = 0.0_rp
+		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		if (params%mpi_params%rank.EQ.0_idef) then
+		    PTot = RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),params%num_species/))
 
 			units = params%cpp%mass*(params%cpp%velocity**3)/params%cpp%length
 			PTot = units*PTot ! (Watts)
@@ -1540,16 +1640,49 @@ SUBROUTINE integrated_spectral_density(params,spp)
 			call save_snapshot_var(params,PTot,var_name)
 		end if
 
-		DEALLOCATE(N_send_buffer)
-		DEALLOCATE(N_receive_buffer)
-		DEALLOCATE(Psyn_send_buffer)
-		DEALLOCATE(Psyn_receive_buffer)
-		DEALLOCATE(PTot_send_buffer)
-		DEALLOCATE(PTot_receive_buffer)
-		DEALLOCATE(np_send_buffer)
-		DEALLOCATE(np_receive_buffer)
-		DEALLOCATE(P_send_buffer)
-		DEALLOCATE(P_receive_buffer)
+		DEALLOCATE(send_buffer)
+		DEALLOCATE(receive_buffer)
+
+
+		numel = params%num_species
+
+		ALLOCATE(send_buffer(numel))
+		ALLOCATE(receive_buffer(numel))
+
+		send_buffer = np_lambda
+		receive_buffer = 0.0_rp
+		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		if (params%mpi_params%rank.EQ.0_idef) then
+		    np_lambda = receive_buffer
+
+			var_name = 'np_lambda'
+			call save_snapshot_var(params,np_lambda,var_name)
+		end if
+
+		DEALLOCATE(send_buffer)
+		DEALLOCATE(receive_buffer)
+
+
+		numel = cam%Nlambda*params%num_species
+
+		ALLOCATE(send_buffer(numel))
+		ALLOCATE(receive_buffer(numel))
+
+		send_buffer = RESHAPE(P_lambda,(/numel/))
+		receive_buffer = 0.0_rp
+		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		if (params%mpi_params%rank.EQ.0_idef) then
+		    P_lambda = RESHAPE(receive_buffer,(/cam%Nlambda,params%num_species/))
+
+			do ss=1_idef,params%num_species
+				P_lambda(:,ss) = P_lambda(:,ss)/np_lambda(ss)
+			end do
+			var_name = 'P_lambda'
+			call save_snapshot_var(params,P_lambda,var_name)
+		end if
+
+		DEALLOCATE(send_buffer)
+		DEALLOCATE(receive_buffer)
 
 	    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 	else
@@ -1560,10 +1693,13 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	    call save_snapshot_var(params,Psyn_lambda,var_name)
 
 		do ss=1_idef,params%num_species
-			P_lambda(:,ss) = P_lambda(:,ss)/N(ss)
+			P_lambda(:,ss) = P_lambda(:,ss)/np_lambda(ss)
 		end do
 		var_name = 'P_lambda'
 		call save_snapshot_var(params,P_lambda,var_name)
+
+		var_name = 'N_lambda'
+		call save_snapshot_var(params,np_lambda,var_name)
 
 		units = params%cpp%mass*(params%cpp%velocity**3)/params%cpp%length
 		PTot = units*PTot ! (Watts)
@@ -1576,7 +1712,7 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	DEALLOCATE(PTot)
 	DEALLOCATE(P)
 	DEALLOCATE(P_lambda)
-	DEALLOCATE(N)
+	DEALLOCATE(np_lambda)
 	DEALLOCATE(zeta)
 END SUBROUTINE integrated_spectral_density
 
@@ -1965,7 +2101,7 @@ SUBROUTINE synthetic_camera(params,spp)
 	if (cam%camera_on) then
 		write(6,'("MPI:",I5," Synthetic camera diagnostic: ON!")') params%mpi_params%rank
 		if (cam%integrated_opt) then
-!			call integrated_angular_density(params,spp)
+			call integrated_angular_density(params,spp)
 			call integrated_spectral_density(params,spp)
 		else
 			call angular_density(params,spp)

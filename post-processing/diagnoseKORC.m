@@ -201,8 +201,8 @@ set(h6,'name','Energy statistics','numbertitle','off')
         gammap = ST.data.(['sp' num2str(ss)]).g(pin,:);
         tmp = zeros(size(gammap));
         for ii=1:size(tmp,1)
-%             tmp(ii,:) = 100*( gammap(ii,:) - gammap(ii,1) )./gammap(ii,1);
-            tmp(ii,:) = (gammap(ii,:)*m*c^2/q)/1E6;
+            tmp(ii,:) = 100*( gammap(ii,:) - gammap(ii,1) )./gammap(ii,1);
+%             tmp(ii,:) = (gammap(ii,:)*m*c^2/q)/1E6;
         end
         
         err(:,ss) = mean(tmp,1);

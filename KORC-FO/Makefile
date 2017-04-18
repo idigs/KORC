@@ -70,12 +70,12 @@ korc_ppusher.o	\
 main.o)
 
 
-all: $(BIN)/KORC-FO
+all: $(BIN)/KORC
 
 $(OBJ)/%.o : $(SRC)/%.f90
 	$(FC)   -c  $(FCFLAGS)  $(FCDEFINEFLAGS)    $<  $(INCLUDES) $(INCLUDES_HDF5)    $(LIB_FLAGS)    -o  $@
 
-$(BIN)/KORC-FO: $(BINARIES)
+$(BIN)/KORC: $(BINARIES)
 	$(FC)	$(FCFLAGS)  $(BINARIES)	-o	$@	$(LIB_FLAGS)	$(LIBSHDF5)	$(LIB)	$(OMP_LIB_FLAGS)
 
 
@@ -86,5 +86,5 @@ info:
 
 clean:
 	@echo	"CLEANING..."
-	rm -f $(MOD)/*.mod	$(OBJ)/*.o	$(BIN)/KORC-FO
+	rm -f $(MOD)/*.mod	$(OBJ)/*.o	$(BIN)/KORC*
 

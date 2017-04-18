@@ -1,5 +1,5 @@
 &input_parameters
-	t_steps = 0 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	t_steps = 3 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
 	dt = 1E-2 ! Time step as fraction of non-relativistic gyro-period
 	output_cadence = 1 ! 1400 for saving each 100 gyro-periods
 	num_species = 3
@@ -73,7 +73,7 @@
 /
 
 &SyntheticCamera
-	camera_on = .FALSE. ! .TRUE. or .FALSE.
+	camera_on = .TRUE. ! .TRUE. or .FALSE.
  	Riw = 1.0 ! Radial position of inner wall
  	num_pixels = 75, 75 ! Number of pixels (X,Y)
  	sensor_size = 0.4, 0.4 ! (horizontal,vertical)
