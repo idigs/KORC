@@ -972,7 +972,7 @@ SUBROUTINE integrated_angular_density(params,spp)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: P_a_pixel
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: np_pixel
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: P_lambda, P_angular
-	REAL(rp) :: q, m, k, u, g, l, threshold_angle
+	REAL(rp) :: q, m, k, u, g, l, threshold_angle, threshold_angle_lamda
 	REAL(rp) :: psi, chi, beta, theta, Psyn_tmp
 	REAL(rp) :: r, photon_energy
 	REAL(rp) :: angle, clockwise
@@ -1015,7 +1015,7 @@ SUBROUTINE integrated_angular_density(params,spp)
 		m = spp(ss)%m*params%cpp%mass
 
 !$OMP PARALLEL FIRSTPRIVATE(q,m) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
-!$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,threshold_angle,theta,&
+!$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,threshold_angle,threshold_angle_lamda,theta,&
 !$OMP& psi,chi,beta,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp,r,photon_energy,&
 !$OMP& lc,zeta,P_lambda,P_angular)&
 !$OMP& SHARED(params,spp,ss,Psyn_angular_pixel,np_angular_pixel,np_lambda_pixel,Psyn_lambda_pixel,&
@@ -1039,6 +1039,8 @@ SUBROUTINE integrated_angular_density(params,spp)
 				binorm = binorm/SQRT(DOT_PRODUCT(binorm,binorm))
 
 				threshold_angle = (1.5_rp*k*cam%lambda_max/C_PI)**(1.0_rp/3.0_rp) ! In radians
+
+				threshold_angle_lamda = 1.0_rp/g
 
 				np_pixel(ss) = np_pixel(ss) + 1.0_rp ! We count all the confined particles.
 
@@ -1084,7 +1086,7 @@ SUBROUTINE integrated_angular_density(params,spp)
 									l = cam%lambda(ll)
 									photon_energy = C_h*C_C/l
 
-									if (theta .LE. threshold_angle) then
+									if (theta .LE. threshold_angle_lamda) then
 										zeta = lc/cam%lambda(ll)
 
 										P_lambda(ll) = (C_C*C_E**2)*P_integral(zeta)/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda(ii)**3)
@@ -1133,7 +1135,7 @@ SUBROUTINE integrated_angular_density(params,spp)
 									l = cam%lambda(ll)
 									photon_energy = C_h*C_C/l
 
-									if (theta .LE. threshold_angle) then
+									if (theta .LE. threshold_angle_lamda) then
 										zeta = lc/cam%lambda(ll)
 
 										P_lambda(ll) = (C_C*C_E**2)*P_integral(zeta)/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda(ii)**3)
@@ -1698,7 +1700,7 @@ SUBROUTINE integrated_spectral_density(params,spp)
 		var_name = 'P_lambda'
 		call save_snapshot_var(params,P_lambda,var_name)
 
-		var_name = 'N_lambda'
+		var_name = 'np_lambda'
 		call save_snapshot_var(params,np_lambda,var_name)
 
 		units = params%cpp%mass*(params%cpp%velocity**3)/params%cpp%length

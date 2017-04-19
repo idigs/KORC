@@ -588,8 +588,8 @@ for ss=1:ST.params.simulation.num_species
     end
 
     if isfield(ST.params,'avalanche_pdf_params')
-%         Psyn_avg = averagedSpectrum(ST,40,50);
-        Psyn_avg = zeros(size(lambda(i1:i2)));
+        Psyn_avg = averagedSpectrum(ST,40,50);
+%         Psyn_avg = zeros(size(lambda(i1:i2)));
     else
         Psyn_sp = singleParticleSpectrum(ST,lambda(i1:i2),...
         ST.params.species.go(ss),deg2rad(ST.params.species.etao(ss)));
@@ -947,6 +947,6 @@ for ss=1:ST.params.simulation.num_species
     ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
     xlabel('$x$-axis','FontSize',12,'Interpreter','latex')    
     
-   saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
+%    saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
 end
 end
