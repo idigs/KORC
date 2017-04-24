@@ -11,7 +11,7 @@ ifeq ($(UNAME), Darwin)
 	FC = mpif90
 
 	FCDEFINEFLAGS =-DDOUBLE_PRECISION	-DHDF5_DOUBLE_PRESICION
-	FCFLAGS =-cpp   -J$(MOD) -fopenmp    -g    -fbacktrace    -ffpe-trap=invalid
+	FCFLAGS =-cpp   -J$(MOD) -fopenmp    -O2
 
 	HDF5_INSTALL =../HDF5
 	PSPLINE_INSTALL=../pspline_lib
@@ -30,7 +30,7 @@ ifeq ($(NERSC_HOST),edison)
 	FC = ftn
 
 	FCDEFINEFLAGS =-DINTEL	-DDOUBLE_PRECISION	-DHDF5_DOUBLE_PRESICION
-	FCFLAGS =-cpp   -module $(MOD)  -qopenmp        -g      -traceback
+	FCFLAGS =-cpp   -module $(MOD)  -qopenmp        -O2
 else
 	FC = mpif90
 

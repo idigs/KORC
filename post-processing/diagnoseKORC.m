@@ -17,7 +17,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
 % angularMomentum(ST);
 
@@ -49,7 +49,7 @@ energyConservation(ST);
 
 % calculateTemperatureComponents(ST);
 
-% avalancheDiagnostic(ST);
+avalancheDiagnostic(ST);
 
 % save('energy_limit','ST')
 end
@@ -100,7 +100,8 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {'X'};
+% list = {'X'};
+list = {};
 
 it = ST.range(1):1:ST.range(2);
 
@@ -129,7 +130,8 @@ for ll=1:length(list)
     end
 end
 
-list = {'g','flag','eta','Prad','Pin'};
+% list = {'g','flag','eta','Prad','Pin'};
+list = {'g','flag','eta'};
 % list = {'g','eta'};
 
 for ll=1:length(list)
@@ -2941,7 +2943,8 @@ end
 E = (g(pAxis)*m*c^2/q)/1E6; % MeV
 % xAxis = chiAxis;
 xAxis = rad2deg(acos(chiAxis));
-yAxis = pAxis;
+% yAxis = pAxis;
+yAxis = E;
 lAxis = l/1E-9;
 
 

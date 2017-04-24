@@ -544,20 +544,21 @@ for ss=1:ST.params.simulation.num_species
         
         np = ST.data.(['sp' num2str(ss)]).np_pixel;
         
+                
+        np_L3 = sum(ST.data.(['sp' num2str(ss)]).np_lambda_pixel,3);
+        np_L4 = sum(ST.data.(['sp' num2str(ss)]).np_angular_pixel,3);
+        
         P_L3 = zeros(Nl,1);
         for it=1:ST.num_snapshots
             P_L3 = P_L3 + ST.data.(['sp' num2str(ss)]).P_l_pixel(:,it).*np(it);
         end
-        P_L3 = P_L3./sum(np);
+        P_L3 = P_L3./sum(sum(np_L3));
         
         P_L4 = zeros(Nl,1);
         for it=1:ST.num_snapshots
             P_L4 = P_L4 + ST.data.(['sp' num2str(ss)]).P_a_pixel(:,it).*np(it);
         end
-        P_L4 = P_L4./sum(np);
-        
-        np_L3 = sum(ST.data.(['sp' num2str(ss)]).np_lambda_pixel,3);
-        np_L4 = sum(ST.data.(['sp' num2str(ss)]).np_angular_pixel,3);
+        P_L4 = P_L4./sum(sum(np_L4));
         
         Psyn_L3 = sum(ST.data.(['sp' num2str(ss)]).Psyn_lambda_pixel,3);
         Psyn_L4 = sum(ST.data.(['sp' num2str(ss)]).Psyn_angular_pixel,3);
@@ -947,6 +948,6 @@ for ss=1:ST.params.simulation.num_species
     ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
     xlabel('$x$-axis','FontSize',12,'Interpreter','latex')    
     
-%    saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
+   saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
 end
 end

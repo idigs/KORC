@@ -972,7 +972,7 @@ SUBROUTINE integrated_angular_density(params,spp)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: P_a_pixel
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: np_pixel
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: P_lambda, P_angular
-	REAL(rp) :: q, m, k, u, g, l, threshold_angle, threshold_angle_lamda
+	REAL(rp) :: q, m, k, u, g, l, threshold_angle, threshold_angle_simple_model
 	REAL(rp) :: psi, chi, beta, theta, Psyn_tmp
 	REAL(rp) :: r, photon_energy
 	REAL(rp) :: angle, clockwise
@@ -1015,9 +1015,9 @@ SUBROUTINE integrated_angular_density(params,spp)
 		m = spp(ss)%m*params%cpp%mass
 
 !$OMP PARALLEL FIRSTPRIVATE(q,m) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
-!$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,threshold_angle,threshold_angle_lamda,theta,&
-!$OMP& psi,chi,beta,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp,r,photon_energy,&
-!$OMP& lc,zeta,P_lambda,P_angular)&
+!$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,threshold_angle,threshold_angle_simple_model,theta,&
+!$OMP& psi,chi,beta,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp,&
+!$OMP& r,photon_energy,lc,zeta,P_lambda,P_angular)&
 !$OMP& SHARED(params,spp,ss,Psyn_angular_pixel,np_angular_pixel,np_lambda_pixel,Psyn_lambda_pixel,&
 !$OMP& P_l_pixel,P_a_pixel,np_pixel)
 !$OMP DO
@@ -1040,11 +1040,12 @@ SUBROUTINE integrated_angular_density(params,spp)
 
 				threshold_angle = (1.5_rp*k*cam%lambda_max/C_PI)**(1.0_rp/3.0_rp) ! In radians
 
-				threshold_angle_lamda = 1.0_rp/g
+				threshold_angle_simple_model = 1.0_rp/g
 
 				np_pixel(ss) = np_pixel(ss) + 1.0_rp ! We count all the confined particles.
 
-				call check_if_visible(X,V/u,threshold_angle,bool,angle)	
+!				call check_if_visible(X,V/u,MINVAL((/threshold_angle,threshold_angle_simple_model/)),bool,angle)
+				call check_if_visible(X,V/u,MAXVAL((/threshold_angle,threshold_angle_simple_model/)),bool,angle)
 			
 				if (bool.EQV..TRUE.) then
 
@@ -1061,7 +1062,7 @@ SUBROUTINE integrated_angular_density(params,spp)
 						do jj=1_idef,cam%num_pixels(2) ! NY
 							
 							if (bool_pixel_array(ii,jj,1)) then
-								angle = angle_pixel_array(ii,jj,1) - clockwise
+								angle = angle_pixel_array(ii,jj,1) - clockwise ! Here, angle is modified w.r.t. check_if_visible.
 
 								XC = (/cam%position(1)*COS(angle),-cam%position(1)*SIN(angle),cam%position(2)/)
 
@@ -1086,8 +1087,8 @@ SUBROUTINE integrated_angular_density(params,spp)
 									l = cam%lambda(ll)
 									photon_energy = C_h*C_C/l
 
-									if (theta .LE. threshold_angle_lamda) then
-										zeta = lc/cam%lambda(ll)
+									if (theta .LE. threshold_angle_simple_model) then
+										zeta = lc/l
 
 										P_lambda(ll) = (C_C*C_E**2)*P_integral(zeta)/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda(ii)**3)
 										np_lambda_pixel(ii,jj,ss) = np_lambda_pixel(ii,jj,ss) + 1.0_rp
@@ -1102,6 +1103,10 @@ SUBROUTINE integrated_angular_density(params,spp)
 										end if
 									end if
 								end do ! Nlambda	
+
+!	open(unit=default_unit_write,file='tmp_file',access = 'append',status='UNKNOWN',form='formatted')
+!	write(default_unit_write,'(/,100ES25.16,/)') P_lambda
+!	close(default_unit_write)
 
 								P_l_pixel(:,ss)	= P_l_pixel(:,ss) + P_lambda
 								P_a_pixel(:,ss)	= P_a_pixel(:,ss) + P_angular
@@ -1135,8 +1140,8 @@ SUBROUTINE integrated_angular_density(params,spp)
 									l = cam%lambda(ll)
 									photon_energy = C_h*C_C/l
 
-									if (theta .LE. threshold_angle_lamda) then
-										zeta = lc/cam%lambda(ll)
+									if (theta .LE. threshold_angle_simple_model) then
+										zeta = lc/l
 
 										P_lambda(ll) = (C_C*C_E**2)*P_integral(zeta)/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda(ii)**3)
 										np_lambda_pixel(ii,jj,ss) = np_lambda_pixel(ii,jj,ss) + 1.0_rp
@@ -1152,6 +1157,10 @@ SUBROUTINE integrated_angular_density(params,spp)
 									end if
 								end do ! Nlambda
 
+!	open(unit=default_unit_write,file='tmp_file',access = 'append',status='UNKNOWN',form='formatted')
+!	write(default_unit_write,'(/,100ES25.16,/)') P_lambda
+!	close(default_unit_write)
+
 								P_l_pixel(:,ss)	= P_l_pixel(:,ss) + P_lambda
 								P_a_pixel(:,ss)	= P_a_pixel(:,ss) + P_angular
 
@@ -1161,9 +1170,8 @@ SUBROUTINE integrated_angular_density(params,spp)
 
 						end do ! NY
 					end do ! NX
-
-
 				end if ! check if bool == TRUE
+
 			end if ! if confined
 		end do ! particles
 !$OMP END DO
