@@ -511,6 +511,30 @@ for ss=1:ST.params.simulation.num_species
     Psyn_L1 = zeros(NR,NZ);
     
     if (ST.params.synthetic_camera_params.integrated_opt == 0)
+        for ii=1:NR
+            for jj=1:NZ
+                if numel(size(ST.data.(['sp' num2str(ss)]).Psyn_pplane)) == 4
+                    Psyn_L2_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).Psyn_pplane(ii,jj,i1:i2,:),4);
+                    np_L2_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).np_pplane(ii,jj,i1:i2,:),4);
+                    Psyn_L1(ii,jj) = sum(abs(ST.data.(['sp' num2str(ss)]).PTot_pplane(ii,jj,:)),3);
+                else
+                    Psyn_L2_lambda(ii,jj,:) = ST.data.(['sp' num2str(ss)]).Psyn_pplane(ii,jj,i1:i2);
+                    np_L2_lambda(ii,jj,:) = ST.data.(['sp' num2str(ss)]).np_pplane(ii,jj,i1:i2);
+                    Psyn_L1(ii,jj) = abs(ST.data.(['sp' num2str(ss)]).PTot_pplane(ii,jj));
+                end
+                
+                np_L2(ii,jj) = sum(np_L2_lambda(ii,jj,:),3);
+                Psyn_L2(ii,jj) = trapz(lambda(i1:i2),Psyn_L2_lambda(ii,jj,:));
+            end
+        end
+    else
+        Psyn_L1 = sum(abs(ST.data.(['sp' num2str(ss)]).PTot_pplane),3);
+        
+        np_L2 = sum(ST.data.(['sp' num2str(ss)]).np_pplane,3);
+        Psyn_L2 = sum(ST.data.(['sp' num2str(ss)]).Psyn_pplane,3);
+    end
+    
+    if (ST.params.synthetic_camera_params.integrated_opt == 0)
         for ii=1:NX
             for jj=1:NY
                 if numel(size(ST.data.(['sp' num2str(ss)]).Psyn_lambda_pixel)) == 4
@@ -535,57 +559,36 @@ for ss=1:ST.params.simulation.num_species
             end
         end
     else
-        np = ST.data.(['sp' num2str(ss)]).np_lambda;
+        
+        npl = ST.data.(['sp' num2str(ss)]).np_lambda;
+        
         P_L2 = zeros(Nl,1);
         for it=1:ST.num_snapshots
-            P_L2 = P_L2 + ST.data.(['sp' num2str(ss)]).P_lambda(:,it)*np(it);
+            P_L2 = P_L2 + ST.data.(['sp' num2str(ss)]).P_lambda(:,it)*npl(it);
         end
-        P_L2 = P_L2/sum(np);
+        P_L2 = P_L2/sum(npl);
         
         np = ST.data.(['sp' num2str(ss)]).np_pixel;
-        
-                
-        np_L3 = sum(ST.data.(['sp' num2str(ss)]).np_lambda_pixel,3);
-        np_L4 = sum(ST.data.(['sp' num2str(ss)]).np_angular_pixel,3);
         
         P_L3 = zeros(Nl,1);
         for it=1:ST.num_snapshots
             P_L3 = P_L3 + ST.data.(['sp' num2str(ss)]).P_l_pixel(:,it).*np(it);
         end
-        P_L3 = P_L3./sum(sum(np_L3));
+%         P_L3 = P_L3/sum(npl);
+        P_L3 = P_L3/sum(np);
         
         P_L4 = zeros(Nl,1);
         for it=1:ST.num_snapshots
             P_L4 = P_L4 + ST.data.(['sp' num2str(ss)]).P_a_pixel(:,it).*np(it);
         end
-        P_L4 = P_L4./sum(sum(np_L4));
+%         P_L4 = P_L4/sum(npl);
+        P_L4 = P_L4/sum(np);
+        
+        np_L3 = sum(ST.data.(['sp' num2str(ss)]).np_lambda_pixel,3);
+        np_L4 = sum(ST.data.(['sp' num2str(ss)]).np_angular_pixel,3);
         
         Psyn_L3 = sum(ST.data.(['sp' num2str(ss)]).Psyn_lambda_pixel,3);
         Psyn_L4 = sum(ST.data.(['sp' num2str(ss)]).Psyn_angular_pixel,3);
-    end
-    
-    if (ST.params.synthetic_camera_params.integrated_opt == 0)
-        for ii=1:NR
-            for jj=1:NZ
-                if numel(size(ST.data.(['sp' num2str(ss)]).Psyn_pplane)) == 4
-                    Psyn_L2_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).Psyn_pplane(ii,jj,i1:i2,:),4);
-                    np_L2_lambda(ii,jj,:) = sum(ST.data.(['sp' num2str(ss)]).np_pplane(ii,jj,i1:i2,:),4);
-                    Psyn_L1(ii,jj) = sum(abs(ST.data.(['sp' num2str(ss)]).PTot_pplane(ii,jj,:)),3);
-                else
-                    Psyn_L2_lambda(ii,jj,:) = ST.data.(['sp' num2str(ss)]).Psyn_pplane(ii,jj,i1:i2);
-                    np_L2_lambda(ii,jj,:) = ST.data.(['sp' num2str(ss)]).np_pplane(ii,jj,i1:i2);
-                    Psyn_L1(ii,jj) = abs(ST.data.(['sp' num2str(ss)]).PTot_pplane(ii,jj));
-                end
-                
-                np_L2(ii,jj) = sum(np_L2_lambda(ii,jj,:),3);
-                Psyn_L2(ii,jj) = trapz(lambda(i1:i2),Psyn_L2_lambda(ii,jj,:));
-            end
-        end
-    else
-        Psyn_L1 = sum(abs(ST.data.(['sp' num2str(ss)]).PTot_pplane),3);
-        
-        np_L2 = sum(ST.data.(['sp' num2str(ss)]).np_pplane,3);
-        Psyn_L2 = sum(ST.data.(['sp' num2str(ss)]).Psyn_pplane,3);
     end
 
     if isfield(ST.params,'avalanche_pdf_params')
@@ -877,7 +880,7 @@ for ss=1:ST.params.simulation.num_species
     
     A = Psyn_L4';
     minval = min(min(A));
-    maxval = 0.9*max(max(A));
+    maxval = 0.8*max(max(A));
     v = linspace(minval,maxval,25);
     
     figure(h);

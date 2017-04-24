@@ -44,7 +44,7 @@ function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,
 %
 % EXAMPLES:
 % USING ANALYTICAL MAGNETIC FIELD
-% ST = pOrbs('','','2D',[],[5E4,1E-2,5],[2,7.2939E3],[3.33,0,0],[3.6E6,130.2],true);
+% ST = pOrbs('','','2D',[],[5E5,1E-2,10,1E-2],[-1,1],[5.5,0,0],[60E6,5],true);
 % ST = pOrbs('','','2D',[],[1E4,1E-2,10],[-1,1],[1.6,0,0],[40E6,0],true);
 % ST = pOrbs('','','2D',[],[1E4,2.5E-2,100],[-1,1],[1.15,0,0],[70E6,10],true);
 % USING TABULATED FIELDS OF THE ANALYTICAL MAGNETIC FIELD
@@ -193,7 +193,7 @@ end
 
 % parametricShift(ST);
 
-% ST.P = synchrotronSpectrum(ST);
+ST.P = synchrotronSpectrum(ST);
 
 munlock
 
@@ -813,18 +813,18 @@ narginchk(1,3);
 
 % Parameters of the analytical magnetic field
 % ITER
-Bo = 5.3;
-Ro = 6.2; % Major radius in meters.
-a = 2.0;% Minor radius in meters.
-qa = 3.0; % Safety factor at the separatrix (r=a)
-qo = 2.4; % Safety factor at the magnetic axis.
+% Bo = 5.3;
+% Ro = 6.2; % Major radius in meters.
+% a = 2.0;% Minor radius in meters.
+% qa = 3.0; % Safety factor at the separatrix (r=a)
+% qo = 2; % Safety factor at the magnetic axis.
 
 % DIII-D
-% Bo = 2.19;
-% Ro = 1.5; % Major radius in meters.
-% a = 0.5;% Minor radius in meters.
-% qa = 2.0; % Safety factor at the separatrix (r=a)
-% qo = 1.6; % Safety factor at the magnetic axis.
+Bo = 2.19;
+Ro = 1.5; % Major radius in meters.
+a = 0.5;% Minor radius in meters.
+qa = 3.0; % Safety factor at the separatrix (r=a)
+qo = 1.0; % Safety factor at the magnetic axis.
 
 lamb = a/sqrt(qa/qo - 1);
 Bpo = lamb*Bo/(qo*Ro);
@@ -2770,8 +2770,8 @@ Nchi = 100;
 
 upper_integration_limit = 200.0;
 
-lambda_min = 400E-9;
-lambda_max = 900E-9;
+lambda_min = 1E-7;
+lambda_max = 1E-5;
 
 if isfield(ST.PP,'k')
     c = 1E2*ST.params.c;
@@ -2871,10 +2871,10 @@ if isfield(ST.PP,'k')
     Psyn_psi_chi = zeros(Npsi,Nchi);
     Psyn_chi_lambda = zeros(Nchi,N);
     
-%     [~,I] = max(P.Psyn(Ind,:)); 
+    [~,I] = max(P.Psyn(Ind,:)); 
 %     I = floor(I/2);
 %     I = N;
-    [~,I] = min(abs(P.lambda(Ind,:) - 700E-7));
+%     [~,I] = min(abs(P.lambda(Ind,:) - 700E-7));
 
     psi_critical = (3*P.lambda(Ind,I)/P.lambdac(Ind)).^(1/3)/gammap(Ind);
     chi_max = sqrt( P.lambda(Ind,I)/(3*P.lambdac(Ind)) )/gammap(Ind); % 0.42;% (24 degrees) 3 percent of error between x and sin(x)

@@ -1104,10 +1104,6 @@ SUBROUTINE integrated_angular_density(params,spp)
 									end if
 								end do ! Nlambda	
 
-!	open(unit=default_unit_write,file='tmp_file',access = 'append',status='UNKNOWN',form='formatted')
-!	write(default_unit_write,'(/,100ES25.16,/)') P_lambda
-!	close(default_unit_write)
-
 								P_l_pixel(:,ss)	= P_l_pixel(:,ss) + P_lambda
 								P_a_pixel(:,ss)	= P_a_pixel(:,ss) + P_angular
 
@@ -1156,10 +1152,6 @@ SUBROUTINE integrated_angular_density(params,spp)
 										end if
 									end if
 								end do ! Nlambda
-
-!	open(unit=default_unit_write,file='tmp_file',access = 'append',status='UNKNOWN',form='formatted')
-!	write(default_unit_write,'(/,100ES25.16,/)') P_lambda
-!	close(default_unit_write)
 
 								P_l_pixel(:,ss)	= P_l_pixel(:,ss) + P_lambda
 								P_a_pixel(:,ss)	= P_a_pixel(:,ss) + P_angular
@@ -1287,7 +1279,7 @@ SUBROUTINE integrated_angular_density(params,spp)
 		    P_a_pixel = RESHAPE(receive_buffer,(/cam%Nlambda,params%num_species/))
 
 		        do ss=1_idef,params%num_species
-				P_a_pixel(:,ss) = P_a_pixel(:,ss)/np_pixel(ss)
+					P_a_pixel(:,ss) = P_a_pixel(:,ss)/np_pixel(ss)
 		        end do
 		        var_name = 'P_a_pixel'
 		        call save_snapshot_var(params,P_a_pixel,var_name)
@@ -1306,7 +1298,7 @@ SUBROUTINE integrated_angular_density(params,spp)
 		    P_l_pixel = RESHAPE(receive_buffer,(/cam%Nlambda,params%num_species/))
 
 		        do ss=1_idef,params%num_species
-				P_l_pixel(:,ss) = P_l_pixel(:,ss)/np_pixel(ss)
+					P_l_pixel(:,ss) = P_l_pixel(:,ss)/np_pixel(ss)
 		        end do
 		        var_name = 'P_l_pixel'
 		        call save_snapshot_var(params,P_l_pixel,var_name)
@@ -1334,9 +1326,15 @@ SUBROUTINE integrated_angular_density(params,spp)
 		call save_snapshot_var(params,np_pixel,var_name)
 
 		var_name = 'P_a_pixel'
+		do ss=1_idef,params%num_species
+			P_a_pixel(:,ss) = P_a_pixel(:,ss)/np_pixel(ss)
+        end do
 		call save_snapshot_var(params,P_a_pixel,var_name)
 
 		var_name = 'P_l_pixel'
+		do ss=1_idef,params%num_species
+			P_l_pixel(:,ss) = P_l_pixel(:,ss)/np_pixel(ss)
+		end do
 		call save_snapshot_var(params,P_l_pixel,var_name)
 	end if
 

@@ -100,7 +100,6 @@ end
 function data = loadData(ST)
 data = struct;
 
-% list = {'X'};
 list = {};
 
 it = ST.range(1):1:ST.range(2);
@@ -130,7 +129,6 @@ for ll=1:length(list)
     end
 end
 
-% list = {'g','flag','eta','Prad','Pin'};
 list = {'g','flag','eta'};
 % list = {'g','eta'};
 
@@ -2911,7 +2909,8 @@ f = @(p,x) (Ehat/Cz)*p.*exp( -p.*(x/Cz + 0.5*Ehat*(1 - x.^2)./x) )./x;
 % sanityIntegral = integral2(f,pmin,pmax,chimin,1);
 % sanityIntegral = integral2(f,0,500,0,1);
 
-l = ST.params.synthetic_camera_params.lambda;
+% l = ST.params.synthetic_camera_params.lambda;
+l = linspace(1E-7,1E-5,100);
 Psyn_p_chi = zeros(numel(l),Np,Nchi);
 ddPsyndpchi = zeros(numel(l),Np,Nchi);
 Psyn_p = zeros(numel(l),Np);
@@ -2956,6 +2955,7 @@ hh = figure;
 for sp=1:numel(I)
     A = squeeze(Psyn_p_chi(I(sp),:,:));
     AA = squeeze(ddPsyndpchi(I(sp),:,:));
+
     cmax = max(max(A));
     
     figure(h)
@@ -2965,6 +2965,8 @@ for sp=1:numel(I)
     title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
     xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
     ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
+    
+    cmax = max(max(AA));
     
     figure(hh)
     subplot(ntiles,ntiles,sp)    
@@ -2977,7 +2979,8 @@ end
 
 A = fRE;
 AA = fnum;
-cmax = max([max(max(A)) max(max(AA))]);
+
+cmax = max(max(A));
 
 figure(h)
 subplot(ntiles,ntiles,ntiles^2)
@@ -2985,6 +2988,8 @@ contourf(xAxis,yAxis,A,17,'LineStyle','none')
 colormap(jet); colorbar; caxis([0 cmax])
 xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
+
+cmax = max(max(AA));
 
 figure(hh)
 subplot(ntiles,ntiles,ntiles^2)
@@ -2994,9 +2999,9 @@ xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 
 
-h = figure;
+hhh = figure;
 for sp=1:numel(I)
-    figure(h)
+    figure(hhh)
     subplot(ntiles,ntiles,sp)
     A = squeeze(Psyn_sp(I(sp),:,:));
     contourf(xAxis,yAxis,A,17,'LineStyle','none')
@@ -3007,7 +3012,7 @@ for sp=1:numel(I)
     ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 end
 
-figure(h)
+figure(hhh)
 subplot(ntiles,ntiles,ntiles^2)
 A = fRE;
 contourf(xAxis,yAxis,A,17,'LineStyle','none')
@@ -3015,6 +3020,10 @@ colormap(jet);
 colorbar
 xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
+
+saveas(h,[ST.path 'ddPdpdchi_theory'],'fig')
+saveas(hh,[ST.path 'ddPdpdchi_simulation'],'fig')
+saveas(hhh,[ST.path 'Synchrotron_radiation'],'fig')
 
 % figure;
 % surf(E,lAxis,squeeze(Psyn_p),'LineStyle','none');
