@@ -1104,7 +1104,7 @@ SUBROUTINE integrated_angular_density(params,spp)
 									end if
 								end do ! Nlambda	
 
-								P_l_pixel(:,ss)	= P_l_pixel(:,ss) + P_lambda
+								P_l_pixel(:,ss)	= P_l_pixel(:,ss) + P_lambda/(2.0_rp*C_PI*(1.0_rp - COS(1.0_rp/g)))
 								P_a_pixel(:,ss)	= P_a_pixel(:,ss) + P_angular
 
 								Psyn_lambda_pixel(ii,jj,ss) = Psyn_lambda_pixel(ii,jj,ss) + trapz(cam%lambda,P_lambda)
@@ -1153,7 +1153,7 @@ SUBROUTINE integrated_angular_density(params,spp)
 									end if
 								end do ! Nlambda
 
-								P_l_pixel(:,ss)	= P_l_pixel(:,ss) + P_lambda
+								P_l_pixel(:,ss)	= P_l_pixel(:,ss) + P_lambda/(2.0_rp*C_PI*(1.0_rp - COS(1.0_rp/g)))
 								P_a_pixel(:,ss)	= P_a_pixel(:,ss) + P_angular
 
 								Psyn_lambda_pixel(ii,jj,ss) = Psyn_lambda_pixel(ii,jj,ss) + trapz(cam%lambda,P_lambda)

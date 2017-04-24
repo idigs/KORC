@@ -574,15 +574,15 @@ for ss=1:ST.params.simulation.num_species
         for it=1:ST.num_snapshots
             P_L3 = P_L3 + ST.data.(['sp' num2str(ss)]).P_l_pixel(:,it).*np(it);
         end
-%         P_L3 = P_L3/sum(npl);
-        P_L3 = P_L3/sum(np);
+        P_L3 = P_L3/sum(npl);
+%         P_L3 = P_L3/sum(np);
         
         P_L4 = zeros(Nl,1);
         for it=1:ST.num_snapshots
             P_L4 = P_L4 + ST.data.(['sp' num2str(ss)]).P_a_pixel(:,it).*np(it);
         end
-%         P_L4 = P_L4/sum(npl);
-        P_L4 = P_L4/sum(np);
+        P_L4 = P_L4/sum(npl);
+%         P_L4 = P_L4/sum(np);
         
         np_L3 = sum(ST.data.(['sp' num2str(ss)]).np_lambda_pixel,3);
         np_L4 = sum(ST.data.(['sp' num2str(ss)]).np_angular_pixel,3);
@@ -603,6 +603,10 @@ for ss=1:ST.params.simulation.num_species
     axis_lambda = 1E9*lambda(i1:i2);
     if (ST.params.synthetic_camera_params.integrated_opt == 0)
         Psyn_L4_lambda = 1E-9*Psyn_L4_lambda;
+    else
+        P_L2 = 1E-9*P_L2;
+        P_L3 = 1E-9*P_L3;
+        P_L4 = 1E-9*P_L4;
     end
     
     
@@ -736,14 +740,16 @@ for ss=1:ST.params.simulation.num_species
     end
     
     if isfield(ST.params,'avalanche_pdf_params')
-        P_theory = Psyn_avg; %P_theory = Psyn_avg/max(Psyn_avg);
+        P_theory = 1E-9*Psyn_avg; %P_theory = Psyn_avg/max(Psyn_avg);
     else
-        P_theory = Psyn_sp; % P_theory = Psyn_sp/max(Psyn_sp);
+        P_theory = 1E-9*Psyn_sp; % P_theory = Psyn_sp/max(Psyn_sp);
     end
     figure(h)
     
     try
         plot(axis_lambda,P_theory,'k',axis_lambda,f_L2,'r',axis_lambda,f_L3,'b',axis_lambda,f_L4,'g','LineWidth',1)
+%         plot(axis_lambda,P_theory/max(P_theory),'k',axis_lambda,f_L2/max(f_L2),'r',...
+%             axis_lambda,f_L3/max(f_L3),'b',axis_lambda,f_L4/max(f_L4),'g','LineWidth',1)
     catch
         figure(h)
         plot(axis_lambda,P_theory,'k',axis_lambda,f_L2,'r','LineWidth',1)
