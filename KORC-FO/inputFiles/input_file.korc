@@ -25,10 +25,10 @@
 														! angles correspond to those of a thermalized distribution.
         Ro = 1.5, 1.5, 1.5 !
         Zo = 0.0, 0.0, 0.0 !
-        r = 0.02, 0.02, 0.02 !
-        Eo = 40.0E6, 40.0E6, 40.0E6 ! Initial energy in eV
+        r = 0.2, 0.2, 0.2 !
+        Eo = 60.0E6, 60.0E6, 60.0E6 ! Initial energy in eV
         etao = 10.0, 20.0, 40.0  ! Initial pitch angle
-        ppp = 10, 10, 10 ! Number of particles per process (mpi)
+        ppp = 1000, 1000, 1000 ! Number of particles per process (mpi)
         q = -1.0, -1.0, -1.0 ! Electric charge
         m = 1.0, 1.0, 1.0 ! In units of electron mass
 /

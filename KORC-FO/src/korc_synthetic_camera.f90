@@ -796,9 +796,9 @@ SUBROUTINE angular_density(params,spp)
 									photon_energy = C_h*C_C/l
 
 									if (theta .LE. threshold_angle) then
-										zeta = lc/cam%lambda(ll)
+										zeta = lc/l
 
-										Psyn_tmp = (C_C*C_E**2)*P_integral(zeta)/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda(ii)**3)
+										Psyn_tmp = (C_C*C_E**2)*P_integral(zeta)/(SQRT(3.0_rp)*C_E0*g**2*l**3)
 
 										Psyn_lambda_pixel(ii,jj,ll,ss) = Psyn_lambda_pixel(ii,jj,ll,ss) + Psyn_tmp/photon_energy
 										np_lambda_pixel(ii,jj,ll,ss) = np_lambda_pixel(ii,jj,ll,ss) + 1.0_rp
@@ -838,9 +838,9 @@ SUBROUTINE angular_density(params,spp)
 									photon_energy = C_h*C_C/l
 
 									if (theta .LE. threshold_angle) then
-										zeta = lc/cam%lambda(ll)
+										zeta = lc/l
 
-										Psyn_tmp = (C_C*C_E**2)*P_integral(zeta)/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda(ii)**3)
+										Psyn_tmp = (C_C*C_E**2)*P_integral(zeta)/(SQRT(3.0_rp)*C_E0*g**2*l**3)
 
 										Psyn_lambda_pixel(ii,jj,ll,ss) = Psyn_lambda_pixel(ii,jj,ll,ss) + Psyn_tmp/photon_energy
 										np_lambda_pixel(ii,jj,ll,ss) = np_lambda_pixel(ii,jj,ll,ss) + 1.0_rp
@@ -1090,7 +1090,7 @@ SUBROUTINE integrated_angular_density(params,spp)
 									if (theta .LE. threshold_angle_simple_model) then
 										zeta = lc/l
 
-										P_lambda(ll) = (C_C*C_E**2)*P_integral(zeta)/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda(ii)**3)
+										P_lambda(ll) = (C_C*C_E**2)*P_integral(zeta)/(SQRT(3.0_rp)*C_E0*g**2*l**3)
 										np_lambda_pixel(ii,jj,ss) = np_lambda_pixel(ii,jj,ss) + 1.0_rp
 									end if
 
@@ -1143,7 +1143,7 @@ SUBROUTINE integrated_angular_density(params,spp)
 									if (theta .LE. threshold_angle_simple_model) then
 										zeta = lc/l
 
-										P_lambda(ll) = (C_C*C_E**2)*P_integral(zeta)/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda(ii)**3)
+										P_lambda(ll) = (C_C*C_E**2)*P_integral(zeta)/(SQRT(3.0_rp)*C_E0*g**2*l**3)
 										np_lambda_pixel(ii,jj,ss) = np_lambda_pixel(ii,jj,ss) + 1.0_rp
 									end if
 
