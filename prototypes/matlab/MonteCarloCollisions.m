@@ -31,13 +31,9 @@ CO = initializeCollisionOperators(CO);
 
 CO = normalize(CO);
 
-parametricStudy(CO);
+% V = ThermalDistribution(CO);
+V = repmat([0.9;0;0],[1,CO.np]);
 
-Vo = ThermalDistribution(CO);
-V = Vo;
-% V = zeros(3,CO.np);
-% V(1,:) = 0.1344;
-% V(2,:) = 0.1344;
 
 h = figure;
 subplot(2,1,1)
@@ -95,10 +91,10 @@ CO.cop.Vc = CO.cop.VTe*sqrt(0.5*CO.cop.Ec/sqrt(Ef*Ef'));
 
 CO.cop.c = CO.params.c;
 
-Ek = linspace(1.0,10E6,1E6)*CO.params.qe; % Kinetic energy
+g = linspace(1,5,1000); % relativistic gamma factor
+E = g*CO.params.me*CO.params.c^2;%*linspace(6E5,50E6,200)*ST.params.qe;
 Er = CO.params.me*CO.params.c^2; % Rest energy
-ET = Ek + Er; % Total energy
-u = CO.params.c*sqrt(1 - Er^2./ET.^2);
+u = CO.params.c*sqrt(1 - Er^2./E.^2);
 
 % % % NORMALIZATIN PARAMETERS % % % 
 CO.norm.B = CO.Bo;
@@ -143,40 +139,21 @@ CO.cop.CF = @(v) CO.cop.Gamma*CO.cop.psi(v)/CO.cop.Te;
 CO.cop.CB = @(v) (0.5*CO.cop.Gamma./v).*( CO.cop.Zeff + ...
     erf(CO.cop.x(v)) - CO.cop.psi(v) + 0.5*CO.cop.delta^4*CO.cop.x(v).^2 );
 
-CO.cop.dvdp = @(v) 1./CO.cop.g(v).^3;
-
-CO.cop.fun = @(v) 2*(1./CO.cop.x(v) + CO.cop.x(v)).*exp(-CO.cop.x(v).^2)/sqrt(pi) - ...
-    erf(CO.cop.x(v))./CO.cop.x(v).^2 - CO.cop.psi(v);
-
-CO.cop.f = @(v) ( 2*(1./CO.cop.x(v) + CO.cop.x(v)).*exp(-CO.cop.x(v).^2)/sqrt(pi) -...
-    erf(CO.cop.x(v))./CO.cop.x(v).^2 - CO.cop.psi(v) )./(v.^2.*CO.cop.g(v).^3);
-
-CO.cop.h = @(v) -CO.cop.CF(v) + ...
-    2*CO.cop.CA(v)./(v.*CO.cop.g(v)) + CO.cop.Gamma*CO.cop.f(v);
-
-Ek = 1E-6*Ek/CO.params.qe;
-xAxis = u;
+E = 1E-6*E/CO.params.qe;
+xAxis = E;
 
 figure;
-subplot(3,2,1);
+subplot(3,1,1);
 plot(xAxis,CO.cop.CA(u));
 ylabel('$C_A$ ($e B_0/m_e^3 c^2 $)','Interpreter','latex')
 xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
-subplot(3,2,2);
+subplot(3,1,2);
 plot(xAxis,CO.cop.CB(u));
 ylabel('$C_B$ ($e B_0/m_e^3 c^2 $)','Interpreter','latex')
 xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
-subplot(3,2,3);
+subplot(3,1,3);
 plot(xAxis,CO.cop.CF(u));
 ylabel('$C_F$ ($e B_0/m_e^2 c $)','Interpreter','latex')
-xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
-subplot(3,2,4);
-semilogx(Ek,u);
-ylabel('$v$ ($c$)','Interpreter','latex')
-xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
-subplot(3,2,[5 6]);
-plot(xAxis,CO.cop.h(u),'b',xAxis,CO.cop.h(u)+CO.cop.CF(u),'r');
-ylabel('Drag (blue)','Interpreter','latex')
 xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
 end
 
@@ -243,97 +220,36 @@ end
 
 end
 
-function parametricStudy(CO)
-Ek = linspace(1.0,10E6,1E6)*CO.params.qe; % Kinetic energy
-Er = CO.params.me*CO.params.c^2; % Rest energy
-ET = Ek + Er; % Total energy
-u = CO.params.c*sqrt(1 - Er^2./ET.^2);
-
-u = u/CO.norm.v; % Normalization
-xi = 1.0;
-dt = linspace(1E-4,0.1,1E3);
-
-p = @(v) CO.cop.g(v).*v;
-
-upperb1 = @(xi,v) -2*xi.*CO.cop.CB(v)./p(v).^2;
-upperb2 = @(xi,v) -sqrt(2*CO.cop.CB(v).*(1 - xi.^2))./p(v); 
-
-
-Ek = Ek/CO.params.qe;
-Ek = Ek/1E6;
-
-figure
-subplot(2,1,1)
-semilogy(u,upperb1(1.0,u),'b',u,upperb1(0.9,u),'r',u,upperb1(0.8,u),'g',...
-    u,upperb1(0.7,u),'c')
-subplot(2,1,2)
-semilogy(u,upperb2(1.0,u),'b',u,upperb2(0.9,u),'r',u,upperb2(0.8,u),'g',...
-    u,upperb2(0.7,u),'c')
-
-
-
-end
-
 function U = collisionOperator(CO,V,dt)
 % This function calculates the random kicks due to collisions
 U = zeros(1,3);
 
 v = sqrt(V*V');
-if v > 0
-    g = CO.cop.g(v);
-    p = g*v;
-    
-    U1 = g*(V*CO.b1');
-    U2 = g*(V*CO.b2');
-    U3 = g*(V*CO.b3');
-    
-    xi = U1/p;
-    A = acos(xi);
-    
-    dWp = random('normal',0,dt);
-    dWxi = random('uniform',0,1,1)*sqrt(dt);
-    dWphi = random('uniform',0,2*pi,1)*sqrt(dt);
-    
-    CA = CO.cop.CA(v);
-    CB = CO.cop.CB(v);
-    
-    dp = CO.cop.h(v)*dt;% + sqrt(2*CA)*dWp;
-    
-    dxi = -2*xi*CB*dt/p^2;% - sqrt(2*CB*(1 - xi^2))*dWxi/p;
-    
-    dA = (CB*cot(A)/p^2)*dt + sqrt(2*CB)*dWxi/p;
-    dB = sqrt(2*CB)*dWphi/(p*sin(A));
-    
-    dphi = sqrt(2*CB)*dWphi/(p*sqrt(1 - xi^2));
-    if ~isfinite(dphi)
-        dphi = 0;
-    end
-    
-%     f1 = @(dt) CO.cop.h(v)*dt + sqrt(2*CA)*sqrt(dt);
-%     f2 = @(dt) CO.cop.h(v)*dt;
-%     f3 = @(dt) -2*xi*CB*dt/p^2 - sqrt(2*CB*(1 - xi^2))*sqrt(dt)/p;
-%     f4 = @(dt) -2*xi*CB*dt/p^2;
-%     f5 = @(dt) sqrt(2*CB)*sqrt(dt)/(p*sqrt(1 - xi^2));
-%     
-%     t = linspace(1E-4,0.1,1E3);
-%     figure
-%     subplot(3,1,1)
-%     plot(t,f1(t),'k',t,f2(t),'r')
-%     subplot(3,1,2)
-%     plot(t,f3(t),'k',t,f4(t),'r')
-%     subplot(3,1,3)
-%     plot(t,f5(t))
-    
-    pitch = acos(xi + dxi);
-    
-    dU1 = dp*cos(pitch);
-    dU2 = dp*sin(pitch)*cos(dphi);
-    dU3 = dp*sin(pitch)*sin(dphi);
-    
-    U(1) = U1 + dU1;
-    U(2) = U2 + dU2;
-    U(3) = U3 + dU3;
-    
-    U = U/sqrt( 1 + U*U' );
-end
+g = CO.cop.g(v);
+
+U1 = g*(V*CO.b1');
+U2 = g*(V*CO.b2');
+U3 = g*(V*CO.b3');
+
+dW = random('norm',0,dt,[3,1]);
+
+CA = CO.cop.CA(v);
+CB = CO.cop.CB(v);
+CF = CO.cop.CF(v);
+
+a = [2*CF;0;0];
+
+s = [CA,0,0;
+    0,0.5*CB,0;
+    0,0,0.5*CB];
+
+dU = a*dt + s*dW;
+% dU = s*dW;
+
+U(1) = U1 + dU(1);
+U(2) = U2 + dU(2);
+U(3) = U3 + dU(3);
+
+U = U/sqrt( 1 + U*U' );
+
 end

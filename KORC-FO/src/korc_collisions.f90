@@ -124,8 +124,6 @@ subroutine load_params_ss(params)
 	read(default_unit_open,nml=CollisionParamsSingleSpecies)
 	close(default_unit_open)
 
-!	write(*,nml=CollisionParamsSingleSpecies)
-
 	cparams_ss%Te = Te*C_E
 	cparams_ss%Ti = Ti*C_E
 	cparams_ss%ne = ne

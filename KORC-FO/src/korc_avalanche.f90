@@ -7,6 +7,7 @@ MODULE korc_avalanche
 
 	TYPE, PRIVATE :: AVALANCHE_PDF_PARAMS
 		REAL(rp) :: max_pitch_angle ! Maximum pitch angle of sampled PDF in degrees
+		REAL(rp) :: min_pitch_angle ! Minimum pitch angle of sampled PDF in degrees
 		REAL(rp) :: min_energy ! Minimum energy of sampled PDF in MeV
 		REAL(rp) :: max_energy ! Maximum energy of sampled PDF in MeV
 		REAL(rp) :: min_p ! Minimum momentum of sampled PDF
@@ -54,12 +55,14 @@ SUBROUTINE initialize_avalanche_params(params)
 	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp) :: max_pitch_angle
+	REAL(rp) :: min_pitch_angle
 	REAL(rp) :: max_energy
+	REAL(rp) :: min_energy
 	REAL(rp) :: ne
 	REAL(rp) :: Zeff
 	REAL(rp) :: Epar
 	REAL(rp) :: Te
-	NAMELIST /AvalancheGenerationPDF/ max_pitch_angle,max_energy,ne,Zeff,Epar,Te
+	NAMELIST /AvalancheGenerationPDF/ max_pitch_angle,min_pitch_angle,max_energy,min_energy,ne,Zeff,Epar,Te
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=AvalancheGenerationPDF)
@@ -68,6 +71,7 @@ SUBROUTINE initialize_avalanche_params(params)
 !	write(*,nml=AvalancheGenerationPDF)
 
 	aval_params%max_pitch_angle = max_pitch_angle
+	aval_params%min_pitch_angle = min_pitch_angle
 	aval_params%max_energy = max_energy*C_E ! In Joules
 	aval_params%ne = ne
 	aval_params%Zeff = Zeff
@@ -82,9 +86,17 @@ SUBROUTINE initialize_avalanche_params(params)
 	aval_params%Epar = Epar
 	aval_params%Ebar = aval_params%Epar/aval_params%Ec
 
-	aval_params%max_p = SQRT((aval_params%max_energy/(C_ME*C_C**2))**2 - 1.0_rp) ! In units of mec^2
-	aval_params%min_p = SQRT(aval_params%Ebar - 1.0_rp) ! In units of mec^2
-	aval_params%min_energy = SQRT(1.0_rp + aval_params%min_p**2)*C_ME*C_C**2
+	if (min_energy .EQ. 0.0_rp) then
+		aval_params%max_p = SQRT((aval_params%max_energy/(C_ME*C_C**2))**2 - 1.0_rp) ! In units of mec^2
+		aval_params%min_p = SQRT(aval_params%Ebar - 1.0_rp) ! In units of mec^2
+
+		aval_params%min_energy = SQRT(1.0_rp + aval_params%min_p**2)*C_ME*C_C**2
+	else
+		aval_params%min_energy = min_energy*C_E ! In Joules
+
+		aval_params%max_p = SQRT((aval_params%max_energy/(C_ME*C_C**2))**2 - 1.0_rp) ! In units of mec^2
+		aval_params%min_p = SQRT((aval_params%min_energy/(C_ME*C_C**2))**2 - 1.0_rp) ! In units of mec^2
+	end if
 
 	aval_params%alpha = (aval_params%Ebar - 1.0_rp)/(1.0_rp + aval_params%Zeff)
 	aval_params%cz = SQRT(3.0_rp*(aval_params%Zeff + 5.0_rp)/C_PI)*aval_params%CoulombLog
@@ -109,7 +121,6 @@ FUNCTION fRE(x,p)
 	REAL(rp) :: fRE
 	
 	fRE = aval_params%fo*p*EXP(-p*(aval_params%C2*x + aval_params%C1/x))/x
-!	fRE = aval_params%fo*EXP( -p*(aval_params%C2*x + aval_params%C1/x) )/(x*p)
 END FUNCTION fRE
 
 
@@ -163,7 +174,7 @@ SUBROUTINE sample_distribution(params,g,eta)
 		ii=2_idef
 		do while (ii .LE. 1000000_idef)
 			eta_test = eta_buffer + random_norm(0.0_rp,1.0_rp)
-			do while (ABS(eta_test) .GT. aval_params%max_pitch_angle)
+			do while ((ABS(eta_test) .GT. aval_params%max_pitch_angle).OR.(ABS(eta_test) .LT. aval_params%min_pitch_angle))
 				eta_test = eta_buffer + random_norm(0.0_rp,1.0_rp)
 			end do
 			chi_test = COS(deg2rad(eta_test))
@@ -198,7 +209,7 @@ SUBROUTINE sample_distribution(params,g,eta)
 		ii=2_idef
 		do while (ii .LE. nsamples)
 			eta_test = eta_samples(ii-1) + random_norm(0.0_rp,1.0_rp)
-			do while (ABS(eta_test) .GT. aval_params%max_pitch_angle)
+			do while ((ABS(eta_test) .GT. aval_params%max_pitch_angle).OR.(ABS(eta_test) .LT. aval_params%min_pitch_angle))
 				eta_test = eta_samples(ii-1) + random_norm(0.0_rp,1.0_rp)
 			end do
 			chi_test = COS(deg2rad(eta_test))
@@ -276,6 +287,10 @@ SUBROUTINE save_avalanche_params(params)
 		dset = TRIM(gname) // "/max_pitch_angle"
 		attr = "Maximum pitch angle in avalanche PDF (degrees)"
 		call save_to_hdf5(h5file_id,dset,aval_params%max_pitch_angle,attr)
+
+		dset = TRIM(gname) // "/min_pitch_angle"
+		attr = "Minimum pitch angle in avalanche PDF (degrees)"
+		call save_to_hdf5(h5file_id,dset,aval_params%min_pitch_angle,attr)
 
 		dset = TRIM(gname) // "/min_energy"
 		attr = "Minimum energy in avalanche PDF (eV)"

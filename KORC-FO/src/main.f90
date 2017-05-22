@@ -23,6 +23,8 @@ program main
 
 	call initialize_communications(params)
 
+	t1 = MPI_WTIME()
+
 	! * * * INITIALIZATION STAGE * * *
 	call initialize_HDF5()
 
@@ -67,6 +69,10 @@ program main
 	call save_simulation_outputs(params,spp,EB)
 
 	call synthetic_camera(params,spp) ! Synthetic camera!
+
+	t2 = MPI_WTIME()
+
+	call timing_KORC(params,t1,t2)
 
 	t1 = MPI_WTIME()
 

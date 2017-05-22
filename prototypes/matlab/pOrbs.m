@@ -170,7 +170,7 @@ end
 
 ST.time = ST.time;%/(2*pi/ST.params.wc);
 
-% ST.cOp = initializeCollisionOperators(ST);
+ST.cOp = initializeCollisionOperators(ST);
 
 ST_tmp = ST;
 
@@ -193,7 +193,7 @@ end
 
 % parametricShift(ST);
 
-ST.P = synchrotronSpectrum(ST);
+% ST.P = synchrotronSpectrum(ST);
 
 munlock
 
@@ -1000,7 +1000,7 @@ end
 function cOp = initializeCollisionOperators(ST)
 cOp = struct;
 
-cOp.Te = 1000.0*ST.params.qe; % Background electron temperature in Joules
+cOp.Te = (1.5E3)*ST.params.qe; % Background electron temperature in Joules
 cOp.Ti = cOp.Te; % Background ion temperature in Joules
 cOp.ne = 1.0E25; % Background electron density in 1/m^3
 cOp.Zeff = 13.0; % Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
@@ -1017,7 +1017,8 @@ cOp.Ec = cOp.ne*ST.params.qe^3*cOp.Clog/(4*pi*ST.params.ep^2*ST.params.me*ST.par
 [Ef,~] = analyticalE(ST.B,[ST.B.Ro,0,0]);
 cOp.Vc = cOp.VTe*sqrt(0.5*cOp.Ec/sqrt(Ef*Ef'));
 
-energy = linspace(1E6,50E6,200)*ST.params.qe;
+g = linspace(1,1.03,200);
+energy = g*ST.params.m*ST.params.c^2;%*linspace(6E5,50E6,200)*ST.params.qe;
 u = ST.params.c*sqrt(1 - (ST.params.m*ST.params.c^2./energy).^2);
 
 % Normalization
@@ -1072,30 +1073,44 @@ end
 if ST.opt
     energy = 1E-6*energy/ST.params.qe;
     
+%     figure;
+%     subplot(3,2,1);
+%     plot(energy,cOp.CA(u));
+%     ylabel('$C_A$ ($e B_0/m_e^3 c^2 $)','Interpreter','latex')
+%     xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+%     subplot(3,2,2);
+%     plot(energy,cOp.CB(u));
+%     ylabel('$C_B$ ($e B_0/m_e^3 c^2 $)','Interpreter','latex')
+%     xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+%     subplot(3,2,3);
+%     plot(energy,cOp.CF(u));
+%     ylabel('$C_F$ ($e B_0/m_e^2 c $)','Interpreter','latex')
+%     xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+%     subplot(3,2,4);
+%     plot(energy,cOp.ratio(u));
+%     ylabel('$C_Fdt/\sqrt{2C_A dt}$','Interpreter','latex')
+%     xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+%     subplot(3,2,5);
+%     plot(energy,cOp.timeStep(u)*ST.norm.t);
+%     ylabel('$dt$ (s)','Interpreter','latex')
+%     xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')   
+%     subplot(3,2,6);
+%     plot(energy,cOp.timeStep(u)/(ST.params.dt/ST.norm.t));
+%     ylabel('Iterations','Interpreter','latex')
+%     xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+    
     figure;
-    subplot(3,2,1);
+    subplot(3,1,1);
     plot(energy,cOp.CA(u));
     ylabel('$C_A$ ($e B_0/m_e^3 c^2 $)','Interpreter','latex')
     xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
-    subplot(3,2,2);
+    subplot(3,1,2);
     plot(energy,cOp.CB(u));
     ylabel('$C_B$ ($e B_0/m_e^3 c^2 $)','Interpreter','latex')
     xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
-    subplot(3,2,3);
+    subplot(3,1,3);
     plot(energy,cOp.CF(u));
     ylabel('$C_F$ ($e B_0/m_e^2 c $)','Interpreter','latex')
-    xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
-    subplot(3,2,4);
-    plot(energy,cOp.ratio(u));
-    ylabel('$C_Fdt/\sqrt{2C_A dt}$','Interpreter','latex')
-    xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
-    subplot(3,2,5);
-    plot(energy,cOp.timeStep(u)*ST.norm.t);
-    ylabel('$dt$ (s)','Interpreter','latex')
-    xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')   
-    subplot(3,2,6);
-    plot(energy,cOp.timeStep(u)/(ST.params.dt/ST.norm.t));
-    ylabel('Iterations','Interpreter','latex')
     xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
 end
 end
@@ -1152,6 +1167,47 @@ disp(['Collisions: ' num2str(U1) ' , ' num2str(U2) ' , ' num2str(U3)])
 U(1) = (U1+dU1)*(b1*x') + (U2+dU2)*(b2*x') + (U3+dU3)*(b3*x');
 U(2) = (U1+dU1)*(b1*y') + (U2+dU2)*(b2*y') + (U3+dU3)*(b3*y');
 U(3) = (U1+dU1)*(b1*z') + (U2+dU2)*(b2*z') + (U3+dU3)*(b3*z');
+
+Wcoll = (gammap - sqrt(1 + U*U'))/dt;
+end
+
+function [U,Wcoll] = runawayCollision(ST,X,V,dt)
+% This function calculates the random kicks due to collisions
+U = zeros(1,3);
+x = [1,0,0];
+y = [0,1,0];
+z = [0,0,1];
+
+
+v = sqrt(V*V');
+gammap = 1/sqrt(1 - v^2);
+u = gammap*v;
+
+[b1,b2,b3] = unitVectors(ST,X);
+
+U1 = gammap*V*b1';
+U2 = gammap*V*b2';
+U3 = gammap*V*b3';
+
+dW = random('norm',0,dt,[3,1]);
+
+CA = ST.cOp.CA(v);
+CB = ST.cOp.CB(v);
+CF = ST.cOp.CF(v);
+
+a = [2*CF;0;0];
+
+s = [CA,0,0;
+    0,0.5*CB,0;
+    0,0,0.5*CB];
+
+dU = a*dt + s*dW;
+
+disp(['Collisions: ' num2str(U1) ' , ' num2str(U2) ' , ' num2str(U3)])
+
+U(1) = (U1+dU(1))*(b1*x') + (U2+dU(2))*(b2*x') + (U3+dU(3))*(b3*x');
+U(2) = (U1+dU(1))*(b1*y') + (U2+dU(2))*(b2*y') + (U3+dU(3))*(b3*y');
+U(3) = (U1+dU(1))*(b1*z') + (U2+dU(2))*(b2*z') + (U3+dU(3))*(b3*z');
 
 Wcoll = (gammap - sqrt(1 + U*U'))/dt;
 end
@@ -1346,9 +1402,10 @@ for ii=2:ST.params.numSnapshots
         % % % Leap-frog scheme for the radiation damping force % % %
         
 %         % % % Collisions % % %
-%         if mod((ii-1)*ST.params.cadence + jj,ST.cOp.subcyclingIter) == 0
+        if mod((ii-1)*ST.params.cadence + jj,ST.cOp.subcyclingIter) == 0
+            [U,dummyWcoll] = runawayCollision(ST,XX,U/sqrt( 1 + U*U' ),dt*ST.cOp.subcyclingIter);
 %             [U,dummyWcoll] = collisionOperator(ST,XX,U/sqrt( 1 + U*U' ),dt*ST.cOp.subcyclingIter);
-%         end
+        end
 %         % % % Collisions % % %  
 
         gamma = sqrt( 1 + U*U' ); % Comment or uncomment
@@ -1406,7 +1463,7 @@ for ii=2:ST.params.numSnapshots
     if (pitch < 0)
         pitch = pitch + 2*pi;
     end
-%     kapp(ii) = abs(q)*B_mag*sin(pitch)/sqrt(ppar(ii)^2 + pperp(ii)^2);
+    
     kapp(ii) = abs(q)*sin(pitch)/sqrt(ppar(ii)^2 + pperp(ii)^2);% Bo = 1 due to normalization
     
 	Psyn(ii) = -(2/3)*( Kc*q^2*gamma^4*vmag^4*curv^2 );

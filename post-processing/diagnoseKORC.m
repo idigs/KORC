@@ -129,7 +129,7 @@ for ll=1:length(list)
     end
 end
 
-list = {'g','flag','eta'};
+list = {'g','eta','flag'};
 % list = {'g','eta'};
 
 for ll=1:length(list)
@@ -2909,8 +2909,8 @@ f = @(p,x) (Ehat/Cz)*p.*exp( -p.*(x/Cz + 0.5*Ehat*(1 - x.^2)./x) )./x;
 % sanityIntegral = integral2(f,pmin,pmax,chimin,1);
 % sanityIntegral = integral2(f,0,500,0,1);
 
-% l = ST.params.synthetic_camera_params.lambda;
-l = linspace(1E-7,1E-5,100);
+l = ST.params.synthetic_camera_params.lambda;
+% l = linspace(1E-7,1E-5,100);
 Psyn_p_chi = zeros(numel(l),Np,Nchi);
 ddPsyndpchi = zeros(numel(l),Np,Nchi);
 Psyn_p = zeros(numel(l),Np);
