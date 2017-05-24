@@ -1,5 +1,6 @@
 function CO = MonteCarloCollisions(DT,numIt,np,Te,ne,Zeff)
 % CO = MonteCarloCollisions(1E-2,5,1E4,10E3,1E19,1.0);
+% CO = MonteCarloCollisions(1E-3,10000,100,1E3,1E20,0.0);
 close all
 
 CO.params = struct;
@@ -23,7 +24,7 @@ CO.numIt = numIt;
 CO.Te = Te;
 CO.ne = ne;
 CO.Zeff = Zeff;
-CO.VTe = sqrt(CO.Te*CO.params.qe/CO.params.me);
+CO.VTe = sqrt(2*CO.Te*CO.params.qe/CO.params.me);
 
 CO.np = np; % Number of particles
 
@@ -31,20 +32,23 @@ CO = initializeCollisionOperators(CO);
 
 CO = normalize(CO);
 
-% V = ThermalDistribution(CO);
-V = repmat([0.9;0;0],[1,CO.np]);
+V = ThermalDistribution(CO);
+% V = repmat([0.6;0;0],[1,CO.np]);
 
+x = linspace(-1,1,100);
+fx = exp(-x.^2/CO.VTe^2)/(CO.VTe*sqrt(pi));
 
-h = figure;
+hh = figure;
 subplot(2,1,1)
 hold on
 histogram(V(1,:),'Normalization','pdf')
 histogram(V(2,:),'Normalization','pdf')
 histogram(V(3,:),'Normalization','pdf')
-x = linspace(-1,1,100);
-fx = exp(-0.5*x.^2/CO.VTe^2)/(CO.VTe*sqrt(2*pi));
-hold on;plot(x,fx);hold off
 hold off
+hold on;plot(x,fx);hold off
+
+h = figure;
+plot3(V(1,:),V(2,:),V(3,:),'r.');axis equal;axis(2*[-1,1,-1,1,-1,1])
 
 for ii=1:CO.numIt
     for pp=1:CO.np
@@ -52,17 +56,19 @@ for ii=1:CO.numIt
     end
 end
 
-U = sqrt(sum(V.^2,1));
-
 figure(h);
+hold on;plot3(V(1,:),V(2,:),V(3,:),'b.');axis equal;axis(2*[-1,1,-1,1,-1,1]);hold off
+
+figure(hh);
 subplot(2,1,2)
 hold on
 histogram(V(1,:),'Normalization','pdf')
 histogram(V(2,:),'Normalization','pdf')
 histogram(V(3,:),'Normalization','pdf')
-histogram(U,'Normalization','pdf')
 hold off
+hold on;plot(x,fx);hold off
 
+CO.V = V;
 end
 
 function CO = initializeCollisionOperators(CO)
@@ -197,7 +203,7 @@ function V = ThermalDistribution(CO)
 vmax = 1.0; % A fraction of the speed of light
 sv = CO.VTe/5;
 
-f = @(U) exp(-0.5*(U/CO.VTe).^2); % VTe = sqrt(T/m)
+f = @(U) exp(-(U/CO.VTe).^2); % VTe = sqrt(T/m)
 
 V = zeros(3,CO.np);
 V(:,1) = CO.VTe;
@@ -227,9 +233,15 @@ U = zeros(1,3);
 v = sqrt(V*V');
 g = CO.cop.g(v);
 
-U1 = g*(V*CO.b1');
-U2 = g*(V*CO.b2');
-U3 = g*(V*CO.b3');
+v1 = V/v;
+v2 = cross(v1,CO.b2);
+v2 = v2/sqrt(v2*v2');
+v3 = cross(v1,v2);
+v3 = v3/sqrt(v3*v3');
+
+U1 = g*(V*v1');
+U2 = g*(V*v2');
+U3 = g*(V*v3');
 
 dW = random('norm',0,dt,[3,1]);
 
@@ -237,18 +249,18 @@ CA = CO.cop.CA(v);
 CB = CO.cop.CB(v);
 CF = CO.cop.CF(v);
 
-a = [2*CF;0;0];
+a = [-2.0*CF;0;0];
 
-s = [CA,0,0;
-    0,0.5*CB,0;
-    0,0,0.5*CB];
+s = 0.5*[CA,0,0;
+    0,CB,0;
+    0,0,CB]; % Check the 0.5 factor!!
 
 dU = a*dt + s*dW;
 % dU = s*dW;
 
-U(1) = U1 + dU(1);
-U(2) = U2 + dU(2);
-U(3) = U3 + dU(3);
+U(1) = (U1+dU(1))*(v1*CO.b1') + (U2+dU(2))*(v2*CO.b1') + (U3+dU(3))*(v3*CO.b1');
+U(2) = (U1+dU(1))*(v1*CO.b2') + (U2+dU(2))*(v2*CO.b2') + (U3+dU(3))*(v3*CO.b2');
+U(3) = (U1+dU(1))*(v1*CO.b3') + (U2+dU(2))*(v2*CO.b3') + (U3+dU(3))*(v3*CO.b3');
 
 U = U/sqrt( 1 + U*U' );
 

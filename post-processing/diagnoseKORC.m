@@ -49,7 +49,7 @@ ST.data = loadData(ST);
 
 % calculateTemperatureComponents(ST);
 
-avalancheDiagnostic(ST);
+% avalancheDiagnostic(ST);
 
 % save('energy_limit','ST')
 end
@@ -129,8 +129,8 @@ for ll=1:length(list)
     end
 end
 
-list = {'g','eta','flag'};
-% list = {'g','eta'};
+% list = {'g','eta','flag'};
+list = {'g','eta'};
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])

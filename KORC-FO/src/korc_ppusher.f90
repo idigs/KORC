@@ -131,7 +131,7 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 
 				! ! ! Stochastic differential equations for including collisions
 				if (params%collisions .AND. (TRIM(params%collisions_model) .EQ. 'SINGLE_SPECIES')) then
-					call include_collisions(params,spp(ii)%vars%B(:,pp),U)
+					call include_CoulombCollisions(params,U)
 				end if
 				! ! ! Stochastic differential equations for including collisions
 
