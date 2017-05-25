@@ -35,7 +35,7 @@ CO = normalize(CO);
 V = ThermalDistribution(CO);
 % V = repmat([0.6;0;0],[1,CO.np]);
 
-x = linspace(-1,1,100);
+x = linspace(-1,1,500);
 fx = exp(-x.^2/CO.VTe^2)/(CO.VTe*sqrt(pi));
 
 hh = figure;
@@ -48,7 +48,7 @@ hold off
 hold on;plot(x,fx);hold off
 
 h = figure;
-plot3(V(1,:),V(2,:),V(3,:),'r.');axis equal;axis(2*[-1,1,-1,1,-1,1])
+plot3(V(1,:),V(2,:),V(3,:),'r.');axis equal;axis([-1,1,-1,1,-1,1])
 
 for ii=1:CO.numIt
     for pp=1:CO.np
@@ -57,7 +57,7 @@ for ii=1:CO.numIt
 end
 
 figure(h);
-hold on;plot3(V(1,:),V(2,:),V(3,:),'b.');axis equal;axis(2*[-1,1,-1,1,-1,1]);hold off
+hold on;plot3(V(1,:),V(2,:),V(3,:),'b.');axis equal;axis([-1,1,-1,1,-1,1]);hold off
 
 figure(hh);
 subplot(2,1,2)
@@ -88,7 +88,11 @@ CO.cop.Clog = 25.3 - 1.15*log10(1E-6*CO.cop.ne) + 2.3*log10(CO.cop.Te/CO.params.
 CO.cop.VTe = sqrt(2*CO.cop.Te/CO.params.me);
 CO.cop.delta = CO.cop.VTe/CO.params.c;
 CO.cop.Gamma = CO.cop.ne*CO.params.qe^4*CO.cop.Clog/(4*pi*CO.params.ep^2);
+CO.cop.Tauc = CO.params.me^2*CO.VTe^3/CO.cop.Gamma;
+
 CO.cop.Tau = CO.params.me^2*CO.params.c^3/CO.cop.Gamma;
+% CO.cop.Tau = CO.cop.Tauc;
+
 CO.cop.Ec = CO.cop.ne*CO.params.qe^3*CO.cop.Clog/(4*pi*CO.params.ep^2*CO.params.me*CO.params.c^2);
 CO.cop.ED = CO.cop.ne*CO.params.qe^3*CO.cop.Clog/(4*pi*CO.params.ep^2*CO.cop.Te);
 
@@ -135,15 +139,14 @@ CO.cop.g = @(v) 1./sqrt(1 - v.^2);
 
 CO.cop.x = @(v) v/CO.cop.VTe;
 
-CO.cop.psi = @(v) 0.5*( erf(CO.cop.x(v)) - ...
-    2*CO.cop.x(v).*exp(-CO.cop.x(v).^2)/sqrt(pi) )./CO.cop.x(v).^2;
+CO.cop.psi = @(v) 0.5*( erf(CO.cop.x(v)) - 2*CO.cop.x(v).*exp(-CO.cop.x(v).^2)/sqrt(pi) )./CO.cop.x(v).^2;
 
 CO.cop.CA = @(v) CO.cop.Gamma*CO.cop.psi(v)./v;
 
 CO.cop.CF = @(v) CO.cop.Gamma*CO.cop.psi(v)/CO.cop.Te;
 
 CO.cop.CB = @(v) (0.5*CO.cop.Gamma./v).*( CO.cop.Zeff + ...
-    erf(CO.cop.x(v)) - CO.cop.psi(v) + 0.5*CO.cop.delta^4*CO.cop.x(v).^2 );
+    erf(CO.cop.x(v)) - CO.cop.psi(v));% + 0.5*CO.cop.delta^4*CO.cop.x(v).^2 );
 
 E = 1E-6*E/CO.params.qe;
 xAxis = E;
@@ -203,7 +206,7 @@ function V = ThermalDistribution(CO)
 vmax = 1.0; % A fraction of the speed of light
 sv = CO.VTe/5;
 
-f = @(U) exp(-(U/CO.VTe).^2); % VTe = sqrt(T/m)
+f = @(U) exp(-(U/CO.VTe).^2); % VTe = sqrt(2T/m)
 
 V = zeros(3,CO.np);
 V(:,1) = CO.VTe;
@@ -243,20 +246,15 @@ U1 = g*(V*v1');
 U2 = g*(V*v2');
 U3 = g*(V*v3');
 
-dW = random('norm',0,dt,[3,1]);
+dW = random('norm',0,sqrt(dt),[3,1]);
 
 CA = CO.cop.CA(v);
 CB = CO.cop.CB(v);
 CF = CO.cop.CF(v);
 
-a = [-2.0*CF;0;0];
-
-s = 0.5*[CA,0,0;
-    0,CB,0;
-    0,0,CB]; % Check the 0.5 factor!!
-
-dU = a*dt + s*dW;
-% dU = s*dW;
+dU = [-2.0*CF*dt + sqrt(2*CA)*dW(1);
+    sqrt(2*CB)*dW(2);
+    sqrt(2*CB)*dW(3)];
 
 U(1) = (U1+dU(1))*(v1*CO.b1') + (U2+dU(2))*(v2*CO.b1') + (U3+dU(3))*(v3*CO.b1');
 U(2) = (U1+dU(1))*(v1*CO.b2') + (U2+dU(2))*(v2*CO.b2') + (U3+dU(3))*(v3*CO.b2');

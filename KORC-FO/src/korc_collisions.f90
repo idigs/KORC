@@ -38,7 +38,8 @@ module korc_collisions
 		REAL(rp) :: VTe ! Thermal velocity of background electrons
 		REAL(rp) :: delta ! delta parameter
 		REAL(rp) :: Gammac ! Gamma factor
-		REAL(rp) :: Tau ! Collisional time
+		REAL(rp) :: Tau ! Collisional time of relativistic particles
+		REAL(rp) :: Tauc ! Collisional time of thermal particles
 		REAL(rp) :: Ec ! Critical electric field
 		REAL(rp) :: ED ! Dreicer electric field
 		REAL(rp) :: dTau ! Subcycling time step in collisional time units (Tau)
@@ -144,6 +145,7 @@ subroutine load_params_ss(params)
 	cparams_ss%delta = cparams_ss%VTe/C_C
 	cparams_ss%Gammac = cparams_ss%ne*C_E**4*cparams_ss%CoulombLog/(4.0_rp*C_PI*C_E0**2)
 
+	cparams_ss%Tauc = C_ME**2*cparams_ss%VTe**3/cparams_ss%Gammac
 	cparams_ss%Tau = C_ME**2*C_C**3/cparams_ss%Gammac
 	cparams_ss%Ec = cparams_ss%ne*C_E**3*cparams_ss%CoulombLog/(4.0_rp*C_PI*C_E0**2*C_ME*C_C**2)
 	cparams_ss%ED = cparams_ss%ne*C_E**3*cparams_ss%CoulombLog/(4.0_rp*C_PI*C_E0**2*cparams_ss%Te)
@@ -196,6 +198,7 @@ subroutine normalize_params_ss(params)
 	cparams_ss%Gammac = &
 	cparams_ss%Gammac*params%cpp%time/(params%cpp%mass**2*params%cpp%velocity**3)
 	cparams_ss%Tau = cparams_ss%Tau/params%cpp%time
+	cparams_ss%Tauc = cparams_ss%Tauc/params%cpp%time
 	cparams_ss%Ec = cparams_ss%Ec/params%cpp%Eo
 	cparams_ss%ED = cparams_ss%ED/params%cpp%Eo
 end subroutine normalize_params_ss
@@ -378,6 +381,7 @@ subroutine include_CoulombCollisions(params,U)
 	REAL(rp) :: dU1, dU2, dU3
 	REAL(rp) :: um
 	REAL(rp) :: v ! speed of particle
+	REAL(rp) :: CAL,CFL,CBL
 
 !	if (MODULO(params%it+1_ip,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
 !		dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt
@@ -396,9 +400,13 @@ subroutine include_CoulombCollisions(params,U)
 	call RANDOM_NUMBER(rnd2)
 	dW = SQRT(dt)*SQRT(-2.0_rp*LOG(1.0_rp-rnd1))*COS(2.0_rp*C_PI*rnd2)
 
-	dU1 = -2.0_rp*CF(v)*dt + CA(v)*dW(1)
-	dU2 = 0.5_rp*CB(v)*dW(2)
-	dU3 = 0.5_rp*CB(v)*dW(3)
+	CAL = CA(v)
+	CFL = CF(v)
+	CBL = CB(v)
+
+	dU1 = -2.0_rp*CFL*dt + SQRT(2.0_rp*CAL)*dW(1)
+	dU2 = SQRT(2.0_rp*CBL)*dW(2)
+	dU3 = SQRT(2.0_rp*CBL)*dW(3)
 
 !	write(6,*) U1,dU1, U2,dU2, U3,dU3
 
@@ -643,9 +651,14 @@ subroutine save_params_ss(params)
 		call save_to_hdf5(h5file_id,dset,units*cparams_ss%Gammac,attr)
 
 		dset = TRIM(gname) // "/Tau"
-		attr = "Collisional time in s"
+		attr = "Relativistic collisional time in s"
 		units = params%cpp%time
 		call save_to_hdf5(h5file_id,dset,units*cparams_ss%Tau,attr)
+
+		dset = TRIM(gname) // "/Tauc"
+		attr = "Thermal collisional time in s"
+		units = params%cpp%time
+		call save_to_hdf5(h5file_id,dset,units*cparams_ss%Tauc,attr)
 
 		dset = TRIM(gname) // "/dTau"
 		attr = "Subcycling time step in s"
