@@ -1000,10 +1000,10 @@ end
 function cOp = initializeCollisionOperators(ST)
 cOp = struct;
 
-cOp.Te = (1.5E3)*ST.params.qe; % Background electron temperature in Joules
+cOp.Te = (1.0E3)*ST.params.qe; % Background electron temperature in Joules
 cOp.Ti = cOp.Te; % Background ion temperature in Joules
-cOp.ne = 1.0E25; % Background electron density in 1/m^3
-cOp.Zeff = 13.0; % Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
+cOp.ne = 1.0E20; % Background electron density in 1/m^3
+cOp.Zeff = 0.0; % Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
 cOp.rD = ...
     sqrt( ST.params.ep*cOp.Te/(cOp.ne*ST.params.qe^2*(1 + cOp.Zeff*cOp.Te/cOp.Ti)) );
 cOp.re = ST.params.qe^2/( 4*pi*ST.params.ep*ST.params.me*ST.params.c^2 );
@@ -1012,7 +1012,11 @@ cOp.VTe = sqrt(2*cOp.Te/ST.params.me);
 cOp.delta = cOp.VTe/ST.params.c;
 cOp.Gamma = cOp.ne*ST.params.qe^4*cOp.Clog/(4*pi*ST.params.ep^2);
 cOp.Tau = ST.params.me^2*ST.params.c^3/cOp.Gamma;
+cOp.Tauc = ST.params.me^2*cOp.VTe^3/cOp.Gamma;
 cOp.Ec = cOp.ne*ST.params.qe^3*cOp.Clog/(4*pi*ST.params.ep^2*ST.params.me*ST.params.c^2);
+
+disp(['Relativistic collisional time: ' num2str(cOp.Tau) ' s'])
+disp(['Thermal collisional time: ' num2str(cOp.Tauc) ' s'])
 
 [Ef,~] = analyticalE(ST.B,[ST.B.Ro,0,0]);
 cOp.Vc = cOp.VTe*sqrt(0.5*cOp.Ec/sqrt(Ef*Ef'));
@@ -1171,45 +1175,46 @@ U(3) = (U1+dU1)*(b1*z') + (U2+dU2)*(b2*z') + (U3+dU3)*(b3*z');
 Wcoll = (gammap - sqrt(1 + U*U'))/dt;
 end
 
-function [U,Wcoll] = runawayCollision(ST,X,V,dt)
+function [Uc,Wcoll] = CoulombCollision(ST,U,dt)
 % This function calculates the random kicks due to collisions
-U = zeros(1,3);
+Uc = zeros(1,3);
 x = [1,0,0];
 y = [0,1,0];
 z = [0,0,1];
 
-
+g = sqrt( 1 + U*U' );
+V = U/g;
 v = sqrt(V*V');
-gammap = 1/sqrt(1 - v^2);
-u = gammap*v;
 
-[b1,b2,b3] = unitVectors(ST,X);
+v1 = V/v;
 
-U1 = gammap*V*b1';
-U2 = gammap*V*b2';
-U3 = gammap*V*b3';
+v2 = cross(v1,y);
+v2 = v2/sqrt(v2*v2');
 
-dW = random('norm',0,dt,[3,1]);
+v3 = cross(v1,v2);
+v3 = v3/sqrt(v3*v3');
+
+U1 = U*v1';
+U2 = U*v2';
+U3 = U*v3';
+
+dW = random('norm',0,sqrt(dt),[3,1]);
 
 CA = ST.cOp.CA(v);
 CB = ST.cOp.CB(v);
 CF = ST.cOp.CF(v);
 
-a = [2*CF;0;0];
+dU = [-2.0*CF*dt + sqrt(2*CA)*dW(1);
+    sqrt(2*CB)*dW(2);
+    sqrt(2*CB)*dW(3)];
 
-s = [CA,0,0;
-    0,0.5*CB,0;
-    0,0,0.5*CB];
+% disp(['Collisions: ' num2str(U1) ' , ' num2str(U2) ' , ' num2str(U3)])
 
-dU = a*dt + s*dW;
+Uc(1) = (U1+dU(1))*(v1*x') + (U2+dU(2))*(v2*x') + (U3+dU(3))*(v3*x');
+Uc(2) = (U1+dU(1))*(v1*y') + (U2+dU(2))*(v2*y') + (U3+dU(3))*(v3*y');
+Uc(3) = (U1+dU(1))*(v1*z') + (U2+dU(2))*(v2*z') + (U3+dU(3))*(v3*z');
 
-disp(['Collisions: ' num2str(U1) ' , ' num2str(U2) ' , ' num2str(U3)])
-
-U(1) = (U1+dU(1))*(b1*x') + (U2+dU(2))*(b2*x') + (U3+dU(3))*(b3*x');
-U(2) = (U1+dU(1))*(b1*y') + (U2+dU(2))*(b2*y') + (U3+dU(3))*(b3*y');
-U(3) = (U1+dU(1))*(b1*z') + (U2+dU(2))*(b2*z') + (U3+dU(3))*(b3*z');
-
-Wcoll = (gammap - sqrt(1 + U*U'))/dt;
+Wcoll = (g - sqrt(1 + Uc*Uc'))/dt;
 end
 
 % LEAP-FROG PARTICLE PUSHER
@@ -1402,10 +1407,11 @@ for ii=2:ST.params.numSnapshots
         % % % Leap-frog scheme for the radiation damping force % % %
         
 %         % % % Collisions % % %
-        if mod((ii-1)*ST.params.cadence + jj,ST.cOp.subcyclingIter) == 0
-            [U,dummyWcoll] = runawayCollision(ST,XX,U/sqrt( 1 + U*U' ),dt*ST.cOp.subcyclingIter);
+%         if mod((ii-1)*ST.params.cadence + jj,ST.cOp.subcyclingIter) == 0
+%             [U,dummyWcoll] = CoulombCollision(ST,XX,U,dt*ST.cOp.subcyclingIter);
 %             [U,dummyWcoll] = collisionOperator(ST,XX,U/sqrt( 1 + U*U' ),dt*ST.cOp.subcyclingIter);
-        end
+%         end
+        [U,dummyWcoll] = CoulombCollision(ST,U,dt);
 %         % % % Collisions % % %  
 
         gamma = sqrt( 1 + U*U' ); % Comment or uncomment

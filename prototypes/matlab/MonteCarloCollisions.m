@@ -34,7 +34,8 @@ CO = normalize(CO);
 
 % V = ThermalDistribution(CO);
 
-u = sqrt(1 - (CO.params.me*CO.params.c^2./(ERE*CO.params.qe)).^2);
+ERE = CO.params.me*CO.params.c^2 + ERE *CO.params.qe;
+u = sqrt(1 - (CO.params.me*CO.params.c^2./(ERE)).^2);
 
 V = repmat([u;0;0],[1,CO.np]);
 
@@ -50,13 +51,13 @@ for ii=1:CO.numIt
     end
     if mod(ii,snapshot) == 0
         figure(sh);
-        subplot(2,5,ii/snapshot)
+        subplot(3,5,ii/snapshot)
         hold on;plot3(V(1,:),V(2,:),V(3,:),'r.');
         grid on;box on;axis equal;axis([-1,1,-1,1,-1,1]);hold off
         view([150,10])
         title(['$t=$' num2str(ii*CO.cop.dt*CO.norm.t) ' s'],'interpreter','latex')
         
-        subplot(2,5,ii/snapshot+5)
+        subplot(3,5,ii/snapshot+5)
         hold on
         histogram(V(1,:),25,'Normalization','pdf','LineStyle','none')
         histogram(V(2,:),25,'Normalization','pdf','LineStyle','none')
@@ -64,6 +65,14 @@ for ii=1:CO.numIt
         plot(x,fx,'k','LineWidth',2)
         hold off
         legend({'$f(v_x)$','$f(v_y)$','$f(v_z)$','$f_M(v)$'},'Interpreter','latex')
+        box on
+        grid on
+        
+        subplot(3,5,ii/snapshot+10)
+        g = 1./sqrt(1-sum(V.^2,1));
+        E = g*CO.params.me*CO.params.c^2/(CO.params.qe*1E6);
+        histogram(E,25,'Normalization','pdf','LineStyle','none')
+        xlabel('$\mathcal{E}$ (MeV)','interpreter','latex')
         box on
         grid on
     end
