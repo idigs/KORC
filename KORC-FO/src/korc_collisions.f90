@@ -408,8 +408,6 @@ subroutine include_CoulombCollisions(params,U)
 	dU2 = SQRT(2.0_rp*CBL)*dW(2)
 	dU3 = SQRT(2.0_rp*CBL)*dW(3)
 
-!	write(6,*) U1,dU1, U2,dU2, U3,dU3
-
 	U(1) = (U1+dU1)*DOT_PRODUCT(v1,x) + (U2+dU2)*DOT_PRODUCT(v2,x) + (U3+dU3)*DOT_PRODUCT(v3,x)
 	U(2) = (U1+dU1)*DOT_PRODUCT(v1,y) + (U2+dU2)*DOT_PRODUCT(v2,y) + (U3+dU3)*DOT_PRODUCT(v3,y)
 	U(3) = (U1+dU1)*DOT_PRODUCT(v1,z) + (U2+dU2)*DOT_PRODUCT(v2,z) + (U3+dU3)*DOT_PRODUCT(v3,z)

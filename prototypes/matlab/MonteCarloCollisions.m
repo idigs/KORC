@@ -1,4 +1,4 @@
-function CO = MonteCarloCollisions(DT,numIt,np,Te,ne,Zeff)
+function CO = MonteCarloCollisions(DT,numIt,np,Te,ne,Zeff,ERE)
 % CO = MonteCarloCollisions(1E-2,5,1E4,10E3,1E19,1.0);
 % CO = MonteCarloCollisions(1E-3,10000,100,1E3,1E20,0.0);
 close all
@@ -32,41 +32,42 @@ CO = initializeCollisionOperators(CO);
 
 CO = normalize(CO);
 
-V = ThermalDistribution(CO);
-% V = repmat([0.6;0;0],[1,CO.np]);
+% V = ThermalDistribution(CO);
+
+u = sqrt(1 - (CO.params.me*CO.params.c^2./(ERE*CO.params.qe)).^2);
+
+V = repmat([u;0;0],[1,CO.np]);
 
 x = linspace(-1,1,500);
 fx = exp(-x.^2/CO.VTe^2)/(CO.VTe*sqrt(pi));
 
-hh = figure;
-subplot(2,1,1)
-hold on
-histogram(V(1,:),'Normalization','pdf')
-histogram(V(2,:),'Normalization','pdf')
-histogram(V(3,:),'Normalization','pdf')
-hold off
-hold on;plot(x,fx);hold off
-
-h = figure;
-plot3(V(1,:),V(2,:),V(3,:),'r.');axis equal;axis([-1,1,-1,1,-1,1])
+snapshot = floor(numIt/5);
+sh = figure;
 
 for ii=1:CO.numIt
     for pp=1:CO.np
         V(:,pp) = collisionOperator(CO,V(:,pp)',CO.cop.dt);
     end
+    if mod(ii,snapshot) == 0
+        figure(sh);
+        subplot(2,5,ii/snapshot)
+        hold on;plot3(V(1,:),V(2,:),V(3,:),'r.');
+        grid on;box on;axis equal;axis([-1,1,-1,1,-1,1]);hold off
+        view([150,10])
+        title(['$t=$' num2str(ii*CO.cop.dt*CO.norm.t) ' s'],'interpreter','latex')
+        
+        subplot(2,5,ii/snapshot+5)
+        hold on
+        histogram(V(1,:),25,'Normalization','pdf','LineStyle','none')
+        histogram(V(2,:),25,'Normalization','pdf','LineStyle','none')
+        histogram(V(3,:),25,'Normalization','pdf','LineStyle','none')
+        plot(x,fx,'k','LineWidth',2)
+        hold off
+        legend({'$f(v_x)$','$f(v_y)$','$f(v_z)$','$f_M(v)$'},'Interpreter','latex')
+        box on
+        grid on
+    end
 end
-
-figure(h);
-hold on;plot3(V(1,:),V(2,:),V(3,:),'b.');axis equal;axis([-1,1,-1,1,-1,1]);hold off
-
-figure(hh);
-subplot(2,1,2)
-hold on
-histogram(V(1,:),'Normalization','pdf')
-histogram(V(2,:),'Normalization','pdf')
-histogram(V(3,:),'Normalization','pdf')
-hold off
-hold on;plot(x,fx);hold off
 
 CO.V = V;
 end
@@ -85,7 +86,7 @@ CO.cop.rD = ...
     sqrt( CO.params.ep*CO.cop.Te/(CO.cop.ne*CO.params.qe^2*(1 + CO.cop.Zeff*CO.cop.Te/CO.cop.Ti)) );
 CO.cop.re = CO.params.qe^2/( 4*pi*CO.params.ep*CO.params.me*CO.params.c^2 );
 CO.cop.Clog = 25.3 - 1.15*log10(1E-6*CO.cop.ne) + 2.3*log10(CO.cop.Te/CO.params.qe);
-CO.cop.VTe = sqrt(2*CO.cop.Te/CO.params.me);
+CO.cop.VTe = CO.VTe;
 CO.cop.delta = CO.cop.VTe/CO.params.c;
 CO.cop.Gamma = CO.cop.ne*CO.params.qe^4*CO.cop.Clog/(4*pi*CO.params.ep^2);
 CO.cop.Tauc = CO.params.me^2*CO.VTe^3/CO.cop.Gamma;
@@ -105,6 +106,10 @@ g = linspace(1,5,1000); % relativistic gamma factor
 E = g*CO.params.me*CO.params.c^2;%*linspace(6E5,50E6,200)*ST.params.qe;
 Er = CO.params.me*CO.params.c^2; % Rest energy
 u = CO.params.c*sqrt(1 - Er^2./E.^2);
+
+disp(['Relativistic collisional time: ' num2str(CO.cop.Tau) ' s'])
+disp(['Thermal collisional time: ' num2str(CO.cop.Tauc) ' s'])
+
 
 % % % NORMALIZATIN PARAMETERS % % % 
 CO.norm.B = CO.Bo;
@@ -146,7 +151,9 @@ CO.cop.CA = @(v) CO.cop.Gamma*CO.cop.psi(v)./v;
 CO.cop.CF = @(v) CO.cop.Gamma*CO.cop.psi(v)/CO.cop.Te;
 
 CO.cop.CB = @(v) (0.5*CO.cop.Gamma./v).*( CO.cop.Zeff + ...
-    erf(CO.cop.x(v)) - CO.cop.psi(v));% + 0.5*CO.cop.delta^4*CO.cop.x(v).^2 );
+    erf(CO.cop.x(v)) - CO.cop.psi(v) + 0.5*CO.cop.delta^4*CO.cop.x(v).^2 );
+
+% CO.cop.CB = @(v) (0.5*CO.cop.Gamma./v).*( erf(CO.cop.x(v)) - CO.cop.psi(v) );
 
 E = 1E-6*E/CO.params.qe;
 xAxis = E;
