@@ -90,11 +90,11 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 				!! Magnitude of magnetic field
 				B = SQRT( DOT_PRODUCT(spp(ii)%vars%B(:,pp),spp(ii)%vars%B(:,pp)) )
 
-                if (bool) then
+ !               if (bool) then
 				    !! Instantaneous guiding center
-				    spp(ii)%vars%Rgc(:,pp) = spp(ii)%vars%X(:,pp)&
-				    + g*spp(ii)%m*cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%B(:,pp))/( spp(ii)%q*B**2 )
-                end if
+!				    spp(ii)%vars%Rgc(:,pp) = spp(ii)%vars%X(:,pp)&
+!				    + g*spp(ii)%m*cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%B(:,pp))/( spp(ii)%q*B**2 )
+!                end if
 
 				U_L = U
 				U_RC = U

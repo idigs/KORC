@@ -64,12 +64,14 @@
 /
 
 &AvalancheGenerationPDF
-	max_pitch_angle = 20 ! Maximum pitch angle of sampled PDF in degrees
+	max_pitch_angle = 30 ! Maximum pitch angle of sampled PDF in degrees
+	min_pitch_angle = 0.0 !
 	max_energy  = 60E6 ! Maximum energy of sampled PDF in MeV
-	ne = 3.9E19 ! Background electron density in m^-3
-	Zeff = 5.0 ! Effective atomic number of ions
-	Epar = 2.0 ! Parallel electric field in V/m
-	Te = 1.5 ! Background electron temperature in eV
+	min_energy = 0.0 !
+	ne = 3.9E20 ! Background electron density in m^-3
+	Zeff = 10.0 ! Effective atomic number of ions
+	Epar = 0.7427 ! Parallel electric field in V/m
+	Te = 2.0 ! Background electron temperature in eV
 /
 
 &SyntheticCamera

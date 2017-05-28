@@ -1003,7 +1003,7 @@ cOp = struct;
 cOp.Te = (1.0E3)*ST.params.qe; % Background electron temperature in Joules
 cOp.Ti = cOp.Te; % Background ion temperature in Joules
 cOp.ne = 1.0E20; % Background electron density in 1/m^3
-cOp.Zeff = 0.0; % Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
+cOp.Zeff = 10.0; % Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
 cOp.rD = ...
     sqrt( ST.params.ep*cOp.Te/(cOp.ne*ST.params.qe^2*(1 + cOp.Zeff*cOp.Te/cOp.Ti)) );
 cOp.re = ST.params.qe^2/( 4*pi*ST.params.ep*ST.params.me*ST.params.c^2 );
