@@ -9,22 +9,24 @@ CO.params.Kc = 8.987E9; % Coulomb constant in N*m^2/C^2
 CO.params.mu0 = (4E-7)*pi; % Magnetic permeability
 CO.params.ep = 8.854E-12;% Electric permitivity
 CO.params.c = 2.9979E8; % Speed of light
-CO.params.qe = 1.602176E-19; % Electron charge
+CO.params.qe = -1.602176E-19; % Electron charge
 CO.params.me = 9.109382E-31; % Electron mass
+
 
 CO.b1 = [1,0,0];
 CO.b2 = [0,1,0];
 CO.b3 = [0,0,1];
 
-CO.Bo = 2.19;
+CO.Bo = 2.19; % in Teslas
+CO.Eo = -0.0; % in V/m
 CO.B = [CO.Bo,0,0];
-CO.E = [0,0,0];
+CO.E = [CO.Eo,0,0];
 CO.DT = DT;
 CO.numIt = numIt;
 CO.Te = Te;
 CO.ne = ne;
 CO.Zeff = Zeff;
-CO.VTe = sqrt(2*CO.Te*CO.params.qe/CO.params.me);
+CO.VTe = sqrt(2*CO.Te*abs(CO.params.qe)/CO.params.me);
 
 CO.np = np; % Number of particles
 
@@ -34,10 +36,20 @@ CO = normalize(CO);
 
 % V = ThermalDistribution(CO);
 
-ERE = CO.params.me*CO.params.c^2 + ERE *CO.params.qe;
+ERE = CO.params.me*CO.params.c^2 + ERE *abs(CO.params.qe);
 u = sqrt(1 - (CO.params.me*CO.params.c^2./(ERE)).^2);
 
 V = repmat([u;0;0],[1,CO.np]);
+
+if (CO.Bo > 0)
+    CO.params.wc = sqrt(1 - u^2)*abs(CO.params.qe)*CO.Bo/CO.params.me;
+    disp(['Gyro-period: ' num2str(2*pi/CO.params.wc) ' s'])
+    
+    dt = DT*(2*pi/CO.params.wc);
+    dt = dt/CO.norm.t;
+else
+    dt = CO.cop.dt;
+end
 
 x = linspace(-1,1,500);
 fx = exp(-x.^2/CO.VTe^2)/(CO.VTe*sqrt(pi));
@@ -45,17 +57,46 @@ fx = exp(-x.^2/CO.VTe^2)/(CO.VTe*sqrt(pi));
 snapshot = floor(numIt/5);
 sh = figure;
 
+a = -dt;
+
+tic 
+
 for ii=1:CO.numIt
+    
     for pp=1:CO.np
-        V(:,pp) = collisionOperator(CO,V(:,pp)',CO.cop.dt);
+        if (CO.Bo > 0)
+            U = V(:,pp)/sqrt(1 - V(:,pp)'*V(:,pp));
+            
+            Up = [U(1) + a*(CO.Eo - 0.5*V(3,pp)*CO.Bo);
+                U(2) + 0.5*a*V(3,pp)*CO.Bo;
+                U(3) - 0.5*a*V(2,pp)*CO.Bo];
+            
+            tau = 0.5*a*CO.Bo;
+            gp = sqrt(1 + Up'*Up);
+            sig = gp^2 - tau^2;
+            us = 0.5*a*CO.Bo*Up(1);
+            g = sqrt(0.5)*sqrt( sig + sqrt(sig^2 + 4*(tau^2 + us^2)) );
+            t = tau/g;
+            s = 1/(1 + t^2);
+            
+            U = s*[Up(1) + Up(1)*t^2 - Up(3)*t;
+                Up(2) + Up(3)*t;
+                Up(3) - Up(2)*t];
+            
+            V(:,pp) = U/sqrt(1 + U'*U);
+        end
+        
+        V(:,pp) = collisionOperator(CO,V(:,pp)',dt);
     end
+    
+    
     if mod(ii,snapshot) == 0
         figure(sh);
         subplot(3,5,ii/snapshot)
         hold on;plot3(V(1,:),V(2,:),V(3,:),'r.');
         grid on;box on;axis equal;axis([-1,1,-1,1,-1,1]);hold off
         view([150,10])
-        title(['$t=$' num2str(ii*CO.cop.dt*CO.norm.t) ' s'],'interpreter','latex')
+        title(['$t=$' num2str(ii*dt*CO.norm.t) ' s'],'interpreter','latex')
         
         subplot(3,5,ii/snapshot+5)
         hold on
@@ -70,13 +111,15 @@ for ii=1:CO.numIt
         
         subplot(3,5,ii/snapshot+10)
         g = 1./sqrt(1-sum(V.^2,1));
-        E = g*CO.params.me*CO.params.c^2/(CO.params.qe*1E6);
+        E = g*CO.params.me*CO.params.c^2/(abs(CO.params.qe)*1E6);
         histogram(E,25,'Normalization','pdf','LineStyle','none')
         xlabel('$\mathcal{E}$ (MeV)','interpreter','latex')
         box on
         grid on
     end
 end
+
+toc
 
 CO.V = V;
 end
@@ -86,25 +129,25 @@ function CO = initializeCollisionOperators(CO)
 % light and the electron mass, respectively.
 CO.cop = struct;
 
-CO.cop.Te = CO.Te*CO.params.qe; % Background electron temperature in Joules
+CO.cop.Te = CO.Te*abs(CO.params.qe); % Background electron temperature in Joules
 
 CO.cop.Ti = CO.Te; % Background ion temperature in Joules
 CO.cop.ne = CO.ne; % Background electron density in 1/m^3
 CO.cop.Zeff = CO.Zeff; % Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
 CO.cop.rD = ...
-    sqrt( CO.params.ep*CO.cop.Te/(CO.cop.ne*CO.params.qe^2*(1 + CO.cop.Zeff*CO.cop.Te/CO.cop.Ti)) );
-CO.cop.re = CO.params.qe^2/( 4*pi*CO.params.ep*CO.params.me*CO.params.c^2 );
-CO.cop.Clog = 25.3 - 1.15*log10(1E-6*CO.cop.ne) + 2.3*log10(CO.cop.Te/CO.params.qe);
+    sqrt( CO.params.ep*CO.cop.Te/(CO.cop.ne*abs(CO.params.qe)^2*(1 + CO.cop.Zeff*CO.cop.Te/CO.cop.Ti)) );
+CO.cop.re = abs(CO.params.qe)^2/( 4*pi*CO.params.ep*CO.params.me*CO.params.c^2 );
+CO.cop.Clog = 25.3 - 1.15*log10(1E-6*CO.cop.ne) + 2.3*log10(CO.cop.Te/abs(CO.params.qe));
 CO.cop.VTe = CO.VTe;
 CO.cop.delta = CO.cop.VTe/CO.params.c;
-CO.cop.Gamma = CO.cop.ne*CO.params.qe^4*CO.cop.Clog/(4*pi*CO.params.ep^2);
+CO.cop.Gamma = CO.cop.ne*abs(CO.params.qe)^4*CO.cop.Clog/(4*pi*CO.params.ep^2);
 CO.cop.Tauc = CO.params.me^2*CO.VTe^3/CO.cop.Gamma;
 
 CO.cop.Tau = CO.params.me^2*CO.params.c^3/CO.cop.Gamma;
 % CO.cop.Tau = CO.cop.Tauc;
 
-CO.cop.Ec = CO.cop.ne*CO.params.qe^3*CO.cop.Clog/(4*pi*CO.params.ep^2*CO.params.me*CO.params.c^2);
-CO.cop.ED = CO.cop.ne*CO.params.qe^3*CO.cop.Clog/(4*pi*CO.params.ep^2*CO.cop.Te);
+CO.cop.Ec = CO.cop.ne*abs(CO.params.qe)^3*CO.cop.Clog/(4*pi*CO.params.ep^2*CO.params.me*CO.params.c^2);
+CO.cop.ED = CO.cop.ne*abs(CO.params.qe)^3*CO.cop.Clog/(4*pi*CO.params.ep^2*CO.cop.Te);
 
 Ef = CO.E;
 CO.cop.Vc = CO.cop.VTe*sqrt(0.5*CO.cop.Ec/sqrt(Ef*Ef'));
@@ -124,7 +167,12 @@ disp(['Thermal collisional time: ' num2str(CO.cop.Tauc) ' s'])
 CO.norm.B = CO.Bo;
 CO.norm.q = abs(CO.params.qe);
 CO.norm.m = CO.params.me;
-CO.norm.t = CO.cop.Tau;
+if (CO.Bo > 0)
+    CO.norm.wc = abs(CO.params.qe)*CO.Bo/CO.params.me;
+    CO.norm.t = 1/CO.norm.wc;
+else
+    CO.norm.t = CO.cop.Tau;
+end
 CO.norm.l = CO.params.c*CO.norm.t;
 CO.norm.v = CO.params.c;
 CO.norm.E = CO.norm.m*CO.norm.v^2;
@@ -164,7 +212,7 @@ CO.cop.CB = @(v) (0.5*CO.cop.Gamma./v).*( CO.cop.Zeff + ...
 
 % CO.cop.CB = @(v) (0.5*CO.cop.Gamma./v).*( erf(CO.cop.x(v)) - CO.cop.psi(v) );
 
-E = 1E-6*E/CO.params.qe;
+E = 1E-6*E/abs(CO.params.qe);
 xAxis = E;
 
 figure;
@@ -185,6 +233,9 @@ end
 function CO = normalize(CO)
 
 CO.B = CO.B/CO.norm.B;
+CO.Bo = CO.Bo/CO.norm.B;
+CO.E = CO.E/CO.norm.E;
+CO.Eo = CO.Eo/CO.norm.E;
 CO.VTe = CO.VTe/CO.norm.v;
 
 end

@@ -90,7 +90,7 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 				!! Magnitude of magnetic field
 				B = SQRT( DOT_PRODUCT(spp(ii)%vars%B(:,pp),spp(ii)%vars%B(:,pp)) )
 
- !               if (bool) then
+!                if (bool) then
 				    !! Instantaneous guiding center
 !				    spp(ii)%vars%Rgc(:,pp) = spp(ii)%vars%X(:,pp)&
 !				    + g*spp(ii)%m*cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%B(:,pp))/( spp(ii)%q*B**2 )
@@ -122,10 +122,11 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 				! ! ! Splitting operator for including radiation
 
 				! J. R. Martin-Solis et al. PoP 22, 092512 (2015)
-				if (params%collisions .AND. (TRIM(params%collisions_model) .EQ. 'MULTIPLE_SPECIES')) then
-					call collision_force(spp(ii),U_os,Fcoll)
-					U_RC = U_RC + a*Fcoll/spp(ii)%q
-				end if
+!				if (params%collisions .AND. (TRIM(params%collisions_model) .EQ. 'MULTIPLE_SPECIES')) then
+!					call collision_force(spp(ii),U_os,Fcoll)
+!					U_RC = U_RC + a*Fcoll/spp(ii)%q
+!				end if
+				! J. R. Martin-Solis et al. PoP 22, 092512 (2015)
 
 				U = U_L + U_RC - U
 
