@@ -49,7 +49,7 @@ ST.data = loadData(ST);
 
 % calculateTemperatureComponents(ST);
 
-% avalancheDiagnostic(ST);
+avalancheDiagnostic(ST);
 
 % save('energy_limit','ST')
 end
@@ -2909,8 +2909,12 @@ f = @(p,x) (Ehat/Cz)*p.*exp( -p.*(x/Cz + 0.5*Ehat*(1 - x.^2)./x) )./x;
 % sanityIntegral = integral2(f,pmin,pmax,chimin,1);
 % sanityIntegral = integral2(f,0,500,0,1);
 
-l = ST.params.synthetic_camera_params.lambda;
-% l = linspace(1E-7,1E-5,100);
+try
+    l = ST.params.synthetic_camera_params.lambda;
+catch
+    l = linspace(1E-7,1E-5,20);
+end
+
 Psyn_p_chi = zeros(numel(l),Np,Nchi);
 ddPsyndpchi = zeros(numel(l),Np,Nchi);
 Psyn_p = zeros(numel(l),Np);
@@ -3045,12 +3049,15 @@ nbins_chi = 50;
 for ss=1:ST.params.simulation.num_species
     q = abs(ST.params.species.q(ss));
     m = ST.params.species.m(ss);
-    Ro = ST.params.fields.Ro;
     c = ST.params.scales.v;
     
-    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
-    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
-    bool = pin;% & passing;
+    try
+        pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+        passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
+        bool = pin;% & passing;
+    catch
+        bool = true(size(ST.data.(['sp' num2str(ss)]).g(:,1)));
+    end
     
     g = [];
     eta = [];
