@@ -292,8 +292,15 @@ end subroutine collision_force
 subroutine define_collisions_time_step(params)
 	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	INTEGER(ip) :: iterations
 
-	cparams_ss%subcycling_iterations = FLOOR((cparams_ss%dTau*cparams_ss%Tauv)/params%dt,ip)
+	iterations = FLOOR((cparams_ss%dTau*cparams_ss%Tauv)/params%dt,ip)
+
+	if (iterations.GT.0_ip) then
+		cparams_ss%subcycling_iterations = FLOOR((cparams_ss%dTau*cparams_ss%Tauv)/params%dt,ip)
+	else
+		cparams_ss%subcycling_iterations = 1_ip
+	end if
 
 	if (params%collisions .AND. (params%mpi_params%rank .EQ. 0)) then
 		write(6,'(/,"* * * * * * * SUBCYCLING FOR COLLISIONS * * * * * * *")')
