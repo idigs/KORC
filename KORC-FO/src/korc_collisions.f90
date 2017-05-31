@@ -163,8 +163,8 @@ subroutine load_params_ss(params)
 		cparams_ss%v_RE = C_C*cparams_ss%p_RE/SQRT( (C_ME*C_C)**2 + cparams_ss%p_RE**2 )
 		cparams_ss%Tauv = C_ME**2*cparams_ss%v_RE**3/cparams_ss%Gammac
 	else
-		cparams_ss%p_RE = 0.0_rp
-		cparams_ss%v_RE = 0.0_rp
+		cparams_ss%v_RE = cparams_ss%VTe
+		cparams_ss%p_RE = C_ME*cparams_ss%v_RE/SQRT(1.0_rp - (cparams_ss%v_RE/C_C)**2)
 		cparams_ss%Tauv = cparams_ss%Tauc
 	end if
 end subroutine load_params_ss
