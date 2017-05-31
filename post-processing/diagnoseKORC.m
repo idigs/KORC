@@ -3025,9 +3025,9 @@ colorbar
 xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 
-% saveas(h,[ST.path 'ddPdpdchi_theory'],'fig')
-% saveas(hh,[ST.path 'ddPdpdchi_simulation'],'fig')
-% saveas(hhh,[ST.path 'Synchrotron_radiation'],'fig')
+saveas(h,[ST.path 'ddPdpdchi_theory'],'fig')
+saveas(hh,[ST.path 'ddPdpdchi_simulation'],'fig')
+saveas(hhh,[ST.path 'Synchrotron_radiation'],'fig')
 
 % figure;
 % surf(E,lAxis,squeeze(Psyn_p),'LineStyle','none');
@@ -3043,8 +3043,8 @@ ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 end
 
 function avalancheDiagnostic(ST)
-nbins_p = 40;
-nbins_chi = 40;
+nbins_p = 50;
+nbins_chi = 50;
 
 for ss=1:ST.params.simulation.num_species
     q = abs(ST.params.species.q(ss));

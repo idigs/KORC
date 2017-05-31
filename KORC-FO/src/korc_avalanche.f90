@@ -151,6 +151,7 @@ SUBROUTINE sample_distribution(params,g,eta)
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: eta_samples
 	REAL(4), DIMENSION(2) :: tarray
 	REAL(4) :: time_elapsed
+	REAL(rp) :: deta
 	INTEGER :: ii,ppp,nsamples
 	INTEGER :: mpierr
 
@@ -160,6 +161,8 @@ SUBROUTINE sample_distribution(params,g,eta)
 	ppp = SIZE(g)
 	nsamples = ppp*params%mpi_params%nmpi
 	ALLOCATE(p(ppp))
+
+	deta = aval_params%max_pitch_angle/50.0_rp
 
 	if (params%mpi_params%rank.EQ.0_idef) then
 		ALLOCATE(p_samples(nsamples))! Number of samples to distribute among all MPI processes
@@ -173,9 +176,9 @@ SUBROUTINE sample_distribution(params,g,eta)
 
 		ii=2_idef
 		do while (ii .LE. 1000000_idef)
-			eta_test = eta_buffer + random_norm(0.0_rp,1.0_rp)
+			eta_test = eta_buffer + random_norm(0.0_rp,deta)
 			do while ((ABS(eta_test) .GT. aval_params%max_pitch_angle).OR.(ABS(eta_test) .LT. aval_params%min_pitch_angle))
-				eta_test = eta_buffer + random_norm(0.0_rp,1.0_rp)
+				eta_test = eta_buffer + random_norm(0.0_rp,deta)
 			end do
 			chi_test = COS(deg2rad(eta_test))
 			chi = COS(deg2rad(eta_buffer))
@@ -208,9 +211,9 @@ SUBROUTINE sample_distribution(params,g,eta)
 
 		ii=2_idef
 		do while (ii .LE. nsamples)
-			eta_test = eta_samples(ii-1) + random_norm(0.0_rp,1.0_rp)
+			eta_test = eta_samples(ii-1) + random_norm(0.0_rp,deta)
 			do while ((ABS(eta_test) .GT. aval_params%max_pitch_angle).OR.(ABS(eta_test) .LT. aval_params%min_pitch_angle))
-				eta_test = eta_samples(ii-1) + random_norm(0.0_rp,1.0_rp)
+				eta_test = eta_samples(ii-1) + random_norm(0.0_rp,deta)
 			end do
 			chi_test = COS(deg2rad(eta_test))
 			chi = COS(deg2rad(eta_samples(ii-1)))
