@@ -17,8 +17,8 @@ CO.b1 = [1,0,0];
 CO.b2 = [0,1,0];
 CO.b3 = [0,0,1];
 
-CO.Bo = 2.19; % in Teslas
-CO.Eo = -0.0; % in V/m
+CO.Bo = 0.0; % 2.19 ; % in Teslas
+CO.Eo = 0.0; % in V/m
 CO.B = [CO.Bo,0,0];
 CO.E = [CO.Eo,0,0];
 CO.DT = DT;
@@ -141,6 +141,7 @@ CO.cop.Clog = 25.3 - 1.15*log10(1E-6*CO.cop.ne) + 2.3*log10(CO.cop.Te/abs(CO.par
 CO.cop.VTe = CO.VTe;
 CO.cop.delta = CO.cop.VTe/CO.params.c;
 CO.cop.Gamma = CO.cop.ne*abs(CO.params.qe)^4*CO.cop.Clog/(4*pi*CO.params.ep^2);
+
 CO.cop.Tauc = CO.params.me^2*CO.VTe^3/CO.cop.Gamma;
 
 CO.cop.Tau = CO.params.me^2*CO.params.c^3/CO.cop.Gamma;

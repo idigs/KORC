@@ -3025,9 +3025,9 @@ colorbar
 xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 
-saveas(h,[ST.path 'ddPdpdchi_theory'],'fig')
-saveas(hh,[ST.path 'ddPdpdchi_simulation'],'fig')
-saveas(hhh,[ST.path 'Synchrotron_radiation'],'fig')
+% saveas(h,[ST.path 'ddPdpdchi_theory'],'fig')
+% saveas(hh,[ST.path 'ddPdpdchi_simulation'],'fig')
+% saveas(hhh,[ST.path 'Synchrotron_radiation'],'fig')
 
 % figure;
 % surf(E,lAxis,squeeze(Psyn_p),'LineStyle','none');
@@ -3043,8 +3043,8 @@ saveas(hhh,[ST.path 'Synchrotron_radiation'],'fig')
 end
 
 function avalancheDiagnostic(ST)
-nbins_p = 50;
-nbins_chi = 50;
+nbins_p = 40;
+nbins_chi = 40;
 
 for ss=1:ST.params.simulation.num_species
     q = abs(ST.params.species.q(ss));
@@ -3133,22 +3133,22 @@ for ss=1:ST.params.simulation.num_species
     ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
     
     
-%     figure
-%     histogram2(eta,E,[nbins_chi,nbins_p],'FaceColor','flat','Normalization','probability','LineStyle','none');
-%     view([0 90])
-%     cmp = colormap(jet);
-%     xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
-%     ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
-%     
-%     pperp = sin(deg2rad(eta)).*p;
-%     pparallel = cos(deg2rad(eta)).*p;
-%     
-%     figure
-%     histogram2(pparallel,pperp,[nbins_chi,nbins_p],'FaceColor','flat','Normalization','probability','LineStyle','none');
-%     view([0 90])
-%     cmp = colormap(jet);
-%     xlabel('$p_\parallel$ ($mc$)','FontSize',14,'Interpreter','latex')
-%     ylabel('$p_\perp$ ($mc$)','FontSize',14,'Interpreter','latex')
+    figure
+    histogram2(eta,E,[nbins_chi,nbins_p],'FaceColor','flat','Normalization','probability','LineStyle','none');
+    view([0 90])
+    cmp = colormap(jet);
+    xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
+    ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
+    
+    pperp = sin(deg2rad(eta)).*p;
+    pparallel = cos(deg2rad(eta)).*p;
+    
+    figure
+    histogram2(pparallel,pperp,[nbins_chi,nbins_p],'FaceColor','flat','Normalization','probability','LineStyle','none');
+    view([0 90])
+    cmp = colormap(jet);
+    xlabel('$p_\parallel$ ($mc$)','FontSize',14,'Interpreter','latex')
+    ylabel('$p_\perp$ ($mc$)','FontSize',14,'Interpreter','latex')
 end
 
 end

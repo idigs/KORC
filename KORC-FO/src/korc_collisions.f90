@@ -40,8 +40,12 @@ module korc_collisions
 		REAL(rp) :: Gammac ! Gamma factor
 		REAL(rp) :: Tau ! Collisional time of relativistic particles
 		REAL(rp) :: Tauc ! Collisional time of thermal particles
+		REAL(rp) :: Tauv
 		REAL(rp) :: Ec ! Critical electric field
 		REAL(rp) :: ED ! Dreicer electric field
+		REAL(rp) :: Epar ! Parallel electric field
+		REAL(rp) :: p_RE ! minimum momentum of electrons to be RE
+		REAL(rp) :: v_RE ! minimum speed of electrons to be RE
 		REAL(rp) :: dTau ! Subcycling time step in collisional time units (Tau)
         INTEGER(ip) :: subcycling_iterations
 
@@ -120,9 +124,10 @@ subroutine load_params_ss(params)
 	REAL(rp) :: Ti ! Ion temperature
 	REAL(rp) :: ne ! Background electron density
 	REAL(rp) :: Zeff ! Effective atomic number of ions
+	REAL(rp) :: Epar
 	REAL(rp) :: dTau ! Subcycling time step in collisional time units (Tau)
 
-	NAMELIST /CollisionParamsSingleSpecies/ Te, Ti, ne, Zeff, dTau
+	NAMELIST /CollisionParamsSingleSpecies/ Te, Ti, ne, Zeff, Epar, dTau
 
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
@@ -133,6 +138,7 @@ subroutine load_params_ss(params)
 	cparams_ss%Ti = Ti*C_E
 	cparams_ss%ne = ne
 	cparams_ss%Zeff = Zeff
+	cparams_ss%Epar = Epar
 	cparams_ss%dTau = dTau
 
 	cparams_ss%rD = &
@@ -147,8 +153,20 @@ subroutine load_params_ss(params)
 
 	cparams_ss%Tauc = C_ME**2*cparams_ss%VTe**3/cparams_ss%Gammac
 	cparams_ss%Tau = C_ME**2*C_C**3/cparams_ss%Gammac
-	cparams_ss%Ec = cparams_ss%ne*C_E**3*cparams_ss%CoulombLog/(4.0_rp*C_PI*C_E0**2*C_ME*C_C**2)
+
+!	cparams_ss%Ec = cparams_ss%ne*C_E**3*cparams_ss%CoulombLog/(4.0_rp*C_PI*C_E0**2*C_ME*C_C**2)
+	cparams_ss%Ec = C_ME*C_C/(C_E*cparams_ss%Tau)
 	cparams_ss%ED = cparams_ss%ne*C_E**3*cparams_ss%CoulombLog/(4.0_rp*C_PI*C_E0**2*cparams_ss%Te)
+
+	if (ABS(cparams_ss%Epar).GT.0.0_rp) then
+		cparams_ss%p_RE = C_ME*C_C/SQRT(cparams_ss%Epar/cparams_ss%Ec - 1.0_rp)
+		cparams_ss%v_RE = C_C*cparams_ss%p_RE/SQRT( (C_ME*C_C)**2 + cparams_ss%p_RE**2 )
+		cparams_ss%Tauv = C_ME**2*cparams_ss%v_RE**3/cparams_ss%Gammac
+	else
+		cparams_ss%p_RE = 0.0_rp
+		cparams_ss%v_RE = 0.0_rp
+		cparams_ss%Tauv = cparams_ss%Tauc
+	end if
 end subroutine load_params_ss
 
 
@@ -199,8 +217,12 @@ subroutine normalize_params_ss(params)
 	cparams_ss%Gammac*params%cpp%time/(params%cpp%mass**2*params%cpp%velocity**3)
 	cparams_ss%Tau = cparams_ss%Tau/params%cpp%time
 	cparams_ss%Tauc = cparams_ss%Tauc/params%cpp%time
+	cparams_ss%Tauv = cparams_ss%Tauv/params%cpp%time
 	cparams_ss%Ec = cparams_ss%Ec/params%cpp%Eo
 	cparams_ss%ED = cparams_ss%ED/params%cpp%Eo
+	cparams_ss%Epar = cparams_ss%Epar/params%cpp%Eo
+	cparams_ss%p_RE = cparams_ss%p_RE/(params%cpp%mass*params%cpp%velocity)
+	cparams_ss%v_RE = cparams_ss%v_RE/params%cpp%velocity
 end subroutine normalize_params_ss
 
 
@@ -271,10 +293,11 @@ subroutine define_collisions_time_step(params)
 	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
-	cparams_ss%subcycling_iterations = FLOOR((cparams_ss%dTau*cparams_ss%Tau)/params%dt,ip)
+	cparams_ss%subcycling_iterations = FLOOR((cparams_ss%dTau*cparams_ss%Tauv)/params%dt,ip)
 
 	if (params%collisions .AND. (params%mpi_params%rank .EQ. 0)) then
 		write(6,'(/,"* * * * * * * SUBCYCLING FOR COLLISIONS * * * * * * *")')
+		write(6,'(/,"The shorter collisional time in the simulations is: ",F25.15," s")') cparams_ss%Tauv
 		write(6,'("Number of KORC iterations per collision: ",I16)') cparams_ss%subcycling_iterations
 		write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * * * *",/)')
 	end if
@@ -383,9 +406,9 @@ subroutine include_CoulombCollisions(params,U)
 	REAL(rp) :: v ! speed of particle
 	REAL(rp) :: CAL,CFL,CBL
 
-!	if (MODULO(params%it+1_ip,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
-!		dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt
-	dt = params%dt
+	if (MODULO(params%it+1_ip,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
+	dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt
+!	dt = params%dt
 
 	um = SQRT(DOT_PRODUCT(U,U))
 	v = um/SQRT(1.0_rp + um**2)
@@ -411,7 +434,7 @@ subroutine include_CoulombCollisions(params,U)
 	U(1) = (U1+dU1)*DOT_PRODUCT(v1,x) + (U2+dU2)*DOT_PRODUCT(v2,x) + (U3+dU3)*DOT_PRODUCT(v3,x)
 	U(2) = (U1+dU1)*DOT_PRODUCT(v1,y) + (U2+dU2)*DOT_PRODUCT(v2,y) + (U3+dU3)*DOT_PRODUCT(v3,y)
 	U(3) = (U1+dU1)*DOT_PRODUCT(v1,z) + (U2+dU2)*DOT_PRODUCT(v2,z) + (U3+dU3)*DOT_PRODUCT(v3,z)
-!	end if
+	end if
 end subroutine include_CoulombCollisions
 
 subroutine include_collisions(params,B,U)
@@ -658,6 +681,11 @@ subroutine save_params_ss(params)
 		units = params%cpp%time
 		call save_to_hdf5(h5file_id,dset,units*cparams_ss%Tauc,attr)
 
+		dset = TRIM(gname) // "/Tauv"
+		attr = "Shortest collisional time in simulation, in s"
+		units = params%cpp%time
+		call save_to_hdf5(h5file_id,dset,units*cparams_ss%Tauv,attr)
+
 		dset = TRIM(gname) // "/dTau"
 		attr = "Subcycling time step in s"
 		units = params%cpp%time
@@ -676,6 +704,21 @@ subroutine save_params_ss(params)
 		attr = "Dreicer electric field"
 		units = params%cpp%Eo
 		call save_to_hdf5(h5file_id,dset,units*cparams_ss%ED,attr)
+
+		dset = TRIM(gname) // "/Epar"
+		attr = "Dreicer electric field"
+		units = params%cpp%Eo
+		call save_to_hdf5(h5file_id,dset,units*cparams_ss%Epar,attr)
+
+		dset = TRIM(gname) // "/p_RE"
+		attr = "Minimum momentum of RE in kgm/s"
+		units = params%cpp%mass*params%cpp%velocity
+		call save_to_hdf5(h5file_id,dset,units*cparams_ss%p_RE,attr)
+
+		dset = TRIM(gname) // "/v_RE"
+		attr = "Minimum speed of RE in m/s"
+		units = params%cpp%velocity
+		call save_to_hdf5(h5file_id,dset,units*cparams_ss%v_RE,attr)
 
 		call h5gclose_f(group_id, h5error)
 
