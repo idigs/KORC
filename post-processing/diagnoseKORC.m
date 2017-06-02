@@ -17,7 +17,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
 % angularMomentum(ST);
 
@@ -49,7 +49,7 @@ ST.data = loadData(ST);
 
 % calculateTemperatureComponents(ST);
 
-avalancheDiagnostic(ST);
+% avalancheDiagnostic(ST);
 
 % save('energy_limit','ST')
 end
