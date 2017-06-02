@@ -121,6 +121,8 @@ TYPE, PUBLIC :: SPECIES
 	REAL(rp) :: Eo
 	REAL(rp) :: go
 	REAL(rp) :: etao
+	REAL(rp), DIMENSION(2) :: Eo_lims
+	REAL(rp), DIMENSION(2) :: etao_lims
 	REAL(rp) :: wc
 	REAL(rp) :: wc_r
 	REAL(rp) :: q

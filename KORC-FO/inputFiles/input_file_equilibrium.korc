@@ -1,12 +1,12 @@
 &input_parameters
-	t_steps = 0 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	t_steps = 250000 ! 101000000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
 	dt = 1E-2 ! Time step as fraction of non-relativistic gyro-period
-	output_cadence = 1 ! 1400 for saving each 100 gyro-periods
-	num_species = 2
+	output_cadence = 2500 ! 1400 for saving each 100 gyro-periods
+	num_species = 1
 	radiation = .FALSE.
-	collisions = .FALSE.
+	collisions = .TRUE.
 	collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
-	magnetic_field_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
+	magnetic_field_model = 'UNIFORM' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
 										! For 'ANALYTICAL', the magnetic field is calculated based on
 										! the parameters given in the "analytic_mag_field_params" section.
 										! For 'EXTERNAL', the magnetic field is loaded from the file
@@ -15,38 +15,36 @@
 	poloidal_flux = .FALSE.			 ! .TRUE. if using JFIT poloidal flux, .FALSE. if using the
 										! cylindrical components of the magnetic field
 	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/DIII-D_JFIT.h5" !
-	outputs_list = '{g,eta}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
+	outputs_list = '{eta,g}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
 /
 
 &plasma_species
-        runaway = .FALSE., .FALSE. !
-        energy_distribution = 'MONOENERGETIC','UNIFORM'	! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE'
-																				! and 'UNIFORM'
-        pitch_distribution = 'MONOPITCH','UNIFORM'	! Options are: 'MONOPITCH', 'AVALANCHE', and 'UNIFORM'.
-																	! When energy_distribution='THERMAL', the pitch angles 
-																	! correspond to those of a thermalized distribution.
-        Ro = 1.5, 1.5 !
-        Zo = 0.0, 0.0 !
-        r = 0.2, 0.2 !
-        Eo = 60.0E6, 60.0E6 ! Initial energy in eV
-        etao = 10.0, 20.0  ! Initial pitch angle
-		Eo_lims = 1.0E6, 50.0E6, 1.0E6, 30.0E6 ! Lower and upper limit of simulated energy range, in eV.
-		etao_lims = 0.0, 20.0, 0.0, 10.0 ! Lower and upper limit of simulated pitch-angle range, in degrees.
-        ppp = 100000, 100000 ! Number of particles per process (mpi)
-        q = -1.0, -1.0 ! Electric charge
-        m = 1.0, 1.0 ! In units of electron mass
+        runaway = .FALSE. !
+        energy_distribution = 'UNIFORM' ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE'
+        pitch_distribution = 'UNIFORM' ! Options are: 'MONOPITCH', 'AVALANCHE'. When energy_distribution='THERMAL', the pitch
+														! angles correspond to those of a thermalized distribution.
+        Ro = 1.3 !
+        Zo = 0.0 !
+        r = 0.2 !
+        Eo = 1.0E6 ! 63.21923136E6 ! Initial energy in eV
+        etao = 5.0 ! Initial pitch angle
+		Eo_lims = 1.0E6, 40.0E6 ! Lower and upper limit of simulated energy range, in eV.
+		etao_lims = 0.0, 20.0 ! Lower and upper limit of simulated pitch-angle range, in degrees.
+        ppp = 1000 ! Number of particles per process (mpi)
+        q = -1.0 ! Electric charge
+        m = 1.0 ! In units of electron mass
 /
 
 &analytic_mag_field_params
 	electric_field_mode = 'CONSTANT' ! Options are 'CONSTANT' and 'PULSE'
-	Eo = 0.0 ! In V/m
+	Eo = -1.0 ! -0.7427 ! In V/m
 	pulse_maximum = 3.0E-3 ! Time at which maximum is reached in s
 	pulse_duration = 6.7E-4 ! Duration of intense toroidal electric field
 	Bo = 2.19 ! In Teslas. ITER: 5.42 DIII-D: 2.19
 	minor_radius = 0.5 ! Minor radius in meters. ITER: 1.5 DIII-D: 0.5
 	major_radius = 1.5 ! Major radius in meters. ITER: 6.5 DIII-D: 1.6
-	qa = 2.0 ! Safety factor at the separatrix (r=a)
-	qo = 1.6 ! Safety factor at the separatrix (r=a)
+	qa = 3.0 ! Safety factor at the separatrix (r=a)
+	qo = 1.0 ! Safety factor at the separatrix (r=a)
 /
 
 &CollisionParamsMultipleSpecies
@@ -60,29 +58,29 @@
 /
 
 &CollisionParamsSingleSpecies
-	Te = 1.0E3 ! Background electron temperature in eV
-	Ti = 1.0E3 ! Background ion temperature in eV
-	ne = 1.0E25 ! Background electron density in 1/m^3
+	Te = 1.5 ! Background electron temperature in eV
+	Ti = 1.5 ! Background ion temperature in eV
+	ne = 2.0E20 ! Background electron density in 1/m^3
 	Zeff = 1.0 ! Effective atomic number
-	Epar = 0.7427 ! Parallel electric field in V/m
-	dTau = 1.0E-3 ! Subcycling time step in collisional time units (Tau)
+	Epar = 1.0 ! Parallel electric field in V/m
+	dTau = 1.0E-5 ! Subcycling time step in collisional time units (Tau)
 /
 
 &AvalancheGenerationPDF
-	max_pitch_angle = 30.0 ! Maximum pitch angle of sampled PDF in degrees
+	max_pitch_angle = 10.0 ! Maximum pitch angle of sampled PDF in degrees
 	min_pitch_angle = 0.0 !
-	max_energy  = 60E6 ! Maximum energy of sampled PDF in MeV
+	max_energy  = 45.0E6 ! Maximum energy of sampled PDF in MeV
 	min_energy = 0.0 !
-	ne = 3.9E20 ! Background electron density in m^-3
-	Zeff = 10.0 ! Effective atomic number of ions
-	Epar = 0.7427 ! Parallel electric field in V/m
-	Te = 2.0 ! Background electron temperature in eV
+	ne = 2.0E20 ! Background electron density in m^-3
+	Zeff = 1.0 ! Effective atomic number of ions
+	Epar = 1.0 ! Parallel electric field in V/m
+	Te = 1.5 ! Background electron temperature in eV
 /
 
 &SyntheticCamera
 	camera_on = .FALSE. ! .TRUE. or .FALSE.
  	Riw = 1.0 ! Radial position of inner wall
- 	num_pixels = 50, 50 ! Number of pixels (X,Y)
+ 	num_pixels = 75, 75 ! Number of pixels (X,Y)
  	sensor_size = 0.4, 0.4 ! (horizontal,vertical)
  	focal_length = 0.5
  	position = 2.4, 0.0 ! Position of camera (R,Z)

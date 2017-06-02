@@ -168,15 +168,17 @@ subroutine initialize_particles(params,F,spp)
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: m
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Eo
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: etao
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: Eo_lims
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: etao_lims
 	LOGICAL, DIMENSION(:), ALLOCATABLE :: runaway
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: energy_distribution
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: pitch_distribution
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Ro
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zo
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: r
-	INTEGER :: ii,jj ! Iterator
+	INTEGER :: ii,jj, mpierr ! Iterator
 
-	NAMELIST /plasma_species/ ppp, q, m, Eo, etao, runaway, energy_distribution, pitch_distribution, Ro, Zo, r
+	NAMELIST /plasma_species/ ppp,q,m,Eo,etao,Eo_lims,etao_lims,runaway,energy_distribution,pitch_distribution,Ro,Zo,r
 
 	! Allocate array containing variables of particles for each species
 	ALLOCATE(spp(params%num_species))
@@ -186,6 +188,8 @@ subroutine initialize_particles(params,F,spp)
 	ALLOCATE(m(params%num_species))
 	ALLOCATE(Eo(params%num_species))
 	ALLOCATE(etao(params%num_species))
+	ALLOCATE(Eo_lims(2_idef*params%num_species))
+	ALLOCATE(etao_lims(2_idef*params%num_species))
 	ALLOCATE(runaway(params%num_species))
 	ALLOCATE(energy_distribution(params%num_species))
 	ALLOCATE(pitch_distribution(params%num_species))
@@ -198,8 +202,6 @@ subroutine initialize_particles(params,F,spp)
 	close(default_unit_open)
 
 	do ii=1_idef,params%num_species
-		spp(ii)%Eo = Eo(ii)*C_E
-		spp(ii)%etao = etao(ii)
 		spp(ii)%runaway = runaway(ii)
 		spp(ii)%energy_distribution = TRIM(energy_distribution(ii))
 		spp(ii)%pitch_distribution = TRIM(pitch_distribution(ii))
@@ -210,8 +212,6 @@ subroutine initialize_particles(params,F,spp)
 		spp(ii)%Ro = Ro(ii)
 		spp(ii)%Zo = Zo(ii)
 		spp(ii)%r = r(ii)
-
-		spp(ii)%go = (spp(ii)%Eo + spp(ii)%m*C_C**2)/(spp(ii)%m*C_C**2)
 
 		ALLOCATE( spp(ii)%vars%X(3,spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%V(3,spp(ii)%ppp) )
@@ -229,31 +229,66 @@ subroutine initialize_particles(params,F,spp)
 
 		SELECT CASE (TRIM(spp(ii)%energy_distribution))
 			CASE ('MONOENERGETIC')
+				spp(ii)%Eo = Eo(ii)*C_E
+				spp(ii)%go = (spp(ii)%Eo + spp(ii)%m*C_C**2)/(spp(ii)%m*C_C**2)
+
 				spp(ii)%vars%g = spp(ii)%go ! Monoenergetic
+				spp(ii)%Eo_lims = (/spp(ii)%Eo , spp(ii)%Eo /)
 			CASE ('AVALANCHE')
 				call get_avalanche_PDF_params(params,spp(ii)%vars%g,spp(ii)%vars%eta)
+
 				spp(ii)%go = SUM(spp(ii)%vars%g)/SIZE(spp(ii)%vars%g)
 				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
+				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
+									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
+			CASE ('UNIFORM')
+				spp(ii)%Eo_lims = Eo_lims((ii-1_idef)*2_idef + 1_idef:2_idef*ii)*C_E
+				spp(ii)%Eo = spp(ii)%Eo_lims(1)
+				spp(ii)%go = (spp(ii)%Eo + spp(ii)%m*C_C**2)/(spp(ii)%m*C_C**2)
+
+				call RANDOM_NUMBER(spp(ii)%vars%g)
+
+				spp(ii)%vars%g = (spp(ii)%Eo_lims(2) - spp(ii)%Eo_lims(1))*spp(ii)%vars%g/(spp(ii)%m*C_C**2) + &
+									(spp(ii)%Eo_lims(1) + spp(ii)%m*C_C**2)/(spp(ii)%m*C_C**2)
 			CASE DEFAULT
-				if (params%mpi_params%rank .EQ. 0) then
-					write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * * *")')
-					write(6,'("Energy distribution of species ",I4 " is: ",A50)') ii,TRIM(spp(ii)%energy_distribution)
-					write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * *",/)')
-				end if
+				! Something to be done
 		END SELECT
+
+		if (params%mpi_params%rank .EQ. 0) then
+			write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * * *")')
+			write(6,'("Energy distribution of species ",I4 " is: ",A20)') ii,TRIM(spp(ii)%energy_distribution)
+			write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * *",/)')
+		end if
+
+		call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
 		SELECT CASE (TRIM(spp(ii)%pitch_distribution))
 			CASE ('MONOPITCH')
+				spp(ii)%etao = etao(ii)
+
 				spp(ii)%vars%eta = spp(ii)%etao ! Mono-pitch-angle
+				spp(ii)%etao_lims = (/spp(ii)%etao , spp(ii)%etao/)
 			CASE ('AVALANCHE')
 				spp(ii)%etao = SUM(spp(ii)%vars%eta)/SIZE(spp(ii)%vars%eta)
+				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
+			CASE ('UNIFORM')
+				spp(ii)%etao_lims = etao_lims((ii-1_idef)*2_idef + 1_idef:2_idef*ii)
+				spp(ii)%etao = spp(ii)%etao_lims(1)
+
+				call RANDOM_NUMBER(spp(ii)%vars%eta)
+
+				spp(ii)%vars%eta = (spp(ii)%etao_lims(2) - spp(ii)%etao_lims(1))*spp(ii)%vars%eta + spp(ii)%Eo_lims(1)
 			CASE DEFAULT
-				if (params%mpi_params%rank .EQ. 0) then
-					write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * * *")')
-					write(6,'("The energy distribution will be: ",A50)') TRIM(spp(ii)%pitch_distribution)
-					write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * *",/)')
-				end if
+				! Something to be done
 		END SELECT
+
+		if (params%mpi_params%rank .EQ. 0) then
+			write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * * *")')
+			write(6,'("Pitch-angle distribution of species ",I4 " is: ",A20)') ii,TRIM(spp(ii)%pitch_distribution)
+			write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * *",/)')
+		end if
+
+		call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 	
 		! Initialize to zero
 		spp(ii)%vars%X = 0.0_rp
@@ -274,6 +309,8 @@ subroutine initialize_particles(params,F,spp)
 	DEALLOCATE(m)
 	DEALLOCATE(Eo)
 	DEALLOCATE(etao)
+	DEALLOCATE(Eo_lims)
+	DEALLOCATE(etao_lims)
 	DEALLOCATE(runaway)
 	DEALLOCATE(Ro)
 	DEALLOCATE(Zo)

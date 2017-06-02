@@ -244,11 +244,12 @@ end subroutine normalize_collisions_params
 
 
 subroutine collision_force(spp,U,Fcoll)
-!				if (params%collisions .AND. &
-!				(TRIM(params%collisions_model) .EQ. 'MULTIPLE_SPECIES')) then
+				! J. R. Martin-Solis et al. PoP 22, 092512 (2015)
+!				if (params%collisions .AND. (TRIM(params%collisions_model) .EQ. 'MULTIPLE_SPECIES')) then
 !					call collision_force(spp(ii),U_os,Fcoll)
 !					U_RC = U_RC + a*Fcoll/spp(ii)%q
 !				end if
+				! J. R. Martin-Solis et al. PoP 22, 092512 (2015)
     IMPLICIT NONE
 	TYPE(SPECIES), INTENT(IN) :: spp
 	REAL(rp), DIMENSION(3), INTENT(IN) :: U
@@ -413,9 +414,9 @@ subroutine include_CoulombCollisions(params,U)
 	REAL(rp) :: v ! speed of particle
 	REAL(rp) :: CAL,CFL,CBL
 
-	if (MODULO(params%it+1_ip,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
-	dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt
-!	dt = params%dt
+!	if (MODULO(params%it+1_ip,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
+!	dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt
+	dt = params%dt
 
 	um = SQRT(DOT_PRODUCT(U,U))
 	v = um/SQRT(1.0_rp + um**2)
@@ -441,83 +442,8 @@ subroutine include_CoulombCollisions(params,U)
 	U(1) = (U1+dU1)*DOT_PRODUCT(v1,x) + (U2+dU2)*DOT_PRODUCT(v2,x) + (U3+dU3)*DOT_PRODUCT(v3,x)
 	U(2) = (U1+dU1)*DOT_PRODUCT(v1,y) + (U2+dU2)*DOT_PRODUCT(v2,y) + (U3+dU3)*DOT_PRODUCT(v3,y)
 	U(3) = (U1+dU1)*DOT_PRODUCT(v1,z) + (U2+dU2)*DOT_PRODUCT(v2,z) + (U3+dU3)*DOT_PRODUCT(v3,z)
-	end if
+!	end if
 end subroutine include_CoulombCollisions
-
-subroutine include_collisions(params,B,U)
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	REAL(rp), DIMENSION(3), INTENT(IN) :: B
-	REAL(rp), DIMENSION(3), INTENT(INOUT) :: U
-	REAL(rp), DIMENSION(3) :: b1, b2, b3
-	REAL(rp), DIMENSION(3) :: x = (/1.0_rp,0.0_rp,0.0_rp/)
-	REAL(rp), DIMENSION(3) :: y = (/0.0_rp,1.0_rp,0.0_rp/)
-	REAL(rp), DIMENSION(3) :: z = (/0.0_rp,0.0_rp,1.0_rp/)
-	REAL(rp) :: dt
-    REAL(rp) :: rnd_num1, rnd_num2
-	REAL(rp) :: U1, U2, U3
-	REAL(rp) :: dU1, dU2, dU3
-	REAL(rp) :: dp, dxi, dphi
-	REAL(rp) :: dWp, dWphi, dWxi
-	REAL(rp) :: pitch
-	REAL(rp) :: xi ! cosine of pitch angle
-	REAL(rp) :: g ! Gamma factor
-	REAL(rp) :: v ! Velocity magnitude
-	REAL(rp) :: p ! Magnitude of dimensionless momentum U
-
-	if (MODULO(params%it+1_ip,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
-!		write(6,'("Collision at iteration: ",I16)') params%it
-		dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt
-
-		p = SQRT(DOT_PRODUCT(U,U))
-		g = SQRT(1.0_rp + DOT_PRODUCT(U,U))
-		v = p/g
-
-		call unitVectors(B,b1,b2,b3)
-
-		U1 = DOT_PRODUCT(U,b1);
-		U2 = DOT_PRODUCT(U,b2);
-		U3 = DOT_PRODUCT(U,b3);
-
-		xi = U1/(g*v)
-
-		call RANDOM_NUMBER(rnd_num1)
-		call RANDOM_NUMBER(rnd_num2)
-		dWp =  &
-		SQRT(dt)*SQRT(-2.0_rp*LOG(1.0_rp-rnd_num1))*COS(2.0_rp*C_PI*rnd_num2);
-
-		call RANDOM_NUMBER(rnd_num1)
-		dWphi = 2.0_rp*C_PI*rnd_num1*SQRT(dt);
-
-		call RANDOM_NUMBER(rnd_num1)
-		dWxi = rnd_num1*SQRT(dt);
-
-
-		dp = ( -CF(v) + 2.0_rp*CA(v)/p + cparams_ss%Gammac*fun(v)/(p**2*SQRT(1.0_rp + p**2)) )*dt&
-			 + SQRT(2.0_rp*CA(v))*dWp
-
-		dxi = -2.0_rp*xi*CB(v)*dt/p**2 - SQRT(2.0_rp*CB(v)*(1.0_rp - xi**2))*dWxi/p
-
-		dphi = SQRT(2.0_rp*CB(v))*dWphi/(p*SQRT(1.0_rp - xi**2))
-		if ((dphi .GE. infinity) .OR. ISNAN(dphi)) then
-		    dphi = 0.0_rp
-		end if
-
-		pitch = ACOS(xi + dxi);
-
-		dU1 = dp*COS(pitch);
-		dU2 = dp*SIN(pitch)*COS(dphi);
-		dU3 = dp*SIN(pitch)*SIN(dphi);
-
-!		write(6,'("xi,pitch,dU1,dU2,dU3: ",6F25.16)') U(1),U(2),U(3),U1,U2,U3
-		
-		U(1) = (U1+dU1)*DOT_PRODUCT(b1,x) + (U2+dU2)*DOT_PRODUCT(b2,x)&
-			+ (U3+dU3)*DOT_PRODUCT(b3,x)
-		U(2) = (U1+dU1)*DOT_PRODUCT(b1,y) + (U2+dU2)*DOT_PRODUCT(b2,y)&
-			+ (U3+dU3)*DOT_PRODUCT(b3,y)
-		U(3) = (U1+dU1)*DOT_PRODUCT(b1,z) + (U2+dU2)*DOT_PRODUCT(b2,z)&
-			+ (U3+dU3)*DOT_PRODUCT(b3,z)
-	end if
-end subroutine include_collisions
 
 
 subroutine save_params_ms(params)

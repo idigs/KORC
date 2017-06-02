@@ -17,7 +17,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
 % angularMomentum(ST);
 
