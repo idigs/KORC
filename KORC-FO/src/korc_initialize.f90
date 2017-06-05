@@ -6,6 +6,7 @@ module korc_initialize
     use korc_HDF5
     use korc_fields
     use rnd_numbers
+	use hammersley_generator
 
 	use korc_avalanche ! external module
 
@@ -158,6 +159,22 @@ end subroutine initialize_korc_parameters
 ! * * * SUBROUTINES FOR INITIALIZING PARTICLES * * * !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
+
+subroutine dummy_subroutine()
+	implicit none
+	INTEGER(4) :: I, M, N
+	REAL(8), DIMENSION(2) :: R
+	INTEGER :: ii 
+
+	N = INT(1000,4)
+	
+	do ii=1_idef,1000_idef
+		call hammersley(INT(ii,4),INT(2_idef,4),N,R)
+		write(6,'(2F25.15)') R
+	end do
+
+end subroutine dummy_subroutine
+
 subroutine initialize_particles(params,F,spp) 
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
@@ -200,6 +217,8 @@ subroutine initialize_particles(params,F,spp)
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=plasma_species)
 	close(default_unit_open)
+
+	call dummy_subroutine()
 
 	do ii=1_idef,params%num_species
 		spp(ii)%runaway = runaway(ii)

@@ -63,6 +63,7 @@ korc_coords.o	\
 korc_interp.o	\
 korc_fields.o	\
 korc_avalanche.o	\
+hammersley_generator.o	\
 korc_initialize.o	\
 korc_finalize.o	\
 korc_units.o	\
