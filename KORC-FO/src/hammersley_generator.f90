@@ -209,99 +209,8 @@ subroutine hammersley_inverse ( r, m, n, i )
  
   return
 end
-subroutine hammersley_sequence ( i1, i2, m, n, r )
 
-!*****************************************************************************80
-!
-!! HAMMERSLEY_SEQUENCE computes elements I1 through I2 of a Hammersley sequence.
-!
-!  Licensing:
-!
-!    This code is distributed under the GNU LGPL license.
-!
-!  Modified:
-!
-!    20 August 2016
-!
-!  Author:
-!
-!    John Burkardt
-!
-!  Reference:
-!
-!    John Hammersley,
-!    Monte Carlo methods for solving multivariable problems,
-!    Proceedings of the New York Academy of Science,
-!    Volume 86, 1960, pages 844-874.
-!
-!  Parameters:
-!
-!    Input, integer ( kind = 4 ) I1, I2, the indices of the first and last 
-!    elements of the sequence.  0 <= I1, I2.
-!
-!    Input, integer ( kind = 4 ) M, the spatial dimension.
-!
-!    Input, integer ( kind = 4 ) N, the "base" for the first component.
-!    1 <= N.
-!
-!    Output, real ( kind = 8 ) R(M,abs(I1-I2)+1), the elements of the sequence 
-!    with indices I1 through I2.
-!
-  implicit none
 
-  integer ( kind = 4 ) m
-
-  integer ( kind = 4 ) d
-  integer ( kind = 4 ) i
-  integer ( kind = 4 ) i1
-  integer ( kind = 4 ) i2
-  integer ( kind = 4 ) i3
-  integer ( kind = 4 ) j
-  integer ( kind = 4 ) k
-  integer ( kind = 4 ) l
-  integer ( kind = 4 ) n
-  integer ( kind = 4 ) prime
-  real ( kind = 8 ) prime_inv(2:m)
-  real ( kind = 8 ) r(m,abs(i1-i2)+1)
-  integer ( kind = 4 ) t(2:m)
-
-  if ( i1 <= i2 ) then
-    i3 = +1
-  else
-    i3 = -1
-  end if
-
-  l = abs ( i2 - i1 ) + 1
-  r(1:m,1:l) = 0.0D+00
-  k = 0
-
-  do i = i1, i2, i3
-
-    t(2:m) = i
-!
-!  Carry out the computation.
-!
-    do j = 2, m
-      prime_inv(j) = 1.0D+00 / real ( prime ( j - 1 ), kind = 8 )
-    end do
-
-    k = k + 1;
-
-    r(1,k) = real ( mod ( i, n + 1 ), kind = 8 ) / real ( n, kind = 8 )
-
-    do while ( any ( t(2:m) /= 0 ) )
-      do j = 2, m
-        d = mod ( t(j), prime ( j - 1 ) )
-        r(j,k) = r(j,k) + real ( d, kind = 8 ) * prime_inv(j)
-        prime_inv(j) = prime_inv(j) / real ( prime ( j - 1 ), kind = 8 )
-        t(j) = ( t(j) / prime ( j - 1 ) )
-      end do
-    end do
-
-  end do
-
-  return
-end
 function prime ( n )
 
 !*****************************************************************************80
@@ -571,6 +480,103 @@ function prime ( n )
 
   return
 end
+
+
+subroutine hammersley_sequence ( i1, i2, m, n, r )
+
+!*****************************************************************************80
+!
+!! HAMMERSLEY_SEQUENCE computes elements I1 through I2 of a Hammersley sequence.
+!
+!  Licensing:
+!
+!    This code is distributed under the GNU LGPL license.
+!
+!  Modified:
+!
+!    20 August 2016
+!
+!  Author:
+!
+!    John Burkardt
+!
+!  Reference:
+!
+!    John Hammersley,
+!    Monte Carlo methods for solving multivariable problems,
+!    Proceedings of the New York Academy of Science,
+!    Volume 86, 1960, pages 844-874.
+!
+!  Parameters:
+!
+!    Input, integer ( kind = 4 ) I1, I2, the indices of the first and last 
+!    elements of the sequence.  0 <= I1, I2.
+!
+!    Input, integer ( kind = 4 ) M, the spatial dimension.
+!
+!    Input, integer ( kind = 4 ) N, the "base" for the first component.
+!    1 <= N.
+!
+!    Output, real ( kind = 8 ) R(M,abs(I1-I2)+1), the elements of the sequence 
+!    with indices I1 through I2.
+!
+  implicit none
+
+  integer ( kind = 4 ) m
+
+  integer ( kind = 4 ) d
+  integer ( kind = 4 ) i
+  integer ( kind = 4 ) i1
+  integer ( kind = 4 ) i2
+  integer ( kind = 4 ) i3
+  integer ( kind = 4 ) j
+  integer ( kind = 4 ) k
+  integer ( kind = 4 ) l
+  integer ( kind = 4 ) n
+!  integer ( kind = 4 ) prime
+  real ( kind = 8 ) prime_inv(2:m)
+  real ( kind = 8 ) r(m,abs(i1-i2)+1)
+  integer ( kind = 4 ) t(2:m)
+
+  if ( i1 <= i2 ) then
+    i3 = +1
+  else
+    i3 = -1
+  end if
+
+  l = abs ( i2 - i1 ) + 1
+  r(1:m,1:l) = 0.0D+00
+  k = 0
+
+  do i = i1, i2, i3
+
+    t(2:m) = i
+!
+!  Carry out the computation.
+!
+    do j = 2, m
+      prime_inv(j) = 1.0D+00 / real ( prime ( j - 1 ), kind = 8 )
+    end do
+
+    k = k + 1;
+
+    r(1,k) = real ( mod ( i, n + 1 ), kind = 8 ) / real ( n, kind = 8 )
+
+    do while ( any ( t(2:m) /= 0 ) )
+      do j = 2, m
+        d = mod ( t(j), prime ( j - 1 ) )
+        r(j,k) = r(j,k) + real ( d, kind = 8 ) * prime_inv(j)
+        prime_inv(j) = prime_inv(j) / real ( prime ( j - 1 ), kind = 8 )
+        t(j) = ( t(j) / prime ( j - 1 ) )
+      end do
+    end do
+
+  end do
+
+  return
+end
+
+
 subroutine r8mat_print ( m, n, a, title )
 
 !*****************************************************************************80
