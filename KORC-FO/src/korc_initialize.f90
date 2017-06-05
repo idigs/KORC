@@ -159,22 +159,6 @@ end subroutine initialize_korc_parameters
 ! * * * SUBROUTINES FOR INITIALIZING PARTICLES * * * !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
-
-subroutine dummy_subroutine()
-	implicit none
-	INTEGER(4) :: I, M, N
-	REAL(8), DIMENSION(2) :: R
-	INTEGER :: ii 
-
-	N = INT(1000,4)
-	
-	do ii=1_idef,1000_idef
-		call hammersley(INT(ii,4),INT(2_idef,4),N,R)
-		write(6,'(2F25.15)') R
-	end do
-
-end subroutine dummy_subroutine
-
 subroutine initialize_particles(params,F,spp) 
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
@@ -217,8 +201,6 @@ subroutine initialize_particles(params,F,spp)
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=plasma_species)
 	close(default_unit_open)
-
-	call dummy_subroutine()
 
 	do ii=1_idef,params%num_species
 		spp(ii)%runaway = runaway(ii)
@@ -265,7 +247,8 @@ subroutine initialize_particles(params,F,spp)
 				spp(ii)%Eo = spp(ii)%Eo_lims(1)
 				spp(ii)%go = (spp(ii)%Eo + spp(ii)%m*C_C**2)/(spp(ii)%m*C_C**2)
 
-				call RANDOM_NUMBER(spp(ii)%vars%g)
+!				call RANDOM_NUMBER(spp(ii)%vars%g)
+				call generate_2D_hammersley_sequence(params%mpi_params%rank,params%mpi_params%nmpi,spp(ii)%vars%g,spp(ii)%vars%eta)
 
 				spp(ii)%vars%g = (spp(ii)%Eo_lims(2) - spp(ii)%Eo_lims(1))*spp(ii)%vars%g/(spp(ii)%m*C_C**2) + &
 									(spp(ii)%Eo_lims(1) + spp(ii)%m*C_C**2)/(spp(ii)%m*C_C**2)
@@ -294,9 +277,9 @@ subroutine initialize_particles(params,F,spp)
 				spp(ii)%etao_lims = etao_lims((ii-1_idef)*2_idef + 1_idef:2_idef*ii)
 				spp(ii)%etao = spp(ii)%etao_lims(1)
 
-				call RANDOM_NUMBER(spp(ii)%vars%eta)
+!				call RANDOM_NUMBER(spp(ii)%vars%eta)
 
-				spp(ii)%vars%eta = (spp(ii)%etao_lims(2) - spp(ii)%etao_lims(1))*spp(ii)%vars%eta + spp(ii)%Eo_lims(1)
+				spp(ii)%vars%eta = (spp(ii)%etao_lims(2) - spp(ii)%etao_lims(1))*spp(ii)%vars%eta + spp(ii)%etao_lims(1)
 			CASE DEFAULT
 				! Something to be done
 		END SELECT
