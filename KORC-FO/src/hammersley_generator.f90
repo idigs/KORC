@@ -35,7 +35,9 @@ subroutine generate_2D_hammersley_sequence(ID,NMPIS,X,Y)
 	INTEGER(4) :: ii 
 
 	N = INT(SIZE(X),4)
-	offset = (INT(ID+1_idef,4) - 1_4)*N*INT(NMPIS,4)
+	offset = (INT(ID+1_idef,4) - 1_4)*N
+
+	write(6,'("MPI process: ",I5," offset: ",I5)') ID, offset
 
 	do ii=1_4,N
 		call hammersley(ii+INT(offset,4),2_4,N*INT(NMPIS,4),R)
