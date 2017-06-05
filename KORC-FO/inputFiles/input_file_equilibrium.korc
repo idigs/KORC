@@ -1,9 +1,9 @@
 &input_parameters
-	t_steps = 0 ! 101000000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
+	t_steps = 2100000 ! 101000000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
 	dt = 1E-2 ! Time step as fraction of non-relativistic gyro-period
-	output_cadence = 2500 ! 1400 for saving each 100 gyro-periods
+	output_cadence = 21000 ! 1400 for saving each 100 gyro-periods
 	num_species = 1
-	radiation = .FALSE.
+	radiation = .TRUE.
 	collisions = .TRUE.
 	collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
 	magnetic_field_model = 'UNIFORM' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
@@ -15,7 +15,7 @@
 	poloidal_flux = .FALSE.			 ! .TRUE. if using JFIT poloidal flux, .FALSE. if using the
 										! cylindrical components of the magnetic field
 	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/DIII-D_JFIT.h5" !
-	outputs_list = '{eta,g}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
+	outputs_list = '{eta,g,flag}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
 /
 
 &plasma_species
@@ -30,14 +30,14 @@
         etao = 5.0 ! Initial pitch angle
 		Eo_lims = 1.0E6, 40.0E6 ! Lower and upper limit of simulated energy range, in eV.
 		etao_lims = 0.0, 20.0 ! Lower and upper limit of simulated pitch-angle range, in degrees.
-        ppp = 1000 ! Number of particles per process (mpi)
+        ppp = 250 ! Number of particles per process (mpi)
         q = -1.0 ! Electric charge
         m = 1.0 ! In units of electron mass
 /
 
 &analytic_mag_field_params
 	electric_field_mode = 'CONSTANT' ! Options are 'CONSTANT' and 'PULSE'
-	Eo = -1.0 ! -0.7427 ! In V/m
+	Eo = 0.0 ! -0.7427 ! In V/m
 	pulse_maximum = 3.0E-3 ! Time at which maximum is reached in s
 	pulse_duration = 6.7E-4 ! Duration of intense toroidal electric field
 	Bo = 2.19 ! In Teslas. ITER: 5.42 DIII-D: 2.19
@@ -62,8 +62,8 @@
 	Ti = 1.5 ! Background ion temperature in eV
 	ne = 2.0E20 ! Background electron density in 1/m^3
 	Zeff = 1.0 ! Effective atomic number
-	Epar = 1.0 ! Parallel electric field in V/m
-	dTau = 1.0E-5 ! Subcycling time step in collisional time units (Tau)
+	Epar = 0.0 ! Parallel electric field in V/m
+	dTau = 1.0 ! Subcycling time step in collisional time units (Tau)
 /
 
 &AvalancheGenerationPDF

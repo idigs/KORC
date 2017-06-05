@@ -17,7 +17,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
 % angularMomentum(ST);
 
@@ -369,6 +369,7 @@ for ss=1:ST.params.simulation.num_species
     q = abs(ST.params.species.q(ss));
     m = ST.params.species.m(ss);
     c = ST.params.scales.v;
+    
     
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
     passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
