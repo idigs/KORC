@@ -52,16 +52,22 @@ module korc_collisions
 		REAL(rp), DIMENSION(3) :: x = (/1.0_rp,0.0_rp,0.0_rp/)
 		REAL(rp), DIMENSION(3) :: y = (/0.0_rp,1.0_rp,0.0_rp/)
 		REAL(rp), DIMENSION(3) :: z = (/0.0_rp,0.0_rp,1.0_rp/)
+
+		REAL(rp), DIMENSION(:,:), ALLOCATABLE :: rnd_num
+		INTEGER :: rnd_num_count
+		INTEGER :: rnd_dim = 40000000_idef
 	END TYPE PARAMS_SS
 
 	TYPE(PARAMS_MS), PRIVATE :: cparams_ms
 	TYPE(PARAMS_SS), PRIVATE :: cparams_ss
 
 	PUBLIC :: initialize_collision_params,normalize_collisions_params,&
-				collision_force,deallocate_collisions_params,save_collision_params
+				collision_force,deallocate_collisions_params,&
+				save_collision_params,include_CoulombCollisions,check_collisions_params
 	PRIVATE :: load_params_ms,load_params_ss,normalize_params_ms,&
 				normalize_params_ss,save_params_ms,save_params_ss,&
-				deallocate_params_ms,cross,unitVectors,CA,CB,CF,fun
+				deallocate_params_ms,cross,unitVectors,CA,CB,CF,fun,&
+				random_vector
 
 	contains
 
@@ -167,6 +173,11 @@ subroutine load_params_ss(params)
 		cparams_ss%p_RE = C_ME*cparams_ss%v_RE/SQRT(1.0_rp - (cparams_ss%v_RE/C_C)**2)
 		cparams_ss%Tauv = cparams_ss%Tauc
 	end if
+
+
+	ALLOCATE(cparams_ss%rnd_num(3,cparams_ss%rnd_dim))
+	call RANDOM_NUMBER(cparams_ss%rnd_num)
+	cparams_ss%rnd_num_count = 1_idef
 end subroutine load_params_ss
 
 
@@ -393,6 +404,38 @@ subroutine unitVectors(B,b1,b2,b3)
     b3 = cross(b1,b2)
     b3 = b3/SQRT(DOT_PRODUCT(b3,b3))
 end subroutine unitVectors
+
+
+function random_vector()
+	IMPLICIT NONE
+	REAL(rp), DIMENSION(3) :: random_vector
+
+!	if (cparams_ss%rnd_num_count.EQ.cparams_ss%rnd_dim) then
+!		call RANDOM_NUMBER(cparams_ss%rnd_num)
+!		cparams_ss%rnd_num_count = 1_idef
+!		random_vector = cparams_ss%rnd_num(:,cparams_ss%rnd_num_count)
+!	else
+!		random_vector = cparams_ss%rnd_num(:,cparams_ss%rnd_num_count)
+!	end if
+
+	random_vector = cparams_ss%rnd_num(:,cparams_ss%rnd_num_count)
+	cparams_ss%rnd_num_count = cparams_ss%rnd_num_count + 1_idef
+end function random_vector
+
+
+subroutine check_collisions_params(spp)
+	IMPLICIT NONE
+	TYPE(SPECIES), INTENT(IN) :: spp
+	INTEGER aux
+
+	aux = cparams_ss%rnd_num_count + 2_idef*INT(spp%ppp,idef)
+	
+	if (aux.GE.cparams_ss%rnd_dim) then
+		call RANDOM_NUMBER(cparams_ss%rnd_num)
+		cparams_ss%rnd_num_count = 1_idef
+	end if
+end subroutine check_collisions_params
+
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
 ! * FUNCTIONS OF COLLISION OPERATOR FOR SINGLE-SPECIES PLASMAS * !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
@@ -427,8 +470,10 @@ subroutine include_CoulombCollisions(params,U)
 	U2 = DOT_PRODUCT(U,v2);
 	U3 = DOT_PRODUCT(U,v3);
 
-	call RANDOM_NUMBER(rnd1)
-	call RANDOM_NUMBER(rnd2)
+!	call RANDOM_NUMBER(rnd1)
+!	call RANDOM_NUMBER(rnd2)
+	rnd1 = random_vector()
+	rnd2 = random_vector()
 	dW = SQRT(dt)*SQRT(-2.0_rp*LOG(1.0_rp-rnd1))*COS(2.0_rp*C_PI*rnd2)
 
 	CAL = CA(v)

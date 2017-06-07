@@ -82,6 +82,11 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 !$OMP& sigma,us,g,t,s,Frad,Fcoll,U_RC,U_os,&
 !$OMP& tmp,b_unit,B,vpar,v,vperp,vec,Prad)&
 !$OMP& SHARED(ii,spp)
+
+!$OMP SINGLE
+	call check_collisions_params(spp(ii))
+!$OMP END SINGLE
+
 !$OMP DO
 		do pp=1_idef,spp(ii)%ppp
 			if ( spp(ii)%vars%flag(pp) .EQ. 1_idef ) then
@@ -124,7 +129,7 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 				U = U_L + U_RC - U
 
 				! ! ! Stochastic differential equations for including collisions
-				if (params%collisions .AND. (TRIM(params%collisions_model) .EQ. 'SINGLE_SPECIES')) then
+				if (params%collisions .AND. (TRIM(params%collisions_model) .EQ. 'SINGLE_SPECIES')) then		
 					call include_CoulombCollisions(params,U)
 				end if
 				! ! ! Stochastic differential equations for including collisions
