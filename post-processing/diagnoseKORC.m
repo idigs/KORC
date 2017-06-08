@@ -17,7 +17,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
 % angularMomentum(ST);
 
@@ -50,6 +50,10 @@ energyConservation(ST);
 % calculateTemperatureComponents(ST);
 
 % avalancheDiagnostic(ST);
+
+
+plotEnergyPitchanglePDF(ST);
+
 
 % save('energy_limit','ST')
 end
@@ -3152,4 +3156,32 @@ for ss=1:ST.params.simulation.num_species
     ylabel('$p_\perp$ ($mc$)','FontSize',14,'Interpreter','latex')
 end
 
+end
+
+
+function plotEnergyPitchanglePDF(ST)
+me = ST.params.scales.m;
+qe = ST.params.scales.q;
+c = ST.params.scales.v;
+
+
+Eo = ST.data.sp1.g(:,1)*me*c^2/(qe*1E6);
+Ef = ST.data.sp1.g(:,end)*me*c^2/(qe*1E6);
+pao = ST.data.sp1.eta(:,1);
+paf = ST.data.sp1.eta(:,end);
+
+E = ST.data.sp1.g'*me*c^2/(qe*1E6);
+pa = ST.data.sp1.eta';
+
+figure;
+hold on
+plot(pa,E,'b')
+plot(pao,Eo,'k.',paf,Ef,'r.','MarkerSize',8)
+hold off
+box on
+grid on
+xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
+ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
+% legend({['$t=$' num2str(ST.time(1)) ' s'],...
+%     ['$t=$' num2str(ST.time(end)) ' s']},'Interpreter','latex')
 end
