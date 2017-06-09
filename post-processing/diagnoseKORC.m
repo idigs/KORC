@@ -104,6 +104,7 @@ end
 function data = loadData(ST)
 data = struct;
 
+% list = {'X'};
 list = {};
 
 it = ST.range(1):1:ST.range(2);
@@ -1148,7 +1149,11 @@ for ss=1:ST.params.simulation.num_species
     figure(h1)
     subplot(1,2,1)
     hold on
-    plot(R,Z,'o','MarkerSize',2,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+%     plot(R,Z,'.','MarkerSize',8,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+    his=histogram2(R,Z,'FaceColor','flat',...
+        'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
+    colormap(jet);caxis([min(min(his.Values)) max(max(his.Values))])
+    colorbar
     hold off
     legends{ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
 end
@@ -1181,8 +1186,12 @@ for ss=ST.params.simulation.num_species:-1:1
     figure(h1)
     subplot(1,2,2)
     hold on
-    plot(R,Z,'o','MarkerSize',2,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+%     plot(R,Z,'.','MarkerSize',8,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
 %     plot(R,Z,'.','MarkerSize',10,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+    his=histogram2(R,Z,'FaceColor','flat',...
+        'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
+    colormap(jet);caxis([min(min(his.Values)) max(max(his.Values))])
+    colorbar
     hold off
     legends{ST.params.simulation.num_species + 1 -ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
 end
@@ -3164,24 +3173,74 @@ me = ST.params.scales.m;
 qe = ST.params.scales.q;
 c = ST.params.scales.v;
 
+for ss=1:ST.params.simulation.num_species
+    Eo = ST.data.(['sp' num2str(ss)]).g(:,1)*me*c^2/(qe*1E6);
+    pao = ST.data.(['sp' num2str(ss)]).eta(:,1);
+    
+    try
+        pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    catch
+        pin = true(1,size(ST.data.(['sp' num2str(ss)]).g,1));
+    end
+    
+    Ef = ST.data.(['sp' num2str(ss)]).g(pin,end)*me*c^2/(qe*1E6);
+    paf = ST.data.(['sp' num2str(ss)]).eta(pin,end);
+    
+    E = ST.data.(['sp' num2str(ss)]).g(pin,:)'*me*c^2/(qe*1E6);
+    pa = ST.data.(['sp' num2str(ss)]).eta(pin,:)';
+    
+    N = 20; % Energy
+    M = 20; % Pitch-angle
+    
+%     E_edges = linspace(min([min(Eo(pin)) min(Ef)]),...
+%         max([max(Eo(pin)) max(Ef)]),N);
+%     pa_edges = linspace(min([min(pao(pin)) min(paf)]),...
+%         max([max(pao(pin)) max(paf)]),M);
 
-Eo = ST.data.sp1.g(:,1)*me*c^2/(qe*1E6);
-Ef = ST.data.sp1.g(:,end)*me*c^2/(qe*1E6);
-pao = ST.data.sp1.eta(:,1);
-paf = ST.data.sp1.eta(:,end);
-
-E = ST.data.sp1.g'*me*c^2/(qe*1E6);
-pa = ST.data.sp1.eta';
-
-figure;
-hold on
-plot(pa,E,'b')
-plot(pao,Eo,'k.',paf,Ef,'r.','MarkerSize',8)
-hold off
-box on
-grid on
-xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
-ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
-% legend({['$t=$' num2str(ST.time(1)) ' s'],...
-%     ['$t=$' num2str(ST.time(end)) ' s']},'Interpreter','latex')
+    E_edges = linspace(0,50,N);
+    pa_edges = linspace(0,25,M);
+    
+    figure;
+    subplot(2,1,1)
+    h = histogram2(pao(pin),Eo(pin),pa_edges,E_edges,'FaceColor','flat',...
+        'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
+    colormap(jet); caxis([min(min(h.Values)) max(max(h.Values))])
+    colorbar
+    box on
+    grid on
+    xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
+    ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
+    
+    subplot(2,1,2)
+    histogram2(paf,Ef,pa_edges,E_edges,'FaceColor','flat',...
+        'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none')
+    colormap(jet); caxis([min(min(h.Values)) max(max(h.Values))])
+    colorbar
+    box on
+    grid on
+    xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
+    ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')    
+    
+    figure;
+    subplot(2,1,1)
+    hold on
+%     plot(pa,E,'b')
+    plot(pao,Eo,'k.',paf,Ef,'r.','MarkerSize',8)
+    hold off
+    box on
+    grid on
+    xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
+    ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
+    % legend({['$t=$' num2str(ST.time(1)) ' s'],...
+    %     ['$t=$' num2str(ST.time(end)) ' s']},'Interpreter','latex')
+    
+    
+	subplot(2,1,2)
+    quiver(pao(pin),Eo(pin),paf-pao(pin),Ef-Eo(pin),...
+        'MaxHeadSize',0.1,'AlignVertexCenters','on')
+    box on
+    grid on
+    xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
+    ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
+end
 end
