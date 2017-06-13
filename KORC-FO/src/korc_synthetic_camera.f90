@@ -1690,8 +1690,11 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 	        call save_snapshot_var(params,np_pixel,var_name)
 		end if
 
+		DEALLOCATE(send_buffer)
+		DEALLOCATE(receive_buffer)
+
 		
-		numel = cam%Nlambda*params%num_species
+		numel = cam%Nlambda*params%num_species*cam%ntor_sections
 		
 		ALLOCATE(send_buffer(numel))
 		ALLOCATE(receive_buffer(numel))

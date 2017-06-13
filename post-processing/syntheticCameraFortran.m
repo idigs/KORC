@@ -19,7 +19,7 @@ ST.data = loadData(ST);
 
 % plotSyntheticCameraAnalysis(ST)
 
-% generateFigures(ST);
+generateFigures(ST);
 
 % testFunction(ST);
 
@@ -498,6 +498,13 @@ ZAxis = ST.params.poloidal_plane_params.nodes_Z;
 NR = ST.params.poloidal_plane_params.grid_dims(1);
 NZ = ST.params.poloidal_plane_params.grid_dims(1);
 
+if (ST.params.synthetic_camera_params.toroidal_sections == 1)
+    NT = ST.params.synthetic_camera_params.ntor_sections;
+else
+    NT = 1;
+end
+
+
 if isempty(ST.lambdas)
     ST.lambdas = [min(lambda) max(lambda)];
 end
@@ -523,16 +530,29 @@ for ss=1:ST.params.simulation.num_species
         np_L2_lambda = zeros(NR,NZ,Nl);
     end
     
-    Psyn_L4 = zeros(NX,NY);
-    np_L4 = zeros(NX,NY);
-    
-    Psyn_L3 = zeros(NX,NY);
-    np_L3 = zeros(NX,NY);
-    
-    Psyn_L2 = zeros(NR,NZ);
-    np_L2 = zeros(NR,NZ);
-    
-    Psyn_L1 = zeros(NR,NZ);
+    if (ST.params.synthetic_camera_params.toroidal_sections == 1)
+        Psyn_L4 = zeros(NX,NY,NT);
+        np_L4 = zeros(NX,NY,NT);
+        
+        Psyn_L3 = zeros(NX,NY,NT);
+        np_L3 = zeros(NX,NY,NT);
+        
+        Psyn_L2 = [];
+        np_L2 = [];
+        
+        Psyn_L1 = [];
+    else
+        Psyn_L4 = zeros(NX,NY);
+        np_L4 = zeros(NX,NY);
+        
+        Psyn_L3 = zeros(NX,NY);
+        np_L3 = zeros(NX,NY);
+        
+        Psyn_L2 = zeros(NR,NZ);
+        np_L2 = zeros(NR,NZ);
+        
+        Psyn_L1 = zeros(NR,NZ);
+    end
     
     if (ST.params.synthetic_camera_params.integrated_opt == 0)
         for ii=1:NR
@@ -582,42 +602,67 @@ for ss=1:ST.params.simulation.num_species
                 Psyn_L4(ii,jj) = trapz(lambda(i1:i2),Psyn_L4_lambda(ii,jj,:));
             end
         end
-    else
-        
+    else        
         npl = ST.data.(['sp' num2str(ss)]).np_lambda;
         
-        P_L2 = zeros(Nl,1);
-        for it=1:ST.num_snapshots
-            P_L2 = P_L2 + ST.data.(['sp' num2str(ss)]).P_lambda(i1:i2,it)*npl(it);
+        if (ST.params.synthetic_camera_params.toroidal_sections == 1)
+            np = ST.data.(['sp' num2str(ss)]).np_pixel;
+            
+            P_L2 = [];
+            
+            P_L3 = zeros(Nl,NT);
+            for it=1:ST.num_snapshots
+                P_L3 = P_L3 + ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,:,it).*np(it);
+            end
+%             P_L3 = P_L3/sum(npl);
+            %         P_L3 = P_L3/sum(np);
+            
+            P_L4 = zeros(Nl,NT);
+            for it=1:ST.num_snapshots
+                P_L4 = P_L4 + ST.data.(['sp' num2str(ss)]).P_a_pixel(i1:i2,:,it).*np(it);
+            end
+%             P_L4 = P_L4/sum(npl);
+            %         P_L4 = P_L4/sum(np);
+            
+            np_L3 = sum(ST.data.(['sp' num2str(ss)]).np_lambda_pixel,4);
+            np_L4 = sum(ST.data.(['sp' num2str(ss)]).np_angular_pixel,4);
+            
+            Psyn_L3 = sum(ST.data.(['sp' num2str(ss)]).Psyn_lambda_pixel,4);
+            Psyn_L4 = sum(ST.data.(['sp' num2str(ss)]).Psyn_angular_pixel,4);
+            
+        else           
+            P_L2 = zeros(Nl,1);
+            for it=1:ST.num_snapshots
+                P_L2 = P_L2 + ST.data.(['sp' num2str(ss)]).P_lambda(i1:i2,it)*npl(it);
+            end
+            P_L2 = P_L2/sum(npl);
+            
+            np = ST.data.(['sp' num2str(ss)]).np_pixel;
+            
+            P_L3 = zeros(Nl,1);
+            for it=1:ST.num_snapshots
+                P_L3 = P_L3 + ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,it).*np(it);
+            end
+            P_L3 = P_L3/sum(npl);
+            %         P_L3 = P_L3/sum(np);
+            
+            P_L4 = zeros(Nl,1);
+            for it=1:ST.num_snapshots
+                P_L4 = P_L4 + ST.data.(['sp' num2str(ss)]).P_a_pixel(i1:i2,it).*np(it);
+            end
+            P_L4 = P_L4/sum(npl);
+            %         P_L4 = P_L4/sum(np);
+            
+            np_L3 = sum(ST.data.(['sp' num2str(ss)]).np_lambda_pixel,3);
+            np_L4 = sum(ST.data.(['sp' num2str(ss)]).np_angular_pixel,3);
+            
+            Psyn_L3 = sum(ST.data.(['sp' num2str(ss)]).Psyn_lambda_pixel,3);
+            Psyn_L4 = sum(ST.data.(['sp' num2str(ss)]).Psyn_angular_pixel,3);
         end
-        P_L2 = P_L2/sum(npl);
-        
-        np = ST.data.(['sp' num2str(ss)]).np_pixel;
-        
-        P_L3 = zeros(Nl,1);
-        for it=1:ST.num_snapshots
-            P_L3 = P_L3 + ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,it).*np(it);
-        end
-        P_L3 = P_L3/sum(npl);
-%         P_L3 = P_L3/sum(np);
-        
-        P_L4 = zeros(Nl,1);
-        for it=1:ST.num_snapshots
-            P_L4 = P_L4 + ST.data.(['sp' num2str(ss)]).P_a_pixel(i1:i2,it).*np(it);
-        end
-        P_L4 = P_L4/sum(npl);
-%         P_L4 = P_L4/sum(np);
-        
-        np_L3 = sum(ST.data.(['sp' num2str(ss)]).np_lambda_pixel,3);
-        np_L4 = sum(ST.data.(['sp' num2str(ss)]).np_angular_pixel,3);
-        
-        Psyn_L3 = sum(ST.data.(['sp' num2str(ss)]).Psyn_lambda_pixel,3);
-        Psyn_L4 = sum(ST.data.(['sp' num2str(ss)]).Psyn_angular_pixel,3);
     end
 
     if isfield(ST.params,'avalanche_pdf_params')
         Psyn_avg = averagedSpectrum(ST,40,50);
-%         Psyn_avg = zeros(size(lambda(i1:i2)));
     else
         Psyn_sp = singleParticleSpectrum(ST,lambda(i1:i2),...
         ST.params.species.go(ss),deg2rad(ST.params.species.etao(ss)));
@@ -632,10 +677,6 @@ for ss=1:ST.params.simulation.num_species
         P_L3 = 1E-9*P_L3;
         P_L4 = 1E-9*P_L4;
     end
-    
-    
-    h = figure;
-    h.Position(3:4) = [800 860];
     
     nt = 100;
     t = linspace(0,2*pi,nt);
@@ -727,103 +768,6 @@ for ss=1:ST.params.simulation.num_species
     end
     % Initial condition
     
-    A = Psyn_L1';
-    minval = min(min(A));
-    maxval = 0.9*max(max(A));
-    v = linspace(minval,maxval,25);
-        
-    figure(h);
-    subplot(4,2,1)
-    contourf(RAxis,ZAxis,A,v,'LineStyle','none')
-    ax = gca; ax.YDir = 'reverse';
-    hold on;plot(x,y,'w','Linewidth',2);hold off
-    hold on;plot(ST.params.fields.Ro,0,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
-        'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
-    colormap(jet); hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-    xlabel(hc,'$P_{Tot}$ (Watts)','Interpreter','latex','FontSize',12)
-    box on; axis square;view([0 -90])
-    ylabel('$Z$-axis','FontSize',12,'Interpreter','latex')
-    xlabel('$R$-axis','FontSize',12,'Interpreter','latex')
-    
-
-    figure(h);  
-    subplot(4,2,2)
-    if (ST.params.synthetic_camera_params.integrated_opt == 0)
-        % Something is wrong here!!! 
-        tmp = Psyn_L4_lambda./np_L4_lambda;
-        tmp(~isfinite(tmp)) = 0;
-        f_L4 = squeeze(mean(mean(tmp,1),2));
-        tmp = Psyn_L3_lambda./np_L3_lambda;
-        tmp(~isfinite(tmp)) = 0;
-        f_L3 = squeeze(mean(mean(tmp,1),2));
-        f_L2 = squeeze(sum(sum(Psyn_L2_lambda,1),2))./squeeze(sum(sum(np_L2_lambda,1),2));
-        % Something is wrong here!!! 
-    else
-        f_L3 = P_L3;
-        f_L4 = P_L4;
-        f_L2 = P_L2;
-    end
-    
-    if isfield(ST.params,'avalanche_pdf_params')
-        P_theory = 1E-9*Psyn_avg; %P_theory = Psyn_avg/max(Psyn_avg);
-    else
-        P_theory = 1E-9*Psyn_sp; % P_theory = Psyn_sp/max(Psyn_sp);
-    end
-    figure(h)
-    
-    try
-        plot(axis_lambda,P_theory,'k',axis_lambda,f_L2,'r',axis_lambda,f_L3,'b',axis_lambda,f_L4,'g','LineWidth',1)
-%         plot(axis_lambda,P_theory/max(P_theory),'k',axis_lambda,f_L2/max(f_L2),'r',...
-%             axis_lambda,f_L3/max(f_L3),'b',axis_lambda,f_L4/max(f_L4),'g','LineWidth',1)
-    catch
-        figure(h)
-        plot(axis_lambda,P_theory(i1:i2),'k',axis_lambda,f_L2,'r','LineWidth',1)
-        figure;plot(axis_lambda,f_L2./P_theory(i1:i2),'r','LineWidth',1)
-    end
-    ylabel('$P_{syn}$ (A.U.)','FontSize',12,'Interpreter','latex')
-    xlim([min(axis_lambda) max(axis_lambda)])
-    xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
-    legend({'$\mathcal{P}_{R}(\lambda)$ (Theory)','$\mathcal{P}_{R}(\lambda)$',...
-        '$P_R(\lambda)$','$P_R(\lambda,\psi,\chi)$'},'Interpreter','latex')
-    
-    
-    A = Psyn_L2';
-    minval = min(min(A));
-    maxval = 0.8*max(max(A));
-    v = linspace(minval,maxval,25);
-    
-    figure(h);
-    subplot(4,2,3)
-    contourf(RAxis,ZAxis,A,v,'LineStyle','none')
-    ax = gca; ax.YDir = 'reverse';
-    hold on;plot(x,y,'w','Linewidth',2);hold off
-    hold on;plot(ST.params.fields.Ro,0,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
-        'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
-    colormap(jet); hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-    xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
-    box on; axis square;view([0 -90])
-    ylabel('$Z$-axis','FontSize',12,'Interpreter','latex')
-    xlabel('$R$-axis','FontSize',12,'Interpreter','latex')
-    
-    
-    A = np_L2';
-    minval = min(min(A));
-    maxval = 0.8*max(max(A));
-    v = linspace(minval,maxval,25);
-    
-    figure(h);
-    subplot(4,2,4)
-    contourf(RAxis,ZAxis,A,v,'LineStyle','none')
-    ax = gca; ax.YDir = 'reverse';
-    hold on;plot(x,y,'w','Linewidth',2);hold off
-    hold on;plot(ST.params.fields.Ro,0,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
-    'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
-    colormap(jet);  hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-    xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
-    box on; axis square;view([0 -90])
-    ylabel('$Z$-axis','FontSize',14,'Interpreter','latex')
-    xlabel('$R$-axis','FontSize',14,'Interpreter','latex')
-    
     
     rescaled_xAxis = ST.params.fields.Ro*(xAxis - xc)/xmag_axis;
     rescaled_yAxis = ST.params.fields.Ro*yAxis/xmag_axis;
@@ -835,157 +779,441 @@ for ss=1:ST.params.simulation.num_species
     rescaled_yperp = ST.params.fields.Ro*yperp/xmag_axis;
     
     rescaled_Xiw = ST.params.fields.Ro*(Xiw)/xmag_axis;
-      
-    % % % % % Camera diagnostic % % % % % 
     
-    A = Psyn_L3';
-    minval = min(min(A));
-    maxval = 0.8*max(max(A));
-    v = linspace(minval,maxval,25);
-    
-    figure(h);
-    subplot(4,2,5)
-    contourf(rescaled_xAxis,rescaled_yAxis,A,v,'LineStyle','none')
-    hold on;plot(rescaled_xpixel,rescaled_ypixel,'w','Linewidth',0.5);hold off
-    hold on;plot(rescaled_xperp,rescaled_yperp,-rescaled_xperp,rescaled_yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
-    for ii=1:niw
-        hold on;plot(rescaled_Xiw(1,:,ii),rescaled_Xiw(2,:,ii),'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+    if (ST.params.synthetic_camera_params.toroidal_sections == 1)
+        
+        f_L3 = P_L3;
+        f_L4 = P_L4;
+        if isfield(ST.params,'avalanche_pdf_params')
+            P_theory = 1E-9*Psyn_avg; %P_theory = Psyn_avg/max(Psyn_avg);
+        else
+            P_theory = 1E-9*Psyn_sp; % P_theory = Psyn_sp/max(Psyn_sp);
+        end
+        
+        fig = figure;
+        subplot(2,1,1)
+        plot(axis_lambda,f_L3)
+        hold on;plot(axis_lambda,P_theory,'r');hold off
+        ylabel('$P_{syn}$ (A.U.)','FontSize',12,'Interpreter','latex')
+        xlim([min(axis_lambda) max(axis_lambda)]);box on;grid on;
+        xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
+        
+        subplot(2,1,2)
+        plot(axis_lambda,f_L4)
+        hold on;plot(axis_lambda,P_theory,'r');hold off
+        ylabel('$P_{syn}$ (A.U.)','FontSize',12,'Interpreter','latex')
+        xlim([min(axis_lambda) max(axis_lambda)]);box on;grid on;
+        xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
+        
+        Dtor = 360/double(NT);
+        
+        for tt=1:NT
+            h = figure;
+            h.Position(3:4) = [800 860];
+            annotation('textbox',[0.03 0.03 0.5 0.05],'String',['$\phi\in$[' num2str((tt-1)*Dtor) '$^\circ$,' num2str(tt*Dtor) '$^\circ$]'],...
+                'FitBoxToText','on','Interpreter','latex');
+            
+            % % % % % Camera diagnostic % % % % %
+            
+            A = squeeze(Psyn_L3(:,:,tt))';
+            minval = min(min(A));
+            maxval = 0.8*max(max(A));
+            v = linspace(minval,maxval,25);
+            
+            figure(h);
+            subplot(2,2,1)
+            contourf(rescaled_xAxis,rescaled_yAxis,A,v,'LineStyle','none')
+            hold on;plot(rescaled_xpixel,rescaled_ypixel,'w','Linewidth',0.5);hold off
+            hold on;plot(rescaled_xperp,rescaled_yperp,-rescaled_xperp,rescaled_yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+            for ii=1:niw
+                hold on;plot(rescaled_Xiw(1,:,ii),rescaled_Xiw(2,:,ii),'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+            end
+            a = max(rescaled_yperp);angle = pi/4;b = a*sin(angle);xb = a*cos(angle);
+            rescaled_wxAxisn = ST.params.fields.Ro-xb;
+            rescaled_wxAxisp = ST.params.fields.Ro+xb;
+            hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
+                'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+            angle = pi/8;b = a*sin(angle);xb = a*cos(angle);
+            rescaled_wxAxisn = ST.params.fields.Ro-xb;
+            rescaled_wxAxisp = ST.params.fields.Ro+xb;
+            hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
+                'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+            hold on;plot([ST.params.fields.Ro,-ST.params.fields.Ro],[a,a],[ST.params.fields.Ro,-ST.params.fields.Ro],[-a,-a],...
+                'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+            hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
+                'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
+            cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
+            ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
+            xlabel(hc,'$\int P_R^{\Omega_\alpha}(\lambda) d\lambda$ (W)','Interpreter','latex','FontSize',12)
+            ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
+            axis([xmin, xmax, ymin, ymax]);
+            box on; axis square;axis ij;
+            ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
+            xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+            
+            
+            A = squeeze(np_L3(:,:,tt))';
+            minval = min(min(A));
+            maxval = 0.8*max(max(A));
+            v = linspace(minval,maxval,25);
+            
+            figure(h);
+            subplot(2,2,2)
+            contourf(rescaled_xAxis,rescaled_yAxis,A,v,'LineStyle','none')
+            hold on;plot(rescaled_xpixel,rescaled_ypixel,'w','Linewidth',0.5);hold off
+            hold on;plot(rescaled_xperp,rescaled_yperp,-rescaled_xperp,rescaled_yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+            for ii=1:niw
+                hold on;plot(rescaled_Xiw(1,:,ii),rescaled_Xiw(2,:,ii),'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+            end
+            a = max(rescaled_yperp);angle = pi/4;b = a*sin(angle);xb = a*cos(angle);
+            rescaled_wxAxisn = ST.params.fields.Ro-xb;
+            rescaled_wxAxisp = ST.params.fields.Ro+xb;
+            hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
+                'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+            angle = pi/8;b = a*sin(angle);xb = a*cos(angle);
+            rescaled_wxAxisn = ST.params.fields.Ro-xb;
+            rescaled_wxAxisp = ST.params.fields.Ro+xb;
+            hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
+                'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+            hold on;plot([ST.params.fields.Ro,-ST.params.fields.Ro],[a,a],[ST.params.fields.Ro,-ST.params.fields.Ro],[-a,-a],...
+                'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+            hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
+                'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
+            cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
+            ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
+            xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
+            ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
+            axis([xmin, xmax, ymin, ymax]);
+            box on; axis square;axis ij;
+            ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
+            xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+            
+            A = squeeze(Psyn_L4(:,:,tt))';
+            minval = min(min(A));
+            maxval = 0.8*max(max(A));
+            v = linspace(minval,maxval,25);
+            
+            figure(h);
+            subplot(2,2,3)
+            contourf(rescaled_xAxis,rescaled_yAxis,A,v,'LineStyle','none')
+            hold on;plot(rescaled_xpixel,rescaled_ypixel,'w','Linewidth',0.5);hold off
+            hold on;plot(rescaled_xperp,rescaled_yperp,-rescaled_xperp,rescaled_yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+            for ii=1:niw
+                hold on;plot(rescaled_Xiw(1,:,ii),rescaled_Xiw(2,:,ii),'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+            end
+            a = max(rescaled_yperp);angle = pi/4;b = a*sin(angle);xb = a*cos(angle);
+            rescaled_wxAxisn = ST.params.fields.Ro-xb;
+            rescaled_wxAxisp = ST.params.fields.Ro+xb;
+            hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
+                'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+            angle = pi/8;b = a*sin(angle);xb = a*cos(angle);
+            rescaled_wxAxisn = ST.params.fields.Ro-xb;
+            rescaled_wxAxisp = ST.params.fields.Ro+xb;
+            hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
+                'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+            hold on;plot([ST.params.fields.Ro,-ST.params.fields.Ro],[a,a],[ST.params.fields.Ro,-ST.params.fields.Ro],[-a,-a],...
+                'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+            hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
+                'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
+            cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
+            ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
+            xlabel(hc,'$\int \mathcal{P}_R(\lambda,\psi,\chi) d\lambda$ (W)','Interpreter','latex','FontSize',12)
+            ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
+            axis([xmin, xmax, ymin, ymax]);
+            box on; axis square;axis ij;
+            ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
+            xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+            
+            
+            A = squeeze(np_L4(:,:,tt))';
+            minval = min(min(A));
+            maxval = 0.8*max(max(A));
+            v = linspace(minval,maxval,25);
+            
+            figure(h);
+            subplot(2,2,4)
+            contourf(rescaled_xAxis,rescaled_yAxis,A,v,'LineStyle','none')
+            hold on;plot(rescaled_xpixel,rescaled_ypixel,'w','Linewidth',0.5);hold off
+            hold on;plot(rescaled_xperp,rescaled_yperp,-rescaled_xperp,rescaled_yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+            for ii=1:niw
+                hold on;plot(rescaled_Xiw(1,:,ii),rescaled_Xiw(2,:,ii),'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+            end
+            a = max(rescaled_yperp);angle = pi/4;b = a*sin(angle);xb = a*cos(angle);
+            rescaled_wxAxisn = ST.params.fields.Ro-xb;
+            rescaled_wxAxisp = ST.params.fields.Ro+xb;
+            hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
+                'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+            angle = pi/8;b = a*sin(angle);xb = a*cos(angle);
+            rescaled_wxAxisn = ST.params.fields.Ro-xb;
+            rescaled_wxAxisp = ST.params.fields.Ro+xb;
+            hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
+                'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+            hold on;plot([ST.params.fields.Ro,-ST.params.fields.Ro],[a,a],[ST.params.fields.Ro,-ST.params.fields.Ro],[-a,-a],...
+                'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+            hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
+                'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
+            cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
+            ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
+            xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
+            ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
+            axis([xmin, xmax, ymin, ymax]);
+            box on; axis square;axis ij;
+            ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
+            xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+            
+%             saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
+        end
+    else
+        h = figure;
+        h.Position(3:4) = [800 860];
+        
+        A = Psyn_L1';
+        minval = min(min(A));
+        maxval = 0.9*max(max(A));
+        v = linspace(minval,maxval,25);
+        
+        figure(h);
+        subplot(4,2,1)
+        contourf(RAxis,ZAxis,A,v,'LineStyle','none')
+        ax = gca; ax.YDir = 'reverse';
+        hold on;plot(x,y,'w','Linewidth',2);hold off
+        hold on;plot(ST.params.fields.Ro,0,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
+            'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
+        colormap(jet); hc = colorbar('Location','eastoutside');caxis([0,maxval]);
+        xlabel(hc,'$P_{Tot}$ (Watts)','Interpreter','latex','FontSize',12)
+        box on; axis square;view([0 -90])
+        ylabel('$Z$-axis','FontSize',12,'Interpreter','latex')
+        xlabel('$R$-axis','FontSize',12,'Interpreter','latex')
+        
+        
+        figure(h);
+        subplot(4,2,2)
+        if (ST.params.synthetic_camera_params.integrated_opt == 0)
+            % Something is wrong here!!!
+            tmp = Psyn_L4_lambda./np_L4_lambda;
+            tmp(~isfinite(tmp)) = 0;
+            f_L4 = squeeze(mean(mean(tmp,1),2));
+            tmp = Psyn_L3_lambda./np_L3_lambda;
+            tmp(~isfinite(tmp)) = 0;
+            f_L3 = squeeze(mean(mean(tmp,1),2));
+            f_L2 = squeeze(sum(sum(Psyn_L2_lambda,1),2))./squeeze(sum(sum(np_L2_lambda,1),2));
+            % Something is wrong here!!!
+        else
+            f_L3 = P_L3;
+            f_L4 = P_L4;
+            f_L2 = P_L2;
+        end
+        
+        if isfield(ST.params,'avalanche_pdf_params')
+            P_theory = 1E-9*Psyn_avg; %P_theory = Psyn_avg/max(Psyn_avg);
+        else
+            P_theory = 1E-9*Psyn_sp; % P_theory = Psyn_sp/max(Psyn_sp);
+        end
+        figure(h)
+        
+        try
+            plot(axis_lambda,P_theory,'k',axis_lambda,f_L2,'r',axis_lambda,f_L3,'b',axis_lambda,f_L4,'g','LineWidth',1)
+            %         plot(axis_lambda,P_theory/max(P_theory),'k',axis_lambda,f_L2/max(f_L2),'r',...
+            %             axis_lambda,f_L3/max(f_L3),'b',axis_lambda,f_L4/max(f_L4),'g','LineWidth',1)
+        catch
+            figure(h)
+            plot(axis_lambda,P_theory(i1:i2),'k',axis_lambda,f_L2,'r','LineWidth',1)
+            figure;plot(axis_lambda,f_L2./P_theory(i1:i2),'r','LineWidth',1)
+        end
+        ylabel('$P_{syn}$ (A.U.)','FontSize',12,'Interpreter','latex')
+        xlim([min(axis_lambda) max(axis_lambda)])
+        xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
+        legend({'$\mathcal{P}_{R}(\lambda)$ (Theory)','$\mathcal{P}_{R}(\lambda)$',...
+            '$P_R(\lambda)$','$P_R(\lambda,\psi,\chi)$'},'Interpreter','latex')
+        
+        
+        A = Psyn_L2';
+        minval = min(min(A));
+        maxval = 0.8*max(max(A));
+        v = linspace(minval,maxval,25);
+        
+        figure(h);
+        subplot(4,2,3)
+        contourf(RAxis,ZAxis,A,v,'LineStyle','none')
+        ax = gca; ax.YDir = 'reverse';
+        hold on;plot(x,y,'w','Linewidth',2);hold off
+        hold on;plot(ST.params.fields.Ro,0,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
+            'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
+        colormap(jet); hc = colorbar('Location','eastoutside');caxis([0,maxval]);
+        xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
+        box on; axis square;view([0 -90])
+        ylabel('$Z$-axis','FontSize',12,'Interpreter','latex')
+        xlabel('$R$-axis','FontSize',12,'Interpreter','latex')
+        
+        
+        A = np_L2';
+        minval = min(min(A));
+        maxval = 0.8*max(max(A));
+        v = linspace(minval,maxval,25);
+        
+        figure(h);
+        subplot(4,2,4)
+        contourf(RAxis,ZAxis,A,v,'LineStyle','none')
+        ax = gca; ax.YDir = 'reverse';
+        hold on;plot(x,y,'w','Linewidth',2);hold off
+        hold on;plot(ST.params.fields.Ro,0,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
+            'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
+        colormap(jet);  hc = colorbar('Location','eastoutside');caxis([0,maxval]);
+        xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
+        box on; axis square;view([0 -90])
+        ylabel('$Z$-axis','FontSize',14,'Interpreter','latex')
+        xlabel('$R$-axis','FontSize',14,'Interpreter','latex')
+        
+        
+        % % % % % Camera diagnostic % % % % %
+        
+        A = Psyn_L3';
+        minval = min(min(A));
+        maxval = 0.8*max(max(A));
+        v = linspace(minval,maxval,25);
+        
+        figure(h);
+        subplot(4,2,5)
+        contourf(rescaled_xAxis,rescaled_yAxis,A,v,'LineStyle','none')
+        hold on;plot(rescaled_xpixel,rescaled_ypixel,'w','Linewidth',0.5);hold off
+        hold on;plot(rescaled_xperp,rescaled_yperp,-rescaled_xperp,rescaled_yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+        for ii=1:niw
+            hold on;plot(rescaled_Xiw(1,:,ii),rescaled_Xiw(2,:,ii),'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+        end
+        a = max(rescaled_yperp);angle = pi/4;b = a*sin(angle);xb = a*cos(angle);
+        rescaled_wxAxisn = ST.params.fields.Ro-xb;
+        rescaled_wxAxisp = ST.params.fields.Ro+xb;
+        hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
+            'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+        angle = pi/8;b = a*sin(angle);xb = a*cos(angle);
+        rescaled_wxAxisn = ST.params.fields.Ro-xb;
+        rescaled_wxAxisp = ST.params.fields.Ro+xb;
+        hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
+            'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+        hold on;plot([ST.params.fields.Ro,-ST.params.fields.Ro],[a,a],[ST.params.fields.Ro,-ST.params.fields.Ro],[-a,-a],...
+            'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+        hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
+            'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
+        cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
+        ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
+        xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
+        ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
+        axis([xmin, xmax, ymin, ymax]);
+        box on; axis square;axis ij;
+        ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
+        xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+        
+        
+        A = np_L3';
+        minval = min(min(A));
+        maxval = 0.8*max(max(A));
+        v = linspace(minval,maxval,25);
+        
+        figure(h);
+        subplot(4,2,6)
+        contourf(rescaled_xAxis,rescaled_yAxis,A,v,'LineStyle','none')
+        hold on;plot(rescaled_xpixel,rescaled_ypixel,'w','Linewidth',0.5);hold off
+        hold on;plot(rescaled_xperp,rescaled_yperp,-rescaled_xperp,rescaled_yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+        for ii=1:niw
+            hold on;plot(rescaled_Xiw(1,:,ii),rescaled_Xiw(2,:,ii),'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+        end
+        a = max(rescaled_yperp);angle = pi/4;b = a*sin(angle);xb = a*cos(angle);
+        rescaled_wxAxisn = ST.params.fields.Ro-xb;
+        rescaled_wxAxisp = ST.params.fields.Ro+xb;
+        hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
+            'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+        angle = pi/8;b = a*sin(angle);xb = a*cos(angle);
+        rescaled_wxAxisn = ST.params.fields.Ro-xb;
+        rescaled_wxAxisp = ST.params.fields.Ro+xb;
+        hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
+            'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+        hold on;plot([ST.params.fields.Ro,-ST.params.fields.Ro],[a,a],[ST.params.fields.Ro,-ST.params.fields.Ro],[-a,-a],...
+            'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+        hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
+            'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
+        cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
+        ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
+        xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
+        ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
+        axis([xmin, xmax, ymin, ymax]);
+        box on; axis square;axis ij;
+        ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
+        xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+        
+        A = Psyn_L4';
+        minval = min(min(A));
+        maxval = 0.8*max(max(A));
+        v = linspace(minval,maxval,25);
+        
+        figure(h);
+        subplot(4,2,7)
+        contourf(rescaled_xAxis,rescaled_yAxis,A,v,'LineStyle','none')
+        hold on;plot(rescaled_xpixel,rescaled_ypixel,'w','Linewidth',0.5);hold off
+        hold on;plot(rescaled_xperp,rescaled_yperp,-rescaled_xperp,rescaled_yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+        for ii=1:niw
+            hold on;plot(rescaled_Xiw(1,:,ii),rescaled_Xiw(2,:,ii),'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+        end
+        a = max(rescaled_yperp);angle = pi/4;b = a*sin(angle);xb = a*cos(angle);
+        rescaled_wxAxisn = ST.params.fields.Ro-xb;
+        rescaled_wxAxisp = ST.params.fields.Ro+xb;
+        hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
+            'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+        angle = pi/8;b = a*sin(angle);xb = a*cos(angle);
+        rescaled_wxAxisn = ST.params.fields.Ro-xb;
+        rescaled_wxAxisp = ST.params.fields.Ro+xb;
+        hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
+            'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+        hold on;plot([ST.params.fields.Ro,-ST.params.fields.Ro],[a,a],[ST.params.fields.Ro,-ST.params.fields.Ro],[-a,-a],...
+            'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+        hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
+            'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
+        cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
+        ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
+        xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
+        ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
+        axis([xmin, xmax, ymin, ymax]);
+        box on; axis square;axis ij;
+        ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
+        xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+        
+        
+        A = np_L4';
+        minval = min(min(A));
+        maxval = 0.8*max(max(A));
+        v = linspace(minval,maxval,25);
+        
+        figure(h);
+        subplot(4,2,8)
+        contourf(rescaled_xAxis,rescaled_yAxis,A,v,'LineStyle','none')
+        hold on;plot(rescaled_xpixel,rescaled_ypixel,'w','Linewidth',0.5);hold off
+        hold on;plot(rescaled_xperp,rescaled_yperp,-rescaled_xperp,rescaled_yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+        for ii=1:niw
+            hold on;plot(rescaled_Xiw(1,:,ii),rescaled_Xiw(2,:,ii),'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+        end
+        a = max(rescaled_yperp);angle = pi/4;b = a*sin(angle);xb = a*cos(angle);
+        rescaled_wxAxisn = ST.params.fields.Ro-xb;
+        rescaled_wxAxisp = ST.params.fields.Ro+xb;
+        hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
+            'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+        angle = pi/8;b = a*sin(angle);xb = a*cos(angle);
+        rescaled_wxAxisn = ST.params.fields.Ro-xb;
+        rescaled_wxAxisp = ST.params.fields.Ro+xb;
+        hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
+            'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+        hold on;plot([ST.params.fields.Ro,-ST.params.fields.Ro],[a,a],[ST.params.fields.Ro,-ST.params.fields.Ro],[-a,-a],...
+            'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
+        hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
+            'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
+        cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
+        ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
+        xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
+        ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
+        axis([xmin, xmax, ymin, ymax]);
+        box on; axis square;axis ij;
+        ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
+        xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+        
+        saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
     end
-    a = max(rescaled_yperp);angle = pi/4;b = a*sin(angle);xb = a*cos(angle);
-    rescaled_wxAxisn = ST.params.fields.Ro-xb;
-    rescaled_wxAxisp = ST.params.fields.Ro+xb;
-    hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
-        'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
-    angle = pi/8;b = a*sin(angle);xb = a*cos(angle);
-    rescaled_wxAxisn = ST.params.fields.Ro-xb;
-    rescaled_wxAxisp = ST.params.fields.Ro+xb;
-    hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
-        'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
-    hold on;plot([ST.params.fields.Ro,-ST.params.fields.Ro],[a,a],[ST.params.fields.Ro,-ST.params.fields.Ro],[-a,-a],...
-        'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
-    hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
-    'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
-    cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-    ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
-    xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
-    ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
-    axis([xmin, xmax, ymin, ymax]);
-    box on; axis square;axis ij;
-    ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-    xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
-    
-   
-    A = np_L3';
-    minval = min(min(A));
-    maxval = 0.8*max(max(A));
-    v = linspace(minval,maxval,25);
-    
-    figure(h);
-    subplot(4,2,6)
-    contourf(rescaled_xAxis,rescaled_yAxis,A,v,'LineStyle','none')
-    hold on;plot(rescaled_xpixel,rescaled_ypixel,'w','Linewidth',0.5);hold off
-    hold on;plot(rescaled_xperp,rescaled_yperp,-rescaled_xperp,rescaled_yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
-    for ii=1:niw
-        hold on;plot(rescaled_Xiw(1,:,ii),rescaled_Xiw(2,:,ii),'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
-    end
-    a = max(rescaled_yperp);angle = pi/4;b = a*sin(angle);xb = a*cos(angle);
-    rescaled_wxAxisn = ST.params.fields.Ro-xb;
-    rescaled_wxAxisp = ST.params.fields.Ro+xb;
-    hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
-        'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
-    angle = pi/8;b = a*sin(angle);xb = a*cos(angle);
-    rescaled_wxAxisn = ST.params.fields.Ro-xb;
-    rescaled_wxAxisp = ST.params.fields.Ro+xb;
-    hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
-        'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
-    hold on;plot([ST.params.fields.Ro,-ST.params.fields.Ro],[a,a],[ST.params.fields.Ro,-ST.params.fields.Ro],[-a,-a],...
-        'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
-    hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
-    'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
-    cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-    ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
-    xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
-    ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
-    axis([xmin, xmax, ymin, ymax]);
-    box on; axis square;axis ij;
-    ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-    xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
-    
-    A = Psyn_L4';
-    minval = min(min(A));
-    maxval = 0.8*max(max(A));
-    v = linspace(minval,maxval,25);
-    
-    figure(h);
-    subplot(4,2,7)
-    contourf(rescaled_xAxis,rescaled_yAxis,A,v,'LineStyle','none')
-    hold on;plot(rescaled_xpixel,rescaled_ypixel,'w','Linewidth',0.5);hold off
-    hold on;plot(rescaled_xperp,rescaled_yperp,-rescaled_xperp,rescaled_yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
-    for ii=1:niw
-        hold on;plot(rescaled_Xiw(1,:,ii),rescaled_Xiw(2,:,ii),'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
-    end
-    a = max(rescaled_yperp);angle = pi/4;b = a*sin(angle);xb = a*cos(angle);
-    rescaled_wxAxisn = ST.params.fields.Ro-xb;
-    rescaled_wxAxisp = ST.params.fields.Ro+xb;
-    hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
-        'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
-    angle = pi/8;b = a*sin(angle);xb = a*cos(angle);
-    rescaled_wxAxisn = ST.params.fields.Ro-xb;
-    rescaled_wxAxisp = ST.params.fields.Ro+xb;
-    hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
-        'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
-    hold on;plot([ST.params.fields.Ro,-ST.params.fields.Ro],[a,a],[ST.params.fields.Ro,-ST.params.fields.Ro],[-a,-a],...
-        'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
-    hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
-    'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
-    cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-    ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
-    xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
-    ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
-    axis([xmin, xmax, ymin, ymax]);
-    box on; axis square;axis ij;
-    ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-    xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
-    
-   
-    A = np_L4';
-    minval = min(min(A));
-    maxval = 0.8*max(max(A));
-    v = linspace(minval,maxval,25);
-    
-    figure(h);
-    subplot(4,2,8)
-    contourf(rescaled_xAxis,rescaled_yAxis,A,v,'LineStyle','none')
-    hold on;plot(rescaled_xpixel,rescaled_ypixel,'w','Linewidth',0.5);hold off
-    hold on;plot(rescaled_xperp,rescaled_yperp,-rescaled_xperp,rescaled_yperp,'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
-    for ii=1:niw
-        hold on;plot(rescaled_Xiw(1,:,ii),rescaled_Xiw(2,:,ii),'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
-    end
-    a = max(rescaled_yperp);angle = pi/4;b = a*sin(angle);xb = a*cos(angle);
-    rescaled_wxAxisn = ST.params.fields.Ro-xb;
-    rescaled_wxAxisp = ST.params.fields.Ro+xb;
-    hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
-        'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
-    angle = pi/8;b = a*sin(angle);xb = a*cos(angle);
-    rescaled_wxAxisn = ST.params.fields.Ro-xb;
-    rescaled_wxAxisp = ST.params.fields.Ro+xb;
-    hold on;plot([rescaled_wxAxisn,-rescaled_wxAxisp],[b,b],[rescaled_wxAxisn,-rescaled_wxAxisp],[-b,-b],...
-        'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
-    hold on;plot([ST.params.fields.Ro,-ST.params.fields.Ro],[a,a],[ST.params.fields.Ro,-ST.params.fields.Ro],[-a,-a],...
-        'Color',[0.7,0.7,0.7],'Linewidth',1);hold off
-    hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
-    'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
-    cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-    ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
-    xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
-    ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
-    axis([xmin, xmax, ymin, ymax]);
-    box on; axis square;axis ij;
-    ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-    xlabel('$x$-axis','FontSize',12,'Interpreter','latex')    
-    
-   saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
 end
 end
-
-
