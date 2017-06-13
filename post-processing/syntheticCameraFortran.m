@@ -564,7 +564,7 @@ for ss=1:ST.params.simulation.num_species
         
         P_L2 = zeros(Nl,1);
         for it=1:ST.num_snapshots
-            P_L2 = P_L2 + ST.data.(['sp' num2str(ss)]).P_lambda(:,it)*npl(it);
+            P_L2 = P_L2 + ST.data.(['sp' num2str(ss)]).P_lambda(i1:i2,it)*npl(it);
         end
         P_L2 = P_L2/sum(npl);
         
@@ -572,14 +572,14 @@ for ss=1:ST.params.simulation.num_species
         
         P_L3 = zeros(Nl,1);
         for it=1:ST.num_snapshots
-            P_L3 = P_L3 + ST.data.(['sp' num2str(ss)]).P_l_pixel(:,it).*np(it);
+            P_L3 = P_L3 + ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,it).*np(it);
         end
         P_L3 = P_L3/sum(npl);
 %         P_L3 = P_L3/sum(np);
         
         P_L4 = zeros(Nl,1);
         for it=1:ST.num_snapshots
-            P_L4 = P_L4 + ST.data.(['sp' num2str(ss)]).P_a_pixel(:,it).*np(it);
+            P_L4 = P_L4 + ST.data.(['sp' num2str(ss)]).P_a_pixel(i1:i2,it).*np(it);
         end
         P_L4 = P_L4/sum(npl);
 %         P_L4 = P_L4/sum(np);
@@ -711,6 +711,7 @@ for ss=1:ST.params.simulation.num_species
     figure(h);
     subplot(4,2,1)
     contourf(RAxis,ZAxis,A,v,'LineStyle','none')
+    ax = gca; ax.YDir = 'reverse';
     hold on;plot(x,y,'w','Linewidth',2);hold off
     hold on;plot(ST.params.fields.Ro,0,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
         'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
@@ -752,8 +753,8 @@ for ss=1:ST.params.simulation.num_species
 %             axis_lambda,f_L3/max(f_L3),'b',axis_lambda,f_L4/max(f_L4),'g','LineWidth',1)
     catch
         figure(h)
-        plot(axis_lambda,P_theory,'k',axis_lambda,f_L2,'r','LineWidth',1)
-        figure;plot(axis_lambda,f_L2./P_theory,'r','LineWidth',1)
+        plot(axis_lambda,P_theory(i1:i2),'k',axis_lambda,f_L2,'r','LineWidth',1)
+        figure;plot(axis_lambda,f_L2./P_theory(i1:i2),'r','LineWidth',1)
     end
     ylabel('$P_{syn}$ (A.U.)','FontSize',12,'Interpreter','latex')
     xlim([min(axis_lambda) max(axis_lambda)])
@@ -770,6 +771,7 @@ for ss=1:ST.params.simulation.num_species
     figure(h);
     subplot(4,2,3)
     contourf(RAxis,ZAxis,A,v,'LineStyle','none')
+    ax = gca; ax.YDir = 'reverse';
     hold on;plot(x,y,'w','Linewidth',2);hold off
     hold on;plot(ST.params.fields.Ro,0,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
         'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
@@ -788,6 +790,7 @@ for ss=1:ST.params.simulation.num_species
     figure(h);
     subplot(4,2,4)
     contourf(RAxis,ZAxis,A,v,'LineStyle','none')
+    ax = gca; ax.YDir = 'reverse';
     hold on;plot(x,y,'w','Linewidth',2);hold off
     hold on;plot(ST.params.fields.Ro,0,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
     'MarkerEdgeColor',[0.6,0.6,0.6]);hold off

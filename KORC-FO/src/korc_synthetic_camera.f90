@@ -43,6 +43,8 @@ MODULE korc_synthetic_camera
 		REAL(rp), DIMENSION(:), ALLOCATABLE :: lambda ! In cm
 
 		LOGICAL :: integrated_opt
+		LOGICAL :: toroidal_sections
+		INTEGER :: ntor_sections
 	END TYPE CAMERA
 
 	TYPE, PRIVATE :: ANGLES
@@ -70,7 +72,8 @@ MODULE korc_synthetic_camera
 
 	PRIVATE :: clockwise_rotation,anticlockwise_rotation,cross,check_if_visible,calculate_rotation_angles,&
 				zeta,fx,arg,Po,P1,Psyn,chic,psic,save_synthetic_camera_params,besselk,&
-				angular_density,spectral_density,IntK,nintegral_besselk,save_snapshot_var,trapz
+				angular_density,spectral_density,integrated_SE_toroidal_sections,&
+				IntK,nintegral_besselk,save_snapshot_var,trapz
 	PUBLIC :: initialize_synthetic_camera,synthetic_camera
 
 	CONTAINS
@@ -180,12 +183,14 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 	REAL(rp) :: lambda_min ! Minimum wavelength in cm
 	REAL(rp) :: lambda_max ! Maximum wavelength in cm
 	INTEGER :: Nlambda
-	LOGICAL :: camera_on, integrated_opt
+	LOGICAL :: camera_on, integrated_opt, toroidal_sections
+	INTEGER :: ntor_sections
 	REAL(rp) :: xmin, xmax, ymin, ymax, DX, DY
 	INTEGER :: ii
 
 	NAMELIST /SyntheticCamera/ camera_on,aperture,Riw,num_pixels,sensor_size,focal_length,&
-								position,incline,lambda_min,lambda_max,Nlambda,integrated_opt
+								position,incline,lambda_min,lambda_max,Nlambda,integrated_opt,&
+								toroidal_sections,ntor_sections
 
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'(/,"* * * * * * * * * * * * * * * * * *")')
@@ -214,6 +219,8 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 	cam%Dlambda = (cam%lambda_max - cam%lambda_min)/REAL(cam%Nlambda,rp)
 	ALLOCATE(cam%lambda(cam%Nlambda))
 	cam%integrated_opt = integrated_opt
+	cam%toroidal_sections = toroidal_sections
+	cam%ntor_sections = ntor_sections
 	
 	if (cam%camera_on) then
 		do ii=1_idef,cam%Nlambda
@@ -1356,6 +1363,424 @@ SUBROUTINE integrated_angular_density(params,spp)
 END SUBROUTINE integrated_angular_density
 
 
+SUBROUTINE integrated_SE_toroidal_sections(params,spp)
+	IMPLICIT NONE
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
+	CHARACTER(MAX_STRING_LENGTH) :: var_name
+	LOGICAL, DIMENSION(:,:,:), ALLOCATABLE :: bool_pixel_array
+	LOGICAL :: bool
+	REAL(rp), DIMENSION(3) :: binorm, n, nperp
+	REAL(rp), DIMENSION(3) :: X, V, B, E, XC
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: angle_pixel_array
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: np_angular_pixel
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: Psyn_angular_pixel
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: np_lambda_pixel
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: Psyn_lambda_pixel
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: P_lambda_pixel
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: P_angular_pixel
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: P_l_pixel
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: P_a_pixel
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: np_pixel
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: P_lambda, P_angular
+	REAL(rp) :: q, m, k, u, g, l, threshold_angle, threshold_angle_simple_model
+	REAL(rp) :: psi, chi, beta, theta, Psyn_tmp
+	REAL(rp) :: r, photon_energy
+	REAL(rp) :: angle, clockwise
+	REAL(rp) :: units
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: send_buffer, receive_buffer
+	REAL(rp) :: lc, zeta
+	REAL(rp) :: Dtor
+	INTEGER :: ii,jj,ll,ss,pp
+	INTEGER :: itor
+    INTEGER :: numel, mpierr
+
+
+	ALLOCATE(bool_pixel_array(cam%num_pixels(1),cam%num_pixels(2),2)) ! (NX,NY,2)
+	ALLOCATE(angle_pixel_array(cam%num_pixels(1),cam%num_pixels(2),2)) ! (NX,NY,2)
+
+	ALLOCATE(np_angular_pixel(cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species))
+	ALLOCATE(Psyn_angular_pixel(cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species))
+
+	ALLOCATE(np_lambda_pixel(cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species))
+	ALLOCATE(Psyn_lambda_pixel(cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species))
+
+	ALLOCATE(P_lambda(cam%Nlambda,cam%ntor_sections))
+	ALLOCATE(P_angular(cam%Nlambda,cam%ntor_sections))
+
+	ALLOCATE(P_l_pixel(cam%Nlambda,cam%ntor_sections,params%num_species))
+	ALLOCATE(P_a_pixel(cam%Nlambda,cam%ntor_sections,params%num_species))
+	ALLOCATE(np_pixel(params%num_species))
+
+
+	np_angular_pixel = 0.0_rp
+	Psyn_angular_pixel = 0.0_rp
+
+	np_lambda_pixel = 0.0_rp
+	Psyn_lambda_pixel = 0.0_rp
+
+	P_l_pixel = 0.0_rp
+	P_a_pixel = 0.0_rp
+	np_pixel = 0.0_rp
+
+	Dtor = 2.0_rp*C_PI/REAL(cam%ntor_sections,rp)
+
+	do ss=1_idef,params%num_species
+		q = ABS(spp(ss)%q)*params%cpp%charge
+		m = spp(ss)%m*params%cpp%mass
+
+!$OMP PARALLEL FIRSTPRIVATE(q,m,Dtor) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
+!$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,threshold_angle,threshold_angle_simple_model,theta,&
+!$OMP& psi,chi,beta,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp,&
+!$OMP& r,photon_energy,lc,zeta,P_lambda,P_angular,itor)&
+!$OMP& SHARED(params,spp,ss,Psyn_angular_pixel,np_angular_pixel,np_lambda_pixel,Psyn_lambda_pixel,&
+!$OMP& P_l_pixel,P_a_pixel,np_pixel)
+!$OMP DO
+		do pp=1_idef,spp(ss)%ppp
+			if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
+				V = spp(ss)%vars%V(:,pp)*params%cpp%velocity
+				X = spp(ss)%vars%X(:,pp)*params%cpp%length
+				g = spp(ss)%vars%g(pp)
+				B = spp(ss)%vars%B(:,pp)*params%cpp%Bo
+				E = spp(ss)%vars%E(:,pp)*params%cpp%Eo
+
+				binorm = cross(V,E) + cross(V,cross(V,B))
+		
+				u = SQRT(DOT_PRODUCT(V,V))
+				k = q*SQRT(DOT_PRODUCT(binorm,binorm))/(spp(ss)%vars%g(pp)*m*u**3)
+
+				lc = (4.0_rp*C_PI/3.0_rp)/(k*g**3) ! Critical wavelength
+
+				binorm = binorm/SQRT(DOT_PRODUCT(binorm,binorm))
+
+				threshold_angle = (1.5_rp*k*cam%lambda_max/C_PI)**(1.0_rp/3.0_rp) ! In radians
+
+				threshold_angle_simple_model = 1.0_rp/g
+
+				np_pixel(ss) = np_pixel(ss) + 1.0_rp ! We count all the confined particles.
+
+				call check_if_visible(X,V/u,MAXVAL((/threshold_angle,threshold_angle_simple_model/)),bool,angle)
+			
+				if (bool.EQV..TRUE.) then
+
+					X(1:2) = clockwise_rotation(X(1:2),angle)
+					V(1:2) = clockwise_rotation(V(1:2),angle)
+					binorm(1:2) = clockwise_rotation(binorm(1:2),angle)
+
+					call calculate_rotation_angles(X,bool_pixel_array,angle_pixel_array)
+
+					clockwise = ATAN2(X(2),X(1))
+					if (clockwise.LT.0.0_rp) clockwise = clockwise + 2.0_rp*C_PI
+
+					do ii=1_idef,cam%num_pixels(1) ! NX
+						do jj=1_idef,cam%num_pixels(2) ! NY
+							
+							if (bool_pixel_array(ii,jj,1)) then
+								angle = angle_pixel_array(ii,jj,1) - clockwise ! Here, angle is modified w.r.t. check_if_visible.
+								itor = floor(angle_pixel_array(ii,jj,1)/Dtor) + 1_idef
+
+								XC = (/cam%position(1)*COS(angle),-cam%position(1)*SIN(angle),cam%position(2)/)
+
+								n = XC - X
+								r = SQRT(DOT_PRODUCT(n,n))
+								n = n/r
+
+								beta = ACOS(DOT_PRODUCT(n,binorm))
+								if (beta.GT.0.5_rp*C_PI) psi = beta - 0.5_rp*C_PI
+								if (beta.LT.0.5_rp*C_PI) psi = 0.5_rp*C_PI - beta
+
+								nperp = n - DOT_PRODUCT(n,binorm)*binorm
+								nperp = nperp/SQRT(DOT_PRODUCT(nperp,nperp))
+								chi = ABS(ACOS(DOT_PRODUCT(nperp,V/u)))
+
+								theta = ABS(ACOS(DOT_PRODUCT(n,V/u)))
+
+								P_lambda = 0.0_rp
+								P_angular = 0.0_rp
+
+								do ll=1_idef,cam%Nlambda ! Nlambda
+									l = cam%lambda(ll)
+									photon_energy = C_h*C_C/l
+
+									if (theta .LE. threshold_angle_simple_model) then
+										zeta = lc/l
+
+										P_lambda(ll,itor) = (C_C*C_E**2)*P_integral(zeta)/(SQRT(3.0_rp)*C_E0*g**2*l**3)
+										np_lambda_pixel(ii,jj,itor,ss) = np_lambda_pixel(ii,jj,itor,ss) + 1.0_rp
+									end if
+
+									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
+										P_angular(ll,itor) = Psyn(g,psi,k,l,chi)
+										if (P_angular(ll,itor).GT.0.0_rp) then
+											np_angular_pixel(ii,jj,itor,ss) = np_angular_pixel(ii,jj,itor,ss) + 1.0_rp
+										else
+											P_angular(ll,itor) = 0.0_rp
+										end if
+									end if
+								end do ! Nlambda	
+
+								P_l_pixel(:,itor,ss) = P_l_pixel(:,itor,ss) + &
+															P_lambda(:,itor)/(2.0_rp*C_PI*(1.0_rp - COS(1.0_rp/g)))
+								P_a_pixel(:,itor,ss) = P_a_pixel(:,itor,ss) + P_angular(:,itor)
+
+								Psyn_lambda_pixel(ii,jj,itor,ss) = Psyn_lambda_pixel(ii,jj,itor,ss) + &
+															trapz(cam%lambda,P_lambda(:,itor))
+								Psyn_angular_pixel(ii,jj,itor,ss) = Psyn_angular_pixel(ii,jj,itor,ss) + &
+															trapz(cam%lambda,P_angular(:,itor))
+							end if
+
+							if (bool_pixel_array(ii,jj,2)) then
+								angle = angle_pixel_array(ii,jj,2) - clockwise
+								itor = floor(angle_pixel_array(ii,jj,2)/Dtor) + 1_idef
+
+								XC = (/cam%position(1)*COS(angle),-cam%position(1)*SIN(angle),cam%position(2)/)
+
+								n = XC - X
+								n = n/SQRT(DOT_PRODUCT(n,n))
+
+								beta = ACOS(DOT_PRODUCT(n,binorm))
+								if (beta.GT.0.5_rp*C_PI) psi = beta - 0.5_rp*C_PI
+								if (beta.LT.0.5_rp*C_PI) psi = 0.5_rp*C_PI - beta
+
+								nperp = n - DOT_PRODUCT(n,binorm)*binorm
+								nperp = nperp/SQRT(DOT_PRODUCT(nperp,nperp))
+								chi = ABS(ACOS(DOT_PRODUCT(nperp,V/u)))
+
+								theta = ABS(ACOS(DOT_PRODUCT(n,V/u)))
+
+								P_lambda = 0.0_rp
+								P_angular = 0.0_rp
+
+								do ll=1_idef,cam%Nlambda ! Nlambda
+									l = cam%lambda(ll)
+									photon_energy = C_h*C_C/l
+
+									if (theta .LE. threshold_angle_simple_model) then
+										zeta = lc/l
+
+										P_lambda(ll,itor) = (C_C*C_E**2)*P_integral(zeta)/(SQRT(3.0_rp)*C_E0*g**2*l**3)
+										np_lambda_pixel(ii,jj,itor,ss) = np_lambda_pixel(ii,jj,itor,ss) + 1.0_rp
+									end if
+
+									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
+										P_angular(ll,itor) = Psyn(g,psi,k,l,chi)
+										if (P_angular(ll,itor).GT.0.0_rp) then
+											np_angular_pixel(ii,jj,itor,ss) = np_angular_pixel(ii,jj,itor,ss) + 1.0_rp
+										else
+											P_angular(ll,itor) = 0.0_rp
+										end if
+									end if
+								end do ! Nlambda	
+
+								P_l_pixel(:,itor,ss) = P_l_pixel(:,itor,ss) + &
+															P_lambda(:,itor)/(2.0_rp*C_PI*(1.0_rp - COS(1.0_rp/g)))
+								P_a_pixel(:,itor,ss) = P_a_pixel(:,itor,ss) + P_angular(:,itor)
+
+								Psyn_lambda_pixel(ii,jj,itor,ss) = Psyn_lambda_pixel(ii,jj,itor,ss) + &
+															trapz(cam%lambda,P_lambda(:,itor))
+								Psyn_angular_pixel(ii,jj,itor,ss) = Psyn_angular_pixel(ii,jj,itor,ss) + &
+															trapz(cam%lambda,P_angular(:,itor))
+							end if
+
+						end do ! NY
+					end do ! NX
+				end if ! check if bool == TRUE
+
+			end if ! if confined
+		end do ! particles
+!$OMP END DO
+!$OMP END PARALLEL
+	end do ! species
+
+!	* * * * * * * IMPORTANT * * * * * * *
+!	* * * * * * * * * * * * * * * * * * *
+!	Here Psyn has units of Watts/m 
+!	or (photons/s)(m^-1). See above.
+!	* * * * * * * * * * * * * * * * * * *
+!	* * * * * * * IMPORTANT * * * * * * *
+
+	units = 1.0_rp
+
+	if (params%mpi_params%nmpi.GT.1_idef) then 
+		numel = cam%num_pixels(1)*cam%num_pixels(2)*params%num_species*cam%ntor_sections
+
+		ALLOCATE(send_buffer(numel))
+		ALLOCATE(receive_buffer(numel))
+
+		send_buffer = RESHAPE(Psyn_angular_pixel,(/numel/))
+		receive_buffer = 0.0_rp
+		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		if (params%mpi_params%rank.EQ.0_idef) then
+		    Psyn_angular_pixel = &
+								RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species/))
+
+			var_name = 'Psyn_angular_pixel'
+			call save_snapshot_var(params,Psyn_angular_pixel,var_name)
+		end if
+
+		DEALLOCATE(send_buffer)
+		DEALLOCATE(receive_buffer)
+
+		ALLOCATE(send_buffer(numel))
+		ALLOCATE(receive_buffer(numel))
+
+		send_buffer = RESHAPE(np_angular_pixel,(/numel/))
+		receive_buffer = 0.0_rp
+		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		if (params%mpi_params%rank.EQ.0_idef) then
+		    np_angular_pixel = &
+								RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species/))
+
+			var_name = 'np_angular_pixel'
+			call save_snapshot_var(params,np_angular_pixel,var_name)
+		end if
+
+		DEALLOCATE(send_buffer)
+		DEALLOCATE(receive_buffer)
+
+
+		ALLOCATE(send_buffer(numel))
+		ALLOCATE(receive_buffer(numel))
+
+		send_buffer = RESHAPE(Psyn_lambda_pixel,(/numel/))
+		receive_buffer = 0.0_rp
+		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		if (params%mpi_params%rank.EQ.0_idef) then
+		    Psyn_lambda_pixel = &
+								RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species/))
+
+			var_name = 'Psyn_lambda_pixel'
+			call save_snapshot_var(params,Psyn_lambda_pixel,var_name)
+		end if
+
+		DEALLOCATE(send_buffer)
+		DEALLOCATE(receive_buffer)
+
+		ALLOCATE(send_buffer(numel))
+		ALLOCATE(receive_buffer(numel))
+
+		send_buffer = RESHAPE(np_lambda_pixel,(/numel/))
+		receive_buffer = 0.0_rp
+		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		if (params%mpi_params%rank.EQ.0_idef) then
+		    np_lambda_pixel = &
+								RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species/))
+
+			var_name = 'np_lambda_pixel'
+			call save_snapshot_var(params,np_lambda_pixel,var_name)
+		end if
+
+		DEALLOCATE(send_buffer)
+		DEALLOCATE(receive_buffer)
+
+
+
+		numel = params%num_species
+
+		ALLOCATE(send_buffer(numel))
+		ALLOCATE(receive_buffer(numel))
+
+		send_buffer = np_pixel
+		receive_buffer = 0.0_rp
+		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		if (params%mpi_params%rank.EQ.0_idef) then
+		    np_pixel = receive_buffer
+
+	        var_name = 'np_pixel'
+	        call save_snapshot_var(params,np_pixel,var_name)
+		end if
+
+		
+		numel = cam%Nlambda*params%num_species
+		
+		ALLOCATE(send_buffer(numel))
+		ALLOCATE(receive_buffer(numel))
+
+		send_buffer = RESHAPE(P_a_pixel,(/numel/))
+		receive_buffer = 0.0_rp
+		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		if (params%mpi_params%rank.EQ.0_idef) then
+		    P_a_pixel = RESHAPE(receive_buffer,(/cam%Nlambda,cam%ntor_sections,params%num_species/))
+
+		        do ss=1_idef,params%num_species
+					P_a_pixel(:,:,ss) = P_a_pixel(:,:,ss)/np_pixel(ss)
+		        end do
+		        var_name = 'P_a_pixel'
+		        call save_snapshot_var(params,P_a_pixel,var_name)
+		end if
+
+		DEALLOCATE(send_buffer)
+		DEALLOCATE(receive_buffer)
+
+		ALLOCATE(send_buffer(numel))
+		ALLOCATE(receive_buffer(numel))
+
+		send_buffer = RESHAPE(P_l_pixel,(/numel/))
+		receive_buffer = 0.0_rp
+		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		if (params%mpi_params%rank.EQ.0_idef) then
+		    P_l_pixel = RESHAPE(receive_buffer,(/cam%Nlambda,cam%ntor_sections,params%num_species/))
+
+		        do ss=1_idef,params%num_species
+					P_l_pixel(:,:,ss) = P_l_pixel(:,:,ss)/np_pixel(ss)
+		        end do
+		        var_name = 'P_l_pixel'
+		        call save_snapshot_var(params,P_l_pixel,var_name)
+		end if
+
+		DEALLOCATE(send_buffer)
+		DEALLOCATE(receive_buffer)
+
+	    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+	else
+		var_name = 'np_angular_pixel'
+		call save_snapshot_var(params,np_angular_pixel,var_name)
+
+		var_name = 'np_lambda_pixel'
+		call save_snapshot_var(params,np_lambda_pixel,var_name)
+
+		var_name = 'Psyn_angular_pixel'
+		call save_snapshot_var(params,Psyn_angular_pixel,var_name)
+
+		var_name = 'Psyn_lambda_pixel'
+		call save_snapshot_var(params,Psyn_lambda_pixel,var_name)
+
+
+		var_name = 'np_pixel'
+		call save_snapshot_var(params,np_pixel,var_name)
+
+		var_name = 'P_a_pixel'
+		do ss=1_idef,params%num_species
+			P_a_pixel(:,:,ss) = P_a_pixel(:,:,ss)/np_pixel(ss)
+        end do
+		call save_snapshot_var(params,P_a_pixel,var_name)
+
+		var_name = 'P_l_pixel'
+		do ss=1_idef,params%num_species
+			P_l_pixel(:,:,ss) = P_l_pixel(:,:,ss)/np_pixel(ss)
+		end do
+		call save_snapshot_var(params,P_l_pixel,var_name)
+	end if
+
+
+	DEALLOCATE(bool_pixel_array)
+	DEALLOCATE(angle_pixel_array)
+
+	DEALLOCATE(np_angular_pixel)
+    DEALLOCATE(Psyn_angular_pixel)
+
+	DEALLOCATE(np_lambda_pixel)
+    DEALLOCATE(Psyn_lambda_pixel)
+
+	DEALLOCATE(P_lambda)
+	DEALLOCATE(P_angular)
+
+	DEALLOCATE(P_l_pixel)
+	DEALLOCATE(P_a_pixel)
+	DEALLOCATE(np_pixel)
+END SUBROUTINE integrated_SE_toroidal_sections
+
+
 SUBROUTINE spectral_density(params,spp)
 	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
@@ -2109,8 +2534,12 @@ SUBROUTINE synthetic_camera(params,spp)
 	if (cam%camera_on) then
 		write(6,'("MPI:",I5," Synthetic camera diagnostic: ON!")') params%mpi_params%rank
 		if (cam%integrated_opt) then
-			call integrated_angular_density(params,spp)
-			call integrated_spectral_density(params,spp)
+			if (cam%toroidal_sections) then
+				call integrated_SE_toroidal_sections(params,spp)
+			else
+				call integrated_angular_density(params,spp)
+				call integrated_spectral_density(params,spp)
+			end if
 		else
 			call angular_density(params,spp)
 			call spectral_density(params,spp)
