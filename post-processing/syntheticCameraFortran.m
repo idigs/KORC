@@ -19,7 +19,7 @@ ST.data = loadData(ST);
 
 % plotSyntheticCameraAnalysis(ST)
 
-generateFigures(ST);
+% generateFigures(ST);
 
 % testFunction(ST);
 
@@ -74,6 +74,12 @@ NX = ST.params.synthetic_camera_params.num_pixels(1);
 NY = ST.params.synthetic_camera_params.num_pixels(2);
 Nl = ST.params.synthetic_camera_params.Nlambda;
 
+if (ST.params.synthetic_camera_params.toroidal_sections == 1)
+    Ntor = ST.params.synthetic_camera_params.ntor_sections;
+else
+    Ntor = 0;
+end
+
 filename = [ST.path 'synthetic_camera_snapshots.h5'];
 
 if (ST.params.synthetic_camera_params.integrated_opt == 0)
@@ -103,16 +109,25 @@ end
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
+    try
     for ss=1:ST.params.simulation.num_species
         if (strcmp(list{ll},'P_lambda') || strcmp(list{ll},'P_a_pixel') || strcmp(list{ll},'P_l_pixel'))
-            data.(['sp' num2str(ss)]).(list{ll}) = zeros(Nl,ST.num_snapshots);
+            if (ST.params.synthetic_camera_params.toroidal_sections == 1)
+                data.(['sp' num2str(ss)]).(list{ll}) = zeros(Nl,Ntor,ST.num_snapshots);
+            else
+                data.(['sp' num2str(ss)]).(list{ll}) = zeros(Nl,ST.num_snapshots);
+            end
             for ii=1:numel(it) % Here
                 dataset = ...
                     ['/' num2str(it(ii)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
                     '/' list{ll}];
-                data.(['sp' num2str(ss)]).(list{ll})(:,ii) = h5read(filename, dataset);
+                if (ST.params.synthetic_camera_params.toroidal_sections == 1)
+                    data.(['sp' num2str(ss)]).(list{ll})(:,:,ii) = h5read(filename, dataset);
+                else
+                    data.(['sp' num2str(ss)]).(list{ll})(:,ii) = h5read(filename, dataset);
+                end
             end
-        elseif (strcmp(list{ll},'np_lambda') || strcmp(list{ll},'np_pixel'))
+        elseif (strcmp(list{ll},'np_pixel'))
             data.(['sp' num2str(ss)]).(list{ll}) = zeros(1,ST.num_snapshots);
             for ii=1:numel(it) % Here
                 dataset = ...
@@ -121,17 +136,26 @@ for ll=1:length(list)
                 data.(['sp' num2str(ss)]).(list{ll})(ii) = h5read(filename, dataset);
             end
         else
-            data.(['sp' num2str(ss)]).(list{ll}) = zeros(NX,NY,ST.num_snapshots);
+            if (ST.params.synthetic_camera_params.toroidal_sections == 1)
+                data.(['sp' num2str(ss)]).(list{ll}) = zeros(NX,NY,Ntor,ST.num_snapshots);
+            else
+                data.(['sp' num2str(ss)]).(list{ll}) = zeros(NX,NY,ST.num_snapshots);
+            end
+            
             for ii=1:numel(it) % Here
                 dataset = ...
                     ['/' num2str(it(ii)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
                     '/' list{ll}];
-                try
+                if (ST.params.synthetic_camera_params.toroidal_sections == 1)
+                    data.(['sp' num2str(ss)]).(list{ll})(:,:,:,ii) = h5read(filename, dataset);
+                else
                     data.(['sp' num2str(ss)]).(list{ll})(:,:,ii) = h5read(filename, dataset);
-                catch
                 end
             end
         end
+    end
+    catch
+        data.(['sp' num2str(ss)]).(list{ll}) = [];
     end
 end
 
@@ -963,3 +987,5 @@ for ss=1:ST.params.simulation.num_species
    saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
 end
 end
+
+
