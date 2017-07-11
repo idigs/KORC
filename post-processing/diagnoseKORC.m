@@ -25,7 +25,7 @@ ST.data = loadData(ST);
 
 % ST.CP = confined_particles(ST);
 
-% ST.PAD = pitchAngleDiagnostic(ST,30);
+ST.PAD = pitchAngleDiagnostic(ST,30);
 
 % ST.MMD = magneticMomentDiagnostic(ST,70);
 
@@ -49,7 +49,7 @@ ST.data = loadData(ST);
 
 % calculateTemperatureComponents(ST);
 
-avalancheDiagnostic(ST);
+% avalancheDiagnostic(ST);
 
 
 % plotEnergyPitchanglePDF(ST);
@@ -536,12 +536,14 @@ for ii=1:N
     hold on
     
     for ss=1:ST.params.simulation.num_species    
-        xAxis = ( x(ss,:,it) - mean(x(ss,:,it)) )/std(fx(ss,:,it));
-        f = std(fx(ss,:,it))*squeeze(fx(ss,:,it))/trapz(x(ss,:,it),fx(ss,:,it));
+%         xAxis = ( x(ss,:,it) - mean(x(ss,:,it)) )/std(fx(ss,:,it));
+%         f = std(fx(ss,:,it))*squeeze(fx(ss,:,it))/trapz(x(ss,:,it),fx(ss,:,it));
+        xAxis = x(ss,:,it);
+        f = squeeze(fx(ss,:,it));
         
         figure(h3)
-%         plot(xAxis,f,'o:')
-        plot(xAxis,log10(f),'o:')
+        plot(xAxis,f,'o:')
+%         plot(xAxis,log10(f),'o:')
                 
         xAxis = z(ss,:,it);
         f = squeeze(fz(ss,:,it));

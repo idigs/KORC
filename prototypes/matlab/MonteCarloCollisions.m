@@ -32,6 +32,8 @@ CO.np = np; % Number of particles
 
 CO = initializeCollisionOperators(CO);
 
+partiallyIonisedCollisionOperator(CO);
+
 CO = normalize(CO);
 
 % V = ThermalDistribution(CO);
@@ -111,8 +113,16 @@ for ii=1:CO.numIt
         
         subplot(3,5,ii/snapshot+10)
         g = 1./sqrt(1-sum(V.^2,1));
-        E = g*CO.params.me*CO.params.c^2/(abs(CO.params.qe)*1E6);
+%         E = (g*CO.params.me*CO.params.c^2 - CO.params.me*CO.params.c^2)/(abs(CO.params.qe)*1E6);
+        E = (g*CO.params.me*CO.params.c^2 - CO.params.me*CO.params.c^2);
+        kBTe = CO.Te*abs(CO.params.qe);
+        EAxis = linspace(0,10*kBTe,500);
+        fE = 2*(1/kBTe)^(1.5)*sqrt(EAxis/pi).*exp(-EAxis/kBTe);
+%         EAxis = EAxis/(abs(CO.params.qe)*1E6);
+        hold on
         histogram(E,25,'Normalization','pdf','LineStyle','none')
+        plot(EAxis,fE,'k','LineWidth',2)
+        hold off
         xlabel('$\mathcal{E}$ (MeV)','interpreter','latex')
         box on
         grid on
@@ -231,6 +241,46 @@ ylabel('$C_F$ ($e B_0/m_e^2 c $)','Interpreter','latex')
 xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
 end
 
+function PICO = partiallyIonisedCollisionOperator(CO)
+IzAr = [15.7596,27.62965,40.74,59.81,75.02]; % Ionisation energy of Argon (eV)
+IzNe = [21.5646,40.96296,63.45,97.12,126.21]; % Ionisation energy of Neon (eV)
+aAr = [0.353,0.329,0.306,0.283,0.260,0.238];
+k = 5;
+alpha = 1/137;
+ZAr = 18; % Argon atomic number
+
+c = CO.params.c;
+ne = CO.ne/(1E20);
+Te = CO.Te/1E3;
+VTe = CO.VTe;
+
+Clog0 = 14.9 - 0.5*log(ne) + log(Te);
+Clog_ei = @(g) Clog0 + log(1 + (2*c*sqrt(g.^2 - 1)/VTe).^k)/k;
+Clog_ee = @(g) Clog0 + log(1 + (2*c^2*(g - 1)/VTe^2).^(k/2))/k;
+
+yj = @(p,aj) 2*aj.*p/alpha;
+Gj = @(p,Zj,Zoj,aj) (2/3)*(Zj^2 - Zoj^2).*log(yj(p,aj).^1.5 + 1) -...
+                    (2/3)*(Zj-Zoj).^2.*yj(p,aj).^1.5./(3*yj(p,aj).^1.5 + 1);
+
+
+Er = CO.params.me*CO.params.c^2; % Rest energy
+E = Er + linspace(1,30.0E6,1000)*abs(CO.params.qe);
+g = E/Er;
+p = sqrt((E/c).^2 - (CO.params.me*CO.params.c)^2);
+p = p/(CO.params.me*CO.params.c);
+
+EAxis = E/(abs(CO.params.qe*1E6));
+figure
+subplot(2,1,1)
+plot(EAxis,Clog_ei(g),'r',EAxis,Clog_ee(g),'k')
+legend({'$\log\Lambda_{ei}$','$\log\Lambda_{ee}$'},'Interpreter','latex')
+ylabel('$\log\Lambda$','Interpreter','latex')
+xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+
+subplot(2,1,2)
+plot(p,Gj(p,ZAr,1,aAr(1)))
+end
+
 function CO = normalize(CO)
 
 CO.B = CO.B/CO.norm.B;
@@ -321,8 +371,8 @@ CB = CO.cop.CB(v);
 CF = CO.cop.CF(v);
 
 dU = [-2.0*CF*dt + sqrt(2*CA)*dW(1);
-    sqrt(2*CB)*dW(2);
-    sqrt(2*CB)*dW(3)];
+    sqrt(2.0*CB)*dW(2);
+    sqrt(2.0*CB)*dW(3)];
 
 U(1) = (U1+dU(1))*(v1*CO.b1') + (U2+dU(2))*(v2*CO.b1') + (U3+dU(3))*(v3*CO.b1');
 U(2) = (U1+dU(1))*(v1*CO.b2') + (U2+dU(2))*(v2*CO.b2') + (U3+dU(3))*(v3*CO.b2');

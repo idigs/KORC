@@ -13,7 +13,7 @@ module korc_initialize
     implicit none
 	
 
-	PRIVATE :: set_paths,load_korc_params,initialization_sanity_check,unitVectors,random_norm,fth_1V,fth_3V,iso_thermal_distribution
+	PRIVATE :: set_paths,load_korc_params,initialization_sanity_check,random_norm,fth_1V,fth_3V,iso_thermal_distribution
 	PUBLIC :: initialize_korc_parameters,initialize_particles,initialize_fields
 
     contains
