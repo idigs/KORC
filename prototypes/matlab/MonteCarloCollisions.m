@@ -165,10 +165,16 @@ CO.cop.Vc = CO.cop.VTe*sqrt(0.5*CO.cop.Ec/sqrt(Ef*Ef'));
 
 CO.cop.c = CO.params.c;
 
-g = linspace(1,5,1000); % relativistic gamma factor
-E = g*CO.params.me*CO.params.c^2;%*linspace(6E5,50E6,200)*ST.params.qe;
+% g = linspace(1,5,1000); % relativistic gamma factor
+% Er = CO.params.me*CO.params.c^2; % Rest energy
+% E = g*CO.params.me*CO.params.c^2;%*linspace(6E5,50E6,200)*ST.params.qe;
+
 Er = CO.params.me*CO.params.c^2; % Rest energy
+E = Er + linspace(1,30.0E6,1E5)*abs(CO.params.qe);
+g = E/Er;
+
 u = CO.params.c*sqrt(1 - Er^2./E.^2);
+
 
 disp(['Relativistic collisional time: ' num2str(CO.cop.Tau) ' s'])
 disp(['Thermal collisional time: ' num2str(CO.cop.Tauc) ' s'])
@@ -223,62 +229,137 @@ CO.cop.CB = @(v) (0.5*CO.cop.Gamma./v).*( CO.cop.Zeff + ...
 
 % CO.cop.CB = @(v) (0.5*CO.cop.Gamma./v).*( erf(CO.cop.x(v)) - CO.cop.psi(v) );
 
-E = 1E-6*E/abs(CO.params.qe);
+CO.cop.vD = @(v) 2*CO.cop.CB(v)./(v.*CO.cop.g(v)).^2;
+
+CO.cop.vpar = @(v) 2*CO.cop.CA(v)./(v.*CO.cop.g(v)).^2;
+
+CO.cop.vS = @(v) 2*CO.cop.CF(v)./(v.*CO.cop.g(v));
+
+E = 1E-6*(E-Er)/abs(CO.params.qe);
 xAxis = E;
 
 figure;
-subplot(3,1,1);
-plot(xAxis,CO.cop.CA(u));
-ylabel('$C_A$ ($e B_0/m_e^3 c^2 $)','Interpreter','latex')
+subplot(2,1,1);
+plot(xAxis,CO.cop.CA(u),'k',xAxis,CO.cop.CB(u),'r',xAxis,CO.cop.CF(u),'b');
+legend({'$C_A$ ($e B_0/m_e^3 c^2 $)','$C_B$ ($e B_0/m_e^3 c^2 $)','$C_F$ ($e B_0/m_e^2 c $)'},...
+    'Interpreter','latex')
 xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
-subplot(3,1,2);
-plot(xAxis,CO.cop.CB(u));
-ylabel('$C_B$ ($e B_0/m_e^3 c^2 $)','Interpreter','latex')
+box on
+
+subplot(2,1,2)
+semilogy(xAxis,CO.cop.vS(u)/CO.norm.t,'k',...
+    xAxis,CO.cop.vD(u)/CO.norm.t,'r',...
+    xAxis,CO.cop.vpar(u)/CO.norm.t,'b');
+legend({'$\nu_S$','$\nu_D$','$\nu_\parallel$'},'Interpreter','latex')
 xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
-subplot(3,1,3);
-plot(xAxis,CO.cop.CF(u));
-ylabel('$C_F$ ($e B_0/m_e^2 c $)','Interpreter','latex')
-xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+ylabel('$\nu$ (s$^{-1}$)','Interpreter','latex')
+box on
+
+
+% ylabel('$C_A$ ($e B_0/m_e^3 c^2 $)','Interpreter','latex')
+% xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+% subplot(3,1,2);
+% plot(xAxis,CO.cop.CB(u));
+% ylabel('$C_B$ ($e B_0/m_e^3 c^2 $)','Interpreter','latex')
+% xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+% subplot(3,1,3);
+% plot(xAxis,CO.cop.CF(u));
+% ylabel('$C_F$ ($e B_0/m_e^2 c $)','Interpreter','latex')
+% xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
 end
 
 function PICO = partiallyIonisedCollisionOperator(CO)
-IzAr = [15.7596,27.62965,40.74,59.81,75.02]; % Ionisation energy of Argon (eV)
-IzNe = [21.5646,40.96296,63.45,97.12,126.21]; % Ionisation energy of Neon (eV)
-aAr = [0.353,0.329,0.306,0.283,0.260,0.238];
-k = 5;
-alpha = 1/137;
-ZAr = 18; % Argon atomic number
-
 c = CO.params.c;
 ne = CO.ne/(1E20);
 Te = CO.Te/1E3;
 VTe = CO.VTe;
 
+ZAr = 18; % Argon atomic number
+IzAr = [15.7596,27.62965,40.74,59.81,75.02]; % Ionisation energy of Argon (eV)
+aAr = [0.353,0.329,0.306,0.283,0.260,0.238];
+nAr = CO.ne*repmat(1E-1,1,5);
+
+IzNe = [21.5646,40.96296,63.45,97.12,126.21]; % Ionisation energy of Neon (eV)
+
+k = 5;
+alpha = 1/137;
+
 Clog0 = 14.9 - 0.5*log(ne) + log(Te);
+
+% functions
+
 Clog_ei = @(g) Clog0 + log(1 + (2*c*sqrt(g.^2 - 1)/VTe).^k)/k;
+
 Clog_ee = @(g) Clog0 + log(1 + (2*c^2*(g - 1)/VTe^2).^(k/2))/k;
 
-yj = @(p,aj) 2*aj.*p/alpha;
-Gj = @(p,Zj,Zoj,aj) (2/3)*(Zj^2 - Zoj^2).*log(yj(p,aj).^1.5 + 1) -...
-                    (2/3)*(Zj-Zoj).^2.*yj(p,aj).^1.5./(3*yj(p,aj).^1.5 + 1);
+% yj = @(p,aj) 2*aj.*p/alpha;
+yj = @(g,aj) 2*aj.*sqrt(g.^2 - 1)/alpha;
+
+Gj = @(g,Zj,Zoj,aj) (2/3)*(Zj^2 - Zoj^2).*log(yj(g,aj).^1.5 + 1) -...
+                    (2/3)*(Zj-Zoj).^2.*yj(g,aj).^1.5./(3*yj(g,aj).^1.5 + 1);
+
+Tau_ei = @(g) 4*pi*CO.params.ep^2*CO.params.me^2*CO.params.c^3./(CO.ne*CO.params.qe^4*Clog_ei(g));
+
+Tau_ee = @(g) 4*pi*CO.params.ep^2*CO.params.me^2*CO.params.c^3./(CO.ne*CO.params.qe^4*Clog_ee(g));
+
+Zeff = @(nj,Zoj) nj.*Zoj.^2/CO.ne;
+
+hj = @(g,Ij) sqrt((g.^2 - 1).*(g - 1))./Ij;
+
+vDCS = @(g,nj,Zoj) (Zeff(nj,Zoj)./Tau_ei(g)).*g./(g.^2 - 1).^1.5;
+
+vSCS = @(g) (1./Tau_ei(g)).*g.^2./(g.^2 - 1).^1.5;
+
+vD = @(g,nj,Zj,Zoj,aj) vDCS(g,nj,Zoj).*(1 + ( nj.*Gj(g,Zj,Zoj,aj)./(CO.ne*Clog_ei(g)) )./Zeff(nj,Zoj));
+
+vS = @(g,nj,Zj,Zoj,Ij) vSCS(g).*( 1 + nj.*(Zj-Zoj).*(log(1 + hj(g,Ij).^k)/k - 1 + 1./g.^2)./(CO.ne*Clog_ee(g)) );
 
 
-Er = CO.params.me*CO.params.c^2; % Rest energy
-E = Er + linspace(1,30.0E6,1000)*abs(CO.params.qe);
+Er = CO.params.me*CO.params.c^2; % Rest energy (Joules)
+E = Er + linspace(1,30.0E6,1E3)*abs(CO.params.qe);
 g = E/Er;
 p = sqrt((E/c).^2 - (CO.params.me*CO.params.c)^2);
 p = p/(CO.params.me*CO.params.c);
 
 EAxis = E/(abs(CO.params.qe*1E6));
-figure
-subplot(2,1,1)
-plot(EAxis,Clog_ei(g),'r',EAxis,Clog_ee(g),'k')
-legend({'$\log\Lambda_{ei}$','$\log\Lambda_{ee}$'},'Interpreter','latex')
-ylabel('$\log\Lambda$','Interpreter','latex')
-xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
 
-subplot(2,1,2)
-plot(p,Gj(p,ZAr,1,aAr(1)))
+xAxis = EAxis;
+
+for ii=1:5
+    figure
+    subplot(2,2,1)
+    plot(xAxis,Clog_ei(g),'r',xAxis,Clog_ee(g),'k')
+    legend({'$\log\Lambda_{ei}$','$\log\Lambda_{ee}$'},'Interpreter','latex')
+    ylabel('$\log\Lambda$','Interpreter','latex')
+    xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+    box on;xlim([min(xAxis) max(xAxis)])
+    
+    subplot(2,2,2)
+    plot(xAxis,Tau_ei(g),'r',xAxis,Tau_ee(g),'k')
+    legend({'$\tau_{ei}$','$\tau_{ee}$'},'Interpreter','latex')
+    ylabel('$\tau_c$ (s)','Interpreter','latex')
+    xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+    box on;xlim([min(xAxis) max(xAxis)])
+    
+    subplot(2,2,3)
+    semilogy(xAxis,vDCS(g,nAr(ii),ii),'r',...
+        xAxis,vD(g,nAr(ii),ZAr,ii,aAr(ii)),'r--',...
+        xAxis,vSCS(g),'k',...
+        xAxis,vS(g,nAr(ii),ZAr,ii,IzAr(ii)*abs(CO.params.qe)/Er),'k--')
+    legend({'$\nu_{D,CS}$','$\nu_D$','$\nu_{S,CS}$','$\nu_S$'},'Interpreter','latex')
+    ylabel('$\nu_{CS}$ (s$^-1$)','Interpreter','latex')
+    xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+    box on;xlim([min(xAxis) max(xAxis)])
+    
+    subplot(2,2,4)
+    semilogy(xAxis,vD(g,nAr(ii),ZAr,ii,aAr(ii))./vDCS(g,nAr(ii),ii),'r',...
+        xAxis,vS(g,nAr(ii),ZAr,ii,IzAr(ii)*abs(CO.params.qe)/Er)./vSCS(g),'k')
+    legend({'$\nu_D/\nu_{D,CS}$','$\nu_S/\nu_{S,CS}$'},'Interpreter','latex')
+    ylabel('$\nu/\nu_{CS}$','Interpreter','latex')
+    xlabel('Energy $\mathcal{E}$ (MeV)','Interpreter','latex')
+    box on;xlim([min(xAxis) max(xAxis)])
+end
+
 end
 
 function CO = normalize(CO)
