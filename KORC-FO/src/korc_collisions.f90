@@ -472,9 +472,12 @@ subroutine include_CoulombCollisions(params,U)
 
 !	call RANDOM_NUMBER(rnd1)
 !	call RANDOM_NUMBER(rnd2)
+!	rnd1 = random_vector()
+!	rnd2 = random_vector()
+!	dW = SQRT(dt)*SQRT(-2.0_rp*LOG(1.0_rp-rnd1))*COS(2.0_rp*C_PI*rnd2)
+
 	rnd1 = random_vector()
-	rnd2 = random_vector()
-	dW = SQRT(dt)*SQRT(-2.0_rp*LOG(1.0_rp-rnd1))*COS(2.0_rp*C_PI*rnd2)
+	dW = SQRT(dt)*SQRT(3.0_rp)*(-1.0_rp + 2.0_rp*rnd1);
 
 	CAL = CA(v)
 	CFL = CF(v)

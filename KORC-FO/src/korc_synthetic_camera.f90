@@ -2263,6 +2263,8 @@ SUBROUTINE save_synthetic_camera_params(params)
 			attr = "Number of toroidal sections"
 			call save_to_hdf5(h5file_id,dset,cam%ntor_sections,attr)
 		else
+			dset = TRIM(gname) // "/toroidal_sections"
+			attr = "Logical variable: 1=decomposed in toroidal sections, 0=no toroidal decomposition"
 			call save_to_hdf5(h5file_id,dset,0.0_rp,attr)
 		end if
 

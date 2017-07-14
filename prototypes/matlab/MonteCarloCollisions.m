@@ -170,7 +170,7 @@ CO.cop.c = CO.params.c;
 % E = g*CO.params.me*CO.params.c^2;%*linspace(6E5,50E6,200)*ST.params.qe;
 
 Er = CO.params.me*CO.params.c^2; % Rest energy
-E = Er + linspace(1,30.0E6,1E5)*abs(CO.params.qe);
+E = Er + linspace(1.0E-3,50.0E6,1E5)*abs(CO.params.qe);
 g = E/Er;
 
 u = CO.params.c*sqrt(1 - Er^2./E.^2);
@@ -277,7 +277,7 @@ VTe = CO.VTe;
 ZAr = 18; % Argon atomic number
 IzAr = [15.7596,27.62965,40.74,59.81,75.02]; % Ionisation energy of Argon (eV)
 aAr = [0.353,0.329,0.306,0.283,0.260,0.238];
-nAr = CO.ne*repmat(1E-1,1,5);
+nAr = CO.ne*repmat(1.0,1,5);
 
 IzNe = [21.5646,40.96296,63.45,97.12,126.21]; % Ionisation energy of Neon (eV)
 
@@ -316,14 +316,14 @@ vS = @(g,nj,Zj,Zoj,Ij) vSCS(g).*( 1 + nj.*(Zj-Zoj).*(log(1 + hj(g,Ij).^k)/k - 1 
 
 
 Er = CO.params.me*CO.params.c^2; % Rest energy (Joules)
-E = Er + linspace(1,30.0E6,1E3)*abs(CO.params.qe);
+E = Er + linspace(1.0E-3,50.0E6,1E5)*abs(CO.params.qe);
 g = E/Er;
 p = sqrt((E/c).^2 - (CO.params.me*CO.params.c)^2);
 p = p/(CO.params.me*CO.params.c);
 
 EAxis = E/(abs(CO.params.qe*1E6));
 
-xAxis = EAxis;
+xAxis = p;
 
 for ii=1:5
     figure
@@ -445,7 +445,8 @@ U1 = g*(V*v1');
 U2 = g*(V*v2');
 U3 = g*(V*v3');
 
-dW = random('norm',0,sqrt(dt),[3,1]);
+% dW = random('norm',0,sqrt(dt),[3,1]);
+dW = sqrt(3*dt)*random('unif',-1,1,[3,1]);
 
 CA = CO.cop.CA(v);
 CB = CO.cop.CB(v);
