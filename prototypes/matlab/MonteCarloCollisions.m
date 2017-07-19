@@ -1,4 +1,4 @@
-function CO = MonteCarloCollisions(DT,numIt,np,Te,ne,Zeff,ERE)
+function CO = MonteCarloCollisions(DT,numIt,np,Te,ne,Zeff,ERE,Emin)
 % CO = MonteCarloCollisions(1E-2,5,1E4,10E3,1E19,1.0);
 % CO = MonteCarloCollisions(1E-3,10000,100,1E3,1E20,0.0);
 close all
@@ -32,14 +32,17 @@ CO.np = np; % Number of particles
 
 CO = initializeCollisionOperators(CO);
 
-partiallyIonisedCollisionOperator(CO);
+% partiallyIonisedCollisionOperator(CO);
 
 CO = normalize(CO);
 
 % V = ThermalDistribution(CO);
 
-ERE = CO.params.me*CO.params.c^2 + ERE *abs(CO.params.qe);
+ERE = CO.params.me*CO.params.c^2 + ERE*abs(CO.params.qe);
 u = sqrt(1 - (CO.params.me*CO.params.c^2./(ERE)).^2);
+
+Emin = CO.params.me*CO.params.c^2 + Emin*abs(CO.params.qe);
+umin = sqrt(1 - (CO.params.me*CO.params.c^2./(Emin)).^2);
 
 V = repmat([u;0;0],[1,CO.np]);
 
@@ -50,7 +53,8 @@ if (CO.Bo > 0)
     dt = DT*(2*pi/CO.params.wc);
     dt = dt/CO.norm.t;
 else
-    dt = CO.cop.dt;
+%     dt = CO.cop.dt;
+    dt = DT*max(1./[CO.cop.vpar(umin) CO.cop.vD(umin) CO.cop.vS(umin)])
 end
 
 x = linspace(-1,1,500);
@@ -277,7 +281,7 @@ VTe = CO.VTe;
 ZAr = 18; % Argon atomic number
 IzAr = [15.7596,27.62965,40.74,59.81,75.02]; % Ionisation energy of Argon (eV)
 aAr = [0.353,0.329,0.306,0.283,0.260,0.238];
-nAr = CO.ne*repmat(1.0,1,5);
+nAr = CO.ne*ones(1,5);
 
 IzNe = [21.5646,40.96296,63.45,97.12,126.21]; % Ionisation energy of Neon (eV)
 
@@ -323,7 +327,7 @@ p = p/(CO.params.me*CO.params.c);
 
 EAxis = E/(abs(CO.params.qe*1E6));
 
-xAxis = p;
+xAxis = EAxis;
 
 for ii=1:5
     figure
@@ -445,8 +449,8 @@ U1 = g*(V*v1');
 U2 = g*(V*v2');
 U3 = g*(V*v3');
 
-% dW = random('norm',0,sqrt(dt),[3,1]);
-dW = sqrt(3*dt)*random('unif',-1,1,[3,1]);
+dW = random('norm',0,sqrt(dt),[3,1]);
+% dW = sqrt(3*dt)*random('unif',-1,1,[3,1]);
 
 CA = CO.cop.CA(v);
 CB = CO.cop.CB(v);

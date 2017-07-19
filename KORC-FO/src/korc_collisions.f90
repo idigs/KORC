@@ -326,13 +326,14 @@ end subroutine define_collisions_time_step
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
 ! * FUNCTIONS OF COLLISION OPERATOR FOR SINGLE-SPECIES PLASMAS * !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
-function psi(v)
+function psi(x)
 	IMPLICIT NONE
-	REAL(rp), INTENT(IN) :: v
+!	REAL(rp), INTENT(IN) :: v	
+	REAL(rp), INTENT(IN) :: x
 	REAL(rp) :: psi
-	REAL(rp) :: x
+!	REAL(rp) :: x
 
-	x = v/cparams_ss%VTe
+!	x = v/cparams_ss%VTe
 	psi = 0.5_rp*(ERF(x) - 2.0_rp*x*EXP(-x**2)/SQRT(C_PI))/x**2
 end function psi
 
@@ -341,8 +342,10 @@ function CA(v)
 	IMPLICIT NONE
 	REAL(rp), INTENT(IN) :: v
 	REAL(rp) :: CA
+	REAL(rp) :: x
 
-	CA  = cparams_ss%Gammac*psi(v)/v
+	x = v/cparams_ss%VTe
+	CA  = cparams_ss%Gammac*psi(x)/v
 end function CA
 
 
@@ -350,8 +353,10 @@ function CF(v)
 	IMPLICIT NONE
 	REAL(rp), INTENT(IN) :: v
 	REAL(rp) :: CF
+	REAL(rp) :: x
 
-	CF  = cparams_ss%Gammac*psi(v)/cparams_ss%Te
+	x = v/cparams_ss%VTe
+	CF  = cparams_ss%Gammac*psi(x)/cparams_ss%Te
 end function CF
 
 
@@ -363,8 +368,41 @@ function CB(v)
 
 	x = v/cparams_ss%VTe
 	CB  = (0.5_rp*cparams_ss%Gammac/v)*( cparams_ss%Zeff + ERF(x) -&
-			psi(v) + 0.5_rp*cparams_ss%delta**4*x**2 )
+			psi(x) + 0.5_rp*cparams_ss%delta**4*x**2 )
 end function CB
+
+
+function nu_S(v)
+	IMPLICIT NONE
+	REAL(rp), INTENT(IN) :: v ! Normalised particle speed
+	REAL(rp) :: nu_S
+	REAL(rp) :: p
+
+	p = v/SQRT(1.0_rp - v**2)
+	nu_S = 2.0_rp*CF(v)/p
+end function
+
+
+function nu_D(v)
+	IMPLICIT NONE
+	REAL(rp), INTENT(IN) :: v ! Normalised particle speed
+	REAL(rp) :: nu_D
+	REAL(rp) :: p
+
+	p = v/SQRT(1.0_rp - v**2)
+	nu_D = 2.0_rp*CB(v)/p**2
+end function
+
+
+function nu_par(v)
+	IMPLICIT NONE
+	REAL(rp), INTENT(IN) :: v ! Normalised particle speed
+	REAL(rp) :: nu_par
+	REAL(rp) :: p
+
+	p = v/SQRT(1.0_rp - v**2)
+	nu_par = 2.0_rp*CA(v)/p**2
+end function
 
 
 function fun(v)
