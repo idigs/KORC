@@ -741,6 +741,14 @@ subroutine save_simulation_parameters(params,spp,F)
 		ALLOCATE(attr_array(1))		
 		ALLOCATE(idata(1))
 
+		dset = TRIM(gname) // "/simulation_time"
+        attr = "Total aimed simulation time in seconds"
+		call save_to_hdf5(h5file_id,dset,params%simulation_time*params%cpp%time,attr)
+
+		dset = TRIM(gname) // "/snapshot_frequency"
+        attr = "Time between snapshots in seconds"
+		call save_to_hdf5(h5file_id,dset,params%snapshot_frequency*params%cpp%time,attr)
+
 		dset = TRIM(gname) // "/dt"
         attr = "Time step in secs"
 		call save_to_hdf5(h5file_id,dset,params%dt*params%cpp%time,attr)

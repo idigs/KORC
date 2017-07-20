@@ -1,10 +1,10 @@
 &input_parameters
-	t_steps = 0 ! 10100000000 ! 160000000 (32000000) for 1 ms using ANALYTICAL (EXTERNAL) field
-	dt = 1E-2 ! Time step as fraction of non-relativistic gyro-period
-	output_cadence = 3000 ! 1400 for saving each 100 gyro-periods
+	simulation_time = 1.0E-6 ! Total aimed simulation time in seconds
+	snapshot_frequency = 1.0E-8 ! Time between snapshots in seconds
+	dt = 1.0E-2 ! Time step as fraction of non-relativistic gyro-period
 	num_species = 2
 	radiation = .FALSE.
-	collisions = .FALSE.
+	collisions = .TRUE.
 	collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
 	magnetic_field_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
 										! For 'ANALYTICAL', the magnetic field is calculated based on
@@ -20,9 +20,9 @@
 
 &plasma_species
         runaway = .FALSE., .FALSE. !
-        energy_distribution = 'MONOENERGETIC','UNIFORM'	! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE'
+        energy_distribution = 'MONOENERGETIC','MONOENERGETIC'	! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE'
 																				! and 'UNIFORM'
-        pitch_distribution = 'MONOPITCH','UNIFORM'	! Options are: 'MONOPITCH', 'AVALANCHE', and 'UNIFORM'.
+        pitch_distribution = 'MONOPITCH','MONOPITCH'	! Options are: 'MONOPITCH', 'AVALANCHE', and 'UNIFORM'.
 																	! When energy_distribution='THERMAL', the pitch angles 
 																	! correspond to those of a thermalized distribution.
         Ro = 1.475, 1.475 !
@@ -32,7 +32,7 @@
         etao = 5.0, 10.0  ! Initial pitch angle
 		Eo_lims = 1.0E6, 50.0E6, 1.0E6, 30.0E6 ! Lower and upper limit of simulated energy range, in eV.
 		etao_lims = 0.0, 20.0, 0.0, 10.0 ! Lower and upper limit of simulated pitch-angle range, in degrees.
-        ppp = 100000, 100000 ! Number of particles per process (mpi)
+        ppp = 50, 50 ! Number of particles per process (mpi)
         q = -1.0, -1.0 ! Electric charge
         m = 1.0, 1.0 ! In units of electron mass
 /
@@ -45,8 +45,8 @@
 	Bo = 2.19 ! In Teslas. ITER: 5.42 DIII-D: 2.19
 	minor_radius = 0.5 ! Minor radius in meters. ITER: 1.5 DIII-D: 0.5
 	major_radius = 1.5 ! Major radius in meters. ITER: 6.5 DIII-D: 1.6
-	qa = 2.0 ! Safety factor at the separatrix (r=a)
-	qo = 1.6 ! Safety factor at the separatrix (r=a)
+	qa = 3.0 ! Safety factor at the separatrix (r=a)
+	qo = 1.0 ! Safety factor at the separatrix (r=a)
 /
 
 &CollisionParamsMultipleSpecies
@@ -64,7 +64,6 @@
 	Ti = 1.0E3 ! Background ion temperature in eV
 	ne = 1.0E25 ! Background electron density in 1/m^3
 	Zeff = 1.0 ! Effective atomic number
-	Epar = 0.7427 ! Parallel electric field in V/m
 	dTau = 1.0E-3 ! Subcycling time step in collisional time units (Tau)
 /
 
@@ -80,7 +79,7 @@
 /
 
 &SyntheticCamera
-	camera_on = .TRUE. ! .TRUE. or .FALSE.
+	camera_on = .FALSE. ! .TRUE. or .FALSE.
  	Riw = 1.0 ! Radial position of inner wall
  	num_pixels = 50, 50 ! Number of pixels (X,Y)
  	sensor_size = 0.4, 0.4 ! (horizontal,vertical)

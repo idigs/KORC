@@ -14,7 +14,7 @@ module korc_initialize
 	
 
 	PRIVATE :: set_paths,load_korc_params,initialization_sanity_check,random_norm,fth_1V,fth_3V,iso_thermal_distribution
-	PUBLIC :: initialize_korc_parameters,initialize_particles,initialize_fields
+	PUBLIC :: initialize_korc_parameters,initialize_particles,initialize_fields,define_time_step
 
     contains
 
@@ -43,7 +43,8 @@ subroutine load_korc_params(params)
 	implicit none
 	TYPE (KORC_PARAMS), INTENT(INOUT) :: params
 	LOGICAL :: restart ! Not used, yet.
-	INTEGER(ip) :: t_steps
+	REAL(rp) :: simulation_time
+	REAL(rp) :: snapshot_frequency
 	REAL(rp) :: dt
 	LOGICAL :: radiation
 	LOGICAL :: collisions
@@ -52,24 +53,25 @@ subroutine load_korc_params(params)
 	LOGICAL :: poloidal_flux
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
 	CHARACTER(MAX_STRING_LENGTH) :: outputs_list
-	INTEGER(ip) :: output_cadence
 	INTEGER :: num_species
 	INTEGER :: num_impurity_species
 	INTEGER :: imax,imin,ii,jj,num_outputs
 	INTEGER, DIMENSION(2) :: indices
 
-	NAMELIST /input_parameters/ magnetic_field_model,poloidal_flux,magnetic_field_filename,t_steps,dt,&
-            output_cadence,num_species,radiation,collisions,collisions_model,outputs_list
+	NAMELIST /input_parameters/ magnetic_field_model,poloidal_flux,magnetic_field_filename,simulation_time,&
+			snapshot_frequency,dt,num_species,radiation,collisions,collisions_model,outputs_list
 	
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=input_parameters)
 	close(default_unit_open)
 
-	! params%restart = restart
-	params%t_steps = t_steps
-	params%output_cadence = output_cadence
-	params%num_snapshots = t_steps/output_cadence
+! 	params%restart = restart
+	params%simulation_time = simulation_time
+	params%snapshot_frequency = snapshot_frequency
+	params%num_snapshots = FLOOR(params%simulation_time/params%snapshot_frequency,ip)
+
 	params%dt = dt
+
 	params%num_species = num_species
 	params%magnetic_field_model = TRIM(magnetic_field_model)
 	params%poloidal_flux = poloidal_flux
@@ -120,9 +122,9 @@ subroutine load_korc_params(params)
 
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'(/,"* * * * * SIMULATION PARAMETERS * * * * *")')
-		write(6,'("Number of time steps: ",I16)') params%t_steps
-		write(6,'("Output cadence: ",I16)') params%output_cadence
-		write(6,'("Number of outputs: ",I16)') params%num_snapshots
+!		write(6,'("Number of time steps: ",I16)') params%t_steps
+!		write(6,'("Output cadence: ",I16)') params%output_cadence
+!		write(6,'("Number of outputs: ",I16)') params%num_snapshots
 		write(6,'("Time step in fraction of relativistic gyro-period: ",F15.10)') params%dt
 		write(6,'("Number of electron populations: ",I16)') params%num_species
 		write(6,'("Magnetic field model: ",A50)') TRIM(params%magnetic_field_model)
@@ -154,6 +156,25 @@ subroutine initialize_korc_parameters(params)
 	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 end subroutine initialize_korc_parameters
 
+
+subroutine define_time_step(params)
+    implicit none
+	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
+
+! 	This definition will be changed as more species and electromagnetic fields
+!	are included.
+
+	params%dt = params%dt*(2.0_rp*C_PI*params%cpp%time_r)
+
+	params%t_steps = CEILING(params%simulation_time/params%dt,ip)
+	params%output_cadence = FLOOR(params%snapshot_frequency/params%dt,ip)
+
+	write(6,'(/,"* * * * * TIME STEPPING PARAMETERS * * * * *")')
+	write(6,'("Number of time steps: ",I16)') params%t_steps
+	write(6,'("Output cadence: ",I16)') params%output_cadence
+	write(6,'("Number of outputs: ",I16)') params%num_snapshots
+	write(6,'("* * * * * * * * * ** * * * * * * * * * * * *",/)')
+end subroutine define_time_step
 
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 ! * * * SUBROUTINES FOR INITIALIZING PARTICLES * * * !

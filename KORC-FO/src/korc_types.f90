@@ -76,6 +76,8 @@ TYPE, PUBLIC :: KORC_PARAMS
 	CHARACTER(MAX_STRING_LENGTH) :: path_to_outputs
 	INTEGER :: num_omp_threads
 	LOGICAL :: restart
+	REAL(rp) :: simulation_time ! Total aimed simulation time in seconds
+	REAL(rp) :: snapshot_frequency ! Time between snapshots in seconds
 	REAL(rp) :: dt
 	REAL(rp) :: time = 0.0_rp
 	INTEGER(ip) :: it = 0_ip

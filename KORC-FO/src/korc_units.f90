@@ -4,7 +4,7 @@ module korc_units
 
     implicit none
 
-	PUBLIC :: compute_charcs_plasma_params, define_time_step, normalize_variables
+	PUBLIC :: compute_charcs_plasma_params,normalize_variables
 
     contains
 
@@ -43,17 +43,6 @@ subroutine compute_charcs_plasma_params(params,spp,F)
 end subroutine compute_charcs_plasma_params
 
 
-subroutine define_time_step(params)
-    implicit none
-	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
-
-! 	This definition will be changed as more species and electromagnetic fields
-!	are included.
-
-	params%dt = params%dt*(2.0_rp*C_PI*params%cpp%time_r)
-end subroutine define_time_step
-
-
 subroutine normalize_variables(params,spp,F)
     implicit none
 	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
@@ -63,6 +52,8 @@ subroutine normalize_variables(params,spp,F)
 
 !	Normalize params variables
 	params%dt = params%dt/params%cpp%time
+	params%simulation_time = params%simulation_time/params%cpp%time
+	params%snapshot_frequency = params%snapshot_frequency/params%cpp%time
 
 !	Normalize particle variables
 	do ii=1_idef,size(spp)

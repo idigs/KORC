@@ -54,7 +54,12 @@ if (CO.Bo > 0)
     dt = dt/CO.norm.t;
 else
 %     dt = CO.cop.dt;
-    dt = DT*max(1./[CO.cop.vpar(umin) CO.cop.vD(umin) CO.cop.vS(umin)])
+    dt = DT*max(1./[CO.cop.vpar(umin) CO.cop.vD(umin) CO.cop.vS(umin)]);
+    dtc = DT*max(1./[CO.cop.vpar(u) CO.cop.vD(u) CO.cop.vS(u)]);
+    
+    
+    disp(['Chosen time step: ' num2str(dt*CO.norm.t) ' s'])
+    disp(['Time step with current energy: ' num2str(dtc*CO.norm.t) ' s'])
 end
 
 x = linspace(-1,1,500);
