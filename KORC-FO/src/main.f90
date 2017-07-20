@@ -42,13 +42,13 @@ program main
 
 	call define_time_step(params)
 
-	call define_collisions_time_step(params)
-
 	call initialize_particle_pusher(params)
 
 	call normalize_variables(params,spp,EB)
 
 	call normalize_collisions_params(params)
+
+	call define_collisions_time_step(params)
 
 	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
 	! *** BEYOND THIS POINT VARIABLES ARE DIMENSIONLESS ***

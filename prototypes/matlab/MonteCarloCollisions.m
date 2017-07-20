@@ -54,15 +54,14 @@ if (CO.Bo > 0)
     dt = dt/CO.norm.t;
 else
 %     dt = CO.cop.dt;
-    dt = DT*max(1./[CO.cop.vpar(umin) CO.cop.vD(umin) CO.cop.vS(umin)]);
-    dtc = DT*max(1./[CO.cop.vpar(u) CO.cop.vD(u) CO.cop.vS(u)]);
+    dt = DT/max([CO.cop.vpar(umin) CO.cop.vD(umin) CO.cop.vS(umin)]);
+    dtc = DT/max([CO.cop.vpar(u) CO.cop.vD(u) CO.cop.vS(u)]);
     
-    
-    disp(['Chosen time step: ' num2str(dt*CO.norm.t) ' s'])
-    disp(['Time step with current energy: ' num2str(dtc*CO.norm.t) ' s'])
+    disp(['Initial collisional time: ' num2str(dtc*CO.norm.t/DT) ' s'])
+    disp(['Chosen collisional time: ' num2str(dt*CO.norm.t/DT) ' s'])
 end
 
-x = linspace(-1,1,500);
+x = linspace(-u,u,500);
 fx = exp(-x.^2/CO.VTe^2)/(CO.VTe*sqrt(pi));
 
 snapshot = floor(numIt/5);
@@ -239,10 +238,12 @@ CO.cop.CB = @(v) (0.5*CO.cop.Gamma./v).*( CO.cop.Zeff + ...
 % CO.cop.CB = @(v) (0.5*CO.cop.Gamma./v).*( erf(CO.cop.x(v)) - CO.cop.psi(v) );
 
 CO.cop.vD = @(v) 2*CO.cop.CB(v)./(v.*CO.cop.g(v)).^2;
-
 CO.cop.vpar = @(v) 2*CO.cop.CA(v)./(v.*CO.cop.g(v)).^2;
-
 CO.cop.vS = @(v) 2*CO.cop.CF(v)./(v.*CO.cop.g(v));
+
+% CO.cop.vD = @(v) 2*CO.cop.CB(v)./v.^2;
+% CO.cop.vpar = @(v) 2*CO.cop.CA(v)./v.^2;
+% CO.cop.vS = @(v) 2*CO.cop.CF(v)./v;
 
 E = 1E-6*(E-Er)/abs(CO.params.qe);
 xAxis = E;

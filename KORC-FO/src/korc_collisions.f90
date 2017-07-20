@@ -40,7 +40,6 @@ module korc_collisions
 		REAL(rp) :: Gammac ! Gamma factor
 		REAL(rp) :: Tau ! Collisional time of relativistic particles
 		REAL(rp) :: Tauc ! Collisional time of thermal particles
-		REAL(rp) :: Tauv
 		REAL(rp) :: Ec ! Critical electric field
 		REAL(rp) :: ED ! Dreicer electric field
 		REAL(rp) :: dTau ! Subcycling time step in collisional time units (Tau)
@@ -64,7 +63,7 @@ module korc_collisions
 	PRIVATE :: load_params_ms,load_params_ss,normalize_params_ms,&
 				normalize_params_ss,save_params_ms,save_params_ss,&
 				deallocate_params_ms,cross,unitVectors,CA,CB,CF,fun,&
-				random_vector
+				random_vector,nu_S,nu_par,nu_D
 
 	contains
 
@@ -211,7 +210,6 @@ subroutine normalize_params_ss(params)
 	cparams_ss%Gammac*params%cpp%time/(params%cpp%mass**2*params%cpp%velocity**3)
 	cparams_ss%Tau = cparams_ss%Tau/params%cpp%time
 	cparams_ss%Tauc = cparams_ss%Tauc/params%cpp%time
-	cparams_ss%Tauv = cparams_ss%Tauv/params%cpp%time
 	cparams_ss%Ec = cparams_ss%Ec/params%cpp%Eo
 	cparams_ss%ED = cparams_ss%ED/params%cpp%Eo
 end subroutine normalize_params_ss
@@ -285,14 +283,26 @@ subroutine define_collisions_time_step(params)
 	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	INTEGER(ip) :: iterations
+	REAL(rp) :: E
+	REAL(rp) :: v
+	REAL(rp) :: Tau
+	REAL(rp), DIMENSION(3) :: nu
 
-	cparams_ss%subcycling_iterations = 1_ip
 
-	if (params%collisions .AND. (params%mpi_params%rank .EQ. 0)) then
-		write(6,'("* * * * * * * SUBCYCLING FOR COLLISIONS * * * * * * *")')
-		write(6,'(/,"The shorter collisional time in the simulations is: ",F25.15," s")') cparams_ss%Tauv
-		write(6,'("Number of KORC iterations per collision: ",I16)') cparams_ss%subcycling_iterations
-		write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * * * *",/)')
+	if (params%collisions) then
+		E = C_ME*C_C**2 + params%minimum_particle_energy*params%cpp%energy
+		v = SQRT(1.0_rp - (C_ME*C_C**2/E)**2)
+		nu = (/nu_S(v),nu_D(v),nu_par(v)/)
+		Tau = MINVAL( 1.0_rp/nu )
+		
+		cparams_ss%subcycling_iterations = FLOOR(cparams_ss%dTau*Tau/params%dt,ip)
+
+		 if (params%mpi_params%rank .EQ. 0) then
+			write(6,'("* * * * * * * SUBCYCLING FOR COLLISIONS * * * * * * *")')
+			write(6,'(/,"The shorter collisional time in the simulations is: ",F25.15," s")') Tau*params%cpp%time
+			write(6,'("Number of KORC iterations per collision: ",I16)') cparams_ss%subcycling_iterations
+			write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * * * *",/)')
+		end if
 	end if
 end subroutine define_collisions_time_step
 
@@ -351,7 +361,7 @@ function nu_S(v)
 
 	p = v/SQRT(1.0_rp - v**2)
 	nu_S = 2.0_rp*CF(v)/p
-end function
+end function nu_S
 
 
 function nu_D(v)
@@ -362,7 +372,7 @@ function nu_D(v)
 
 	p = v/SQRT(1.0_rp - v**2)
 	nu_D = 2.0_rp*CB(v)/p**2
-end function
+end function nu_D
 
 
 function nu_par(v)
@@ -373,7 +383,7 @@ function nu_par(v)
 
 	p = v/SQRT(1.0_rp - v**2)
 	nu_par = 2.0_rp*CA(v)/p**2
-end function
+end function nu_par
 
 
 function fun(v)
@@ -458,40 +468,40 @@ subroutine include_CoulombCollisions(params,U)
 	REAL(rp) :: v ! speed of particle
 	REAL(rp) :: CAL,CFL,CBL
 
-!	if (MODULO(params%it+1_ip,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
-!	dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt
-	dt = params%dt
+	if (MODULO(params%it+1_ip,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
+		dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt
+!		dt = params%dt
 
-	um = SQRT(DOT_PRODUCT(U,U))
-	v = um/SQRT(1.0_rp + um**2)
+		um = SQRT(DOT_PRODUCT(U,U))
+		v = um/SQRT(1.0_rp + um**2)
 
-	call unitVectors(U,v1,v2,v3)
+		call unitVectors(U,v1,v2,v3)
 
-	U1 = DOT_PRODUCT(U,v1);
-	U2 = DOT_PRODUCT(U,v2);
-	U3 = DOT_PRODUCT(U,v3);
+		U1 = DOT_PRODUCT(U,v1);
+		U2 = DOT_PRODUCT(U,v2);
+		U3 = DOT_PRODUCT(U,v3);
 
-!	call RANDOM_NUMBER(rnd1)
-!	call RANDOM_NUMBER(rnd2)
-!	rnd1 = random_vector()
-!	rnd2 = random_vector()
-!	dW = SQRT(dt)*SQRT(-2.0_rp*LOG(1.0_rp-rnd1))*COS(2.0_rp*C_PI*rnd2)
+	!	call RANDOM_NUMBER(rnd1)
+	!	call RANDOM_NUMBER(rnd2)
+	!	rnd1 = random_vector()
+	!	rnd2 = random_vector()
+	!	dW = SQRT(dt)*SQRT(-2.0_rp*LOG(1.0_rp-rnd1))*COS(2.0_rp*C_PI*rnd2)
 
-	rnd1 = random_vector()
-	dW = SQRT(dt)*SQRT(3.0_rp)*(-1.0_rp + 2.0_rp*rnd1);
+		rnd1 = random_vector()
+		dW = SQRT(dt)*SQRT(3.0_rp)*(-1.0_rp + 2.0_rp*rnd1);
 
-	CAL = CA(v)
-	CFL = CF(v)
-	CBL = CB(v)
+		CAL = CA(v)
+		CFL = CF(v)
+		CBL = CB(v)
 
-	dU1 = -2.0_rp*CFL*dt + SQRT(2.0_rp*CAL)*dW(1)
-	dU2 = SQRT(2.0_rp*CBL)*dW(2)
-	dU3 = SQRT(2.0_rp*CBL)*dW(3)
+		dU1 = -2.0_rp*CFL*dt + SQRT(2.0_rp*CAL)*dW(1)
+		dU2 = SQRT(2.0_rp*CBL)*dW(2)
+		dU3 = SQRT(2.0_rp*CBL)*dW(3)
 
-	U(1) = (U1+dU1)*DOT_PRODUCT(v1,x) + (U2+dU2)*DOT_PRODUCT(v2,x) + (U3+dU3)*DOT_PRODUCT(v3,x)
-	U(2) = (U1+dU1)*DOT_PRODUCT(v1,y) + (U2+dU2)*DOT_PRODUCT(v2,y) + (U3+dU3)*DOT_PRODUCT(v3,y)
-	U(3) = (U1+dU1)*DOT_PRODUCT(v1,z) + (U2+dU2)*DOT_PRODUCT(v2,z) + (U3+dU3)*DOT_PRODUCT(v3,z)
-!	end if
+		U(1) = (U1+dU1)*DOT_PRODUCT(v1,x) + (U2+dU2)*DOT_PRODUCT(v2,x) + (U3+dU3)*DOT_PRODUCT(v3,x)
+		U(2) = (U1+dU1)*DOT_PRODUCT(v1,y) + (U2+dU2)*DOT_PRODUCT(v2,y) + (U3+dU3)*DOT_PRODUCT(v3,y)
+		U(3) = (U1+dU1)*DOT_PRODUCT(v1,z) + (U2+dU2)*DOT_PRODUCT(v2,z) + (U3+dU3)*DOT_PRODUCT(v3,z)
+	end if
 end subroutine include_CoulombCollisions
 
 
@@ -662,11 +672,6 @@ subroutine save_params_ss(params)
 		attr = "Thermal collisional time in s"
 		units = params%cpp%time
 		call save_to_hdf5(h5file_id,dset,units*cparams_ss%Tauc,attr)
-
-		dset = TRIM(gname) // "/Tauv"
-		attr = "Shortest collisional time in simulation, in s"
-		units = params%cpp%time
-		call save_to_hdf5(h5file_id,dset,units*cparams_ss%Tauv,attr)
 
 		dset = TRIM(gname) // "/dTau"
 		attr = "Subcycling time step in s"

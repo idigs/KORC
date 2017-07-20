@@ -46,6 +46,7 @@ subroutine load_korc_params(params)
 	REAL(rp) :: simulation_time
 	REAL(rp) :: snapshot_frequency
 	REAL(rp) :: dt
+	REAL(rp) :: minimum_particle_energy
 	LOGICAL :: radiation
 	LOGICAL :: collisions
 	CHARACTER(MAX_STRING_LENGTH) :: collisions_model
@@ -59,7 +60,7 @@ subroutine load_korc_params(params)
 	INTEGER, DIMENSION(2) :: indices
 
 	NAMELIST /input_parameters/ magnetic_field_model,poloidal_flux,magnetic_field_filename,simulation_time,&
-			snapshot_frequency,dt,num_species,radiation,collisions,collisions_model,outputs_list
+			snapshot_frequency,dt,num_species,radiation,collisions,collisions_model,outputs_list,minimum_particle_energy
 	
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=input_parameters)
@@ -76,6 +77,7 @@ subroutine load_korc_params(params)
 	params%magnetic_field_model = TRIM(magnetic_field_model)
 	params%poloidal_flux = poloidal_flux
 	params%magnetic_field_filename = TRIM(magnetic_field_filename)
+	params%minimum_particle_energy = minimum_particle_energy*C_E
 	params%radiation = radiation
 	params%collisions = collisions
 	params%collisions_model = TRIM(collisions_model)
@@ -122,9 +124,8 @@ subroutine load_korc_params(params)
 
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'(/,"* * * * * SIMULATION PARAMETERS * * * * *")')
-!		write(6,'("Number of time steps: ",I16)') params%t_steps
-!		write(6,'("Output cadence: ",I16)') params%output_cadence
-!		write(6,'("Number of outputs: ",I16)') params%num_snapshots
+		write(6,'("Simulation time: ",E15.10," s")') params%simulation_time
+		write(6,'("Output frequency: ",E15.10," s")') params%snapshot_frequency
 		write(6,'("Time step in fraction of relativistic gyro-period: ",F15.10)') params%dt
 		write(6,'("Number of electron populations: ",I16)') params%num_species
 		write(6,'("Magnetic field model: ",A50)') TRIM(params%magnetic_field_model)
@@ -277,12 +278,6 @@ subroutine initialize_particles(params,F,spp)
 				! Something to be done
 		END SELECT
 
-		if (params%mpi_params%rank .EQ. 0) then
-			write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * * *")')
-			write(6,'("Energy distribution of species ",I4 " is: ",A20)') ii,TRIM(spp(ii)%energy_distribution)
-			write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * *",/)')
-		end if
-
 		call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
 		SELECT CASE (TRIM(spp(ii)%pitch_distribution))
@@ -306,9 +301,10 @@ subroutine initialize_particles(params,F,spp)
 		END SELECT
 
 		if (params%mpi_params%rank .EQ. 0) then
-			write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * * *")')
-			write(6,'("Pitch-angle distribution of species ",I4 " is: ",A20)') ii,TRIM(spp(ii)%pitch_distribution)
-			write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * *",/)')
+			write(6,'(/,"* * * * * SPECIES: ",I2," * * * * * * * * * * *")') ii
+			write(6,'("Energy distribution is: ",A20)') TRIM(spp(ii)%energy_distribution)
+			write(6,'("Pitch-angle distribution is: ",A20)') TRIM(spp(ii)%pitch_distribution)
+			write(6,'("* * * * * * * * * * * * * * * * * * * * * *",/)')
 		end if
 
 		call MPI_BARRIER(MPI_COMM_WORLD,mpierr)

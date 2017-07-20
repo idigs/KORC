@@ -54,6 +54,7 @@ subroutine normalize_variables(params,spp,F)
 	params%dt = params%dt/params%cpp%time
 	params%simulation_time = params%simulation_time/params%cpp%time
 	params%snapshot_frequency = params%snapshot_frequency/params%cpp%time
+	params%minimum_particle_energy = params%minimum_particle_energy/params%cpp%energy
 
 !	Normalize particle variables
 	do ii=1_idef,size(spp)

@@ -780,6 +780,10 @@ subroutine save_simulation_parameters(params,spp,F)
 		attr = "Number of mpi processes"
 		call save_to_hdf5(h5file_id,dset,params%mpi_params%nmpi,attr)
 
+		dset = TRIM(gname) // "/minimum_particle_energy"
+        attr = "Minimum energy of simulated particles in eV"
+		call save_to_hdf5(h5file_id,dset,params%minimum_particle_energy*params%cpp%energy/C_E,attr)
+
 		dset = TRIM(gname) // "/radiation"
 		attr = "Radiation losses included in simulation"
 		if(params%radiation) then
