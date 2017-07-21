@@ -52,6 +52,7 @@ subroutine load_korc_params(params)
 	CHARACTER(MAX_STRING_LENGTH) :: collisions_model
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
 	LOGICAL :: poloidal_flux
+	LOGICAL :: axisymmetric
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
 	CHARACTER(MAX_STRING_LENGTH) :: outputs_list
 	INTEGER :: num_species
@@ -59,7 +60,7 @@ subroutine load_korc_params(params)
 	INTEGER :: imax,imin,ii,jj,num_outputs
 	INTEGER, DIMENSION(2) :: indices
 
-	NAMELIST /input_parameters/ magnetic_field_model,poloidal_flux,magnetic_field_filename,simulation_time,&
+	NAMELIST /input_parameters/ magnetic_field_model,poloidal_flux,magnetic_field_filename,simulation_time,axisymmetric,&
 			snapshot_frequency,dt,num_species,radiation,collisions,collisions_model,outputs_list,minimum_particle_energy
 	
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
@@ -76,6 +77,7 @@ subroutine load_korc_params(params)
 	params%num_species = num_species
 	params%magnetic_field_model = TRIM(magnetic_field_model)
 	params%poloidal_flux = poloidal_flux
+	params%axisymmetric = axisymmetric
 	params%magnetic_field_filename = TRIM(magnetic_field_filename)
 	params%minimum_particle_energy = minimum_particle_energy*C_E
 	params%radiation = radiation
@@ -650,8 +652,14 @@ subroutine initialize_fields(params,F)
 			! Load the magnetic field from an external HDF5 file
 		    call load_dim_data_from_hdf5(params,F%dims)
 
-		   	call ALLOCATE_FIELDS_ARRAYS(F,params%poloidal_flux)
-
+			if (params%poloidal_flux) then
+				call ALLOCATE_FLUX_ARRAYS(F)
+			else if (params%axisymmetric) then
+				call ALLOCATE_2D_FIELDS_ARRAYS(F)
+			else
+				call ALLOCATE_3D_FIELDS_ARRAYS(F)
+			end if
+		
 		    call load_field_data_from_hdf5(params,F)
 
 			if (.NOT. params%poloidal_flux) then

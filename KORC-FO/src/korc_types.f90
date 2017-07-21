@@ -91,6 +91,7 @@ TYPE, PUBLIC :: KORC_PARAMS
 	CHARACTER(MAX_STRING_LENGTH) :: collisions_model
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
 	LOGICAL :: poloidal_flux
+	LOGICAL :: axisymmetric
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: outputs_list
 
@@ -161,6 +162,8 @@ TYPE, PUBLIC :: FIELDS
 	TYPE(A_FIELD) :: AB
 	TYPE(V_FIELD_3D) :: E
 	TYPE(V_FIELD_3D) :: B
+	TYPE(V_FIELD_2D) :: E_2D
+	TYPE(V_FIELD_2D) :: B_2D
 	TYPE(MESH) :: X
 	INTEGER, DIMENSION(3) :: dims ! dims(NR, NPHI, NZ)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: PSIp ! Poloidal flux
@@ -175,30 +178,67 @@ TYPE, PUBLIC :: FIELDS
 END TYPE FIELDS
 
 
-PUBLIC :: ALLOCATE_FIELDS_ARRAYS, DEALLOCATE_FIELDS_ARRAYS
-PRIVATE :: ALLOCATE_V_FIELD_3D, DEALLOCATE_V_FIELD_3D
+PUBLIC :: ALLOCATE_FLUX_ARRAYS,ALLOCATE_2D_FIELDS_ARRAYS,ALLOCATE_3D_FIELDS_ARRAYS,DEALLOCATE_FIELDS_ARRAYS
+PRIVATE :: ALLOCATE_V_FIELD_2D,ALLOCATE_V_FIELD_3D
 
 contains
 
-subroutine ALLOCATE_FIELDS_ARRAYS(F,opt)
+subroutine ALLOCATE_FLUX_ARRAYS(F)
     implicit none
 	TYPE(FIELDS), INTENT(INOUT) :: F
-	LOGICAL, INTENT(IN) :: opt
 
-	if (opt) then ! Using only magnetic poloidal flux
-		ALLOCATE( F%PSIp(F%dims(1), F%dims(3)) )
+	ALLOCATE( F%PSIp(F%dims(1),F%dims(3)) )
 
-		ALLOCATE(F%X%R(F%dims(1)))
-		ALLOCATE(F%X%Z(F%dims(3)))
-	else ! Using cylindrical components of magnetic field
-		call ALLOCATE_V_FIELD_3D(F%B,F%dims)
-	!	call ALLOCATE_V_FIELD_3D(F%E,F%dims)	
+	ALLOCATE(F%X%R(F%dims(1)))
+	ALLOCATE(F%X%Z(F%dims(3)))
+end subroutine ALLOCATE_FLUX_ARRAYS
+
+
+subroutine ALLOCATE_2D_FIELDS_ARRAYS(F)
+    implicit none
+	TYPE(FIELDS), INTENT(INOUT) :: F
+
+	call ALLOCATE_V_FIELD_2D(F%B_2D,F%dims)
+!	call ALLOCATE_V_FIELD_2D(F%E_2D,F%dims)
 		
-		ALLOCATE(F%X%R(F%dims(1)))
-		ALLOCATE(F%X%PHI(F%dims(2)))
-		ALLOCATE(F%X%Z(F%dims(3)))
-	end if
-end subroutine ALLOCATE_FIELDS_ARRAYS
+	ALLOCATE(F%X%R(F%dims(1)))
+	ALLOCATE(F%X%Z(F%dims(3)))
+end subroutine ALLOCATE_2D_FIELDS_ARRAYS
+
+
+subroutine ALLOCATE_3D_FIELDS_ARRAYS(F)
+    implicit none
+	TYPE(FIELDS), INTENT(INOUT) :: F
+
+	call ALLOCATE_V_FIELD_3D(F%B,F%dims)
+!	call ALLOCATE_V_FIELD_3D(F%E,F%dims)	
+		
+	ALLOCATE(F%X%R(F%dims(1)))
+	ALLOCATE(F%X%PHI(F%dims(2)))
+	ALLOCATE(F%X%Z(F%dims(3)))
+end subroutine ALLOCATE_3D_FIELDS_ARRAYS
+
+
+subroutine ALLOCATE_V_FIELD_2D(F,dims)
+    implicit none
+	TYPE(V_FIELD_2D), INTENT(INOUT) :: F
+	INTEGER, DIMENSION(3), INTENT(IN) :: dims
+    
+    ALLOCATE(F%R(dims(1),dims(3)))
+    ALLOCATE(F%PHI(dims(1),dims(3)))
+    ALLOCATE(F%Z(dims(1),dims(3)))
+end subroutine ALLOCATE_V_FIELD_2D
+
+
+subroutine ALLOCATE_V_FIELD_3D(F,dims)
+    implicit none
+	TYPE(V_FIELD_3D), INTENT(INOUT) :: F
+	INTEGER, DIMENSION(3), INTENT(IN) :: dims
+    
+    ALLOCATE(F%R(dims(1),dims(2),dims(3)))
+    ALLOCATE(F%PHI(dims(1),dims(2),dims(3)))
+    ALLOCATE(F%Z(dims(1),dims(2),dims(3)))
+end subroutine ALLOCATE_V_FIELD_3D
 
 
 subroutine DEALLOCATE_FIELDS_ARRAYS(F)
@@ -217,27 +257,5 @@ subroutine DEALLOCATE_FIELDS_ARRAYS(F)
 	if (ALLOCATED(F%X%PHI)) DEALLOCATE(F%X%PHI)
 	if (ALLOCATED(F%X%Z)) DEALLOCATE(F%X%Z)
 end subroutine DEALLOCATE_FIELDS_ARRAYS
-
-
-subroutine ALLOCATE_V_FIELD_3D(F,dims)
-    implicit none
-	TYPE(V_FIELD_3D), INTENT(INOUT) :: F
-	INTEGER, DIMENSION(3), INTENT(IN) :: dims
-    
-    ALLOCATE(F%R(dims(1),dims(2),dims(3)))
-    ALLOCATE(F%PHI(dims(1),dims(2),dims(3)))
-    ALLOCATE(F%Z(dims(1),dims(2),dims(3)))
-end subroutine ALLOCATE_V_FIELD_3D
-
-
-subroutine DEALLOCATE_V_FIELD_3D(F)
-    implicit none
-	TYPE(V_FIELD_3D), INTENT(INOUT) :: F
-    
-    DEALLOCATE(F%R)
-    DEALLOCATE(F%PHI)
-    DEALLOCATE(F%Z)
-end subroutine DEALLOCATE_V_FIELD_3D
-
 
 end module korc_types

@@ -134,7 +134,7 @@ for ll=1:length(list)
     end
 end
 
-list = {'g','eta','flag'};
+list = {'eta','flag'};
 % list = {'g','eta'};
 
 for ll=1:length(list)

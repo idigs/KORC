@@ -3,10 +3,11 @@ module korc_fields
 	use korc_hpc
 	use korc_coords
 	use korc_interp
+	use korc_HDF5
 
     implicit none
 
-	PUBLIC :: mean_F_field,get_fields
+	PUBLIC :: mean_F_field,get_fields,load_field_data_from_hdf5,load_dim_data_from_hdf5
 	PRIVATE :: analytical_magnetic_field,analytical_electric_field,uniform_magnetic_field,uniform_electric_field,&
 				check_if_confined,uniform_fields,cross
 
@@ -100,9 +101,17 @@ subroutine mean_F_field(F,Fo,op_field)
 	TYPE(KORC_STRING), INTENT(IN) :: op_field
 
 	if (TRIM(op_field%str) .EQ. 'B') then
-		Fo = sum( sqrt(F%B%R**2 + F%B%PHI**2 + F%B%Z**2) )/size(F%B%R)
+		if (ALLOCATED(F%B%R)) then ! 3D field
+			Fo = SUM( SQRT(F%B%R**2 + F%B%PHI**2 + F%B%Z**2) )/SIZE(F%B%R)
+		else if (ALLOCATED(F%B_2D%R)) then ! Axisymmetric 2D field
+			Fo = SUM( SQRT(F%B_2D%R**2 + F%B_2D%PHI**2 + F%B_2D%Z**2) )/SIZE(F%B_2D%R)
+		end if
 	else if (TRIM(op_field%str) .EQ. 'E') then
-		Fo = sum( sqrt(F%E%R**2 + F%E%PHI**2 + F%E%Z**2) )/size(F%E%R)
+		if (ALLOCATED(F%E%R)) then ! 3D field
+			Fo = SUM( SQRT(F%E%R**2 + F%E%PHI**2 + F%E%Z**2) )/SIZE(F%E%R)
+		else if (ALLOCATED(F%E_2D%R)) then ! Axisymmetric 2D field
+			Fo = SUM( SQRT(F%E_2D%R**2 + F%E_2D%PHI**2 + F%E_2D%Z**2) )/SIZE(F%E_2D%R)
+		end if	
 	else
 		write(6,'("KORC ERROR: Please enter a valid field: mean_F_field")')
 		call korc_abort()
@@ -237,4 +246,164 @@ subroutine get_fields(params,vars,F)
 		CASE DEFAULT
 	END SELECT
 end subroutine get_fields
+
+
+! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+! Subroutines for getting the fields data from HDF5 files
+! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+
+subroutine load_dim_data_from_hdf5(params,field_dims)
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	INTEGER, DIMENSION(3), INTENT(OUT) :: field_dims
+	CHARACTER(MAX_STRING_LENGTH) :: filename
+	CHARACTER(MAX_STRING_LENGTH) :: gname
+	CHARACTER(MAX_STRING_LENGTH) :: subgname
+	CHARACTER(MAX_STRING_LENGTH) :: dset
+	INTEGER(HID_T) :: h5file_id
+	INTEGER(HID_T) :: group_id
+	INTEGER(HID_T) :: subgroup_id
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
+	INTEGER :: h5error
+	REAL(rp) :: rdatum
+    INTEGER :: ii
+
+	filename = TRIM(params%magnetic_field_filename)
+	call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
+	if (h5error .EQ. -1) then
+		write(6,'("KORC ERROR: Something went wrong in: load_dim_data_from_hdf5 --> h5fopen_f")')
+	end if
+
+	if (params%poloidal_flux.OR.params%axisymmetric) then
+			dset = "/NR"
+			call load_from_hdf5(h5file_id,dset,rdatum)
+			field_dims(1) = INT(rdatum)
+
+			field_dims(2) = 0
+
+			dset = "/NZ"
+			call load_from_hdf5(h5file_id,dset,rdatum)
+			field_dims(3) = INT(rdatum)
+	else
+			dset = "/NR"
+			call load_from_hdf5(h5file_id,dset,rdatum)
+			field_dims(1) = INT(rdatum)
+
+			dset = "/NPHI"
+			call load_from_hdf5(h5file_id,dset,rdatum)
+			field_dims(2) = INT(rdatum)
+
+			dset = "/NZ"
+			call load_from_hdf5(h5file_id,dset,rdatum)
+			field_dims(3) = INT(rdatum)
+	end if
+
+
+	call h5fclose_f(h5file_id, h5error)
+	if (h5error .EQ. -1) then
+		write(6,'("KORC ERROR: Something went wrong in: load_dim_data_from_hdf5 --> h5fclose_f")')
+	end if
+end subroutine load_dim_data_from_hdf5
+
+
+subroutine load_field_data_from_hdf5(params,F)
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(FIELDS), INTENT(INOUT) :: F
+	CHARACTER(MAX_STRING_LENGTH) :: filename
+	CHARACTER(MAX_STRING_LENGTH) :: gname
+	CHARACTER(MAX_STRING_LENGTH) :: subgname
+	CHARACTER(MAX_STRING_LENGTH) :: dset
+	INTEGER(HID_T) :: h5file_id
+	INTEGER(HID_T) :: group_id
+	INTEGER(HID_T) :: subgroup_id
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: A
+	INTEGER :: h5error
+    INTEGER ir, iphi, iz
+
+	filename = TRIM(params%magnetic_field_filename)
+	call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
+	if (h5error .EQ. -1) then
+		write(6,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fopen_f")')
+	end if
+
+	dset = "/R"
+	call load_array_from_hdf5(h5file_id,dset,F%X%R)
+
+	if ((.NOT.params%poloidal_flux).OR.(.NOT.params%axisymmetric)) then
+		dset = "/PHI"
+		call load_array_from_hdf5(h5file_id,dset,F%X%PHI)
+	end if
+
+	dset = "/Z"
+	call load_array_from_hdf5(h5file_id,dset,F%X%Z)
+
+	if ((.NOT.params%poloidal_flux).OR.(.NOT.params%axisymmetric)) then
+		dset = "/BR"
+		call load_array_from_hdf5(h5file_id,dset,F%B%R)
+
+		dset = "/BPHI"
+		call load_array_from_hdf5(h5file_id,dset,F%B%PHI)
+
+		dset = "/BZ"
+		call load_array_from_hdf5(h5file_id,dset,F%B%Z)
+	else
+		if (params%poloidal_flux) then
+
+			dset = '/Bo'
+			call load_from_hdf5(h5file_id,dset,F%Bo)
+
+			dset = '/Ro'
+			call load_from_hdf5(h5file_id,dset,F%Ro)
+
+			dset = "/PSIp"
+		    ALLOCATE( A(F%dims(1)*F%dims(3)) )
+			call load_array_from_hdf5(h5file_id,dset,A)
+		    do ir=1_idef,F%dims(1)
+		        do iz=1_idef,F%dims(3)
+			        F%PSIp(ir,iz) = A(iz + (ir-1)*F%dims(3))
+		        end do
+		    end do
+		    DEALLOCATE(A)
+
+		else if (params%axisymmetric) then
+
+			dset = "/BR"
+		    ALLOCATE( A(F%dims(1)*F%dims(3)) )
+			call load_array_from_hdf5(h5file_id,dset,A)
+		    do ir=1_idef,F%dims(1)
+		        do iz=1_idef,F%dims(3)
+			        F%B_2D%R(ir,iz) = A(iz + (ir-1)*F%dims(3))
+		        end do
+		    end do
+		    DEALLOCATE(A)
+
+			dset = "/BPHI"
+		    ALLOCATE( A(F%dims(1)*F%dims(3)) )
+			call load_array_from_hdf5(h5file_id,dset,A)
+		    do ir=1_idef,F%dims(1)
+		        do iz=1_idef,F%dims(3)
+			        F%B_2D%PHI(ir,iz) = A(iz + (ir-1)*F%dims(3))
+		        end do
+		    end do
+		    DEALLOCATE(A)
+
+			dset = "/BZ"
+		    ALLOCATE( A(F%dims(1)*F%dims(3)) )
+			call load_array_from_hdf5(h5file_id,dset,A)
+		    do ir=1_idef,F%dims(1)
+		        do iz=1_idef,F%dims(3)
+			        F%B_2D%Z(ir,iz) = A(iz + (ir-1)*F%dims(3))
+		        end do
+		    end do
+		    DEALLOCATE(A)
+
+		end if
+	end if	
+
+	call h5fclose_f(h5file_id, h5error)
+	if (h5error .EQ. -1) then
+		write(6,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fclose_f")')
+	end if
+
+end subroutine load_field_data_from_hdf5
+
 end module korc_fields

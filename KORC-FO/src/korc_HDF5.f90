@@ -14,7 +14,7 @@ module korc_HDF5
 	  module procedure iload_from_hdf5, rload_from_hdf5
 	END INTERFACE
 
-	INTERFACE rload_array_from_hdf5
+	INTERFACE load_array_from_hdf5
 	  module procedure rload_1d_array_from_hdf5, rload_3d_array_from_hdf5, rload_2d_array_from_hdf5
 	END INTERFACE
 
@@ -39,13 +39,13 @@ module korc_HDF5
 	END INTERFACE
 
 	PRIVATE :: isave_to_hdf5,rsave_to_hdf5,isave_1d_array_to_hdf5,&
-				rsave_1d_array_to_hdf5,rsave_2d_array_to_hdf5,load_from_hdf5,&
-				iload_from_hdf5,rload_from_hdf5,rload_array_from_hdf5,&
-				rload_1d_array_from_hdf5,rload_3d_array_from_hdf5,rload_2d_array_from_hdf5
+				rsave_1d_array_to_hdf5,rsave_2d_array_to_hdf5,&
+				iload_from_hdf5,rload_from_hdf5,rload_1d_array_from_hdf5,&
+				rload_3d_array_from_hdf5,rload_2d_array_from_hdf5
 				
-	PUBLIC :: initialize_HDF5, finalize_HDF5, save_simulation_parameters,&
-                load_field_data_from_hdf5,save_to_hdf5,save_1d_array_to_hdf5,&
-				save_2d_array_to_hdf5
+	PUBLIC :: initialize_HDF5,finalize_HDF5,save_simulation_parameters,&
+                save_to_hdf5,save_1d_array_to_hdf5,save_2d_array_to_hdf5,&
+				load_from_hdf5,load_array_from_hdf5
 
 contains
 
@@ -895,9 +895,15 @@ subroutine save_simulation_parameters(params,spp,F)
 		else if (params%magnetic_field_model .EQ. 'EXTERNAL') then
 			ALLOCATE(attr_array(1))
 
+			
+			if (params%axisymmetric) then
+			else		
+			end if
+
 			dset = TRIM(gname) // "/dims"
 			attr_array(1) = "Mesh dimension of the magnetic field (NR,NPHI,NZ)"
-			call save_1d_array_to_hdf5(h5file_id,dset,F%dims,attr_array)
+			call save_1d_array_to_hdf5(h5file_id,dset,F%dims,attr_array)		
+
 
 			dset = TRIM(gname) // "/R"
 			attr_array(1) = "Radial position of the magnetic field grid nodes"
@@ -1094,125 +1100,5 @@ subroutine save_simulation_outputs(params,spp,F)
 		call h5fclose_f(h5file_id, h5error)
 	end if
 end subroutine save_simulation_outputs
-
-
-subroutine load_dim_data_from_hdf5(params,field_dims)
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	INTEGER, DIMENSION(3), INTENT(OUT) :: field_dims
-	CHARACTER(MAX_STRING_LENGTH) :: filename
-	CHARACTER(MAX_STRING_LENGTH) :: gname
-	CHARACTER(MAX_STRING_LENGTH) :: subgname
-	CHARACTER(MAX_STRING_LENGTH) :: dset
-	INTEGER(HID_T) :: h5file_id
-	INTEGER(HID_T) :: group_id
-	INTEGER(HID_T) :: subgroup_id
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
-	INTEGER :: h5error
-	REAL(rp) :: rdatum
-    INTEGER :: ii
-
-	filename = TRIM(params%magnetic_field_filename)
-	call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
-	if (h5error .EQ. -1) then
-		write(6,'("KORC ERROR: Something went wrong in: load_dim_data_from_hdf5 --> h5fopen_f")')
-	end if
-
-	if (params%poloidal_flux) then
-			dset = "/NR"
-			call load_from_hdf5(h5file_id,dset,rdatum)
-			field_dims(1) = INT(rdatum)
-
-			field_dims(2) = 0
-
-			dset = "/NZ"
-			call load_from_hdf5(h5file_id,dset,rdatum)
-			field_dims(3) = INT(rdatum)
-	else
-			dset = "/NR"
-			call load_from_hdf5(h5file_id,dset,rdatum)
-			field_dims(1) = INT(rdatum)
-
-			dset = "/NPHI"
-			call load_from_hdf5(h5file_id,dset,rdatum)
-			field_dims(2) = INT(rdatum)
-
-			dset = "/NZ"
-			call load_from_hdf5(h5file_id,dset,rdatum)
-			field_dims(3) = INT(rdatum)
-	end if
-
-
-	call h5fclose_f(h5file_id, h5error)
-	if (h5error .EQ. -1) then
-		write(6,'("KORC ERROR: Something went wrong in: load_dim_data_from_hdf5 --> h5fclose_f")')
-	end if
-end subroutine load_dim_data_from_hdf5
-
-
-subroutine load_field_data_from_hdf5(params,F)
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(FIELDS), INTENT(INOUT) :: F
-	CHARACTER(MAX_STRING_LENGTH) :: filename
-	CHARACTER(MAX_STRING_LENGTH) :: gname
-	CHARACTER(MAX_STRING_LENGTH) :: subgname
-	CHARACTER(MAX_STRING_LENGTH) :: dset
-	INTEGER(HID_T) :: h5file_id
-	INTEGER(HID_T) :: group_id
-	INTEGER(HID_T) :: subgroup_id
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: A
-	INTEGER :: h5error
-    INTEGER ir, iphi, iz
-
-	filename = TRIM(params%magnetic_field_filename)
-	call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
-	if (h5error .EQ. -1) then
-		write(6,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fopen_f")')
-	end if
-
-	dset = "/R"
-	call rload_array_from_hdf5(h5file_id,dset,F%X%R)
-
-	if (.NOT. params%poloidal_flux) then
-		dset = "/PHI"
-		call rload_array_from_hdf5(h5file_id,dset,F%X%PHI)
-	end if
-
-	dset = "/Z"
-	call rload_array_from_hdf5(h5file_id,dset,F%X%Z)
-
-	if (.NOT. params%poloidal_flux) then
-		dset = "/BR"
-		call rload_array_from_hdf5(h5file_id,dset,F%B%R)
-
-		dset = "/BPHI"
-		call rload_array_from_hdf5(h5file_id,dset,F%B%PHI)
-
-		dset = "/BZ"
-		call rload_array_from_hdf5(h5file_id,dset,F%B%Z)
-	else
-		dset = '/Bo'
-		call load_from_hdf5(h5file_id,dset,F%Bo)
-
-		dset = '/Ro'
-		call load_from_hdf5(h5file_id,dset,F%Ro)
-
-		dset = "/PSIp"
-        ALLOCATE( A(F%dims(1)*F%dims(3)) )
-		call rload_array_from_hdf5(h5file_id,dset,A)
-        do ir=1_idef,F%dims(1)
-            do iz=1_idef,F%dims(3)
-	            F%PSIp(ir,iz) = A(iz + (ir-1)*F%dims(3))
-            end do
-        end do
-        DEALLOCATE(A)
-
-	end if	
-
-	call h5fclose_f(h5file_id, h5error)
-	if (h5error .EQ. -1) then
-		write(6,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fclose_f")')
-	end if
-
-end subroutine load_field_data_from_hdf5
 
 end module korc_HDF5
