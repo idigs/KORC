@@ -328,7 +328,7 @@ subroutine load_field_data_from_hdf5(params,F)
 	dset = "/R"
 	call load_array_from_hdf5(h5file_id,dset,F%X%R)
 
-	if ((.NOT.params%poloidal_flux).OR.(.NOT.params%axisymmetric)) then
+	if ((.NOT.params%poloidal_flux).AND.(.NOT.params%axisymmetric)) then
 		dset = "/PHI"
 		call load_array_from_hdf5(h5file_id,dset,F%X%PHI)
 	end if
@@ -336,7 +336,7 @@ subroutine load_field_data_from_hdf5(params,F)
 	dset = "/Z"
 	call load_array_from_hdf5(h5file_id,dset,F%X%Z)
 
-	if ((.NOT.params%poloidal_flux).OR.(.NOT.params%axisymmetric)) then
+	if ((.NOT.params%poloidal_flux).AND.(.NOT.params%axisymmetric)) then
 		dset = "/BR"
 		call load_array_from_hdf5(h5file_id,dset,F%B%R)
 
