@@ -1,6 +1,6 @@
 &input_parameters
 	simulation_time = 1.0E-6 ! Total aimed simulation time in seconds
-	snapshot_frequency = 1.0E-7 ! Time between snapshots in seconds
+	snapshot_frequency = 1.0E-9 ! Time between snapshots in seconds
 	dt = 1.0E-2 ! Time step as fraction of non-relativistic gyro-period
 	num_species = 2
 	minimum_particle_energy = 1.0E3 ! Minimum energy of simulated particles in eV
@@ -16,8 +16,8 @@
 	poloidal_flux = .FALSE.			 ! .TRUE. if using JFIT poloidal flux, .FALSE. if using the
 										! cylindrical components of the magnetic field
 	axisymmetric = .TRUE.				! Axisymmetric field?
-	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/DIII-D_sh165826.h5" !
-	outputs_list = '{}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
+	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/D3D_Q.h5" ! DIII-D_sh165826.h5" !
+	outputs_list = '{X,eta,flag,g}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
 /
 
 &plasma_species
@@ -27,14 +27,14 @@
         pitch_distribution = 'MONOPITCH','MONOPITCH'	! Options are: 'MONOPITCH', 'AVALANCHE', and 'UNIFORM'.
 																	! When energy_distribution='THERMAL', the pitch angles 
 																	! correspond to those of a thermalized distribution.
-        Ro = 1.475, 1.475 !
+        Ro = 1.7, 1.7 !
         Zo = 0.0, 0.0 !
-        r = 0.2, 0.2 !
-        Eo = 10.0E6, 10.0E6 ! Initial energy in eV
-        etao = 5.0, 10.0  ! Initial pitch angle
+        r = 0.1, 0.1 !
+        Eo = 1.0E6, 1.0E6 ! Initial energy in eV
+        etao = 50.0, 10.0  ! Initial pitch angle
 		Eo_lims = 1.0E6, 50.0E6, 1.0E6, 30.0E6 ! Lower and upper limit of simulated energy range, in eV.
 		etao_lims = 0.0, 20.0, 0.0, 10.0 ! Lower and upper limit of simulated pitch-angle range, in degrees.
-        ppp = 200, 200 ! Number of particles per process (mpi)
+        ppp = 100, 100 ! Number of particles per process (mpi)
         q = -1.0, -1.0 ! Electric charge
         m = 1.0, 1.0 ! In units of electron mass
 /

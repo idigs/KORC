@@ -347,7 +347,6 @@ subroutine load_field_data_from_hdf5(params,F)
 		call load_array_from_hdf5(h5file_id,dset,F%B%Z)
 	else
 		if (params%poloidal_flux) then
-
 			dset = '/Bo'
 			call load_from_hdf5(h5file_id,dset,F%Bo)
 
@@ -355,47 +354,16 @@ subroutine load_field_data_from_hdf5(params,F)
 			call load_from_hdf5(h5file_id,dset,F%Ro)
 
 			dset = "/PSIp"
-		    ALLOCATE( A(F%dims(1)*F%dims(3)) )
-			call load_array_from_hdf5(h5file_id,dset,A)
-		    do ir=1_idef,F%dims(1)
-		        do iz=1_idef,F%dims(3)
-			        F%PSIp(ir,iz) = A(iz + (ir-1)*F%dims(3))
-		        end do
-		    end do
-		    DEALLOCATE(A)
-
+			call load_array_from_hdf5(h5file_id,dset,F%PSIp)
 		else if (params%axisymmetric) then
-
 			dset = "/BR"
-		    ALLOCATE( A(F%dims(1)*F%dims(3)) )
-			call load_array_from_hdf5(h5file_id,dset,A)
-		    do ir=1_idef,F%dims(1)
-		        do iz=1_idef,F%dims(3)
-			        F%B_2D%R(ir,iz) = A(iz + (ir-1)*F%dims(3))
-		        end do
-		    end do
-		    DEALLOCATE(A)
+			call load_array_from_hdf5(h5file_id,dset,F%B_2D%R)
 
 			dset = "/BPHI"
-		    ALLOCATE( A(F%dims(1)*F%dims(3)) )
-			call load_array_from_hdf5(h5file_id,dset,A)
-		    do ir=1_idef,F%dims(1)
-		        do iz=1_idef,F%dims(3)
-			        F%B_2D%PHI(ir,iz) = A(iz + (ir-1)*F%dims(3))
-		        end do
-		    end do
-		    DEALLOCATE(A)
+			call load_array_from_hdf5(h5file_id,dset,F%B_2D%PHI)
 
 			dset = "/BZ"
-		    ALLOCATE( A(F%dims(1)*F%dims(3)) )
-			call load_array_from_hdf5(h5file_id,dset,A)
-		    do ir=1_idef,F%dims(1)
-		        do iz=1_idef,F%dims(3)
-			        F%B_2D%Z(ir,iz) = A(iz + (ir-1)*F%dims(3))
-		        end do
-		    end do
-		    DEALLOCATE(A)
-
+			call load_array_from_hdf5(h5file_id,dset,F%B_2D%Z)
 		end if
 	end if	
 

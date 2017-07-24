@@ -25,7 +25,7 @@ ST.data = loadData(ST);
 
 % ST.CP = confined_particles(ST);
 
-ST.PAD = pitchAngleDiagnostic(ST,30);
+% ST.PAD = pitchAngleDiagnostic(ST,30);
 
 % ST.MMD = magneticMomentDiagnostic(ST,70);
 
@@ -104,8 +104,8 @@ end
 function data = loadData(ST)
 data = struct;
 
-% list = {'X'};
-list = {};
+list = {'X'};
+% list = {};
 
 it = ST.range(1):1:ST.range(2);
 

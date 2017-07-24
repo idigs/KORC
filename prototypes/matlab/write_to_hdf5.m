@@ -1,7 +1,7 @@
-% name = 'xpand_iter3D_sc4_bet015_I87_hi_acc.dat';
+name = 'xpand_iter3D_sc4_bet015_I87_hi_acc.dat';
 % ST = pOrbs(name,'XPANDER','3D',[150,100,150],[1E6,1E-2,10],[-1,1],[7,0,0],[0.985384856627944,0]);
 
-filename = 'ITER_3D.h5'
+filename = 'ITER.h5'
 
 R = squeeze(B.R(1,:,1));
 Z = squeeze(B.Z(:,1,1));
@@ -169,7 +169,9 @@ for ii=1:dims(1)
         data(ii,jj) = ii + (jj-1)*dims(1);
     end
 end
+
 data
+
 h5dims = fliplr(dims)
 filename = fullfile('my_file.h5');
 fileID = H5F.create(filename,'H5F_ACC_TRUNC','H5P_DEFAULT','H5P_DEFAULT');
