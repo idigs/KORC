@@ -1,4 +1,4 @@
-function fields2hdf(R,PHI,Z,BR,BPHI,BZ,F,outputfile,Bo,Ro)
+function fields2hdf(R,PHI,Z,BR,BPHI,BZ,F,outputfile,Bo,Ro,Zo)
 % size(A) = [numel(R),numel(PHI),numel(Z)], where A can be any of the field
 % components or magnetic flux.
 % Example for JFIT D3D fields:
@@ -8,7 +8,7 @@ function fields2hdf(R,PHI,Z,BR,BPHI,BZ,F,outputfile,Bo,Ro)
 % Example for ITER fields using XPANDER fields
 % fields2hdf(R,PHI,Z,BR,BPHI,BZ,[],'ITER.h5')
 
-narginchk(8,10)
+narginchk(8,11)
 
 NR = numel(R);
 NPHI = numel(PHI);
@@ -84,5 +84,9 @@ if nargin > 8
     dsetname = '/Ro';
     h5create(outputfile,dsetname, [1])
     h5write(outputfile,dsetname,Ro)
+    
+    dsetname = '/Zo';
+    h5create(outputfile,dsetname, [1])
+    h5write(outputfile,dsetname,Zo)
 end
 end

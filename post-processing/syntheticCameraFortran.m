@@ -635,7 +635,7 @@ for ss=1:ST.params.simulation.num_species
             for it=1:ST.num_snapshots
                 P_L2 = P_L2 + ST.data.(['sp' num2str(ss)]).P_lambda(i1:i2,it)*npl(it);
             end
-            P_L2 = P_L2/sum(npl);
+%             P_L2 = P_L2/sum(npl);
             
             np = ST.data.(['sp' num2str(ss)]).np_pixel;
             
@@ -643,14 +643,14 @@ for ss=1:ST.params.simulation.num_species
             for it=1:ST.num_snapshots
                 P_L3 = P_L3 + ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,it).*np(it);
             end
-            P_L3 = P_L3/sum(npl);
+%             P_L3 = P_L3/sum(npl);
             %         P_L3 = P_L3/sum(np);
             
             P_L4 = zeros(Nl,1);
             for it=1:ST.num_snapshots
                 P_L4 = P_L4 + ST.data.(['sp' num2str(ss)]).P_a_pixel(i1:i2,it).*np(it);
             end
-            P_L4 = P_L4/sum(npl);
+%             P_L4 = P_L4/sum(npl);
             %         P_L4 = P_L4/sum(np);
             
             np_L3 = sum(ST.data.(['sp' num2str(ss)]).np_lambda_pixel,3);
@@ -664,8 +664,9 @@ for ss=1:ST.params.simulation.num_species
     if isfield(ST.params,'avalanche_pdf_params')
         Psyn_avg = averagedSpectrum(ST,40,50);
     else
-        Psyn_sp = singleParticleSpectrum(ST,lambda(i1:i2),...
-        ST.params.species.go(ss),deg2rad(ST.params.species.etao(ss)));
+%         Psyn_sp = singleParticleSpectrum(ST,lambda(i1:i2),...
+%         ST.params.species.go(ss),deg2rad(ST.params.species.etao(ss)));
+        Psyn_sp = zeros(size(lambda(i1:i2)));
     end
     
     % Convert from m to nm

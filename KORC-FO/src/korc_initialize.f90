@@ -665,7 +665,7 @@ subroutine initialize_fields(params,F)
 		
 		    call load_field_data_from_hdf5(params,F)
 
-			if (.NOT. params%poloidal_flux) then
+			if ((.NOT.params%poloidal_flux).AND.(.NOT.params%axisymmetric)) then
 				field%str = 'B'
 				call mean_F_field(F,F%Bo,field)
 			end if

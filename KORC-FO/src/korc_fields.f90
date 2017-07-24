@@ -345,8 +345,7 @@ subroutine load_field_data_from_hdf5(params,F)
 
 		dset = "/BZ"
 		call load_array_from_hdf5(h5file_id,dset,F%B%Z)
-	else
-		if (params%poloidal_flux) then
+	else if (params%poloidal_flux) then
 			dset = '/Bo'
 			call load_from_hdf5(h5file_id,dset,F%Bo)
 
@@ -355,7 +354,16 @@ subroutine load_field_data_from_hdf5(params,F)
 
 			dset = "/PSIp"
 			call load_array_from_hdf5(h5file_id,dset,F%PSIp)
-		else if (params%axisymmetric) then
+	else if (params%axisymmetric) then
+			dset = '/Bo'
+			call load_from_hdf5(h5file_id,dset,F%Bo)
+
+			dset = '/Ro'
+			call load_from_hdf5(h5file_id,dset,F%Ro)
+
+			dset = '/Zo'
+			call load_from_hdf5(h5file_id,dset,F%Zo)
+
 			dset = "/BR"
 			call load_array_from_hdf5(h5file_id,dset,F%B_2D%R)
 
@@ -364,7 +372,6 @@ subroutine load_field_data_from_hdf5(params,F)
 
 			dset = "/BZ"
 			call load_array_from_hdf5(h5file_id,dset,F%B_2D%Z)
-		end if
 	end if	
 
 	call h5fclose_f(h5file_id, h5error)

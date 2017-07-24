@@ -170,6 +170,7 @@ TYPE, PUBLIC :: FIELDS
 
 	REAL(rp) :: Bo ! Characteristic magnetic field
 	REAL(rp) :: Ro ! Radial position of magnetic axis
+	REAL(rp) :: Zo
 
     CHARACTER(MAX_STRING_LENGTH) :: electric_field_mode
 	REAL(rp) :: Eo ! Characteristic electric field
