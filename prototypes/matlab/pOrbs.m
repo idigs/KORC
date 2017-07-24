@@ -69,6 +69,8 @@ function ST = pOrbs(pathToBField,fileType,ND,res,timeStepParams,tracerParams,xo,
 % USING RAW FILES
 % ST = pOrbs('jfit_165365_1400.mat','RAW','2D',[],[1E5,1E-2,10],[-1,1],[1.82,0,-0.4928],[0.99,70]);
 
+% name = 'xpand_iter3D_sc4_bet015_I87_hi_acc';
+% ST = pOrbs(name,'XPANDER','3D',[150,100,150],[1E4,1E-2,10,1E-3],[-1,1],[6.5,0,0],[1E6,5],true);
 narginchk(8,9);
 
 close all
@@ -108,7 +110,7 @@ if ST.analytical
     [ST.B,~] = analyticalB([1,1,1],true);
     ST.Bo = ST.B.Bo;
 else
-    ST.B = loadMagneticField(ST,true);
+    ST.B = loadMagneticField(ST,false);
     ST.Bo = ST.B.Bo;
 end
 
@@ -170,19 +172,17 @@ end
 
 ST.time = ST.time;%/(2*pi/ST.params.wc);
 
-ST.cOp = initializeCollisionOperators(ST);
+% ST.cOp = initializeCollisionOperators(ST);
 
-ST_tmp = ST;
-
-ST.PP = particlePusherLeapfrog(ST);
+% ST.PP = particlePusherLeapfrog(ST);
 
 % Particle pusher using matlab ODEs solvers
 % ST.PP = particlePusherMatlab(ST); % (Un)comment this line as required
 % Particle pusher using matlab ODEs solvers
 
-if ST.opt
-    PoincarePlots(ST);
-end
+% if ST.opt
+%     PoincarePlots(ST);
+% end
 % ST.PP.angularMomentum = DiegosInvariants(ST);
 
 % ST.PP.invariant = invariants(ST);
@@ -461,15 +461,15 @@ else
     
     B.SI = calculatescatteredInterpolant(ST,B);
     
-    B.R = [];
-    B.Z = [];
-    B.phi = [];
-    
-    B.B = [];
-    B.BR = [];
-    B.Bphi = [];
-    B.BZ = [];
-    B.P = [];
+%     B.R = [];
+%     B.Z = [];
+%     B.phi = [];
+%     
+%     B.B = [];
+%     B.BR = [];
+%     B.Bphi = [];
+%     B.BZ = [];
+%     B.P = [];
     
 end
 
@@ -1387,7 +1387,7 @@ for ii=2:ST.params.numSnapshots
         
         U_L = s*(up + (up*t')*t + cross(up,t));
         % % % % % % % % % % % % % % %
-%         U = U_L; % Comment or uncomment
+        U = U_L; % Comment or uncomment
         % % % % % % % % % % % % % % %
         % % % Leap-frog scheme for Lorentz force % % %
         
@@ -1403,7 +1403,7 @@ for ii=2:ST.params.numSnapshots
         F3 = ( gamma_eff^2*q^3/(6*pi*ep*m^2) )*( (E*V_eff')^2 - vec*vec' )*V_eff;
 
         U_R = U_R + a*( F1 + F2 + F3 );
-        U = U_L + U_R - U;
+%         U = U_L + U_R - U;
         % % % Leap-frog scheme for the radiation damping force % % %
         
 %         % % % Collisions % % %
@@ -1411,7 +1411,8 @@ for ii=2:ST.params.numSnapshots
 %             [U,dummyWcoll] = CoulombCollision(ST,XX,U,dt*ST.cOp.subcyclingIter);
 %             [U,dummyWcoll] = collisionOperator(ST,XX,U/sqrt( 1 + U*U' ),dt*ST.cOp.subcyclingIter);
 %         end
-        [U,dummyWcoll] = CoulombCollision(ST,U,dt);
+        
+%         [U,dummyWcoll] = CoulombCollision(ST,U,dt);
 %         % % % Collisions % % %  
 
         gamma = sqrt( 1 + U*U' ); % Comment or uncomment
