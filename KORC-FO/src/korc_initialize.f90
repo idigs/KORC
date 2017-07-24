@@ -169,14 +169,17 @@ subroutine define_time_step(params)
 	params%dt = params%dt*(2.0_rp*C_PI*params%cpp%time_r)
 
 	params%t_steps = CEILING(params%simulation_time/params%dt,ip)
-	params%output_cadence = FLOOR(params%snapshot_frequency/params%dt,ip) + 1_ip
+	params%output_cadence = FLOOR(params%snapshot_frequency/params%dt,ip)
+	if (params%output_cadence.EQ.0_ip) params%output_cadence = 1_ip
 	params%num_snapshots = params%t_steps/params%output_cadence
 
-	write(6,'(/,"* * * * * TIME STEPPING PARAMETERS * * * * *")')
-	write(6,'("Number of time steps: ",I16)') params%t_steps
-	write(6,'("Output cadence: ",I16)') params%output_cadence
-	write(6,'("Number of outputs: ",I16)') params%num_snapshots
-	write(6,'("* * * * * * * * * ** * * * * * * * * * * * *",/)')
+	if (params%mpi_params%rank .EQ. 0) then
+		write(6,'(/,"* * * * * TIME STEPPING PARAMETERS * * * * *")')
+		write(6,'("Number of time steps: ",I16)') params%t_steps
+		write(6,'("Output cadence: ",I16)') params%output_cadence
+		write(6,'("Number of outputs: ",I16)') params%num_snapshots
+		write(6,'("* * * * * * * * * ** * * * * * * * * * * * *",/)')
+	end if
 end subroutine define_time_step
 
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
