@@ -1,11 +1,11 @@
 &input_parameters
-	simulation_time = 1.0E-6 ! Total aimed simulation time in seconds
-	snapshot_frequency = 1.0E-9 ! Time between snapshots in seconds
+	simulation_time = 5.0E-6 ! Total aimed simulation time in seconds
+	snapshot_frequency = 1.0E-7 ! Time between snapshots in seconds
 	dt = 1.0E-2 ! Time step as fraction of non-relativistic gyro-period
 	num_species = 2
 	minimum_particle_energy = 1.0E3 ! Minimum energy of simulated particles in eV
 	radiation = .FALSE.
-	collisions = .TRUE.
+	collisions = .FALSE.
 	collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
 	magnetic_field_model = 'EXTERNAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
 										! For 'ANALYTICAL', the magnetic field is calculated based on
@@ -27,14 +27,14 @@
         pitch_distribution = 'MONOPITCH','MONOPITCH'	! Options are: 'MONOPITCH', 'AVALANCHE', and 'UNIFORM'.
 																	! When energy_distribution='THERMAL', the pitch angles 
 																	! correspond to those of a thermalized distribution.
-        Ro = 1.7, 1.7 !
+        Ro = 1.71, 1.71 !
         Zo = 0.0, 0.0 !
-        r = 0.1, 0.1 !
+        r = 0.4, 0.4 !
         Eo = 1.0E6, 1.0E6 ! Initial energy in eV
-        etao = 50.0, 10.0  ! Initial pitch angle
+        etao = 0.0, 10.0  ! Initial pitch angle
 		Eo_lims = 1.0E6, 50.0E6, 1.0E6, 30.0E6 ! Lower and upper limit of simulated energy range, in eV.
 		etao_lims = 0.0, 20.0, 0.0, 10.0 ! Lower and upper limit of simulated pitch-angle range, in degrees.
-        ppp = 100, 100 ! Number of particles per process (mpi)
+        ppp = 1000, 1000 ! Number of particles per process (mpi)
         q = -1.0, -1.0 ! Electric charge
         m = 1.0, 1.0 ! In units of electron mass
 /
