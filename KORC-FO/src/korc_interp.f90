@@ -81,7 +81,7 @@ subroutine initialize_interpolant(params,F)
 			write(6,'("* * * * INITIALIZING  INTERPOLANT * * * *")')
 		end if
 
-		if ((.NOT.params%poloidal_flux).OR.(.NOT.params%axisymmetric)) then
+		if ((.NOT.params%poloidal_flux).AND.(.NOT.params%axisymmetric)) then
 			interp3d%NR = F%dims(1)
 			interp3d%NPHI = F%dims(2)
 			interp3d%NZ = F%dims(3)
@@ -196,19 +196,15 @@ subroutine finalize_interpolant(params)
 	if (params%magnetic_field_model .EQ. 'EXTERNAL') then
 		write(6,'("* * * * FINALIZING INTERPOLANT * * * *")')
 
-		if (.NOT. params%poloidal_flux) then
-			call Ezspline_free(interp3d%R, ezerr)
-			call EZspline_error(ezerr)
+		if (EZspline_allocated(interp3d%R)) call Ezspline_free(interp3d%R, ezerr)
+		if (EZspline_allocated(interp3d%PHI))call Ezspline_free(interp3d%PHI, ezerr)
+		if (EZspline_allocated(interp3d%Z)) call Ezspline_free(interp3d%Z, ezerr)
+		if (EZspline_allocated(interp2d%A)) call Ezspline_free(interp2d%A, ezerr)
+		if (EZspline_allocated(interp2d%R)) call Ezspline_free(interp2d%R, ezerr)
+		if (EZspline_allocated(interp2d%PHI)) call Ezspline_free(interp2d%PHI, ezerr)
+		if (EZspline_allocated(interp2d%Z)) call Ezspline_free(interp2d%Z, ezerr)
+!		call EZspline_error(ezerr)
 
-			call Ezspline_free(interp3d%PHI, ezerr)
-			call EZspline_error(ezerr)
-
-			call Ezspline_free(interp3d%Z, ezerr)
-			call EZspline_error(ezerr)	
-		else
-			call Ezspline_free(interp2d%A, ezerr)
-			call EZspline_error(ezerr)
-		end if
 		write(6,'("* * * * INTERPOLANT  FINALIZED * * * *")')
 	end if
 end subroutine finalize_interpolant
@@ -226,7 +222,9 @@ subroutine check_if_in_domain2D(F,Y,flag)
 !$OMP DO
 	do pp=1_idef,ss
         if ( flag(pp) .EQ. 1_idef ) then
-			call EZspline_isInDomain(interp2d%A, Y(1,pp), Y(3,pp), ezerr)
+			if (EZspline_allocated(interp2d%A)) call EZspline_isInDomain(interp2d%A, Y(1,pp), Y(3,pp), ezerr)
+			if (EZspline_allocated(interp2d%R)) call EZspline_isInDomain(interp2d%R, Y(1,pp), Y(3,pp), ezerr)
+
 			if (ezerr .NE. 0) then
 				flag(pp) = 0_idef
 			end if
