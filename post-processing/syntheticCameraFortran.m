@@ -681,8 +681,13 @@ for ss=1:ST.params.simulation.num_species
     
     nt = 100;
     t = linspace(0,2*pi,nt);
-    x = ST.params.fields.Ro + ST.params.fields.a*cos(t);
-    y = ST.params.fields.a*sin(t);
+    if isfield(ST.params.fields,'a')
+        a95 = ST.params.fields.a;
+    else
+        a95 = max(ST.params.fields.R) - ST.params.fields.Ro;
+    end
+    x = ST.params.fields.Ro + a95*cos(t);
+    y = a95*sin(t);
     
     xpixel = zeros(1,nt);
     ypixel = zeros(1,nt);
@@ -721,8 +726,8 @@ for ss=1:ST.params.simulation.num_species
     niw = 25;
     
     tiw = linspace(pi/2,3*pi/2,nt);
-    xiw = ST.params.fields.Ro + ST.params.fields.a*cos(tiw);
-    yiw = ST.params.fields.a*sin(tiw);
+    xiw = ST.params.fields.Ro + a95*cos(tiw);
+    yiw = a95*sin(tiw);
     
     Xiwo = zeros(2,nt);
     Xiw = zeros(2,nt,niw);
@@ -751,7 +756,7 @@ for ss=1:ST.params.simulation.num_species
     ytmp = sin(incline)*ST.params.fields.Ro;
     d = sqrt( (xtmp - Rc)^2 + ytmp^2 );
     
-    ymag_axis = 0;  
+    ymag_axis = ST.params.fields.Zo;  
     xmag_axis = f*(ST.params.fields.Ro-Ro)/d - xc;
     % Magnetic axis
 
