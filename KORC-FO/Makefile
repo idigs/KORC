@@ -26,7 +26,7 @@ ifeq ($(UNAME), Darwin)
 endif
 
 ifeq ($(UNAME), Linux)
-ifeq ($(NERSC_HOST),edison)
+ifeq ($(NERSC_HOST),cori)
 	FC = ftn
 
 	FCDEFINEFLAGS =-DINTEL	-DDOUBLE_PRECISION	-DHDF5_DOUBLE_PRESICION
@@ -35,7 +35,7 @@ else
 	FC = mpif90
 
 	FCDEFINEFLAGS =-DDOUBLE_PRECISION	-DHDF5_DOUBLE_PRESICION	-UH5_DEBUG_API
-	FCFLAGS =-cpp	-J$(MOD)	-fopenmp	-g
+	FCFLAGS =-cpp	-J$(MOD)	-fopenmp	-O2
 endif
 
 	HDF5_INSTALL =../HDF5

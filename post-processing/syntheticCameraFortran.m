@@ -127,7 +127,7 @@ for ll=1:length(list)
                     data.(['sp' num2str(ss)]).(list{ll})(:,ii) = h5read(filename, dataset);
                 end
             end
-        elseif (strcmp(list{ll},'np_pixel'))
+        elseif (strcmp(list{ll},'np_pixel') || strcmp(list{ll},'np_lambda'))
             data.(['sp' num2str(ss)]).(list{ll}) = zeros(1,ST.num_snapshots);
             for ii=1:numel(it) % Here
                 dataset = ...
@@ -635,7 +635,7 @@ for ss=1:ST.params.simulation.num_species
             for it=1:ST.num_snapshots
                 P_L2 = P_L2 + ST.data.(['sp' num2str(ss)]).P_lambda(i1:i2,it)*npl(it);
             end
-%             P_L2 = P_L2/sum(npl);
+            P_L2 = P_L2/sum(npl);
             
             np = ST.data.(['sp' num2str(ss)]).np_pixel;
             
@@ -644,14 +644,14 @@ for ss=1:ST.params.simulation.num_species
                 P_L3 = P_L3 + ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,it).*np(it);
             end
 %             P_L3 = P_L3/sum(npl);
-            %         P_L3 = P_L3/sum(np);
+                    P_L3 = P_L3/sum(np);
             
             P_L4 = zeros(Nl,1);
             for it=1:ST.num_snapshots
                 P_L4 = P_L4 + ST.data.(['sp' num2str(ss)]).P_a_pixel(i1:i2,it).*np(it);
             end
 %             P_L4 = P_L4/sum(npl);
-            %         P_L4 = P_L4/sum(np);
+                    P_L4 = P_L4/sum(np);
             
             np_L3 = sum(ST.data.(['sp' num2str(ss)]).np_lambda_pixel,3);
             np_L4 = sum(ST.data.(['sp' num2str(ss)]).np_angular_pixel,3);
@@ -664,9 +664,9 @@ for ss=1:ST.params.simulation.num_species
     if isfield(ST.params,'avalanche_pdf_params')
         Psyn_avg = averagedSpectrum(ST,40,50);
     else
-%         Psyn_sp = singleParticleSpectrum(ST,lambda(i1:i2),...
-%         ST.params.species.go(ss),deg2rad(ST.params.species.etao(ss)));
-        Psyn_sp = zeros(size(lambda(i1:i2)));
+        Psyn_sp = singleParticleSpectrum(ST,lambda(i1:i2),...
+        ST.params.species.go(ss),deg2rad(ST.params.species.etao(ss)));
+%         Psyn_sp = zeros(size(lambda(i1:i2)));
     end
     
     % Convert from m to nm
@@ -756,7 +756,7 @@ for ss=1:ST.params.simulation.num_species
     ytmp = sin(incline)*ST.params.fields.Ro;
     d = sqrt( (xtmp - Rc)^2 + ytmp^2 );
     
-    ymag_axis = ST.params.fields.Zo;  
+    ymag_axis = 0;  
     xmag_axis = f*(ST.params.fields.Ro-Ro)/d - xc;
     % Magnetic axis
 
@@ -849,7 +849,7 @@ for ss=1:ST.params.simulation.num_species
             hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
                 'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
             cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-            ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
+            ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
             xlabel(hc,'$\int P_R^{\Omega_\alpha}(\lambda) d\lambda$ (W)','Interpreter','latex','FontSize',12)
             ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
             axis([xmin, xmax, ymin, ymax]);
@@ -886,7 +886,7 @@ for ss=1:ST.params.simulation.num_species
             hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
                 'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
             cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-            ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
+            ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
             xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
             ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
             axis([xmin, xmax, ymin, ymax]);
@@ -922,7 +922,7 @@ for ss=1:ST.params.simulation.num_species
             hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
                 'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
             cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-            ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
+            ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
             xlabel(hc,'$\int \mathcal{P}_R(\lambda,\psi,\chi) d\lambda$ (W)','Interpreter','latex','FontSize',12)
             ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
             axis([xmin, xmax, ymin, ymax]);
@@ -959,7 +959,7 @@ for ss=1:ST.params.simulation.num_species
             hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
                 'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
             cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-            ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
+            ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
             xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
             ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
             axis([xmin, xmax, ymin, ymax]);
@@ -1004,7 +1004,7 @@ for ss=1:ST.params.simulation.num_species
         hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
             'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
         cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-        ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
+        ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         xlabel(hc,'$\int P_R^{\Omega_\alpha}(\lambda) d\lambda$ (W)','Interpreter','latex','FontSize',12)
         ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
         axis([xmin, xmax, ymin, ymax]);
@@ -1041,7 +1041,7 @@ for ss=1:ST.params.simulation.num_species
         hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
             'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
         cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-        ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
+        ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
         ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
         axis([xmin, xmax, ymin, ymax]);
@@ -1077,7 +1077,7 @@ for ss=1:ST.params.simulation.num_species
         hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
             'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
         cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-        ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
+        ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         xlabel(hc,'$\int \mathcal{P}_R(\lambda,\psi,\chi) d\lambda$ (W)','Interpreter','latex','FontSize',12)
         ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
         axis([xmin, xmax, ymin, ymax]);
@@ -1114,7 +1114,7 @@ for ss=1:ST.params.simulation.num_species
         hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
             'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
         cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-        ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
+        ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
         ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
         axis([xmin, xmax, ymin, ymax]);
@@ -1254,7 +1254,7 @@ for ss=1:ST.params.simulation.num_species
         hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
             'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
         cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-        ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
+        ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
         ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
         axis([xmin, xmax, ymin, ymax]);
@@ -1291,7 +1291,7 @@ for ss=1:ST.params.simulation.num_species
         hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
             'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
         cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-        ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
+        ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
         ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
         axis([xmin, xmax, ymin, ymax]);
@@ -1327,7 +1327,7 @@ for ss=1:ST.params.simulation.num_species
         hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
             'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
         cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-        ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
+        ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         xlabel(hc,'$P_{syn}$ (Photon/s)','Interpreter','latex','FontSize',12)
         ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
         axis([xmin, xmax, ymin, ymax]);
@@ -1364,7 +1364,7 @@ for ss=1:ST.params.simulation.num_species
         hold on;plot(ST.params.fields.Ro,0,'wo',0,ST.params.fields.Ro*yc/xmag_axis,'wo','Markersize',3,'LineWidth',1,'MarkerFaceColor',[1,1,1],...
             'MarkerEdgeColor',[0.6,0.6,0.6]);hold off
         cm = colormap(jet);cm(1,:) = [0,0,0];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-        ax = gca;ax.Color = cm(1,:);ax.ClippingStyle = 'rectangle';
+        ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         xlabel(hc,'Number of RE','Interpreter','latex','FontSize',12)
         ymin=min(rescaled_yAxis);ymax=max(rescaled_yAxis);xmin=ST.params.fields.Ro-abs(ymin);xmax=ST.params.fields.Ro+abs(ymax);
         axis([xmin, xmax, ymin, ymax]);
