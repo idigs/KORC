@@ -47,7 +47,7 @@
 	Bo = 2.19 ! In Teslas. ITER: 5.42 DIII-D: 2.19
 	minor_radius = 0.5 ! Minor radius in meters. ITER: 1.5 DIII-D: 0.5
 	major_radius = 1.5 ! Major radius in meters. ITER: 6.5 DIII-D: 1.6
-	qa = 2.0 ! Safety factor at the separatrix (r=a)
+	qa = 3.0 ! Safety factor at the separatrix (r=a)
 	qo = 1.0 ! Safety factor at the separatrix (r=a)
 /
 

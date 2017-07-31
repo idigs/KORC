@@ -1286,11 +1286,11 @@ SUBROUTINE integrated_angular_density(params,spp)
 		if (params%mpi_params%rank.EQ.0_idef) then
 		    P_a_pixel = RESHAPE(receive_buffer,(/cam%Nlambda,params%num_species/))
 
-		        do ss=1_idef,params%num_species
-					P_a_pixel(:,ss) = P_a_pixel(:,ss)/np_pixel(ss)
-		        end do
-		        var_name = 'P_a_pixel'
-		        call save_snapshot_var(params,P_a_pixel,var_name)
+!	        do ss=1_idef,params%num_species
+!				P_a_pixel(:,ss) = P_a_pixel(:,ss)/np_pixel(ss)
+!	        end do
+	        var_name = 'P_a_pixel'
+	        call save_snapshot_var(params,P_a_pixel,var_name)
 		end if
 
 		DEALLOCATE(send_buffer)
@@ -1305,11 +1305,11 @@ SUBROUTINE integrated_angular_density(params,spp)
 		if (params%mpi_params%rank.EQ.0_idef) then
 		    P_l_pixel = RESHAPE(receive_buffer,(/cam%Nlambda,params%num_species/))
 
-		        do ss=1_idef,params%num_species
-					P_l_pixel(:,ss) = P_l_pixel(:,ss)/np_pixel(ss)
-		        end do
-		        var_name = 'P_l_pixel'
-		        call save_snapshot_var(params,P_l_pixel,var_name)
+!	        do ss=1_idef,params%num_species
+!				P_l_pixel(:,ss) = P_l_pixel(:,ss)/np_pixel(ss)
+!	        end do
+	        var_name = 'P_l_pixel'
+	        call save_snapshot_var(params,P_l_pixel,var_name)
 		end if
 
 		DEALLOCATE(send_buffer)
@@ -1334,15 +1334,15 @@ SUBROUTINE integrated_angular_density(params,spp)
 		call save_snapshot_var(params,np_pixel,var_name)
 
 		var_name = 'P_a_pixel'
-		do ss=1_idef,params%num_species
-			P_a_pixel(:,ss) = P_a_pixel(:,ss)/np_pixel(ss)
-        end do
+!		do ss=1_idef,params%num_species
+!			P_a_pixel(:,ss) = P_a_pixel(:,ss)/np_pixel(ss)
+!		end do
 		call save_snapshot_var(params,P_a_pixel,var_name)
 
 		var_name = 'P_l_pixel'
-		do ss=1_idef,params%num_species
-			P_l_pixel(:,ss) = P_l_pixel(:,ss)/np_pixel(ss)
-		end do
+!		do ss=1_idef,params%num_species
+!			P_l_pixel(:,ss) = P_l_pixel(:,ss)/np_pixel(ss)
+!		end do
 		call save_snapshot_var(params,P_l_pixel,var_name)
 	end if
 
@@ -1706,11 +1706,11 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 		if (params%mpi_params%rank.EQ.0_idef) then
 		    P_a_pixel = RESHAPE(receive_buffer,(/cam%Nlambda,cam%ntor_sections,params%num_species/))
 
-		        do ss=1_idef,params%num_species
-					P_a_pixel(:,:,ss) = P_a_pixel(:,:,ss)/np_pixel(ss)
-		        end do
-		        var_name = 'P_a_pixel'
-		        call save_snapshot_var(params,P_a_pixel,var_name)
+!	        do ss=1_idef,params%num_species
+!				P_a_pixel(:,:,ss) = P_a_pixel(:,:,ss)/np_pixel(ss)
+!	        end do
+	        var_name = 'P_a_pixel'
+	        call save_snapshot_var(params,P_a_pixel,var_name)
 		end if
 
 		DEALLOCATE(send_buffer)
@@ -1725,11 +1725,11 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 		if (params%mpi_params%rank.EQ.0_idef) then
 		    P_l_pixel = RESHAPE(receive_buffer,(/cam%Nlambda,cam%ntor_sections,params%num_species/))
 
-		        do ss=1_idef,params%num_species
-					P_l_pixel(:,:,ss) = P_l_pixel(:,:,ss)/np_pixel(ss)
-		        end do
-		        var_name = 'P_l_pixel'
-		        call save_snapshot_var(params,P_l_pixel,var_name)
+!			do ss=1_idef,params%num_species
+!				P_l_pixel(:,:,ss) = P_l_pixel(:,:,ss)/np_pixel(ss)
+!			end do
+	        var_name = 'P_l_pixel'
+	        call save_snapshot_var(params,P_l_pixel,var_name)
 		end if
 
 		DEALLOCATE(send_buffer)
@@ -1754,15 +1754,15 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 		call save_snapshot_var(params,np_pixel,var_name)
 
 		var_name = 'P_a_pixel'
-		do ss=1_idef,params%num_species
-			P_a_pixel(:,:,ss) = P_a_pixel(:,:,ss)/np_pixel(ss)
-        end do
+!		do ss=1_idef,params%num_species
+!			P_a_pixel(:,:,ss) = P_a_pixel(:,:,ss)/np_pixel(ss)
+!		end do
 		call save_snapshot_var(params,P_a_pixel,var_name)
 
 		var_name = 'P_l_pixel'
-		do ss=1_idef,params%num_species
-			P_l_pixel(:,:,ss) = P_l_pixel(:,:,ss)/np_pixel(ss)
-		end do
+!		do ss=1_idef,params%num_species
+!			P_l_pixel(:,:,ss) = P_l_pixel(:,:,ss)/np_pixel(ss)
+!		end do
 		call save_snapshot_var(params,P_l_pixel,var_name)
 	end if
 
@@ -2111,11 +2111,11 @@ SUBROUTINE integrated_spectral_density(params,spp)
 		if (params%mpi_params%rank.EQ.0_idef) then
 		    P_lambda = RESHAPE(receive_buffer,(/cam%Nlambda,params%num_species/))
 
-			do ss=1_idef,params%num_species
-				P_lambda(:,ss) = P_lambda(:,ss)/np_lambda(ss)
-			end do
-			var_name = 'P_lambda'
-			call save_snapshot_var(params,P_lambda,var_name)
+!		do ss=1_idef,params%num_species
+!			P_lambda(:,ss) = P_lambda(:,ss)/np_lambda(ss)
+!		end do
+		var_name = 'P_lambda'
+		call save_snapshot_var(params,P_lambda,var_name)
 		end if
 
 		DEALLOCATE(send_buffer)
@@ -2129,9 +2129,9 @@ SUBROUTINE integrated_spectral_density(params,spp)
 		var_name = 'Psyn_pplane'
 	    call save_snapshot_var(params,Psyn_lambda,var_name)
 
-		do ss=1_idef,params%num_species
-			P_lambda(:,ss) = P_lambda(:,ss)/np_lambda(ss)
-		end do
+!		do ss=1_idef,params%num_species
+!			P_lambda(:,ss) = P_lambda(:,ss)/np_lambda(ss)
+!		end do
 		var_name = 'P_lambda'
 		call save_snapshot_var(params,P_lambda,var_name)
 
