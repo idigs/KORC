@@ -23,7 +23,7 @@ ST.data = loadData(ST);
 
 % ST.RT = radialTransport(ST);
 
-% ST.CP = confined_particles(ST);
+ST.CP = confined_particles(ST);
 
 % ST.PAD = pitchAngleDiagnostic(ST,30);
 
@@ -134,7 +134,7 @@ for ll=1:length(list)
     end
 end
 
-list = {'eta','flag'};
+list = {'g','eta','flag'};
 % list = {'g','eta'};
 
 for ll=1:length(list)
@@ -1144,18 +1144,18 @@ for ss=1:ST.params.simulation.num_species
     passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
     bool = pin & passing;
     
-    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,1));
+    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,:,end));
     R = sqrt( sum(X(1:2,:).^2,1) );
     Z = X(3,:);
 
     figure(h1)
     subplot(1,2,1)
     hold on
-%     plot(R,Z,'.','MarkerSize',8,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
-    his=histogram2(R,Z,'FaceColor','flat',...
-        'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
-    colormap(jet);caxis([min(min(his.Values)) max(max(his.Values))])
-    colorbar
+    plot(R,Z,'.','MarkerSize',8,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+%     his=histogram2(R,Z,'FaceColor','flat',...
+%         'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
+%     colormap(jet);caxis([min(min(his.Values)) max(max(his.Values))])
+%     colorbar
     hold off
     legends{ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
 end

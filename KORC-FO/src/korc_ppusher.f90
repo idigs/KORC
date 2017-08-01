@@ -80,7 +80,7 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 
 	    a = spp(ii)%q*dt/spp(ii)%m
 
-!$OMP PARALLEL SHARED(ii,spp) FIRSTPRIVATE(a,dt,bool)&
+!$OMP PARALLEL SHARED(params,ii,spp) FIRSTPRIVATE(a,dt,bool)&
 !$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gp,sigma,us,g,t,s,Frad,Fcoll,U_RC,U_os,tmp,b_unit,B,vpar,v,vperp,vec,Prad)
 
 !$OMP SINGLE
