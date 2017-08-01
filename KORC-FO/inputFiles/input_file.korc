@@ -1,5 +1,5 @@
 &input_parameters
-        simulation_time = 5.0E-6 ! Total aimed simulation time in seconds
+        simulation_time = 1.0E-6 ! Total aimed simulation time in seconds
         snapshot_frequency = 5.0E-7 ! Time between snapshots in seconds
         dt = 1.0E-2 ! Time step as fraction of non-relativistic gyro-period
         num_species = 4

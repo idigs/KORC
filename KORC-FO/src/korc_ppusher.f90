@@ -73,15 +73,15 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 	INTEGER :: ii, pp ! Iterators
 
 	do ii = 1,params%num_species
-		call get_fields(params,spp(ii)%vars, EB)
+!!$OMP PARALLEL SHARED(params,ii,spp,EB) FIRSTPRIVATE(dt,bool)&
+!!$OMP& PRIVATE(a,pp,U,U_L,U_hs,tau,up,gp,sigma,us,g,t,s,Frad,Fcoll,U_RC,U_os,tmp,b_unit,B,vpar,v,vperp,vec,Prad)
+
+		call get_fields(params,spp(ii)%vars,EB)
 
 	    a = spp(ii)%q*dt/spp(ii)%m
 
-!$OMP PARALLEL FIRSTPRIVATE(a,dt,bool)&
-!$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gp,&
-!$OMP& sigma,us,g,t,s,Frad,Fcoll,U_RC,U_os,&
-!$OMP& tmp,b_unit,B,vpar,v,vperp,vec,Prad)&
-!$OMP& SHARED(ii,spp)
+!$OMP PARALLEL SHARED(ii,spp) FIRSTPRIVATE(a,dt,bool)&
+!$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gp,sigma,us,g,t,s,Frad,Fcoll,U_RC,U_os,tmp,b_unit,B,vpar,v,vperp,vec,Prad)
 
 !$OMP SINGLE
 	call check_collisions_params(spp(ii))
