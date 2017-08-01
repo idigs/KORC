@@ -245,8 +245,10 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 			cam%pixels_edges_x(ii) = xmin + REAL(ii-1_idef,rp)*DX
 		end do
 
-		ymin = cam%position(2) - 0.5_rp*cam%sensor_size(2)
-		ymax = cam%position(2) + 0.5_rp*cam%sensor_size(2)
+!		ymin = cam%position(2) - 0.5_rp*cam%sensor_size(2)
+!		ymax = cam%position(2) + 0.5_rp*cam%sensor_size(2)
+		ymin = -0.5_rp*cam%sensor_size(2)
+		ymax = 0.5_rp*cam%sensor_size(2)
 		DY = cam%sensor_size(2)/REAL(cam%num_pixels(2),rp)
 
 		do ii=1_idef,cam%num_pixels(2)

@@ -1598,7 +1598,7 @@ for ss=1:ST.params.simulation.num_species
     
     scaling_factor = (Rc_max - Rc_min)/(max(xAxis) - min(xAxis));
     xAxis_rescaled = scaling_factor*xAxis + Rc_zero;
-    yAxis_rescaled = scaling_factor*yAxis;
+    yAxis_rescaled = scaling_factor*yAxis + Zc;
     
     if (NT ~= 1)
         
