@@ -31,7 +31,7 @@ ifeq ($(NERSC_HOST),edison)
 	FC = ftn
 
 	FCDEFINEFLAGS =-DINTEL	-DDOUBLE_PRECISION	-DHDF5_DOUBLE_PRESICION
-	FCFLAGS =-cpp   -module $(MOD)  -qopenmp        -O2
+	FCFLAGS =-cpp   -module $(MOD)  -qopenmp	-O2
 else
 	FC = mpif90
 
