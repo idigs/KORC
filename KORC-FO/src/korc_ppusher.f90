@@ -191,10 +191,10 @@ subroutine advance_particles_position(params,EB,spp,dt)
 	INTEGER :: ii, pp ! Iterators
 
 	if (params%magnetic_field_model .NE. 'UNIFORM') then
-		do ii = 1,params%num_species
-!$OMP PARALLEL PRIVATE(pp) SHARED(ii,spp,dt,params)
+		do ii=1_idef,params%num_species
+!$OMP PARALLEL FIRSTPRIVATE(dt) PRIVATE(pp) SHARED(ii,spp,params)
 !$OMP DO
-		do pp = 1,spp(ii)%ppp
+		do pp=1_idef,spp(ii)%ppp
 		    if ( spp(ii)%vars%flag(pp) .EQ. 1_idef ) then
 				spp(ii)%vars%X(:,pp) = spp(ii)%vars%X(:,pp) + dt*spp(ii)%vars%V(:,pp)
 		    end if

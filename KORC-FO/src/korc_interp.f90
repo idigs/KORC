@@ -210,15 +210,14 @@ subroutine finalize_interpolant(params)
 end subroutine finalize_interpolant
 
 
-subroutine check_if_in_domain2D(F,Y,flag)
+subroutine check_if_in_domain2D(Y,flag)
     implicit none
-	TYPE(FIELDS), INTENT(IN) :: F
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
 	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
 	INTEGER(ip) :: pp,ss
 
     ss = SIZE(Y,2)
-!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(F,Y,flag)
+!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(Y,flag,interp2d)
 !$OMP DO
 	do pp=1_idef,ss
         if ( flag(pp) .EQ. 1_idef ) then
@@ -236,16 +235,15 @@ subroutine check_if_in_domain2D(F,Y,flag)
 end subroutine check_if_in_domain2D
 
 
-subroutine check_if_in_domain3D(F,Y,flag)
+subroutine check_if_in_domain3D(Y,flag)
     implicit none
-	TYPE(FIELDS), INTENT(IN) :: F
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
 	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
 	INTEGER(ip) :: pp,ss
 
 
     ss = SIZE(Y,2)
-!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(F,Y,flag)
+!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(Y,flag,interp3d)
 !$OMP DO
 	do pp=1_idef,ss
         if ( flag(pp) .EQ. 1_idef ) then
@@ -265,7 +263,7 @@ subroutine interp_2D_B_field(Y,B,flag)
 	implicit none
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = R, Y(2,:) = PHI, Y(3,:) = Z
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: F ! F(1,:) = FR, F(3,:) = FZ
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: F ! F(1,:) = FR, F(2,:) = FPHI, F(3,:) = FZ
 	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
 	INTEGER :: pp, ss
 
@@ -390,13 +388,13 @@ subroutine interp_field(prtcls,F)
 	call cart_to_cyl(prtcls%X, prtcls%Y)
 
 	if (ALLOCATED(F%PSIp)) then
-		call check_if_in_domain2D(F, prtcls%Y, prtcls%flag)
+		call check_if_in_domain2D(prtcls%Y, prtcls%flag)
 		call calculate_magnetic_field(prtcls%Y,F,prtcls%B,prtcls%flag)
 	else if (ALLOCATED(F%B_2D%R)) then
-		call check_if_in_domain2D(F, prtcls%Y, prtcls%flag)
+		call check_if_in_domain2D(prtcls%Y, prtcls%flag)
 		call interp_2D_B_field(prtcls%Y,prtcls%B,prtcls%flag)
 	else if (ALLOCATED(F%B%R)) then
-		call check_if_in_domain3D(F, prtcls%Y, prtcls%flag)
+		call check_if_in_domain3D(prtcls%Y, prtcls%flag)
 		call interp_3D_B_field(prtcls%Y,prtcls%B,prtcls%flag)
 	else
 		write(6,'("* * * * NO FIELD ARRAYS ALLOCATED * * * *")')
