@@ -26,7 +26,8 @@ ifeq ($(UNAME), Darwin)
 endif
 
 ifeq ($(UNAME), Linux)
-ifeq ($(NERSC_HOST),cori)
+#ifeq ($(NERSC_HOST),cori)
+ifeq ($(NERSC_HOST),edison)
 	FC = ftn
 
 	FCDEFINEFLAGS =-DINTEL	-DDOUBLE_PRECISION	-DHDF5_DOUBLE_PRESICION
