@@ -269,7 +269,7 @@ subroutine interp_2D_B_field(Y,B,flag)
 
 	ss = size(Y,2)
 
-	ALLOCATE(F(2,ss))
+	ALLOCATE(F(3,ss))
 !$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(interp2d,F,Y,B,flag)
 !$OMP DO
 	do pp=1_idef,ss
