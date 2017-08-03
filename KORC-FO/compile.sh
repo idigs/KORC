@@ -3,5 +3,7 @@
 clear
 make clean
 
-make info
-make -B
+make info PRG_ENV=$1
+make -B PRG_ENV=$1
+
+

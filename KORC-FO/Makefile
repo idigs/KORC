@@ -1,11 +1,13 @@
 #Makefile
 
-UNAME	:=	$(shell uname)
+UNAME:=$(shell uname)
 
 SRC=src
 OBJ=obj
 MOD=mod
 BIN=bin
+
+PSPLINE_INSTALL=../pspline_lib
 
 ifeq ($(UNAME), Darwin)
 	FC = mpif90
@@ -14,7 +16,6 @@ ifeq ($(UNAME), Darwin)
 	FCFLAGS =-cpp   -J$(MOD) -fopenmp    -O2
 
 	HDF5_INSTALL =../HDF5
-	PSPLINE_INSTALL=../pspline_lib
 
 	INCLUDES_HDF5	=-I$(HDF5_INSTALL)/include
 	INCLUDES =-I$(PSPLINE_INSTALL)/mod
@@ -23,33 +24,61 @@ ifeq ($(UNAME), Darwin)
 	LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib
 	LIB	= -lm   -lz -ldl	-lpspline
 	OMP_LIB_FLAGS =	-lgomp
-endif
+endif #Darwin
 
 ifeq ($(UNAME), Linux)
-#ifeq ($(NERSC_HOST),cori)
-ifeq ($(NERSC_HOST),edison)
+
+ifdef NERSC_HOST
 	FC = ftn
 
-	FCDEFINEFLAGS =-DINTEL	-DDOUBLE_PRECISION	-DHDF5_DOUBLE_PRESICION
+ifdef PRG_ENV
+ifeq ($(PRG_ENV),GNU)
+	HDF5_INSTALL =../HDF5_GNU
+	FCFLAGS =-cpp	-J$(MOD)	-fopenmp	-O2
+	FCDEFINEFLAGS =-DDOUBLE_PRECISION       -DHDF5_DOUBLE_PRESICION
+endif #GNU
+ifeq ($(PRG_ENV),INTEL)
+	HDF5_INSTALL =../HDF5_INTEL
 	FCFLAGS =-cpp   -module $(MOD)  -qopenmp	-O2
-else
+	FCDEFINEFLAGS =-DINTEL	-DDOUBLE_PRECISION	-DHDF5_DOUBLE_PRESICION
+endif #INTEL
+endif #PRG_ENV
+
+ifeq ($(NERSC_HOST),cori)
+	INCLUDES =$(PSPLINE)
+	LIB_FLAGS =$(PSPLINE)
+	LIB     = -lm   -lz -ldl        -lpspline
+	OMP_LIB_FLAGS =
+endif #cori
+
+ifeq ($(NERSC_HOST),edison)
+	INCLUDES =-I$(PSPLINE_INSTALL)/mod
+	LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib
+	LIB     = -lm   -lz -ldl        -lpspline
+	OMP_LIB_FLAGS =
+endif #edison
+
+else #NERSC_HOST
 	FC = mpif90
 
 	FCDEFINEFLAGS =-DDOUBLE_PRECISION	-DHDF5_DOUBLE_PRESICION	-UH5_DEBUG_API
 	FCFLAGS =-cpp	-J$(MOD)	-fopenmp	-O2
-endif
 
 	HDF5_INSTALL =../HDF5
-	PSPLINE_INSTALL=../pspline_lib
 
-	INCLUDES_HDF5	=-I$(HDF5_INSTALL)/include
 	INCLUDES =-I$(PSPLINE_INSTALL)/mod
-	EXTLIB	=-L$(HDF5_INSTALL)/lib
-	LIBSHDF5	=$(EXTLIB)	$(HDF5_INSTALL)/lib/libhdf5hl_fortran.a	$(HDF5_INSTALL)/lib/libhdf5_fortran.a	$(HDF5_INSTALL)/lib/libhdf5_hl.a	$(HDF5_INSTALL)/lib/libhdf5.a
 	LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib
-	LIB	= -lm   -lz -ldl	-lpspline
-	OMP_LIB_FLAGS =
-endif
+endif #NERSC_HOST
+
+endif # Linux
+
+EXTLIB=-L$(HDF5_INSTALL)/lib
+LIBSHDF5=$(EXTLIB)      $(HDF5_INSTALL)/lib/libhdf5hl_fortran.a $(HDF5_INSTALL)/lib/libhdf5_fortran.a   $(HDF5_INSTALL)/lib/libhdf5_hl.a        $(HDF5_INSTALL)/lib/libhdf5.a
+
+INCLUDES_HDF5   =-I$(HDF5_INSTALL)/include
+LIB	= -lm   -lz -ldl	-lpspline
+OMP_LIB_FLAGS =
+
 
 BINARIES = $(addprefix $(OBJ)/,korc_types.o	\
 korc_constants.o	\
@@ -83,8 +112,13 @@ $(BIN)/KORC: $(BINARIES)
 
 info:
 	@echo	"COMPILING KORC-KO FOR: "$(UNAME)
+	@echo	"COMPILING USING: "$(PRG_ENV)
+ifdef NERSC_HOST
+	@echo	"COMPILING AT: "$(NERSC_HOST)
+else
+	@echo	"NOT COMPILING AT NERSC"
+endif
 	@echo	"STARTING COMPILATION..."
-	@echo $(MSG)
 
 clean:
 	@echo	"CLEANING..."
