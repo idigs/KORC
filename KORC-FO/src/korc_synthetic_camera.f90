@@ -2551,7 +2551,9 @@ SUBROUTINE synthetic_camera(params,spp)
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
 
 	if (cam%camera_on) then
-		write(6,'("MPI:",I5," Synthetic camera diagnostic: ON!")') params%mpi_params%rank
+		if (params%mpi_params%rank .EQ. 0) then
+			write(6,'("Synthetic camera diagnostic: ON!")')
+		end if
 		if (cam%integrated_opt) then
 			if (cam%toroidal_sections) then
 				call integrated_SE_toroidal_sections(params,spp)
@@ -2563,7 +2565,9 @@ SUBROUTINE synthetic_camera(params,spp)
 			call angular_density(params,spp)
 			call spectral_density(params,spp)
 		end if
-		write(6,'("MPI:",I5," Synthetic camera diagnostic: OFF!")') params%mpi_params%rank
+		if (params%mpi_params%rank .EQ. 0) then
+			write(6,'("Synthetic camera diagnostic: OFF!")')
+		end if
 	end if
 END SUBROUTINE synthetic_camera
 

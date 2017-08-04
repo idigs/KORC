@@ -194,7 +194,9 @@ subroutine finalize_interpolant(params)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
 	if (params%magnetic_field_model .EQ. 'EXTERNAL') then
-		write(6,'("* * * * FINALIZING INTERPOLANT * * * *")')
+		if (params%mpi_params%rank .EQ. 0) then
+			write(6,'("* * * * FINALIZING INTERPOLANT * * * *")')
+		end if
 
 		if (EZspline_allocated(interp3d%R)) call Ezspline_free(interp3d%R, ezerr)
 		if (EZspline_allocated(interp3d%PHI))call Ezspline_free(interp3d%PHI, ezerr)
@@ -205,7 +207,9 @@ subroutine finalize_interpolant(params)
 		if (EZspline_allocated(interp2d%Z)) call Ezspline_free(interp2d%Z, ezerr)
 !		call EZspline_error(ezerr)
 
-		write(6,'("* * * * INTERPOLANT  FINALIZED * * * *")')
+		if (params%mpi_params%rank .EQ. 0) then
+			write(6,'("* * * * INTERPOLANT  FINALIZED * * * *")')
+		end if
 	end if
 end subroutine finalize_interpolant
 

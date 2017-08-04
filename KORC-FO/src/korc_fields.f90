@@ -372,31 +372,7 @@ subroutine load_field_data_from_hdf5(params,F)
 
 			dset = "/BZ"
 			call load_array_from_hdf5(h5file_id,dset,F%B_2D%Z)
-	end if	
-
-!open(unit=default_unit_write,file='test.txt',status='UNKNOWN',form='formatted')
-!do ir=1_idef,129
-!write(default_unit_write,'(2F15.10)') F%X%R(ir),F%X%Z(ir)
-!end do
-
-!write(default_unit_write,'(/)')
-!write(default_unit_write,'(3F15.10)') F%Bo,F%Ro,F%Zo
-
-!write(default_unit_write,'(/)')
-!do ir=1_idef,129
-!write(default_unit_write,'(129F15.10)') F%B_2D%R(ir,:)
-!end do
-
-!write(default_unit_write,'(/)')
-!do ir=1_idef,129
-!write(default_unit_write,'(129F15.10)') F%B_2D%PHI(ir,:)
-!end do
-
-!write(default_unit_write,'(/)')
-!do ir=1_idef,129
-!write(default_unit_write,'(129F15.10)') F%B_2D%Z(ir,:)
-!end do
-!close(unit=default_unit_write)
+	end if
 
 	call h5fclose_f(h5file_id, h5error)
 	if (h5error .EQ. -1) then

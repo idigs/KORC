@@ -157,8 +157,8 @@ subroutine load_params_ss(params)
 	cparams_ss%Ec = C_ME*C_C/(C_E*cparams_ss%Tau)
 	cparams_ss%ED = cparams_ss%ne*C_E**3*cparams_ss%CoulombLog/(4.0_rp*C_PI*C_E0**2*cparams_ss%Te)
 
-	ALLOCATE(cparams_ss%rnd_num(3,cparams_ss%rnd_dim))
-	call RANDOM_NUMBER(cparams_ss%rnd_num)
+!	ALLOCATE(cparams_ss%rnd_num(3,cparams_ss%rnd_dim))
+!	call RANDOM_NUMBER(cparams_ss%rnd_num)
 	cparams_ss%rnd_num_count = 1_idef
 end subroutine load_params_ss
 
@@ -487,7 +487,8 @@ subroutine include_CoulombCollisions(params,U)
 	!	rnd2 = random_vector()
 	!	dW = SQRT(dt)*SQRT(-2.0_rp*LOG(1.0_rp-rnd1))*COS(2.0_rp*C_PI*rnd2)
 
-		rnd1 = random_vector()
+!		rnd1 = random_vector()
+		call RANDOM_NUMBER(rnd1)
 		dW = SQRT(dt)*SQRT(3.0_rp)*(-1.0_rp + 2.0_rp*rnd1);
 
 		CAL = CA(v)

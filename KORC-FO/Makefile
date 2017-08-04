@@ -116,7 +116,7 @@ info:
 ifdef NERSC_HOST
 	@echo	"COMPILING AT: "$(NERSC_HOST)
 else
-	@echo	"NOT COMPILING AT NERSC"
+	@echo	"COMPILING AT: "$(shell hostname)
 endif
 	@echo	"STARTING COMPILATION..."
 

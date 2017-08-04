@@ -83,9 +83,9 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 !$OMP PARALLEL SHARED(params,ii,spp) FIRSTPRIVATE(a,dt,bool)&
 !$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gp,sigma,us,g,t,s,Frad,Fcoll,U_RC,U_os,tmp,b_unit,B,vpar,v,vperp,vec,Prad)
 
-!$OMP SINGLE
-	call check_collisions_params(spp(ii))
-!$OMP END SINGLE
+!!$OMP SINGLE
+!	call check_collisions_params(spp(ii))
+!!$OMP END SINGLE
 
 !$OMP DO
 		do pp=1_idef,spp(ii)%ppp
