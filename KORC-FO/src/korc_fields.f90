@@ -101,14 +101,14 @@ subroutine mean_F_field(F,Fo,op_field)
 	TYPE(KORC_STRING), INTENT(IN) :: op_field
 
 	if (TRIM(op_field%str) .EQ. 'B') then
-		if (ALLOCATED(F%B%R)) then ! 3D field
-			Fo = SUM( SQRT(F%B%R**2 + F%B%PHI**2 + F%B%Z**2) )/SIZE(F%B%R)
+		if (ALLOCATED(F%B_3D%R)) then ! 3D field
+			Fo = SUM( SQRT(F%B_3D%R**2 + F%B_3D%PHI**2 + F%B_3D%Z**2) )/SIZE(F%B_3D%R)
 		else if (ALLOCATED(F%B_2D%R)) then ! Axisymmetric 2D field
 			Fo = SUM( SQRT(F%B_2D%R**2 + F%B_2D%PHI**2 + F%B_2D%Z**2) )/SIZE(F%B_2D%R)
 		end if
 	else if (TRIM(op_field%str) .EQ. 'E') then
-		if (ALLOCATED(F%E%R)) then ! 3D field
-			Fo = SUM( SQRT(F%E%R**2 + F%E%PHI**2 + F%E%Z**2) )/SIZE(F%E%R)
+		if (ALLOCATED(F%E_3D%R)) then ! 3D field
+			Fo = SUM( SQRT(F%E_3D%R**2 + F%E_3D%PHI**2 + F%E_3D%Z**2) )/SIZE(F%E_3D%R)
 		else if (ALLOCATED(F%E_2D%R)) then ! Axisymmetric 2D field
 			Fo = SUM( SQRT(F%E_2D%R**2 + F%E_2D%PHI**2 + F%E_2D%Z**2) )/SIZE(F%E_2D%R)
 		end if	
@@ -338,13 +338,13 @@ subroutine load_field_data_from_hdf5(params,F)
 
 	if ((.NOT.params%poloidal_flux).AND.(.NOT.params%axisymmetric)) then
 		dset = "/BR"
-		call load_array_from_hdf5(h5file_id,dset,F%B%R)
+		call load_array_from_hdf5(h5file_id,dset,F%B_3D%R)
 
 		dset = "/BPHI"
-		call load_array_from_hdf5(h5file_id,dset,F%B%PHI)
+		call load_array_from_hdf5(h5file_id,dset,F%B_3D%PHI)
 
 		dset = "/BZ"
-		call load_array_from_hdf5(h5file_id,dset,F%B%Z)
+		call load_array_from_hdf5(h5file_id,dset,F%B_3D%Z)
 	else if (params%poloidal_flux) then
 			dset = '/Bo'
 			call load_from_hdf5(h5file_id,dset,F%Bo)

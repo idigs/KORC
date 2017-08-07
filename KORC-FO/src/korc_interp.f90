@@ -95,7 +95,7 @@ subroutine initialize_interpolant(params,F)
 			! interp3d%R%x2 = F%X%PHI
 			interp3d%R%x3 = F%X%Z
 
-			call EZspline_setup(interp3d%R, F%B%R, ezerr)
+			call EZspline_setup(interp3d%R, F%B_3D%R, ezerr)
 			call EZspline_error(ezerr)
 
 			! Initializing PHI component of interpolant
@@ -107,7 +107,7 @@ subroutine initialize_interpolant(params,F)
 			! interp3d%PHI%x2 = F%X%PHI
 			interp3d%PHI%x3 = F%X%Z
 
-			call EZspline_setup(interp3d%PHI, F%B%PHI, ezerr)
+			call EZspline_setup(interp3d%PHI, F%B_3D%PHI, ezerr)
 			call EZspline_error(ezerr)
 
 			! Initializing Z component of interpolant
@@ -119,7 +119,7 @@ subroutine initialize_interpolant(params,F)
 			! interp3d%Z%x2 = F%X%PHI
 			interp3d%Z%x3 = F%X%Z
 
-			call EZspline_setup(interp3d%Z, F%B%Z, ezerr)
+			call EZspline_setup(interp3d%Z, F%B_3D%Z, ezerr)
 			call EZspline_error(ezerr)
 		else if (params%poloidal_flux) then
 			interp2d%NR = F%dims(1)
@@ -397,7 +397,7 @@ subroutine interp_field(prtcls,F)
 	else if (ALLOCATED(F%B_2D%R)) then
 		call check_if_in_domain2D(prtcls%Y, prtcls%flag)
 		call interp_2D_B_field(prtcls%Y,prtcls%B,prtcls%flag)
-	else if (ALLOCATED(F%B%R)) then
+	else if (ALLOCATED(F%B_3D%R)) then
 		call check_if_in_domain3D(prtcls%Y, prtcls%flag)
 		call interp_3D_B_field(prtcls%Y,prtcls%B,prtcls%flag)
 	else

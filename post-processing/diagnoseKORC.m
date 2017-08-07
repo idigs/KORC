@@ -23,7 +23,7 @@ ST.data = loadData(ST);
 
 % ST.RT = radialTransport(ST);
 
-% ST.CP = confined_particles(ST);
+ST.CP = confined_particles(ST);
 
 % ST.PAD = pitchAngleDiagnostic(ST,30);
 

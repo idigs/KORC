@@ -91,13 +91,17 @@ subroutine normalize_variables(params,spp,F)
 	else if (params%magnetic_field_model .EQ. 'EXTERNAL') then
 		F%Bo = F%Bo/params%cpp%Bo
 
-		if (ALLOCATED(F%B%R)) F%B%R = F%B%R/params%cpp%Bo
-		if (ALLOCATED(F%B%PHI)) F%B%PHI = F%B%PHI/params%cpp%Bo
-		if (ALLOCATED(F%B%Z)) F%B%Z = F%B%Z/params%cpp%Bo
+		if (ALLOCATED(F%B_3D%R)) F%B_3D%R = F%B_3D%R/params%cpp%Bo
+		if (ALLOCATED(F%B_3D%PHI)) F%B_3D%PHI = F%B_3D%PHI/params%cpp%Bo
+		if (ALLOCATED(F%B_3D%Z)) F%B_3D%Z = F%B_3D%Z/params%cpp%Bo
 
 		if (ALLOCATED(F%PSIp)) F%PSIp = F%PSIp/(params%cpp%Bo*params%cpp%length**2)
 		if (ALLOCATED(F%PSIp).OR.ALLOCATED(F%B_2D%R)) F%Ro = F%Ro/params%cpp%length
 		if (ALLOCATED(F%PSIp).OR.ALLOCATED(F%B_2D%R)) F%Zo = F%Zo/params%cpp%length
+
+		if (ALLOCATED(F%B_2D%R)) F%B_2D%R = F%B_2D%R/params%cpp%Bo
+		if (ALLOCATED(F%B_2D%PHI)) F%B_2D%PHI = F%B_2D%PHI/params%cpp%Bo
+		if (ALLOCATED(F%B_2D%Z)) F%B_2D%Z = F%B_2D%Z/params%cpp%Bo
 
 		F%X%R = F%X%R/params%cpp%length
 		! Nothing to do for the PHI component

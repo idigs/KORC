@@ -48,7 +48,7 @@
 	qo = 1.0 ! Safety factor at the separatrix (r=a)
 /
 
-&profiles
+&plasma_profiles
 	ne_profile = 'FLAT' ! Options are 'FLAT' and 'PARABOLIC'
 	Te_profile = 'FLAT' ! Options are 'FLAT' and 'PARABOLIC'
 /
