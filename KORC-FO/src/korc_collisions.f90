@@ -528,6 +528,9 @@ subroutine save_params_ms(params)
 
 		ALLOCATE(attr_array(cparams_ms%num_impurity_species))
 
+		dset = TRIM(gname) // "/collisions_model"
+		call save_string_parameter(h5file_id,dset,(/params%collisions_model/))
+
 		dset = TRIM(gname) // "/num_impurity_species"
 		attr = "Number of impurity species"
 		call save_to_hdf5(h5file_id,dset,cparams_ms%num_impurity_species,attr)
@@ -616,6 +619,9 @@ subroutine save_params_ss(params)
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
 		ALLOCATE(attr_array(cparams_ms%num_impurity_species))
+
+		dset = TRIM(gname) // "/collisions_model"
+		call save_string_parameter(h5file_id,dset,(/params%collisions_model/))
 
 		dset = TRIM(gname) // "/Te"
 		attr = "Background electron temperature in eV"

@@ -1614,14 +1614,14 @@ for ss=1:ST.params.simulation.num_species
         
         fig = figure;
         subplot(2,1,1)
-        plot(axis_lambda,f_L3)
+        plot(axis_lambda,f_L3,axis_lambda,sum(f_L3,2),'--')
         hold on;plot(axis_lambda,P_theory,'r');hold off
         ylabel('$P_{syn}$ (A.U.)','FontSize',12,'Interpreter','latex')
         xlim([min(axis_lambda) max(axis_lambda)]);box on;grid on;
         xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
         
         subplot(2,1,2)
-        plot(axis_lambda,f_L4)
+        plot(axis_lambda,f_L4,axis_lambda,sum(f_L4,2),'--')
         hold on;plot(axis_lambda,P_theory,'r');hold off
         ylabel('$P_{syn}$ (A.U.)','FontSize',12,'Interpreter','latex')
         xlim([min(axis_lambda) max(axis_lambda)]);box on;grid on;

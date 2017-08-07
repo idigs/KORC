@@ -45,7 +45,7 @@ module korc_HDF5
 				
 	PUBLIC :: initialize_HDF5,finalize_HDF5,save_simulation_parameters,&
                 save_to_hdf5,save_1d_array_to_hdf5,save_2d_array_to_hdf5,&
-				load_from_hdf5,load_array_from_hdf5
+				load_from_hdf5,load_array_from_hdf5,save_string_parameter
 
 contains
 
@@ -703,6 +703,41 @@ subroutine rsave_3d_array_to_hdf5(h5file_id,dset,rdata,attr)
 end subroutine rsave_3d_array_to_hdf5
 
 
+subroutine save_string_parameter(h5file_id,dset,string_array)
+	implicit none
+	INTEGER(HID_T), INTENT(IN) :: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
+	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), INTENT(IN) :: string_array
+	INTEGER(HID_T) :: dset_id
+	INTEGER(HID_T) :: dspace_id
+	INTEGER(HSIZE_T), DIMENSION(1) :: dims
+	INTEGER(HSIZE_T), DIMENSION(2) :: data_dims
+	INTEGER(SIZE_T), DIMENSION(:), ALLOCATABLE :: str_len
+	INTEGER(HID_T) :: string_type
+	INTEGER :: h5error
+	
+	ALLOCATE(str_len(SIZE(string_array)))
+
+	dims = (/SIZE(string_array)/)
+	data_dims = (/MAX_STRING_LENGTH,SIZE(string_array)/)
+	str_len = (/LEN_TRIM(string_array)/)
+
+	call h5tcopy_f(H5T_STRING,string_type,h5error)
+	call h5tset_strpad_f(string_type,H5T_STR_SPACEPAD_F,h5error)
+
+	call h5screate_simple_f(1,dims,dspace_id,h5error)
+
+	call h5dcreate_f(h5file_id,TRIM(dset),string_type,dspace_id,dset_id,h5error)
+
+	call h5dwrite_vl_f(dset_id,string_type,string_array,data_dims,str_len,h5error,dspace_id)
+
+	call h5sclose_f(dspace_id, h5error)
+	call h5dclose_f(dset_id, h5error)
+
+	DEALLOCATE(str_len)
+end subroutine save_string_parameter
+
+
 subroutine save_simulation_parameters(params,spp,F)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
@@ -800,6 +835,9 @@ subroutine save_simulation_parameters(params,spp,F)
 			call save_to_hdf5(h5file_id,dset,0_idef,attr)
 		end if
 
+		dset = TRIM(gname) // "/outputs_list"
+		call save_string_parameter(h5file_id,dset,params%outputs_list)
+
 		DEALLOCATE(idata)
 		DEALLOCATE(attr_array)
 
@@ -811,6 +849,12 @@ subroutine save_simulation_parameters(params,spp,F)
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
 		ALLOCATE(attr_array(params%num_species))
+
+		dset = TRIM(gname) // "/energy_distribution"
+		call save_string_parameter(h5file_id,dset,spp%energy_distribution)
+
+		dset = TRIM(gname) // "/pitch_distribution"
+		call save_string_parameter(h5file_id,dset,spp%pitch_distribution)
 
 		dset = TRIM(gname) // "/ppp"
 		attr_array(1) = "Particles per (mpi) process"
@@ -860,7 +904,10 @@ subroutine save_simulation_parameters(params,spp,F)
 		gname = "fields"
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
-		if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
+		dset = TRIM(gname) // "/magnetic_field_model"
+		call save_string_parameter(h5file_id,dset,(/params%magnetic_field_model/))
+
+		if (TRIM(params%magnetic_field_model) .EQ. 'ANALYTICAL') then
 			dset = TRIM(gname) // "/Bo"
 			attr = "Toroidal field at the magnetic axis in T"
 			call save_to_hdf5(h5file_id,dset,F%Bo*params%cpp%Bo,attr)

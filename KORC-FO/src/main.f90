@@ -17,7 +17,7 @@ program main
 
 	TYPE(KORC_PARAMS) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE :: spp
-	TYPE(FIELDS) :: EB
+	TYPE(FIELDS) :: F
 	INTEGER(ip) :: it ! Iterator(s)
 	REAL(rp) :: t1, t2 ! variables for timing the simulation
 
@@ -30,21 +30,21 @@ program main
 
 	call initialize_korc_parameters(params) ! Initialize korc parameters
 
-	call initialize_fields(params,EB)
+	call initialize_fields(params,F)
 
-	call initialize_particles(params,EB,spp) ! Initialize particles
+	call initialize_particles(params,F,spp) ! Initialize particles
 
 	call initialize_collision_params(params)
 
-	call initialize_synthetic_camera(params,EB) ! Synthetic camera
+	call initialize_synthetic_camera(params,F) ! Synthetic camera
 
-	call compute_charcs_plasma_params(params,spp,EB)
+	call compute_charcs_plasma_params(params,spp,F)
 
 	call define_time_step(params)
 
 	call initialize_particle_pusher(params)
 
-	call normalize_variables(params,spp,EB)
+	call normalize_variables(params,spp,F)
 
 	call normalize_collisions_params(params)
 
@@ -54,19 +54,19 @@ program main
 	! *** BEYOND THIS POINT VARIABLES ARE DIMENSIONLESS ***
 	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
 
-	call initialize_interpolant(params,EB)
+	call initialize_interpolant(params,F)
 
-	call set_up_particles_ic(params,EB,spp)
+	call set_up_particles_ic(params,F,spp)
 	! * * * INITIALIZATION STAGE * * *
 
-	call save_simulation_parameters(params,spp,EB)
+	call save_simulation_parameters(params,spp,F)
 
 	call save_collision_params(params)
 
-	call advance_particles_velocity(params,EB,spp,0.0_rp,.TRUE.)
+	call advance_particles_velocity(params,F,spp,0.0_rp,.TRUE.)
 
 	! Save initial condition
-	call save_simulation_outputs(params,spp,EB)
+	call save_simulation_outputs(params,spp,F)
 
 	call synthetic_camera(params,spp) ! Synthetic camera!
 
@@ -77,23 +77,23 @@ program main
 	t1 = MPI_WTIME()
 
 	! Initial half-time particle push
-	call advance_particles_position(params,EB,spp,0.5_rp*params%dt)
+	call advance_particles_position(params,F,spp,0.5_rp*params%dt)
 
 	do it=1_ip,params%t_steps
         params%time = REAL(it,rp)*params%dt
 		params%it = it
 
 		if ( modulo(it,params%output_cadence) .EQ. 0_ip ) then
-            call advance_particles_velocity(params,EB,spp,params%dt,.TRUE.)
-		    call advance_particles_position(params,EB,spp,params%dt)
+            call advance_particles_velocity(params,F,spp,params%dt,.TRUE.)
+		    call advance_particles_position(params,F,spp,params%dt)
 
 			write(6,'("MPI:",I5," Saving snapshot: ",I15)') params%mpi_params%rank, it/params%output_cadence
-			call save_simulation_outputs(params,spp,EB)
+			call save_simulation_outputs(params,spp,F)
 
 			call synthetic_camera(params,spp) ! Synthetic camera
         else
-            call advance_particles_velocity(params,EB,spp,params%dt,.FALSE.)
-		    call advance_particles_position(params,EB,spp,params%dt)
+            call advance_particles_velocity(params,F,spp,params%dt,.FALSE.)
+		    call advance_particles_position(params,F,spp,params%dt)
         end if
 	end do
 	
@@ -107,7 +107,7 @@ program main
 	call finalize_interpolant(params)
 
 	! DEALLOCATION OF VARIABLES
-	call deallocate_variables(params,EB,spp)
+	call deallocate_variables(params,F,spp)
 
 	call deallocate_collisions_params(params)
 

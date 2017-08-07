@@ -57,10 +57,10 @@ subroutine radiation_force(spp,U,E,B,Frad)
 end subroutine radiation_force
 
 
-subroutine advance_particles_velocity(params,EB,spp,dt,bool)
+subroutine advance_particles_velocity(params,F,spp,dt,bool)
     implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(FIELDS), INTENT(IN) :: EB
+	TYPE(FIELDS), INTENT(IN) :: F
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
     LOGICAL, INTENT(IN) :: bool
 	REAL(rp), INTENT(IN) :: dt
@@ -73,10 +73,10 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 	INTEGER :: ii, pp ! Iterators
 
 	do ii = 1,params%num_species
-!!$OMP PARALLEL SHARED(params,ii,spp,EB) FIRSTPRIVATE(dt,bool)&
+!!$OMP PARALLEL SHARED(params,ii,spp,F) FIRSTPRIVATE(dt,bool)&
 !!$OMP& PRIVATE(a,pp,U,U_L,U_hs,tau,up,gp,sigma,us,g,t,s,Frad,Fcoll,U_RC,U_os,tmp,b_unit,B,vpar,v,vperp,vec,Prad)
 
-		call get_fields(params,spp(ii)%vars,EB)
+		call get_fields(params,spp(ii)%vars,F)
 
 	    a = spp(ii)%q*dt/spp(ii)%m
 
@@ -182,10 +182,10 @@ subroutine advance_particles_velocity(params,EB,spp,dt,bool)
 end subroutine advance_particles_velocity
 
 
-subroutine advance_particles_position(params,EB,spp,dt)
+subroutine advance_particles_position(params,F,spp,dt)
     implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(FIELDS), INTENT(IN) :: EB
+	TYPE(FIELDS), INTENT(IN) :: F
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
 	REAL(rp), INTENT(IN) :: dt
 	INTEGER :: ii, pp ! Iterators

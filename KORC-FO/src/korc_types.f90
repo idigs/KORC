@@ -159,6 +159,7 @@ END TYPE MESH
 
 
 TYPE, PUBLIC :: FIELDS
+	! Electric and magnetic field
 	TYPE(A_FIELD) :: AB
 	TYPE(V_FIELD_3D) :: E
 	TYPE(V_FIELD_3D) :: B
@@ -176,6 +177,8 @@ TYPE, PUBLIC :: FIELDS
 	REAL(rp) :: Eo ! Characteristic electric field
     REAL(rp) :: to
     REAL(rp) :: sig
+
+	! Temperature and density fields
 END TYPE FIELDS
 
 

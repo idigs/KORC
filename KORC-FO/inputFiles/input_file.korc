@@ -1,11 +1,11 @@
 &input_parameters
         simulation_time = 1.0E-6 ! Total aimed simulation time in seconds
-        snapshot_frequency = 5.0E-7 ! Time between snapshots in seconds
+        snapshot_frequency = 2.0E-7 ! Time between snapshots in seconds
         dt = 1.0E-2 ! Time step as fraction of non-relativistic gyro-period
-        num_species = 4
+        num_species = 2
         minimum_particle_energy = 1.0E3 ! Minimum energy of simulated particles in eV
-        radiation = .FALSE.
-        collisions = .FALSE.
+        radiation = .TRUE.
+        collisions = .TRUE.
         collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
         magnetic_field_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
                                                                                 ! For 'ANALYTICAL', the magnetic field is calculated based on
@@ -21,22 +21,19 @@
 /
 
 &plasma_species
-        runaway = .FALSE., .FALSE., .FALSE., .FALSE. !
-        energy_distribution = 'MONOENERGETIC','MONOENERGETIC','MONOENERGETIC','MONOENERGETIC'   ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE'
-                                                                                                                                                                ! and 'UNIFORM'
-        pitch_distribution = 'MONOPITCH','MONOPITCH','MONOPITCH','MONOPITCH'    ! Options are: 'MONOPITCH', 'AVALANCHE', and 'UNIFORM'.
-                                                                                                                                        ! When energy_distribution='THERMAL', the pitch angles
-                                                                                                                                        ! correspond to those of a thermalized distribution.
-        Ro = 1.5, 1.5, 1.5, 1.5 !
-        Zo = 0.0, 0.0, 0.0, 0.0 !
-        r = 0.2, 0.2, 0.2, 0.2 !
-        Eo = 30.0E6, 30.0E6, 30.0E6, 30.0E6 ! Initial energy in eV
-        etao = 5.0, 10.0, 15.0, 20.0  ! Initial pitch angle
-        Eo_lims = 1.0E6, 50.0E6, 1.0E6, 30.0E6, 1.0E6, 50.0E6, 1.0E6, 30.0E6 ! Lower and upper limit of simulated energy range, in eV.
-        etao_lims = 0.0, 20.0, 0.0, 10.0, 0.0, 20.0, 0.0, 10.0 ! Lower and upper limit of simulated pitch-angle range, in degrees.
-        ppp = 1000, 1000, 1000, 1000 ! Number of particles per process (mpi)
-        q = -1.0, -1.0, -1.0, -1.0 ! Electric charge
-        m = 1.0, 1.0, 1.0, 1.0 ! In units of electron mass
+        runaway = .FALSE. !
+        energy_distribution = 'MONOENERGETIC','MONOENERGETIC'   ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE' and 'UNIFORM'
+        pitch_distribution = 'MONOPITCH','MONOPITCH'	! Options are: 'MONOPITCH', 'AVALANCHE', and 'UNIFORM'. When energy_distribution='THERMAL', the pitch angles correspond to those of a thermalized distribution.
+        Ro = 1.5,1.5 !
+        Zo = 0.0,0.0 !
+        r = 0.2,0.2 !
+        Eo = 10.0E6,10.0E6 ! Initial energy in eV
+        etao = 5.0,10.0  ! Initial pitch angle
+        Eo_lims = 1.0E6,50.0E6,1.0E6,50.0E6 ! Lower and upper limit of simulated energy range, in eV.
+        etao_lims = 0.0,20.0,0.0,20.0 ! Lower and upper limit of simulated pitch-angle range, in degrees.
+        ppp = 500,500 ! Number of particles per process (mpi)
+        q = -1.0,-1.0 ! Electric charge
+        m = 1.0,1.0 ! In units of electron mass
 /
 
 &analytic_mag_field_params
@@ -51,6 +48,11 @@
 	qo = 1.0 ! Safety factor at the separatrix (r=a)
 /
 
+&profiles
+	ne_profile = 'FLAT' ! Options are 'FLAT' and 'PARABOLIC'
+	Te_profile = 'FLAT' ! Options are 'FLAT' and 'PARABOLIC'
+/
+
 &CollisionParamsMultipleSpecies
 	num_impurity_species = 2
 	Te = 1.5 ! Background electron temperature in eV
@@ -62,8 +64,8 @@
 /
 
 &CollisionParamsSingleSpecies
-	Te = 2.0 ! Background electron temperature in eV
-	Ti = 2.0 ! Background ion temperature in eV
+	Te = 1.0E3 ! Background electron temperature in eV
+	Ti = 1.0E3 ! Background ion temperature in eV
 	ne = 1.0E20 ! Background electron density in 1/m^3
 	Zeff = 1.0 ! Effective atomic number
 	dTau = 0.1 ! Subcycling time step in collisional time units (Tau)
@@ -81,7 +83,7 @@
 /
 
 &SyntheticCamera
-	camera_on = .TRUE. ! .TRUE. or .FALSE.
+	camera_on = .FALSE. ! .TRUE. or .FALSE.
  	Riw = 1.0 ! Radial position of inner wall
  	num_pixels = 50, 50 ! Number of pixels (X,Y)
  	sensor_size = 0.4, 0.4 ! (horizontal,vertical)
