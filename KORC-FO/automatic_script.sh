@@ -1,6 +1,7 @@
 #!/bin/bash
-for it in $(seq 1 1 10)
+for it in 1 2 4 8
 do
-mpirun -np 1 -x OMP_NUM_THREADS=10 ./bin/KORC inputFiles/input_file.korc /media/l8c/FantomHD/DIII-D/KORC_data/test/
+rm outputFiles/*h5
+mpirun -np 1 -x OMP_NUM_THREADS=$it ./bin/KORC inputFiles/input_file.korc outputFiles/
 sleep 1s
 done

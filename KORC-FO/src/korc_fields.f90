@@ -31,12 +31,12 @@ subroutine analytical_magnetic_field(F,Y,B,flag)
         if ( flag(pp) .EQ. 1_idef ) then
 		    eta = Y(1,pp)/F%Ro
             q = F%AB%qo*(1.0_rp + (Y(1,pp)/F%AB%lambda)**2)
-            Bp = eta*F%AB%Bo/(q*(1.0_rp + eta*cos(Y(2,pp))))
-		    Bt = F%AB%Bo/( 1.0_rp + eta*cos(Y(2,pp)) )
+            Bp = eta*F%AB%Bo/(q*(1.0_rp + eta*COS(Y(2,pp))))
+		    Bt = F%AB%Bo/( 1.0_rp + eta*COS(Y(2,pp)) )
 
-		    B(1,pp) =  Bt*cos(Y(3,pp)) - Bp*sin(Y(2,pp))*sin(Y(3,pp))
-		    B(2,pp) = -Bt*sin(Y(3,pp)) - Bp*sin(Y(2,pp))*cos(Y(3,pp))
-		    B(3,pp) = Bp*cos(Y(2,pp))
+		    B(1,pp) =  Bt*COS(Y(3,pp)) - Bp*SIN(Y(2,pp))*SIN(Y(3,pp))
+		    B(2,pp) = -Bt*SIN(Y(3,pp)) - Bp*SIN(Y(2,pp))*COS(Y(3,pp))
+		    B(3,pp) = Bp*COS(Y(2,pp))
         end if
 	end do
 !$OMP END DO
@@ -81,10 +81,10 @@ subroutine analytical_electric_field(F,Y,E,flag)
 		do pp=1_idef,ss
             if ( flag(pp) .EQ. 1_idef ) then
 			    eta = Y(1,pp)/F%Ro		
-			    Ezeta = F%Eo/( 1.0_rp + eta*cos(Y(2,pp)) )
+			    Ezeta = F%Eo/( 1.0_rp + eta*COS(Y(2,pp)) )
 
-			    E(1,pp) = Ezeta*cos(Y(3,pp))
-			    E(2,pp) = -Ezeta*sin(Y(3,pp))
+			    E(1,pp) = Ezeta*COS(Y(3,pp))
+			    E(2,pp) = -Ezeta*SIN(Y(3,pp))
 			    E(3,pp) = 0.0_rp
             end if
 		end do

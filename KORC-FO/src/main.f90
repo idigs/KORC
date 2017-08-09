@@ -95,6 +95,7 @@ program main
             call advance_particles_velocity(params,F,spp,params%dt,.FALSE.)
 		    call advance_particles_position(params,F,spp,params%dt)
         end if
+
 	end do
 	
 	t2 = MPI_WTIME()

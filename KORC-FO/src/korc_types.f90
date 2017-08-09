@@ -179,10 +179,19 @@ TYPE, PUBLIC :: FIELDS
 END TYPE FIELDS
 
 
-!TYPE, PUBLIC :: PROFILES
+TYPE, PUBLIC :: PROFILES
+	! Density
+	REAL(rp) :: neo ! Electron density at the magnetic axis
+	REAL(rp) :: nea ! Electron density at the plasma edge (if analytical)
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: ne_3D ! ne_3D(R,PHI,Z)
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: ne_2D ! ne_2D(R,Z)
 	
-
-!END TYPE PROFILES
+	!Temperature	
+	REAL(rp) :: Teo ! Electron temperature at the magnetic axis
+	REAL(rp) :: Tea ! Electron temperature at the plasma edge (if analytical)
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: Te_3D ! Te_3D(R,PHI,Z)
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Te_2D ! Te_2D(R,Z)
+END TYPE PROFILES
 
 PUBLIC :: ALLOCATE_FLUX_ARRAYS,ALLOCATE_2D_FIELDS_ARRAYS,ALLOCATE_3D_FIELDS_ARRAYS,DEALLOCATE_FIELDS_ARRAYS
 PRIVATE :: ALLOCATE_V_FIELD_2D,ALLOCATE_V_FIELD_3D

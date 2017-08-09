@@ -291,8 +291,8 @@ subroutine interp_2D_B_field(Y,B,flag)
 			call EZspline_interp(interp2d%Z, Y(1,pp), Y(3,pp), F(3,pp), ezerr)
 			call EZspline_error(ezerr)
 
-			B(1,pp) = F(1,pp)*cos(Y(2,pp)) - F(2,pp)*sin(Y(2,pp))
-			B(2,pp) = F(1,pp)*sin(Y(2,pp)) + F(2,pp)*cos(Y(2,pp))
+			B(1,pp) = F(1,pp)*COS(Y(2,pp)) - F(2,pp)*SIN(Y(2,pp))
+			B(2,pp) = F(1,pp)*SIN(Y(2,pp)) + F(2,pp)*COS(Y(2,pp))
 			B(3,pp) = F(3,pp)
 		end if
 	end do
@@ -330,8 +330,8 @@ subroutine interp_3D_B_field(Y,B,flag)
 			call EZspline_interp(interp3d%Z, Y(1,pp), Y(2,pp), Y(3,pp), F(3,pp), ezerr)
 			call EZspline_error(ezerr)
 
-			B(1,pp) = F(1,pp)*cos(Y(2,pp)) - F(2,pp)*sin(Y(2,pp))
-			B(2,pp) = F(1,pp)*sin(Y(2,pp)) + F(2,pp)*cos(Y(2,pp))
+			B(1,pp) = F(1,pp)*COS(Y(2,pp)) - F(2,pp)*SIN(Y(2,pp))
+			B(2,pp) = F(1,pp)*SIN(Y(2,pp)) + F(2,pp)*COS(Y(2,pp))
 			B(3,pp) = F(3,pp)
 		end if
 	end do
@@ -371,8 +371,8 @@ subroutine calculate_magnetic_field(Y,F,B,flag)
 				call EZspline_error(ezerr)
 				A(3,pp) = -A(3,pp)/Y(1,pp)
 
-				B(1,pp) = A(1,pp)*cos(Y(2,pp)) - A(2,pp)*sin(Y(2,pp))
-				B(2,pp) = A(1,pp)*sin(Y(2,pp)) + A(2,pp)*cos(Y(2,pp))
+				B(1,pp) = A(1,pp)*COS(Y(2,pp)) - A(2,pp)*SIN(Y(2,pp))
+				B(2,pp) = A(1,pp)*SIN(Y(2,pp)) + A(2,pp)*COS(Y(2,pp))
 				B(3,pp) = A(3,pp)
 			end if
 		end if

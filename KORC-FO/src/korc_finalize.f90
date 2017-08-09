@@ -40,9 +40,7 @@ subroutine deallocate_variables(params,F,spp)
 
 	DEALLOCATE(spp)
 
-    if (params%magnetic_field_model .EQ. 'EXTERNAL') then
-        call DEALLOCATE_FIELDS_ARRAYS(F)
-    end if
+	call DEALLOCATE_FIELDS_ARRAYS(F)
 end subroutine deallocate_variables
 
 end module korc_finalize

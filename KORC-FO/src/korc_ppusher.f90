@@ -72,9 +72,7 @@ subroutine advance_particles_velocity(params,F,spp,dt,bool)
 	REAL(rp), DIMENSION(3) :: vec, b_unit ! diagnostics and temporary variables
 	INTEGER :: ii, pp ! Iterators
 
-	do ii = 1,params%num_species
-!!$OMP PARALLEL SHARED(params,ii,spp,F) FIRSTPRIVATE(dt,bool)&
-!!$OMP& PRIVATE(a,pp,U,U_L,U_hs,tau,up,gp,sigma,us,g,t,s,Frad,Fcoll,U_RC,U_os,tmp,b_unit,B,vpar,v,vperp,vec,Prad)
+	do ii = 1_idef,params%num_species
 
 		call get_fields(params,spp(ii)%vars,F)
 
