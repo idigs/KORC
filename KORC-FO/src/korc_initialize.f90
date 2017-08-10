@@ -125,8 +125,8 @@ subroutine load_korc_params(params)
 
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'(/,"* * * * * SIMULATION PARAMETERS * * * * *")')
-		write(6,'("Simulation time: ",E15.10," s")') params%simulation_time
-		write(6,'("Output frequency: ",E15.10," s")') params%snapshot_frequency
+		write(6,'("Simulation time: ",E17.10," s")') params%simulation_time
+		write(6,'("Output frequency: ",E17.10," s")') params%snapshot_frequency
 		write(6,'("Time step in fraction of relativistic gyro-period: ",F15.10)') params%dt
 		write(6,'("Number of electron populations: ",I16)') params%num_species
 		write(6,'("Magnetic field model: ",A50)') TRIM(params%magnetic_field_model)

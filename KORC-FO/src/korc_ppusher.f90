@@ -199,6 +199,8 @@ subroutine advance_particles_position(params,F,spp,dt)
 		end do
 !$OMP END DO
 !$OMP END PARALLEL
+
+!		spp(ii)%vars%X = MERGE(spp(ii)%vars%X + dt*spp(ii)%vars%V,spp(ii)%vars%X,SPREAD(spp(ii)%vars%flag,1,3).EQ.1_idef)
 		end do
 	end if
 end subroutine advance_particles_position

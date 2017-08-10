@@ -62,7 +62,7 @@ else #NERSC_HOST
 	FC = mpif90
 
 	FCDEFINEFLAGS =-DDOUBLE_PRECISION	-DHDF5_DOUBLE_PRESICION	-UH5_DEBUG_API
-	FCFLAGS =-cpp	-J$(MOD)	-fopenmp	-O2
+	FCFLAGS =-cpp	-J$(MOD)	-fopenmp	-O2	-ffast-math	-funroll-loops
 
 	HDF5_INSTALL =../HDF5
 

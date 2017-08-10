@@ -82,7 +82,7 @@ program main
 	do it=1_ip,params%t_steps
         params%time = REAL(it,rp)*params%dt
 		params%it = it
-
+!!$OMP PARALLEL FIRSTPRIVATE(it) SHARED(params,F,spp)
 		if ( modulo(it,params%output_cadence) .EQ. 0_ip ) then
             call advance_particles_velocity(params,F,spp,params%dt,.TRUE.)
 		    call advance_particles_position(params,F,spp,params%dt)
@@ -95,7 +95,7 @@ program main
             call advance_particles_velocity(params,F,spp,params%dt,.FALSE.)
 		    call advance_particles_position(params,F,spp,params%dt)
         end if
-
+!!$OMP END PARALLEL
 	end do
 	
 	t2 = MPI_WTIME()
