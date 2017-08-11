@@ -178,15 +178,17 @@ subroutine get_analytical_fields(vars,F)
 	TYPE(PARTICLES), INTENT(INOUT) :: vars
 	TYPE(FIELDS), INTENT(IN) :: F
 
-	call cart_to_tor(vars%X, F%AB%Ro, vars%Y, vars%flag)
+!	call cart_to_tor(vars%X, F%AB%Ro, vars%Y, vars%flag)
 
-	call check_if_confined(F, vars%Y, vars%flag)
+!	call check_if_confined(F, vars%Y, vars%flag)
 
-!	call analytical_fields(F,vars%Y, vars%E, vars%B, vars%flag)
+	call cart_to_tor_check_if_confined(vars%X,F,vars%Y,vars%flag)
 
-	call analytical_magnetic_field(F, vars%Y, vars%B, vars%flag)
+	call analytical_fields(F,vars%Y, vars%E, vars%B, vars%flag)
 
-	call analytical_electric_field(F, vars%Y, vars%E, vars%flag)
+!	call analytical_magnetic_field(F, vars%Y, vars%B, vars%flag)
+
+!	call analytical_electric_field(F, vars%Y, vars%E, vars%flag)
 end subroutine get_analytical_fields
 
 

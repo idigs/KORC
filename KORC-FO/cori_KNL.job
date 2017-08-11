@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH -N 1
 #SBATCH -C knl,quad,cache
-#SBATCH -p debug
+#SBATCH -p regular
 #SBATCH -J KORC_KNL
 #SBATCH --mail-user=carbajalgoml@ornl.gov
 #SBATCH --mail-type=ALL
-#SBATCH -t 00:10:00
+#SBATCH -t 03:00:00
 #SBATCH -L SCRATCH
 #SBATCH -o KORC_KNL_%j.out 
 #SBATCH -e KORC_KNL_%j.err
@@ -14,7 +14,7 @@
 cd $SLURM_SUBMIT_DIR
 
 ## You might want to change the path of the outouts folder
-FILE_ID='1000A'
+FILE_ID='10000A'
 INPUT_FOLDER='timing'
 
 FOLDER_ID=${INPUT_FOLDER}_${FILE_ID}
@@ -24,7 +24,7 @@ OUTPUT_FOLDER=${PATH_TO_SCRATCH}/${FOLDER_ID}
 mkdir ${OUTPUT_FOLDER}
 
 #MPI settings:
-MPI_PROCCESSES=1
+#MPI_PROCCESSES=1
 
 #OpenMP settings:
 #export OMP_NUM_THREADS=1
@@ -35,15 +35,16 @@ export OMP_PROC_BIND=spread
 #srun -n $((MPI_PROCCESSES*SLURM_JOB_NUM_NODES)) -c $((4*OMP_NUM_THREADS)) --cpu_bind=cores ./bin/KORC inputFiles/${INPUT_FOLDER}/input_file.korc ${OUTPUT_FOLDER}/
 
 #for it in $(seq 68 -2 2)
-for it in 68 64
+for it in 68 64 32 16 8 4 2 1
 do
 rm ${OUTPUT_FOLDER}/*.h5
-#export OMP_NUM_THREADS=$((68/it))
 export OMP_NUM_THREADS=$it
-srun -n 1 -c $((4*OMP_NUM_THREADS)) --cpu_bind=cores ./bin/KORC inputFiles/${INPUT_FOLDER}/input_file_${FILE_ID}.korc ${OUTPUT_FOLDER}/
+MPI_PROCCESSES=$((68/it))
+srun -n $MPI_PROCCESSES -c $((4*OMP_NUM_THREADS)) --cpu_bind=cores ./bin/KORC inputFiles/${INPUT_FOLDER}/input_file_${FILE_ID}.korc ${OUTPUT_FOLDER}/
 sleep 1s
 done
 
 #export OMP_NUM_THREADS=17
 #srun -n 1 -c 272 --cpu_bind=cores ./bin/KORC inputFiles/${INPUT_FOLDER}/input_file_${FILE_ID}.korc ${OUTPUT_FOLDER}/
 #srun -n 1 -c 272 --cpu_bind=cores ./bin/KORC inputFiles/input_file.korc ${OUTPUT_FOLDER}/
+

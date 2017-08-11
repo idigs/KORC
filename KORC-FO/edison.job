@@ -1,23 +1,20 @@
 #!/bin/bash
 #SBATCH -N 1
-#SBATCH -p debug
-##SBATCH --qos=premium
+#SBATCH -p regular
 #SBATCH -J KORC_EDISON
 #SBATCH --mail-user=carbajalgoml@ornl.gov
 #SBATCH --mail-type=ALL
-#SBATCH -t 00:10:00
+#SBATCH -t 03:00:00
 #SBATCH -L project,SCRATCH
 #SBATCH -o KORC_EDISON_%j.out 
 #SBATCH -e KORC_EDISON_%j.err
 #SBATCH -A atom
 
-module load cray-hdf5/1.10.0
-
 cd $SLURM_SUBMIT_DIR
 
 ## You might want to change the path of the outouts folder
-FILE_ID='D3DQ'
-INPUT_FOLDER='newInputFormat'
+FILE_ID='10000A'
+INPUT_FOLDER='timing'
 
 FOLDER_ID=${INPUT_FOLDER}_${FILE_ID}
 PATH_TO_SCRATCH='/scratch1/scratchdirs/carbajal'
@@ -25,12 +22,24 @@ OUTPUT_FOLDER=${PATH_TO_SCRATCH}/${FOLDER_ID}
 
 mkdir ${OUTPUT_FOLDER}
 
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$opt/cray/hdf5/1.10.0/INTEL/15.0/lib
 
 #OpenMP settings:
-export OMP_NUM_THREADS=4
+#export OMP_NUM_THREADS=4
 export OMP_PLACES=threads
 export OMP_PROC_BIND=spread
 
+#module load vtune
+
 #run the application:
-srun -n $((6*SLURM_JOB_NUM_NODES)) -c $((2*OMP_NUM_THREADS)) ./bin/KORC inputFiles/${INPUT_FOLDER}/input_file_${FILE_ID}.korc ${OUTPUT_FOLDER}/
+#srun -n $((6*SLURM_JOB_NUM_NODES)) -c $((2*OMP_NUM_THREADS)) ./bin/KORC inputFiles/${INPUT_FOLDER}/input_file_${FILE_ID}.korc ${OUTPUT_FOLDER}/
+#srun -n $((6*SLURM_JOB_NUM_NODES)) -c $((2*OMP_NUM_THREADS)) amplxe-cl -collect memory-access -knob analyze-openmp=true -knob analyze-mem-objects=true -search-dir /global/homes/c/carbajal/KORC_CRAY/KORC-FO/mod -search-dir /global/homes/c/carbajal/KORC_CRAY/KORC-FO/obj -search-dir /global/homes/c/carbajal/KORC_CRAY/KORC-FO/src -search-dir /global/homes/c/carbajal/KORC_CRAY/KORC-FO/bin -r KORC_EDISON_VTUNE -trace-mpi -- ./bin/KORC inputFiles/${INPUT_FOLDER}/input_file_${FILE_ID}.korc ${OUTPUT_FOLDER}/
+
+for it in 1 2 4 8 16 24
+do
+rm ${OUTPUT_FOLDER}/*.h5
+export OMP_NUM_THREADS=$it
+NUM_MPI_PROC=$((24/it))
+srun -n $NUM_MPI_PROC -c $((2*OMP_NUM_THREADS)) ./bin/KORC inputFiles/${INPUT_FOLDER}/input_file_${FILE_ID}.korc ${OUTPUT_FOLDER}/
+sleep 1s
+done
+
