@@ -8,10 +8,48 @@ module korc_fields
     implicit none
 
 	PUBLIC :: mean_F_field,get_fields,load_field_data_from_hdf5,load_dim_data_from_hdf5
-	PRIVATE :: analytical_magnetic_field,analytical_electric_field,uniform_magnetic_field,uniform_electric_field,&
-				check_if_confined,uniform_fields,cross
+	PRIVATE :: get_analytical_fields,analytical_fields,analytical_magnetic_field,analytical_electric_field,uniform_magnetic_field,&
+				uniform_electric_field,check_if_confined,uniform_fields,cross
 
     contains
+
+subroutine analytical_fields(F,Y,E,B,flag)
+    implicit none
+	TYPE(FIELDS), INTENT(IN) :: F
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: E ! E(1,:) = Ex, E(2,:) = Ey, E(3,:) = Ez
+	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: flag
+	REAL(rp) :: Ezeta, Bp, Bt, eta, q
+	INTEGER(ip) pp ! Iterator(s)
+	INTEGER(ip) :: ss
+
+	ss = SIZE(Y,2)
+
+!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,Ezeta,Bp,Bt,eta,q) SHARED(F,Y,E,B,flag)
+	do pp=1_idef,ss
+        if ( flag(pp) .EQ. 1_idef ) then
+		    eta = Y(1,pp)/F%Ro
+            q = F%AB%qo*(1.0_rp + (Y(1,pp)/F%AB%lambda)**2)
+            Bp = eta*F%AB%Bo/(q*(1.0_rp + eta*COS(Y(2,pp))))
+		    Bt = F%AB%Bo/( 1.0_rp + eta*COS(Y(2,pp)) )
+			
+
+		    B(1,pp) =  Bt*COS(Y(3,pp)) - Bp*SIN(Y(2,pp))*SIN(Y(3,pp))
+		    B(2,pp) = -Bt*SIN(Y(3,pp)) - Bp*SIN(Y(2,pp))*COS(Y(3,pp))
+		    B(3,pp) = Bp*COS(Y(2,pp))
+
+			if (abs(F%Eo) > 0) then
+				Ezeta = F%Eo/( 1.0_rp + eta*COS(Y(2,pp)) )
+
+				E(1,pp) = Ezeta*COS(Y(3,pp))
+				E(2,pp) = -Ezeta*SIN(Y(3,pp))
+				E(3,pp) = 0.0_rp
+			end if
+        end if
+	end do
+!$OMP END PARALLEL DO
+end subroutine analytical_fields
 
 subroutine analytical_magnetic_field(F,Y,B,flag)
     implicit none
@@ -25,8 +63,7 @@ subroutine analytical_magnetic_field(F,Y,B,flag)
 
 	ss = SIZE(Y,2)
 
-!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,Bp,Bt,eta,q) SHARED(F,Y,B,flag)
-!$OMP DO
+!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,Bp,Bt,eta,q) SHARED(F,Y,B,flag)
 	do pp=1_idef,ss
         if ( flag(pp) .EQ. 1_idef ) then
 		    eta = Y(1,pp)/F%Ro
@@ -39,8 +76,7 @@ subroutine analytical_magnetic_field(F,Y,B,flag)
 		    B(3,pp) = Bp*COS(Y(2,pp))
         end if
 	end do
-!$OMP END DO
-!$OMP END PARALLEL
+!$OMP END PARALLEL DO
 end subroutine analytical_magnetic_field
 
 
@@ -76,8 +112,7 @@ subroutine analytical_electric_field(F,Y,E,flag)
 
 	if (abs(F%Eo) > 0) then
 		ss = SIZE(Y,2)
-!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,Ezeta,eta) SHARED(F,Y,E,flag)
-!$OMP DO
+!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,Ezeta,eta) SHARED(F,Y,E,flag)
 		do pp=1_idef,ss
             if ( flag(pp) .EQ. 1_idef ) then
 			    eta = Y(1,pp)/F%Ro		
@@ -88,8 +123,7 @@ subroutine analytical_electric_field(F,Y,E,flag)
 			    E(3,pp) = 0.0_rp
             end if
 		end do
-!$OMP END DO
-!$OMP END PARALLEL
+!$OMP END PARALLEL DO
 	end if
 end subroutine analytical_electric_field
 
@@ -127,8 +161,7 @@ subroutine check_if_confined(F,Y,flag)
 	INTEGER(ip) :: pp,ss
 
     ss = SIZE(Y,2)
-!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(F,Y,flag)
-!$OMP DO
+!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(F,Y,flag)
 	do pp=1_idef,ss
         if ( flag(pp) .EQ. 1_idef ) then
             if (Y(1,pp) .GT. F%AB%a) then
@@ -136,12 +169,11 @@ subroutine check_if_confined(F,Y,flag)
             end if
         end if
 	end do
-!$OMP END DO
-!$OMP END PARALLEL
+!$OMP END PARALLEL DO
 end subroutine check_if_confined
 
 
-subroutine analytical_fields(vars,F)
+subroutine get_analytical_fields(vars,F)
     implicit none
 	TYPE(PARTICLES), INTENT(INOUT) :: vars
 	TYPE(FIELDS), INTENT(IN) :: F
@@ -150,10 +182,12 @@ subroutine analytical_fields(vars,F)
 
 	call check_if_confined(F, vars%Y, vars%flag)
 
+!	call analytical_fields(F,vars%Y, vars%E, vars%B, vars%flag)
+
 	call analytical_magnetic_field(F, vars%Y, vars%B, vars%flag)
 
 	call analytical_electric_field(F, vars%Y, vars%E, vars%flag)
-end subroutine analytical_fields
+end subroutine get_analytical_fields
 
 
 subroutine uniform_fields(vars,F)
@@ -238,7 +272,7 @@ subroutine get_fields(params,vars,F)
 
 	SELECT CASE (TRIM(params%magnetic_field_model))
 		CASE('ANALYTICAL')
-			call analytical_fields(vars, F)
+			call get_analytical_fields(vars, F)
 		CASE('EXTERNAL')
 			call interp_field(vars, F)
 		CASE('UNIFORM')

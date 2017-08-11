@@ -17,16 +17,14 @@ subroutine cart_to_cyl(X,Xcyl)
 	
 	ss = SIZE(X,2)
 
-!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(X,Xcyl)
-!$OMP DO
+!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(X,Xcyl)
 	do pp=1_idef,ss
 		Xcyl(1,pp) = SQRT(X(1,pp)**2 + X(2,pp)**2)
 		Xcyl(2,pp) = ATAN2(X(2,pp), X(1,pp))
 		Xcyl(2,pp) = MODULO(Xcyl(2,pp), 2.0_rp*C_PI)
 		Xcyl(3,pp) = X(3,pp)
 	end do
-!$OMP END DO
-!$OMP END PARALLEL
+!$OMP END PARALLEL DO
 end subroutine cart_to_cyl
 
 
@@ -40,8 +38,7 @@ subroutine cart_to_tor(X,Ro,Xtor,flag)
 
 	ss = SIZE(X,2)
 
-!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(X,Xtor,flag)
-!$OMP DO
+!$OMP PARALLEL DO FIRSTPRIVATE(ss,Ro) PRIVATE(pp) SHARED(X,Xtor,flag)
 	do pp=1_idef,ss
         if ( flag(pp) .EQ. 1_idef ) then
 		    Xtor(1,pp) = SQRT( (SQRT(X(1,pp)**2 + X(2,pp)**2) - Ro)**2 + X(3,pp)**2 )
@@ -51,8 +48,7 @@ subroutine cart_to_tor(X,Ro,Xtor,flag)
 		    Xtor(3,pp) = MODULO(Xtor(3,pp),2.0_rp*C_PI)
         end if
 	end do
-!$OMP END DO
-!$OMP END PARALLEL
+!$OMP END PARALLEL DO
 end subroutine cart_to_tor
 
 

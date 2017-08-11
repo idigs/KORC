@@ -1,6 +1,6 @@
 &input_parameters
-        simulation_time = 1.0E-8 ! Total aimed simulation time in seconds
-        snapshot_frequency = 2.0E-9 ! Time between snapshots in seconds
+        simulation_time = 1.0E-6 ! Total aimed simulation time in seconds
+        snapshot_frequency = 2.0E-7 ! Time between snapshots in seconds
         dt = 1.0E-2 ! Time step as fraction of non-relativistic gyro-period
         num_species = 2
         minimum_particle_energy = 1.0E3 ! Minimum energy of simulated particles in eV

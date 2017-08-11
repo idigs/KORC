@@ -7,67 +7,70 @@ OBJ=obj
 MOD=mod
 BIN=bin
 
-PSPLINE_INSTALL=../pspline_lib
-
 ifeq ($(UNAME), Darwin)
-	FC = mpif90
+        FC = mpif90
 
-	FCDEFINEFLAGS =-DDOUBLE_PRECISION	-DHDF5_DOUBLE_PRESICION
-	FCFLAGS =-cpp   -J$(MOD) -fopenmp    -O2
+        FCDEFINEFLAGS =-DDOUBLE_PRECISION       -DHDF5_DOUBLE_PRESICION
+        FCFLAGS =-cpp   -J$(MOD) -fopenmp    -O2
 
-	HDF5_INSTALL =../HDF5
+        PSPLINE_INSTALL=../pspline_lib
 
-	INCLUDES_HDF5	=-I$(HDF5_INSTALL)/include
-	INCLUDES =-I$(PSPLINE_INSTALL)/mod
-	EXTLIB	=-L$(HDF5_INSTALL)/lib
-	LIBSHDF5	=$(EXTLIB)  $(HDF5_INSTALL)/lib/libhdf5_fortran.a   $(HDF5_INSTALL)/lib/libhdf5_hl.a    $(HDF5_INSTALL)/lib/libhdf5.a
-	LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib
-	LIB	= -lm   -lz -ldl	-lpspline
-	OMP_LIB_FLAGS =	-lgomp
+        HDF5_INSTALL =../HDF5
+
+        INCLUDES_HDF5   =-I$(HDF5_INSTALL)/include
+        INCLUDES =-I$(PSPLINE_INSTALL)/mod
+        EXTLIB  =-L$(HDF5_INSTALL)/lib
+        LIBSHDF5        =$(EXTLIB)  $(HDF5_INSTALL)/lib/libhdf5_fortran.a   $(HDF5_INSTALL)/lib/libhdf5_hl.a    $(HDF5_INSTALL)/lib/libhdf5.a
+        LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib
+        LIB     = -lm   -lz -ldl        -lpspline
+        OMP_LIB_FLAGS = -lgomp
 endif #Darwin
 
 ifeq ($(UNAME), Linux)
 
 ifdef NERSC_HOST
-	FC = ftn
+        FC = ftn
 
 ifdef PRG_ENV
 ifeq ($(PRG_ENV),GNU)
-	HDF5_INSTALL =../HDF5_GNU
-	FCFLAGS =-cpp	-J$(MOD)	-fopenmp	-O2
-	FCDEFINEFLAGS =-DDOUBLE_PRECISION       -DHDF5_DOUBLE_PRESICION
+        PSPLINE_INSTALL=../pspline_lib_GNU
+        HDF5_INSTALL =../HDF5_GNU
+        FCFLAGS =-cpp   -J$(MOD)        -fopenmp        -Ofast  #-O3    -ffast-math     -funroll-loops
+        FCDEFINEFLAGS =-DDOUBLE_PRECISION       -DHDF5_DOUBLE_PRESICION
 endif #GNU
 ifeq ($(PRG_ENV),INTEL)
-	HDF5_INSTALL =../HDF5_INTEL
-	FCFLAGS =-cpp   -module $(MOD)  -qopenmp	-O2
-	FCDEFINEFLAGS =-DINTEL	-DDOUBLE_PRECISION	-DHDF5_DOUBLE_PRESICION
+        PSPLINE_INSTALL=../pspline_lib_INTEL
+        HDF5_INSTALL =../HDF5_INTEL
+        FCFLAGS =-cpp   -module $(MOD)  -qopenmp        -fast   #-g     -dynamic        -debug inline-debug-info
+        FCDEFINEFLAGS =-DINTEL  -DDOUBLE_PRECISION      -DHDF5_DOUBLE_PRESICION
 endif #INTEL
 endif #PRG_ENV
 
 ifeq ($(NERSC_HOST),cori)
-	INCLUDES =$(PSPLINE)
-	LIB_FLAGS =$(PSPLINE)
-	LIB     = -lm   -lz -ldl        -lpspline
-	OMP_LIB_FLAGS =
+        INCLUDES =$(PSPLINE)
+        LIB_FLAGS =$(PSPLINE)
+        LIB     = -lm   -lz -ldl        -lpspline
+        OMP_LIB_FLAGS =
 endif #cori
 
 ifeq ($(NERSC_HOST),edison)
-	INCLUDES =-I$(PSPLINE_INSTALL)/mod
-	LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib
-	LIB     = -lm   -lz -ldl        -lpspline
-	OMP_LIB_FLAGS =
+        INCLUDES =-I$(PSPLINE_INSTALL)/mod
+        LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib
+        LIB     = -lm   -lz -ldl        -lpspline
+        OMP_LIB_FLAGS =
 endif #edison
 
 else #NERSC_HOST
-	FC = mpif90
+        FC = mpif90
 
-	FCDEFINEFLAGS =-DDOUBLE_PRECISION	-DHDF5_DOUBLE_PRESICION	-UH5_DEBUG_API
-	FCFLAGS =-cpp	-J$(MOD)	-fopenmp	-O2	-ffast-math	-funroll-loops
+        FCDEFINEFLAGS =-DDOUBLE_PRECISION       -DHDF5_DOUBLE_PRESICION -UH5_DEBUG_API
+        FCFLAGS =-cpp   -J$(MOD)        -fopenmp        -O2
 
-	HDF5_INSTALL =../HDF5
+        HDF5_INSTALL =../HDF5
+        PSPLINE_INSTALL=../pspline_lib
 
-	INCLUDES =-I$(PSPLINE_INSTALL)/mod
-	LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib
+        INCLUDES =-I$(PSPLINE_INSTALL)/mod
+        LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib
 endif #NERSC_HOST
 
 endif # Linux

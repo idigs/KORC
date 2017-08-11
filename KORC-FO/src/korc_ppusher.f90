@@ -78,14 +78,12 @@ subroutine advance_particles_velocity(params,F,spp,dt,bool)
 
 	    a = spp(ii)%q*dt/spp(ii)%m
 
-!$OMP PARALLEL SHARED(params,ii,spp) FIRSTPRIVATE(a,dt,bool)&
+!$OMP PARALLEL DO SHARED(params,ii,spp) FIRSTPRIVATE(a,dt,bool)&
 !$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gp,sigma,us,g,t,s,Frad,Fcoll,U_RC,U_os,tmp,b_unit,B,vpar,v,vperp,vec,Prad)
 
 !!$OMP SINGLE
 !	call check_collisions_params(spp(ii))
 !!$OMP END SINGLE
-
-!$OMP DO
 		do pp=1_idef,spp(ii)%ppp
 			if ( spp(ii)%vars%flag(pp) .EQ. 1_idef ) then
 				U = spp(ii)%vars%g(pp)*spp(ii)%vars%V(:,pp)
@@ -173,8 +171,7 @@ subroutine advance_particles_velocity(params,F,spp,dt,bool)
                 end if
 			end if
 		end do
-!$OMP END DO
-!$OMP END PARALLEL
+!$OMP END PARALLEL DO
 
 	end do
 end subroutine advance_particles_velocity
@@ -190,15 +187,13 @@ subroutine advance_particles_position(params,F,spp,dt)
 
 	if (params%magnetic_field_model .NE. 'UNIFORM') then
 		do ii=1_idef,params%num_species
-!$OMP PARALLEL FIRSTPRIVATE(dt) PRIVATE(pp) SHARED(ii,spp,params)
-!$OMP DO
+!$OMP PARALLEL DO FIRSTPRIVATE(dt) PRIVATE(pp) SHARED(ii,spp,params)
 		do pp=1_idef,spp(ii)%ppp
 		    if ( spp(ii)%vars%flag(pp) .EQ. 1_idef ) then
 				spp(ii)%vars%X(:,pp) = spp(ii)%vars%X(:,pp) + dt*spp(ii)%vars%V(:,pp)
 		    end if
 		end do
-!$OMP END DO
-!$OMP END PARALLEL
+!$OMP END PARALLEL DO
 
 !		spp(ii)%vars%X = MERGE(spp(ii)%vars%X + dt*spp(ii)%vars%V,spp(ii)%vars%X,SPREAD(spp(ii)%vars%flag,1,3).EQ.1_idef)
 		end do
