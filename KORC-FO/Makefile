@@ -31,33 +31,28 @@ ifeq ($(UNAME), Linux)
 ifdef NERSC_HOST
         FC = ftn
 
-ifdef PRG_ENV
 ifeq ($(PRG_ENV),GNU)
-        PSPLINE_INSTALL=../pspline_lib_GNU
-        HDF5_INSTALL =../HDF5_GNU
         FCFLAGS =-cpp   -J$(MOD)        -fopenmp        -Ofast  #-O3    -ffast-math     -funroll-loops
         FCDEFINEFLAGS =-DDOUBLE_PRECISION       -DHDF5_DOUBLE_PRESICION
 endif #GNU
+
 ifeq ($(PRG_ENV),INTEL)
-        PSPLINE_INSTALL=../pspline_lib_INTEL
-        HDF5_INSTALL =../HDF5_INTEL
         FCFLAGS =-cpp   -module $(MOD)  -qopenmp        -fast   #-g     -dynamic        -debug inline-debug-info
         FCDEFINEFLAGS =-DINTEL  -DDOUBLE_PRECISION      -DHDF5_DOUBLE_PRESICION
 endif #INTEL
-endif #PRG_ENV
+
+HDF5_INSTALL =../HDF5_$(PRG_ENV)
 
 ifeq ($(NERSC_HOST),cori)
+		PSPLINE_INSTALL=
         INCLUDES =$(PSPLINE)
         LIB_FLAGS =$(PSPLINE)
-        LIB     = -lm   -lz -ldl        -lpspline
-        OMP_LIB_FLAGS =
 endif #cori
 
 ifeq ($(NERSC_HOST),edison)
+		PSPLINE_INSTALL=../pspline_lib_INTEL
         INCLUDES =-I$(PSPLINE_INSTALL)/mod
         LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib
-        LIB     = -lm   -lz -ldl        -lpspline
-        OMP_LIB_FLAGS =
 endif #edison
 
 else #NERSC_HOST

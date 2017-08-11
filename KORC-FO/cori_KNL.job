@@ -11,10 +11,16 @@
 #SBATCH -e KORC_KNL_%j.err
 #SBATCH -A atom
 
+module swap craype-haswell craype-mic-knl
+module swap PrgEnv-intel PrgEnv-gnu
+module load cray-netcdf
+module load pspline
+
+
 cd $SLURM_SUBMIT_DIR
 
 ## You might want to change the path of the outouts folder
-FILE_ID='10000A'
+FILE_ID='1000A'
 INPUT_FOLDER='timing'
 
 FOLDER_ID=${INPUT_FOLDER}_${FILE_ID}
