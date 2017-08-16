@@ -31,35 +31,43 @@ ifeq ($(UNAME), Linux)
 ifdef NERSC_HOST
         FC = ftn
 
+ifdef PRG_ENV
 ifeq ($(PRG_ENV),GNU)
+        HDF5_INSTALL =../HDF5_GNU
         FCFLAGS =-cpp   -J$(MOD)        -fopenmp        -Ofast  #-O3    -ffast-math     -funroll-loops
         FCDEFINEFLAGS =-DDOUBLE_PRECISION       -DHDF5_DOUBLE_PRESICION
 endif #GNU
-
 ifeq ($(PRG_ENV),INTEL)
-        FCFLAGS =-cpp   -module $(MOD)  -qopenmp        -fast   #-g     -dynamic        -debug inline-debug-info
+#        PSPLINE_INSTALL=../pspline_lib_INTEL
+        HDF5_INSTALL =../HDF5_INTEL
+        FCFLAGS =-cpp   -module $(MOD)  -qopenmp        -O2   #-g     -dynamic        -debug inline-debug-info
         FCDEFINEFLAGS =-DINTEL  -DDOUBLE_PRECISION      -DHDF5_DOUBLE_PRESICION
 endif #INTEL
-
-HDF5_INSTALL =../HDF5_$(PRG_ENV)
+endif #PRG_ENV
 
 ifeq ($(NERSC_HOST),cori)
-		PSPLINE_INSTALL=
         INCLUDES =$(PSPLINE)
         LIB_FLAGS =$(PSPLINE)
+        LIB     = -lm   -lz -ldl        -lpspline
+        OMP_LIB_FLAGS =
 endif #cori
 
 ifeq ($(NERSC_HOST),edison)
-		PSPLINE_INSTALL=../pspline_lib_INTEL
-        INCLUDES =-I$(PSPLINE_INSTALL)/mod
-        LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib
+#       PSPLINE_INSTALL=../pspline_lib_GNU
+#        INCLUDES =-I$(PSPLINE_INSTALL)/mod
+#        LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib
+#        LIB     = -lm   -lz -ldl        -lpspline
+        INCLUDES =$(PSPLINE)
+        LIB_FLAGS =$(PSPLINE)
+        LIB     = -lm   -lz -ldl -lpspline
+        OMP_LIB_FLAGS =
 endif #edison
 
 else #NERSC_HOST
         FC = mpif90
 
         FCDEFINEFLAGS =-DDOUBLE_PRECISION       -DHDF5_DOUBLE_PRESICION -UH5_DEBUG_API
-        FCFLAGS =-cpp   -J$(MOD)        -fopenmp        -O2
+        FCFLAGS =-cpp   -J$(MOD)        -fopenmp        -Ofast
 
         HDF5_INSTALL =../HDF5
         PSPLINE_INSTALL=../pspline_lib
@@ -74,30 +82,30 @@ EXTLIB=-L$(HDF5_INSTALL)/lib
 LIBSHDF5=$(EXTLIB)      $(HDF5_INSTALL)/lib/libhdf5hl_fortran.a $(HDF5_INSTALL)/lib/libhdf5_fortran.a   $(HDF5_INSTALL)/lib/libhdf5_hl.a        $(HDF5_INSTALL)/lib/libhdf5.a
 
 INCLUDES_HDF5   =-I$(HDF5_INSTALL)/include
-LIB	= -lm   -lz -ldl	-lpspline
+LIB     = -lm   -lz -ldl        -lpspline
 OMP_LIB_FLAGS =
 
-
-BINARIES = $(addprefix $(OBJ)/,korc_types.o	\
-korc_constants.o	\
-korc_HDF5.o	\
-special_fun_modules.o	\
-special_fun_subroutines.o	\
-korc_synthetic_camera.o	\
-korc_collisions.o	\
-korc_hpc.o	\
-rnd_numbers.o	\
-korc_coords.o	\
-korc_interp.o	\
-korc_fields.o	\
-korc_avalanche.o	\
+BINARIES = $(addprefix $(OBJ)/,korc_types.o     \
+korc_constants.o        \
+korc_HDF5.o     \
+special_fun_modules.o   \
+special_fun_subroutines.o       \
+korc_synthetic_camera.o \
+korc_collisions.o       \
+korc_hpc.o      \
+rnd_numbers.o   \
+korc_coords.o   \
+korc_interp.o   \
+korc_fields.o   \
+korc_avalanche.o        \
 korc_experimental_pdf.o	\
-hammersley_generator.o	\
-korc_initialize.o	\
-korc_finalize.o	\
-korc_units.o	\
-korc_ppusher.o	\
+hammersley_generator.o  \
+korc_initialize.o       \
+korc_finalize.o \
+korc_units.o    \
+korc_ppusher.o  \
 main.o)
+
 
 
 all: $(BIN)/KORC
