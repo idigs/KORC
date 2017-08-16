@@ -1,5 +1,5 @@
 &input_parameters
-        simulation_time = 0.0E-6 ! Total aimed simulation time in seconds
+        simulation_time = 1.0E-6 ! Total aimed simulation time in seconds
         snapshot_frequency = 2.0E-7 ! Time between snapshots in seconds
         dt = 1.0E-2 ! Time step as fraction of non-relativistic gyro-period
         num_species = 2
@@ -31,7 +31,7 @@
         etao = 5.0,10.0  ! Initial pitch angle
         Eo_lims = 1.0E6,50.0E6,1.0E6,50.0E6 ! Lower and upper limit of simulated energy range, in eV.
         etao_lims = 0.0,20.0,0.0,20.0 ! Lower and upper limit of simulated pitch-angle range, in degrees.
-        ppp = 100,500000 ! Number of particles per process (mpi)
+        ppp = 10,10 ! Number of particles per process (mpi)
         q = -1.0,-1.0 ! Electric charge
         m = 1.0,1.0 ! In units of electron mass
 /
