@@ -37,17 +37,19 @@ MODULE korc_avalanche
 
 	CONTAINS
 
-SUBROUTINE get_avalanche_PDF_params(params,g,eta)
+SUBROUTINE get_avalanche_PDF_params(params,g,eta,go,etao)
 	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: g
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: eta
+	REAL(rp), INTENT(OUT) :: go
+	REAL(rp), INTENT(OUT) :: etao
 
 	call initialize_avalanche_params(params)
 
 	call save_avalanche_params(params)
 
-	call sample_distribution(params,g,eta)
+	call sample_distribution(params,g,eta,go,etao)
 END SUBROUTINE get_avalanche_PDF_params
 
 
@@ -137,11 +139,13 @@ FUNCTION random_norm(mean,sigma)
 END FUNCTION random_norm
 
 
-SUBROUTINE sample_distribution(params,g,eta)
+SUBROUTINE sample_distribution(params,g,eta,go,etao)
 	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: g
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: eta
+	REAL(rp), INTENT(OUT) :: go
+	REAL(rp), INTENT(OUT) :: etao
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: p
 	REAL(rp) :: chi, chi_test
 	REAL(rp) :: p_buffer, p_test
@@ -241,11 +245,10 @@ SUBROUTINE sample_distribution(params,g,eta)
 			end if
 		end do	
 
-		do ii=1_idef,ppp
-			if (eta_samples(ii).LT.0.0_rp) then
-				eta_samples(ii) = -eta_samples(ii)
-			end if
-		end do
+		eta_samples = ABS(eta_samples)
+
+		go = SUM(SQRT(1.0_rp + p_samples**2))/nsamples
+		etao = SUM(eta_samples)/nsamples
 
 	end if
 
@@ -253,9 +256,14 @@ SUBROUTINE sample_distribution(params,g,eta)
 
 	CALL MPI_SCATTER(eta_samples,ppp,MPI_REAL8,eta,ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
 
+	CALL MPI_SCATTER(go,1,MPI_REAL8,go,1,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+
+	CALL MPI_SCATTER(etao,1,MPI_REAL8,etao,1,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+
 	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
 	g = SQRT(1.0_rp + p**2)
+
 
 !	write(6,'("MPI:",I4," Minimum gamma: ",F30.16," "I6)') params%mpi_params%rank,MINVAL(p),indices(MINLOC(p))
 !	call DTIME(tarray,time_elapsed)

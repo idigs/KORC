@@ -23,7 +23,7 @@ ST.data = loadData(ST);
 
 % ST.RT = radialTransport(ST);
 
-% ST.CP = confined_particles(ST);
+ST.CP = confined_particles(ST);
 
 % ST.PAD = pitchAngleDiagnostic(ST,30);
 
@@ -105,7 +105,16 @@ function data = loadData(ST)
 data = struct;
 
 list = ST.params.simulation.outputs_list;
-it = ST.range(1):1:ST.range(2);
+
+filename = [ST.path 'file_0.h5'];
+H = h5info(filename);
+it = zeros(1,size(H.Groups,1));
+for ii=1:size(H.Groups,1)
+    tmpstr = strrep(H.Groups(ii).Name,'/','');
+    it(ii) = str2num(tmpstr);
+end
+it = sort(it,'ascend');
+
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -124,7 +133,7 @@ for ll=1:length(list)
             indf = ff*double(ST.params.species.ppp(ss));
             for ii=1:ST.num_snapshots
                 dataset = ...
-                    ['/' num2str(it(ii)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
+                    ['/' num2str(it(ii)) '/spp_' num2str(ss)...
                     '/' list{ll}];
                 if (strcmp(list{ll},'X') || strcmp(list{ll},'V') || strcmp(list{ll},'B') || strcmp(list{ll},'E'))
                     data.(['sp' num2str(ss)]).(list{ll})(:,indi:indf,ii) = ...
@@ -1124,11 +1133,11 @@ for ss=1:ST.params.simulation.num_species
     figure(h1)
     subplot(1,2,1)
     hold on
-    plot(R,Z,'.','MarkerSize',8,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
-%     his=histogram2(R,Z,'FaceColor','flat',...
-%         'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
-%     colormap(jet);caxis([min(min(his.Values)) max(max(his.Values))])
-%     colorbar
+%     plot(R,Z,'.','MarkerSize',8,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+    his=histogram2(R,Z,'FaceColor','flat',...
+        'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
+    colormap(jet);caxis([min(min(his.Values)) max(max(his.Values))])
+    colorbar
     hold off
     legends{ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
 end

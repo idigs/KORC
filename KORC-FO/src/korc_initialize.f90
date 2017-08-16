@@ -264,16 +264,14 @@ subroutine initialize_particles(params,F,spp)
 				spp(ii)%vars%g = spp(ii)%go ! Monoenergetic
 				spp(ii)%Eo_lims = (/spp(ii)%Eo , spp(ii)%Eo /)
 			CASE ('AVALANCHE')
-				call get_avalanche_PDF_params(params,spp(ii)%vars%g,spp(ii)%vars%eta)
+				call get_avalanche_PDF_params(params,spp(ii)%vars%g,spp(ii)%vars%eta,spp(ii)%go,spp(ii)%etao)
 
-				spp(ii)%go = SUM(spp(ii)%vars%g)/SIZE(spp(ii)%vars%g)
 				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
 				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
 									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
 			CASE ('EXPERIMENTAL')
-				call get_experimental_distribution(params,spp(ii)%vars%g,spp(ii)%vars%eta)
+				call get_experimental_distribution(params,spp(ii)%vars%g,spp(ii)%vars%eta,spp(ii)%go,spp(ii)%etao)
 
-				spp(ii)%go = SUM(spp(ii)%vars%g)/SIZE(spp(ii)%vars%g)
 				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
 				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
 									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
@@ -299,10 +297,8 @@ subroutine initialize_particles(params,F,spp)
 				spp(ii)%vars%eta = spp(ii)%etao ! Mono-pitch-angle
 				spp(ii)%etao_lims = (/spp(ii)%etao , spp(ii)%etao/)
 			CASE ('AVALANCHE')
-				spp(ii)%etao = SUM(spp(ii)%vars%eta)/SIZE(spp(ii)%vars%eta)
 				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
 			CASE ('EXPERIMENTAL')
-				spp(ii)%etao = SUM(spp(ii)%vars%eta)/SIZE(spp(ii)%vars%eta)
 				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
 			CASE ('UNIFORM')
 				spp(ii)%etao_lims = etao_lims((ii-1_idef)*2_idef + 1_idef:2_idef*ii)

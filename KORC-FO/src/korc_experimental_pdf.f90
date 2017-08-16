@@ -27,17 +27,18 @@ MODULE korc_experimental_pdf
 
 	CONTAINS
 
-SUBROUTINE get_experimental_distribution(params,g,eta)
+SUBROUTINE get_experimental_distribution(params,g,eta,go,etao)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: g
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: eta
-
+	REAL(rp), INTENT(OUT) :: go
+	REAL(rp), INTENT(OUT) :: etao
 
 	call initialize_params(params)
 
 	call save_params(params)
 
-	call sample_distribution(params,g,eta)
+	call sample_distribution(params,g,eta,go,etao)
 
 END SUBROUTINE get_experimental_distribution
 
@@ -117,10 +118,12 @@ FUNCTION random_norm(mean,sigma)
 END FUNCTION random_norm
 
 
-SUBROUTINE sample_distribution(params,g,eta)
+SUBROUTINE sample_distribution(params,g,eta,go,etao)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: g
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: eta
+	REAL(rp), INTENT(OUT) :: go
+	REAL(rp), INTENT(OUT) :: etao
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: p
 	REAL(rp) :: p_buffer, p_test
 	REAL(rp) :: eta_buffer, eta_test
@@ -211,11 +214,18 @@ SUBROUTINE sample_distribution(params,g,eta)
 		end do	
 	
 		eta_samples = ABS(eta_samples)
+
+		go = SUM(SQRT(1.0_rp + p_samples**2))/nsamples
+		etao = SUM(eta_samples)/nsamples
 	end if
 
 	CALL MPI_SCATTER(p_samples,ppp,MPI_REAL8,p,ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
 
 	CALL MPI_SCATTER(eta_samples,ppp,MPI_REAL8,eta,ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+
+	CALL MPI_SCATTER(go,1,MPI_REAL8,go,1,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+
+	CALL MPI_SCATTER(etao,1,MPI_REAL8,etao,1,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
 
 	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
