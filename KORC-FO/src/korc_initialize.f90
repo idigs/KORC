@@ -9,6 +9,7 @@ module korc_initialize
 	use hammersley_generator
 
 	use korc_avalanche ! external module
+	use korc_experimental_pdf ! external module
 
     implicit none
 	
@@ -269,12 +270,18 @@ subroutine initialize_particles(params,F,spp)
 				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
 				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
 									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
+			CASE ('EXPERIMENTAL')
+				call get_experimental_distribution(params,spp(ii)%vars%g,spp(ii)%vars%eta)
+
+				spp(ii)%go = SUM(spp(ii)%vars%g)/SIZE(spp(ii)%vars%g)
+				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
+				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
+									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
 			CASE ('UNIFORM')
 				spp(ii)%Eo_lims = Eo_lims((ii-1_idef)*2_idef + 1_idef:2_idef*ii)*C_E
 				spp(ii)%Eo = spp(ii)%Eo_lims(1)
 				spp(ii)%go = (spp(ii)%Eo + spp(ii)%m*C_C**2)/(spp(ii)%m*C_C**2)
 
-!				call RANDOM_NUMBER(spp(ii)%vars%g)
 				call generate_2D_hammersley_sequence(params%mpi_params%rank,params%mpi_params%nmpi,spp(ii)%vars%g,spp(ii)%vars%eta)
 
 				spp(ii)%vars%g = (spp(ii)%Eo_lims(2) - spp(ii)%Eo_lims(1))*spp(ii)%vars%g/(spp(ii)%m*C_C**2) + &
@@ -294,11 +301,12 @@ subroutine initialize_particles(params,F,spp)
 			CASE ('AVALANCHE')
 				spp(ii)%etao = SUM(spp(ii)%vars%eta)/SIZE(spp(ii)%vars%eta)
 				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
+			CASE ('EXPERIMENTAL')
+				spp(ii)%etao = SUM(spp(ii)%vars%eta)/SIZE(spp(ii)%vars%eta)
+				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
 			CASE ('UNIFORM')
 				spp(ii)%etao_lims = etao_lims((ii-1_idef)*2_idef + 1_idef:2_idef*ii)
 				spp(ii)%etao = spp(ii)%etao_lims(1)
-
-!				call RANDOM_NUMBER(spp(ii)%vars%eta)
 
 				spp(ii)%vars%eta = (spp(ii)%etao_lims(2) - spp(ii)%etao_lims(1))*spp(ii)%vars%eta + spp(ii)%etao_lims(1)
 			CASE DEFAULT

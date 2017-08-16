@@ -23,7 +23,7 @@ ST.data = loadData(ST);
 
 % ST.RT = radialTransport(ST);
 
-ST.CP = confined_particles(ST);
+% ST.CP = confined_particles(ST);
 
 % ST.PAD = pitchAngleDiagnostic(ST,30);
 
@@ -104,9 +104,7 @@ end
 function data = loadData(ST)
 data = struct;
 
-list = {'X'};
-% list = {};
-
+list = ST.params.simulation.outputs_list;
 it = ST.range(1):1:ST.range(2);
 
 for ll=1:length(list)
@@ -114,8 +112,11 @@ for ll=1:length(list)
     for ss=1:ST.params.simulation.num_species
         tnp = double(ST.params.species.ppp(ss)*ST.params.simulation.nmpi);
         
-        data.(['sp' num2str(ss)]).(list{ll}) = ...
-            zeros(3,tnp,ST.num_snapshots);
+        if (strcmp(list{ll},'X') || strcmp(list{ll},'V') || strcmp(list{ll},'B') || strcmp(list{ll},'E'))
+            data.(['sp' num2str(ss)]).(list{ll}) = zeros(3,tnp,ST.num_snapshots);
+        else
+            data.(['sp' num2str(ss)]).(list{ll}) = zeros(tnp,ST.num_snapshots);
+        end
         
         for ff=1:ST.params.simulation.nmpi
             filename = [ST.path 'file_' num2str(ff-1) '.h5'];
@@ -125,44 +126,15 @@ for ll=1:length(list)
                 dataset = ...
                     ['/' num2str(it(ii)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
                     '/' list{ll}];
-                
-                data.(['sp' num2str(ss)]).(list{ll})(:,indi:indf,ii) = ...
-                    h5read(filename, dataset);
+                if (strcmp(list{ll},'X') || strcmp(list{ll},'V') || strcmp(list{ll},'B') || strcmp(list{ll},'E'))
+                    data.(['sp' num2str(ss)]).(list{ll})(:,indi:indf,ii) = ...
+                        h5read(filename, dataset);
+                else
+                    data.(['sp' num2str(ss)]).(list{ll})(indi:indf,ii) = ...
+                        h5read(filename, dataset);
+                end
             end
-            
-        end 
-    end
-end
-
-list = {'g','eta','flag'};
-% list = {'g','eta'};
-
-for ll=1:length(list)
-    disp(['Loading ' list{ll}])
-    for ss=1:ST.params.simulation.num_species
-        tnp = double(ST.params.species.ppp(ss)*ST.params.simulation.nmpi);
-        
-        data.(['sp' num2str(ss)]).(list{ll}) = ...
-            zeros(tnp,ST.num_snapshots);
-        
-        for ii=1:ST.num_snapshots
-            for ff=1:ST.params.simulation.nmpi
-                
-                filename = [ST.path 'file_' num2str(ff-1) '.h5'];
-                indi = (ff - 1)*double(ST.params.species.ppp(ss)) + 1;
-                indf = ff*double(ST.params.species.ppp(ss));
-                
-                dataset = ...
-                    ['/' num2str(it(ii)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
-                    '/' list{ll}];
-                
-                data.(['sp' num2str(ss)]).(list{ll})(indi:indf,ii) = ...
-                    h5read(filename, dataset);
-                
-            end
-            
         end
-        
     end
 end
 
@@ -1141,8 +1113,9 @@ set(h1,'Visible',ST.visible,'name','IC','numbertitle','off')
 legends = cell(1,ST.params.simulation.num_species);
 for ss=1:ST.params.simulation.num_species   
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
-    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
-    bool = pin & passing;
+%     passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
+%     bool = pin & passing;
+    bool = pin;
     
     X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,:,end));
     R = sqrt( sum(X(1:2,:).^2,1) );

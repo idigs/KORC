@@ -152,6 +152,7 @@ SUBROUTINE sample_distribution(params,g,eta)
 	REAL(4), DIMENSION(2) :: tarray
 	REAL(4) :: time_elapsed
 	REAL(rp) :: deta
+	REAL(rp) :: dp
 	INTEGER :: ii,ppp,nsamples
 	INTEGER :: mpierr
 
@@ -163,6 +164,7 @@ SUBROUTINE sample_distribution(params,g,eta)
 	ALLOCATE(p(ppp))
 
 	deta = aval_params%max_pitch_angle/50.0_rp
+	dp = 1.0_rp
 
 	if (params%mpi_params%rank.EQ.0_idef) then
 		ALLOCATE(p_samples(nsamples))! Number of samples to distribute among all MPI processes
@@ -183,9 +185,9 @@ SUBROUTINE sample_distribution(params,g,eta)
 			chi_test = COS(deg2rad(eta_test))
 			chi = COS(deg2rad(eta_buffer))
 
-			p_test = p_buffer + random_norm(0.0_rp,1.0_rp)
+			p_test = p_buffer + random_norm(0.0_rp,dp)
 			do while ((p_test.LT.aval_params%min_p).OR.(p_test.GT.aval_params%max_p))
-				p_test = p_buffer + random_norm(0.0_rp,1.0_rp)
+				p_test = p_buffer + random_norm(0.0_rp,dp)
 			end do
 
 			ratio = fRE(chi_test,p_test)/fRE(chi,p_buffer)
@@ -218,9 +220,9 @@ SUBROUTINE sample_distribution(params,g,eta)
 			chi_test = COS(deg2rad(eta_test))
 			chi = COS(deg2rad(eta_samples(ii-1)))
 
-			p_test = p_samples(ii-1) + random_norm(0.0_rp,1.0_rp)
+			p_test = p_samples(ii-1) + random_norm(0.0_rp,dp)
 			do while ((p_test.LT.aval_params%min_p).OR.(p_test.GT.aval_params%max_p))
-				p_test = p_samples(ii-1) + random_norm(0.0_rp,1.0_rp)
+				p_test = p_samples(ii-1) + random_norm(0.0_rp,dp)
 			end do
 
 			ratio = fRE(chi_test,p_test)/fRE(chi,p_samples(ii-1))
