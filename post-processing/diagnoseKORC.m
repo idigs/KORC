@@ -23,7 +23,7 @@ ST.data = loadData(ST);
 
 % ST.RT = radialTransport(ST);
 
-ST.CP = confined_particles(ST);
+% ST.CP = confined_particles(ST);
 
 % ST.PAD = pitchAngleDiagnostic(ST,30);
 
@@ -49,7 +49,7 @@ ST.CP = confined_particles(ST);
 
 % calculateTemperatureComponents(ST);
 
-% avalancheDiagnostic(ST);
+SE_phaseSpaceAnalisys(ST);
 
 
 % plotEnergyPitchanglePDF(ST);
@@ -74,6 +74,21 @@ end
 
 try
     info = h5info([ST.path 'avalanche_parameters.h5']);
+    
+    for ii=1:length(info.Groups)
+        for jj=1:length(info.Groups(ii).Datasets)
+            name = info.Groups(ii).Name(2:end);
+            subname = info.Groups(ii).Datasets(jj).Name;
+            params.(name).(subname) = ...
+                h5read(info.Filename,['/' name '/' subname]);
+        end
+    end
+catch
+end
+
+
+try
+    info = h5info([ST.path 'experimental_distribution_parameters.h5']);
     
     for ii=1:length(info.Groups)
         for jj=1:length(info.Groups(ii).Datasets)
@@ -1122,7 +1137,7 @@ set(h1,'Visible',ST.visible,'name','IC','numbertitle','off')
 legends = cell(1,ST.params.simulation.num_species);
 for ss=1:ST.params.simulation.num_species   
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
-%     passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
 %     bool = pin & passing;
     bool = pin;
     
@@ -3040,7 +3055,140 @@ saveas(hhh,[ST.path 'Synchrotron_radiation'],'fig')
 % ylabel('$P_{R}$ (Watts)','Interpreter','latex')
 end
 
-function avalancheDiagnostic(ST)
+function fRE = experimentalfRE(ST,p,eta)
+q = abs(ST.params.species.q(1));
+m = ST.params.species.m(1);
+c = ST.params.scales.v;
+
+E = ST.params.params.E;
+Z = ST.params.params.Zeff;
+k = ST.params.params.k;
+t = ST.params.params.t;
+xo = (m*c^2/q)/1E6;
+
+fG = @(x,k,t) x.^(k-1).*exp(-x/t)/(gamma(k)*t.^k);
+
+fE = @(x,k,t,xo) fG(x,k,t/xo)/xo;
+f = @(x) fG(x,10,0.75/xo)/xo;
+A = @(E,Z,p) 2*E*p.^2./((Z+1)*sqrt(p.^2 + 1));
+ft = @(E,Z,p,t) 0.5*A(E,Z,p).*exp(A(E,Z,p).*cos(t))./sinh(A(E,Z,p));
+
+Eo = sqrt(p^2 + 1);
+
+fRE = fE(Eo,k,t,xo)*ft(E,Z,p,eta);
+end
+
+function regionsOfSE(ST,chiAxis,pAxis,fnum)
+Np = numel(pAxis);
+Nchi = numel(chiAxis);
+
+q = abs(ST.params.species.q(1));
+m = ST.params.species.m(1);
+c = ST.params.scales.v;
+
+try
+    l = ST.params.synthetic_camera_params.lambda;
+catch
+    l = linspace(1E-7,1E-5,20);
+end
+
+g = @(p) sqrt(p.^2 + 1);
+eta = @(x) acos(x);
+
+fRE = zeros(size(fnum));
+Psyn_sp = zeros(numel(l),Np,Nchi);
+ddPsyndpchi = zeros(numel(l),Np,Nchi);
+ddPsyndpchi_theory = zeros(numel(l),Np,Nchi);
+
+for ll=1:numel(l)
+    for pp=1:Np
+        for cc=1:Nchi
+            Psyn_sp(ll,pp,cc) = singleParticleSpectrum(ST,l(ll),g(pAxis(pp)),eta(chiAxis(cc)));
+            ddPsyndpchi(ll,pp,cc) = fnum(pp,cc)*Psyn_sp(ll,pp,cc);
+            fRE(pp,cc) = experimentalfRE(ST,pAxis(pp),eta(chiAxis(cc)));
+            ddPsyndpchi_theory(ll,pp,cc) = fRE(pp,cc)*Psyn_sp(ll,pp,cc);
+        end
+    end
+end
+
+E = (g(pAxis)*m*c^2/q)/1E6; % MeV
+% xAxis = chiAxis;
+xAxis = rad2deg(acos(chiAxis));
+% yAxis = pAxis;
+yAxis = E;
+lAxis = l/1E-9;
+
+
+I = floor(linspace(1,numel(l),15));
+ntiles = ceil(sqrt(numel(I)));
+
+h = figure;
+hh = figure;
+for sp=1:numel(I)
+    A = squeeze(ddPsyndpchi_theory(I(sp),:,:));    
+    cmax = max(max(A));
+    
+    figure(h)
+    subplot(ntiles,ntiles,sp)    
+    contourf(xAxis,yAxis,A,17,'LineStyle','none')
+    colormap(jet); colorbar; caxis([0 cmax])
+    title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
+    xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
+    ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
+    
+    
+    AA = squeeze(ddPsyndpchi(I(sp),:,:));    
+    cmax = max(max(AA));
+    
+    figure(hh)
+    subplot(ntiles,ntiles,sp)    
+    contourf(xAxis,yAxis,AA,17,'LineStyle','none')
+    colormap(jet); colorbar; caxis([0 cmax])
+    title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
+    xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
+    ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
+end
+
+A = fRE;
+cmax = max(max(A));
+
+figure(h)
+subplot(ntiles,ntiles,ntiles^2)
+contourf(xAxis,yAxis,A,17,'LineStyle','none')
+colormap(jet); colorbar; caxis([0 cmax])
+xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
+ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
+
+AA = fnum;
+cmax = max(max(AA));
+
+figure(hh)
+subplot(ntiles,ntiles,ntiles^2)
+contourf(xAxis,yAxis,AA,17,'LineStyle','none')
+colormap(jet); colorbar; caxis([0 cmax])
+xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
+ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
+
+
+hhh = figure;
+for sp=1:numel(I)
+    figure(hhh)
+    subplot(ntiles,ntiles,sp)
+    A = squeeze(Psyn_sp(I(sp),:,:));
+    contourf(xAxis,yAxis,A,17,'LineStyle','none')
+    colormap(jet);
+    colorbar
+    title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
+    xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
+    ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
+end
+
+% saveas(h,[ST.path 'ddPdpdchi_theory'],'fig')
+% saveas(hh,[ST.path 'ddPdpdchi_simulation'],'fig')
+% saveas(hhh,[ST.path 'Synchrotron_radiation'],'fig')
+end
+
+function SE_phaseSpaceAnalisys(ST)
 nbins_p = 50;
 nbins_chi = 50;
 
@@ -3069,31 +3217,37 @@ for ss=1:ST.params.simulation.num_species
     p = sqrt(g.^2 - 1);
     chi = cos(deg2rad(eta));
     
-    pmax = ST.params.avalanche_pdf_params.max_p;
-    pmin = ST.params.avalanche_pdf_params.min_p;
+    if (strcmp(ST.params.species.energy_distribution(ss),'AVALANCHE'))
+        pmax = ST.params.avalanche_pdf_params.max_p;
+        pmin = ST.params.avalanche_pdf_params.min_p;
+    elseif (strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL'))
+        pmax = ST.params.params.max_p;
+        pmin = ST.params.params.min_p;
+    end
     Emin = sqrt(pmin.^2 + 1)*m*c^2/(q*1E6);
     Emax = sqrt(pmax.^2 + 1)*m*c^2/(q*1E6);
     Dp = (pmax-pmin)/nbins_p;
     pAxis = pmin + (0:1:nbins_p-1)*Dp + 0.5*Dp;
     EAxis = sqrt(pAxis.^2 + 1)*m*c^2/(q*1E6);
     
-    pitchmax = ST.params.avalanche_pdf_params.max_pitch_angle;
-    pitchmin = 0;
+    if (strcmp(ST.params.species.energy_distribution(ss),'AVALANCHE'))
+        pitchmax = ST.params.avalanche_pdf_params.max_pitch_angle;
+        pitchmin = ST.params.avalanche_pdf_params.min_pitch_angle;
+    elseif (strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL'))
+        pitchmax = ST.params.params.max_pitch_angle;
+        pitchmin = ST.params.params.min_pitch_angle;
+    end
     Dpitch = (pitchmax - pitchmin)/nbins_chi;
     pitchAxis = pitchmin + (0:1:nbins_chi-1)*Dpitch + 0.5*Dpitch;
     
     chiAxis = cos(deg2rad(pitchAxis));
-%     chimin = cos(pitchmax);
-%     chimax = 1.0;
-%     Dchi = (chimax-chimin)/nbins_chi;
-%     chiAxis = chimin + (0:1:nbins_chi-1)*Dchi + 0.5*Dchi;
-
+    
     fRE = zeros(nbins_p,nbins_chi);
     ip = floor((p - pmin)/Dp) + 1;
     ip(ip>nbins_p) = nbins_p;
     ichi = floor((eta - pitchmin)/Dpitch) + 1;
     ichi(ichi>nbins_chi) = nbins_chi;
-      
+    
     for pp=1:numel(p)
         fRE(ip(pp),ichi(pp)) = fRE(ip(pp),ichi(pp)) + 1;
     end
@@ -3101,39 +3255,43 @@ for ss=1:ST.params.simulation.num_species
     S = trapz(fliplr(chiAxis),trapz(pAxis,fRE));
     fRE = fRE/S;
     
-%     xAxis = pitchAxis;
-%     yAxis = EAxis;
-    xAxis = cos(deg2rad(pitchAxis));
-    yAxis = pAxis;
-    
-%     figure;
-%     A = fRE;
-%     contourf(xAxis,yAxis,A,17,'LineStyle','none')
-%     colormap(jet);
-%     colorbar
-%     axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
-%     xlabel('$\chi$','FontSize',14,'Interpreter','latex')
-%     ylabel('$p$ ($mc$)','FontSize',14,'Interpreter','latex')
-    
-    [~,fRE_theory] = averagedSpectrum(ST,chiAxis,pAxis,fRE);
-        
-	DfRE = sqrt((fRE_theory - fRE).^2);
-    
     xAxis = pitchAxis;
     yAxis = EAxis;
+    %     xAxis = cos(deg2rad(pitchAxis));
+    %     yAxis = pAxis;
     
-    figure;
-    contourf(xAxis,yAxis,DfRE,17,'LineStyle','none')
-    colormap(jet);
-    colorbar
-    axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
-    xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
-    ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
-    
+    if (strcmp(ST.params.species.energy_distribution(ss),'AVALANCHE'))
+        figure;
+        A = fRE;
+        contourf(xAxis,yAxis,A,17,'LineStyle','none')
+        colormap(jet);
+        colorbar
+        axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
+        xlabel('$\chi$','FontSize',14,'Interpreter','latex')
+        ylabel('$p$ ($mc$)','FontSize',14,'Interpreter','latex')
+        
+        [~,fRE_theory] = averagedSpectrum(ST,chiAxis,pAxis,fRE);
+        
+        DfRE = sqrt((fRE_theory - fRE).^2);
+        
+        xAxis = pitchAxis;
+        yAxis = EAxis;
+        
+        figure;
+        contourf(xAxis,yAxis,DfRE,17,'LineStyle','none')
+        colormap(jet);
+        colorbar
+        axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
+        xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
+        ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
+    elseif (strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL'))
+        regionsOfSE(ST,chiAxis,pAxis,fRE);
+    end
     
     figure
+    subplot(2,1,1)
     histogram2(eta,E,[nbins_chi,nbins_p],'FaceColor','flat','Normalization','probability','LineStyle','none');
-    view([0 90])
+    view([0 90]);axis([0 max(eta) 0 max(E)]);axis equal;
     cmp = colormap(jet);
     xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
     ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
@@ -3141,9 +3299,9 @@ for ss=1:ST.params.simulation.num_species
     pperp = sin(deg2rad(eta)).*p;
     pparallel = cos(deg2rad(eta)).*p;
     
-    figure
+    subplot(2,1,2)
     histogram2(pparallel,pperp,[nbins_chi,nbins_p],'FaceColor','flat','Normalization','probability','LineStyle','none');
-    view([0 90])
+    view([0 90]);axis([0 max(pparallel) 0 max(pperp)]);axis equal;
     cmp = colormap(jet);
     xlabel('$p_\parallel$ ($mc$)','FontSize',14,'Interpreter','latex')
     ylabel('$p_\perp$ ($mc$)','FontSize',14,'Interpreter','latex')

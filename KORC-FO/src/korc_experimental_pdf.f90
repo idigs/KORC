@@ -295,6 +295,14 @@ SUBROUTINE save_params(params)
 		attr = "Parallel electric field in (Ec)"
 		call save_to_hdf5(h5file_id,dset,pdf_params%E,attr)
 
+		dset = TRIM(gname) // "/k"
+		attr = "Shape factor"
+		call save_to_hdf5(h5file_id,dset,pdf_params%k,attr)
+
+		dset = TRIM(gname) // "/t"
+		attr = "Scale factor"
+		call save_to_hdf5(h5file_id,dset,pdf_params%t,attr)
+
 		call h5gclose_f(group_id, h5error)
 
 		call h5fclose_f(h5file_id, h5error)

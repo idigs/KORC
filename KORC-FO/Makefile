@@ -67,7 +67,7 @@ else #NERSC_HOST
         FC = mpif90
 
         FCDEFINEFLAGS =-DDOUBLE_PRECISION       -DHDF5_DOUBLE_PRESICION -UH5_DEBUG_API
-        FCFLAGS =-cpp   -J$(MOD)        -fopenmp        -Ofast
+        FCFLAGS =-cpp   -J$(MOD)        -fopenmp        -O3
 
         HDF5_INSTALL =../HDF5
         PSPLINE_INSTALL=../pspline_lib
