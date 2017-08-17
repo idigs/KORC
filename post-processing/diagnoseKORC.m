@@ -23,7 +23,7 @@ ST.data = loadData(ST);
 
 % ST.RT = radialTransport(ST);
 
-% ST.CP = confined_particles(ST);
+ST.CP = confined_particles(ST);
 
 % ST.PAD = pitchAngleDiagnostic(ST,30);
 
@@ -49,7 +49,7 @@ ST.data = loadData(ST);
 
 % calculateTemperatureComponents(ST);
 
-SE_phaseSpaceAnalisys(ST);
+% SE_phaseSpaceAnalisys(ST);
 
 
 % plotEnergyPitchanglePDF(ST);
@@ -1148,11 +1148,11 @@ for ss=1:ST.params.simulation.num_species
     figure(h1)
     subplot(1,2,1)
     hold on
-%     plot(R,Z,'.','MarkerSize',8,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
-    his=histogram2(R,Z,'FaceColor','flat',...
-        'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
-    colormap(jet);caxis([min(min(his.Values)) max(max(his.Values))])
-    colorbar
+    plot(R,Z,'.','MarkerSize',8,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+%     his=histogram2(R,Z,'FaceColor','flat',...
+%         'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
+%     colormap(jet);caxis([min(min(his.Values)) max(max(his.Values))])
+%     colorbar
     hold off
     legends{ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
 end

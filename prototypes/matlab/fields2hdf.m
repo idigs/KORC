@@ -1,14 +1,17 @@
-function fields2hdf(R,PHI,Z,BR,BPHI,BZ,F,outputfile,Bo,Ro,Zo)
+function fields2hdf(R,PHI,Z,BR,BPHI,BZ,F,FLAG,outputfile,Bo,Ro,Zo)
 % size(A) = [numel(R),numel(PHI),numel(Z)], where A can be any of the field
+% size(A) = [numel(R),numel(Z)], where A can be any of the field
 % components or magnetic flux.
 % Example for JFIT D3D fields:
-% fields2hdf(R,PHI,Z,[],[],[],D,outputfile,2.19,1.695)
+% fields2hdf(R,PHI,Z,[],[],[],D,[],outputfile,2.19,1.695,0.0)
 % Example for EFIT axisymmetric D3D magnetic fields
-% fields2hdf(R,[],Z,BR,BPHI,BZ,[],'D3D_Q.h5')
+% fields2hdf(R,[],Z,BR,BPHI,BZ,[],[],'D3D_Q.h5')
 % Example for ITER fields using XPANDER fields
-% fields2hdf(R,PHI,Z,BR,BPHI,BZ,[],'ITER.h5')
+% fields2hdf(R,PHI,Z,BR,BPHI,BZ,[],[],'ITER.h5')
+% Example for DIIID fields using VMEC fields
+% fields2hdf(R,[],Z,BR,BPHI,BZ,[],FLAG,'D3D_VMEC.h5',2.4538,1.6282,0.0282)
 
-narginchk(8,11)
+narginchk(9,12)
 
 NR = numel(R);
 NPHI = numel(PHI);
