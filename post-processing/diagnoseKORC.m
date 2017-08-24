@@ -23,7 +23,7 @@ ST.data = loadData(ST);
 
 % ST.RT = radialTransport(ST);
 
-ST.CP = confined_particles(ST);
+% ST.CP = confined_particles(ST);
 
 % ST.PAD = pitchAngleDiagnostic(ST,30);
 
@@ -49,7 +49,7 @@ ST.CP = confined_particles(ST);
 
 % calculateTemperatureComponents(ST);
 
-% SE_phaseSpaceAnalisys(ST);
+SE_phaseSpaceAnalisys(ST);
 
 
 % plotEnergyPitchanglePDF(ST);
@@ -3089,7 +3089,7 @@ c = ST.params.scales.v;
 try
     l = ST.params.synthetic_camera_params.lambda;
 catch
-    l = linspace(1E-7,1E-5,20);
+    l = linspace(3E-6,8E-6,20);
 end
 
 g = @(p) sqrt(p.^2 + 1);

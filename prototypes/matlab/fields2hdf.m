@@ -10,6 +10,9 @@ function fields2hdf(R,PHI,Z,BR,BPHI,BZ,F,FLAG,outputfile,Bo,Ro,Zo)
 % fields2hdf(R,PHI,Z,BR,BPHI,BZ,[],[],'ITER.h5')
 % Example for DIIID fields using VMEC fields
 % fields2hdf(R,[],Z,BR,BPHI,BZ,[],FLAG,'D3D_VMEC.h5',2.4538,1.6282,0.0282)
+% Example for NIMROD fields
+% fields2hdf(R,PHI,Z,BR,BPHI,BZ,[],[],'NIMROD_DIVERTED.h5',2.1170,1.7272,0.0142)
+
 
 narginchk(9,12)
 
