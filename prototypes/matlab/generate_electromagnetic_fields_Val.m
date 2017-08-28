@@ -42,30 +42,32 @@ t = [     25         0.0041
 
 
 [X3D,Y3D,Z3D,Br3D]=make_field_real(R,Z,Br,Npplanes);
-X3D(:,:,end) = [];Y3D(:,:,end) = [];Z3D(:,:,end) = [];
-Br3D(:,:,end) = [];
+X3D(:,:,1) = [];Y3D(:,:,1) = [];Z3D(:,:,1) = [];
+Br3D(:,:,1) = [];
 X3D = flip(X3D,3);Y3D = flip(Y3D,3);Z3D = flip(Z3D,3);
 Br3D = flip(Br3D,3);
 
 [~,~,~,Bz3D]=make_field_real(R,Z,Bz,Npplanes);
-Bz3D(:,:,end) = [];
+Bz3D(:,:,1) = [];
 Bz3D = flip(Bz3D,3);
 
 [~,~,~,Bphi3D]=make_field_real(R,Z,Bphi,Npplanes);
-Bphi3D(:,:,end) = [];
+Bphi3D(:,:,1) = [];
 Bphi3D = flip(Bphi3D,3);
 
 B = sqrt(Br3D.^2 + Bphi3D.^2 + Bz3D.^2);
 
 [~,~,~,n3D]=make_field_real(R,Z,n,Npplanes);
-n3D(:,:,end) = [];
+n3D(:,:,1) = [];
 n3D = flip(n3D,3);
 
 [~,~,~,n13D]=make_field_real(R,Z,n,Npplanes);
-n13D(:,:,end) = [];
+n13D(:,:,1) = [];
 n13D = flip(n13D,3);
 
-
+phi = squeeze(atan2(Y3D(1,1,:),X3D(1,1,:)))
+phi(phi<0) = phi(phi<0) + 2*pi;
+phi
 
 % SI = scatteredInterpolant(reshape(X3D,[numel(X3D) 1]),reshape(Z,[numel(Z) 1]),reshape(Bslice,[numel(Bslice) 1]));
 

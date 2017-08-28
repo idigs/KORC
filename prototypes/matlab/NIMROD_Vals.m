@@ -3,7 +3,7 @@
 close all
 clear all
 
-[r,z,varr]=readcon(25,0); % load data
+[r,z,varr]=readcon(1100,1); % load data
 
 [R,Z,Br]=onegrid(r,z,varr,14); % Obtain magnetic field components
 
