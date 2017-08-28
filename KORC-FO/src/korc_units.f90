@@ -90,14 +90,14 @@ subroutine normalize_variables(params,spp,F)
         F%sig = F%sig/params%cpp%time
 	else if (params%magnetic_field_model .EQ. 'EXTERNAL') then
 		F%Bo = F%Bo/params%cpp%Bo
+		F%Ro = F%Ro/params%cpp%length
+		F%Zo = F%Zo/params%cpp%length
 
 		if (ALLOCATED(F%B_3D%R)) F%B_3D%R = F%B_3D%R/params%cpp%Bo
 		if (ALLOCATED(F%B_3D%PHI)) F%B_3D%PHI = F%B_3D%PHI/params%cpp%Bo
 		if (ALLOCATED(F%B_3D%Z)) F%B_3D%Z = F%B_3D%Z/params%cpp%Bo
 
 		if (ALLOCATED(F%PSIp)) F%PSIp = F%PSIp/(params%cpp%Bo*params%cpp%length**2)
-		if (ALLOCATED(F%PSIp).OR.ALLOCATED(F%B_2D%R)) F%Ro = F%Ro/params%cpp%length
-		if (ALLOCATED(F%PSIp).OR.ALLOCATED(F%B_2D%R)) F%Zo = F%Zo/params%cpp%length
 
 		if (ALLOCATED(F%B_2D%R)) F%B_2D%R = F%B_2D%R/params%cpp%Bo
 		if (ALLOCATED(F%B_2D%PHI)) F%B_2D%PHI = F%B_2D%PHI/params%cpp%Bo

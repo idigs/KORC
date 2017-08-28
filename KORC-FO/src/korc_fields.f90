@@ -372,6 +372,15 @@ subroutine load_field_data_from_hdf5(params,F)
 	dset = "/Z"
 	call load_array_from_hdf5(h5file_id,dset,F%X%Z)
 
+	dset = '/Bo'
+	call load_from_hdf5(h5file_id,dset,F%Bo)
+
+	dset = '/Ro'
+	call load_from_hdf5(h5file_id,dset,F%Ro)
+
+	dset = '/Zo'
+	call load_from_hdf5(h5file_id,dset,F%Zo)
+
 	if ((.NOT.params%poloidal_flux).AND.(.NOT.params%axisymmetric)) then
 		dset = "/BR"
 		call load_array_from_hdf5(h5file_id,dset,F%B_3D%R)
@@ -382,32 +391,18 @@ subroutine load_field_data_from_hdf5(params,F)
 		dset = "/BZ"
 		call load_array_from_hdf5(h5file_id,dset,F%B_3D%Z)
 	else if (params%poloidal_flux) then
-			dset = '/Bo'
-			call load_from_hdf5(h5file_id,dset,F%Bo)
-
-			dset = '/Ro'
-			call load_from_hdf5(h5file_id,dset,F%Ro)
-
-			dset = "/PSIp"
-			call load_array_from_hdf5(h5file_id,dset,F%PSIp)
+		dset = "/PSIp"
+		call load_array_from_hdf5(h5file_id,dset,F%PSIp)
 	else if (params%axisymmetric) then
-			dset = '/Bo'
-			call load_from_hdf5(h5file_id,dset,F%Bo)
 
-			dset = '/Ro'
-			call load_from_hdf5(h5file_id,dset,F%Ro)
+		dset = "/BR"
+		call load_array_from_hdf5(h5file_id,dset,F%B_2D%R)
 
-			dset = '/Zo'
-			call load_from_hdf5(h5file_id,dset,F%Zo)
+		dset = "/BPHI"
+		call load_array_from_hdf5(h5file_id,dset,F%B_2D%PHI)
 
-			dset = "/BR"
-			call load_array_from_hdf5(h5file_id,dset,F%B_2D%R)
-
-			dset = "/BPHI"
-			call load_array_from_hdf5(h5file_id,dset,F%B_2D%PHI)
-
-			dset = "/BZ"
-			call load_array_from_hdf5(h5file_id,dset,F%B_2D%Z)
+		dset = "/BZ"
+		call load_array_from_hdf5(h5file_id,dset,F%B_2D%Z)
 	end if
 
 	call h5fclose_f(h5file_id, h5error)

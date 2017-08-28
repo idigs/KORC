@@ -959,19 +959,17 @@ subroutine save_simulation_parameters(params,spp,F)
 			attr_array(1) = "Z position of the magnetic field grid nodes"
 			call save_1d_array_to_hdf5(h5file_id,dset,F%X%Z*params%cpp%length,attr_array)
 
-			if (params%poloidal_flux.OR.params%axisymmetric) then
-				dset = TRIM(gname) // "/Bo"
-				attr = "Toroidal field at the magnetic axis in T"
-				call save_to_hdf5(h5file_id,dset,F%Bo*params%cpp%Bo,attr)
+			dset = TRIM(gname) // "/Bo"
+			attr = "Toroidal field at the magnetic axis in T"
+			call save_to_hdf5(h5file_id,dset,F%Bo*params%cpp%Bo,attr)
 
-				dset = TRIM(gname) // "/Ro"
-				attr = "Radial position of magnetic axis"
-				call save_to_hdf5(h5file_id,dset,F%Ro*params%cpp%length,attr)
+			dset = TRIM(gname) // "/Ro"
+			attr = "Radial position of magnetic axis"
+			call save_to_hdf5(h5file_id,dset,F%Ro*params%cpp%length,attr)
 
-				dset = TRIM(gname) // "/Zo"
-				attr = "Radial position of magnetic axis"
-				call save_to_hdf5(h5file_id,dset,F%Zo*params%cpp%length,attr)
-			end if
+			dset = TRIM(gname) // "/Zo"
+			attr = "Radial position of magnetic axis"
+			call save_to_hdf5(h5file_id,dset,F%Zo*params%cpp%length,attr)
 
 			DEALLOCATE(attr_array)
 		else if (params%magnetic_field_model .EQ. 'UNIFORM') then
