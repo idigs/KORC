@@ -27,11 +27,11 @@ else
     ST.fileType = fileType;
 end
 
-if ST.analytical
-    B = analyticalB([1,1,1],'initialize');
-else
-    B = loadMagneticField(pathToBField,fileType,ND,res);
-end
+% if ST.analytical
+%     B = analyticalB([1,1,1],'initialize');
+% else
+%     B = loadMagneticField(pathToBField,fileType,ND,res);
+% end
 
 P = figure;
 
@@ -76,165 +76,165 @@ for ii=1:numel(Ros)
     hold off
     
     
-    % Cylindrical to Cartesian
-    x = R.*cos(phi);
-    y = R.*sin(phi);
-    z = Z;
-    
-    if ST.analytical
-        disp('Toroidal coordinate system')
-        
-        h = figure;
-        subplot(3,1,1)
-        plot3(x,y,z,'b')
-        axis equal
-        box on; grid on
-        xlabel('$X$ [m]','Interpreter','latex','FontSize',16)
-        ylabel('$Y$ [m]','Interpreter','latex','FontSize',16)
-        zlabel('$Z$ [m]','Interpreter','latex','FontSize',16)
-        
-        tmp = sqrt(x.^2 + y.^2) - B.Ro;
-        r = sqrt( tmp.^2 + z.^2 );
-        eta = r/B.Ro;
-        zeta = pi/2 - phi;
-        zeta(zeta<0) = zeta(zeta<0) + 2*pi;
-        theta = atan2(Z,R - B.Ro);
-        theta(theta<0) = theta(theta<0) + 2*pi;
-        
-        Bp = B.Bpo*(r/B.lamb)./( 1 + (r/B.lamb).^2 );
-        Dtheta = [0;mod(diff(theta),2*pi)];
-        zeta_theory = zeta(1) + cumsum( (B.Bo./Bp).*(eta./(1 + eta.*cos(theta))).*Dtheta );
-        zeta_theory = mod(zeta_theory,2*pi);
-        
-        figure(h)
-        subplot(3,1,2)
-        plot(theta,zeta,'r.',theta,zeta_theory,'b.')
-        axis([0 2*pi 0 2*pi])
-        xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
-        ylabel('$\zeta$ [rad]','Interpreter','latex','FontSize',16)
-        
-        
-        % Theoretical curvature of the analytical magnetic field
-        % components of magnetic field in toroidal
-        % coordinates
-        B_theta = Bp./(1 + eta.*cos(theta));
-        B_zeta = B.Bo./( 1 + eta.*cos(theta) );
-        B_r = zeros(size(B_theta));
-        
-        % Note that c*dR/dt = B and A = c*d^2R/dt^2 = d(B)/dt
-        A_r = -(B.Bo.*Bp + B.Bo^3./Bp).*eta.*sin(theta)./(1 + eta.*cos(theta)).^3;
-        A_theta = -B_theta.*B_zeta - ...
-            B_zeta.^2.*B.Bo.*eta.*cos(theta)./( Bp.*(1 + eta.*cos(theta)) );
-        A_zeta = B_theta.^2 + ...
-            B_theta.*B_zeta.*B.Bo.*eta.*cos(theta)./( Bp.*(1 + eta.*cos(theta)) );
-        
-        dRdt = sqrt( B_r.^2 + B_theta.^2 + B_zeta.^2 );
-        k = zeros(size(dRdt));
-        for jj=1:numel(k)
-            A = [B_r(jj),B_theta(jj),B_zeta(jj)];
-            D = [A_r(jj),A_theta(jj),A_zeta(jj)];
-            k(jj) = abs( sqrt(sum(cross(A,D).^2)) )/dRdt(jj)^3;
-        end
-        
-        figure(h)
-        subplot(3,1,3)
-        plot(theta,k/max(k),'k.')
-        xlim([0 2*pi])
-        xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
-        ylabel('$\kappa(\theta)$','Interpreter','latex','FontSize',16)
-        % Theoretical curvature of the analytical magnetic field
-        
-        % Numerical curvature of the analytical magnetic field
-        dRds = [diff(x,1,1),diff(y,1,1),diff(z,1,1)]/DS;
-        dRds(1,:) = [];
-        
-        ddRdss = [diff(x,2,1),diff(y,2,1),diff(z,2,1)]/DS^2;
-        
-        k_numerical = sqrt(sum(cross(dRds,ddRdss).^2,2))./sqrt(sum(dRds.^2,2)).^3;
-        
-        figure(h)
-        subplot(3,1,3)
-        hold on
-        plot(theta(3:end),k_numerical/max(k_numerical),'r.')
-        hold off
-        xlim([0 2*pi])
-        xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
-        ylabel('$\kappa(\theta)$','Interpreter','latex','FontSize',16)
-        % Numerical curvature of the analytical magnetic field
-        
-        % Toroidal to Cartesian
-        xx = ( B.Ro + X(:,1).*cos(mod(X(:,2),2*pi)) ).*sin(mod(X(:,3),2*pi));
-        yy = ( B.Ro + X(:,1).*cos(mod(X(:,2),2*pi)) ).*cos(mod(X(:,3),2*pi));
-        zz = X(:,1).*sin(mod(X(:,2),2*pi));
-        
-        figure(h)
-        subplot(3,1,2)
-        hold on
-        plot(mod(X(:,2),2*pi),mod(X(:,3),2*pi),'k.')
-        hold off
-        axis([0 2*pi 0 2*pi])
-        xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
-        ylabel('$\zeta$ [rad]','Interpreter','latex','FontSize',16)
-        
-        % Numerical curvature of the analytical magnetic field
-        dRds = [diff(xx,1,1),diff(yy,1,1),diff(zz,1,1)]/DS;
-        dRds(1,:) = [];
-        
-        ddRdss = [diff(xx,2,1),diff(yy,2,1),diff(zz,2,1)]/DS^2;
-        
-        k_numerical = sqrt(sum(cross(dRds,ddRdss).^2,2))./sqrt(sum(dRds.^2,2)).^3;
-        
-        figure(h)
-        subplot(3,1,3)
-        hold on
-        plot(mod(X(3:end,2),2*pi),k_numerical/max(k_numerical),'g.')
-        hold off
-        xlim([0 2*pi])
-        xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
-        ylabel('$\kappa(\theta)$','Interpreter','latex','FontSize',16)
-        % Numerical curvature of the analytical magnetic field
-        
-    else
-        
-        h = figure;
-        subplot(2,1,1)
-        plot3(x,y,z,'b')
-        axis equal
-        box on; grid on
-        xlabel('$X$ [m]','Interpreter','latex','FontSize',16)
-        ylabel('$Y$ [m]','Interpreter','latex','FontSize',16)
-        zlabel('$Z$ [m]','Interpreter','latex','FontSize',16)
-        
-        % Numerical curvature of the analytical magnetic field
-        dRds = [diff(x,1,1),diff(y,1,1),diff(z,1,1)]/DS;
-        dRds(1,:) = [];
-        
-        ddRdss = [diff(x,2,1),diff(y,2,1),diff(z,2,1)]/DS^2;
-        
-        k_numerical = sqrt(sum(cross(dRds,ddRdss).^2,2))./sqrt(sum(dRds.^2,2)).^3;
-        
-        theta = atan2(Z,R - 1.654);
-        theta(theta<0) = theta(theta<0) + 2*pi;
-        
-        figure(h)
-        subplot(2,1,2)
-        hold on
-        plot(theta(3:end),k_numerical/max(k_numerical),'r.')
-        hold off
-        xlim([0 2*pi])
-        xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
-        ylabel('$\kappa(\theta)$','Interpreter','latex','FontSize',16)
-        % Numerical curvature of the analytical magnetic field
-        
-    end
+%     % Cylindrical to Cartesian
+%     x = R.*cos(phi);
+%     y = R.*sin(phi);
+%     z = Z;
+%     
+%     if ST.analytical
+%         disp('Toroidal coordinate system')
+%         
+%         h = figure;
+%         subplot(3,1,1)
+%         plot3(x,y,z,'b')
+%         axis equal
+%         box on; grid on
+%         xlabel('$X$ [m]','Interpreter','latex','FontSize',16)
+%         ylabel('$Y$ [m]','Interpreter','latex','FontSize',16)
+%         zlabel('$Z$ [m]','Interpreter','latex','FontSize',16)
+%         
+%         tmp = sqrt(x.^2 + y.^2) - B.Ro;
+%         r = sqrt( tmp.^2 + z.^2 );
+%         eta = r/B.Ro;
+%         zeta = pi/2 - phi;
+%         zeta(zeta<0) = zeta(zeta<0) + 2*pi;
+%         theta = atan2(Z,R - B.Ro);
+%         theta(theta<0) = theta(theta<0) + 2*pi;
+%         
+%         Bp = B.Bpo*(r/B.lamb)./( 1 + (r/B.lamb).^2 );
+%         Dtheta = [0;mod(diff(theta),2*pi)];
+%         zeta_theory = zeta(1) + cumsum( (B.Bo./Bp).*(eta./(1 + eta.*cos(theta))).*Dtheta );
+%         zeta_theory = mod(zeta_theory,2*pi);
+%         
+%         figure(h)
+%         subplot(3,1,2)
+%         plot(theta,zeta,'r.',theta,zeta_theory,'b.')
+%         axis([0 2*pi 0 2*pi])
+%         xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
+%         ylabel('$\zeta$ [rad]','Interpreter','latex','FontSize',16)
+%         
+%         
+%         % Theoretical curvature of the analytical magnetic field
+%         % components of magnetic field in toroidal
+%         % coordinates
+%         B_theta = Bp./(1 + eta.*cos(theta));
+%         B_zeta = B.Bo./( 1 + eta.*cos(theta) );
+%         B_r = zeros(size(B_theta));
+%         
+%         % Note that c*dR/dt = B and A = c*d^2R/dt^2 = d(B)/dt
+%         A_r = -(B.Bo.*Bp + B.Bo^3./Bp).*eta.*sin(theta)./(1 + eta.*cos(theta)).^3;
+%         A_theta = -B_theta.*B_zeta - ...
+%             B_zeta.^2.*B.Bo.*eta.*cos(theta)./( Bp.*(1 + eta.*cos(theta)) );
+%         A_zeta = B_theta.^2 + ...
+%             B_theta.*B_zeta.*B.Bo.*eta.*cos(theta)./( Bp.*(1 + eta.*cos(theta)) );
+%         
+%         dRdt = sqrt( B_r.^2 + B_theta.^2 + B_zeta.^2 );
+%         k = zeros(size(dRdt));
+%         for jj=1:numel(k)
+%             A = [B_r(jj),B_theta(jj),B_zeta(jj)];
+%             D = [A_r(jj),A_theta(jj),A_zeta(jj)];
+%             k(jj) = abs( sqrt(sum(cross(A,D).^2)) )/dRdt(jj)^3;
+%         end
+%         
+%         figure(h)
+%         subplot(3,1,3)
+%         plot(theta,k/max(k),'k.')
+%         xlim([0 2*pi])
+%         xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
+%         ylabel('$\kappa(\theta)$','Interpreter','latex','FontSize',16)
+%         % Theoretical curvature of the analytical magnetic field
+%         
+%         % Numerical curvature of the analytical magnetic field
+%         dRds = [diff(x,1,1),diff(y,1,1),diff(z,1,1)]/DS;
+%         dRds(1,:) = [];
+%         
+%         ddRdss = [diff(x,2,1),diff(y,2,1),diff(z,2,1)]/DS^2;
+%         
+%         k_numerical = sqrt(sum(cross(dRds,ddRdss).^2,2))./sqrt(sum(dRds.^2,2)).^3;
+%         
+%         figure(h)
+%         subplot(3,1,3)
+%         hold on
+%         plot(theta(3:end),k_numerical/max(k_numerical),'r.')
+%         hold off
+%         xlim([0 2*pi])
+%         xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
+%         ylabel('$\kappa(\theta)$','Interpreter','latex','FontSize',16)
+%         % Numerical curvature of the analytical magnetic field
+%         
+%         % Toroidal to Cartesian
+%         xx = ( B.Ro + X(:,1).*cos(mod(X(:,2),2*pi)) ).*sin(mod(X(:,3),2*pi));
+%         yy = ( B.Ro + X(:,1).*cos(mod(X(:,2),2*pi)) ).*cos(mod(X(:,3),2*pi));
+%         zz = X(:,1).*sin(mod(X(:,2),2*pi));
+%         
+%         figure(h)
+%         subplot(3,1,2)
+%         hold on
+%         plot(mod(X(:,2),2*pi),mod(X(:,3),2*pi),'k.')
+%         hold off
+%         axis([0 2*pi 0 2*pi])
+%         xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
+%         ylabel('$\zeta$ [rad]','Interpreter','latex','FontSize',16)
+%         
+%         % Numerical curvature of the analytical magnetic field
+%         dRds = [diff(xx,1,1),diff(yy,1,1),diff(zz,1,1)]/DS;
+%         dRds(1,:) = [];
+%         
+%         ddRdss = [diff(xx,2,1),diff(yy,2,1),diff(zz,2,1)]/DS^2;
+%         
+%         k_numerical = sqrt(sum(cross(dRds,ddRdss).^2,2))./sqrt(sum(dRds.^2,2)).^3;
+%         
+%         figure(h)
+%         subplot(3,1,3)
+%         hold on
+%         plot(mod(X(3:end,2),2*pi),k_numerical/max(k_numerical),'g.')
+%         hold off
+%         xlim([0 2*pi])
+%         xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
+%         ylabel('$\kappa(\theta)$','Interpreter','latex','FontSize',16)
+%         % Numerical curvature of the analytical magnetic field
+%         
+%     else
+%         
+%         h = figure;
+%         subplot(2,1,1)
+%         plot3(x,y,z,'b')
+%         axis equal
+%         box on; grid on
+%         xlabel('$X$ [m]','Interpreter','latex','FontSize',16)
+%         ylabel('$Y$ [m]','Interpreter','latex','FontSize',16)
+%         zlabel('$Z$ [m]','Interpreter','latex','FontSize',16)
+%         
+%         % Numerical curvature of the analytical magnetic field
+%         dRds = [diff(x,1,1),diff(y,1,1),diff(z,1,1)]/DS;
+%         dRds(1,:) = [];
+%         
+%         ddRdss = [diff(x,2,1),diff(y,2,1),diff(z,2,1)]/DS^2;
+%         
+%         k_numerical = sqrt(sum(cross(dRds,ddRdss).^2,2))./sqrt(sum(dRds.^2,2)).^3;
+%         
+%         theta = atan2(Z,R - 1.654);
+%         theta(theta<0) = theta(theta<0) + 2*pi;
+%         
+%         figure(h)
+%         subplot(2,1,2)
+%         hold on
+%         plot(theta(3:end),k_numerical/max(k_numerical),'r.')
+%         hold off
+%         xlim([0 2*pi])
+%         xlabel('$\theta$ [rad]','Interpreter','latex','FontSize',16)
+%         ylabel('$\kappa(\theta)$','Interpreter','latex','FontSize',16)
+%         % Numerical curvature of the analytical magnetic field
+%         
+%     end
     
 end
-
-figure(P)
-axis equal
-xlabel('$R$ [m]','Interpreter','latex','FontSize',16)
-ylabel('$Z$ [m]','Interpreter','latex','FontSize',16)
-title('Poincare plot','Interpreter','latex','FontSize',16)
+% 
+% figure(P)
+% axis equal
+% xlabel('$R$ [m]','Interpreter','latex','FontSize',16)
+% ylabel('$Z$ [m]','Interpreter','latex','FontSize',16)
+% title('Poincare plot','Interpreter','latex','FontSize',16)
 
 end
 
