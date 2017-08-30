@@ -23,7 +23,7 @@
 &plasma_species
         runaway = .FALSE. !
         energy_distribution = 'MONOENERGETIC','EXPERIMENTAL'   ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'
-        pitch_distribution = 'MONOPITCH','EXPERIMENTAL'	! Options are: 'MONOPITCH', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'. When energy_distribution='THERMAL', the pitch angles correspond to those of a thermalized distribution.
+        pitch_distribution = 'MONOPITCH','EXPERIMENTAL'	! Options are: 'MONOPITCH', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'.
         Ro = 1.5,1.5 !
         Zo = 0.0,0.0 !
         r = 0.2,0.2 !

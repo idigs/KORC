@@ -22,6 +22,7 @@ MODULE korc_synthetic_camera
 
 	TYPE, PRIVATE :: CAMERA
 		LOGICAL :: camera_on
+		REAL(rp) :: start_at ! In seconds
 		REAL(rp) :: aperture ! Aperture of the camera (diameter of lens) in meters
 		REAL(rp) :: Riw ! Radial position of inner wall
 		INTEGER, DIMENSION(2) :: num_pixels ! Number of pixels (X,Y)
@@ -174,6 +175,7 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(FIELDS), INTENT(IN) :: F
 	REAL(rp) :: aperture ! Aperture of the camera (diameter of lens) in meters
+	REAL(rp) :: start_at ! in Seconds
 	REAL(rp) :: Riw ! Radial position of inner wall
 	INTEGER, DIMENSION(2) :: num_pixels ! Number of pixels (X,Y)
 	REAL(rp), DIMENSION(2) :: sensor_size ! (horizontal,vertical)
@@ -190,7 +192,7 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 
 	NAMELIST /SyntheticCamera/ camera_on,aperture,Riw,num_pixels,sensor_size,focal_length,&
 								position,incline,lambda_min,lambda_max,Nlambda,integrated_opt,&
-								toroidal_sections,ntor_sections
+								toroidal_sections,ntor_sections,start_at
 
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'(/,"* * * * * * * * * * * * * * * * * *")')
@@ -206,6 +208,7 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 	
 	cam%camera_on = camera_on
 	cam%aperture = aperture
+	cam%start_at = start_at
 	cam%Riw = Riw
 	cam%num_pixels = num_pixels
 	cam%sensor_size = sensor_size
@@ -245,8 +248,6 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 			cam%pixels_edges_x(ii) = xmin + REAL(ii-1_idef,rp)*DX
 		end do
 
-!		ymin = cam%position(2) - 0.5_rp*cam%sensor_size(2)
-!		ymax = cam%position(2) + 0.5_rp*cam%sensor_size(2)
 		ymin = -0.5_rp*cam%sensor_size(2)
 		ymax = 0.5_rp*cam%sensor_size(2)
 		DY = cam%sensor_size(2)/REAL(cam%num_pixels(2),rp)
@@ -403,7 +404,6 @@ FUNCTION Po(g,p,k,l)
 	REAL(rp), INTENT(IN) :: k
 	REAL(rp), INTENT(IN) :: l
 	
-!	Po = -(4.0_rp*C_PI*CGS_C*CGS_E**2/(k*(l*g)**4))*(1.0_rp + (g*p)**2)**2
 	Po = -(C_C*C_E**2/(SQRT(3.0_rp)*C_E0*k*(l*g)**4))*(1.0_rp + (g*p)**2)**2
 END FUNCTION Po
 
@@ -493,8 +493,6 @@ FUNCTION IntK(v,x)
 	REAL(rp), INTENT(IN) :: v
 	REAL(rp), INTENT(IN) :: x
 
-!	IntK = (C_PI/SQRT(2.0_rp))*(1.0_rp - 0.25_rp*(4.0_rp*v**2 - 1.0_rp))*(1 - ERF(SQRT(x))) +&
-!			0.25_rp*(4.0_rp*v**2 - 1.0_rp)*SQRT(0.5_rp*C_PI/x)*EXP(-x)
 	IntK = (C_PI/SQRT(2.0_rp))*(1.0_rp - 0.25_rp*(4.0_rp*v**2 - 1.0_rp))*ERFC(SQRT(x))&
 			 + 0.25_rp*(4.0_rp*v**2 - 1.0_rp)*SQRT(0.5_rp*C_PI/x)*EXP(-x)
 END FUNCTION IntK
@@ -1257,8 +1255,6 @@ SUBROUTINE integrated_angular_density(params,spp)
 		DEALLOCATE(send_buffer)
 		DEALLOCATE(receive_buffer)
 
-
-
 		numel = params%num_species
 
 		ALLOCATE(send_buffer(numel))
@@ -1288,9 +1284,6 @@ SUBROUTINE integrated_angular_density(params,spp)
 		if (params%mpi_params%rank.EQ.0_idef) then
 		    P_a_pixel = RESHAPE(receive_buffer,(/cam%Nlambda,params%num_species/))
 
-!	        do ss=1_idef,params%num_species
-!				P_a_pixel(:,ss) = P_a_pixel(:,ss)/np_pixel(ss)
-!	        end do
 	        var_name = 'P_a_pixel'
 	        call save_snapshot_var(params,P_a_pixel,var_name)
 		end if
@@ -1307,9 +1300,6 @@ SUBROUTINE integrated_angular_density(params,spp)
 		if (params%mpi_params%rank.EQ.0_idef) then
 		    P_l_pixel = RESHAPE(receive_buffer,(/cam%Nlambda,params%num_species/))
 
-!	        do ss=1_idef,params%num_species
-!				P_l_pixel(:,ss) = P_l_pixel(:,ss)/np_pixel(ss)
-!	        end do
 	        var_name = 'P_l_pixel'
 	        call save_snapshot_var(params,P_l_pixel,var_name)
 		end if
@@ -1336,15 +1326,9 @@ SUBROUTINE integrated_angular_density(params,spp)
 		call save_snapshot_var(params,np_pixel,var_name)
 
 		var_name = 'P_a_pixel'
-!		do ss=1_idef,params%num_species
-!			P_a_pixel(:,ss) = P_a_pixel(:,ss)/np_pixel(ss)
-!		end do
 		call save_snapshot_var(params,P_a_pixel,var_name)
 
 		var_name = 'P_l_pixel'
-!		do ss=1_idef,params%num_species
-!			P_l_pixel(:,ss) = P_l_pixel(:,ss)/np_pixel(ss)
-!		end do
 		call save_snapshot_var(params,P_l_pixel,var_name)
 	end if
 
@@ -1708,9 +1692,6 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 		if (params%mpi_params%rank.EQ.0_idef) then
 		    P_a_pixel = RESHAPE(receive_buffer,(/cam%Nlambda,cam%ntor_sections,params%num_species/))
 
-!	        do ss=1_idef,params%num_species
-!				P_a_pixel(:,:,ss) = P_a_pixel(:,:,ss)/np_pixel(ss)
-!	        end do
 	        var_name = 'P_a_pixel'
 	        call save_snapshot_var(params,P_a_pixel,var_name)
 		end if
@@ -1727,9 +1708,6 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 		if (params%mpi_params%rank.EQ.0_idef) then
 		    P_l_pixel = RESHAPE(receive_buffer,(/cam%Nlambda,cam%ntor_sections,params%num_species/))
 
-!			do ss=1_idef,params%num_species
-!				P_l_pixel(:,:,ss) = P_l_pixel(:,:,ss)/np_pixel(ss)
-!			end do
 	        var_name = 'P_l_pixel'
 	        call save_snapshot_var(params,P_l_pixel,var_name)
 		end if
@@ -1756,15 +1734,9 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 		call save_snapshot_var(params,np_pixel,var_name)
 
 		var_name = 'P_a_pixel'
-!		do ss=1_idef,params%num_species
-!			P_a_pixel(:,:,ss) = P_a_pixel(:,:,ss)/np_pixel(ss)
-!		end do
 		call save_snapshot_var(params,P_a_pixel,var_name)
 
 		var_name = 'P_l_pixel'
-!		do ss=1_idef,params%num_species
-!			P_l_pixel(:,:,ss) = P_l_pixel(:,:,ss)/np_pixel(ss)
-!		end do
 		call save_snapshot_var(params,P_l_pixel,var_name)
 	end if
 
@@ -2113,11 +2085,8 @@ SUBROUTINE integrated_spectral_density(params,spp)
 		if (params%mpi_params%rank.EQ.0_idef) then
 		    P_lambda = RESHAPE(receive_buffer,(/cam%Nlambda,params%num_species/))
 
-!		do ss=1_idef,params%num_species
-!			P_lambda(:,ss) = P_lambda(:,ss)/np_lambda(ss)
-!		end do
-		var_name = 'P_lambda'
-		call save_snapshot_var(params,P_lambda,var_name)
+			var_name = 'P_lambda'
+			call save_snapshot_var(params,P_lambda,var_name)
 		end if
 
 		DEALLOCATE(send_buffer)
@@ -2131,9 +2100,6 @@ SUBROUTINE integrated_spectral_density(params,spp)
 		var_name = 'Psyn_pplane'
 	    call save_snapshot_var(params,Psyn_lambda,var_name)
 
-!		do ss=1_idef,params%num_species
-!			P_lambda(:,ss) = P_lambda(:,ss)/np_lambda(ss)
-!		end do
 		var_name = 'P_lambda'
 		call save_snapshot_var(params,P_lambda,var_name)
 
@@ -2185,6 +2151,10 @@ SUBROUTINE save_synthetic_camera_params(params)
 		dset = TRIM(gname) // "/aperture"
 		attr = "Aperture of the camera (m)"
 		call save_to_hdf5(h5file_id,dset,cam%aperture,attr)
+
+		dset = TRIM(gname) // "/start_at"
+		attr = "Time at which camera starts working (s)"
+		call save_to_hdf5(h5file_id,dset,cam%start_at,attr)
 
 		dset = TRIM(gname) // "/Riw"
 		attr = "Radial position of inner wall (m)"
@@ -2550,7 +2520,7 @@ SUBROUTINE synthetic_camera(params,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
 
-	if (cam%camera_on) then
+	if (cam%camera_on.AND.(params%time*params%cpp%time >= cam%start_at)) then
 		if (params%mpi_params%rank .EQ. 0) then
 			write(6,'("Synthetic camera diagnostic: ON!")')
 		end if
