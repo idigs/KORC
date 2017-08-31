@@ -1787,7 +1787,7 @@ for ss=1:ST.params.simulation.num_species
         
         A = fliplr(sum(np_L4,3))';
         minval = min(min(A));
-        maxval = 0.8*max(max(A));
+        maxval = 0.8*max(max(A));   
         v = linspace(minval,maxval,25);
         
         figure(h);

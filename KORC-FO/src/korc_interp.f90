@@ -221,8 +221,7 @@ subroutine check_if_in_domain2D(Y,flag)
 	INTEGER(ip) :: pp,ss
 
     ss = SIZE(Y,2)
-!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(Y,flag,interp2d)
-!$OMP DO
+!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(Y,flag,interp2d)
 	do pp=1_idef,ss
         if ( flag(pp) .EQ. 1_idef ) then
 			if (EZspline_allocated(interp2d%A)) call EZspline_isInDomain(interp2d%A, Y(1,pp), Y(3,pp), ezerr)
@@ -234,8 +233,7 @@ subroutine check_if_in_domain2D(Y,flag)
 !			write(6,'("Error code is:",I3)') ezerr
         end if
 	end do
-!$OMP END DO
-!$OMP END PARALLEL
+!$OMP END PARALLEL DO
 end subroutine check_if_in_domain2D
 
 
@@ -247,8 +245,7 @@ subroutine check_if_in_domain3D(Y,flag)
 
 
     ss = SIZE(Y,2)
-!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(Y,flag,interp3d)
-!$OMP DO
+!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(Y,flag,interp3d)
 	do pp=1_idef,ss
         if ( flag(pp) .EQ. 1_idef ) then
 			call EZspline_isInDomain3_r8(interp3d%R, Y(1,pp), Y(2,pp), Y(3,pp), ezerr)
@@ -258,8 +255,7 @@ subroutine check_if_in_domain3D(Y,flag)
 !			write(6,'("Error code is:",I3)') ezerr
         end if
 	end do
-!$OMP END DO
-!$OMP END PARALLEL
+!$OMP END PARALLEL DO
 end subroutine check_if_in_domain3D
 
 
@@ -274,8 +270,7 @@ subroutine interp_2D_B_field(Y,B,flag)
 	ss = size(Y,2)
 
 	ALLOCATE(F(3,ss))
-!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(interp2d,F,Y,B,flag)
-!$OMP DO
+!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(interp2d,F,Y,B,flag)
 	do pp=1_idef,ss
 		if ( flag(pp) .EQ. 1_idef ) then
 			call EZspline_interp(interp2d%R, Y(1,pp), Y(3,pp), F(1,pp), ezerr)
@@ -296,8 +291,7 @@ subroutine interp_2D_B_field(Y,B,flag)
 			B(3,pp) = F(3,pp)
 		end if
 	end do
-!$OMP END DO
-!$OMP END PARALLEL
+!$OMP END PARALLEL DO
 	DEALLOCATE(F)
 end subroutine interp_2D_B_field
 
@@ -313,8 +307,7 @@ subroutine interp_3D_B_field(Y,B,flag)
 	ss = size(Y,2)
 
 	ALLOCATE(F(3,ss))
-!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(interp3d,F,Y,B,flag)
-!$OMP DO
+!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(interp3d,F,Y,B,flag)
 	do pp=1_idef,ss
 		if ( flag(pp) .EQ. 1_idef ) then
 			call EZspline_interp(interp3d%R, Y(1,pp), Y(2,pp), Y(3,pp), F(1,pp), ezerr)
@@ -335,8 +328,7 @@ subroutine interp_3D_B_field(Y,B,flag)
 			B(3,pp) = F(3,pp)
 		end if
 	end do
-!$OMP END DO
-!$OMP END PARALLEL
+!$OMP END PARALLEL DO
 	DEALLOCATE(F)
 end subroutine interp_3D_B_field
 
@@ -353,8 +345,7 @@ subroutine calculate_magnetic_field(Y,F,B,flag)
 	ss = size(Y,2)
 
 	ALLOCATE(A(3,ss))
-!$OMP PARALLEL FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(interp2d,F,Y,A,B,flag)
-!$OMP DO
+!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(interp2d,F,Y,A,B,flag)
 	do pp=1_idef,ss
 		if ( flag(pp) .EQ. 1_idef ) then
 			call EZspline_derivative(interp2d%A, 0, 1, Y(1,pp), Y(3,pp), A(1,pp), ezerr)
@@ -377,8 +368,7 @@ subroutine calculate_magnetic_field(Y,F,B,flag)
 			end if
 		end if
 	end do
-!$OMP END DO
-!$OMP END PARALLEL
+!$OMP END PARALLEL DO
 	DEALLOCATE(A)
 end subroutine calculate_magnetic_field
 

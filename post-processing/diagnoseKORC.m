@@ -3125,25 +3125,29 @@ ntiles = ceil(sqrt(numel(I)));
 h = figure;
 hh = figure;
 for sp=1:numel(I)
-    A = squeeze(ddPsyndpchi_theory(I(sp),:,:));    
+    A = squeeze(ddPsyndpchi_theory(I(sp),:,:));
     cmax = max(max(A));
+    cmin = min(min(A));
+%     cmin = 10*cmax;
     
     figure(h)
     subplot(ntiles,ntiles,sp)    
     contourf(xAxis,yAxis,A,17,'LineStyle','none')
-    colormap(jet); colorbar; caxis([0 cmax])
+    colormap(jet); colorbar; caxis([cmin cmax])
     title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
     xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
     ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
     
     
-    AA = squeeze(ddPsyndpchi(I(sp),:,:));    
+    AA = squeeze(ddPsyndpchi(I(sp),:,:));
     cmax = max(max(AA));
+    cmin = min(min(AA));
+%     cmin = 10*cmax;
     
     figure(hh)
     subplot(ntiles,ntiles,sp)    
     contourf(xAxis,yAxis,AA,17,'LineStyle','none')
-    colormap(jet); colorbar; caxis([0 cmax])
+    colormap(jet); colorbar; caxis([cmin cmax])
     title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
     xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
     ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
@@ -3151,21 +3155,23 @@ end
 
 A = fRE;
 cmax = max(max(A));
+cmin = min(min(A));
 
 figure(h)
 subplot(ntiles,ntiles,ntiles^2)
 contourf(xAxis,yAxis,A,17,'LineStyle','none')
-colormap(jet); colorbar; caxis([0 cmax])
+colormap(jet); colorbar; caxis([cmin cmax])
 xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 
 AA = fnum;
 cmax = max(max(AA));
+cmin = min(min(A));
 
 figure(hh)
 subplot(ntiles,ntiles,ntiles^2)
 contourf(xAxis,yAxis,AA,17,'LineStyle','none')
-colormap(jet); colorbar; caxis([0 cmax])
+colormap(jet); colorbar; caxis([cmin cmax])
 xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 
@@ -3174,7 +3180,7 @@ hhh = figure;
 for sp=1:numel(I)
     figure(hhh)
     subplot(ntiles,ntiles,sp)
-    A = squeeze(Psyn_sp(I(sp),:,:));
+    A = log10(squeeze(Psyn_sp(I(sp),:,:)));
     contourf(xAxis,yAxis,A,17,'LineStyle','none')
     colormap(jet);
     colorbar
@@ -3189,8 +3195,8 @@ end
 end
 
 function SE_phaseSpaceAnalisys(ST)
-nbins_p = 50;
-nbins_chi = 50;
+nbins_p = 100;
+nbins_chi = 100;
 
 for ss=1:ST.params.simulation.num_species
     q = abs(ST.params.species.q(ss));
