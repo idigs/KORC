@@ -668,11 +668,6 @@ subroutine initialize_fields(params,F)
 			end if
 		
 		    call load_field_data_from_hdf5(params,F)
-
-!			if ((.NOT.params%poloidal_flux).AND.(.NOT.params%axisymmetric)) then
-!				field%str = 'B'
-!				call mean_F_field(F,F%Bo,field)
-!			end if
 		CASE('UNIFORM')
 			! Load the parameters of the analytical magnetic field
 			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')

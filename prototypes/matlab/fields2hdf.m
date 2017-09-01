@@ -1,4 +1,4 @@
-function fields2hdf(R,PHI,Z,BR,BPHI,BZ,F,FLAG,outputfile,Bo,Ro,Zo)
+function fields2hdf(R,PHI,Z,BR,BPHI,BZ,FLUX,FLAG,outputfile,Bo,Ro,Zo)
 % size(A) = [numel(R),numel(PHI),numel(Z)], where A can be any of the field
 % size(A) = [numel(R),numel(Z)], where A can be any of the field
 % components or magnetic flux.
@@ -12,7 +12,7 @@ function fields2hdf(R,PHI,Z,BR,BPHI,BZ,F,FLAG,outputfile,Bo,Ro,Zo)
 % fields2hdf(R,[],Z,BR,BPHI,BZ,[],FLAG,'D3D_VMEC.h5',2.4538,1.6282,0.0282)
 % Example for NIMROD fields
 % fields2hdf(R,PHI,Z,BR,BPHI,BZ,[],[],'NIMROD_DIVERTED.h5',2.1170,1.7272,0.0142)
-
+% fields2hdf(S.R,S.PHI,S.Z,S.BR,S.BPHI,S.BZ,[],[],'NIMROD_1100C.h5',S.Bo,S.Ro,S.Zo)
 
 narginchk(9,12)
 
@@ -58,10 +58,10 @@ dsetname = '/R';
 h5create(outputfile,dsetname, dims(1))
 h5write(outputfile,dsetname,R)
 
-if ~isempty(F)
+if ~isempty(FLUX)
     dsetname = '/PSIp';
     h5create(outputfile,dsetname,dims)
-    h5write(outputfile,dsetname,F)
+    h5write(outputfile,dsetname,FLUX)
 end
 
 if ~isempty(BR)
@@ -80,6 +80,12 @@ if ~isempty(BR)
     dsetname = '/BZ';
     h5create(outputfile,dsetname,dims)
     h5write(outputfile,dsetname,BZ)
+end
+
+if ~isempty(FLAG)
+    dsetname = '/FLAG';
+    h5create(outputfile,dsetname,dims,'DataType','int8')
+    h5write(outputfile,dsetname,int8(FLAG))
 end
 
 if nargin > 8

@@ -167,6 +167,8 @@ TYPE, PUBLIC :: FIELDS
 	TYPE(MESH) :: X
 	INTEGER, DIMENSION(3) :: dims ! dims(NR, NPHI, NZ)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: PSIp ! Poloidal flux
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: FLAG2D	
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: FLAG3D
 
 	REAL(rp) :: Bo ! Characteristic magnetic field
 	REAL(rp) :: Ro ! Radial position of magnetic axis
@@ -204,6 +206,8 @@ subroutine ALLOCATE_FLUX_ARRAYS(F)
 
 	ALLOCATE( F%PSIp(F%dims(1),F%dims(3)) )
 
+	ALLOCATE(F%FLAG2D(F%dims(1),F%dims(3)))
+
 	ALLOCATE(F%X%R(F%dims(1)))
 	ALLOCATE(F%X%Z(F%dims(3)))
 end subroutine ALLOCATE_FLUX_ARRAYS
@@ -215,6 +219,8 @@ subroutine ALLOCATE_2D_FIELDS_ARRAYS(F)
 
 	call ALLOCATE_V_FIELD_2D(F%B_2D,F%dims)
 !	call ALLOCATE_V_FIELD_2D(F%E_2D,F%dims)
+
+	ALLOCATE(F%FLAG2D(F%dims(1),F%dims(3)))
 		
 	ALLOCATE(F%X%R(F%dims(1)))
 	ALLOCATE(F%X%Z(F%dims(3)))
@@ -227,6 +233,8 @@ subroutine ALLOCATE_3D_FIELDS_ARRAYS(F)
 
 	call ALLOCATE_V_FIELD_3D(F%B_3D,F%dims)
 !	call ALLOCATE_V_FIELD_3D(F%E_3D,F%dims)	
+
+	ALLOCATE(F%FLAG3D(F%dims(1),F%dims(2),F%dims(3)))
 		
 	ALLOCATE(F%X%R(F%dims(1)))
 	ALLOCATE(F%X%PHI(F%dims(2)))
@@ -271,6 +279,9 @@ subroutine DEALLOCATE_FIELDS_ARRAYS(F)
 	if (ALLOCATED(F%X%R)) DEALLOCATE(F%X%R)
 	if (ALLOCATED(F%X%PHI)) DEALLOCATE(F%X%PHI)
 	if (ALLOCATED(F%X%Z)) DEALLOCATE(F%X%Z)
+
+	if (ALLOCATED(F%FLAG2D)) DEALLOCATE(F%FLAG2D)
+	if (ALLOCATED(F%FLAG3D)) DEALLOCATE(F%FLAG3D)
 end subroutine DEALLOCATE_FIELDS_ARRAYS
 
 end module korc_types

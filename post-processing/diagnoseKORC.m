@@ -23,7 +23,7 @@ ST.data = loadData(ST);
 
 % ST.RT = radialTransport(ST);
 
-% ST.CP = confined_particles(ST);
+ST.CP = confined_particles(ST);
 
 % ST.PAD = pitchAngleDiagnostic(ST,30);
 
@@ -1141,7 +1141,7 @@ for ss=1:ST.params.simulation.num_species
 %     bool = pin & passing;
     bool = pin;
     
-    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,:,end));
+    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,1));
     R = sqrt( sum(X(1:2,:).^2,1) );
     Z = X(3,:);
 

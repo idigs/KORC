@@ -54,8 +54,21 @@ module korc_interp
 	END TYPE
 #endif
 
+	TYPE, PRIVATE :: KORC_INTERPOLANT_DOMAIN
+		INTEGER(KIND=1), DIMENSION(:,:), ALLOCATABLE :: FLAG2D
+		INTEGER(KIND=1), DIMENSION(:,:,:), ALLOCATABLE :: FLAG3D
+
+		REAL(rp) :: Ro
+		REAL(rp) :: Zo
+
+		REAL(rp) :: DR
+		REAL(rp) :: DPHI
+		REAL(rp) :: DZ
+	END TYPE 
+
 	TYPE(KORC_3DINTERPOLANT), PRIVATE :: interp3d
 	TYPE(KORC_2DINTERPOLANT), PRIVATE :: interp2d
+	TYPE(KORC_INTERPOLANT_DOMAIN), PRIVATE :: domain
 	INTEGER :: ezerr
 
 
@@ -64,7 +77,7 @@ module korc_interp
 !	END INTERFACE
 
     PUBLIC :: interp_field,initialize_interpolant,finalize_interpolant
-	PRIVATE :: interp_3D_B_field,interp_2D_B_field,check_if_in_domain2D,check_if_in_domain3D
+	PRIVATE :: interp_3D_B_field,interp_2D_B_field,check_if_in_domain2D,check_if_in_domain3D,check_if_in_domain
 
     contains
 
@@ -121,6 +134,13 @@ subroutine initialize_interpolant(params,F)
 
 			call EZspline_setup(interp3d%Z, F%B_3D%Z, ezerr)
 			call EZspline_error(ezerr)
+
+			ALLOCATE(domain%FLAG3D(interp3d%NR,interp3d%NPHI,interp3d%NZ))
+			domain%FLAG3D = F%FLAG3D
+
+			domain%DR = ABS(F%X%R(2) - F%X%R(1))
+			domain%DPHI = 2.0_rp*C_PI/interp3d%NPHI
+			domain%DZ = ABS(F%X%Z(2) - F%X%Z(1))
 		else if (params%poloidal_flux) then
 			interp2d%NR = F%dims(1)
 			interp2d%NZ = F%dims(3)
@@ -134,6 +154,12 @@ subroutine initialize_interpolant(params,F)
 
 			call EZspline_setup(interp2d%A, F%PSIp, ezerr, .TRUE.)
 			call EZspline_error(ezerr)
+
+			ALLOCATE(domain%FLAG2D(interp3d%NR,interp3d%NZ))
+			domain%FLAG2D = F%FLAG2D
+
+			domain%DR = ABS(F%X%R(2) - F%X%R(1))
+			domain%DZ = ABS(F%X%Z(2) - F%X%Z(1))
 		else if (params%axisymmetric) then
 			interp2d%NR = F%dims(1)
 			interp2d%NZ = F%dims(3)
@@ -167,7 +193,16 @@ subroutine initialize_interpolant(params,F)
 
 			call EZspline_setup(interp2d%Z, F%B_2D%Z, ezerr, .TRUE.)
 			call EZspline_error(ezerr)
+
+			ALLOCATE(domain%FLAG2D(interp3d%NR,interp3d%NZ))
+			domain%FLAG2D = F%FLAG2D
+
+			domain%DR = ABS(F%X%R(2) - F%X%R(1))
+			domain%DZ = ABS(F%X%Z(2) - F%X%Z(1))
 		end if
+
+		domain%Ro = F%X%R(1)
+		domain%Zo = F%X%Z(1)
 
 		if (params%mpi_params%rank .EQ. 0) then
 			write(6,'("* * * * INTERPOLANT   INITIALIZED * * * *")')
@@ -207,11 +242,50 @@ subroutine finalize_interpolant(params)
 		if (EZspline_allocated(interp2d%Z)) call Ezspline_free(interp2d%Z, ezerr)
 !		call EZspline_error(ezerr)
 
+		if (ALLOCATED(domain%FLAG2D)) DEALLOCATE(domain%FLAG2D)
+		if (ALLOCATED(domain%FLAG3D)) DEALLOCATE(domain%FLAG3D)
+
 		if (params%mpi_params%rank .EQ. 0) then
 			write(6,'("* * * * INTERPOLANT  FINALIZED * * * *")')
 		end if
 	end if
 end subroutine finalize_interpolant
+
+
+subroutine check_if_in_domain(Y,flag)
+    implicit none
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
+	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
+	INTEGER :: IR,IPHI,IZ
+	INTEGER(ip) :: pp,ss
+
+	ss = SIZE(Y,2)
+
+	if (ALLOCATED(domain%FLAG3D)) then
+!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,IR,IPHI,IZ) SHARED(Y,flag,domain,interp3d)
+		do pp=1_idef,ss
+			IR = INT(FLOOR((Y(1,pp)  - domain%Ro + 0.5_rp*domain%DR)/domain%DR) + 1.0_rp,idef)
+			IPHI = INT(FLOOR((Y(2,pp)  + 0.5_rp*domain%DPHI)/domain%DPHI) + 1.0_rp,idef)
+			IZ = INT(FLOOR((Y(3,pp)  + ABS(domain%Zo) + 0.5_rp*domain%DZ)/domain%DZ) + 1.0_rp,idef)
+	
+			if ((domain%FLAG3D(IR,IPHI,IZ).NE.1_1).OR.((IR.GT.interp3d%NR).OR.(IZ.GT.interp3d%NZ))) then
+				flag(pp) = 0_idef
+			end if
+		end do
+!$OMP END PARALLEL DO
+	else 
+!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,IR,IZ) SHARED(Y,flag,domain,interp2d)
+		do pp=1_idef,ss
+			IR = INT(FLOOR((Y(1,pp)  - domain%Ro + 0.5_rp*domain%DR)/domain%DR) + 1.0_rp,idef)
+			IZ = INT(FLOOR((Y(3,pp)  + ABS(domain%Ro) + 0.5_rp*domain%DZ)/domain%DZ) + 1.0_rp,idef)
+	
+			if ((domain%FLAG2D(IR,IZ).NE.1_1).OR.((IR.GT.interp3d%NR).OR.(IZ.GT.interp3d%NZ))) then
+				flag(pp) = 0_idef
+			end if
+		end do
+!$OMP END PARALLEL DO
+	end if
+end subroutine check_if_in_domain
 
 
 subroutine check_if_in_domain2D(Y,flag)
@@ -381,14 +455,16 @@ subroutine interp_field(prtcls,F)
 
 	call cart_to_cyl(prtcls%X, prtcls%Y)
 
+	call check_if_in_domain(prtcls%Y, prtcls%flag)
+
 	if (ALLOCATED(F%PSIp)) then
-		call check_if_in_domain2D(prtcls%Y, prtcls%flag)
+!		call check_if_in_domain2D(prtcls%Y, prtcls%flag)
 		call calculate_magnetic_field(prtcls%Y,F,prtcls%B,prtcls%flag)
 	else if (ALLOCATED(F%B_2D%R)) then
-		call check_if_in_domain2D(prtcls%Y, prtcls%flag)
+!		call check_if_in_domain2D(prtcls%Y, prtcls%flag)
 		call interp_2D_B_field(prtcls%Y,prtcls%B,prtcls%flag)
 	else if (ALLOCATED(F%B_3D%R)) then
-		call check_if_in_domain3D(prtcls%Y, prtcls%flag)
+!		call check_if_in_domain3D(prtcls%Y, prtcls%flag)
 		call interp_3D_B_field(prtcls%Y,prtcls%B,prtcls%flag)
 	else
 		write(6,'("* * * * NO FIELD ARRAYS ALLOCATED * * * *")')
