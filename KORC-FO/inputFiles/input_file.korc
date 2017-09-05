@@ -1,13 +1,13 @@
 &input_parameters
         simulation_time = 1.0E-6 ! Total aimed simulation time in seconds
-        snapshot_frequency = 2.0E-7 ! Time between snapshots in seconds
+        snapshot_frequency = 1.0E-7 ! Time between snapshots in seconds
         dt = 1.0E-2 ! Time step as fraction of non-relativistic gyro-period
         num_species = 2
         minimum_particle_energy = 1.0E3 ! Minimum energy of simulated particles in eV
         radiation = .TRUE.
         collisions = .TRUE.
         collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
-        magnetic_field_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
+        plasma_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
                                                                                 ! For 'ANALYTICAL', the magnetic field is calculated based on
                                                                                 ! the parameters given in the "analytic_mag_field_params" section.
                                                                                 ! For 'EXTERNAL', the magnetic field is loaded from the file
@@ -22,8 +22,8 @@
 
 &plasma_species
         runaway = .FALSE. !
-        energy_distribution = 'MONOENERGETIC','EXPERIMENTAL'   ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'
-        pitch_distribution = 'MONOPITCH','EXPERIMENTAL'	! Options are: 'MONOPITCH', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'.
+        energy_distribution = 'MONOENERGETIC','MONOENERGETIC'   ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'
+        pitch_distribution = 'MONOPITCH','MONOPITCH'	! Options are: 'MONOPITCH', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'.
         Ro = 1.5,1.5 !
         Zo = 0.0,0.0 !
         r = 0.2,0.2 !
@@ -31,12 +31,12 @@
         etao = 5.0,10.0  ! Initial pitch angle
         Eo_lims = 1.0E6,50.0E6,1.0E6,50.0E6 ! Lower and upper limit of simulated energy range, in eV.
         etao_lims = 0.0,20.0,0.0,20.0 ! Lower and upper limit of simulated pitch-angle range, in degrees.
-        ppp = 10,10 ! Number of particles per process (mpi)
+        ppp = 100,100 ! Number of particles per process (mpi)
         q = -1.0,-1.0 ! Electric charge
         m = 1.0,1.0 ! In units of electron mass
 /
 
-&analytic_mag_field_params
+&analytical_fields_params
 	electric_field_mode = 'CONSTANT' ! Options are 'CONSTANT' and 'PULSE'
 	Eo = 0.0 ! In V/m
 	pulse_maximum = 3.0E-3 ! Time at which maximum is reached in s
@@ -48,9 +48,12 @@
 	qo = 1.0 ! Safety factor at the separatrix (r=a)
 /
 
-&plasma_profiles
+&analytical_plasma_profiles
 	ne_profile = 'FLAT' ! Options are 'FLAT' and 'PARABOLIC'
+	neo = 1.0E19 ! In m^-3
 	Te_profile = 'FLAT' ! Options are 'FLAT' and 'PARABOLIC'
+	Teo = 1.0E3 ! In eV
+	nfactor = 2.0 ! 
 /
 
 &CollisionParamsMultipleSpecies
@@ -93,8 +96,16 @@
 	t = 0.65 ! Scale factor of Gamma distribution for energy
 /
 
+&EnergyGammaPDF
+	min_energy = 1.0E6 ! In eV
+	max_energy = 30.0E6 ! In eV
+	k = 11.89 ! Shape factor of Gamma distribution for energy
+	t = 0.65 ! Scale factor of Gamma distribution for energy
+/
+
 &SyntheticCamera
 	camera_on = .FALSE. ! .TRUE. or .FALSE.
+	start_at = 5.0E-6 ! Seconds
  	Riw = 1.0 ! Radial position of inner wall
  	num_pixels = 50, 50 ! Number of pixels (X,Y)
  	sensor_size = 0.4, 0.4 ! (horizontal,vertical)

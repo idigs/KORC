@@ -89,7 +89,7 @@ TYPE, PUBLIC :: KORC_PARAMS
 	LOGICAL :: radiation
 	LOGICAL :: collisions
 	CHARACTER(MAX_STRING_LENGTH) :: collisions_model
-	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
+	CHARACTER(MAX_STRING_LENGTH) :: plasma_model
 	LOGICAL :: poloidal_flux
 	LOGICAL :: axisymmetric
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
@@ -182,15 +182,17 @@ END TYPE FIELDS
 
 
 TYPE, PUBLIC :: PROFILES
+	REAL(rp) :: nfactor
+
 	! Density
+	CHARACTER(MAX_STRING_LENGTH) :: ne_profile
 	REAL(rp) :: neo ! Electron density at the magnetic axis
-	REAL(rp) :: nea ! Electron density at the plasma edge (if analytical)
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: ne_3D ! ne_3D(R,PHI,Z)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: ne_2D ! ne_2D(R,Z)
 	
-	!Temperature	
+	!Temperature
+	CHARACTER(MAX_STRING_LENGTH) :: Te_profile
 	REAL(rp) :: Teo ! Electron temperature at the magnetic axis
-	REAL(rp) :: Tea ! Electron temperature at the plasma edge (if analytical)
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: Te_3D ! Te_3D(R,PHI,Z)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Te_2D ! Te_2D(R,Z)
 END TYPE PROFILES

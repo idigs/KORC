@@ -776,6 +776,9 @@ subroutine save_simulation_parameters(params,spp,F)
 		ALLOCATE(attr_array(1))		
 		ALLOCATE(idata(1))
 
+		dset = TRIM(gname) // "/plasma_model"
+		call save_string_parameter(h5file_id,dset,(/params%plasma_model/))
+
 		dset = TRIM(gname) // "/simulation_time"
         attr = "Total aimed simulation time in seconds"
 		call save_to_hdf5(h5file_id,dset,params%simulation_time*params%cpp%time,attr)
@@ -904,10 +907,7 @@ subroutine save_simulation_parameters(params,spp,F)
 		gname = "fields"
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
-		dset = TRIM(gname) // "/magnetic_field_model"
-		call save_string_parameter(h5file_id,dset,(/params%magnetic_field_model/))
-
-		if (TRIM(params%magnetic_field_model) .EQ. 'ANALYTICAL') then
+		if (TRIM(params%plasma_model) .EQ. 'ANALYTICAL') then
 			dset = TRIM(gname) // "/Bo"
 			attr = "Toroidal field at the magnetic axis in T"
 			call save_to_hdf5(h5file_id,dset,F%Bo*params%cpp%Bo,attr)
@@ -939,7 +939,7 @@ subroutine save_simulation_parameters(params,spp,F)
 			dset = TRIM(gname) // "/Eo"
 			attr = "Electric field at the magnetic axis in V/m"
 			call save_to_hdf5(h5file_id,dset,F%Eo*params%cpp%Eo,attr)
-		else if (params%magnetic_field_model .EQ. 'EXTERNAL') then
+		else if (params%plasma_model .EQ. 'EXTERNAL') then
 			ALLOCATE(attr_array(1))
 			dset = TRIM(gname) // "/dims"
 			attr_array(1) = "Mesh dimension of the magnetic field (NR,NPHI,NZ)"
@@ -972,7 +972,7 @@ subroutine save_simulation_parameters(params,spp,F)
 			call save_to_hdf5(h5file_id,dset,F%Zo*params%cpp%length,attr)
 
 			DEALLOCATE(attr_array)
-		else if (params%magnetic_field_model .EQ. 'UNIFORM') then
+		else if (params%plasma_model .EQ. 'UNIFORM') then
 			dset = TRIM(gname) // "/Bo"
 			attr = "Magnetic field in T"
 			call save_to_hdf5(h5file_id,dset,F%Bo*params%cpp%Bo,attr)

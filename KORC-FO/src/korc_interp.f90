@@ -87,7 +87,7 @@ subroutine initialize_interpolant(params,F)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(FIELDS), INTENT(IN) :: F
 
-	if (params%magnetic_field_model .EQ. 'EXTERNAL') then
+	if (params%plasma_model .EQ. 'EXTERNAL') then
 		
 		if (params%mpi_params%rank .EQ. 0) then
 			write(6,'(/,"* * * * * * * * * * * * * * * * * * * * *")')
@@ -208,13 +208,13 @@ subroutine initialize_interpolant(params,F)
 			write(6,'("* * * * INTERPOLANT   INITIALIZED * * * *")')
 			write(6,'("* * * * * * * * * * * * * * * * * * * * *",/)')
 		end if
-	else if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
+	else if (params%plasma_model .EQ. 'ANALYTICAL') then
 		if (params%mpi_params%rank .EQ. 0) then
 			write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * *")')
 			write(6,'("* * * * USING ANALYTICAL MAGNETIC FIELD * * * *")')
 			write(6,'("* * * * * * * * * * * * * * * * * * * * * * * *",/)')
 		end if
-	else if (params%magnetic_field_model .EQ. 'UNIFORM') then
+	else if (params%plasma_model .EQ. 'UNIFORM') then
 		if (params%mpi_params%rank .EQ. 0) then
 			write(6,'(/,"* * * * * * * * * * *  * * * * * * * * * * *")')
 			write(6,'("* * * * USING UNIFORM MAGNETIC FIELD * * * *")')
@@ -228,7 +228,7 @@ subroutine finalize_interpolant(params)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
-	if (params%magnetic_field_model .EQ. 'EXTERNAL') then
+	if (params%plasma_model .EQ. 'EXTERNAL') then
 		if (params%mpi_params%rank .EQ. 0) then
 			write(6,'("* * * * FINALIZING INTERPOLANT * * * *")')
 		end if

@@ -10,12 +10,13 @@ module korc_initialize
 
 	use korc_avalanche ! external module
 	use korc_experimental_pdf ! external module
+	use korc_energy_pdfs ! external module
 
     implicit none
 	
 
 	PRIVATE :: set_paths,load_korc_params,initialization_sanity_check,random_norm,fth_1V,fth_3V,iso_thermal_distribution
-	PUBLIC :: initialize_korc_parameters,initialize_particles,initialize_fields,define_time_step
+	PUBLIC :: initialize_korc_parameters,initialize_particles,initialize_fields_and_profiles,define_time_step
 
     contains
 
@@ -51,7 +52,7 @@ subroutine load_korc_params(params)
 	LOGICAL :: radiation
 	LOGICAL :: collisions
 	CHARACTER(MAX_STRING_LENGTH) :: collisions_model
-	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_model
+	CHARACTER(MAX_STRING_LENGTH) :: plasma_model
 	LOGICAL :: poloidal_flux
 	LOGICAL :: axisymmetric
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
@@ -61,7 +62,7 @@ subroutine load_korc_params(params)
 	INTEGER :: imax,imin,ii,jj,num_outputs
 	INTEGER, DIMENSION(2) :: indices
 
-	NAMELIST /input_parameters/ magnetic_field_model,poloidal_flux,magnetic_field_filename,simulation_time,axisymmetric,&
+	NAMELIST /input_parameters/ plasma_model,poloidal_flux,magnetic_field_filename,simulation_time,axisymmetric,&
 			snapshot_frequency,dt,num_species,radiation,collisions,collisions_model,outputs_list,minimum_particle_energy
 	
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
@@ -75,7 +76,7 @@ subroutine load_korc_params(params)
 	params%dt = dt
 
 	params%num_species = num_species
-	params%magnetic_field_model = TRIM(magnetic_field_model)
+	params%plasma_model = TRIM(plasma_model)
 	params%poloidal_flux = poloidal_flux
 	params%axisymmetric = axisymmetric
 	params%magnetic_field_filename = TRIM(magnetic_field_filename)
@@ -130,7 +131,7 @@ subroutine load_korc_params(params)
 		write(6,'("Output frequency: ",E17.10," s")') params%snapshot_frequency
 		write(6,'("Time step in fraction of relativistic gyro-period: ",F15.10)') params%dt
 		write(6,'("Number of electron populations: ",I16)') params%num_species
-		write(6,'("Magnetic field model: ",A50)') TRIM(params%magnetic_field_model)
+		write(6,'("Magnetic field model: ",A50)') TRIM(params%plasma_model)
 		write(6,'("USINg (JFIT) poloidal flux: ", L1)') params%poloidal_flux
 		write(6,'("Magnetic field model: ",A100)') TRIM(params%magnetic_field_filename)
 		write(6,'("Radiation losses included: ",L1)') params%radiation
@@ -271,6 +272,12 @@ subroutine initialize_particles(params,F,spp)
 									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
 			CASE ('EXPERIMENTAL')
 				call get_experimental_distribution(params,spp(ii)%vars%g,spp(ii)%vars%eta,spp(ii)%go,spp(ii)%etao)
+
+				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
+				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
+									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
+			CASE ('GAMMA')
+				call get_gamma_distribution(params,spp(ii)%vars%g,spp(ii)%go)
 
 				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
 				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
@@ -495,7 +502,7 @@ subroutine set_up_particles_ic(params,F,spp)
 		ALLOCATE( R(spp(ii)%ppp) )
 
 		! * * * * INITIALIZE POSITION * * * * 
-		if (TRIM(params%magnetic_field_model) .EQ. 'UNIFORM') then
+		if (TRIM(params%plasma_model) .EQ. 'UNIFORM') then
 			spp(ii)%vars%X = 0.0_rp
 		else
 			! Initial condition of uniformly distributed particles on a disk in the xz-plane
@@ -615,7 +622,7 @@ end subroutine initialization_sanity_check
 ! * * *  SUBROUTINES FOR INITIALIZING FIELDS   * * * !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
-subroutine initialize_fields(params,F)
+subroutine initialize_fields_and_profiles(params,F)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(FIELDS), INTENT(OUT) :: F
@@ -629,15 +636,22 @@ subroutine initialize_fields(params,F)
 	REAL(rp) :: Eo
     REAL(rp) :: pulse_maximum
     REAL(rp) :: pulse_duration
+    CHARACTER(MAX_STRING_LENGTH) :: ne_profile
+    CHARACTER(MAX_STRING_LENGTH) :: Te_profile
+	REAL(rp) :: neo
+	REAL(rp) :: Teo
+	REAL(rp) :: nfactor
 
-	NAMELIST /analytic_mag_field_params/ Bo,minor_radius,major_radius,&
+	NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
 			qa,qo,electric_field_mode,Eo,pulse_maximum,pulse_duration
 
-	SELECT CASE (TRIM(params%magnetic_field_model))
+	NAMELIST /analytical_plasma_profiles/ ne_profile,neo,Te_profile,Teo,nfactor
+
+	SELECT CASE (TRIM(params%plasma_model))
 		CASE('ANALYTICAL')
 			! Load the parameters of the analytical magnetic field
 			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-			read(default_unit_open,nml=analytic_mag_field_params)
+			read(default_unit_open,nml=analytical_fields_params)
 			close(default_unit_open)
 
 			F%AB%Bo = Bo
@@ -655,6 +669,11 @@ subroutine initialize_fields(params,F)
 		    F%electric_field_mode = TRIM(electric_field_mode)
 			F%to = pulse_maximum
 			F%sig = pulse_duration
+
+			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
+			read(default_unit_open,nml=analytical_plasma_profiles)
+			close(default_unit_open)
+
 		CASE('EXTERNAL')
 			! Load the magnetic field from an external HDF5 file
 		    call load_dim_data_from_hdf5(params,F%dims)
@@ -671,13 +690,13 @@ subroutine initialize_fields(params,F)
 		CASE('UNIFORM')
 			! Load the parameters of the analytical magnetic field
 			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-			read(default_unit_open,nml=analytic_mag_field_params)
+			read(default_unit_open,nml=analytical_fields_params)
 			close(default_unit_open)
 
 			F%Eo = Eo
 			F%Bo = Bo
 		CASE DEFAULT
 	END SELECT
-end subroutine initialize_fields
+end subroutine initialize_fields_and_profiles
 
 end module korc_initialize

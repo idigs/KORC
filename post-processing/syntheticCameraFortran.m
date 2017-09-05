@@ -70,7 +70,16 @@ end
 function data = loadData(ST)
 data = struct;
 
-it = ST.range(1):1:ST.range(2);
+filename = [ST.path 'synthetic_camera_snapshots.h5'];
+H = h5info(filename);
+it = zeros(1,size(H.Groups,1));
+for ii=1:size(H.Groups,1)
+    tmpstr = strrep(H.Groups(ii).Name,'/','');
+    it(ii) = str2num(tmpstr);
+end
+it = sort(it,'ascend');
+
+% it = ST.range(1):1:ST.range(2);
 
 NX = ST.params.synthetic_camera_params.num_pixels(1);
 NY = ST.params.synthetic_camera_params.num_pixels(2);
@@ -96,7 +105,7 @@ if (ST.params.synthetic_camera_params.integrated_opt == 0)
             data.(['sp' num2str(ss)]).(list{ll}) = zeros(NX,NY,Nl,ST.num_snapshots);
             for ii=1:numel(it)
                 dataset = ...
-                    ['/' num2str(it(ii)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
+                    ['/' num2str(it(ii)) '/spp_' num2str(ss)...
                     '/' list{ll}];
                 data.(['sp' num2str(ss)]).(list{ll})(:,:,:,ii) = h5read(filename, dataset);
             end
@@ -125,7 +134,7 @@ for ll=1:length(list)
                 end
                 for ii=1:numel(it) % Here
                     dataset = ...
-                        ['/' num2str(it(ii)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
+                        ['/' num2str(it(ii)) '/spp_' num2str(ss)...
                         '/' list{ll}];
                     if (ST.params.synthetic_camera_params.toroidal_sections == 1)
                         data.(['sp' num2str(ss)]).(list{ll})(:,:,ii) = h5read(filename, dataset);
@@ -137,7 +146,7 @@ for ll=1:length(list)
                 data.(['sp' num2str(ss)]).(list{ll}) = zeros(1,ST.num_snapshots);
                 for ii=1:numel(it) % Here
                     dataset = ...
-                        ['/' num2str(it(ii)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
+                        ['/' num2str(it(ii)) '/spp_' num2str(ss)...
                         '/' list{ll}];
                     data.(['sp' num2str(ss)]).(list{ll})(ii) = h5read(filename, dataset);
                 end
@@ -150,7 +159,7 @@ for ll=1:length(list)
                 
                 for ii=1:numel(it) % Here
                     dataset = ...
-                        ['/' num2str(it(ii)*double(ST.params.simulation.output_cadence)) '/spp_' num2str(ss)...
+                        ['/' num2str(it(ii)) '/spp_' num2str(ss)...
                         '/' list{ll}];
                     if (ST.params.synthetic_camera_params.toroidal_sections == 1)
                         data.(['sp' num2str(ss)]).(list{ll})(:,:,:,ii) = h5read(filename, dataset);
@@ -1518,15 +1527,17 @@ for ss=1:ST.params.simulation.num_species
             
             P_L2 = [];
             
-            P_L3 = zeros(Nl,NT);
-            for it=1:ST.num_snapshots
-                P_L3 = P_L3 + ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,:,it);
-            end
+%             P_L3 = zeros(Nl,NT);
+            P_L3 = squeeze(sum(ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,:,:),3));
+%             for it=1:ST.num_snapshots
+%                 P_L3 = P_L3 + ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,:,it);
+%             end
             
-            P_L4 = zeros(Nl,NT);
-            for it=1:ST.num_snapshots
-                P_L4 = P_L4 + ST.data.(['sp' num2str(ss)]).P_a_pixel(i1:i2,:,it);
-            end
+%             P_L4 = zeros(Nl,NT);
+            P_L4 = squeeze(sum(ST.data.(['sp' num2str(ss)]).P_a_pixel(i1:i2,:,:),3));
+%             for it=1:ST.num_snapshots
+%                 P_L4 = P_L4 + ST.data.(['sp' num2str(ss)]).P_a_pixel(i1:i2,:,it);
+%             end
             
             np_L3 = sum(ST.data.(['sp' num2str(ss)]).np_lambda_pixel,4);
             np_L4 = sum(ST.data.(['sp' num2str(ss)]).np_angular_pixel,4);

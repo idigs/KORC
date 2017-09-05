@@ -185,7 +185,7 @@ subroutine advance_particles_position(params,F,spp,dt)
 	REAL(rp), INTENT(IN) :: dt
 	INTEGER :: ii, pp ! Iterators
 
-	if (params%magnetic_field_model .NE. 'UNIFORM') then
+	if (params%plasma_model .NE. 'UNIFORM') then
 		do ii=1_idef,params%num_species
 !$OMP PARALLEL DO FIRSTPRIVATE(dt) PRIVATE(pp) SHARED(ii,spp,params)
 		do pp=1_idef,spp(ii)%ppp

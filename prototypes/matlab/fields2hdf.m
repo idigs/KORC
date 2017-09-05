@@ -5,7 +5,7 @@ function fields2hdf(R,PHI,Z,BR,BPHI,BZ,FLUX,FLAG,outputfile,Bo,Ro,Zo)
 % Example for JFIT D3D fields:
 % fields2hdf(R,PHI,Z,[],[],[],D,[],outputfile,2.19,1.695,0.0)
 % Example for EFIT axisymmetric D3D magnetic fields
-% fields2hdf(R,[],Z,BR,BPHI,BZ,[],[],'D3D_Q.h5',1.4096,1.7033,0.025)
+% fields2hdf(R,[],Z,BR,BPHI,BZ,[],FLAG,'D3D_165826_1.h5',1.4096,1.7033,0.025)
 % Example for ITER fields using XPANDER fields
 % fields2hdf(R,PHI,Z,BR,BPHI,BZ,[],[],'ITER.h5')
 % Example for DIIID fields using VMEC fields

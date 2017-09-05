@@ -295,7 +295,7 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 
 		! * * * * * * * ALL IN METERS * * * * * * * 
 
-		IF (TRIM(params%magnetic_field_model) .EQ. 'ANALYTICAL') THEN
+		IF (TRIM(params%plasma_model) .EQ. 'ANALYTICAL') THEN
 			pplane%Rmin = F%Ro - F%AB%a
 			pplane%Rmax = F%Ro + F%AB%a
 			pplane%Zmin = -F%AB%a

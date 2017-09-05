@@ -272,7 +272,7 @@ subroutine get_fields(params,vars,F)
 	TYPE(PARTICLES), INTENT(INOUT) :: vars
 	TYPE(FIELDS), INTENT(IN) :: F
 
-	SELECT CASE (TRIM(params%magnetic_field_model))
+	SELECT CASE (TRIM(params%plasma_model))
 		CASE('ANALYTICAL')
 			call get_analytical_fields(vars, F)
 		CASE('EXTERNAL')

@@ -4,7 +4,7 @@ ft = fittype('x^(k-1)*exp(-x/t)','independent','x')
 w = 1./err;w = w/sum(w);
 [fitobj, gof] = fit(xd',10.^yd',ft,'Weights',w)
 confint = predint(fitobj,xd,0.95,'functional','on');
-% figure;
+figure;
 hold on;
 plot(fitobj,xd,10.^yd);
 plot(xd,confint,'m--')

@@ -99,6 +99,7 @@ korc_interp.o   \
 korc_fields.o   \
 korc_avalanche.o        \
 korc_experimental_pdf.o	\
+korc_energy_pdfs.o	\
 hammersley_generator.o  \
 korc_initialize.o       \
 korc_finalize.o \

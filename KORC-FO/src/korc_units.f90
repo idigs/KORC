@@ -74,7 +74,7 @@ subroutine normalize_variables(params,spp,F)
 	end do
 
 !	Normalize electromagnetic fields
-	if (params%magnetic_field_model .EQ. 'ANALYTICAL') then
+	if (params%plasma_model .EQ. 'ANALYTICAL') then
 		F%Bo = F%Bo/params%cpp%Bo
 
 		F%AB%Bo = F%AB%Bo/params%cpp%Bo
@@ -88,7 +88,7 @@ subroutine normalize_variables(params,spp,F)
 		F%Eo = F%Eo/params%cpp%Eo
         F%to = F%to/params%cpp%time
         F%sig = F%sig/params%cpp%time
-	else if (params%magnetic_field_model .EQ. 'EXTERNAL') then
+	else if (params%plasma_model .EQ. 'EXTERNAL') then
 		F%Bo = F%Bo/params%cpp%Bo
 		F%Ro = F%Ro/params%cpp%length
 		F%Zo = F%Zo/params%cpp%length
@@ -106,7 +106,7 @@ subroutine normalize_variables(params,spp,F)
 		F%X%R = F%X%R/params%cpp%length
 		! Nothing to do for the PHI component
 		F%X%Z = F%X%Z/params%cpp%length
-	else if (params%magnetic_field_model .EQ. 'UNIFORM') then
+	else if (params%plasma_model .EQ. 'UNIFORM') then
 		F%Bo = F%Bo/params%cpp%Bo
 		F%Eo = F%Eo/params%cpp%Eo
 	end if	
