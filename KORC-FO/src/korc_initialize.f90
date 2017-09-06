@@ -249,6 +249,8 @@ subroutine initialize_particles(params,F,spp)
 		ALLOCATE( spp(ii)%vars%Y(3,spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%E(3,spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%B(3,spp(ii)%ppp) )
+		ALLOCATE( spp(ii)%vars%ne(spp(ii)%ppp) )
+		ALLOCATE( spp(ii)%vars%Te(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%g(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%eta(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%mu(spp(ii)%ppp) )
@@ -335,7 +337,7 @@ subroutine initialize_particles(params,F,spp)
 		spp(ii)%vars%mu = 0.0_rp
 		spp(ii)%vars%Prad = 0.0_rp
 		spp(ii)%vars%Pin = 0.0_rp
-		spp(ii)%vars%flag = 1_idef
+		spp(ii)%vars%flag = 1_is
 		spp(ii)%vars%AUX = 0.0_rp
 	end do
 
@@ -622,16 +624,18 @@ end subroutine initialization_sanity_check
 ! * * *  SUBROUTINES FOR INITIALIZING FIELDS   * * * !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
-subroutine initialize_fields_and_profiles(params,F)
+subroutine initialize_fields_and_profiles(params,F,P)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(FIELDS), INTENT(OUT) :: F
+	TYPE(PROFILES), INTENT(OUT) :: P
 	TYPE(KORC_STRING) :: field
 	REAL(rp) :: Bo
 	REAL(rp) :: minor_radius
 	REAL(rp) :: major_radius
 	REAL(rp) :: qa
 	REAL(rp) :: qo
+    CHARACTER(MAX_STRING_LENGTH) :: current_direction
     CHARACTER(MAX_STRING_LENGTH) :: electric_field_mode
 	REAL(rp) :: Eo
     REAL(rp) :: pulse_maximum
@@ -643,7 +647,7 @@ subroutine initialize_fields_and_profiles(params,F)
 	REAL(rp) :: nfactor
 
 	NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
-			qa,qo,electric_field_mode,Eo,pulse_maximum,pulse_duration
+			qa,qo,electric_field_mode,Eo,pulse_maximum,pulse_duration,current_direction
 
 	NAMELIST /analytical_plasma_profiles/ ne_profile,neo,Te_profile,Teo,nfactor
 
@@ -662,6 +666,14 @@ subroutine initialize_fields_and_profiles(params,F)
 			F%AB%qo = qo
 			F%AB%lambda = F%AB%a/SQRT(qa/qo - 1.0_rp)
 			F%AB%Bpo = F%AB%lambda*F%AB%Bo/(F%AB%qo*F%AB%Ro)
+			F%AB%current_direction = TRIM(current_direction)
+			SELECT CASE (TRIM(F%AB%current_direction))
+				CASE('PARALLEL')
+					F%AB%Bpo = F%AB%Bpo
+				CASE('ANTI-PARALLEL')
+					F%AB%Bpo = -F%AB%Bpo
+				CASE DEFAULT
+			END SELECT
 
 			F%Eo = Eo
 			F%Bo = F%AB%Bo
@@ -674,6 +686,12 @@ subroutine initialize_fields_and_profiles(params,F)
 			read(default_unit_open,nml=analytical_plasma_profiles)
 			close(default_unit_open)
 
+			P%a = minor_radius
+			P%ne_profile = TRIM(ne_profile)
+			P%neo = neo
+			P%Te_profile = TRIM(Te_profile)
+			P%Teo = Teo*C_E
+			P%nfactor = nfactor
 		CASE('EXTERNAL')
 			! Load the magnetic field from an external HDF5 file
 		    call load_dim_data_from_hdf5(params,F%dims)

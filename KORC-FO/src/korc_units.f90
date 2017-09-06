@@ -43,11 +43,12 @@ subroutine compute_charcs_plasma_params(params,spp,F)
 end subroutine compute_charcs_plasma_params
 
 
-subroutine normalize_variables(params,spp,F)
+subroutine normalize_variables(params,spp,F,P)
     implicit none
 	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
 	TYPE(FIELDS), INTENT(INOUT) :: F
+	TYPE(PROFILES), INTENT(INOUT) :: P
 	INTEGER :: ii ! Iterator(s)
 
 !	Normalize params variables
@@ -73,7 +74,7 @@ subroutine normalize_variables(params,spp,F)
 		spp(ii)%r = spp(ii)%r/params%cpp%length
 	end do
 
-!	Normalize electromagnetic fields
+!	Normalize electromagnetic fields and plasma profiles
 	if (params%plasma_model .EQ. 'ANALYTICAL') then
 		F%Bo = F%Bo/params%cpp%Bo
 
@@ -88,6 +89,10 @@ subroutine normalize_variables(params,spp,F)
 		F%Eo = F%Eo/params%cpp%Eo
         F%to = F%to/params%cpp%time
         F%sig = F%sig/params%cpp%time
+
+		P%a = P%a/params%cpp%length
+		P%neo = P%neo/params%cpp%density
+		P%Teo = P%Teo/params%cpp%temperature
 	else if (params%plasma_model .EQ. 'EXTERNAL') then
 		F%Bo = F%Bo/params%cpp%Bo
 		F%Ro = F%Ro/params%cpp%length

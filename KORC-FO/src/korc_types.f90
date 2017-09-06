@@ -5,9 +5,10 @@ module korc_types
 ! * * * Real and integer precisions * * * !
 ! * * * * * * * * * * * * * * * * * * * * !
 
-	INTEGER, PUBLIC, PARAMETER  :: ip = KIND(INT(1,8)) ! SELECTED_INT_KIND(10) !
-	INTEGER, PUBLIC, PARAMETER  :: idef = KIND(1) !
-	INTEGER, PUBLIC, PARAMETER  :: rdef = KIND(1.0) !
+	INTEGER, PUBLIC, PARAMETER :: is = KIND(INT(1,1))
+	INTEGER, PUBLIC, PARAMETER :: ip = KIND(INT(1,8)) ! SELECTED_INT_KIND(10) !
+	INTEGER, PUBLIC, PARAMETER :: idef = KIND(1) !
+	INTEGER, PUBLIC, PARAMETER :: rdef = KIND(1.0) !
 #ifdef DOUBLE_PRECISION
 	INTEGER, PUBLIC, PARAMETER :: rp = KIND(0.d0) ! Double precision
 #elif SINGLE_PRECISION
@@ -107,12 +108,14 @@ TYPE, PUBLIC :: PARTICLES
     REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Y ! Position in alternative coordinate system, i.e. cylindrical or toroidal coordinates.
     REAL(rp), DIMENSION(:,:), ALLOCATABLE :: E ! Auxiliar vector for fields interpolations
     REAL(rp), DIMENSION(:,:), ALLOCATABLE :: B ! Auxiliar vector for fields interpolations
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: ne ! Auxiliar vector for density interpolations
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: Te ! Auxiliar vector for temperature interpolations
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: g ! Gamma relativistic
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: eta ! Pitch angle
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: mu ! Instantaneous magnetic moment
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Prad ! Radiated power (in Watts/electron)
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Pin ! Input power (in Watts/electron)
-	INTEGER, DIMENSION(:), ALLOCATABLE :: flag
+	INTEGER(is), DIMENSION(:), ALLOCATABLE :: flag
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: AUX
 END TYPE PARTICLES
 
@@ -148,6 +151,7 @@ TYPE, PRIVATE :: A_FIELD
 	REAL(rp) :: qo
 	REAL(rp) :: lambda
 	REAL(rp) :: Bpo
+	CHARACTER(MAX_STRING_LENGTH) :: current_direction
 END TYPE A_FIELD
 
 
@@ -167,7 +171,7 @@ TYPE, PUBLIC :: FIELDS
 	TYPE(MESH) :: X
 	INTEGER, DIMENSION(3) :: dims ! dims(NR, NPHI, NZ)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: PSIp ! Poloidal flux
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: FLAG2D	
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: FLAG2D
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: FLAG3D
 
 	REAL(rp) :: Bo ! Characteristic magnetic field
@@ -182,6 +186,13 @@ END TYPE FIELDS
 
 
 TYPE, PUBLIC :: PROFILES
+	TYPE(MESH) :: X
+	REAL(rp) :: a ! plasma radius
+
+	INTEGER, DIMENSION(3) :: dims ! dims(NR, NPHI, NZ)
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: FLAG2D
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: FLAG3D
+
 	REAL(rp) :: nfactor
 
 	! Density
@@ -197,13 +208,13 @@ TYPE, PUBLIC :: PROFILES
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Te_2D ! Te_2D(R,Z)
 END TYPE PROFILES
 
+
 PUBLIC :: ALLOCATE_FLUX_ARRAYS,ALLOCATE_2D_FIELDS_ARRAYS,ALLOCATE_3D_FIELDS_ARRAYS,DEALLOCATE_FIELDS_ARRAYS
 PRIVATE :: ALLOCATE_V_FIELD_2D,ALLOCATE_V_FIELD_3D
 
 contains
 
 subroutine ALLOCATE_FLUX_ARRAYS(F)
-    implicit none
 	TYPE(FIELDS), INTENT(INOUT) :: F
 
 	ALLOCATE( F%PSIp(F%dims(1),F%dims(3)) )
@@ -216,7 +227,6 @@ end subroutine ALLOCATE_FLUX_ARRAYS
 
 
 subroutine ALLOCATE_2D_FIELDS_ARRAYS(F)
-    implicit none
 	TYPE(FIELDS), INTENT(INOUT) :: F
 
 	call ALLOCATE_V_FIELD_2D(F%B_2D,F%dims)
@@ -230,7 +240,6 @@ end subroutine ALLOCATE_2D_FIELDS_ARRAYS
 
 
 subroutine ALLOCATE_3D_FIELDS_ARRAYS(F)
-    implicit none
 	TYPE(FIELDS), INTENT(INOUT) :: F
 
 	call ALLOCATE_V_FIELD_3D(F%B_3D,F%dims)
@@ -245,7 +254,6 @@ end subroutine ALLOCATE_3D_FIELDS_ARRAYS
 
 
 subroutine ALLOCATE_V_FIELD_2D(F,dims)
-    implicit none
 	TYPE(V_FIELD_2D), INTENT(INOUT) :: F
 	INTEGER, DIMENSION(3), INTENT(IN) :: dims
     
@@ -256,7 +264,6 @@ end subroutine ALLOCATE_V_FIELD_2D
 
 
 subroutine ALLOCATE_V_FIELD_3D(F,dims)
-    implicit none
 	TYPE(V_FIELD_3D), INTENT(INOUT) :: F
 	INTEGER, DIMENSION(3), INTENT(IN) :: dims
     
@@ -267,7 +274,6 @@ end subroutine ALLOCATE_V_FIELD_3D
 
 
 subroutine DEALLOCATE_FIELDS_ARRAYS(F)
-    implicit none
 	TYPE(FIELDS), INTENT(INOUT) :: F
 
 	if (ALLOCATED(F%PSIp)) DEALLOCATE(F%PSIp)

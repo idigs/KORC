@@ -18,6 +18,7 @@ program main
 	TYPE(KORC_PARAMS) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE :: spp
 	TYPE(FIELDS) :: F
+	TYPE(PROFILES) :: P
 	INTEGER(ip) :: it ! Iterator(s)
 	REAL(rp) :: t1, t2 ! variables for timing the simulation
 
@@ -30,7 +31,7 @@ program main
 
 	call initialize_korc_parameters(params) ! Initialize korc parameters
 
-	call initialize_fields_and_profiles(params,F)
+	call initialize_fields_and_profiles(params,F,P)
 
 	call initialize_particles(params,F,spp) ! Initialize particles
 
@@ -44,7 +45,7 @@ program main
 
 	call initialize_particle_pusher(params)
 
-	call normalize_variables(params,spp,F)
+	call normalize_variables(params,spp,F,P)
 
 	call normalize_collisions_params(params)
 
@@ -59,11 +60,11 @@ program main
 	call set_up_particles_ic(params,F,spp)
 	! * * * INITIALIZATION STAGE * * *
 
-	call save_simulation_parameters(params,spp,F)
+	call save_simulation_parameters(params,spp,F,P)
 
 	call save_collision_params(params)
 
-	call advance_particles_velocity(params,F,spp,0.0_rp,.TRUE.)
+	call advance_particles_velocity(params,F,P,spp,0.0_rp,.TRUE.)
 
 	! Save initial condition
 	call save_simulation_outputs(params,spp,F)
@@ -83,7 +84,7 @@ program main
         params%time = REAL(it,rp)*params%dt
 		params%it = it
 		if ( modulo(it,params%output_cadence) .EQ. 0_ip ) then
-            call advance_particles_velocity(params,F,spp,params%dt,.TRUE.)
+            call advance_particles_velocity(params,F,P,spp,params%dt,.TRUE.)
 		    call advance_particles_position(params,F,spp,params%dt)
 
 			write(6,'("MPI:",I5," Saving snapshot: ",I15)') params%mpi_params%rank, it/params%output_cadence
@@ -91,7 +92,7 @@ program main
 
 			call synthetic_camera(params,spp) ! Synthetic camera
         else
-            call advance_particles_velocity(params,F,spp,params%dt,.FALSE.)
+            call advance_particles_velocity(params,F,P,spp,params%dt,.FALSE.)
 		    call advance_particles_position(params,F,spp,params%dt)
         end if
 	end do

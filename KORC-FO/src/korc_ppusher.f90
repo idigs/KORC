@@ -3,6 +3,7 @@ module korc_ppusher
     use korc_types
     use korc_constants
     use korc_fields
+    use korc_profiles
     use korc_interp
 	use korc_collisions
     use korc_hpc
@@ -57,10 +58,11 @@ subroutine radiation_force(spp,U,E,B,Frad)
 end subroutine radiation_force
 
 
-subroutine advance_particles_velocity(params,F,spp,dt,bool)
+subroutine advance_particles_velocity(params,F,P,spp,dt,bool)
     implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(FIELDS), INTENT(IN) :: F
+	TYPE(PROFILES), INTENT(IN) :: P
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
     LOGICAL, INTENT(IN) :: bool
 	REAL(rp), INTENT(IN) :: dt
@@ -76,6 +78,8 @@ subroutine advance_particles_velocity(params,F,spp,dt,bool)
 
 		call get_fields(params,spp(ii)%vars,F)
 
+		call get_profiles(params,spp(ii)%vars,P)
+
 	    a = spp(ii)%q*dt/spp(ii)%m
 
 !$OMP PARALLEL DO SHARED(params,ii,spp) FIRSTPRIVATE(a,dt,bool)&
@@ -85,7 +89,7 @@ subroutine advance_particles_velocity(params,F,spp,dt,bool)
 !	call check_collisions_params(spp(ii))
 !!$OMP END SINGLE
 		do pp=1_idef,spp(ii)%ppp
-			if ( spp(ii)%vars%flag(pp) .EQ. 1_idef ) then
+			if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
 				U = spp(ii)%vars%g(pp)*spp(ii)%vars%V(:,pp)
 
 				!! Magnitude of magnetic field
@@ -120,7 +124,7 @@ subroutine advance_particles_velocity(params,F,spp,dt,bool)
 
 				! ! ! Stochastic differential equations for including collisions
 				if (params%collisions .AND. (TRIM(params%collisions_model) .EQ. 'SINGLE_SPECIES')) then		
-					call include_CoulombCollisions(params,U)
+					call include_CoulombCollisions(params,U,spp(ii)%vars%ne(pp),spp(ii)%vars%Te(pp))
 				end if
 				! ! ! Stochastic differential equations for including collisions
 
@@ -189,7 +193,7 @@ subroutine advance_particles_position(params,F,spp,dt)
 		do ii=1_idef,params%num_species
 !$OMP PARALLEL DO FIRSTPRIVATE(dt) PRIVATE(pp) SHARED(ii,spp,params)
 		do pp=1_idef,spp(ii)%ppp
-		    if ( spp(ii)%vars%flag(pp) .EQ. 1_idef ) then
+		    if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
 				spp(ii)%vars%X(:,pp) = spp(ii)%vars%X(:,pp) + dt*spp(ii)%vars%V(:,pp)
 		    end if
 		end do

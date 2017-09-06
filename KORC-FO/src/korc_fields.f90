@@ -19,7 +19,7 @@ subroutine analytical_fields(F,Y,E,B,flag)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: E ! E(1,:) = Ex, E(2,:) = Ey, E(3,:) = Ez
-	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: flag
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: flag
 	REAL(rp) :: Ezeta, Bp, Bt, eta, q
 	INTEGER(ip) pp ! Iterator(s)
 	INTEGER(ip) :: ss
@@ -28,7 +28,7 @@ subroutine analytical_fields(F,Y,E,B,flag)
 
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,Ezeta,Bp,Bt,eta,q) SHARED(F,Y,E,B,flag)
 	do pp=1_idef,ss
-        if ( flag(pp) .EQ. 1_idef ) then
+        if ( flag(pp) .EQ. 1_is ) then
 		    eta = Y(1,pp)/F%Ro
             q = F%AB%qo*(1.0_rp + (Y(1,pp)/F%AB%lambda)**2)
             Bp = eta*F%AB%Bo/(q*(1.0_rp + eta*COS(Y(2,pp))))
@@ -51,12 +51,13 @@ subroutine analytical_fields(F,Y,E,B,flag)
 !$OMP END PARALLEL DO
 end subroutine analytical_fields
 
+
 subroutine analytical_magnetic_field(F,Y,B,flag)
     implicit none
 	TYPE(FIELDS), INTENT(IN) :: F
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz
-	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: flag
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: flag
 	REAL(rp) :: Bp, Bt, eta, q
 	INTEGER(ip) pp ! Iterator(s)
 	INTEGER(ip) :: ss
@@ -65,7 +66,7 @@ subroutine analytical_magnetic_field(F,Y,B,flag)
 
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,Bp,Bt,eta,q) SHARED(F,Y,B,flag)
 	do pp=1_idef,ss
-        if ( flag(pp) .EQ. 1_idef ) then
+        if ( flag(pp) .EQ. 1_is ) then
 		    eta = Y(1,pp)/F%Ro
             q = F%AB%qo*(1.0_rp + (Y(1,pp)/F%AB%lambda)**2)
             Bp = eta*F%AB%Bo/(q*(1.0_rp + eta*COS(Y(2,pp))))
@@ -105,7 +106,7 @@ subroutine analytical_electric_field(F,Y,E,flag)
 	TYPE(FIELDS), INTENT(IN) :: F
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: E ! E(1,:) = Ex, E(2,:) = Ey, E(3,:) = Ez
-	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: flag
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: flag
 	REAL(rp) :: Ezeta, eta
 	INTEGER(ip) pp ! Iterator(s)
 	INTEGER(ip) :: ss
@@ -114,7 +115,7 @@ subroutine analytical_electric_field(F,Y,E,flag)
 		ss = SIZE(Y,2)
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,Ezeta,eta) SHARED(F,Y,E,flag)
 		do pp=1_idef,ss
-            if ( flag(pp) .EQ. 1_idef ) then
+            if ( flag(pp) .EQ. 1_is ) then
 			    eta = Y(1,pp)/F%Ro		
 			    Ezeta = F%Eo/( 1.0_rp + eta*COS(Y(2,pp)) )
 
@@ -157,15 +158,15 @@ subroutine check_if_confined(F,Y,flag)
     implicit none
 	TYPE(FIELDS), INTENT(IN) :: F
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
-	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
 	INTEGER(ip) :: pp,ss
 
     ss = SIZE(Y,2)
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(F,Y,flag)
 	do pp=1_idef,ss
-        if ( flag(pp) .EQ. 1_idef ) then
+        if ( flag(pp) .EQ. 1_is ) then
             if (Y(1,pp) .GT. F%AB%a) then
-                flag(pp) = 0_idef
+                flag(pp) = 0_is
             end if
         end if
 	end do
@@ -222,7 +223,7 @@ subroutine unitVectors(params,Xo,F,b1,b2,b3,flag)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: b1
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: b2
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: b3
-	INTEGER, DIMENSION(:), ALLOCATABLE, OPTIONAL, INTENT(INOUT) :: flag
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, OPTIONAL, INTENT(INOUT) :: flag
 	TYPE(PARTICLES) :: vars
 	REAL(rp), PARAMETER :: tol = korc_zero
 	INTEGER :: ii, ppp

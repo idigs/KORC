@@ -35,9 +35,13 @@ module korc_collisions
 		REAL(rp) :: rD ! Debye radius
 		REAL(rp) :: re ! Classical electron radius
 		REAL(rp) :: CoulombLog ! Coulomb logarithm
+		REAL(rp) :: CLog1, CLog2
 		REAL(rp) :: VTe ! Thermal velocity of background electrons
+		REAL(rp) :: VTeo
 		REAL(rp) :: delta ! delta parameter
+		REAL(rp) :: deltao
 		REAL(rp) :: Gammac ! Gamma factor
+		REAL(rp) :: Gammaco
 		REAL(rp) :: Tau ! Collisional time of relativistic particles
 		REAL(rp) :: Tauc ! Collisional time of thermal particles
 		REAL(rp) :: Ec ! Critical electric field
@@ -63,7 +67,8 @@ module korc_collisions
 	PRIVATE :: load_params_ms,load_params_ss,normalize_params_ms,&
 				normalize_params_ss,save_params_ms,save_params_ss,&
 				deallocate_params_ms,cross,unitVectors,CA,CB,CF,fun,&
-				random_vector,nu_S,nu_par,nu_D
+				random_vector,nu_S,nu_par,nu_D,Gammac_wu,CLog_wu,VTe_wu,Gammac,CLog,VTe,&
+				CA_SD,CB_SD,CF_SD,delta
 
 	contains
 
@@ -73,7 +78,6 @@ module korc_collisions
 
 
 subroutine load_params_ms(params)
-	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp) :: Te ! Background electron temperature in eV
 	REAL(rp) :: ne! Background electron density in 1/m^3
@@ -120,7 +124,6 @@ end subroutine load_params_ms
 
 
 subroutine load_params_ss(params)
-	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp) :: Te ! Electron temperature
 	REAL(rp) :: Ti ! Ion temperature
@@ -145,11 +148,12 @@ subroutine load_params_ss(params)
 	SQRT(C_E0*cparams_ss%Te/(cparams_ss%ne*C_E**2*(1.0_rp + cparams_ss%Te/cparams_ss%Ti)))
 
 	cparams_ss%re = C_E**2/(4.0_rp*C_PI*C_E0*C_ME*C_C**2)
-	cparams_ss%CoulombLog = 25.3_rp - 1.15_rp*LOG10(1E-6_rp*cparams_ss%ne) + 2.3_rp*LOG10(cparams_ss%Te/C_E)
+	cparams_ss%CoulombLog = CLog_wu(cparams_ss%ne,cparams_ss%Te)
 
-	cparams_ss%VTe = SQRT(2.0_rp*cparams_ss%Te/C_ME)
+	cparams_ss%VTe = VTe_wu(cparams_ss%Te)
 	cparams_ss%delta = cparams_ss%VTe/C_C
-	cparams_ss%Gammac = cparams_ss%ne*C_E**4*cparams_ss%CoulombLog/(4.0_rp*C_PI*C_E0**2)
+	cparams_ss%Gammac = Gammac_wu(cparams_ss%ne,cparams_ss%Te)
+	cparams_ss%Gammaco = C_E**4/(4.0_rp*C_PI*C_E0**2)
 
 	cparams_ss%Tauc = C_ME**2*cparams_ss%VTe**3/cparams_ss%Gammac
 	cparams_ss%Tau = C_ME**2*C_C**3/cparams_ss%Gammac
@@ -164,7 +168,6 @@ end subroutine load_params_ss
 
 
 subroutine initialize_collision_params(params)
-	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
 	if (params%collisions) then
@@ -181,7 +184,6 @@ end subroutine initialize_collision_params
 
 
 subroutine normalize_params_ms(params)
-	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
 	cparams_ms%Te = cparams_ms%Te/params%cpp%temperature
@@ -197,8 +199,14 @@ end subroutine normalize_params_ms
 
 
 subroutine normalize_params_ss(params)
-	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
+
+	! Calculate constant quantities used in various functions within this module
+	cparams_ss%Clog1 = -1.15_rp*LOG10(1.0E-6_rp*params%cpp%density)
+	cparams_ss%Clog2 = 2.3_rp*LOG10(params%cpp%temperature/C_E)
+	cparams_ss%Gammaco = cparams_ss%Gammaco*params%cpp%density*params%cpp%time/(params%cpp%mass**2*params%cpp%velocity**3)
+	cparams_ss%VTeo = SQRT(params%cpp%temperature/C_ME)/params%cpp%velocity
+	cparams_ss%deltao = params%cpp%velocity/C_C
 
 	cparams_ss%Te = cparams_ss%Te/params%cpp%temperature
 	cparams_ss%Ti = cparams_ss%Ti/params%cpp%temperature
@@ -206,8 +214,7 @@ subroutine normalize_params_ss(params)
 	cparams_ss%rD = cparams_ss%rD/params%cpp%length
 	cparams_ss%re = cparams_ss%re/params%cpp%length
 	cparams_ss%VTe = cparams_ss%VTe/params%cpp%velocity
-	cparams_ss%Gammac = &
-	cparams_ss%Gammac*params%cpp%time/(params%cpp%mass**2*params%cpp%velocity**3)
+	cparams_ss%Gammac = cparams_ss%Gammac*params%cpp%time/(params%cpp%mass**2*params%cpp%velocity**3)
 	cparams_ss%Tau = cparams_ss%Tau/params%cpp%time
 	cparams_ss%Tauc = cparams_ss%Tauc/params%cpp%time
 	cparams_ss%Ec = cparams_ss%Ec/params%cpp%Eo
@@ -216,7 +223,6 @@ end subroutine normalize_params_ss
 
 
 subroutine normalize_collisions_params(params)
-	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
 	if (params%collisions) then
@@ -239,7 +245,6 @@ subroutine collision_force(spp,U,Fcoll)
 !					U_RC = U_RC + a*Fcoll/spp(ii)%q
 !				end if
 				! J. R. Martin-Solis et al. PoP 22, 092512 (2015)
-    IMPLICIT NONE
 	TYPE(SPECIES), INTENT(IN) :: spp
 	REAL(rp), DIMENSION(3), INTENT(IN) :: U
 	REAL(rp), DIMENSION(3), INTENT(OUT) :: Fcoll
@@ -280,7 +285,6 @@ end subroutine collision_force
 
 
 subroutine define_collisions_time_step(params)
-	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	INTEGER(ip) :: iterations
 	REAL(rp) :: E
@@ -310,8 +314,67 @@ end subroutine define_collisions_time_step
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
 ! * FUNCTIONS OF COLLISION OPERATOR FOR SINGLE-SPECIES PLASMAS * !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
+function VTe_wu(Te)
+	REAL(rp), INTENT(IN) :: Te ! In Joules
+	REAL(rp) :: VTe_wu
+
+	VTe_wu = SQRT(2.0_rp*Te/C_ME)
+end function VTe_wu
+
+
+function VTe(Te) ! Dimensionless temperature
+	REAL(rp), INTENT(IN) :: Te
+	REAL(rp) :: VTe
+
+	VTe = SQRT(2.0_rp*Te)*cparams_ss%VTeo
+end function VTe
+
+
+function Gammac_wu(ne,Te) ! With units
+	REAL(rp), INTENT(IN) :: ne
+	REAL(rp), INTENT(IN) :: Te ! In Joules
+	REAL(rp) :: Gammac_wu
+
+	Gammac_wu = ne*C_E**4*CLog_wu(ne,Te)/(4.0_rp*C_PI*C_E0**2)
+end function Gammac_wu
+
+
+function Gammac(ne,Te) ! Dimensionless ne and Te
+	REAL(rp), INTENT(IN) :: ne
+	REAL(rp), INTENT(IN) :: Te
+	REAL(rp) :: Gammac
+
+	Gammac = ne*CLog(ne,Te)*cparams_ss%Gammaco
+end function Gammac
+
+
+function CLog_wu(ne,Te) ! With units
+	REAL(rp), INTENT(IN) :: ne 
+	REAL(rp), INTENT(IN) :: Te ! In Joules
+	REAL(rp) :: CLog_wu
+
+	CLog_wu = 25.3_rp - 1.15_rp*LOG10(1E-6_rp*ne) + 2.3_rp*LOG10(Te/C_E)
+end function CLog_wu
+
+
+function CLog(ne,Te) ! Dimensionless ne and Te
+	REAL(rp), INTENT(IN) :: ne 
+	REAL(rp), INTENT(IN) :: Te
+	REAL(rp) :: CLog
+
+	CLog = 25.3_rp - 1.15_rp*LOG10(ne) + 2.3_rp*LOG10(Te) + cparams_ss%CLog1 + cparams_ss%CLog2
+end function CLog
+
+
+function delta(Te)
+	REAL(rp), INTENT(IN) :: Te
+	REAL(rp) :: delta
+
+	delta = VTe(Te)*cparams_ss%deltao
+end function delta
+
+
 function psi(x)
-	IMPLICIT NONE
 	REAL(rp), INTENT(IN) :: x
 	REAL(rp) :: psi
 
@@ -320,7 +383,6 @@ end function psi
 
 
 function CA(v)
-	IMPLICIT NONE
 	REAL(rp), INTENT(IN) :: v
 	REAL(rp) :: CA
 	REAL(rp) :: x
@@ -330,8 +392,19 @@ function CA(v)
 end function CA
 
 
+function CA_SD(v,ne,Te)
+	REAL(rp), INTENT(IN) :: v
+	REAL(rp), INTENT(IN) :: ne 
+	REAL(rp), INTENT(IN) :: Te
+	REAL(rp) :: CA_SD
+	REAL(rp) :: x
+
+	x = v/VTe(Te)
+	CA_SD  = Gammac(ne,Te)*psi(x)/v
+end function CA_SD
+
+
 function CF(v)
-	IMPLICIT NONE
 	REAL(rp), INTENT(IN) :: v
 	REAL(rp) :: CF
 	REAL(rp) :: x
@@ -341,20 +414,41 @@ function CF(v)
 end function CF
 
 
+function CF_SD(v,ne,Te)
+	REAL(rp), INTENT(IN) :: v
+	REAL(rp), INTENT(IN) :: ne 
+	REAL(rp), INTENT(IN) :: Te
+	REAL(rp) :: CF_SD
+	REAL(rp) :: x
+
+	x = v/VTe(Te)
+	CF_SD  = Gammac(ne,Te)*psi(x)/Te
+end function CF_SD
+
+
 function CB(v)
-	IMPLICIT NONE
 	REAL(rp), INTENT(IN) :: v
 	REAL(rp) :: CB
 	REAL(rp) :: x
 
 	x = v/cparams_ss%VTe
-	CB  = (0.5_rp*cparams_ss%Gammac/v)*( cparams_ss%Zeff + ERF(x) -&
-			psi(x) + 0.5_rp*cparams_ss%delta**4*x**2 )
+	CB  = (0.5_rp*cparams_ss%Gammac/v)*( cparams_ss%Zeff + ERF(x) - psi(x) + 0.5_rp*cparams_ss%delta**4*x**2 )
 end function CB
 
 
+function CB_SD(v,ne,Te)
+	REAL(rp), INTENT(IN) :: v
+	REAL(rp), INTENT(IN) :: ne 
+	REAL(rp), INTENT(IN) :: Te
+	REAL(rp) :: CB_SD
+	REAL(rp) :: x
+
+	x = v/VTe(Te)
+	CB_SD  = (0.5_rp*Gammac(ne,Te)/v)*( cparams_ss%Zeff + ERF(x) - psi(x) + 0.5_rp*delta(Te)**4*x**2 )
+end function CB_SD
+
+
 function nu_S(v)
-	IMPLICIT NONE
 	REAL(rp), INTENT(IN) :: v ! Normalised particle speed
 	REAL(rp) :: nu_S
 	REAL(rp) :: p
@@ -365,7 +459,6 @@ end function nu_S
 
 
 function nu_D(v)
-	IMPLICIT NONE
 	REAL(rp), INTENT(IN) :: v ! Normalised particle speed
 	REAL(rp) :: nu_D
 	REAL(rp) :: p
@@ -376,7 +469,6 @@ end function nu_D
 
 
 function nu_par(v)
-	IMPLICIT NONE
 	REAL(rp), INTENT(IN) :: v ! Normalised particle speed
 	REAL(rp) :: nu_par
 	REAL(rp) :: p
@@ -387,7 +479,6 @@ end function nu_par
 
 
 function fun(v)
-	IMPLICIT NONE
 	REAL(rp), INTENT(IN) :: v
 	REAL(rp) :: fun
 	REAL(rp) :: x
@@ -409,7 +500,6 @@ end function cross
 
 
 subroutine unitVectors(B,b1,b2,b3)
-    IMPLICIT NONE
     REAL(rp), DIMENSION(3), INTENT(IN) :: B
 	REAL(rp), DIMENSION(3), INTENT(OUT) :: b1
 	REAL(rp), DIMENSION(3), INTENT(OUT) :: b2
@@ -426,7 +516,6 @@ end subroutine unitVectors
 
 
 function random_vector()
-	IMPLICIT NONE
 	REAL(rp), DIMENSION(3) :: random_vector
 
 	random_vector = cparams_ss%rnd_num(:,cparams_ss%rnd_num_count)
@@ -435,7 +524,6 @@ end function random_vector
 
 
 subroutine check_collisions_params(spp)
-	IMPLICIT NONE
 	TYPE(SPECIES), INTENT(IN) :: spp
 	INTEGER aux
 
@@ -452,9 +540,11 @@ end subroutine check_collisions_params
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
 
 
-subroutine include_CoulombCollisions(params,U)
+subroutine include_CoulombCollisions(params,U,ne,Te)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), DIMENSION(3), INTENT(INOUT) :: U
+	REAL(rp), INTENT(IN) :: ne
+	REAL(rp), INTENT(IN) :: Te
 	REAL(rp), DIMENSION(3) :: v1, v2, v3
 	REAL(rp), DIMENSION(3) :: dW
 	REAL(rp), DIMENSION(3) :: rnd1, rnd2
@@ -491,9 +581,13 @@ subroutine include_CoulombCollisions(params,U)
 		call RANDOM_NUMBER(rnd1)
 		dW = SQRT(dt)*SQRT(3.0_rp)*(-1.0_rp + 2.0_rp*rnd1);
 
-		CAL = CA(v)
-		CFL = CF(v)
-		CBL = CB(v)
+!		CAL = CA(v)
+!		CFL = CF(v)
+!		CBL = CB(v)
+
+		CAL = CA_SD(v,ne,Te)
+		CFL = CF_SD(v,ne,Te)
+		CBL = CB_SD(v,ne,Te)
 
 		dU1 = -2.0_rp*CFL*dt + SQRT(2.0_rp*CAL)*dW(1)
 		dU2 = SQRT(2.0_rp*CBL)*dW(2)
@@ -507,7 +601,6 @@ end subroutine include_CoulombCollisions
 
 
 subroutine save_params_ms(params)
-	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	CHARACTER(MAX_STRING_LENGTH) :: filename
 	CHARACTER(MAX_STRING_LENGTH) :: gname
@@ -598,7 +691,6 @@ end subroutine save_params_ms
 
 
 subroutine save_params_ss(params)
-	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	CHARACTER(MAX_STRING_LENGTH) :: filename
 	CHARACTER(MAX_STRING_LENGTH) :: gname
@@ -707,7 +799,6 @@ end subroutine save_params_ss
 
 
 subroutine save_collision_params(params)
-	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
 	if (params%collisions) then
@@ -724,8 +815,6 @@ end subroutine save_collision_params
 
 
 subroutine deallocate_params_ms()
-	IMPLICIT NONE
-
 	if (ALLOCATED(cparams_ms%Zj)) DEALLOCATE(cparams_ms%Zj)
 	if (ALLOCATED(cparams_ms%Zo)) DEALLOCATE(cparams_ms%Zo)
 	if (ALLOCATED(cparams_ms%nz)) DEALLOCATE(cparams_ms%nz)
@@ -736,7 +825,6 @@ end subroutine deallocate_params_ms
 
 
 subroutine deallocate_collisions_params(params)
-	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
 	if (params%collisions) then

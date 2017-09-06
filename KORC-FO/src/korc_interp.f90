@@ -255,7 +255,7 @@ end subroutine finalize_interpolant
 subroutine check_if_in_domain(Y,flag)
     implicit none
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
-	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
 	INTEGER :: IR,IPHI,IZ
 	INTEGER(ip) :: pp,ss
 
@@ -269,7 +269,7 @@ subroutine check_if_in_domain(Y,flag)
 			IZ = INT(FLOOR((Y(3,pp)  + ABS(domain%Zo) + 0.5_rp*domain%DZ)/domain%DZ) + 1.0_rp,idef)
 	
 			if ((domain%FLAG3D(IR,IPHI,IZ).NE.1_1).OR.((IR.GT.interp3d%NR).OR.(IZ.GT.interp3d%NZ))) then
-				flag(pp) = 0_idef
+				flag(pp) = 0_is
 			end if
 		end do
 !$OMP END PARALLEL DO
@@ -280,7 +280,7 @@ subroutine check_if_in_domain(Y,flag)
 			IZ = INT(FLOOR((Y(3,pp)  + ABS(domain%Ro) + 0.5_rp*domain%DZ)/domain%DZ) + 1.0_rp,idef)
 	
 			if ((domain%FLAG2D(IR,IZ).NE.1_1).OR.((IR.GT.interp3d%NR).OR.(IZ.GT.interp3d%NZ))) then
-				flag(pp) = 0_idef
+				flag(pp) = 0_is
 			end if
 		end do
 !$OMP END PARALLEL DO
@@ -291,18 +291,18 @@ end subroutine check_if_in_domain
 subroutine check_if_in_domain2D(Y,flag)
     implicit none
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
-	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
 	INTEGER(ip) :: pp,ss
 
     ss = SIZE(Y,2)
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(Y,flag,interp2d)
 	do pp=1_idef,ss
-        if ( flag(pp) .EQ. 1_idef ) then
+        if ( flag(pp) .EQ. 1_is ) then
 			if (EZspline_allocated(interp2d%A)) call EZspline_isInDomain(interp2d%A, Y(1,pp), Y(3,pp), ezerr)
 			if (EZspline_allocated(interp2d%R)) call EZspline_isInDomain(interp2d%R, Y(1,pp), Y(3,pp), ezerr)
 
 			if (ezerr .NE. 0) then
-				flag(pp) = 0_idef
+				flag(pp) = 0_is
 			end if
 !			write(6,'("Error code is:",I3)') ezerr
         end if
@@ -314,17 +314,17 @@ end subroutine check_if_in_domain2D
 subroutine check_if_in_domain3D(Y,flag)
     implicit none
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
-	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
 	INTEGER(ip) :: pp,ss
 
 
     ss = SIZE(Y,2)
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(Y,flag,interp3d)
 	do pp=1_idef,ss
-        if ( flag(pp) .EQ. 1_idef ) then
+        if ( flag(pp) .EQ. 1_is ) then
 			call EZspline_isInDomain3_r8(interp3d%R, Y(1,pp), Y(2,pp), Y(3,pp), ezerr)
 			if (ezerr .NE. 0) then
-				flag(pp) = 0_idef
+				flag(pp) = 0_is
 			end if
 !			write(6,'("Error code is:",I3)') ezerr
         end if
@@ -338,7 +338,7 @@ subroutine interp_2D_B_field(Y,B,flag)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = R, Y(2,:) = PHI, Y(3,:) = Z
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: F ! F(1,:) = FR, F(2,:) = FPHI, F(3,:) = FZ
-	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
 	INTEGER :: pp, ss
 
 	ss = size(Y,2)
@@ -346,12 +346,12 @@ subroutine interp_2D_B_field(Y,B,flag)
 	ALLOCATE(F(3,ss))
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(interp2d,F,Y,B,flag)
 	do pp=1_idef,ss
-		if ( flag(pp) .EQ. 1_idef ) then
+		if ( flag(pp) .EQ. 1_is ) then
 			call EZspline_interp(interp2d%R, Y(1,pp), Y(3,pp), F(1,pp), ezerr)
 			call EZspline_error(ezerr)
 
 			if (ezerr .NE. 0) then ! We flag the particle as lost
-				flag(pp) = 0_idef
+				flag(pp) = 0_is
 			end if
 
 			call EZspline_interp(interp2d%PHI, Y(1,pp), Y(3,pp), F(2,pp), ezerr)
@@ -375,7 +375,7 @@ subroutine interp_3D_B_field(Y,B,flag)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = R, Y(2,:) = PHI, Y(3,:) = Z
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: F ! F(1,:) = FR, F(2,:) = FPHI, F(3,:) = FZ
-	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
 	INTEGER :: pp, ss
 
 	ss = size(Y,2)
@@ -383,12 +383,12 @@ subroutine interp_3D_B_field(Y,B,flag)
 	ALLOCATE(F(3,ss))
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(interp3d,F,Y,B,flag)
 	do pp=1_idef,ss
-		if ( flag(pp) .EQ. 1_idef ) then
+		if ( flag(pp) .EQ. 1_is ) then
 			call EZspline_interp(interp3d%R, Y(1,pp), Y(2,pp), Y(3,pp), F(1,pp), ezerr)
 			call EZspline_error(ezerr)
 
 			if (ezerr .NE. 0) then ! We flag the particle as lost
-				flag(pp) = 0_idef
+				flag(pp) = 0_is
 			end if
 
 			call EZspline_interp(interp3d%PHI, Y(1,pp), Y(2,pp), Y(3,pp), F(2,pp), ezerr)
@@ -412,7 +412,7 @@ subroutine calculate_magnetic_field(Y,F,B,flag)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = R, Y(2,:) = PHI, Y(3,:) = Z
 	TYPE(FIELDS), INTENT(IN) :: F
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz	
-	INTEGER, DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: A ! A(1,:) = FR, A(2,:) = FPHI, A(3,:) = FZ
 	INTEGER :: pp, ss
 
@@ -421,12 +421,12 @@ subroutine calculate_magnetic_field(Y,F,B,flag)
 	ALLOCATE(A(3,ss))
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(interp2d,F,Y,A,B,flag)
 	do pp=1_idef,ss
-		if ( flag(pp) .EQ. 1_idef ) then
+		if ( flag(pp) .EQ. 1_is ) then
 			call EZspline_derivative(interp2d%A, 0, 1, Y(1,pp), Y(3,pp), A(1,pp), ezerr)
 !			call EZspline_error(ezerr)
 
 			if (ezerr .NE. 0) then ! We flag the particle as lost
-				flag(pp) = 0_idef
+				flag(pp) = 0_is
 			else
 				A(1,pp) = A(1,pp)/Y(1,pp)
 

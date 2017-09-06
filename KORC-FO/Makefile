@@ -97,6 +97,7 @@ rnd_numbers.o   \
 korc_coords.o   \
 korc_interp.o   \
 korc_fields.o   \
+korc_profiles.o   \
 korc_avalanche.o        \
 korc_experimental_pdf.o	\
 korc_energy_pdfs.o	\

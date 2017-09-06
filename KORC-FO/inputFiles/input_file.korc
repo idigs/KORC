@@ -17,21 +17,21 @@
                                                                                 ! cylindrical components of the magnetic field
         axisymmetric = .FALSE.                          ! Axisymmetric field?
         magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/D3D_Q.h5" ! DIII-D_sh165826.h5" !
-        outputs_list = '{X,flag,g,eta}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
+        outputs_list = '{X,flag,g,eta,ne,Te}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
 /
 
 &plasma_species
-        runaway = .FALSE. !
+        runaway = .FALSE.,.FALSE. !
         energy_distribution = 'MONOENERGETIC','MONOENERGETIC'   ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'
         pitch_distribution = 'MONOPITCH','MONOPITCH'	! Options are: 'MONOPITCH', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'.
         Ro = 1.5,1.5 !
         Zo = 0.0,0.0 !
-        r = 0.2,0.2 !
+        r = 0.3,0.3 !
         Eo = 10.0E6,10.0E6 ! Initial energy in eV
         etao = 5.0,10.0  ! Initial pitch angle
         Eo_lims = 1.0E6,50.0E6,1.0E6,50.0E6 ! Lower and upper limit of simulated energy range, in eV.
         etao_lims = 0.0,20.0,0.0,20.0 ! Lower and upper limit of simulated pitch-angle range, in degrees.
-        ppp = 100,100 ! Number of particles per process (mpi)
+        ppp = 1000,1000 ! Number of particles per process (mpi)
         q = -1.0,-1.0 ! Electric charge
         m = 1.0,1.0 ! In units of electron mass
 /
@@ -41,6 +41,7 @@
 	Eo = 0.0 ! In V/m
 	pulse_maximum = 3.0E-3 ! Time at which maximum is reached in s
 	pulse_duration = 6.7E-4 ! Duration of intense toroidal electric field
+	current_direction = 'ANTI-PARALLEL' ! 'PARALLEL' or 'ANTI-PARALLEL'
 	Bo = 2.19 ! In Teslas. ITER: 5.42 DIII-D: 2.19
 	minor_radius = 0.5 ! Minor radius in meters. ITER: 1.5 DIII-D: 0.5
 	major_radius = 1.5 ! Major radius in meters. ITER: 6.5 DIII-D: 1.6
@@ -50,10 +51,10 @@
 
 &analytical_plasma_profiles
 	ne_profile = 'FLAT' ! Options are 'FLAT' and 'PARABOLIC'
-	neo = 1.0E19 ! In m^-3
+	neo = 1.0E21 ! In m^-3
 	Te_profile = 'FLAT' ! Options are 'FLAT' and 'PARABOLIC'
-	Teo = 1.0E3 ! In eV
-	nfactor = 2.0 ! 
+	Teo = 10.0 ! In eV
+	nfactor = 10.0 ! 
 /
 
 &CollisionParamsMultipleSpecies
@@ -67,11 +68,11 @@
 /
 
 &CollisionParamsSingleSpecies
-	Te = 1.0E3 ! Background electron temperature in eV
-	Ti = 1.0E3 ! Background ion temperature in eV
-	ne = 1.0E20 ! Background electron density in 1/m^3
+	Te = 10.0 ! Background electron temperature in eV
+	Ti = 10.0 ! Background ion temperature in eV
+	ne = 1.0E21 ! Background electron density in m^-3
 	Zeff = 1.0 ! Effective atomic number
-	dTau = 0.1 ! Subcycling time step in collisional time units (Tau)
+	dTau = 0.01 ! Subcycling time step in collisional time units (Tau)
 /
 
 &AvalancheGenerationPDF

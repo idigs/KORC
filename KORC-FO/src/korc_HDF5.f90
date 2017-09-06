@@ -738,11 +738,12 @@ subroutine save_string_parameter(h5file_id,dset,string_array)
 end subroutine save_string_parameter
 
 
-subroutine save_simulation_parameters(params,spp,F)
+subroutine save_simulation_parameters(params,spp,F,P)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
 	TYPE(FIELDS), INTENT(IN) :: F
+	TYPE(PROFILES), INTENT(IN) :: P
 	CHARACTER(MAX_STRING_LENGTH) :: filename
 	CHARACTER(MAX_STRING_LENGTH) :: gname
 	CHARACTER(MAX_STRING_LENGTH) :: dset
@@ -903,14 +904,17 @@ subroutine save_simulation_parameters(params,spp,F)
 
 		DEALLOCATE(attr_array)
 
-		! Electromagnetic fields group
-		gname = "fields"
+		! Electromagnetic fields and plasma profiles group
+		gname = "fields_and_profiles"
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
 		if (TRIM(params%plasma_model) .EQ. 'ANALYTICAL') then
 			dset = TRIM(gname) // "/Bo"
 			attr = "Toroidal field at the magnetic axis in T"
 			call save_to_hdf5(h5file_id,dset,F%Bo*params%cpp%Bo,attr)
+
+			dset = TRIM(gname) // "/current_direction"
+			call save_string_parameter(h5file_id,dset,(/F%AB%current_direction/))
 
 			dset = TRIM(gname) // "/a"
 			attr = "Minor radius in m"
@@ -939,6 +943,24 @@ subroutine save_simulation_parameters(params,spp,F)
 			dset = TRIM(gname) // "/Eo"
 			attr = "Electric field at the magnetic axis in V/m"
 			call save_to_hdf5(h5file_id,dset,F%Eo*params%cpp%Eo,attr)
+
+			dset = TRIM(gname) // "/density_profile"
+			call save_string_parameter(h5file_id,dset,(/P%ne_profile/))
+
+			dset = TRIM(gname) // "/nfactor"
+			attr = "Exponent of tanh(x)^nfactor"
+			call save_to_hdf5(h5file_id,dset,P%nfactor,attr)
+
+			dset = TRIM(gname) // "/neo"
+			attr = "Density at the magnetic axis (m^-3)"
+			call save_to_hdf5(h5file_id,dset,P%neo*params%cpp%density,attr)
+
+			dset = TRIM(gname) // "/temperature_profile"
+			call save_string_parameter(h5file_id,dset,(/P%Te_profile/))
+
+			dset = TRIM(gname) // "/Teo"
+			attr = "Temperature at the magnetic axis (eV)"
+			call save_to_hdf5(h5file_id,dset,P%Teo*params%cpp%temperature/C_E,attr)
 		else if (params%plasma_model .EQ. 'EXTERNAL') then
 			ALLOCATE(attr_array(1))
 			dset = TRIM(gname) // "/dims"
@@ -1116,7 +1138,7 @@ subroutine save_simulation_outputs(params,spp,F)
 						call save_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%Pin)
 					CASE('flag')
 						dset = "flag"
-						call save_1d_array_to_hdf5(subgroup_id,dset, spp(ii)%vars%flag)
+						call save_1d_array_to_hdf5(subgroup_id,dset, INT(spp(ii)%vars%flag,idef))
 					CASE('B')
 						dset = "B"
 						units = params%cpp%Bo
@@ -1128,7 +1150,14 @@ subroutine save_simulation_outputs(params,spp,F)
 					CASE('AUX')
 						dset = "AUX"
 						call save_1d_array_to_hdf5(subgroup_id, dset, spp(ii)%vars%AUX)
-
+					CASE ('ne')
+						dset = "ne"
+						units = params%cpp%density
+						call save_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%ne)
+					CASE ('Te')
+						dset = "Te"
+						units = params%cpp%temperature
+						call save_1d_array_to_hdf5(subgroup_id, dset, units*spp(ii)%vars%Te/C_E)
 					CASE DEFAULT
 				
 				END SELECT
