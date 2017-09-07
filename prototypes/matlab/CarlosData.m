@@ -14,4 +14,4 @@ b = sqrt(BR.^2+BPHI.^2+BZ.^2);
 FLAG = zeros(size(BR));
 FLAG(2:end-1,2:end-1) = 1;
 
-fields2hdf(R,[],Z,BR,BPHI,BZ,[],FLAG,'D3D_165826_1.h5',b(J,I(J)),R(I(J)),Z(J))
+fields2hdf(R,[],Z,BR,BPHI,BZ,[],FLAG,'D3D_165139.h5',b(J,I(J)),R(I(J)),Z(J))

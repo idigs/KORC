@@ -299,7 +299,7 @@ subroutine define_collisions_time_step(params)
 		nu = (/nu_S(v),nu_D(v),nu_par(v)/)
 		Tau = MINVAL( 1.0_rp/nu )
 		
-		cparams_ss%subcycling_iterations = FLOOR(cparams_ss%dTau*Tau/params%dt,ip)
+		cparams_ss%subcycling_iterations = FLOOR(cparams_ss%dTau*Tau/params%dt,ip) + 1_ip
 
 		 if (params%mpi_params%rank .EQ. 0) then
 			write(6,'("* * * * * * * SUBCYCLING FOR COLLISIONS * * * * * * *")')

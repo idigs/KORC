@@ -120,11 +120,6 @@ subroutine load_korc_params(params)
 		params%outputs_list(1) = TRIM(outputs_list(imin+1_idef:imax-1_idef))
 	end if
 
-!	do ii=1_idef,SIZE(params%outputs_list)
-!		write(6,*) TRIM(params%outputs_list(ii))
-!	end do
-	! Loading list of output parameters
-
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'(/,"* * * * * SIMULATION PARAMETERS * * * * *")')
 		write(6,'("Simulation time: ",E17.10," s")') params%simulation_time
@@ -132,11 +127,17 @@ subroutine load_korc_params(params)
 		write(6,'("Time step in fraction of relativistic gyro-period: ",F15.10)') params%dt
 		write(6,'("Number of electron populations: ",I16)') params%num_species
 		write(6,'("Magnetic field model: ",A50)') TRIM(params%plasma_model)
-		write(6,'("USINg (JFIT) poloidal flux: ", L1)') params%poloidal_flux
-		write(6,'("Magnetic field model: ",A100)') TRIM(params%magnetic_field_filename)
+		if (TRIM(params%plasma_model).EQ.'EXTERNAL') then
+			write(6,'("USINg (JFIT) poloidal flux: ", L1)') params%poloidal_flux
+			write(6,'("Axisymmetric external field: ", L1)') params%axisymmetric
+			write(6,'("Magnetic field file: ",A100)') TRIM(params%magnetic_field_filename)
+		end if
+
 		write(6,'("Radiation losses included: ",L1)') params%radiation
 		write(6,'("collisions losses included: ",L1)') params%collisions
-		write(6,'("collisions model: ",A50)') TRIM(params%collisions_model)
+		if (params%collisions) then
+			write(6,'("collisions model: ",A50)') TRIM(params%collisions_model)
+		end if
 		write(6,'(/)')
 	end if	
 end subroutine load_korc_params
@@ -669,12 +670,11 @@ subroutine initialize_fields_and_profiles(params,F,P)
 			F%AB%current_direction = TRIM(current_direction)
 			SELECT CASE (TRIM(F%AB%current_direction))
 				CASE('PARALLEL')
-					F%AB%Bpo = F%AB%Bpo
+					F%AB%Bp_sign = 1.0_rp
 				CASE('ANTI-PARALLEL')
-					F%AB%Bpo = -F%AB%Bpo
+					F%AB%Bp_sign = -1.0_rp
 				CASE DEFAULT
 			END SELECT
-
 			F%Eo = Eo
 			F%Bo = F%AB%Bo
 

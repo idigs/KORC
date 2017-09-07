@@ -23,7 +23,7 @@ ST.data = loadData(ST);
 
 % ST.RT = radialTransport(ST);
 
-% ST.CP = confined_particles(ST);
+ST.CP = confined_particles(ST);
 
 % ST.PAD = pitchAngleDiagnostic(ST,30);
 
@@ -52,7 +52,7 @@ ST.data = loadData(ST);
 % SE_phaseSpaceAnalisys(ST);
 
 
-% plotEnergyPitchanglePDF(ST);
+plotEnergyPitchanglePDF(ST);
 
 
 % save('energy_limit','ST')
@@ -700,7 +700,7 @@ for ss=1:ST.params.simulation.num_species
         xlabel('$R$','Interpreter','latex','FontSize',16)
         ylabel('$Z$','Interpreter','latex','FontSize',16)
         
-        x = ST.params.fields.Ro + ...
+        x = ST.params.fields_and_profiles.Ro + ...
             ST.params.species.r(ss)*cos(linspace(0,2*pi,100));
         y = ST.params.species.r(ss)*sin(linspace(0,2*pi,100));
         hold on; plot3(x,y,1*ones(size(x)),'k');hold off
@@ -775,7 +775,7 @@ for ss=1:ST.params.simulation.num_species
 %     xlabel('$R$','Interpreter','latex','FontSize',16)
 %     ylabel('$Z$','Interpreter','latex','FontSize',16)
 %     
-%     x = ST.params.fields.Ro + ...
+%     x = ST.params.fields_and_profiles.Ro + ...
 %         ST.params.species.r(ss)*cos(linspace(0,2*pi,100));
 %     y = ST.params.species.r(ss)*sin(linspace(0,2*pi,100));
 %     hold on; plot3(x,y,1*ones(size(x)),'k');hold off
@@ -787,10 +787,10 @@ end
 end
 
 function angularMomentum(ST)
-Bo = ST.params.fields.Bo;
-Ro = ST.params.fields.Ro; % Major radius in meters.
-lambda = ST.params.fields.lambda;
-qo = ST.params.fields.qo;
+Bo = ST.params.fields_and_profiles.Bo;
+Ro = ST.params.fields_and_profiles.Ro; % Major radius in meters.
+lambda = ST.params.fields_and_profiles.lambda;
+qo = ST.params.fields_and_profiles.qo;
 
 st1 = zeros(ST.num_snapshots,ST.params.simulation.num_species);
 st2 = zeros(ST.num_snapshots,ST.params.simulation.num_species);
@@ -995,7 +995,7 @@ RT = struct;
 
 % cad = ST.params.simulation.output_cadence;
 % time = ST.params.simulation.dt*double(0:cad:ST.params.simulation.t_steps);
-Ro = ST.params.fields.Ro;
+Ro = ST.params.fields_and_profiles.Ro;
 rc = zeros(1,ST.params.simulation.num_species);
 
 C = colormap(jet(512));
@@ -1024,7 +1024,7 @@ for ss=1:ST.params.simulation.num_species
         
         bool = all(ST.data.(['sp' num2str(ss)]).eta(pp,:) < 90);
         
-        if all(r < ST.params.fields.a) && bool && all
+        if all(r < ST.params.fields_and_profiles.a) && bool && all
 %             rc(ss) = r(1);
             pin(pp) = 1;
         end
@@ -1035,8 +1035,8 @@ for ss=1:ST.params.simulation.num_species
     end
     
     t = linspace(0,2*pi,200);
-    Rs = ST.params.fields.Ro + ST.params.fields.a*cos(t);
-    Zs = ST.params.fields.a*sin(t);
+    Rs = ST.params.fields_and_profiles.Ro + ST.params.fields_and_profiles.a*cos(t);
+    Zs = ST.params.fields_and_profiles.a*sin(t);
 
     X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,logical(pin),1));
     R = sqrt( sum(X(1:2,:).^2,1) );
@@ -1091,10 +1091,10 @@ CP = struct;
 tmax = max(ST.time);
 tmin = min(ST.time);
 
-if isfield(ST.params.fields,'a')
+if isfield(ST.params.fields_and_profiles,'a')
     t = linspace(0,2*pi,200);
-    Rs = ST.params.fields.Ro + ST.params.fields.a*cos(t);
-    Zs = ST.params.fields.a*sin(t);
+    Rs = ST.params.fields_and_profiles.Ro + ST.params.fields_and_profiles.a*cos(t);
+    Zs = ST.params.fields_and_profiles.a*sin(t);
 end
 
 CP.confined = zeros(1,ST.params.simulation.num_species);
@@ -1160,7 +1160,7 @@ end
 figure(h1)
 subplot(1,2,1)
 legend(legends,'interpreter','latex','FontSize',12)
-if isfield(ST.params.fields,'a')
+if isfield(ST.params.fields_and_profiles,'a')
     hold on
     plot(Rs,Zs,'r')
     hold off
@@ -1199,7 +1199,7 @@ end
 figure(h1)
 subplot(1,2,2)
 legend(legends,'interpreter','latex','FontSize',12)
-if isfield(ST.params.fields,'a')
+if isfield(ST.params.fields_and_profiles,'a')
     hold on
     plot(Rs,Zs,'r')
     box on
@@ -1268,18 +1268,18 @@ function B = analyticalB(ST,X)
 narginchk(1,2);
 
 % Parameters of the analytical magnetic field
-Bo = ST.params.fields.Bo;
-a = ST.params.fields.a;
-Ro = ST.params.fields.Ro;
-qa = ST.params.fields.qa;
-lamb = ST.params.fields.lambda;
+Bo = ST.params.fields_and_profiles.Bo;
+a = ST.params.fields_and_profiles.a;
+Ro = ST.params.fields_and_profiles.Ro;
+qa = ST.params.fields_and_profiles.qa;
+lamb = ST.params.fields_and_profiles.lambda;
 try
-    co = ST.params.fields.co;
+    co = ST.params.fields_and_profiles.co;
 catch
-    qo = ST.params.fields.qa;
+    qo = ST.params.fields_and_profiles.qa;
     co = a/lamb;
 end
-Bpo = ST.params.fields.Bpo;
+Bpo = ST.params.fields_and_profiles.Bpo;
 % Parameters of the analytical magnetic field
 
 
@@ -1318,8 +1318,8 @@ function E = analyticalE(ST,X)
 narginchk(1,2);
 
 % Parameters of the analytical magnetic field
-Eo = ST.params.fields.Eo;
-Ro = ST.params.fields.Ro;
+Eo = ST.params.fields_and_profiles.Eo;
+Ro = ST.params.fields_and_profiles.Ro;
 % Parameters of the analytical magnetic field
 
 
@@ -1413,7 +1413,7 @@ for ss=1:ST.params.simulation.num_species
 
     % Approximation of <1/R^2> ~ sin^4(eta)/rg^2
     vperp = vo.*sin(etao);
-    wc = q*ST.params.fields.Bo./(gammapo*m);
+    wc = q*ST.params.fields_and_profiles.Bo./(gammapo*m);
     rg = vperp./wc;
     kappa2 = sin(etao).^4./rg.^2;
  
@@ -1430,7 +1430,7 @@ for ss=1:ST.params.simulation.num_species
     
     % Larmor approximation using approximation for curvature
 %     PR_app = 2*Kc*q^2*(gammapo.*v).^4.*kappa2/(3*c^3);
-    Tr = 6*pi*ep*(m*ST.params.scales.v)^3/(q^4*ST.params.fields.Bo^2);
+    Tr = 6*pi*ep*(m*ST.params.scales.v)^3/(q^4*ST.params.fields_and_profiles.Bo^2);
     PR_app = gammapo.*vo.*(m*gammapo.*vo).*sin(etao).^2/Tr;
     
     figure(h1)
@@ -1614,7 +1614,7 @@ Dlambda_camera = mean(diff(lambda_camera));
 
 rmin = 0;
 try
-    rmax = ST.params.fields.a;
+    rmax = ST.params.fields_and_profiles.a;
     Nr = 25;
     Ntheta = 80;
     
@@ -1627,8 +1627,8 @@ try
     NR = 50;
     NZ = 50;
 catch
-    %     Ro = ST.params.fields.Ro;
-    %     rmax = max([max(ST.params.fields.R) - Ro, Ro - min(ST.params.fields.R)]);
+    %     Ro = ST.params.fields_and_profiles.Ro;
+    %     rmax = max([max(ST.params.fields_and_profiles.R) - Ro, Ro - min(ST.params.fields_and_profiles.R)]);
     rmax = 1.2;
     Nr = 40;
     Ntheta = 80;
@@ -1665,7 +1665,7 @@ for ss=1:num_species
 % for ss=6:6
     q = abs(ST.params.species.q(ss));
     m = ST.params.species.m(ss);
-    Ro = ST.params.fields.Ro;
+    Ro = ST.params.fields_and_profiles.Ro;
     
     if strcmp(geometry,'poloidal')
         Psyn = zeros(Ntheta,Nr);
@@ -1818,7 +1818,7 @@ for ss=1:num_species
 
         % % % % NO CUTOFF % % %
 %         k = ...
-%             q*ST.params.fields.Bo*sin(pi*ST.params.species.etao(ss)/180)...
+%             q*ST.params.fields_and_profiles.Bo*sin(pi*ST.params.species.etao(ss)/180)...
 %             /(ST.params.species.go(ss)*ST.params.species.m(ss)*v(1))*ones(size(v));
         
         % % % % Beyond this point all variables are in cgs units % % % %
@@ -2513,7 +2513,7 @@ anticlockwise_rotation = @(t,x) [cos(t),-sin(t);sin(t),cos(t)]*x;
 for ss=1:num_species
     q = abs(ST.params.species.q(ss));
     m = ST.params.species.m(ss);
-    Ro = ST.params.fields.Ro;
+    Ro = ST.params.fields_and_profiles.Ro;
     
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
     passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
@@ -2876,7 +2876,7 @@ c = ST.params.scales.v;
 v = c*sqrt(1-1/g^2);
 ep = 8.854E-12;% Electric permitivity
 
-k = q*ST.params.fields.Bo*sin(eta)/(g*m*v);
+k = q*ST.params.fields_and_profiles.Bo*sin(eta)/(g*m*v);
 l = lambda; 
 lc = 4*pi/(3*k*g^3);
 
@@ -3317,62 +3317,63 @@ end
 
 
 function plotEnergyPitchanglePDF(ST)
+N = 50; % Energy
+M = 50; % Pitch-angle
+
 me = ST.params.scales.m;
 qe = ST.params.scales.q;
 c = ST.params.scales.v;
 
-for ss=1:ST.params.simulation.num_species
-    Eo = ST.data.(['sp' num2str(ss)]).g(:,1)*me*c^2/(qe*1E6);
-    pao = ST.data.(['sp' num2str(ss)]).eta(:,1);
-    
+for ss=1:ST.params.simulation.num_species 
     try
         pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
     catch
         pin = true(1,size(ST.data.(['sp' num2str(ss)]).g,1));
     end
     
-    Ef = ST.data.(['sp' num2str(ss)]).g(pin,end)*me*c^2/(qe*1E6);
+    Eo = (ST.data.(['sp' num2str(ss)]).g(pin,1)-1)*me*c^2/(qe*1E6);
+    pao = ST.data.(['sp' num2str(ss)]).eta(pin,1);
+    
+    Ef = (ST.data.(['sp' num2str(ss)]).g(pin,end)-1)*me*c^2/(qe*1E6);
     paf = ST.data.(['sp' num2str(ss)]).eta(pin,end);
     
-    E = ST.data.(['sp' num2str(ss)]).g(pin,:)'*me*c^2/(qe*1E6);
+    E = (ST.data.(['sp' num2str(ss)]).g(pin,:)-1)'*me*c^2/(qe*1E6);
     pa = ST.data.(['sp' num2str(ss)]).eta(pin,:)';
     
-    N = 20; % Energy
-    M = 20; % Pitch-angle
+    %     E_edges = linspace(min([min(Eo(pin)) min(Ef)]),...
+    %         max([max(Eo(pin)) max(Ef)]),N);
+    %     pa_edges = linspace(min([min(pao(pin)) min(paf)]),...
+    %         max([max(pao(pin)) max(paf)]),M);
     
-%     E_edges = linspace(min([min(Eo(pin)) min(Ef)]),...
-%         max([max(Eo(pin)) max(Ef)]),N);
-%     pa_edges = linspace(min([min(pao(pin)) min(paf)]),...
-%         max([max(pao(pin)) max(paf)]),M);
-
     E_edges = linspace(0,50,N);
     pa_edges = linspace(0,25,M);
     
-    figure;
-    subplot(2,1,1)
-    h = histogram2(pao(pin),Eo(pin),pa_edges,E_edges,'FaceColor','flat',...
-        'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
-    colormap(jet); caxis([min(min(h.Values)) max(max(h.Values))])
-    colorbar
-    box on
-    grid on
-    xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
-    ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
+%     figure;
+%     subplot(2,1,1)
+%     h = histogram2(pao(pin),Eo(pin),pa_edges,E_edges,'FaceColor','flat',...
+%         'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
+%     colormap(jet); caxis([min(min(h.Values)) max(max(h.Values))])
+%     colorbar
+%     box on
+%     grid on
+%     xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
+%     ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
+%     
+%     subplot(2,1,2)
+%     histogram2(paf,Ef,pa_edges,E_edges,'FaceColor','flat',...
+%         'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none')
+%     colormap(jet); caxis([min(min(h.Values)) max(max(h.Values))])
+%     colorbar
+%     box on
+%     grid on
+%     xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
+%     ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
+   
     
-    subplot(2,1,2)
-    histogram2(paf,Ef,pa_edges,E_edges,'FaceColor','flat',...
-        'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none')
-    colormap(jet); caxis([min(min(h.Values)) max(max(h.Values))])
-    colorbar
-    box on
-    grid on
-    xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
-    ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')    
-    
-    figure;
+    g = figure;
     subplot(2,1,1)
     hold on
-%     plot(pa,E,'b')
+    %     plot(pa,E,'b')
     plot(pao,Eo,'k.',paf,Ef,'r.','MarkerSize',8)
     hold off
     box on
@@ -3383,12 +3384,15 @@ for ss=1:ST.params.simulation.num_species
     %     ['$t=$' num2str(ST.time(end)) ' s']},'Interpreter','latex')
     
     
-	subplot(2,1,2)
-    quiver(pao(pin),Eo(pin),paf-pao(pin),Ef-Eo(pin),...
-        'MaxHeadSize',0.1,'AlignVertexCenters','on')
+    u = paf-pao;
+    v = Ef-Eo;
+    
+    subplot(2,1,2)
+    quiver(pao,Eo,u,v,'MaxHeadSize',0.02,'AutoScale','off')
     box on
     grid on
     xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
     ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
+    saveas(g,[ST.path 'EnergyvsPitch' num2str(ss)],'fig')
 end
 end

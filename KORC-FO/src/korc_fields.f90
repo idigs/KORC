@@ -31,7 +31,7 @@ subroutine analytical_fields(F,Y,E,B,flag)
         if ( flag(pp) .EQ. 1_is ) then
 		    eta = Y(1,pp)/F%Ro
             q = F%AB%qo*(1.0_rp + (Y(1,pp)/F%AB%lambda)**2)
-            Bp = eta*F%AB%Bo/(q*(1.0_rp + eta*COS(Y(2,pp))))
+			Bp = F%AB%Bp_sign*eta*F%AB%Bo/(q*(1.0_rp + eta*COS(Y(2,pp))))
 		    Bt = F%AB%Bo/( 1.0_rp + eta*COS(Y(2,pp)) )
 			
 

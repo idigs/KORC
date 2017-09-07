@@ -151,6 +151,7 @@ TYPE, PRIVATE :: A_FIELD
 	REAL(rp) :: qo
 	REAL(rp) :: lambda
 	REAL(rp) :: Bpo
+	REAL(rp) :: Bp_sign
 	CHARACTER(MAX_STRING_LENGTH) :: current_direction
 END TYPE A_FIELD
 
