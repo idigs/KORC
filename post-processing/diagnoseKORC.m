@@ -52,7 +52,7 @@ ST.CP = confined_particles(ST);
 % SE_phaseSpaceAnalisys(ST);
 
 
-plotEnergyPitchanglePDF(ST);
+% plotEnergyPitchanglePDF(ST);
 
 
 % save('energy_limit','ST')
@@ -3195,8 +3195,8 @@ end
 end
 
 function SE_phaseSpaceAnalisys(ST)
-nbins_p = 100;
-nbins_chi = 100;
+nbins_p = 50;
+nbins_chi = 50;
 
 for ss=1:ST.params.simulation.num_species
     q = abs(ST.params.species.q(ss));

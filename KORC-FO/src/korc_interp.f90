@@ -268,7 +268,7 @@ subroutine check_if_in_domain(Y,flag)
 			IPHI = INT(FLOOR((Y(2,pp)  + 0.5_rp*domain%DPHI)/domain%DPHI) + 1.0_rp,idef)
 			IZ = INT(FLOOR((Y(3,pp)  + ABS(domain%Zo) + 0.5_rp*domain%DZ)/domain%DZ) + 1.0_rp,idef)
 	
-			if ((domain%FLAG3D(IR,IPHI,IZ).NE.1_1).OR.((IR.GT.interp3d%NR).OR.(IZ.GT.interp3d%NZ))) then
+			if ((domain%FLAG3D(IR,IPHI,IZ).NE.1_is).OR.((IR.GT.interp3d%NR).OR.(IZ.GT.interp3d%NZ))) then
 				flag(pp) = 0_is
 			end if
 		end do
@@ -278,8 +278,8 @@ subroutine check_if_in_domain(Y,flag)
 		do pp=1_idef,ss
 			IR = INT(FLOOR((Y(1,pp)  - domain%Ro + 0.5_rp*domain%DR)/domain%DR) + 1.0_rp,idef)
 			IZ = INT(FLOOR((Y(3,pp)  + ABS(domain%Ro) + 0.5_rp*domain%DZ)/domain%DZ) + 1.0_rp,idef)
-	
-			if ((domain%FLAG2D(IR,IZ).NE.1_1).OR.((IR.GT.interp3d%NR).OR.(IZ.GT.interp3d%NZ))) then
+
+			if ((domain%FLAG2D(IR,IZ).NE.1_is).OR.((IR.GT.interp2d%NR).OR.(IZ.GT.interp2d%NZ))) then
 				flag(pp) = 0_is
 			end if
 		end do
@@ -458,13 +458,10 @@ subroutine interp_field(prtcls,F)
 	call check_if_in_domain(prtcls%Y, prtcls%flag)
 
 	if (ALLOCATED(F%PSIp)) then
-!		call check_if_in_domain2D(prtcls%Y, prtcls%flag)
 		call calculate_magnetic_field(prtcls%Y,F,prtcls%B,prtcls%flag)
 	else if (ALLOCATED(F%B_2D%R)) then
-!		call check_if_in_domain2D(prtcls%Y, prtcls%flag)
 		call interp_2D_B_field(prtcls%Y,prtcls%B,prtcls%flag)
 	else if (ALLOCATED(F%B_3D%R)) then
-!		call check_if_in_domain3D(prtcls%Y, prtcls%flag)
 		call interp_3D_B_field(prtcls%Y,prtcls%B,prtcls%flag)
 	else
 		write(6,'("* * * * NO FIELD ARRAYS ALLOCATED * * * *")')
