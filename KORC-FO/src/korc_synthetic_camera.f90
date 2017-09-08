@@ -45,6 +45,7 @@ MODULE korc_synthetic_camera
 
 		LOGICAL :: integrated_opt
 		LOGICAL :: toroidal_sections
+		LOGICAL :: photon_count
 		INTEGER :: ntor_sections
 	END TYPE CAMERA
 
@@ -185,14 +186,14 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 	REAL(rp) :: lambda_min ! Minimum wavelength in cm
 	REAL(rp) :: lambda_max ! Maximum wavelength in cm
 	INTEGER :: Nlambda
-	LOGICAL :: camera_on, integrated_opt, toroidal_sections
+	LOGICAL :: camera_on, integrated_opt, toroidal_sections, photon_count
 	INTEGER :: ntor_sections
 	REAL(rp) :: xmin, xmax, ymin, ymax, DX, DY
 	INTEGER :: ii
 
 	NAMELIST /SyntheticCamera/ camera_on,aperture,Riw,num_pixels,sensor_size,focal_length,&
 								position,incline,lambda_min,lambda_max,Nlambda,integrated_opt,&
-								toroidal_sections,ntor_sections,start_at
+								toroidal_sections,ntor_sections,start_at,photon_count
 
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'(/,"* * * * * * * * * * * * * * * * * *")')
@@ -222,6 +223,7 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 	cam%Nlambda = Nlambda
 	cam%Dlambda = (cam%lambda_max - cam%lambda_min)/REAL(cam%Nlambda,rp)
 	ALLOCATE(cam%lambda(cam%Nlambda))
+	cam%photon_count = photon_count
 	cam%integrated_opt = integrated_opt
 	cam%toroidal_sections = toroidal_sections
 	cam%ntor_sections = ntor_sections
@@ -711,7 +713,7 @@ SUBROUTINE angular_density(params,spp)
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: Psyn_lambda_pixel
 	REAL(rp) :: q, m, k, u, g, l, threshold_angle
 	REAL(rp) :: psi, chi, beta, theta, Psyn_tmp
-	REAL(rp) :: r, photon_energy
+	REAL(rp) :: r, photon_energy,pixel_area,solid_angle
 	REAL(rp) :: angle, clockwise
 	REAL(rp) :: units
     REAL(rp), DIMENSION(:), ALLOCATABLE :: Psyn_send_buffer,Psyn_receive_buffer, np_send_buffer, np_receive_buffer
@@ -739,10 +741,10 @@ SUBROUTINE angular_density(params,spp)
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
 
-!$OMP PARALLEL FIRSTPRIVATE(q,m) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
+!$OMP PARALLEL FIRSTPRIVATE(q,m,pixel_area) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
 !$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,threshold_angle,theta,&
 !$OMP& psi,chi,beta,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp,r,photon_energy,&
-!$OMP& lc,zeta)&
+!$OMP& lc,zeta,solid_angle)&
 !$OMP& SHARED(params,spp,ss,Psyn_angular_pixel,np_angular_pixel,np_lambda_pixel,Psyn_lambda_pixel)
 !$OMP DO
 		do pp=1_idef,spp(ss)%ppp
@@ -982,7 +984,7 @@ SUBROUTINE integrated_angular_density(params,spp)
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: P_lambda, P_angular
 	REAL(rp) :: q, m, k, u, g, l, threshold_angle, threshold_angle_simple_model
 	REAL(rp) :: psi, chi, beta, theta, Psyn_tmp
-	REAL(rp) :: r, photon_energy
+	REAL(rp) :: r,photon_energy,pixel_area,solid_angle
 	REAL(rp) :: angle, clockwise
 	REAL(rp) :: units
     REAL(rp), DIMENSION(:), ALLOCATABLE :: send_buffer, receive_buffer
@@ -1022,10 +1024,10 @@ SUBROUTINE integrated_angular_density(params,spp)
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
 
-!$OMP PARALLEL FIRSTPRIVATE(q,m) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
+!$OMP PARALLEL FIRSTPRIVATE(q,m,pixel_area) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
 !$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,threshold_angle,threshold_angle_simple_model,theta,&
 !$OMP& psi,chi,beta,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp,&
-!$OMP& r,photon_energy,lc,zeta,P_lambda,P_angular)&
+!$OMP& r,photon_energy,lc,zeta,P_lambda,P_angular,solid_angle)&
 !$OMP& SHARED(params,spp,ss,Psyn_angular_pixel,np_angular_pixel,np_lambda_pixel,Psyn_lambda_pixel,&
 !$OMP& P_l_pixel,P_a_pixel,np_pixel)
 !$OMP DO
@@ -1372,7 +1374,7 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: P_lambda, P_angular
 	REAL(rp) :: q, m, k, u, g, l, threshold_angle, threshold_angle_simple_model
 	REAL(rp) :: psi, chi, beta, theta, Psyn_tmp
-	REAL(rp) :: r, photon_energy
+	REAL(rp) :: r, photon_energy,pixel_area,solid_angle
 	REAL(rp) :: angle, clockwise
 	REAL(rp) :: units
     REAL(rp), DIMENSION(:), ALLOCATABLE :: send_buffer, receive_buffer
@@ -1416,10 +1418,10 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
 
-!$OMP PARALLEL FIRSTPRIVATE(q,m,Dtor) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
+!$OMP PARALLEL FIRSTPRIVATE(q,m,Dtor,pixel_area) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
 !$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,threshold_angle,threshold_angle_simple_model,theta,&
 !$OMP& psi,chi,beta,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp,&
-!$OMP& r,photon_energy,lc,zeta,P_lambda,P_angular,itor)&
+!$OMP& r,photon_energy,lc,zeta,P_lambda,P_angular,itor,solid_angle)&
 !$OMP& SHARED(params,spp,ss,Psyn_angular_pixel,np_angular_pixel,np_lambda_pixel,Psyn_lambda_pixel,&
 !$OMP& P_l_pixel,P_a_pixel,np_pixel)
 !$OMP DO
@@ -1771,9 +1773,9 @@ SUBROUTINE spectral_density(params,spp)
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: np
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: Psyn_lambda
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: PTot
-	REAL(rp) :: R, Z
+	REAL(rp) :: Rpol, Zpol
 	REAL(rp) :: q, m, k, u, g, lc
-	REAL(rp) :: photon_energy
+	REAL(rp) :: r, photon_energy,pixel_area,solid_angle
 	INTEGER :: ii,jj,ll,ss,pp
     REAL(rp), DIMENSION(:), ALLOCATABLE :: Psyn_send_buffer,Psyn_receive_buffer
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: np_send_buffer,np_receive_buffer
@@ -1796,8 +1798,8 @@ SUBROUTINE spectral_density(params,spp)
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
 
-!$OMP PARALLEL FIRSTPRIVATE(q,m) PRIVATE(binorm,X,V,B,E,&
-!$OMP& k,u,g,lc,ii,jj,ll,pp,photon_energy,zeta,P,R,Z)&
+!$OMP PARALLEL FIRSTPRIVATE(q,m,pixel_area) PRIVATE(binorm,X,V,B,E,&
+!$OMP& k,u,g,lc,ii,jj,ll,pp,photon_energy,zeta,P,Rpol,Zpol,r,solid_angle)&
 !$OMP& SHARED(params,spp,ss,Psyn_lambda,PTot,np)
 !$OMP DO
 		do pp=1_idef,spp(ss)%ppp
@@ -1817,14 +1819,15 @@ SUBROUTINE spectral_density(params,spp)
 				zeta = lc/cam%lambda
 
 				do ii=1_idef,cam%Nlambda
+					photon_energy = C_h*C_C/cam%lambda(ii)
 					P(ii) = (C_C*C_E**2)*P_integral(zeta(ii))/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda(ii)**3)
 				end do
 
-				R = SQRT(SUM(X(1:2)**2))
-				Z = X(3)
+				Rpol = SQRT(SUM(X(1:2)**2))
+				Zpol = X(3)
 				
-				ii = FLOOR((R - pplane%Rmin)/pplane%DR) + 1_idef
-				jj = FLOOR((Z + ABS(pplane%Zmin))/pplane%DZ) + 1_idef
+				ii = FLOOR((Rpol - pplane%Rmin)/pplane%DR) + 1_idef
+				jj = FLOOR((Zpol + ABS(pplane%Zmin))/pplane%DZ) + 1_idef
 
 				Psyn_lambda(ii,jj,:,ss) = Psyn_lambda(ii,jj,:,ss) + P
 				np(ii,jj,:,ss) = np(ii,jj,:,ss) + 1_idef
@@ -1925,9 +1928,9 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: np
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: Psyn_lambda
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: PTot
-	REAL(rp) :: R, Z
+	REAL(rp) :: Rpol, Zpol
 	REAL(rp) :: q, m, k, u, g, lc
-	REAL(rp) :: photon_energy
+	REAL(rp) :: r, photon_energy,pixel_area,solid_angle
 	INTEGER :: ii,jj,ll,ss,pp
     REAL(rp), DIMENSION(:), ALLOCATABLE :: send_buffer, receive_buffer
     INTEGER :: numel, mpierr
@@ -1952,8 +1955,8 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	do ss=1_idef,params%num_species
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
-!$OMP PARALLEL FIRSTPRIVATE(q,m) PRIVATE(binorm,X,V,B,E,&
-!$OMP& k,u,g,lc,ii,jj,ll,pp,photon_energy,zeta,P,R,Z)&
+!$OMP PARALLEL FIRSTPRIVATE(q,m,pixel_area) PRIVATE(binorm,X,V,B,E,&
+!$OMP& k,u,g,lc,ii,jj,ll,pp,photon_energy,zeta,P,Rpol,Zpol,r,solid_angle)&
 !$OMP& SHARED(params,spp,ss,Psyn_lambda,PTot,np,P_lambda,np_lambda)
 !$OMP DO
 		do pp=1_idef,spp(ss)%ppp
@@ -1973,17 +1976,18 @@ SUBROUTINE integrated_spectral_density(params,spp)
 				zeta = lc/cam%lambda
 
 				do ii=1_idef,cam%Nlambda
+					photon_energy = C_h*C_C/cam%lambda(ii)
 					P(ii) = (C_C*C_E**2)*P_integral(zeta(ii))/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda(ii)**3)
 				end do
 
 				P_lambda(:,ss) = P_lambda(:,ss) + P
 				np_lambda(ss) = np_lambda(ss) + 1.0_rp
 
-				R = SQRT(SUM(X(1:2)**2))
-				Z = X(3)
+				Rpol = SQRT(SUM(X(1:2)**2))
+				Zpol = X(3)
 				
-				ii = FLOOR((R - pplane%Rmin)/pplane%DR) + 1_idef
-				jj = FLOOR((Z + ABS(pplane%Zmin))/pplane%DZ) + 1_idef
+				ii = FLOOR((Rpol - pplane%Rmin)/pplane%DR) + 1_idef
+				jj = FLOOR((Zpol + ABS(pplane%Zmin))/pplane%DZ) + 1_idef
 
 				Psyn_lambda(ii,jj,ss) = Psyn_lambda(ii,jj,ss) + trapz(cam%lambda,P)
 				np(ii,jj,ss) = np(ii,jj,ss) + 1_idef
@@ -2218,6 +2222,14 @@ SUBROUTINE save_synthetic_camera_params(params)
 
 	    dset = TRIM(gname) // "/pixels_edges_y"
 	    call save_1d_array_to_hdf5(h5file_id,dset,cam%pixels_edges_y)
+
+		dset = TRIM(gname) // "/photon_count"
+		attr = "Logical variable: 1=Psyn is in number of photons, 0=Psyn is in Watts"
+		if (cam%photon_count) then
+			call save_to_hdf5(h5file_id,dset,1.0_rp,attr)
+		else
+			call save_to_hdf5(h5file_id,dset,0.0_rp,attr)
+		end if
 
 		dset = TRIM(gname) // "/integrated_opt"
 		attr = "Logical variable: 1=integrated spectra, 0=detailed spectral info"

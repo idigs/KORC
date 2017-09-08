@@ -105,7 +105,7 @@
 /
 
 &SyntheticCamera
-	camera_on = .FALSE. ! .TRUE. or .FALSE.
+	camera_on = .TRUE. ! .TRUE. or .FALSE.
 	start_at = 5.0E-6 ! Seconds
  	Riw = 1.0 ! Radial position of inner wall
  	num_pixels = 50, 50 ! Number of pixels (X,Y)
@@ -116,6 +116,7 @@
  	lambda_min = 100.0E-9 ! Minimum wavelength in meters
  	lambda_max = 10000.0E-9 ! Maximum wavelength in meters
  	Nlambda = 100 ! Number of discrete wavelengths
+	photon_count = .FALSE.
 	integrated_opt = .TRUE. ! .TRUE. or .FALSE.
 	toroidal_sections = .FALSE. ! 
 	ntor_sections = 12 !
