@@ -1085,6 +1085,10 @@ subroutine save_simulation_outputs(params,spp,F)
 	REAL(rp) :: units
     INTEGER :: ii,jj
 
+	if (params%mpi_params%rank .EQ. 0) then
+		write(6,'("Saving snapshot: ",I15)') params%it/params%output_cadence
+	end if
+
 	if (SIZE(params%outputs_list).GT.1_idef) then
 		write(tmp_str,'(I18)') params%mpi_params%rank
 		filename = TRIM(params%path_to_outputs) // "file_" // TRIM(ADJUSTL(tmp_str)) // ".h5"

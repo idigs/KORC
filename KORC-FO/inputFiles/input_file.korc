@@ -1,5 +1,5 @@
 &input_parameters
-        simulation_time = 5.0E-6 ! Total aimed simulation time in seconds
+        simulation_time = 10.0E-6 ! Total aimed simulation time in seconds
         snapshot_frequency = 1.0E-7 ! Time between snapshots in seconds
         dt = 1.0E-2 ! Time step as fraction of non-relativistic gyro-period
         num_species = 2
@@ -24,7 +24,7 @@
         runaway = .FALSE.,.FALSE. !
         energy_distribution = 'MONOENERGETIC','MONOENERGETIC'   ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'
         pitch_distribution = 'MONOPITCH','MONOPITCH'	! Options are: 'MONOPITCH', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'.
-        Ro = 1.5,1.5 !
+        Ro = 1.43,1.43 !
         Zo = 0.0,0.0 !
         r = 0.2,0.2 !
         Eo = 30.0E6,30.0E6 ! Initial energy in eV
@@ -41,7 +41,7 @@
 	Eo = 0.0 ! In V/m
 	pulse_maximum = 3.0E-3 ! Time at which maximum is reached in s
 	pulse_duration = 6.7E-4 ! Duration of intense toroidal electric field
-	current_direction = 'ANTI-PARALLEL' ! 'PARALLEL' or 'ANTI-PARALLEL'
+	current_direction = 'PARALLEL' ! 'PARALLEL' or 'ANTI-PARALLEL'
 	Bo = 2.19 ! In Teslas. ITER: 5.42 DIII-D: 2.19
 	minor_radius = 0.5 ! Minor radius in meters. ITER: 1.5 DIII-D: 0.5
 	major_radius = 1.5 ! Major radius in meters. ITER: 6.5 DIII-D: 1.6
@@ -106,7 +106,7 @@
 
 &SyntheticCamera
 	camera_on = .TRUE. ! .TRUE. or .FALSE.
-	start_at = 1.0E-6 ! Seconds
+	start_at = 2.5E-6 ! Seconds
  	Riw = 1.0 ! Radial position of inner wall
  	num_pixels = 75, 75 ! Number of pixels (X,Y)
  	sensor_size = 0.4, 0.4 ! (horizontal,vertical)
@@ -116,8 +116,8 @@
  	lambda_min = 100.0E-9 ! Minimum wavelength in meters
  	lambda_max = 10000.0E-9 ! Maximum wavelength in meters
  	Nlambda = 75 ! Number of discrete wavelengths
-	photon_count = .TRUE.
+	photon_count = .FALSE.
 	integrated_opt = .TRUE. ! .TRUE. or .FALSE.
-	toroidal_sections = .TRUE. ! 
+	toroidal_sections = .FALSE. ! 
 	ntor_sections = 12 !
 /
