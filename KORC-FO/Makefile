@@ -11,7 +11,7 @@ ifeq ($(UNAME), Darwin)
         FC = mpif90
 
         FCDEFINEFLAGS =-DDOUBLE_PRECISION       -DHDF5_DOUBLE_PRESICION
-        FCFLAGS =-cpp   -J$(MOD) -fopenmp    -O2
+        FCFLAGS =-cpp   -J$(MOD) -fopenmp    -O3
 
         PSPLINE_INSTALL=../pspline_lib
 
@@ -34,13 +34,13 @@ ifdef NERSC_HOST
 ifdef PRG_ENV
 ifeq ($(PRG_ENV),GNU)
         HDF5_INSTALL =../HDF5_GNU
-        FCFLAGS =-cpp   -J$(MOD)        -fopenmp        -Ofast  #-O3    -ffast-math     -funroll-loops
+        FCFLAGS =-cpp   -J$(MOD)        -fopenmp        -O3  #-O3    -ffast-math     -funroll-loops
         FCDEFINEFLAGS =-DDOUBLE_PRECISION       -DHDF5_DOUBLE_PRESICION
 endif #GNU
 ifeq ($(PRG_ENV),INTEL)
 #        PSPLINE_INSTALL=../pspline_lib_INTEL
         HDF5_INSTALL =../HDF5_INTEL
-        FCFLAGS =-cpp   -module $(MOD)  -qopenmp        -O2   #-g     -dynamic        -debug inline-debug-info
+        FCFLAGS =-cpp   -module $(MOD)  -qopenmp        -O3   #-g     -dynamic        -debug inline-debug-info
         FCDEFINEFLAGS =-DINTEL  -DDOUBLE_PRECISION      -DHDF5_DOUBLE_PRESICION
 endif #INTEL
 endif #PRG_ENV

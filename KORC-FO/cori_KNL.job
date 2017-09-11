@@ -5,23 +5,23 @@
 #SBATCH -J KORC_KNL
 #SBATCH --mail-user=carbajalgoml@ornl.gov
 #SBATCH --mail-type=ALL
-#SBATCH -t 00:10:00
+#SBATCH -t 00:30:00
 #SBATCH -L SCRATCH
 #SBATCH -o KORC_KNL_%j.out 
 #SBATCH -e KORC_KNL_%j.err
 #SBATCH -A atom
 
-module swap craype-haswell craype-mic-knl
-module swap PrgEnv-intel PrgEnv-gnu
-module load cray-netcdf
-module load pspline
+#module swap craype-haswell craype-mic-knl
+#module swap PrgEnv-intel PrgEnv-gnu
+#module load cray-netcdf
+#module load pspline
 
 
 cd $SLURM_SUBMIT_DIR
 
 ## You might want to change the path of the outouts folder
-FILE_ID='D3DQ'
-INPUT_FOLDER='D3DQ'
+FILE_ID='D3D_165826_1'
+INPUT_FOLDER='D3DQ_PRL'
 
 FOLDER_ID=${INPUT_FOLDER}_${FILE_ID}
 PATH_TO_SCRATCH=$SCRATCH
@@ -32,10 +32,10 @@ rm -r ${OUTPUT_FOLDER}
 mkdir ${OUTPUT_FOLDER}
 
 #MPI settings:
-MPI_PROCCESSES=8
+MPI_PROCCESSES=2
 
 #OpenMP settings:
-export OMP_NUM_THREADS=8
+export OMP_NUM_THREADS=32
 export OMP_PLACES=threads
 export OMP_PROC_BIND=spread
 
@@ -51,3 +51,4 @@ srun -n $((MPI_PROCCESSES*SLURM_JOB_NUM_NODES)) -c $((4*OMP_NUM_THREADS)) --cpu_
 #srun -n $MPI_PROCCESSES -c $((4*OMP_NUM_THREADS)) --cpu_bind=cores ./bin/KORC inputFiles/${INPUT_FOLDER}/input_file_${FILE_ID}.korc ${OUTPUT_FOLDER}/
 #sleep 1s
 #done
+
