@@ -1,11 +1,11 @@
 &input_parameters
-        simulation_time = 1.0E-6 ! Total aimed simulation time in seconds
+        simulation_time = 5.0E-6 ! Total aimed simulation time in seconds
         snapshot_frequency = 1.0E-7 ! Time between snapshots in seconds
         dt = 1.0E-2 ! Time step as fraction of non-relativistic gyro-period
         num_species = 2
         minimum_particle_energy = 1.0E3 ! Minimum energy of simulated particles in eV
-        radiation = .TRUE.
-        collisions = .TRUE.
+        radiation = .FALSE.
+        collisions = .FALSE.
         collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
         plasma_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
                                                                                 ! For 'ANALYTICAL', the magnetic field is calculated based on
@@ -26,12 +26,12 @@
         pitch_distribution = 'MONOPITCH','MONOPITCH'	! Options are: 'MONOPITCH', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'.
         Ro = 1.5,1.5 !
         Zo = 0.0,0.0 !
-        r = 0.3,0.3 !
-        Eo = 10.0E6,10.0E6 ! Initial energy in eV
-        etao = 5.0,10.0  ! Initial pitch angle
+        r = 0.2,0.2 !
+        Eo = 30.0E6,30.0E6 ! Initial energy in eV
+        etao = 5.0,20.0  ! Initial pitch angle
         Eo_lims = 1.0E6,50.0E6,1.0E6,50.0E6 ! Lower and upper limit of simulated energy range, in eV.
         etao_lims = 0.0,20.0,0.0,20.0 ! Lower and upper limit of simulated pitch-angle range, in degrees.
-        ppp = 1000,1000 ! Number of particles per process (mpi)
+        ppp = 5000,5000 ! Number of particles per process (mpi)
         q = -1.0,-1.0 ! Electric charge
         m = 1.0,1.0 ! In units of electron mass
 /
@@ -106,18 +106,18 @@
 
 &SyntheticCamera
 	camera_on = .TRUE. ! .TRUE. or .FALSE.
-	start_at = 5.0E-6 ! Seconds
+	start_at = 1.0E-6 ! Seconds
  	Riw = 1.0 ! Radial position of inner wall
- 	num_pixels = 50, 50 ! Number of pixels (X,Y)
+ 	num_pixels = 75, 75 ! Number of pixels (X,Y)
  	sensor_size = 0.4, 0.4 ! (horizontal,vertical)
  	focal_length = 0.5
  	position = 2.4, 0.0 ! Position of camera (R,Z)
  	incline = 55.0 ! In degrees
  	lambda_min = 100.0E-9 ! Minimum wavelength in meters
  	lambda_max = 10000.0E-9 ! Maximum wavelength in meters
- 	Nlambda = 100 ! Number of discrete wavelengths
-	photon_count = .FALSE.
+ 	Nlambda = 75 ! Number of discrete wavelengths
+	photon_count = .TRUE.
 	integrated_opt = .TRUE. ! .TRUE. or .FALSE.
-	toroidal_sections = .FALSE. ! 
+	toroidal_sections = .TRUE. ! 
 	ntor_sections = 12 !
 /

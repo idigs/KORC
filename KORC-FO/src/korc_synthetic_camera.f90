@@ -23,10 +23,11 @@ MODULE korc_synthetic_camera
 	TYPE, PRIVATE :: CAMERA
 		LOGICAL :: camera_on
 		REAL(rp) :: start_at ! In seconds
-		REAL(rp) :: aperture ! Aperture of the camera (diameter of lens) in meters
+!		REAL(rp) :: aperture ! Aperture of the camera (diameter of lens) in meters
 		REAL(rp) :: Riw ! Radial position of inner wall
 		INTEGER, DIMENSION(2) :: num_pixels ! Number of pixels (X,Y)
 		REAL(rp), DIMENSION(2) :: sensor_size ! In meters (horizontal,vertical)
+		REAL(rp) :: pixel_area ! Area of a single pixel of the camera sensor. This based on sensor_size and num_pixels.
 		REAL(rp) :: focal_length ! Focal length in meters
 		REAL(rp), DIMENSION(2) :: position ! Position of camera (R,Z)
 		REAL(rp) :: incline ! Incline of camera in degrees
@@ -175,7 +176,7 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(FIELDS), INTENT(IN) :: F
-	REAL(rp) :: aperture ! Aperture of the camera (diameter of lens) in meters
+!	REAL(rp) :: aperture ! Aperture of the camera (diameter of lens) in meters
 	REAL(rp) :: start_at ! in Seconds
 	REAL(rp) :: Riw ! Radial position of inner wall
 	INTEGER, DIMENSION(2) :: num_pixels ! Number of pixels (X,Y)
@@ -191,7 +192,7 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 	REAL(rp) :: xmin, xmax, ymin, ymax, DX, DY
 	INTEGER :: ii
 
-	NAMELIST /SyntheticCamera/ camera_on,aperture,Riw,num_pixels,sensor_size,focal_length,&
+	NAMELIST /SyntheticCamera/ camera_on,Riw,num_pixels,sensor_size,focal_length,&
 								position,incline,lambda_min,lambda_max,Nlambda,integrated_opt,&
 								toroidal_sections,ntor_sections,start_at,photon_count
 
@@ -208,11 +209,12 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 	!	write(*,nml=SyntheticCamera)
 	
 	cam%camera_on = camera_on
-	cam%aperture = aperture
+!	cam%aperture = aperture
 	cam%start_at = start_at
 	cam%Riw = Riw
 	cam%num_pixels = num_pixels
 	cam%sensor_size = sensor_size
+	cam%pixel_area = PRODUCT(sensor_size/num_pixels)
 	cam%focal_length = focal_length
 	cam%position = position
 	cam%incline = C_PI*incline/180.0_rp
@@ -538,25 +540,28 @@ FUNCTION nintegral_besselk(a,b)
 	nintegral_besselk = Inew
 END FUNCTION nintegral_besselk
 
-
-FUNCTION P_integral(z)
-	IMPLICIT NONE
-	REAL(rp) :: P_integral
-	REAL(rp), INTENT(IN) :: z
+SUBROUTINE P_integral(z,P)
+	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: P
+	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: z
 	REAL(rp) :: a
+	INTEGER :: ll,ss
 
-	P_integral = 0.0_rp
+	ss = SIZE(z)
 
-	IF (z .LT. 0.5_rp) THEN
-		a = (2.16_rp/2.0_rp**(2.0_rp/3.0_rp))*z**(1.0_rp/3.0_rp)
-		P_integral = nintegral_besselk(z,a) + IntK(5.0_rp/3.0_rp,a)
-	ELSE IF ((z .GE. 0.5_rp).AND.(z .LT. 2.5_rp)) THEN
-		a = 0.72_rp*(z + 1.0_rp)
-		P_integral = nintegral_besselk(z,a) + IntK(5.0_rp/3.0_rp,a)
-	ELSE
-		P_integral = IntK(5.0_rp/3.0_rp,z)
-	END IF
-END FUNCTION P_integral
+	P = 0.0_rp
+
+	do ll=1_idef,ss
+		IF (z(ll) .LT. 0.5_rp) THEN
+			a = (2.16_rp/2.0_rp**(2.0_rp/3.0_rp))*z(ll)**(1.0_rp/3.0_rp)
+			P(ll) = nintegral_besselk(z(ll),a) + IntK(5.0_rp/3.0_rp,a)
+		ELSE IF ((z(ll) .GE. 0.5_rp).AND.(z(ll) .LT. 2.5_rp)) THEN
+			a = 0.72_rp*(z(ll) + 1.0_rp)
+			P(ll) = nintegral_besselk(z(ll),a) + IntK(5.0_rp/3.0_rp,a)
+		ELSE
+			P(ll) = IntK(5.0_rp/3.0_rp,z(ll))
+		END IF
+	end do
+END SUBROUTINE P_integral
 
 
 FUNCTION trapz(x,f)
@@ -712,12 +717,17 @@ SUBROUTINE angular_density(params,spp)
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: np_lambda_pixel
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: Psyn_lambda_pixel
 	REAL(rp) :: q, m, k, u, g, l, threshold_angle
-	REAL(rp) :: psi, chi, beta, theta, Psyn_tmp
-	REAL(rp) :: r, photon_energy,pixel_area,solid_angle
+	REAL(rp) :: psi, chi, beta, theta
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: P_lambda
+	REAL(rp) :: P_angular
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: photon_energy
+	REAL(rp) :: r,solid_angle
 	REAL(rp) :: angle, clockwise
 	REAL(rp) :: units
     REAL(rp), DIMENSION(:), ALLOCATABLE :: Psyn_send_buffer,Psyn_receive_buffer, np_send_buffer, np_receive_buffer
-	REAL(rp) :: lc, zeta
+	REAL(rp) :: lc
+	REAL(rp) :: dSA ! Element of solid angle
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: zeta
 	INTEGER :: ii,jj,ll,ss,pp
     INTEGER :: numel, mpierr
 
@@ -731,22 +741,31 @@ SUBROUTINE angular_density(params,spp)
 	ALLOCATE(np_lambda_pixel(cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species))
 	ALLOCATE(Psyn_lambda_pixel(cam%num_pixels(1),cam%num_pixels(2),cam%Nlambda,params%num_species))
 
+	ALLOCATE(P_lambda(cam%Nlambda))
+
+	ALLOCATE(zeta(cam%Nlambda))
+
+	ALLOCATE(photon_energy(cam%Nlambda))
+
 	np_angular_pixel = 0.0_rp
 	Psyn_angular_pixel = 0.0_rp
 
 	np_lambda_pixel = 0.0_rp
 	Psyn_lambda_pixel = 0.0_rp
 
+	P_lambda = 0.0_rp
+	zeta = 0.0_rp
+
+	photon_energy = C_h*C_C/cam%lambda
+
 	do ss=1_idef,params%num_species
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
 
-!$OMP PARALLEL FIRSTPRIVATE(q,m,pixel_area) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
+!$OMP PARALLEL DO FIRSTPRIVATE(q,m,photon_energy) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
 !$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,threshold_angle,theta,&
-!$OMP& psi,chi,beta,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp,r,photon_energy,&
-!$OMP& lc,zeta,solid_angle)&
+!$OMP& psi,chi,beta,P_lambda,bool,angle,clockwise,ii,jj,ll,pp,r,lc,zeta,solid_angle,dSA)&
 !$OMP& SHARED(params,spp,ss,Psyn_angular_pixel,np_angular_pixel,np_lambda_pixel,Psyn_lambda_pixel)
-!$OMP DO
 		do pp=1_idef,spp(ss)%ppp
 			if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
 				V = spp(ss)%vars%V(:,pp)*params%cpp%velocity
@@ -761,6 +780,8 @@ SUBROUTINE angular_density(params,spp)
 				k = q*SQRT(DOT_PRODUCT(binorm,binorm))/(spp(ss)%vars%g(pp)*m*u**3)
 
 				lc = (4.0_rp*C_PI/3.0_rp)/(k*g**3) ! Critical wavelength
+
+				zeta = lc/cam%lambda
 
 				binorm = binorm/SQRT(DOT_PRODUCT(binorm,binorm))
 
@@ -791,6 +812,8 @@ SUBROUTINE angular_density(params,spp)
 								r = SQRT(DOT_PRODUCT(n,n))
 								n = n/r
 
+								dSA = DOT_PRODUCT(n,XC/SQRT(DOT_PRODUCT(XC,XC)))*cam%pixel_area/r**2
+
 								beta = ACOS(DOT_PRODUCT(n,binorm))
 								if (beta.GT.0.5_rp*C_PI) psi = beta - 0.5_rp*C_PI
 								if (beta.LT.0.5_rp*C_PI) psi = 0.5_rp*C_PI - beta
@@ -801,24 +824,32 @@ SUBROUTINE angular_density(params,spp)
 
 								theta = ABS(ACOS(DOT_PRODUCT(n,V/u)))
 
-								do ll=1_idef,cam%Nlambda ! Nlambda
-									l = cam%lambda(ll)
-									photon_energy = C_h*C_C/l
+								if (theta .LE. threshold_angle) then
+									call P_integral(zeta,P_lambda)
 
-									if (theta .LE. threshold_angle) then
-										zeta = lc/l
+									P_lambda = (C_C*C_E**2)*P_lambda/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda**3)
 
-										Psyn_tmp = (C_C*C_E**2)*P_integral(zeta)/(SQRT(3.0_rp)*C_E0*g**2*l**3)
+									P_lambda = dSA*P_lambda/(2.0_rp*C_PI*(1.0_rp - COS(1.0_rp/g)))
 
-										Psyn_lambda_pixel(ii,jj,ll,ss) = Psyn_lambda_pixel(ii,jj,ll,ss) + Psyn_tmp/photon_energy
-										np_lambda_pixel(ii,jj,ll,ss) = np_lambda_pixel(ii,jj,ll,ss) + 1.0_rp
+									if (cam%photon_count) then
+										Psyn_lambda_pixel(ii,jj,:,ss) = Psyn_lambda_pixel(ii,jj,:,ss) + P_lambda/photon_energy
+									else
+										Psyn_lambda_pixel(ii,jj,:,ss) = Psyn_lambda_pixel(ii,jj,:,ss) + P_lambda
 									end if
+									np_lambda_pixel(ii,jj,:,ss) = np_lambda_pixel(ii,jj,:,ss) + 1.0_rp
+								end if
 
-									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
-										Psyn_tmp = Psyn(g,psi,k,l,chi)
-										if (Psyn_tmp.GT.0.0_rp) then
-											Psyn_angular_pixel(ii,jj,ll,ss) = Psyn_angular_pixel(ii,jj,ll,ss) &
-																			+ Psyn_tmp/photon_energy
+								do ll=1_idef,cam%Nlambda ! Nlambda
+									if ((chi.LT.chic(g,k,cam%lambda(ll))).AND.(psi.LT.psic(k,cam%lambda(ll)))) then
+										P_angular = Psyn(g,psi,k,cam%lambda(ll),chi)
+										if (P_angular.GT.0.0_rp) then
+											P_angular = dSA*P_angular
+											if (cam%photon_count) then
+												Psyn_angular_pixel(ii,jj,ll,ss) = Psyn_angular_pixel(ii,jj,ll,ss) &
+																				+ P_angular/photon_energy(ll)
+											else
+												Psyn_angular_pixel(ii,jj,ll,ss) = Psyn_angular_pixel(ii,jj,ll,ss) + P_angular
+											end if
 											np_angular_pixel(ii,jj,ll,ss) = np_angular_pixel(ii,jj,ll,ss) + 1.0_rp
 										end if
 									end if
@@ -831,7 +862,10 @@ SUBROUTINE angular_density(params,spp)
 								XC = (/cam%position(1)*COS(angle),-cam%position(1)*SIN(angle),cam%position(2)/)
 
 								n = XC - X
-								n = n/SQRT(DOT_PRODUCT(n,n))
+								r = SQRT(DOT_PRODUCT(n,n))
+								n = n/r
+
+								dSA = DOT_PRODUCT(n,XC/SQRT(DOT_PRODUCT(XC,XC)))*cam%pixel_area/r**2
 
 								beta = ACOS(DOT_PRODUCT(n,binorm))
 								if (beta.GT.0.5_rp*C_PI) psi = beta - 0.5_rp*C_PI
@@ -843,24 +877,32 @@ SUBROUTINE angular_density(params,spp)
 
 								theta = ABS(ACOS(DOT_PRODUCT(n,V/u)))
 
-								do ll=1_idef,cam%Nlambda ! Nlambda
-									l = cam%lambda(ll)
-									photon_energy = C_h*C_C/l
+								if (theta .LE. threshold_angle) then
+									call P_integral(zeta,P_lambda)
 
-									if (theta .LE. threshold_angle) then
-										zeta = lc/l
+									P_lambda = (C_C*C_E**2)*P_lambda/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda**3)
 
-										Psyn_tmp = (C_C*C_E**2)*P_integral(zeta)/(SQRT(3.0_rp)*C_E0*g**2*l**3)
+									P_lambda = dSA*P_lambda/(2.0_rp*C_PI*(1.0_rp - COS(1.0_rp/g)))
 
-										Psyn_lambda_pixel(ii,jj,ll,ss) = Psyn_lambda_pixel(ii,jj,ll,ss) + Psyn_tmp/photon_energy
-										np_lambda_pixel(ii,jj,ll,ss) = np_lambda_pixel(ii,jj,ll,ss) + 1.0_rp
+									if (cam%photon_count) then
+										Psyn_lambda_pixel(ii,jj,:,ss) = Psyn_lambda_pixel(ii,jj,:,ss) + P_lambda/photon_energy
+									else
+										Psyn_lambda_pixel(ii,jj,:,ss) = Psyn_lambda_pixel(ii,jj,:,ss) + P_lambda
 									end if
+									np_lambda_pixel(ii,jj,:,ss) = np_lambda_pixel(ii,jj,:,ss) + 1.0_rp
+								end if
 
-									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
-										Psyn_tmp = Psyn(g,psi,k,l,chi)
-										if (Psyn_tmp.GT.0.0_rp) then
-											Psyn_angular_pixel(ii,jj,ll,ss) = Psyn_angular_pixel(ii,jj,ll,ss) &
-																			+ Psyn_tmp/photon_energy
+								do ll=1_idef,cam%Nlambda ! Nlambda
+									if ((chi.LT.chic(g,k,cam%lambda(ll))).AND.(psi.LT.psic(k,cam%lambda(ll)))) then
+										P_angular = Psyn(g,psi,k,cam%lambda(ll),chi)
+										if (P_angular.GT.0.0_rp) then
+											P_angular = dSA*P_angular
+											if (cam%photon_count) then
+												Psyn_angular_pixel(ii,jj,ll,ss) = Psyn_angular_pixel(ii,jj,ll,ss) &
+																				+ P_angular/photon_energy(ll)
+											else
+												Psyn_angular_pixel(ii,jj,ll,ss) = Psyn_angular_pixel(ii,jj,ll,ss) + P_angular
+											end if
 											np_angular_pixel(ii,jj,ll,ss) = np_angular_pixel(ii,jj,ll,ss) + 1.0_rp
 										end if
 									end if
@@ -874,8 +916,7 @@ SUBROUTINE angular_density(params,spp)
 				end if ! check if bool == TRUE
 			end if ! if confined
 		end do ! particles
-!$OMP END DO
-!$OMP END PARALLEL
+!$OMP END PARALLEL DO
 	end do ! species
 
 !	* * * * * * * IMPORTANT * * * * * * *
@@ -959,6 +1000,12 @@ SUBROUTINE angular_density(params,spp)
 
 	DEALLOCATE(np_lambda_pixel)
     DEALLOCATE(Psyn_lambda_pixel)
+
+	DEALLOCATE(P_lambda)
+
+	DEALLOCATE(zeta)
+
+	DEALLOCATE(photon_energy)
 END SUBROUTINE angular_density
 
 
@@ -983,12 +1030,15 @@ SUBROUTINE integrated_angular_density(params,spp)
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: np_pixel
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: P_lambda, P_angular
 	REAL(rp) :: q, m, k, u, g, l, threshold_angle, threshold_angle_simple_model
-	REAL(rp) :: psi, chi, beta, theta, Psyn_tmp
-	REAL(rp) :: r,photon_energy,pixel_area,solid_angle
+	REAL(rp) :: psi, chi, beta, theta
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: photon_energy
+	REAL(rp) :: r,solid_angle
 	REAL(rp) :: angle, clockwise
 	REAL(rp) :: units
     REAL(rp), DIMENSION(:), ALLOCATABLE :: send_buffer, receive_buffer
-	REAL(rp) :: lc, zeta
+	REAL(rp) :: lc
+	REAL(rp) :: dSA ! Element of solid angle
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: zeta
 	INTEGER :: ii,jj,ll,ss,pp
     INTEGER :: numel, mpierr
 
@@ -1009,6 +1059,9 @@ SUBROUTINE integrated_angular_density(params,spp)
 	ALLOCATE(P_a_pixel(cam%Nlambda,params%num_species))
 	ALLOCATE(np_pixel(params%num_species))
 
+	ALLOCATE(zeta(cam%Nlambda))
+
+	ALLOCATE(photon_energy(cam%Nlambda))
 
 	np_angular_pixel = 0.0_rp
 	Psyn_angular_pixel = 0.0_rp
@@ -1020,17 +1073,18 @@ SUBROUTINE integrated_angular_density(params,spp)
 	P_a_pixel = 0.0_rp
 	np_pixel = 0.0_rp
 
+	zeta = 0.0_rp
+
+	photon_energy = C_h*C_C/cam%lambda
+
 	do ss=1_idef,params%num_species
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
 
-!$OMP PARALLEL FIRSTPRIVATE(q,m,pixel_area) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
+!$OMP PARALLEL DO FIRSTPRIVATE(q,m,photon_energy) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
 !$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,threshold_angle,threshold_angle_simple_model,theta,&
-!$OMP& psi,chi,beta,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp,&
-!$OMP& r,photon_energy,lc,zeta,P_lambda,P_angular,solid_angle)&
-!$OMP& SHARED(params,spp,ss,Psyn_angular_pixel,np_angular_pixel,np_lambda_pixel,Psyn_lambda_pixel,&
-!$OMP& P_l_pixel,P_a_pixel,np_pixel)
-!$OMP DO
+!$OMP& psi,chi,beta,bool,angle,clockwise,ii,jj,ll,pp,r,lc,zeta,P_lambda,P_angular,solid_angle,dSA)&
+!$OMP& SHARED(params,spp,ss,Psyn_angular_pixel,np_angular_pixel,np_lambda_pixel,Psyn_lambda_pixel,P_l_pixel,P_a_pixel,np_pixel)
 		do pp=1_idef,spp(ss)%ppp
 			if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
 				V = spp(ss)%vars%V(:,pp)*params%cpp%velocity
@@ -1046,6 +1100,8 @@ SUBROUTINE integrated_angular_density(params,spp)
 
 				lc = (4.0_rp*C_PI/3.0_rp)/(k*g**3) ! Critical wavelength
 
+				zeta = lc/cam%lambda
+
 				binorm = binorm/SQRT(DOT_PRODUCT(binorm,binorm))
 
 				threshold_angle = (1.5_rp*k*cam%lambda_max/C_PI)**(1.0_rp/3.0_rp) ! In radians
@@ -1054,7 +1110,6 @@ SUBROUTINE integrated_angular_density(params,spp)
 
 				np_pixel(ss) = np_pixel(ss) + 1.0_rp ! We count all the confined particles.
 
-!				call check_if_visible(X,V/u,MINVAL((/threshold_angle,threshold_angle_simple_model/)),bool,angle)
 				call check_if_visible(X,V/u,MAXVAL((/threshold_angle,threshold_angle_simple_model/)),bool,angle)
 			
 				if (bool.EQV..TRUE.) then
@@ -1080,6 +1135,8 @@ SUBROUTINE integrated_angular_density(params,spp)
 								r = SQRT(DOT_PRODUCT(n,n))
 								n = n/r
 
+								dSA = DOT_PRODUCT(n,XC/SQRT(DOT_PRODUCT(XC,XC)))*cam%pixel_area/r**2
+
 								beta = ACOS(DOT_PRODUCT(n,binorm))
 								if (beta.GT.0.5_rp*C_PI) psi = beta - 0.5_rp*C_PI
 								if (beta.LT.0.5_rp*C_PI) psi = 0.5_rp*C_PI - beta
@@ -1093,32 +1150,38 @@ SUBROUTINE integrated_angular_density(params,spp)
 								P_lambda = 0.0_rp
 								P_angular = 0.0_rp
 
+								if (theta .LE. threshold_angle_simple_model) then
+									call P_integral(zeta,P_lambda)
+
+									P_lambda = (C_C*C_E**2)*P_lambda/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda**3)
+									np_lambda_pixel(ii,jj,ss) = np_lambda_pixel(ii,jj,ss) + 1.0_rp
+								end if
+
 								do ll=1_idef,cam%Nlambda ! Nlambda
-									l = cam%lambda(ll)
-									photon_energy = C_h*C_C/l
-
-									if (theta .LE. threshold_angle_simple_model) then
-										zeta = lc/l
-
-										P_lambda(ll) = (C_C*C_E**2)*P_integral(zeta)/(SQRT(3.0_rp)*C_E0*g**2*l**3)
-										np_lambda_pixel(ii,jj,ss) = np_lambda_pixel(ii,jj,ss) + 1.0_rp
-									end if
-
-									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
-										P_angular(ll) = Psyn(g,psi,k,l,chi)
+									if ((chi.LT.chic(g,k,cam%lambda(ll))).AND.(psi.LT.psic(k,cam%lambda(ll)))) then
+										P_angular(ll) = Psyn(g,psi,k,cam%lambda(ll),chi)
 										if (P_angular(ll).GT.0.0_rp) then
 											np_angular_pixel(ii,jj,ss) = np_angular_pixel(ii,jj,ss) + 1.0_rp
-										else
-											P_angular(ll) = 0.0_rp
 										end if
 									end if
 								end do ! Nlambda	
 
-								P_l_pixel(:,ss)	= P_l_pixel(:,ss) + P_lambda/(2.0_rp*C_PI*(1.0_rp - COS(1.0_rp/g)))
+								P_lambda = dSA*P_lambda/(2.0_rp*C_PI*(1.0_rp - COS(1.0_rp/g)))
+								P_angular = dSA*P_angular
+
+								P_l_pixel(:,ss)	= P_l_pixel(:,ss) + P_lambda
 								P_a_pixel(:,ss)	= P_a_pixel(:,ss) + P_angular
 
-								Psyn_lambda_pixel(ii,jj,ss) = Psyn_lambda_pixel(ii,jj,ss) + trapz(cam%lambda,P_lambda)
-								Psyn_angular_pixel(ii,jj,ss) = Psyn_angular_pixel(ii,jj,ss) + trapz(cam%lambda,P_angular)
+								if (cam%photon_count) then
+									P_lambda = P_lambda/photon_energy
+									P_angular = P_angular/photon_energy
+
+									Psyn_lambda_pixel(ii,jj,ss) = Psyn_lambda_pixel(ii,jj,ss) + SUM(P_lambda)
+									Psyn_angular_pixel(ii,jj,ss) = Psyn_angular_pixel(ii,jj,ss) + SUM(P_angular)
+								else
+									Psyn_lambda_pixel(ii,jj,ss) = Psyn_lambda_pixel(ii,jj,ss) + trapz(cam%lambda,P_lambda)
+									Psyn_angular_pixel(ii,jj,ss) = Psyn_angular_pixel(ii,jj,ss) + trapz(cam%lambda,P_angular)
+								end if
 							end if
 
 							if (bool_pixel_array(ii,jj,2)) then
@@ -1127,7 +1190,10 @@ SUBROUTINE integrated_angular_density(params,spp)
 								XC = (/cam%position(1)*COS(angle),-cam%position(1)*SIN(angle),cam%position(2)/)
 
 								n = XC - X
-								n = n/SQRT(DOT_PRODUCT(n,n))
+								r = SQRT(DOT_PRODUCT(n,n))
+								n = n/r
+
+								dSA = DOT_PRODUCT(n,XC/SQRT(DOT_PRODUCT(XC,XC)))*cam%pixel_area/r**2
 
 								beta = ACOS(DOT_PRODUCT(n,binorm))
 								if (beta.GT.0.5_rp*C_PI) psi = beta - 0.5_rp*C_PI
@@ -1142,32 +1208,38 @@ SUBROUTINE integrated_angular_density(params,spp)
 								P_lambda = 0.0_rp
 								P_angular = 0.0_rp
 
+								if (theta .LE. threshold_angle_simple_model) then
+									call P_integral(zeta,P_lambda)
+
+									P_lambda = (C_C*C_E**2)*P_lambda/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda**3)
+									np_lambda_pixel(ii,jj,ss) = np_lambda_pixel(ii,jj,ss) + 1.0_rp
+								end if
+
 								do ll=1_idef,cam%Nlambda ! Nlambda
-									l = cam%lambda(ll)
-									photon_energy = C_h*C_C/l
-
-									if (theta .LE. threshold_angle_simple_model) then
-										zeta = lc/l
-
-										P_lambda(ll) = (C_C*C_E**2)*P_integral(zeta)/(SQRT(3.0_rp)*C_E0*g**2*l**3)
-										np_lambda_pixel(ii,jj,ss) = np_lambda_pixel(ii,jj,ss) + 1.0_rp
-									end if
-
-									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
-										P_angular(ll) = Psyn(g,psi,k,l,chi)
+									if ((chi.LT.chic(g,k,cam%lambda(ll))).AND.(psi.LT.psic(k,cam%lambda(ll)))) then
+										P_angular(ll) = Psyn(g,psi,k,cam%lambda(ll),chi)
 										if (P_angular(ll).GT.0.0_rp) then
 											np_angular_pixel(ii,jj,ss) = np_angular_pixel(ii,jj,ss) + 1.0_rp
-										else
-											P_angular(ll) = 0.0_rp
 										end if
 									end if
-								end do ! Nlambda
+								end do ! Nlambda	
 
-								P_l_pixel(:,ss)	= P_l_pixel(:,ss) + P_lambda/(2.0_rp*C_PI*(1.0_rp - COS(1.0_rp/g)))
+								P_lambda = dSA*P_lambda/(2.0_rp*C_PI*(1.0_rp - COS(1.0_rp/g)))
+								P_angular = dSA*P_angular
+
+								P_l_pixel(:,ss)	= P_l_pixel(:,ss) + P_lambda
 								P_a_pixel(:,ss)	= P_a_pixel(:,ss) + P_angular
 
-								Psyn_lambda_pixel(ii,jj,ss) = Psyn_lambda_pixel(ii,jj,ss) + trapz(cam%lambda,P_lambda)
-								Psyn_angular_pixel(ii,jj,ss) = Psyn_angular_pixel(ii,jj,ss) + trapz(cam%lambda,P_angular)
+								if (cam%photon_count) then
+									P_lambda = P_lambda/photon_energy
+									P_angular = P_angular/photon_energy
+
+									Psyn_lambda_pixel(ii,jj,ss) = Psyn_lambda_pixel(ii,jj,ss) + SUM(P_lambda)
+									Psyn_angular_pixel(ii,jj,ss) = Psyn_angular_pixel(ii,jj,ss) + SUM(P_angular)
+								else
+									Psyn_lambda_pixel(ii,jj,ss) = Psyn_lambda_pixel(ii,jj,ss) + trapz(cam%lambda,P_lambda)
+									Psyn_angular_pixel(ii,jj,ss) = Psyn_angular_pixel(ii,jj,ss) + trapz(cam%lambda,P_angular)
+								end if
 							end if
 
 						end do ! NY
@@ -1176,8 +1248,7 @@ SUBROUTINE integrated_angular_density(params,spp)
 
 			end if ! if confined
 		end do ! particles
-!$OMP END DO
-!$OMP END PARALLEL
+!$OMP END PARALLEL DO
 	end do ! species
 
 !	* * * * * * * IMPORTANT * * * * * * *
@@ -1349,6 +1420,10 @@ SUBROUTINE integrated_angular_density(params,spp)
 	DEALLOCATE(P_l_pixel)
 	DEALLOCATE(P_a_pixel)
 	DEALLOCATE(np_pixel)
+
+	DEALLOCATE(zeta)
+
+	DEALLOCATE(photon_energy)
 END SUBROUTINE integrated_angular_density
 
 
@@ -1371,14 +1446,18 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: P_l_pixel
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: P_a_pixel
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: np_pixel
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: P
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: P_lambda, P_angular
 	REAL(rp) :: q, m, k, u, g, l, threshold_angle, threshold_angle_simple_model
-	REAL(rp) :: psi, chi, beta, theta, Psyn_tmp
-	REAL(rp) :: r, photon_energy,pixel_area,solid_angle
+	REAL(rp) :: psi, chi, beta, theta
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: photon_energy
+	REAL(rp) :: r,solid_angle
 	REAL(rp) :: angle, clockwise
 	REAL(rp) :: units
     REAL(rp), DIMENSION(:), ALLOCATABLE :: send_buffer, receive_buffer
-	REAL(rp) :: lc, zeta
+	REAL(rp) :: lc
+	REAL(rp) :: dSA ! Element of solid angle
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: zeta
 	REAL(rp) :: Dtor
 	INTEGER :: ii,jj,ll,ss,pp
 	INTEGER :: itor
@@ -1394,6 +1473,8 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 	ALLOCATE(np_lambda_pixel(cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species))
 	ALLOCATE(Psyn_lambda_pixel(cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species))
 
+	ALLOCATE(P(cam%Nlambda))
+	
 	ALLOCATE(P_lambda(cam%Nlambda,cam%ntor_sections))
 	ALLOCATE(P_angular(cam%Nlambda,cam%ntor_sections))
 
@@ -1401,6 +1482,9 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 	ALLOCATE(P_a_pixel(cam%Nlambda,cam%ntor_sections,params%num_species))
 	ALLOCATE(np_pixel(params%num_species))
 
+	ALLOCATE(zeta(cam%Nlambda))
+
+	ALLOCATE(photon_energy(cam%Nlambda))
 
 	np_angular_pixel = 0.0_rp
 	Psyn_angular_pixel = 0.0_rp
@@ -1414,17 +1498,18 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 
 	Dtor = 2.0_rp*C_PI/REAL(cam%ntor_sections,rp)
 
+	zeta = 0.0_rp
+
+	photon_energy = C_h*C_C/cam%lambda
+
 	do ss=1_idef,params%num_species
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
 
-!$OMP PARALLEL FIRSTPRIVATE(q,m,Dtor,pixel_area) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
+!$OMP PARALLEL DO FIRSTPRIVATE(q,m,Dtor,photon_energy) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
 !$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,threshold_angle,threshold_angle_simple_model,theta,&
-!$OMP& psi,chi,beta,Psyn_tmp,bool,angle,clockwise,ii,jj,ll,pp,&
-!$OMP& r,photon_energy,lc,zeta,P_lambda,P_angular,itor,solid_angle)&
-!$OMP& SHARED(params,spp,ss,Psyn_angular_pixel,np_angular_pixel,np_lambda_pixel,Psyn_lambda_pixel,&
-!$OMP& P_l_pixel,P_a_pixel,np_pixel)
-!$OMP DO
+!$OMP& psi,chi,beta,bool,angle,clockwise,ii,jj,ll,pp,r,lc,zeta,P_lambda,P_angular,itor,solid_angle,dSA)&
+!$OMP& SHARED(params,spp,ss,Psyn_angular_pixel,np_angular_pixel,np_lambda_pixel,Psyn_lambda_pixel,P_l_pixel,P_a_pixel,np_pixel)
 		do pp=1_idef,spp(ss)%ppp
 			if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
 				V = spp(ss)%vars%V(:,pp)*params%cpp%velocity
@@ -1439,6 +1524,8 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 				k = q*SQRT(DOT_PRODUCT(binorm,binorm))/(spp(ss)%vars%g(pp)*m*u**3)
 
 				lc = (4.0_rp*C_PI/3.0_rp)/(k*g**3) ! Critical wavelength
+
+				zeta = lc/cam%lambda
 
 				binorm = binorm/SQRT(DOT_PRODUCT(binorm,binorm))
 
@@ -1474,6 +1561,8 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 								r = SQRT(DOT_PRODUCT(n,n))
 								n = n/r
 
+								dSA = DOT_PRODUCT(n,XC/SQRT(DOT_PRODUCT(XC,XC)))*cam%pixel_area/r**2
+
 								beta = ACOS(DOT_PRODUCT(n,binorm))
 								if (beta.GT.0.5_rp*C_PI) psi = beta - 0.5_rp*C_PI
 								if (beta.LT.0.5_rp*C_PI) psi = 0.5_rp*C_PI - beta
@@ -1487,19 +1576,16 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 								P_lambda = 0.0_rp
 								P_angular = 0.0_rp
 
+								if (theta .LE. threshold_angle_simple_model) then
+									call P_integral(zeta,P)
+
+									P_lambda(:,itor) = (C_C*C_E**2)*P/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda**3)
+									np_lambda_pixel(ii,jj,itor,ss) = np_lambda_pixel(ii,jj,itor,ss) + 1.0_rp
+								end if
+
 								do ll=1_idef,cam%Nlambda ! Nlambda
-									l = cam%lambda(ll)
-									photon_energy = C_h*C_C/l
-
-									if (theta .LE. threshold_angle_simple_model) then
-										zeta = lc/l
-
-										P_lambda(ll,itor) = (C_C*C_E**2)*P_integral(zeta)/(SQRT(3.0_rp)*C_E0*g**2*l**3)
-										np_lambda_pixel(ii,jj,itor,ss) = np_lambda_pixel(ii,jj,itor,ss) + 1.0_rp
-									end if
-
-									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
-										P_angular(ll,itor) = Psyn(g,psi,k,l,chi)
+									if ((chi.LT.chic(g,k,cam%lambda(ll))).AND.(psi.LT.psic(k,cam%lambda(ll)))) then
+										P_angular(ll,itor) = Psyn(g,psi,k,cam%lambda(ll),chi)
 										if (P_angular(ll,itor).GT.0.0_rp) then
 											np_angular_pixel(ii,jj,itor,ss) = np_angular_pixel(ii,jj,itor,ss) + 1.0_rp
 										else
@@ -1508,14 +1594,24 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 									end if
 								end do ! Nlambda	
 
-								P_l_pixel(:,itor,ss) = P_l_pixel(:,itor,ss) + &
-															P_lambda(:,itor)/(2.0_rp*C_PI*(1.0_rp - COS(1.0_rp/g)))
+								P_lambda(:,itor) = dSA*P_lambda(:,itor)/(2.0_rp*C_PI*(1.0_rp - COS(1.0_rp/g)))
+								P_angular(:,itor) = dSA*P_angular(:,itor)
+
+								P_l_pixel(:,itor,ss) = P_l_pixel(:,itor,ss) + P_lambda(:,itor)
 								P_a_pixel(:,itor,ss) = P_a_pixel(:,itor,ss) + P_angular(:,itor)
 
-								Psyn_lambda_pixel(ii,jj,itor,ss) = Psyn_lambda_pixel(ii,jj,itor,ss) + &
-															trapz(cam%lambda,P_lambda(:,itor))
-								Psyn_angular_pixel(ii,jj,itor,ss) = Psyn_angular_pixel(ii,jj,itor,ss) + &
-															trapz(cam%lambda,P_angular(:,itor))
+								if (cam%photon_count) then
+									P_lambda(:,itor) = P_lambda(:,itor)/photon_energy
+									P_angular(:,itor) = P_angular(:,itor)/photon_energy
+
+									Psyn_lambda_pixel(ii,jj,itor,ss) = Psyn_lambda_pixel(ii,jj,itor,ss) + SUM(P_lambda(:,itor))
+									Psyn_angular_pixel(ii,jj,itor,ss) = Psyn_angular_pixel(ii,jj,itor,ss) + SUM(P_angular(:,itor))
+								else
+									Psyn_lambda_pixel(ii,jj,itor,ss) = Psyn_lambda_pixel(ii,jj,itor,ss) + &
+																trapz(cam%lambda,P_lambda(:,itor))
+									Psyn_angular_pixel(ii,jj,itor,ss) = Psyn_angular_pixel(ii,jj,itor,ss) + &
+																trapz(cam%lambda,P_angular(:,itor))
+								end if
 							end if
 
 							if (bool_pixel_array(ii,jj,2)) then
@@ -1525,7 +1621,10 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 								XC = (/cam%position(1)*COS(angle),-cam%position(1)*SIN(angle),cam%position(2)/)
 
 								n = XC - X
-								n = n/SQRT(DOT_PRODUCT(n,n))
+								r = SQRT(DOT_PRODUCT(n,n))
+								n = n/r
+
+								dSA = DOT_PRODUCT(n,XC/SQRT(DOT_PRODUCT(XC,XC)))*cam%pixel_area/r**2
 
 								beta = ACOS(DOT_PRODUCT(n,binorm))
 								if (beta.GT.0.5_rp*C_PI) psi = beta - 0.5_rp*C_PI
@@ -1540,19 +1639,16 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 								P_lambda = 0.0_rp
 								P_angular = 0.0_rp
 
+								if (theta .LE. threshold_angle_simple_model) then
+									call P_integral(zeta,P)
+
+									P_lambda(:,itor) = (C_C*C_E**2)*P/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda**3)
+									np_lambda_pixel(ii,jj,itor,ss) = np_lambda_pixel(ii,jj,itor,ss) + 1.0_rp
+								end if
+
 								do ll=1_idef,cam%Nlambda ! Nlambda
-									l = cam%lambda(ll)
-									photon_energy = C_h*C_C/l
-
-									if (theta .LE. threshold_angle_simple_model) then
-										zeta = lc/l
-
-										P_lambda(ll,itor) = (C_C*C_E**2)*P_integral(zeta)/(SQRT(3.0_rp)*C_E0*g**2*l**3)
-										np_lambda_pixel(ii,jj,itor,ss) = np_lambda_pixel(ii,jj,itor,ss) + 1.0_rp
-									end if
-
-									if ((chi.LT.chic(g,k,l)).AND.(psi.LT.psic(k,l))) then
-										P_angular(ll,itor) = Psyn(g,psi,k,l,chi)
+									if ((chi.LT.chic(g,k,cam%lambda(ll))).AND.(psi.LT.psic(k,cam%lambda(ll)))) then
+										P_angular(ll,itor) = Psyn(g,psi,k,cam%lambda(ll),chi)
 										if (P_angular(ll,itor).GT.0.0_rp) then
 											np_angular_pixel(ii,jj,itor,ss) = np_angular_pixel(ii,jj,itor,ss) + 1.0_rp
 										else
@@ -1561,14 +1657,24 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 									end if
 								end do ! Nlambda	
 
-								P_l_pixel(:,itor,ss) = P_l_pixel(:,itor,ss) + &
-															P_lambda(:,itor)/(2.0_rp*C_PI*(1.0_rp - COS(1.0_rp/g)))
+								P_lambda(:,itor) = dSA*P_lambda(:,itor)/(2.0_rp*C_PI*(1.0_rp - COS(1.0_rp/g)))
+								P_angular(:,itor) = dSA*P_angular(:,itor)
+
+								P_l_pixel(:,itor,ss) = P_l_pixel(:,itor,ss) + P_lambda(:,itor)
 								P_a_pixel(:,itor,ss) = P_a_pixel(:,itor,ss) + P_angular(:,itor)
 
-								Psyn_lambda_pixel(ii,jj,itor,ss) = Psyn_lambda_pixel(ii,jj,itor,ss) + &
-															trapz(cam%lambda,P_lambda(:,itor))
-								Psyn_angular_pixel(ii,jj,itor,ss) = Psyn_angular_pixel(ii,jj,itor,ss) + &
-															trapz(cam%lambda,P_angular(:,itor))
+								if (cam%photon_count) then
+									P_lambda(:,itor) = P_lambda(:,itor)/photon_energy
+									P_angular(:,itor) = P_angular(:,itor)/photon_energy
+
+									Psyn_lambda_pixel(ii,jj,itor,ss) = Psyn_lambda_pixel(ii,jj,itor,ss) + SUM(P_lambda(:,itor))
+									Psyn_angular_pixel(ii,jj,itor,ss) = Psyn_angular_pixel(ii,jj,itor,ss) + SUM(P_angular(:,itor))
+								else
+									Psyn_lambda_pixel(ii,jj,itor,ss) = Psyn_lambda_pixel(ii,jj,itor,ss) + &
+																trapz(cam%lambda,P_lambda(:,itor))
+									Psyn_angular_pixel(ii,jj,itor,ss) = Psyn_angular_pixel(ii,jj,itor,ss) + &
+																trapz(cam%lambda,P_angular(:,itor))
+								end if
 							end if
 
 						end do ! NY
@@ -1577,8 +1683,7 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 
 			end if ! if confined
 		end do ! particles
-!$OMP END DO
-!$OMP END PARALLEL
+!$OMP END PARALLEL DO
 	end do ! species
 
 !	* * * * * * * IMPORTANT * * * * * * *
@@ -1758,6 +1863,12 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 	DEALLOCATE(P_l_pixel)
 	DEALLOCATE(P_a_pixel)
 	DEALLOCATE(np_pixel)
+
+	DEALLOCATE(P)
+
+	DEALLOCATE(zeta)
+
+	DEALLOCATE(photon_energy)
 END SUBROUTINE integrated_SE_toroidal_sections
 
 
@@ -1775,7 +1886,7 @@ SUBROUTINE spectral_density(params,spp)
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: PTot
 	REAL(rp) :: Rpol, Zpol
 	REAL(rp) :: q, m, k, u, g, lc
-	REAL(rp) :: r, photon_energy,pixel_area,solid_angle
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: photon_energy
 	INTEGER :: ii,jj,ll,ss,pp
     REAL(rp), DIMENSION(:), ALLOCATABLE :: Psyn_send_buffer,Psyn_receive_buffer
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: np_send_buffer,np_receive_buffer
@@ -1788,20 +1899,20 @@ SUBROUTINE spectral_density(params,spp)
 	ALLOCATE(PTot(pplane%grid_dims(1),pplane%grid_dims(2),params%num_species))
 	ALLOCATE(P(cam%Nlambda))
 	ALLOCATE(zeta(cam%Nlambda))
+	ALLOCATE(photon_energy(cam%Nlambda))
 
 	np = 0.0_rp
 	Psyn_lambda = 0.0_rp
 	P = 0.0_rp
 	PTot = 0.0_rp
+	photon_energy = C_h*C_C/cam%lambda
 	
 	do ss=1_idef,params%num_species
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
 
-!$OMP PARALLEL FIRSTPRIVATE(q,m,pixel_area) PRIVATE(binorm,X,V,B,E,&
-!$OMP& k,u,g,lc,ii,jj,ll,pp,photon_energy,zeta,P,Rpol,Zpol,r,solid_angle)&
+!$OMP PARALLEL DO FIRSTPRIVATE(q,m,photon_energy) PRIVATE(binorm,X,V,B,E,k,u,g,lc,ii,jj,ll,pp,zeta,P,Rpol,Zpol)&
 !$OMP& SHARED(params,spp,ss,Psyn_lambda,PTot,np)
-!$OMP DO
 		do pp=1_idef,spp(ss)%ppp
 			if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
 				V = spp(ss)%vars%V(:,pp)*params%cpp%velocity
@@ -1818,10 +1929,9 @@ SUBROUTINE spectral_density(params,spp)
 				lc = (4.0_rp*C_PI/3.0_rp)/(k*g**3)
 				zeta = lc/cam%lambda
 
-				do ii=1_idef,cam%Nlambda
-					photon_energy = C_h*C_C/cam%lambda(ii)
-					P(ii) = (C_C*C_E**2)*P_integral(zeta(ii))/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda(ii)**3)
-				end do
+				call P_integral(zeta,P)
+
+				P = (C_C*C_E**2)*P/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda**3)
 
 				Rpol = SQRT(SUM(X(1:2)**2))
 				Zpol = X(3)
@@ -1834,8 +1944,7 @@ SUBROUTINE spectral_density(params,spp)
 				PTot(ii,jj,ss) = PTot(ii,jj,ss) + spp(ss)%vars%Prad(pp);
 			end if ! if confined
 		end do ! particles
-!$OMP END DO
-!$OMP END PARALLEL
+!$OMP END PARALLEL DO
 	end do ! species
 
 !	* * * * * * * IMPORTANT * * * * * * *
@@ -1911,6 +2020,7 @@ SUBROUTINE spectral_density(params,spp)
 	DEALLOCATE(PTot)
 	DEALLOCATE(P)
 	DEALLOCATE(zeta)
+	DEALLOCATE(photon_energy)
 END SUBROUTINE spectral_density
 
 
@@ -1930,7 +2040,7 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: PTot
 	REAL(rp) :: Rpol, Zpol
 	REAL(rp) :: q, m, k, u, g, lc
-	REAL(rp) :: r, photon_energy,pixel_area,solid_angle
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: photon_energy
 	INTEGER :: ii,jj,ll,ss,pp
     REAL(rp), DIMENSION(:), ALLOCATABLE :: send_buffer, receive_buffer
     INTEGER :: numel, mpierr
@@ -1943,6 +2053,7 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	ALLOCATE(P_lambda(cam%Nlambda,params%num_species))
 	ALLOCATE(np_lambda(params%num_species))
 	ALLOCATE(zeta(cam%Nlambda))
+	ALLOCATE(photon_energy(cam%Nlambda))
 
 	np = 0.0_rp
 	Psyn_lambda = 0.0_rp
@@ -1951,14 +2062,13 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	PTot = 0.0_rp
 
 	np_lambda = 0.0_rp
+	photon_energy = C_h*C_C/cam%lambda
 	
 	do ss=1_idef,params%num_species
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
-!$OMP PARALLEL FIRSTPRIVATE(q,m,pixel_area) PRIVATE(binorm,X,V,B,E,&
-!$OMP& k,u,g,lc,ii,jj,ll,pp,photon_energy,zeta,P,Rpol,Zpol,r,solid_angle)&
+!$OMP PARALLEL DO FIRSTPRIVATE(q,m,photon_energy) PRIVATE(binorm,X,V,B,E,k,u,g,lc,ii,jj,ll,pp,zeta,P,Rpol,Zpol)&
 !$OMP& SHARED(params,spp,ss,Psyn_lambda,PTot,np,P_lambda,np_lambda)
-!$OMP DO
 		do pp=1_idef,spp(ss)%ppp
 			if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
 				V = spp(ss)%vars%V(:,pp)*params%cpp%velocity
@@ -1975,10 +2085,9 @@ SUBROUTINE integrated_spectral_density(params,spp)
 				lc = (4.0_rp*C_PI/3.0_rp)/(k*g**3)
 				zeta = lc/cam%lambda
 
-				do ii=1_idef,cam%Nlambda
-					photon_energy = C_h*C_C/cam%lambda(ii)
-					P(ii) = (C_C*C_E**2)*P_integral(zeta(ii))/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda(ii)**3)
-				end do
+				call P_integral(zeta,P)
+
+				P = (C_C*C_E**2)*P/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda**3)
 
 				P_lambda(:,ss) = P_lambda(:,ss) + P
 				np_lambda(ss) = np_lambda(ss) + 1.0_rp
@@ -1994,8 +2103,7 @@ SUBROUTINE integrated_spectral_density(params,spp)
 				PTot(ii,jj,ss) = PTot(ii,jj,ss) + spp(ss)%vars%Prad(pp);
 			end if ! if confined
 		end do ! particles
-!$OMP END DO
-!$OMP END PARALLEL
+!$OMP END PARALLEL DO
 	end do ! species
 
 !	* * * * * * * IMPORTANT * * * * * * *
@@ -2123,6 +2231,7 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	DEALLOCATE(P_lambda)
 	DEALLOCATE(np_lambda)
 	DEALLOCATE(zeta)
+	DEALLOCATE(photon_energy)
 END SUBROUTINE integrated_spectral_density
 
 
@@ -2152,9 +2261,13 @@ SUBROUTINE save_synthetic_camera_params(params)
 		gname = "synthetic_camera_params"
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
-		dset = TRIM(gname) // "/aperture"
-		attr = "Aperture of the camera (m)"
-		call save_to_hdf5(h5file_id,dset,cam%aperture,attr)
+!		dset = TRIM(gname) // "/aperture"
+!		attr = "Aperture of the camera (m)"
+!		call save_to_hdf5(h5file_id,dset,cam%aperture,attr)
+
+		dset = TRIM(gname) // "/pixel_area"
+		attr = "Pixel area (m^2)"
+		call save_to_hdf5(h5file_id,dset,cam%pixel_area,attr)
 
 		dset = TRIM(gname) // "/start_at"
 		attr = "Time at which camera starts working (s)"
@@ -2226,31 +2339,29 @@ SUBROUTINE save_synthetic_camera_params(params)
 		dset = TRIM(gname) // "/photon_count"
 		attr = "Logical variable: 1=Psyn is in number of photons, 0=Psyn is in Watts"
 		if (cam%photon_count) then
-			call save_to_hdf5(h5file_id,dset,1.0_rp,attr)
+			call save_to_hdf5(h5file_id,dset,1_idef,attr)
 		else
-			call save_to_hdf5(h5file_id,dset,0.0_rp,attr)
+			call save_to_hdf5(h5file_id,dset,0_idef,attr)
 		end if
 
 		dset = TRIM(gname) // "/integrated_opt"
 		attr = "Logical variable: 1=integrated spectra, 0=detailed spectral info"
 		if (cam%integrated_opt) then
-			call save_to_hdf5(h5file_id,dset,1.0_rp,attr)
+			call save_to_hdf5(h5file_id,dset,1_idef,attr)
 		else
-			call save_to_hdf5(h5file_id,dset,0.0_rp,attr)
+			call save_to_hdf5(h5file_id,dset,0_idef,attr)
 		end if
 
-		if (cam%toroidal_sections) then
 			dset = TRIM(gname) // "/toroidal_sections"
 			attr = "Logical variable: 1=decomposed in toroidal sections, 0=no toroidal decomposition"
-			call save_to_hdf5(h5file_id,dset,1.0_rp,attr)
+		if (cam%toroidal_sections) then
+			call save_to_hdf5(h5file_id,dset,1_idef,attr)
 
 			dset = TRIM(gname) // "/ntor_sections"
 			attr = "Number of toroidal sections"
 			call save_to_hdf5(h5file_id,dset,cam%ntor_sections,attr)
 		else
-			dset = TRIM(gname) // "/toroidal_sections"
-			attr = "Logical variable: 1=decomposed in toroidal sections, 0=no toroidal decomposition"
-			call save_to_hdf5(h5file_id,dset,0.0_rp,attr)
+			call save_to_hdf5(h5file_id,dset,0_idef,attr)
 		end if
 
 		call h5gclose_f(group_id, h5error)

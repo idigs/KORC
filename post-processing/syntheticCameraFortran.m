@@ -839,7 +839,7 @@ for ss=1:ST.params.simulation.num_species
             
             A = squeeze(Psyn_L3(:,:,tt))';
             minval = min(min(A));
-            maxval = 50*mean(mean(A));
+            maxval = 4*std(reshape(A,[numel(A),1]));
             v = linspace(minval,maxval,25);
             
             figure(h);
@@ -912,7 +912,7 @@ for ss=1:ST.params.simulation.num_species
             
             A = squeeze(Psyn_L4(:,:,tt))';
             minval = min(min(A));
-            maxval = 50*mean(mean(A));
+            maxval = 4*std(reshape(A,[numel(A),1]));
             v = linspace(minval,maxval,25);
             
             figure(h);
@@ -994,7 +994,7 @@ for ss=1:ST.params.simulation.num_species
         
         A = squeeze(sum(Psyn_L3,3))';
         minval = min(min(A));
-        maxval = 50*mean(mean(A));
+        maxval = 4*std(reshape(A,[numel(A),1]));
         v = linspace(minval,maxval,25);
         
         figure(h);
@@ -1067,7 +1067,7 @@ for ss=1:ST.params.simulation.num_species
         
         A = squeeze(sum(Psyn_L4,3))';
         minval = min(min(A));
-        maxval = 50*mean(mean(A));
+        maxval = 4*std(reshape(A,[numel(A),1]));
         v = linspace(minval,maxval,25);
         
         figure(h);
@@ -1204,7 +1204,7 @@ for ss=1:ST.params.simulation.num_species
         
         A = Psyn_L2';
         minval = min(min(A));
-        maxval = 50*mean(mean(A));
+        maxval = 4*std(reshape(A,[numel(A),1]));
         v = linspace(minval,maxval,25);
         
         figure(h);
@@ -1244,7 +1244,7 @@ for ss=1:ST.params.simulation.num_species
         
         A = Psyn_L3';
         minval = min(min(A));
-        maxval = 50*mean(mean(A));
+        maxval = 4*std(reshape(A,[numel(A),1]));
         v = linspace(minval,maxval,25);
         
         figure(h);
@@ -1317,7 +1317,7 @@ for ss=1:ST.params.simulation.num_species
         
         A = Psyn_L4';
         minval = min(min(A));
-        maxval = 50*mean(mean(A));
+        maxval = 4*std(reshape(A,[numel(A),1]));
         v = linspace(minval,maxval,25);
         
         figure(h);
@@ -1650,7 +1650,7 @@ for ss=1:ST.params.simulation.num_species
             
             A = fliplr(Psyn_L3(:,:,tt))';
             minval = min(min(A));
-            maxval = 50*mean(mean(A));
+            maxval = 4*std(reshape(A,[numel(A),1]));
             v = linspace(minval,maxval,25);
             
             if any(any(A))
@@ -1691,7 +1691,7 @@ for ss=1:ST.params.simulation.num_species
                 
                 A = fliplr(Psyn_L4(:,:,tt))';
                 minval = min(min(A));
-                maxval = 50*mean(mean(A));
+                maxval = 4*std(reshape(A,[numel(A),1]));
                 v = linspace(minval,maxval,25);
                 
                 figure(h);
@@ -1740,7 +1740,7 @@ for ss=1:ST.params.simulation.num_species
         
         A = fliplr(sum(Psyn_L3,3))';
         minval = min(min(A));
-        maxval = 50*mean(mean(A));
+        maxval = 4*std(reshape(A,[numel(A),1]));
         v = linspace(minval,maxval,25);
         
         figure(h);
@@ -1778,7 +1778,7 @@ for ss=1:ST.params.simulation.num_species
         
         
         A = fliplr(sum(Psyn_L4,3))';
-        maxval = 50*mean(mean(A));
+        maxval = 4*std(reshape(A,[numel(A),1]));
         minval = min(min(A));
         v = linspace(minval,maxval,25);
         
@@ -1866,7 +1866,7 @@ for ss=1:ST.params.simulation.num_species
         
         A = Psyn_L2';
         minval = min(min(A));
-        maxval = 50*mean(mean(A));
+        maxval = 4*std(reshape(A,[numel(A),1]));
         v = linspace(minval,maxval,25);
         
         figure(h);
@@ -1900,7 +1900,7 @@ for ss=1:ST.params.simulation.num_species
         
         A = fliplr(Psyn_L3)';
         minval = min(min(A));
-        maxval = 50*mean(mean(A));
+        maxval = 4*std(reshape(A,[numel(A),1]));
         v = linspace(minval,maxval,25);
         
         figure(h);
@@ -1939,7 +1939,7 @@ for ss=1:ST.params.simulation.num_species
         
         A = fliplr(Psyn_L4)';
         minval = min(min(A));
-        maxval = 50*mean(mean(A));
+        maxval = 4*std(reshape(A,[numel(A),1]));
         v = linspace(minval,maxval,25);
         
         figure(h);
