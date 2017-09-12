@@ -103,7 +103,7 @@ if (ST.params.synthetic_camera_params.integrated_opt == 0)
         disp(['Loading ' list{ll}])
         for ss=1:ST.params.simulation.num_species
             data.(['sp' num2str(ss)]).(list{ll}) = zeros(NX,NY,Nl,ST.num_snapshots);
-            for ii=1:numel(it)
+            for ii=1:ST.num_snapshots
                 dataset = ...
                     ['/' num2str(it(ii)) '/spp_' num2str(ss)...
                     '/' list{ll}];
@@ -132,7 +132,7 @@ for ll=1:length(list)
                 else
                     data.(['sp' num2str(ss)]).(list{ll}) = zeros(Nl,ST.num_snapshots);
                 end
-                for ii=1:numel(it) % Here
+                for ii=1:ST.num_snapshots % Here
                     dataset = ...
                         ['/' num2str(it(ii)) '/spp_' num2str(ss)...
                         '/' list{ll}];
@@ -144,7 +144,7 @@ for ll=1:length(list)
                 end
             elseif (strcmp(list{ll},'np_pixel') || strcmp(list{ll},'np_lambda'))
                 data.(['sp' num2str(ss)]).(list{ll}) = zeros(1,ST.num_snapshots);
-                for ii=1:numel(it) % Here
+                for ii=1:ST.num_snapshots % Here
                     dataset = ...
                         ['/' num2str(it(ii)) '/spp_' num2str(ss)...
                         '/' list{ll}];
@@ -157,7 +157,7 @@ for ll=1:length(list)
                     data.(['sp' num2str(ss)]).(list{ll}) = zeros(NX,NY,ST.num_snapshots);
                 end
                 
-                for ii=1:numel(it) % Here
+                for ii=1:ST.num_snapshots % Here
                     dataset = ...
                         ['/' num2str(it(ii)) '/spp_' num2str(ss)...
                         '/' list{ll}];

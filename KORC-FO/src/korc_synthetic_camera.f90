@@ -812,7 +812,7 @@ SUBROUTINE angular_density(params,spp)
 								r = SQRT(DOT_PRODUCT(n,n))
 								n = n/r
 
-								dSA = 1.0_rp! DOT_PRODUCT(n,XC/SQRT(DOT_PRODUCT(XC,XC)))*cam%pixel_area/r**2
+								dSA = DOT_PRODUCT(n,XC/SQRT(DOT_PRODUCT(XC,XC)))*cam%pixel_area/r**2
 
 								beta = ACOS(DOT_PRODUCT(n,binorm))
 								if (beta.GT.0.5_rp*C_PI) psi = beta - 0.5_rp*C_PI
@@ -865,7 +865,7 @@ SUBROUTINE angular_density(params,spp)
 								r = SQRT(DOT_PRODUCT(n,n))
 								n = n/r
 
-								dSA = 1.0_rp! DOT_PRODUCT(n,XC/SQRT(DOT_PRODUCT(XC,XC)))*cam%pixel_area/r**2
+								dSA = DOT_PRODUCT(n,XC/SQRT(DOT_PRODUCT(XC,XC)))*cam%pixel_area/r**2
 
 								beta = ACOS(DOT_PRODUCT(n,binorm))
 								if (beta.GT.0.5_rp*C_PI) psi = beta - 0.5_rp*C_PI
@@ -1135,7 +1135,7 @@ SUBROUTINE integrated_angular_density(params,spp)
 								r = SQRT(DOT_PRODUCT(n,n))
 								n = n/r
 
-								dSA = 1.0_rp! DOT_PRODUCT(n,XC/SQRT(DOT_PRODUCT(XC,XC)))*cam%pixel_area/r**2
+								dSA = DOT_PRODUCT(n,XC/SQRT(DOT_PRODUCT(XC,XC)))*cam%pixel_area/r**2
 
 								beta = ACOS(DOT_PRODUCT(n,binorm))
 								if (beta.GT.0.5_rp*C_PI) psi = beta - 0.5_rp*C_PI
@@ -1195,7 +1195,7 @@ SUBROUTINE integrated_angular_density(params,spp)
 								r = SQRT(DOT_PRODUCT(n,n))
 								n = n/r
 
-								dSA = 1.0_rp! DOT_PRODUCT(n,XC/SQRT(DOT_PRODUCT(XC,XC)))*cam%pixel_area/r**2
+								dSA = DOT_PRODUCT(n,XC/SQRT(DOT_PRODUCT(XC,XC)))*cam%pixel_area/r**2
 
 								beta = ACOS(DOT_PRODUCT(n,binorm))
 								if (beta.GT.0.5_rp*C_PI) psi = beta - 0.5_rp*C_PI
@@ -1565,7 +1565,7 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 								r = SQRT(DOT_PRODUCT(n,n))
 								n = n/r
 
-								dSA = 1.0_rp! DOT_PRODUCT(n,XC/SQRT(DOT_PRODUCT(XC,XC)))*cam%pixel_area/r**2
+								dSA = DOT_PRODUCT(n,XC/SQRT(DOT_PRODUCT(XC,XC)))*cam%pixel_area/r**2
 
 								beta = ACOS(DOT_PRODUCT(n,binorm))
 								if (beta.GT.0.5_rp*C_PI) psi = beta - 0.5_rp*C_PI
@@ -1628,7 +1628,7 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 								r = SQRT(DOT_PRODUCT(n,n))
 								n = n/r
 
-								dSA = 1.0_rp! DOT_PRODUCT(n,XC/SQRT(DOT_PRODUCT(XC,XC)))*cam%pixel_area/r**2
+								dSA = DOT_PRODUCT(n,XC/SQRT(DOT_PRODUCT(XC,XC)))*cam%pixel_area/r**2
 
 								beta = ACOS(DOT_PRODUCT(n,binorm))
 								if (beta.GT.0.5_rp*C_PI) psi = beta - 0.5_rp*C_PI
