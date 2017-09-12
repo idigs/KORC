@@ -89,7 +89,7 @@ subroutine timing_KORC(params,t1,t2)
 
 	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
-	write(6,'("MPI: ",I4," Total time: ",F30.16)') params%mpi_params%rank, t2 - t1
+!	write(6,'("MPI: ",I4," Total time: ",F30.16)') params%mpi_params%rank, t2 - t1
 
 	call MPI_GATHER(individual_runtime,1,MPI_DOUBLE_PRECISION,runtime,&
 			1,MPI_DOUBLE_PRECISION,0_idef, MPI_COMM_WORLD, mpierr)
