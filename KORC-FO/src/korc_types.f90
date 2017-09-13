@@ -123,6 +123,7 @@ END TYPE PARTICLES
 TYPE, PUBLIC :: SPECIES
 	TYPE(PARTICLES) :: vars
 	LOGICAL :: runaway
+	CHARACTER(MAX_STRING_LENGTH) :: spatial_distribution
 	CHARACTER(MAX_STRING_LENGTH) :: energy_distribution
 	CHARACTER(MAX_STRING_LENGTH) :: pitch_distribution
 	REAL(rp) :: Eo
@@ -140,6 +141,7 @@ TYPE, PUBLIC :: SPECIES
 	REAL(rp) :: Ro
 	REAL(rp) :: Zo
 	REAL(rp) :: r
+	REAL(rp) :: sigma_r
 END TYPE SPECIES
 
 

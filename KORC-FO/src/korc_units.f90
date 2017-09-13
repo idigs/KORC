@@ -72,6 +72,7 @@ subroutine normalize_variables(params,spp,F,P)
 		spp(ii)%Ro = spp(ii)%Ro/params%cpp%length
 		spp(ii)%Zo = spp(ii)%Zo/params%cpp%length
 		spp(ii)%r = spp(ii)%r/params%cpp%length
+		spp(ii)%sigma_r = spp(ii)%sigma_r/params%cpp%length
 	end do
 
 !	Normalize electromagnetic fields and plasma profiles

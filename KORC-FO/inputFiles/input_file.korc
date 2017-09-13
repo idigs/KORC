@@ -1,5 +1,5 @@
 &input_parameters
-        simulation_time = 10.0E-6 ! Total aimed simulation time in seconds
+        simulation_time = 0.0E-6 ! Total aimed simulation time in seconds
         snapshot_frequency = 1.0E-7 ! Time between snapshots in seconds
         dt = 1.0E-2 ! Time step as fraction of non-relativistic gyro-period
         num_species = 2
@@ -22,18 +22,20 @@
 
 &plasma_species
         runaway = .FALSE.,.FALSE. !
-        energy_distribution = 'MONOENERGETIC','MONOENERGETIC'   ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'
-        pitch_distribution = 'MONOPITCH','MONOPITCH'	! Options are: 'MONOPITCH', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'.
+        ppp = 50,1000000 ! Number of particles per process (mpi)
+        q = -1.0,-1.0 ! Electric charge
+        m = 1.0,1.0 ! In units of electron mass
+		spatial_distribution = 'FLAT','GAUSSIAN'
         Ro = 1.43,1.43 !
         Zo = 0.0,0.0 !
-        r = 0.2,0.2 !
+        r = 0.2,0.4 !
+		sigma_r = 0.0, 0.14 !
+        energy_distribution = 'MONOENERGETIC','MONOENERGETIC'   ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'
+        pitch_distribution = 'MONOPITCH','MONOPITCH'	! Options are: 'MONOPITCH', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'.
         Eo = 30.0E6,30.0E6 ! Initial energy in eV
         etao = 5.0,20.0  ! Initial pitch angle
         Eo_lims = 1.0E6,50.0E6,1.0E6,50.0E6 ! Lower and upper limit of simulated energy range, in eV.
         etao_lims = 0.0,20.0,0.0,20.0 ! Lower and upper limit of simulated pitch-angle range, in degrees.
-        ppp = 5000,5000 ! Number of particles per process (mpi)
-        q = -1.0,-1.0 ! Electric charge
-        m = 1.0,1.0 ! In units of electron mass
 /
 
 &analytical_fields_params

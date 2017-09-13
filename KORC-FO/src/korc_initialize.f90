@@ -202,14 +202,17 @@ subroutine initialize_particles(params,F,spp)
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Eo_lims
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: etao_lims
 	LOGICAL, DIMENSION(:), ALLOCATABLE :: runaway
+	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: spatial_distribution	
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: energy_distribution
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: pitch_distribution
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Ro
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zo
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: r
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: sigma_r
 	INTEGER :: ii,jj, mpierr ! Iterator
 
-	NAMELIST /plasma_species/ ppp,q,m,Eo,etao,Eo_lims,etao_lims,runaway,energy_distribution,pitch_distribution,Ro,Zo,r
+	NAMELIST /plasma_species/ ppp,q,m,Eo,etao,Eo_lims,etao_lims,runaway,spatial_distribution,&
+								energy_distribution,pitch_distribution,Ro,Zo,r,sigma_r
 
 	! Allocate array containing variables of particles for each species
 	ALLOCATE(spp(params%num_species))
@@ -222,11 +225,13 @@ subroutine initialize_particles(params,F,spp)
 	ALLOCATE(Eo_lims(2_idef*params%num_species))
 	ALLOCATE(etao_lims(2_idef*params%num_species))
 	ALLOCATE(runaway(params%num_species))
+	ALLOCATE(spatial_distribution(params%num_species))
 	ALLOCATE(energy_distribution(params%num_species))
 	ALLOCATE(pitch_distribution(params%num_species))
 	ALLOCATE(Ro(params%num_species))
 	ALLOCATE(Zo(params%num_species))
 	ALLOCATE(r(params%num_species))
+	ALLOCATE(sigma_r(params%num_species))
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=plasma_species)
@@ -234,6 +239,7 @@ subroutine initialize_particles(params,F,spp)
 
 	do ii=1_idef,params%num_species
 		spp(ii)%runaway = runaway(ii)
+		spp(ii)%spatial_distribution = TRIM(spatial_distribution(ii))		
 		spp(ii)%energy_distribution = TRIM(energy_distribution(ii))
 		spp(ii)%pitch_distribution = TRIM(pitch_distribution(ii))
 		spp(ii)%q = q(ii)*C_E
@@ -243,6 +249,8 @@ subroutine initialize_particles(params,F,spp)
 		spp(ii)%Ro = Ro(ii)
 		spp(ii)%Zo = Zo(ii)
 		spp(ii)%r = r(ii)
+		spp(ii)%sigma_r = sigma_r(ii)
+		
 
 		ALLOCATE( spp(ii)%vars%X(3,spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%V(3,spp(ii)%ppp) )
@@ -350,9 +358,13 @@ subroutine initialize_particles(params,F,spp)
 	DEALLOCATE(Eo_lims)
 	DEALLOCATE(etao_lims)
 	DEALLOCATE(runaway)
+	DEALLOCATE(spatial_distribution)
+	DEALLOCATE(energy_distribution)
+	DEALLOCATE(pitch_distribution)
 	DEALLOCATE(Ro)
 	DEALLOCATE(Zo)
 	DEALLOCATE(r)
+	DEALLOCATE(sigma_r)
 end subroutine initialize_particles
 
 
@@ -483,7 +495,7 @@ subroutine set_up_particles_ic(params,F,spp)
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: V3
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: b1, b2, b3
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Xo
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: theta, zeta, R ! temporary vars
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: theta, zeta, r ! temporary vars
 	REAL(rp), DIMENSION(3) :: x = (/1.0_rp,0.0_rp,0.0_rp/)
 	REAL(rp), DIMENSION(3) :: y = (/0.0_rp,1.0_rp,0.0_rp/)
 	REAL(rp), DIMENSION(3) :: z = (/0.0_rp,0.0_rp,1.0_rp/)
@@ -522,11 +534,20 @@ subroutine set_up_particles_ic(params,F,spp)
 
 			! Uniform distribution on a disk at a fixed azimuthal theta		
 			call init_random_seed()
-			call RANDOM_NUMBER(R)
+			call RANDOM_NUMBER(r)
+
+			SELECT CASE (TRIM(spp(ii)%spatial_distribution))
+				CASE ('FLAT')
+					r = spp(ii)%r*SQRT(r)
+				CASE ('GAUSSIAN')
+					r = spp(ii)%sigma_r*SQRT( -2.0_rp*LOG( 1.0_rp - (1.0_rp - EXP(-0.5_rp*spp(ii)%r**2/spp(ii)%sigma_r**2))*r ) )
+				CASE DEFAULT
+					r = spp(ii)%r*SQRT(r)
+			END SELECT
 		
-			Xo(1,:) = ( spp(ii)%Ro + spp(ii)%r*SQRT(R)*COS(theta) )*SIN(zeta)
-			Xo(2,:) = ( spp(ii)%Ro + spp(ii)%r*SQRT(R)*COS(theta) )*COS(zeta)
-			Xo(3,:) = spp(ii)%Zo + spp(ii)%r*SQRT(R)*SIN(theta)
+			Xo(1,:) = ( spp(ii)%Ro + r*COS(theta) )*SIN(zeta)
+			Xo(2,:) = ( spp(ii)%Ro + r*COS(theta) )*COS(zeta)
+			Xo(3,:) = spp(ii)%Zo + r*SIN(theta)
 
 			spp(ii)%vars%X(1,:) = Xo(1,:)
 			spp(ii)%vars%X(2,:) = Xo(2,:)

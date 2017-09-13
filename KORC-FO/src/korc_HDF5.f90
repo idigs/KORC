@@ -854,6 +854,9 @@ subroutine save_simulation_parameters(params,spp,F,P)
 
 		ALLOCATE(attr_array(params%num_species))
 
+		dset = TRIM(gname) // "/spatial_distribution"
+		call save_string_parameter(h5file_id,dset,spp%spatial_distribution)
+
 		dset = TRIM(gname) // "/energy_distribution"
 		call save_string_parameter(h5file_id,dset,spp%energy_distribution)
 
@@ -899,6 +902,10 @@ subroutine save_simulation_parameters(params,spp,F,P)
 		dset = TRIM(gname) // "/r"
 		attr_array(1) = "Radius of initial spatial distribution"
 		call save_1d_array_to_hdf5(h5file_id,dset,spp%r*params%cpp%length,attr_array)
+
+		dset = TRIM(gname) // "/sigma_r"
+		attr_array(1) = "Standard deviation of Gaussian radial distribution in m (only used for Gaussian PDF)"
+		call save_1d_array_to_hdf5(h5file_id,dset,spp%sigma_r*params%cpp%length,attr_array)
 
 		call h5gclose_f(group_id, h5error)
 
