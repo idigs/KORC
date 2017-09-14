@@ -74,7 +74,7 @@ subroutine cart_to_tor_check_if_confined(X,F,Xtor,flag)
 		    Xtor(3,pp) = ATAN2(X(1,pp),X(2,pp))
 		    Xtor(3,pp) = MODULO(Xtor(3,pp),2.0_rp*C_PI)
 
-			if (Xtor(3,pp) .GT. F%AB%a) then
+			if (Xtor(1,pp) .GT. F%AB%a) then
                 flag(pp) = 0_is
             end if
         end if

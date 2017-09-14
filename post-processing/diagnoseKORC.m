@@ -49,7 +49,7 @@ ST.data = loadData(ST);
 
 % calculateTemperatureComponents(ST);
 
-% SE_phaseSpaceAnalisys(ST);
+SE_phaseSpaceAnalisys(ST);
 
 
 % plotEnergyPitchanglePDF(ST);
@@ -627,7 +627,7 @@ for ss=1:ST.params.simulation.num_species
     axis on
     xlabel('Time (s)','Interpreter','latex','FontSize',16)
     ylabel('$\Delta \mu/\mu_0$ ($\%$)','Interpreter','latex','FontSize',16)
-    colormap(jet)
+    colormap(jet(1024))
 end
 
 if ST.visible
@@ -695,7 +695,7 @@ for ss=1:ST.params.simulation.num_species
         axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
         axis equal
         view([0 90])
-        colormap(jet)
+        colormap(jet(1024))
         title(['Species: ' num2str(ss) 'Time: ' num2str(ST.time(it))],'Interpreter','latex','FontSize',11)
         xlabel('$R$','Interpreter','latex','FontSize',16)
         ylabel('$Z$','Interpreter','latex','FontSize',16)
@@ -730,7 +730,7 @@ for ss=1:ST.params.simulation.num_species
         surf(xAxis(1:end-1)',yAxis(1:end-1)',prad,'LineStyle','none')
         axis equal
         view([0 90])        
-        colormap(jet)
+        colormap(jet(1024))
         axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
         xlabel('$R$','Interpreter','latex','FontSize',16)
         ylabel('$Z$','Interpreter','latex','FontSize',16)
@@ -744,7 +744,7 @@ for ss=1:ST.params.simulation.num_species
         surf(xAxis(1:end-1)',yAxis(1:end-1)',A,'LineStyle','none')
         axis equal
         view([0 90])        
-        colormap(jet)
+        colormap(jet(1024))
         axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
         xlabel('$R$','Interpreter','latex','FontSize',16)
         ylabel('$Z$','Interpreter','latex','FontSize',16)
@@ -770,7 +770,7 @@ for ss=1:ST.params.simulation.num_species
 %     axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
 %     axis equal
 %     view([0 90])
-%     colormap(jet)
+%     colormap(jet(1024))
 %     title(['Species: ' num2str(ss) 'Time: ' num2str(ST.time(it))],'Interpreter','latex','FontSize',11)
 %     xlabel('$R$','Interpreter','latex','FontSize',16)
 %     ylabel('$Z$','Interpreter','latex','FontSize',16)
@@ -1151,7 +1151,7 @@ for ss=1:ST.params.simulation.num_species
     plot(R,Z,'.','MarkerSize',8,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
 %     his=histogram2(R,Z,'FaceColor','flat',...
 %         'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
-%     colormap(jet);caxis([min(min(his.Values)) max(max(his.Values))])
+%     colormap(jet(1024));caxis([min(min(his.Values)) max(max(his.Values))])
 %     colorbar
     hold off
     legends{ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
@@ -1189,7 +1189,7 @@ for ss=ST.params.simulation.num_species:-1:1
 %     plot(R,Z,'.','MarkerSize',10,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
     his=histogram2(R,Z,'FaceColor','flat',...
         'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
-    colormap(jet);caxis([min(min(his.Values)) max(max(his.Values))])
+    colormap(jet(1024));caxis([min(min(his.Values)) max(max(his.Values))])
     colorbar
     hold off
     legends{ST.params.simulation.num_species + 1 -ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
@@ -1539,7 +1539,7 @@ for ss=1:ST.params.simulation.num_species
     axis on
     xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',16)
     ylabel('$P_{rad}$ (Watts/electron)','Interpreter','latex','FontSize',16)
-    colormap(jet)
+    colormap(jet(1024))
     colorbar
 end
 
@@ -2715,7 +2715,7 @@ for ss=1:num_species
     subplot(4,4,[1,2,5,6])
     surfc(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Pch_tot*Ptot_psi_chi,...
         'LineStyle','none')
-    colormap(jet)
+    colormap(jet(1024))
     box on; axis square; view([90,90])
     ylabel('$x$-axis of detector','FontSize',14,'Interpreter','latex')
     xlabel('$y$-axis of detector','FontSize',14,'Interpreter','latex')
@@ -2723,7 +2723,7 @@ for ss=1:num_species
     subplot(4,4,[3,4,7,8])
     surfc(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,Pch_tot*Ptot_psi,...
         'LineStyle','none')
-    colormap(jet)
+    colormap(jet(1024))
     box on; axis square; view([90,90])
     ylabel('$x$-axis of detector','FontSize',14,'Interpreter','latex')
     xlabel('$y$-axis of detector','FontSize',14,'Interpreter','latex')
@@ -2731,7 +2731,7 @@ for ss=1:num_species
     subplot(4,4,[9,13])
     surfc(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,counter_psi_chi,...
         'LineStyle','none')
-    colormap(jet); colorbar('Location','southoutside')
+    colormap(jet(1024)); colorbar('Location','southoutside')
     box on; axis square; view([90,90])
     ylabel('$x$-axis of detector','FontSize',14,'Interpreter','latex')
     xlabel('$y$-axis of detector','FontSize',14,'Interpreter','latex')
@@ -2740,7 +2740,7 @@ for ss=1:num_species
     subplot(4,4,[10,14])
     surfc(camera_params.pixel_grid.ynodes,camera_params.pixel_grid.xnodes,counter_psi,...
         'LineStyle','none')
-    colormap(jet); colorbar('Location','southoutside')    
+    colormap(jet(1024)); colorbar('Location','southoutside')    
     box on; axis square; view([90,90])
     ylabel('$x$-axis of detector','FontSize',14,'Interpreter','latex')
     xlabel('$y$-axis of detector','FontSize',14,'Interpreter','latex')
@@ -2971,24 +2971,35 @@ h = figure;
 hh = figure;
 for sp=1:numel(I)
     A = squeeze(Psyn_p_chi(I(sp),:,:));
+    A = log10(A/max(max(A)));
+    
     AA = squeeze(ddPsyndpchi(I(sp),:,:));
+    AA = log10(AA/max(max(AA)));
 
     cmax = max(max(A));
+    cmin = -3;%min(min(A(isfinite(A))));
+    
+    x = linspace(0,4,25);
+    levels = cmin + (cmax-cmin)*tanh(x);
     
     figure(h)
     subplot(ntiles,ntiles,sp)    
-    contourf(xAxis,yAxis,A,17,'LineStyle','none')
-    colormap(jet); colorbar; caxis([0 cmax])
+    contourf(xAxis,yAxis,A,levels,'LineStyle','none')
+    colormap(jet(1024)); colorbar; caxis([cmin cmax])
     title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
     xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
     ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
     
-    cmax = max(max(AA));
+    cmax = max(max(A));
+    cmin = -3;%min(min(A(isfinite(A))));
+    
+    x = linspace(0,4,25);
+    levels = cmin + (cmax-cmin)*tanh(x);
     
     figure(hh)
     subplot(ntiles,ntiles,sp)    
     contourf(xAxis,yAxis,AA,17,'LineStyle','none')
-    colormap(jet); colorbar; caxis([0 cmax])
+    colormap(jet(1024)); colorbar; caxis([cmin cmax])
     title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
     xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
     ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
@@ -3002,7 +3013,7 @@ cmax = max(max(A));
 figure(h)
 subplot(ntiles,ntiles,ntiles^2)
 contourf(xAxis,yAxis,A,17,'LineStyle','none')
-colormap(jet); colorbar; caxis([0 cmax])
+colormap(jet(1024)); colorbar; caxis([0 cmax])
 xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 
@@ -3011,7 +3022,7 @@ cmax = max(max(AA));
 figure(hh)
 subplot(ntiles,ntiles,ntiles^2)
 contourf(xAxis,yAxis,AA,17,'LineStyle','none')
-colormap(jet); colorbar; caxis([0 cmax])
+colormap(jet(1024)); colorbar; caxis([0 cmax])
 xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 
@@ -3022,7 +3033,7 @@ for sp=1:numel(I)
     subplot(ntiles,ntiles,sp)
     A = squeeze(Psyn_sp(I(sp),:,:));
     contourf(xAxis,yAxis,A,17,'LineStyle','none')
-    colormap(jet);
+    colormap(jet(1024));
     colorbar
     title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
     xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
@@ -3033,7 +3044,7 @@ figure(hhh)
 subplot(ntiles,ntiles,ntiles^2)
 A = fRE;
 contourf(xAxis,yAxis,A,17,'LineStyle','none')
-colormap(jet);
+colormap(jet(1024));
 colorbar
 xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
@@ -3044,7 +3055,7 @@ saveas(hhh,[ST.path 'Synchrotron_radiation'],'fig')
 
 % figure;
 % surf(E,lAxis,squeeze(Psyn_p),'LineStyle','none');
-% colormap(jet);
+% colormap(jet(1024));
 % xlabel('$\lambda$ (nm)','Interpreter','latex')
 % xlabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 
@@ -3126,28 +3137,41 @@ h = figure;
 hh = figure;
 for sp=1:numel(I)
     A = squeeze(ddPsyndpchi_theory(I(sp),:,:));
+
+    A = log10(A/max(max(A)));
+
     cmax = max(max(A));
-    cmin = min(min(A));
-%     cmin = 10*cmax;
+    cmin = -3;%min(min(A(isfinite(A))));
+    
+    x = linspace(0,4,25);
+    levels = cmin + (cmax-cmin)*tanh(x);
     
     figure(h)
     subplot(ntiles,ntiles,sp)    
-    contourf(xAxis,yAxis,A,17,'LineStyle','none')
-    colormap(jet); colorbar; caxis([cmin cmax])
+    contourf(xAxis,yAxis,A,levels,'LineStyle','none')
+    colormap(jet(1024)); colorbar; caxis([cmin cmax])
     title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
     xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
     ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
     
     
     AA = squeeze(ddPsyndpchi(I(sp),:,:));
-    cmax = max(max(AA));
-    cmin = min(min(AA));
+%     cmax = max(max(AA));
+%     cmin = min(min(AA));
 %     cmin = 10*cmax;
+
+    AA = log10(AA/max(max(AA)));
+
+    cmax = max(max(AA));
+    cmin = -3;%min(min(A(isfinite(A))));
+    
+    x = linspace(0,4,25);
+    levels = cmin + (cmax-cmin)*tanh(x);
     
     figure(hh)
     subplot(ntiles,ntiles,sp)    
-    contourf(xAxis,yAxis,AA,17,'LineStyle','none')
-    colormap(jet); colorbar; caxis([cmin cmax])
+    contourf(xAxis,yAxis,AA,levels,'LineStyle','none')
+    colormap(jet(1024)); colorbar; caxis([cmin cmax])
     title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
     xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
     ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
@@ -3160,7 +3184,7 @@ cmin = min(min(A));
 figure(h)
 subplot(ntiles,ntiles,ntiles^2)
 contourf(xAxis,yAxis,A,17,'LineStyle','none')
-colormap(jet); colorbar; caxis([cmin cmax])
+colormap(jet(1024)); colorbar; caxis([cmin cmax])
 xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 
@@ -3171,7 +3195,7 @@ cmin = min(min(A));
 figure(hh)
 subplot(ntiles,ntiles,ntiles^2)
 contourf(xAxis,yAxis,AA,17,'LineStyle','none')
-colormap(jet); colorbar; caxis([cmin cmax])
+colormap(jet(1024)); colorbar; caxis([cmin cmax])
 xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 
@@ -3180,9 +3204,9 @@ hhh = figure;
 for sp=1:numel(I)
     figure(hhh)
     subplot(ntiles,ntiles,sp)
-    A = log10(squeeze(Psyn_sp(I(sp),:,:)));
+    A = squeeze(Psyn_sp(I(sp),:,:));
     contourf(xAxis,yAxis,A,17,'LineStyle','none')
-    colormap(jet);
+    colormap(jet(1024));
     colorbar
     title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
     xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
@@ -3195,8 +3219,8 @@ end
 end
 
 function SE_phaseSpaceAnalisys(ST)
-nbins_p = 50;
-nbins_chi = 50;
+nbins_p = 75;
+nbins_chi = 75;
 
 for ss=1:ST.params.simulation.num_species
     q = abs(ST.params.species.q(ss));
@@ -3230,6 +3254,7 @@ for ss=1:ST.params.simulation.num_species
         pmax = ST.params.params.max_p;
         pmin = ST.params.params.min_p;
     end
+    
     Emin = sqrt(pmin.^2 + 1)*m*c^2/(q*1E6);
     Emax = sqrt(pmax.^2 + 1)*m*c^2/(q*1E6);
     Dp = (pmax-pmin)/nbins_p;
@@ -3270,11 +3295,11 @@ for ss=1:ST.params.simulation.num_species
         figure;
         A = fRE;
         contourf(xAxis,yAxis,A,17,'LineStyle','none')
-        colormap(jet);
+        colormap(jet(1024));
         colorbar
         axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
-        xlabel('$\chi$','FontSize',14,'Interpreter','latex')
-        ylabel('$p$ ($mc$)','FontSize',14,'Interpreter','latex')
+        xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
+        ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
         
         [~,fRE_theory] = averagedSpectrum(ST,chiAxis,pAxis,fRE);
         
@@ -3285,7 +3310,7 @@ for ss=1:ST.params.simulation.num_species
         
         figure;
         contourf(xAxis,yAxis,DfRE,17,'LineStyle','none')
-        colormap(jet);
+        colormap(jet(1024));
         colorbar
         axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
         xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
@@ -3297,8 +3322,8 @@ for ss=1:ST.params.simulation.num_species
     figure
     subplot(2,1,1)
     histogram2(eta,E,[nbins_chi,nbins_p],'FaceColor','flat','Normalization','probability','LineStyle','none');
-    view([0 90]);axis([0 max(eta) 0 max(E)]);axis equal;
-    cmp = colormap(jet);
+    view([0 90]);axis([0 max(eta) 0 max(E)]);axis square;
+    cmp = colormap(jet(1024));
     xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
     ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
     
@@ -3308,7 +3333,7 @@ for ss=1:ST.params.simulation.num_species
     subplot(2,1,2)
     histogram2(pparallel,pperp,[nbins_chi,nbins_p],'FaceColor','flat','Normalization','probability','LineStyle','none');
     view([0 90]);axis([0 max(pparallel) 0 max(pperp)]);axis equal;
-    cmp = colormap(jet);
+    cmp = colormap(jet(1024));
     xlabel('$p_\parallel$ ($mc$)','FontSize',14,'Interpreter','latex')
     ylabel('$p_\perp$ ($mc$)','FontSize',14,'Interpreter','latex')
 end
@@ -3352,7 +3377,7 @@ for ss=1:ST.params.simulation.num_species
 %     subplot(2,1,1)
 %     h = histogram2(pao(pin),Eo(pin),pa_edges,E_edges,'FaceColor','flat',...
 %         'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
-%     colormap(jet); caxis([min(min(h.Values)) max(max(h.Values))])
+%     colormap(jet(1024)); caxis([min(min(h.Values)) max(max(h.Values))])
 %     colorbar
 %     box on
 %     grid on
@@ -3362,7 +3387,7 @@ for ss=1:ST.params.simulation.num_species
 %     subplot(2,1,2)
 %     histogram2(paf,Ef,pa_edges,E_edges,'FaceColor','flat',...
 %         'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none')
-%     colormap(jet); caxis([min(min(h.Values)) max(max(h.Values))])
+%     colormap(jet(1024)); caxis([min(min(h.Values)) max(max(h.Values))])
 %     colorbar
 %     box on
 %     grid on
