@@ -23,7 +23,7 @@ ST.data = loadData(ST);
 
 % ST.RT = radialTransport(ST);
 
-ST.CP = confined_particles(ST);
+% ST.CP = confined_particles(ST);
 
 % ST.PAD = pitchAngleDiagnostic(ST,30);
 
@@ -49,7 +49,7 @@ ST.CP = confined_particles(ST);
 
 % calculateTemperatureComponents(ST);
 
-% SE_phaseSpaceAnalisys(ST);
+SE_phaseSpaceAnalisys(ST);
 
 
 % plotEnergyPitchanglePDF(ST);
@@ -2990,7 +2990,7 @@ for sp=1:numel(I)
     xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
     ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
     
-    cmax = max(max(A));
+    cmax = max(max(AA));
     cmin = -3;%min(min(A(isfinite(A))));
     
     x = linspace(0,4,25);
@@ -2998,7 +2998,7 @@ for sp=1:numel(I)
     
     figure(hh)
     subplot(ntiles,ntiles,sp)    
-    contourf(xAxis,yAxis,AA,17,'LineStyle','none')
+    contourf(xAxis,yAxis,AA,levels,'LineStyle','none')
     colormap(jet(1024)); colorbar; caxis([cmin cmax])
     title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
     xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
@@ -3006,23 +3006,33 @@ for sp=1:numel(I)
 end
 
 A = fRE;
+A = log10(A/max(max(A)));
 AA = fnum;
+AA = log10(AA/max(max(AA)));
 
 cmax = max(max(A));
+cmin = -10;%min(min(A(isfinite(A))));
+    
+x = linspace(0,4,25);
+levels = cmin + (cmax-cmin)*tanh(x);
 
 figure(h)
 subplot(ntiles,ntiles,ntiles^2)
-contourf(xAxis,yAxis,A,17,'LineStyle','none')
-colormap(jet(1024)); colorbar; caxis([0 cmax])
+contourf(xAxis,yAxis,A,levels,'ShowText','on')%'LineStyle','none')
+colormap(jet(1024)); colorbar; caxis([cmin cmax])
 xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 
 cmax = max(max(AA));
+cmin = -10;%min(min(A(isfinite(A))));
+    
+x = linspace(0,4,25);
+levels = cmin + (cmax-cmin)*tanh(x);
 
 figure(hh)
 subplot(ntiles,ntiles,ntiles^2)
-contourf(xAxis,yAxis,AA,17,'LineStyle','none')
-colormap(jet(1024)); colorbar; caxis([0 cmax])
+contourf(xAxis,yAxis,AA,levels,'ShowText','on')%'LineStyle','none')
+colormap(jet(1024)); colorbar; caxis([cmin cmax])
 xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 

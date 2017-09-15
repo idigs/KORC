@@ -125,6 +125,15 @@ FUNCTION fRE(x,p)
 	fRE = aval_params%fo*p*EXP(-p*(aval_params%C2*x + aval_params%C1/x))/x
 END FUNCTION fRE
 
+FUNCTION log10fRE(x,p)
+	IMPLICIT NONE
+	REAL(rp), INTENT(IN) :: x ! x = cos(pitch)
+	REAL(rp), INTENT(IN) :: p ! momentum
+	REAL(rp) :: log10fRE
+	
+	log10fRE = LOG(fRE(x,p))
+END FUNCTION log10fRE
+
 
 FUNCTION random_norm(mean,sigma)
 	REAL(rp), INTENT(IN) :: mean
