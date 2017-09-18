@@ -14,10 +14,10 @@ module korc_interp
 		TYPE(EZspline3_r8) :: PHI	! 3D EZspline object
 		TYPE(EZspline3_r8) :: Z		! 3D EZspline object
 
-		INTEGER, PRIVATE :: NR, NPHI, NZ
-		INTEGER, PRIVATE, DIMENSION(2) :: BCSR = (/ 0, 0 /)
-		INTEGER, PRIVATE, DIMENSION(2) :: BCSPHI = (/ -1, -1 /)
-		INTEGER, PRIVATE, DIMENSION(2) :: BCSZ = (/ 0, 0 /)
+		INTEGER :: NR, NPHI, NZ
+		INTEGER, DIMENSION(2) :: BCSR = (/ 0, 0 /)
+		INTEGER, DIMENSION(2) :: BCSPHI = (/ -1, -1 /)
+		INTEGER, DIMENSION(2) :: BCSZ = (/ 0, 0 /)
 	END TYPE
 
 	TYPE, PRIVATE :: KORC_2DINTERPOLANT
@@ -27,8 +27,8 @@ module korc_interp
 		TYPE(EZspline2_r8) :: Z		! 2D EZspline object
 
 		INTEGER, PRIVATE :: NR, NZ
-		INTEGER, PRIVATE, DIMENSION(2) :: BCSR = (/ 0, 0 /)
-		INTEGER, PRIVATE, DIMENSION(2) :: BCSZ = (/ 0, 0 /)
+		INTEGER, DIMENSION(2) :: BCSR = (/ 0, 0 /)
+		INTEGER, DIMENSION(2) :: BCSZ = (/ 0, 0 /)
 	END TYPE
 #elif SINGLE_PRECISION
 	TYPE, PRIVATE :: KORC_3DINTERPOLANT
@@ -37,9 +37,9 @@ module korc_interp
 		TYPE(EZspline3_r4) :: Z		! 3D EZspline object
 
 		INTEGER, PRIVATE :: NR, NPHI, NZ
-		INTEGER, PRIVATE, DIMENSION(2) :: BCSR = (/ 0, 0 /)
-		INTEGER, PRIVATE, DIMENSION(2) :: BCSPHI = (/ -1, -1 /)
-		INTEGER, PRIVATE, DIMENSION(2) :: BCSZ = (/ 0, 0 /)
+		INTEGER, DIMENSION(2) :: BCSR = (/ 0, 0 /)
+		INTEGER, DIMENSION(2) :: BCSPHI = (/ -1, -1 /)
+		INTEGER, DIMENSION(2) :: BCSZ = (/ 0, 0 /)
 	END TYPE
 
 	TYPE, PRIVATE :: KORC_2DINTERPOLANT
@@ -49,8 +49,8 @@ module korc_interp
 		TYPE(EZspline2_r4) :: Z		! 2D EZspline object
 
 		INTEGER, PRIVATE :: NR, NZ
-		INTEGER, PRIVATE, DIMENSION(2) :: BCSR = (/ 0, 0 /)
-		INTEGER, PRIVATE, DIMENSION(2) :: BCSZ = (/ 0, 0 /)
+		INTEGER, DIMENSION(2) :: BCSR = (/ 0, 0 /)
+		INTEGER, DIMENSION(2) :: BCSZ = (/ 0, 0 /)
 	END TYPE
 #endif
 
@@ -342,6 +342,7 @@ subroutine interp_2D_B_field(Y,B,flag)
 	INTEGER :: pp, ss
 
 	ss = size(Y,2)
+
 
 	ALLOCATE(F(3,ss))
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(F,Y,B,flag,interp2d)
