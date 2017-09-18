@@ -1774,9 +1774,9 @@ for ss=1:ST.params.simulation.num_species
         subplot(3,2,1)
         contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
         ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
-        axis([xmin, xmax, ymin, ymax]);
+%         axis([xmin, xmax, ymin, ymax]);
         box on; axis equal;
-%         axis([0.95 2.45 -0.5 1])
+        axis([0.95 2.45 -0.5 1])
         ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
         xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
         
@@ -1798,9 +1798,9 @@ for ss=1:ST.params.simulation.num_species
         subplot(3,2,2)
         contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
         ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
-        axis([xmin, xmax, ymin, ymax]);
+%         axis([xmin, xmax, ymin, ymax]);
         box on; axis equal;
-%         axis([0.95 2.45 -0.5 1])
+        axis([0.95 2.45 -0.5 1])
         ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
         xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
         
@@ -1810,7 +1810,8 @@ for ss=1:ST.params.simulation.num_species
         
         
         A = fliplr(sum(Psyn_L4,3))';
-        maxval = 0.8*max(max(A));
+%         maxval = 0.8*max(max(A));
+        maxval = 5*std(std(A));
         minval = min(min(A));
         v = linspace(minval,maxval,25);
         
@@ -1818,9 +1819,9 @@ for ss=1:ST.params.simulation.num_species
         subplot(3,2,3)
         contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
         ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
-        axis([xmin, xmax, ymin, ymax]);
+%         axis([xmin, xmax, ymin, ymax]);
         box on; axis equal;
-%         axis([0.95 2.45 -0.5 1])
+        axis([0.95 2.45 -0.5 1])
         ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
         xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
         
@@ -1831,27 +1832,8 @@ for ss=1:ST.params.simulation.num_species
         else
             xlabel(hc,'$\int P_R(\lambda) d\lambda$ (Watts)','Interpreter','latex','FontSize',12)
         end
-               
-        A = fliplr(sum(np_L4,3))';
-        minval = min(min(A));
-        maxval = 0.8*max(max(A));   
-        v = linspace(minval,maxval,25);
         
-        figure(h);
-        subplot(3,2,4)
-        contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
-        ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
-        axis([xmin, xmax, ymin, ymax]);
-        box on; axis equal;
-%         axis([0.95 2.45 -0.5 1])
-        ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-        xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
-        
-        cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-        ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
-        xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
-        
-                iX = zeros(2,size(xRectangles,1));
+        iX = zeros(2,size(xRectangles,1));
         iY = zeros(2,size(xRectangles,1));
         cameraCount = zeros(1,size(xRectangles,1));
         
@@ -1872,6 +1854,25 @@ for ss=1:ST.params.simulation.num_species
             plot(xplot,yplot,'LineWidth',2,'Color',colorRectangles(ii,:))
         end
         hold off
+               
+        A = fliplr(sum(np_L4,3))';
+        minval = min(min(A));
+        maxval = 0.8*max(max(A));   
+        v = linspace(minval,maxval,25);
+        
+        figure(h);
+        subplot(3,2,4)
+        contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
+        ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
+%         axis([xmin, xmax, ymin, ymax]);
+        box on; axis equal;
+        axis([0.95 2.45 -0.5 1])
+        ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
+        xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+        
+        cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
+        ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
+        xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
         
         figure(h)
         subplot(3,2,[5 6])
@@ -1883,6 +1884,8 @@ for ss=1:ST.params.simulation.num_species
         box on;xlim([0 size(xRectangles,1)+1])
         ylabel('Box count','FontSize',12,'Interpreter','latex')
         xlabel('Box number','FontSize',12,'Interpreter','latex')
+        
+        saveas(h,[ST.path 'Total_SE_ss_' num2str(ss)],'fig')
         
     else
         h = figure;
