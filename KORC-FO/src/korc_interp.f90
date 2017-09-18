@@ -274,7 +274,7 @@ subroutine check_if_in_domain(Y,flag)
 		end do
 !$OMP END PARALLEL DO
 	else 
-!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,IR,IZ) SHARED(Y,flag,domain,interp2d)
+!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,IR,IZ,interp2d) SHARED(Y,flag,domain)
 		do pp=1_idef,ss
 			IR = INT(FLOOR((Y(1,pp)  - domain%Ro + 0.5_rp*domain%DR)/domain%DR) + 1.0_rp,idef)
 			IZ = INT(FLOOR((Y(3,pp)  + ABS(domain%Ro) + 0.5_rp*domain%DZ)/domain%DZ) + 1.0_rp,idef)
@@ -344,7 +344,7 @@ subroutine interp_2D_B_field(Y,B,flag)
 	ss = size(Y,2)
 
 	ALLOCATE(F(3,ss))
-!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(interp2d,F,Y,B,flag)
+!$OMP PARALLEL DO FIRSTPRIVATE(ss,interp2d) PRIVATE(pp,ezerr) SHARED(F,Y,B,flag)
 	do pp=1_idef,ss
 		if ( flag(pp) .EQ. 1_is ) then
 			call EZspline_interp(interp2d%R, Y(1,pp), Y(3,pp), F(1,pp), ezerr)
