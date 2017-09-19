@@ -642,12 +642,8 @@ end subroutine initialize_communications
 subroutine initialization_sanity_check(params)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
-
 	INTEGER :: ierr, mpierr
 	LOGICAL :: flag = .FALSE.
-
-
-!	
 
 	call MPI_INITIALIZED(flag, ierr)
 
