@@ -1425,6 +1425,7 @@ xRectangles = [1.41,1.619; 1.537,1.66; 1.943,2.077];
 yRectangles = [-0.1075,0.1161; -0.0626,0.07147; 0.1831,0.363];
 colorRectangles = [0,0,0; 1,0,0; 0,0,1];
 plotToroidalSections = true;
+figuresToShare = false;
 
 
 lambda = ST.params.synthetic_camera_params.lambda;
@@ -1765,63 +1766,75 @@ for ss=1:ST.params.simulation.num_species
         
         % % % % % Camera diagnostic % % % % %
         
-        A = fliplr(sum(Psyn_L3,3))';
-        minval = min(min(A));
-        maxval = 0.8*max(max(A));
-        v = linspace(minval,maxval,25);
-        
-        figure(h);
-        subplot(3,2,1)
-        contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
-        ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
-%         axis([xmin, xmax, ymin, ymax]);
-        box on; axis equal;
-        axis([0.95 2.45 -0.5 1])
-        ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-        xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
-        
-        cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-        ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
-        if ST.params.synthetic_camera_params.photon_count
-            xlabel(hc,'$P_R$ (Photons)','Interpreter','latex','FontSize',12)
-        else
-            xlabel(hc,'$\int P_R(\lambda) d\lambda$ (Watts)','Interpreter','latex','FontSize',12)
+        if ~figuresToShare
+            A = fliplr(sum(Psyn_L3,3))';
+            minval = min(min(A));
+            maxval = 0.8*max(max(A));
+            v = linspace(minval,maxval,25);
+            
+            figure(h);
+            subplot(3,2,1)
+            contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
+            ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
+            if ~figuresToShare
+                axis([xmin, xmax, ymin, ymax]);
+            else
+                axis([0.95 2.45 -0.5 1])
+            end
+            ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
+            xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+            
+            cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
+            ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
+            if ST.params.synthetic_camera_params.photon_count
+                xlabel(hc,'$P_R$ (Photons)','Interpreter','latex','FontSize',12)
+            else
+                xlabel(hc,'$\int P_R(\lambda) d\lambda$ (Watts)','Interpreter','latex','FontSize',12)
+            end
+            
+            
+            A = fliplr(sum(np_L3,3))';
+            minval = min(min(A));
+            maxval = 0.8*max(max(A));
+            v = linspace(minval,maxval,25);
+            
+            figure(h);
+            subplot(3,2,2)
+            contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
+            ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
+            if ~figuresToShare
+                axis([xmin, xmax, ymin, ymax]);
+            else
+                axis([0.95 2.45 -0.5 1])
+            end
+            ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
+            xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+            
+            cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
+            ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
+            xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
         end
         
-        
-        A = fliplr(sum(np_L3,3))';
-        minval = min(min(A));
-        maxval = 0.8*max(max(A));
-        v = linspace(minval,maxval,25);
-        
-        figure(h);
-        subplot(3,2,2)
-        contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
-        ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
-%         axis([xmin, xmax, ymin, ymax]);
-        box on; axis equal;
-        axis([0.95 2.45 -0.5 1])
-        ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-        xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
-        
-        cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-        ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
-        xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
-        
-        
         A = fliplr(sum(Psyn_L4,3))';
-%         maxval = 0.8*max(max(A));
-        maxval = 5*std(std(A));
-        minval = min(min(A));
+        maxval = 0.35*max(max(A));
+%         maxval = 4*std(std(A));
+        minval = min(min(A(A~=0)));
         v = linspace(minval,maxval,25);
         
         figure(h);
-        subplot(3,2,3)
+        if ~figuresToShare
+            subplot(3,2,3)
+        else
+            subplot(2,2,1)
+        end
         contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
         ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
-%         axis([xmin, xmax, ymin, ymax]);
+        if ~figuresToShare
+            axis([xmin, xmax, ymin, ymax]);
+        else
+            axis([0.95 2.45 -0.5 1])
+        end
         box on; axis equal;
-        axis([0.95 2.45 -0.5 1])
         ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
         xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
         
@@ -1838,7 +1851,11 @@ for ss=1:ST.params.simulation.num_species
         cameraCount = zeros(1,size(xRectangles,1));
         
         figure(h)
-        subplot(3,2,3)
+        if ~figuresToShare
+            subplot(3,2,3)
+        else
+            subplot(2,2,1)
+        end
         hold on
         for ii=1:size(xRectangles,1)
             iX(ii,1) = find(xAxis_rescaled > xRectangles(ii,1),1,'first');
@@ -1861,12 +1878,19 @@ for ss=1:ST.params.simulation.num_species
         v = linspace(minval,maxval,25);
         
         figure(h);
-        subplot(3,2,4)
+        if ~figuresToShare
+            subplot(3,2,4)
+        else
+            subplot(2,2,2)
+        end
         contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
         ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
-%         axis([xmin, xmax, ymin, ymax]);
+        if ~figuresToShare
+            axis([xmin, xmax, ymin, ymax]);
+        else
+            axis([0.95 2.45 -0.5 1])
+        end
         box on; axis equal;
-        axis([0.95 2.45 -0.5 1])
         ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
         xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
         
@@ -1875,7 +1899,11 @@ for ss=1:ST.params.simulation.num_species
         xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
         
         figure(h)
-        subplot(3,2,[5 6])
+        if ~figuresToShare
+            subplot(3,2,[5 6])
+        else
+            subplot(2,2,[3 4])
+        end        
         hold on
         for ii=1:size(xRectangles,1)
             plot(ii,cameraCount(ii),'s','MarkerSize',6,'Color',colorRectangles(ii,:),'MarkerFaceColor',colorRectangles(ii,:))
