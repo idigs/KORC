@@ -36,7 +36,8 @@ subroutine set_paths(params)
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'(/,"* * * * * PATHS * * * * *")')
 		write(6,'("The input file is:",A70)') TRIM(params%path_to_inputs)
-		write(6,'("The output folder is:",A70,/)') TRIM(params%path_to_outputs)
+		write(6,'("The output folder is:",A70)') TRIM(params%path_to_outputs)
+		write(6,'("* * * * * * * * * * * * *",/)')
 	end if
 end subroutine set_paths
 
@@ -138,7 +139,7 @@ subroutine load_korc_params(params)
 		if (params%collisions) then
 			write(6,'("collisions model: ",A50)') TRIM(params%collisions_model)
 		end if
-		write(6,'(/)')
+		write(6,'("* * * * * * * * * * * * * * * * * * * * *",/)')
 	end if	
 end subroutine load_korc_params
 
@@ -609,6 +610,7 @@ end subroutine set_up_particles_ic
 subroutine initialize_communications(params)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
+	CHARACTER(MAX_STRING_LENGTH) :: string
 
 	call initialize_mpi(params)
 
@@ -616,20 +618,36 @@ subroutine initialize_communications(params)
         params%num_omp_threads = OMP_GET_NUM_THREADS()
 !$OMP END PARALLEL
 
-	call initialization_sanity_check(params) 
+	if (params%mpi_params%rank.EQ.0) then
+		write(6,'(/,"* * * * * * * OMP SET-UP * * * * * * *")')
+!$OMP PARALLEL
+!$OMP MASTER
+		write(6,'(/,"OMP threads per MPI process: ",I3)') OMP_GET_NUM_THREADS()
+		write(6,'(/,"Cores available per MPI process: ",I3)') OMP_GET_NUM_PROCS()
+!$OMP END MASTER
+!$OMP END PARALLEL
+#ifdef GNU
+		call GET_ENVIRONMENT_VARIABLE("OMP_PLACES",string)
+		write(6,'(/,"OMP places: ",A30)') TRIM(string)
+		call GET_ENVIRONMENT_VARIABLE("GOMP_CPU_AFFINITY",string)
+		write(6,'(/,"OMP CPU affinity: ",A30)') TRIM(string)
+#endif
+		write(6,'("* * * * * * * * * * * *  * * * * * * *",/)')
+	end if
+
+!	call initialization_sanity_check(params) 
 end subroutine initialize_communications
 
 
 subroutine initialization_sanity_check(params)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	CHARACTER(MAX_STRING_LENGTH) :: env_variable
+
 	INTEGER :: ierr, mpierr
 	LOGICAL :: flag = .FALSE.
 
-!	call GET_ENVIRONMENT_VARIABLE("OMP_PLACES",env_variable)
-!	call GET_ENVIRONMENT_VARIABLE("GOMP_CPU_AFFINITY",env_variable)
-!	write(6,*) TRIM(env_variable)
+
+!	
 
 	call MPI_INITIALIZED(flag, ierr)
 

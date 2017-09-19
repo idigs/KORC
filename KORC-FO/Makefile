@@ -35,7 +35,7 @@ ifdef PRG_ENV
 ifeq ($(PRG_ENV),GNU)
         HDF5_INSTALL =../HDF5_GNU
         FCFLAGS =-cpp   -J$(MOD)        -fopenmp        -O3  #-O3    -ffast-math     -funroll-loops
-        FCDEFINEFLAGS =-DDOUBLE_PRECISION       -DHDF5_DOUBLE_PRESICION
+        FCDEFINEFLAGS =-DGNU	-DDOUBLE_PRECISION       -DHDF5_DOUBLE_PRESICION
 endif #GNU
 ifeq ($(PRG_ENV),INTEL)
 #        PSPLINE_INSTALL=../pspline_lib_INTEL
@@ -66,7 +66,7 @@ endif #edison
 else #NERSC_HOST
         FC = mpif90
 
-        FCDEFINEFLAGS =-DDOUBLE_PRECISION       -DHDF5_DOUBLE_PRESICION -UH5_DEBUG_API
+        FCDEFINEFLAGS =-DGNU	-DDOUBLE_PRECISION       -DHDF5_DOUBLE_PRESICION -UH5_DEBUG_API
         FCFLAGS =-cpp   -J$(MOD)        -fopenmp        -O3
 
         HDF5_INSTALL =../HDF5

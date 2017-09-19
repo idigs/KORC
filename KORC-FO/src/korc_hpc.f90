@@ -25,19 +25,30 @@ subroutine initialize_mpi(params)
 	INTEGER :: mpierr
 	INTEGER, PARAMETER :: NDIMS = 1
 	INTEGER, DIMENSION(:), ALLOCATABLE :: DIMS
+	LOGICAL :: all_mpis_initialized = .FALSE.
+	LOGICAL :: mpi_process_initialized = .FALSE.
 	LOGICAL, PARAMETER :: REORDER = .FALSE.
 	LOGICAL, DIMENSION(:), ALLOCATABLE :: PERIODS
 	INTEGER :: ii ! Iterator
 
 	call MPI_INIT(mpierr)
+
 	if (mpierr .NE. MPI_SUCCESS) then
-		print *,'Error starting MPI program. Terminating.'
+		write(6,'(/,"* * * * * * * COMMUNICATIONS * * * * * * *")')
+		write(6,'(/," ERROR: Initializing MPI. Aborting... ")')
+		write(6,'(/,"* * * * * * * * * ** * * * * * * * * * * *")')
 		call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
 	end if
 
+	call MPI_INITIALIZED(mpi_process_initialized,mpierr)
+
+	call MPI_REDUCE(mpi_process_initialized,all_mpis_initialized,1,MPI_LOGICAL,MPI_LAND,0,MPI_COMM_WORLD,mpierr)
+
 	call MPI_COMM_SIZE(MPI_COMM_WORLD, params%mpi_params%nmpi, mpierr)
 	if (mpierr .NE. MPI_SUCCESS) then
-		print *,'Error getting the size of WORLD COMMON COMMUNICATOR. Terminating.'
+		write(6,'(/,"* * * * * * * COMMUNICATIONS * * * * * * *")')
+		write(6,'(/," ERROR: Obtaining size of communicator. Aborting... ")')
+		write(6,'(/,"* * * * * * * * * ** * * * * * * * * * * *")')
 		call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
 	end if
 
@@ -50,18 +61,21 @@ subroutine initialize_mpi(params)
 		PERIODS(ii) = .TRUE.
 	end do
 
+	! * * * Getting the rank of the MPI process in the WORLD COMMON communicator * * * !
+	call MPI_COMM_RANK(MPI_COMM_WORLD, params%mpi_params%rank, mpierr)
+	if (mpierr .NE. MPI_SUCCESS) then
+		write(6,'(/,"* * * * * * * COMMUNICATIONS * * * * * * *")')
+		write(6,'(/," ERROR: Obtaining MPI rank. Aborting... ")')
+		write(6,'(/,"* * * * * * * * * ** * * * * * * * * * * *")')
+		call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
+	end if	
+
+	! * * * Here a periodic topology for MPI is created * * * !
 !	call MPI_CART_CREATE(MPI_COMM_WORLD, NDIMS, DIMS, PERIODS, REORDER, params%mpi_params%mpi_topo, mpierr)
 !	if (mpierr .NE. MPI_SUCCESS) then
 !		print *,'Error creating new MPI topology. Terminating.'
 !		call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
 !	end if
-
-	! * * * Getting the rank of the MPI process in the WORLD COMMON communicator * * * !
-	call MPI_COMM_RANK(MPI_COMM_WORLD, params%mpi_params%rank, mpierr)
-	if (mpierr .NE. MPI_SUCCESS) then
-		print *,'Error getting MPI rank in COMM_WORLD. Terminating.'
-		call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
-	end if	
 
 	! * * * Getting the rank of the MPI process in the new topology * * * !
 !	call MPI_COMM_RANK(params%mpi_params%mpi_topo, params%mpi_params%rank_topo, mpierr)
@@ -69,6 +83,20 @@ subroutine initialize_mpi(params)
 !		print *,'Error getting MPI rank in KORC topology. Terminating.'
 !		call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
 !	end if
+
+	if (params%mpi_params%rank.EQ.0) then
+		if (all_mpis_initialized) then
+			write(6,'(/,"* * * * * COMMUNICATIONS  * * * * *")')
+			write(6,'(/,"  MPI communications initialized!  ")')
+			write(6,'(/,"  Number of MPI processes: ",I5)') params%mpi_params%nmpi
+			write(6,'(/,"* * * * * * * * * * * * * * * * * *")')
+		else
+			write(6,'(/,"* * * * * * * COMMUNICATIONS * * * * * * *")')
+			write(6,'(/," ERROR: MPI not initialized. Aborting... ")')
+			write(6,'(/,"* * * * * * * * * ** * * * * * * * * * * *")')
+			call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
+		end if
+	end if
 
 	DEALLOCATE(DIMS)
 	DEALLOCATE(PERIODS)
