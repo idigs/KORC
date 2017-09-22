@@ -301,7 +301,7 @@ xRectangles = [1.41,1.619; 1.537,1.66; 1.943,2.077];
 yRectangles = [-0.1075,0.1161; -0.0626,0.07147; 0.1831,0.363];
 colorRectangles = [0,0,0; 1,0,0; 0,0,1];
 plotToroidalSections = false;
-figuresToShare = true;
+figuresToShare = false;
 
 
 lambda = ST.params.synthetic_camera_params.lambda;
@@ -533,6 +533,8 @@ for ss=1:ST.params.simulation.num_species
         xlim([min(axis_lambda) max(axis_lambda)]);box on;grid on;
         xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
         
+        saveas(fig,[ST.path 'Spectra_ss_' num2str(ss)],'fig')
+        
         Dtor = 360/double(NT);
         if plotToroidalSections
             for tt=1:NT
@@ -642,10 +644,15 @@ for ss=1:ST.params.simulation.num_species
         % % % % % Camera diagnostic % % % % %
         
         if ~figuresToShare
-            A = fliplr(sum(Psyn_L3,3))';
-            minval = min(min(A(A~=0)));
-            maxval = 0.6*max(max(A));
-            v = linspace(minval,maxval,25);
+        A = fliplr(sum(Psyn_L3,3))';
+        B = reshape(A,[numel(A),1]);
+        B(B==0) = [];
+        if ST.params.synthetic_camera_params.photon_count
+            B(B<1) = [];
+        end
+        minval = min(B);
+        maxval = 3*std(B);
+        v = linspace(minval,maxval,50);
             
             figure(h);
             subplot(3,2,1)
@@ -737,21 +744,21 @@ for ss=1:ST.params.simulation.num_species
         else
             subplot(2,2,1)
         end
-        hold on
-        for ii=1:size(xRectangles,1)
-            iX(ii,1) = find(xAxis_rescaled > xRectangles(ii,1),1,'first');
-            iX(ii,2) = find(xAxis_rescaled > xRectangles(ii,2),1,'first') - 1;
-            
-            iY(ii,1) = find(yAxis_rescaled > yRectangles(ii,1),1,'first');
-            iY(ii,2) = find(yAxis_rescaled > yRectangles(ii,2),1,'first') - 1;
-            
-            cameraCount(ii) = sum(sum(A(iY(ii,1):iY(ii,2),iX(ii,1):iX(ii,2))));
-            
-            xplot = [xRectangles(ii,1),xRectangles(ii,2),xRectangles(ii,2),xRectangles(ii,1),xRectangles(ii,1)];
-            yplot = [yRectangles(ii,1),yRectangles(ii,1),yRectangles(ii,2),yRectangles(ii,2),yRectangles(ii,1)];
-            plot(xplot,yplot,'LineWidth',2,'Color',colorRectangles(ii,:))
-        end
-        hold off
+%         hold on
+%         for ii=1:size(xRectangles,1)
+%             iX(ii,1) = find(xAxis_rescaled > xRectangles(ii,1),1,'first');
+%             iX(ii,2) = find(xAxis_rescaled > xRectangles(ii,2),1,'first') - 1;
+%             
+%             iY(ii,1) = find(yAxis_rescaled > yRectangles(ii,1),1,'first');
+%             iY(ii,2) = find(yAxis_rescaled > yRectangles(ii,2),1,'first') - 1;
+%             
+%             cameraCount(ii) = sum(sum(A(iY(ii,1):iY(ii,2),iX(ii,1):iX(ii,2))));
+%             
+%             xplot = [xRectangles(ii,1),xRectangles(ii,2),xRectangles(ii,2),xRectangles(ii,1),xRectangles(ii,1)];
+%             yplot = [yRectangles(ii,1),yRectangles(ii,1),yRectangles(ii,2),yRectangles(ii,2),yRectangles(ii,1)];
+%             plot(xplot,yplot,'LineWidth',2,'Color',colorRectangles(ii,:))
+%         end
+%         hold off
                
         A = fliplr(sum(np_L4,3))';
         B = reshape(A,[numel(A),1]);
@@ -948,7 +955,7 @@ for ss=1:ST.params.simulation.num_species
         xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
         
         cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-        ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
+        ax = gca;ax.Color = [0,0,0];ax.ClippingStyle = 'rectangle';
         if ST.params.synthetic_camera_params.photon_count
             xlabel(hc,'$P_R$ (Photons)','Interpreter','latex','FontSize',12)
         else
@@ -974,7 +981,7 @@ for ss=1:ST.params.simulation.num_species
         ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
         
-        saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
+%         saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
     end
 end
 end

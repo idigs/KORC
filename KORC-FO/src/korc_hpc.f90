@@ -135,15 +135,20 @@ end subroutine timing_KORC
 subroutine finalize_mpi(params)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	LOGICAL :: flag = .FALSE.
+	LOGICAL :: mpi_process_finalized = .FALSE.
 	INTEGER :: mpierr
 
 	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
 	call MPI_FINALIZE(mpierr)
 
-	call MPI_FINALIZED(flag, mpierr)
-	write(6,'("MPI: ",I4," FINALIZED: ",l)') params%mpi_params%rank, flag
+	call MPI_FINALIZED(mpi_process_finalized,mpierr)
+
+	if (.NOT.mpi_process_finalized) then
+		write(6,'(/,"* * * * * * * COMMUNICATIONS * * * * * * *")')
+		write(6,'(/," ERROR: MPI not finalized well. MPI process: ",I5)') params%mpi_params%rank
+		write(6,'(/,"* * * * * * * * * ** * * * * * * * * * * *")')
+	end if
 end subroutine finalize_mpi
 
 end module korc_hpc
