@@ -508,6 +508,9 @@ for ss=1:ST.params.simulation.num_species
     xAxis_rescaled = scaling_factor*xAxis + Rc_zero;
     yAxis_rescaled = scaling_factor*yAxis + Zc;
     
+%     xAxis_rescaled = xAxis;
+%     yAxis_rescaled = yAxis;
+    
     if (NT ~= 1)
         
         f_L3 = P_L3;

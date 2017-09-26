@@ -2,7 +2,7 @@ MODULE korc_synthetic_camera
 	USE korc_types
 	USE korc_constants
 	USE korc_HDF5
-    USE mpi
+    USE korc_hpc
     USE special_functions
 
 	IMPLICIT NONE
@@ -48,12 +48,17 @@ MODULE korc_synthetic_camera
 		LOGICAL :: toroidal_sections
 		LOGICAL :: photon_count
 		INTEGER :: ntor_sections
+	
+		REAL(rp), DIMENSION(3) :: r
 	END TYPE CAMERA
 
 	TYPE, PRIVATE :: ANGLES
 		REAL(rp), DIMENSION(:), ALLOCATABLE :: eta
 		REAL(rp), DIMENSION(:), ALLOCATABLE :: beta
 		REAL(rp), DIMENSION(:), ALLOCATABLE :: psi
+		REAL(rp), DIMENSION(:), ALLOCATABLE :: ax
+		REAL(rp), DIMENSION(:), ALLOCATABLE :: ay
+		REAL(rp) :: ac
 
 		REAL(rp) :: threshold_angle
 		REAL(rp) :: threshold_radius
@@ -199,7 +204,6 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'(/,"* * * * * * * * * * * * * * * * * *")')
 		write(6,'("*  Initializing synthetic camera  *")')
-		write(6,'("* * * * * * * * * * * * * * * * * *",/)')
 	end if
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
@@ -229,6 +233,8 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 	cam%integrated_opt = integrated_opt
 	cam%toroidal_sections = toroidal_sections
 	cam%ntor_sections = ntor_sections
+
+	cam%r = (/COS(0.5_rp*C_PI - cam%incline),-SIN(0.5_rp*C_PI - cam%incline),0.0_rp/)
 	
 	if (cam%camera_on) then
 		do ii=1_idef,cam%Nlambda
@@ -265,9 +271,9 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 		end do
 	
 		! Initialize ang variables
-		ALLOCATE(ang%eta(cam%num_pixels(1)))
-		ALLOCATE(ang%beta(cam%num_pixels(1)))
-		ALLOCATE(ang%psi(cam%num_pixels(2)+1_idef))
+		ALLOCATE(ang%eta(cam%num_pixels(1))) ! angle between main line of sight and a given pixel along the x-axis
+		ALLOCATE(ang%beta(cam%num_pixels(1))) 
+		ALLOCATE(ang%psi(cam%num_pixels(2)+1_idef)) ! angle between main line of sight and a given pixel along the y-axis
 
 		do ii=1_idef,cam%num_pixels(1)
 			ang%eta(ii) = ABS(ATAN2(cam%pixels_nodes_x(ii),cam%focal_length))
@@ -284,6 +290,23 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 
 		ang%threshold_angle = ATAN2(cam%Riw,-cam%position(1))
 		ang%threshold_radius = SQRT(cam%Riw**2 + cam%position(1)**2)
+
+		ALLOCATE(ang%ax(cam%num_pixels(1))) ! angle between main line of sight and a given pixel along the x-axis
+		ALLOCATE(ang%ay(cam%num_pixels(2))) ! angle between main line of sight and a given pixel along the y-axis
+
+		do ii=1_idef,cam%num_pixels(1)
+			ang%ax(ii) = ATAN2(cam%pixels_nodes_x(ii),cam%focal_length)
+		end do
+
+		do ii=1_idef,cam%num_pixels(2)
+			ang%ay(ii) = ATAN2(cam%pixels_nodes_y(ii),cam%focal_length)
+		end do
+
+		if (cam%incline.GT.0.5_rp*C_PI) then
+			ang%ac = cam%incline - 0.5_rp*C_PI
+		else
+			ang%ac = 0.5_rp*C_PI - cam%incline
+		end if
 
 		if (params%mpi_params%rank .EQ. 0) then
 			write(6,'("*     Synthetic camera ready!     *")')
@@ -638,41 +661,57 @@ SUBROUTINE check_if_visible(X,V,threshold_angle,bool,angle,XC)
 END SUBROUTINE check_if_visible
 
 
-SUBROUTINE is_visible(X,V,threshold_angle,bool)
+SUBROUTINE is_visible(X,V,threshold_angle,bool,ii,jj)
 	IMPLICIT NONE
 	REAL(rp), DIMENSION(3), INTENT(IN) :: X
 	REAL(rp), DIMENSION(3), INTENT(IN) :: V
 	REAL(rp), INTENT(IN) :: threshold_angle
 	LOGICAL, INTENT(OUT) :: bool
+	INTEGER, INTENT(OUT) :: ii
+	INTEGER, INTENT(OUT) :: jj
 	REAL(rp), DIMENSION(3) :: vec
-	REAL(rp) :: a, b, c, ciw, dis, disiw
+	REAL(rp), DIMENSION(3) :: n
+	REAL(rp) :: r
 	REAL(rp) :: psi
+	REAL(rp) :: t,ax,ay
 
+	vec(1) = cam%position(1) - X(1)
+	vec(2) = -X(2)
+	vec(3) = cam%position(2) - X(3)
 
-	a = V(1)**2 + V(2)**2
-	b = 2.0_rp*(X(1)*V(1) + X(2)*V(2))
-	c = X(1)**2 + X(2)**2 - cam%position(1)**2
-	ciw = X(1)**2 + X(2)**2 - cam%Riw**2
-
-	dis = b**2 - 4.0_rp*a*c
-	disiw = b**2 - 4.0_rp*a*ciw
-	
-	if ((dis .LT. 0.0_rp).OR.(disiw .GE. 0.0_rp)) then
-		bool = .FALSE. ! The particle is not visible
-	else
-		vec(1) = cam%position(1) - X(1)
-		vec(2) = -X(2)
-		vec(3) = cam%position(2) - X(3)
-
-		vec = vec/SQRT(DOT_PRODUCT(vec,vec))
+	r = SQRT(DOT_PRODUCT(vec,vec))
+	n = vec/r
 		
-		psi = ACOS(DOT_PRODUCT(vec,V))
+	psi = ACOS(DOT_PRODUCT(n,V))
 
-		if (psi.LE.threshold_angle) then
-			bool = .TRUE. ! The particle is visible
+	if (psi.LE.threshold_angle) then
+		bool = .TRUE. ! The particle is visible
+
+		t =  ACOS(DOT_PRODUCT((/n(1),n(2),0.0_rp/),(/1.0_rp,0.0_rp,0.0_rp/)))
+
+		if (cam%incline.GT.0.5_rp*C_PI) then
+			if (t.GT.ang%ac) then
+				ax = -ACOS(DOT_PRODUCT((/n(1),n(2),0.0_rp/),cam%r))
+			else
+				ax = ACOS(DOT_PRODUCT((/n(1),n(2),0.0_rp/),cam%r))
+			end if
 		else
-			bool = .FALSE. ! The particle is not visible
+			if (t.GT.ang%ac) then
+				ax = ACOS(DOT_PRODUCT((/n(1),n(2),0.0_rp/),cam%r))
+			else
+				ax = -ACOS(DOT_PRODUCT((/n(1),n(2),0.0_rp/),cam%r))
+			end if
 		end if
+
+		ay = -ASIN(vec(3)/r)
+
+		ii = MINLOC(ABS(ax - ang%ax),1)
+		jj = MINLOC(ABS(ay - ang%ay),1)
+
+		if ((ii.GT.cam%num_pixels(1)).OR.(jj.GT.cam%num_pixels(2))) bool = .FALSE.
+
+	else
+		bool = .FALSE. ! The particle is not visible
 	end if
 END SUBROUTINE is_visible
 
@@ -1920,11 +1959,9 @@ SUBROUTINE integrated_SE_3D(params,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
 	CHARACTER(MAX_STRING_LENGTH) :: var_name
-	LOGICAL, DIMENSION(:,:,:), ALLOCATABLE :: bool_pixel_array
 	LOGICAL :: bool
 	REAL(rp), DIMENSION(3) :: binorm, n, nperp
 	REAL(rp), DIMENSION(3) :: X, V, B, E, XC
-	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: angle_pixel_array
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: np_angular_pixel
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: Psyn_angular_pixel
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: np_lambda_pixel
@@ -1946,14 +1983,10 @@ SUBROUTINE integrated_SE_3D(params,spp)
 	REAL(rp) :: lc
 	REAL(rp) :: dSA ! Element of solid angle
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: zeta
-	REAL(rp) :: Dtor
+	REAL(rp) :: azimuthal_angle,Dtor
 	INTEGER :: ii,jj,ll,ss,pp
 	INTEGER :: itor
     INTEGER :: numel, mpierr
-
-
-	ALLOCATE(bool_pixel_array(cam%num_pixels(1),cam%num_pixels(2),2)) ! (NX,NY,2)
-	ALLOCATE(angle_pixel_array(cam%num_pixels(1),cam%num_pixels(2),2)) ! (NX,NY,2)
 
 	ALLOCATE(np_angular_pixel(cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species))
 	ALLOCATE(Psyn_angular_pixel(cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species))
@@ -1995,8 +2028,8 @@ SUBROUTINE integrated_SE_3D(params,spp)
 		m = spp(ss)%m*params%cpp%mass
 
 !$OMP PARALLEL DO FIRSTPRIVATE(q,m,Dtor,photon_energy) PRIVATE(binorm,n,nperp,X,XC,V,B,E,&
-!$OMP& bool_pixel_array,angle_pixel_array,k,u,g,l,threshold_angle,threshold_angle_simple_model,theta,&
-!$OMP& psi,chi,beta,bool,angle,clockwise,ii,jj,ll,pp,r,lc,zeta,P_lambda,P_angular,itor,solid_angle,dSA,P)&
+!$OMP& k,u,g,l,threshold_angle,threshold_angle_simple_model,theta,&
+!$OMP& psi,chi,beta,bool,angle,clockwise,ii,jj,ll,pp,r,lc,zeta,P_lambda,P_angular,itor,solid_angle,dSA,P,azimuthal_angle)&
 !$OMP& SHARED(params,spp,ss,Psyn_angular_pixel,np_angular_pixel,np_lambda_pixel,Psyn_lambda_pixel,P_l_pixel,P_a_pixel,np_pixel)
 		do pp=1_idef,spp(ss)%ppp
 			if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
@@ -2023,12 +2056,14 @@ SUBROUTINE integrated_SE_3D(params,spp)
 
 				np_pixel(ss) = np_pixel(ss) + 1.0_rp ! We count all the confined particles.
 
-				call is_visible(X,V/u,MAXVAL((/threshold_angle,threshold_angle_simple_model/)),bool)
+				call is_visible(X,V/u,MAXVAL((/threshold_angle,threshold_angle_simple_model/)),bool,ii,jj)
 			
 				if (bool.EQV..TRUE.) then
-					call calculate_rotation_angles(X,bool_pixel_array,angle_pixel_array) ! This routine needs to change to give ii and jj
-							
-					itor = floor(angle_pixel_array(ii,jj,1)/Dtor) + 1_idef
+					azimuthal_angle = ATAN2(X(2),X(1))
+
+					if (azimuthal_angle.LT.0.0_rp) azimuthal_angle = 2.0_rp*C_PI + azimuthal_angle
+
+					itor = floor(azimuthal_angle/Dtor) + 1_idef
 
 					XC = (/cam%position(1),0.0_rp,cam%position(2)/)
 
@@ -2254,10 +2289,6 @@ SUBROUTINE integrated_SE_3D(params,spp)
 		var_name = 'P_l_pixel'
 		call save_snapshot_var(params,P_l_pixel,var_name)
 	end if
-
-
-	DEALLOCATE(bool_pixel_array)
-	DEALLOCATE(angle_pixel_array)
 
 	DEALLOCATE(np_angular_pixel)
     DEALLOCATE(Psyn_angular_pixel)
@@ -3057,8 +3088,8 @@ SUBROUTINE synthetic_camera(params,spp)
 		end if
 		if (cam%integrated_opt) then
 			if (cam%toroidal_sections) then
-				call integrated_SE_toroidal_sections(params,spp)
-!				call integrated_SE_3D(params,spp)
+!				call integrated_SE_toroidal_sections(params,spp)
+				call integrated_SE_3D(params,spp)
 				call integrated_spectral_density(params,spp)
 			else
 				call integrated_angular_density(params,spp)
