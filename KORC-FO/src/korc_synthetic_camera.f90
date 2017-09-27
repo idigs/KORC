@@ -740,8 +740,8 @@ SUBROUTINE calculate_rotation_angles(X,bpa,apa)
 	! bpa(:,:,2) -- > xn
 		
 	R = SQRT(SUM(X(1:2)**2))
-	D = SQRT( (X(1) - cam%position(1))**2 + X(2)**2 )
-	psi = -ATAN2(X(3) - cam%position(2),D)
+	D = SQRT( (cam%position(1) - X(1))**2 + X(2)**2 )
+	psi = -ATAN2(cam%position(2) - X(3),D)
 
 	bpa = .TRUE.
 	

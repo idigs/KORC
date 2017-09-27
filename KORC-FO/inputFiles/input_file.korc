@@ -17,12 +17,12 @@
                                                                                 ! cylindrical components of the magnetic field
         axisymmetric = .FALSE.                          ! Axisymmetric field?
         magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/D3D_Q.h5" ! DIII-D_sh165826.h5" !
-        outputs_list = '{X,flag,g,eta,ne,Te}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
+        outputs_list = '{}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
 /
 
 &plasma_species
         runaway = .FALSE.,.FALSE. !
-        ppp = 1000,1000 ! Number of particles per process (mpi)
+        ppp = 1000000,1000000 ! Number of particles per process (mpi)
         q = -1.0,-1.0 ! Electric charge
         m = 1.0,1.0 ! In units of electron mass
 		spatial_distribution = 'FLAT','FLAT'
@@ -32,7 +32,7 @@
 		sigma_r = 0.0, 0.14 !
         energy_distribution = 'MONOENERGETIC','MONOENERGETIC'   ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'
         pitch_distribution = 'MONOPITCH','MONOPITCH'	! Options are: 'MONOPITCH', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'.
-        Eo = 25.0E6,25.0E6 ! Initial energy in eV
+        Eo = 30.0E6,30.0E6 ! Initial energy in eV
         etao = 5.0,10.0  ! Initial pitch angle
         Eo_lims = 1.0E6,50.0E6,1.0E6,50.0E6 ! Lower and upper limit of simulated energy range, in eV.
         etao_lims = 0.0,20.0,0.0,20.0 ! Lower and upper limit of simulated pitch-angle range, in degrees.
@@ -43,7 +43,7 @@
 	Eo = 0.0 ! In V/m
 	pulse_maximum = 3.0E-3 ! Time at which maximum is reached in s
 	pulse_duration = 6.7E-4 ! Duration of intense toroidal electric field
-	current_direction = 'ANTI-PARALLEL' ! 'PARALLEL' or 'ANTI-PARALLEL'
+	current_direction = 'PARALLEL' ! 'PARALLEL' or 'ANTI-PARALLEL'
 	Bo = 2.19 ! In Teslas. ITER: 5.42 DIII-D: 2.19
 	minor_radius = 0.5 ! Minor radius in meters. ITER: 1.5 DIII-D: 0.5
 	major_radius = 1.5 ! Major radius in meters. ITER: 6.5 DIII-D: 1.6
@@ -114,10 +114,10 @@
  	sensor_size = 0.4, 0.4 ! (horizontal,vertical)
  	focal_length = 0.5
 	position = 2.4, 0.0 ! Position of camera (R,Z)
-	incline = 50.42 ! In degrees
+	incline = 55.0 ! In degrees
  	lambda_min = 100.0E-9 ! Minimum wavelength in meters
  	lambda_max = 10000.0E-9 ! Maximum wavelength in meters
- 	Nlambda = 75 ! Number of discrete wavelengths
+ 	Nlambda = 100 ! Number of discrete wavelengths
 	photon_count = .FALSE.
 	integrated_opt = .TRUE. ! .TRUE. or .FALSE.
 	toroidal_sections = .TRUE. ! 
