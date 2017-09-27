@@ -599,6 +599,15 @@ FUNCTION trapz(x,f)
 	trapz = 0.5_rp*SUM( (x(2:N) - x(1:N-1))*(f(1:N-1) + f(2:N)) )
 END FUNCTION trapz
 
+
+FUNCTION rad2deg(t)
+	REAL(rp), INTENT(IN) :: t
+	REAL(rp) :: rad2deg
+
+	rad2deg = t*180.0_rp/C_PI
+
+END FUNCTION rad2deg
+
 ! * * * * * * * * * * * * * * * !
 ! * * * * * FUNCTIONS * * * * * !
 ! * * * * * * * * * * * * * * * !
@@ -684,22 +693,25 @@ SUBROUTINE is_visible(X,V,threshold_angle,bool,ii,jj)
 		
 	psi = ACOS(DOT_PRODUCT(n,V))
 
+	n = (/vec(1),vec(2),0.0_rp/)
+	n = n/SQRT(DOT_PRODUCT(n,n))
+
 	if (psi.LE.threshold_angle) then
 		bool = .TRUE. ! The particle is visible
 
-		t =  ACOS(DOT_PRODUCT((/n(1),n(2),0.0_rp/),(/1.0_rp,0.0_rp,0.0_rp/)))
+		t =  ACOS(DOT_PRODUCT(n,(/1.0_rp,0.0_rp,0.0_rp/)))
 
 		if (cam%incline.GT.0.5_rp*C_PI) then
 			if (t.GT.ang%ac) then
-				ax = -ACOS(DOT_PRODUCT((/n(1),n(2),0.0_rp/),cam%r))
+				ax = -ACOS(DOT_PRODUCT(n,cam%r))
 			else
-				ax = ACOS(DOT_PRODUCT((/n(1),n(2),0.0_rp/),cam%r))
+				ax = ACOS(DOT_PRODUCT(n,cam%r))
 			end if
 		else
 			if (t.GT.ang%ac) then
-				ax = ACOS(DOT_PRODUCT((/n(1),n(2),0.0_rp/),cam%r))
+				ax = ACOS(DOT_PRODUCT(n,cam%r))
 			else
-				ax = -ACOS(DOT_PRODUCT((/n(1),n(2),0.0_rp/),cam%r))
+				ax = -ACOS(DOT_PRODUCT(n,cam%r))
 			end if
 		end if
 
@@ -709,7 +721,6 @@ SUBROUTINE is_visible(X,V,threshold_angle,bool,ii,jj)
 		jj = MINLOC(ABS(ay - ang%ay),1)
 
 		if ((ii.GT.cam%num_pixels(1)).OR.(jj.GT.cam%num_pixels(2))) bool = .FALSE.
-
 	else
 		bool = .FALSE. ! The particle is not visible
 	end if
