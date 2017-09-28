@@ -139,6 +139,7 @@ TYPE, PUBLIC :: SPECIES
 
 	! Parameters for initializing spatial distribution
 	REAL(rp) :: Ro
+	REAL(rp) :: PHIo
 	REAL(rp) :: Zo
 	REAL(rp) :: r
 	REAL(rp) :: sigma_r

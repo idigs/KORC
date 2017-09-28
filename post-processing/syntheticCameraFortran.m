@@ -1073,7 +1073,7 @@ for ss=1:ST.params.simulation.num_species
         ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
         
-%         saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
+        saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
     end
 end
 end

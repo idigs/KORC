@@ -49,17 +49,17 @@ for rr=1:B.NR
 end
 
 
-B.SI.BR = scatteredInterpolant(reshape(R,[numel(R) 1]),reshape(PHI,[numel(PHI) 1]),reshape(Z,[numel(Z) 1]),reshape(S.BR,[numel(S.BR) 1]));
-B.SI.Bphi = scatteredInterpolant(reshape(R,[numel(R) 1]),reshape(PHI,[numel(PHI) 1]),reshape(Z,[numel(Z) 1]),reshape(S.BPHI,[numel(S.BPHI) 1]));
-B.SI.BZ = scatteredInterpolant(reshape(R,[numel(R) 1]),reshape(PHI,[numel(PHI) 1]),reshape(Z,[numel(Z) 1]),reshape(S.BZ,[numel(S.BZ) 1]));
+% B.SI.BR = scatteredInterpolant(reshape(R,[numel(R) 1]),reshape(PHI,[numel(PHI) 1]),reshape(Z,[numel(Z) 1]),reshape(S.BR,[numel(S.BR) 1]));
+% B.SI.Bphi = scatteredInterpolant(reshape(R,[numel(R) 1]),reshape(PHI,[numel(PHI) 1]),reshape(Z,[numel(Z) 1]),reshape(S.BPHI,[numel(S.BPHI) 1]));
+% B.SI.BZ = scatteredInterpolant(reshape(R,[numel(R) 1]),reshape(PHI,[numel(PHI) 1]),reshape(Z,[numel(Z) 1]),reshape(S.BZ,[numel(S.BZ) 1]));
 
-% load('B.mat')
+load('B.mat')
 
 P = figure;
 
-Ros = 1.5;%B.Ro;%linspace(B.Ro,2.1,numInitCond);
+Ros = 1.6;%B.Ro;%linspace(B.Ro,2.1,numInitCond);
 phio = 0;
-Zos = linspace(-1.2,-1,numInitCond);
+Zos = linspace(-0.5,0.5,numInitCond);
 
 for ii=1:numInitCond
     
@@ -87,7 +87,7 @@ for ii=1:numInitCond
     locs = find(abs(diff(phi)) > 6);
     figure(P)
     hold on
-    plot(R(locs),Z(locs),'b.','MarkerSize',3)
+    plot(R(locs),Z(locs),'.','MarkerSize',3)
     hold off
     
 end

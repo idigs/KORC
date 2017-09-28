@@ -895,6 +895,10 @@ subroutine save_simulation_parameters(params,spp,F,P)
 		attr_array(1) = "Initial radial position of population"
 		call save_1d_array_to_hdf5(h5file_id,dset,spp%Ro*params%cpp%length,attr_array)
 
+		dset = TRIM(gname) // "/PHIo"
+		attr_array(1) = "Azimuthal angle in degrees."
+		call save_1d_array_to_hdf5(h5file_id,dset,spp%PHIo*180.0_rp/C_PI,attr_array)
+
 		dset = TRIM(gname) // "/Zo"
 		attr_array(1) = "Initial Z position of population"
 		call save_1d_array_to_hdf5(h5file_id,dset,spp%Zo*params%cpp%length,attr_array)

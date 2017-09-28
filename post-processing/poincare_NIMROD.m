@@ -1,7 +1,7 @@
 close all
 % clear all
 
-ST = diagnoseKORC('../KORC-FO/outputFiles/','on',[0,10000])
+ST = diagnoseKORC('../KORC-FO/outputFiles/NIMROD_D/','on',[0,100000])
 X = ST.data.sp1.X;
 t1 = squeeze(atan2(X(2,:,:),X(1,:,:)));
 t1(t1<0) = t1(t1<0) + 2*pi;

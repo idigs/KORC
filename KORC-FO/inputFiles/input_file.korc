@@ -27,6 +27,7 @@
         m = 1.0,1.0 ! In units of electron mass
 		spatial_distribution = 'FLAT','FLAT'
         Ro = 1.5,1.5 !
+		PHIo = 0.0, 0.0 ! In degrees
         Zo = 0.0,0.0 !
         r = 0.2,0.2 !
 		sigma_r = 0.0, 0.14 !
