@@ -317,7 +317,7 @@ disp('Plotting snapshots...')
 xRectangles = [1.41,1.619; 1.537,1.66; 1.943,2.077];
 yRectangles = [-0.1075,0.1161; -0.0626,0.07147; 0.1831,0.363];
 colorRectangles = [0,0,0; 1,0,0; 0,0,1];
-plotToroidalSections = false;
+plotToroidalSections = true;
 figuresToShare = false;
 
 
@@ -335,11 +335,11 @@ NZ = ST.params.poloidal_plane_params.grid_dims(1);
 
 
 if ~isfield(ST.params.synthetic_camera_params,'toroidal_sections')
-    NT = 1;
+    NT = 0;
 elseif (ST.params.synthetic_camera_params.toroidal_sections == 1)
     NT = ST.params.synthetic_camera_params.ntor_sections;
 else
-    NT = 1;
+    NT = 0;
 end
 
 
@@ -368,7 +368,7 @@ for ss=1:ST.params.simulation.num_species
         np_L2_lambda = zeros(NR,NZ,Nl);
     end
     
-    if (NT ~= 1)
+    if (NT ~= 0)
         Psyn_L4 = zeros(NX,NY,NT);
         np_L4 = zeros(NX,NY,NT);
         
@@ -440,7 +440,7 @@ for ss=1:ST.params.simulation.num_species
         
         P_L2 = squeeze(sum(ST.data.(['sp' num2str(ss)]).P_lambda(i1:i2,:),2))/sum(sum(np_L2));        
         
-        if (NT ~= 1)
+        if (NT ~= 0)
             np = ST.data.(['sp' num2str(ss)]).np_pixel;
             
             if ndims(ST.data.(['sp' num2str(ss)]).P_l_pixel) == 2
@@ -521,7 +521,7 @@ for ss=1:ST.params.simulation.num_species
 %     xAxis_rescaled = xAxis;
 %     yAxis_rescaled = yAxis;
     
-    if (NT ~= 1)
+    if (NT ~= 0)
         f_L2 = P_L2;
         f_L3 = P_L3;
         f_L4 = P_L4;

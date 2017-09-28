@@ -232,11 +232,15 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 	cam%photon_count = photon_count
 	cam%integrated_opt = integrated_opt
 	cam%toroidal_sections = toroidal_sections
-	cam%ntor_sections = ntor_sections
-
-	cam%r = (/COS(0.5_rp*C_PI - cam%incline),-SIN(0.5_rp*C_PI - cam%incline),0.0_rp/)
+	if (cam%toroidal_sections) then
+		cam%ntor_sections = ntor_sections
+	else
+		cam%ntor_sections = 1_idef
+	end if
 	
 	if (cam%camera_on) then
+		cam%r = (/COS(0.5_rp*C_PI - cam%incline),-SIN(0.5_rp*C_PI - cam%incline),0.0_rp/)
+
 		do ii=1_idef,cam%Nlambda
 			cam%lambda(ii) = cam%lambda_min + REAL(ii-1_idef,rp)*cam%Dlambda
 		end do
@@ -1541,6 +1545,8 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: np_pixel
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: P
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: P_lambda, P_angular
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: array3D
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: array2D
 	REAL(rp) :: q, m, k, u, g, l, threshold_angle, threshold_angle_simple_model
 	REAL(rp) :: psi, chi, beta, theta
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: photon_energy
@@ -1786,6 +1792,11 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 !	* * * * * * * * * * * * * * * * * * *
 !	* * * * * * * IMPORTANT * * * * * * *
 
+	if (.NOT.cam%toroidal_sections) then
+		ALLOCATE(array3D(cam%num_pixels(1),cam%num_pixels(2),params%num_species))
+		ALLOCATE(array2D(cam%Nlambda,params%num_species))
+	end if
+
 	units = 1.0_rp
 
 	if (params%mpi_params%nmpi.GT.1_idef) then 
@@ -1802,7 +1813,13 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 								RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species/))
 
 			var_name = 'Psyn_angular_pixel'
-			call save_snapshot_var(params,Psyn_angular_pixel,var_name)
+
+			if (cam%toroidal_sections) then
+				call save_snapshot_var(params,Psyn_angular_pixel,var_name)
+			else
+				array3D = SUM(Psyn_angular_pixel,3)
+				call save_snapshot_var(params,array3D,var_name)
+			end if				
 		end if
 
 		DEALLOCATE(send_buffer)
@@ -1819,7 +1836,13 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 								RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species/))
 
 			var_name = 'np_angular_pixel'
-			call save_snapshot_var(params,np_angular_pixel,var_name)
+
+			if (cam%toroidal_sections) then
+				call save_snapshot_var(params,np_angular_pixel,var_name)
+			else
+				array3D = SUM(np_angular_pixel,3)
+				call save_snapshot_var(params,array3D,var_name)
+			end if				
 		end if
 
 		DEALLOCATE(send_buffer)
@@ -1837,7 +1860,13 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 								RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species/))
 
 			var_name = 'Psyn_lambda_pixel'
-			call save_snapshot_var(params,Psyn_lambda_pixel,var_name)
+
+			if (cam%toroidal_sections) then
+				call save_snapshot_var(params,Psyn_lambda_pixel,var_name)
+			else
+				array3D = SUM(Psyn_lambda_pixel,3)
+				call save_snapshot_var(params,array3D,var_name)
+			end if	
 		end if
 
 		DEALLOCATE(send_buffer)
@@ -1854,13 +1883,17 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 								RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species/))
 
 			var_name = 'np_lambda_pixel'
-			call save_snapshot_var(params,np_lambda_pixel,var_name)
+
+			if (cam%toroidal_sections) then
+				call save_snapshot_var(params,np_lambda_pixel,var_name)
+			else
+				array3D = SUM(np_lambda_pixel,3)
+				call save_snapshot_var(params,array3D,var_name)
+			end if	
 		end if
 
 		DEALLOCATE(send_buffer)
 		DEALLOCATE(receive_buffer)
-
-
 
 		numel = params%num_species
 
@@ -1893,7 +1926,13 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 		    P_a_pixel = RESHAPE(receive_buffer,(/cam%Nlambda,cam%ntor_sections,params%num_species/))
 
 	        var_name = 'P_a_pixel'
-	        call save_snapshot_var(params,P_a_pixel,var_name)
+
+			if (cam%toroidal_sections) then
+				call save_snapshot_var(params,P_a_pixel,var_name)
+			else
+				array2D = SUM(P_a_pixel,3)
+				call save_snapshot_var(params,array2D,var_name)
+			end if	
 		end if
 
 		DEALLOCATE(send_buffer)
@@ -1909,7 +1948,13 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 		    P_l_pixel = RESHAPE(receive_buffer,(/cam%Nlambda,cam%ntor_sections,params%num_species/))
 
 	        var_name = 'P_l_pixel'
-	        call save_snapshot_var(params,P_l_pixel,var_name)
+
+			if (cam%toroidal_sections) then
+		        call save_snapshot_var(params,P_l_pixel,var_name)
+			else
+				array2D = SUM(P_l_pixel,3)
+				call save_snapshot_var(params,array2D,var_name)
+			end if	
 		end if
 
 		DEALLOCATE(send_buffer)
@@ -1918,26 +1963,56 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 	    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 	else
 		var_name = 'np_angular_pixel'
-		call save_snapshot_var(params,np_angular_pixel,var_name)
+		if (cam%toroidal_sections) then
+			call save_snapshot_var(params,np_angular_pixel,var_name)
+		else
+			array3D = SUM(np_angular_pixel,3)
+			call save_snapshot_var(params,array3D,var_name)
+		end if	
 
 		var_name = 'np_lambda_pixel'
-		call save_snapshot_var(params,np_lambda_pixel,var_name)
+		if (cam%toroidal_sections) then
+			call save_snapshot_var(params,np_lambda_pixel,var_name)
+		else
+			array3D = SUM(np_lambda_pixel,3)
+			call save_snapshot_var(params,array3D,var_name)
+		end if	
 
 		var_name = 'Psyn_angular_pixel'
-		call save_snapshot_var(params,Psyn_angular_pixel,var_name)
+		if (cam%toroidal_sections) then
+			call save_snapshot_var(params,Psyn_angular_pixel,var_name)
+		else
+			array3D = SUM(Psyn_angular_pixel,3)
+			call save_snapshot_var(params,array3D,var_name)
+		end if	
 
 		var_name = 'Psyn_lambda_pixel'
-		call save_snapshot_var(params,Psyn_lambda_pixel,var_name)
+		if (cam%toroidal_sections) then
+			call save_snapshot_var(params,Psyn_lambda_pixel,var_name)
+		else
+			array3D = SUM(Psyn_lambda_pixel,3)
+			call save_snapshot_var(params,array3D,var_name)
+		end if	
 
 
 		var_name = 'np_pixel'
 		call save_snapshot_var(params,np_pixel,var_name)
 
 		var_name = 'P_a_pixel'
-		call save_snapshot_var(params,P_a_pixel,var_name)
+		if (cam%toroidal_sections) then
+	        call save_snapshot_var(params,P_a_pixel,var_name)
+		else
+			array2D = SUM(P_a_pixel,3)
+			call save_snapshot_var(params,array2D,var_name)
+		end if	
 
 		var_name = 'P_l_pixel'
-		call save_snapshot_var(params,P_l_pixel,var_name)
+		if (cam%toroidal_sections) then
+	        call save_snapshot_var(params,P_l_pixel,var_name)
+		else
+			array2D = SUM(P_l_pixel,3)
+			call save_snapshot_var(params,array2D,var_name)
+		end if	
 	end if
 
 
@@ -1962,6 +2037,11 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 	DEALLOCATE(zeta)
 
 	DEALLOCATE(photon_energy)
+
+	if (.NOT.cam%toroidal_sections) then
+		DEALLOCATE(array3D)
+		DEALLOCATE(array2D)
+	end if
 END SUBROUTINE integrated_SE_toroidal_sections
 
 
@@ -1984,6 +2064,8 @@ SUBROUTINE integrated_SE_3D(params,spp)
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: np_pixel
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: P
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: P_lambda, P_angular
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: array3D
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: array2D
 	REAL(rp) :: q, m, k, u, g, l, threshold_angle, threshold_angle_simple_model
 	REAL(rp) :: psi, chi, beta, theta
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: photon_energy
@@ -2147,6 +2229,11 @@ SUBROUTINE integrated_SE_3D(params,spp)
 !	* * * * * * * * * * * * * * * * * * *
 !	* * * * * * * IMPORTANT * * * * * * *
 
+	if (.NOT.cam%toroidal_sections) then
+		ALLOCATE(array3D(cam%num_pixels(1),cam%num_pixels(2),params%num_species))
+		ALLOCATE(array2D(cam%Nlambda,params%num_species))
+	end if
+
 	units = 1.0_rp
 
 	if (params%mpi_params%nmpi.GT.1_idef) then 
@@ -2163,7 +2250,13 @@ SUBROUTINE integrated_SE_3D(params,spp)
 								RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species/))
 
 			var_name = 'Psyn_angular_pixel'
-			call save_snapshot_var(params,Psyn_angular_pixel,var_name)
+
+			if (cam%toroidal_sections) then
+				call save_snapshot_var(params,Psyn_angular_pixel,var_name)
+			else
+				array3D = SUM(Psyn_angular_pixel,3)
+				call save_snapshot_var(params,array3D,var_name)
+			end if				
 		end if
 
 		DEALLOCATE(send_buffer)
@@ -2180,7 +2273,13 @@ SUBROUTINE integrated_SE_3D(params,spp)
 								RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species/))
 
 			var_name = 'np_angular_pixel'
-			call save_snapshot_var(params,np_angular_pixel,var_name)
+
+			if (cam%toroidal_sections) then
+				call save_snapshot_var(params,np_angular_pixel,var_name)
+			else
+				array3D = SUM(np_angular_pixel,3)
+				call save_snapshot_var(params,array3D,var_name)
+			end if				
 		end if
 
 		DEALLOCATE(send_buffer)
@@ -2198,7 +2297,13 @@ SUBROUTINE integrated_SE_3D(params,spp)
 								RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species/))
 
 			var_name = 'Psyn_lambda_pixel'
-			call save_snapshot_var(params,Psyn_lambda_pixel,var_name)
+
+			if (cam%toroidal_sections) then
+				call save_snapshot_var(params,Psyn_lambda_pixel,var_name)
+			else
+				array3D = SUM(Psyn_lambda_pixel,3)
+				call save_snapshot_var(params,array3D,var_name)
+			end if	
 		end if
 
 		DEALLOCATE(send_buffer)
@@ -2215,13 +2320,17 @@ SUBROUTINE integrated_SE_3D(params,spp)
 								RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species/))
 
 			var_name = 'np_lambda_pixel'
-			call save_snapshot_var(params,np_lambda_pixel,var_name)
+
+			if (cam%toroidal_sections) then
+				call save_snapshot_var(params,np_lambda_pixel,var_name)
+			else
+				array3D = SUM(np_lambda_pixel,3)
+				call save_snapshot_var(params,array3D,var_name)
+			end if	
 		end if
 
 		DEALLOCATE(send_buffer)
 		DEALLOCATE(receive_buffer)
-
-
 
 		numel = params%num_species
 
@@ -2254,7 +2363,13 @@ SUBROUTINE integrated_SE_3D(params,spp)
 		    P_a_pixel = RESHAPE(receive_buffer,(/cam%Nlambda,cam%ntor_sections,params%num_species/))
 
 	        var_name = 'P_a_pixel'
-	        call save_snapshot_var(params,P_a_pixel,var_name)
+
+			if (cam%toroidal_sections) then
+				call save_snapshot_var(params,P_a_pixel,var_name)
+			else
+				array2D = SUM(P_a_pixel,3)
+				call save_snapshot_var(params,array2D,var_name)
+			end if	
 		end if
 
 		DEALLOCATE(send_buffer)
@@ -2270,7 +2385,13 @@ SUBROUTINE integrated_SE_3D(params,spp)
 		    P_l_pixel = RESHAPE(receive_buffer,(/cam%Nlambda,cam%ntor_sections,params%num_species/))
 
 	        var_name = 'P_l_pixel'
-	        call save_snapshot_var(params,P_l_pixel,var_name)
+
+			if (cam%toroidal_sections) then
+		        call save_snapshot_var(params,P_l_pixel,var_name)
+			else
+				array2D = SUM(P_l_pixel,3)
+				call save_snapshot_var(params,array2D,var_name)
+			end if	
 		end if
 
 		DEALLOCATE(send_buffer)
@@ -2279,26 +2400,56 @@ SUBROUTINE integrated_SE_3D(params,spp)
 	    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 	else
 		var_name = 'np_angular_pixel'
-		call save_snapshot_var(params,np_angular_pixel,var_name)
+		if (cam%toroidal_sections) then
+			call save_snapshot_var(params,np_angular_pixel,var_name)
+		else
+			array3D = SUM(np_angular_pixel,3)
+			call save_snapshot_var(params,array3D,var_name)
+		end if	
 
 		var_name = 'np_lambda_pixel'
-		call save_snapshot_var(params,np_lambda_pixel,var_name)
+		if (cam%toroidal_sections) then
+			call save_snapshot_var(params,np_lambda_pixel,var_name)
+		else
+			array3D = SUM(np_lambda_pixel,3)
+			call save_snapshot_var(params,array3D,var_name)
+		end if	
 
 		var_name = 'Psyn_angular_pixel'
-		call save_snapshot_var(params,Psyn_angular_pixel,var_name)
+		if (cam%toroidal_sections) then
+			call save_snapshot_var(params,Psyn_angular_pixel,var_name)
+		else
+			array3D = SUM(Psyn_angular_pixel,3)
+			call save_snapshot_var(params,array3D,var_name)
+		end if	
 
 		var_name = 'Psyn_lambda_pixel'
-		call save_snapshot_var(params,Psyn_lambda_pixel,var_name)
+		if (cam%toroidal_sections) then
+			call save_snapshot_var(params,Psyn_lambda_pixel,var_name)
+		else
+			array3D = SUM(Psyn_lambda_pixel,3)
+			call save_snapshot_var(params,array3D,var_name)
+		end if	
 
 
 		var_name = 'np_pixel'
 		call save_snapshot_var(params,np_pixel,var_name)
 
 		var_name = 'P_a_pixel'
-		call save_snapshot_var(params,P_a_pixel,var_name)
+		if (cam%toroidal_sections) then
+	        call save_snapshot_var(params,P_a_pixel,var_name)
+		else
+			array2D = SUM(P_a_pixel,3)
+			call save_snapshot_var(params,array2D,var_name)
+		end if	
 
 		var_name = 'P_l_pixel'
-		call save_snapshot_var(params,P_l_pixel,var_name)
+		if (cam%toroidal_sections) then
+	        call save_snapshot_var(params,P_l_pixel,var_name)
+		else
+			array2D = SUM(P_l_pixel,3)
+			call save_snapshot_var(params,array2D,var_name)
+		end if	
 	end if
 
 	DEALLOCATE(np_angular_pixel)
@@ -2319,6 +2470,11 @@ SUBROUTINE integrated_SE_3D(params,spp)
 	DEALLOCATE(zeta)
 
 	DEALLOCATE(photon_energy)
+
+	if (.NOT.cam%toroidal_sections) then
+		DEALLOCATE(array3D)
+		DEALLOCATE(array2D)
+	end if
 END SUBROUTINE integrated_SE_3D
 
 
@@ -3097,19 +3253,16 @@ SUBROUTINE synthetic_camera(params,spp)
 		if (params%mpi_params%rank .EQ. 0) then
 			write(6,'("Synthetic camera diagnostic: ON!")')
 		end if
+
 		if (cam%integrated_opt) then
-			if (cam%toroidal_sections) then
-!				call integrated_SE_toroidal_sections(params,spp)
-				call integrated_SE_3D(params,spp)
-				call integrated_spectral_density(params,spp)
-			else
-				call integrated_angular_density(params,spp)
-				call integrated_spectral_density(params,spp)
-			end if
+!			call integrated_SE_toroidal_sections(params,spp)
+			call integrated_SE_3D(params,spp)
+			call integrated_spectral_density(params,spp)
 		else
 			call angular_density(params,spp)
 			call spectral_density(params,spp)
 		end if
+
 		if (params%mpi_params%rank .EQ. 0) then
 			write(6,'("Synthetic camera diagnostic: OFF!")')
 		end if
