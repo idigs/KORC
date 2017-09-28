@@ -2101,7 +2101,7 @@ SUBROUTINE integrated_SE_3D(params,spp)
 						call P_integral(zeta,P)
 
 						P_lambda(:,itor) = (C_C*C_E**2)*P/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda**3)
-						np_lambda_pixel(ii,jj,itor,ss) = np_lambda_pixel(ii,jj,itor,ss) + 1.0_rp
+						np_lambda_pixel(ii,jj,itor,ss) = np_lambda_pixel(ii,jj,itor,ss) + REAL(cam%Nlambda,rp)
 					end if
 
 					do ll=1_idef,cam%Nlambda ! Nlambda
