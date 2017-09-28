@@ -934,9 +934,14 @@ for ss=1:ST.params.simulation.num_species
         
         
         A = Psyn_L2';
-        minval = min(min(A));
-        maxval = 0.8*max(max(A));
-        v = linspace(minval,maxval,25);
+        B = reshape(A,[numel(A),1]);
+        B(B==0) = [];
+        if ST.params.synthetic_camera_params.photon_count
+            B(B<1) = [];
+        end
+        minval = min(B);
+        maxval = 3*std(B);
+        v = linspace(minval,maxval,50);
         
         figure(h);
         subplot(4,2,3)
@@ -954,9 +959,11 @@ for ss=1:ST.params.simulation.num_species
         
         
         A = np_L2';
-        minval = min(min(A));
-        maxval = 0.8*max(max(A));
-        v = linspace(minval,maxval,25);
+        B = reshape(A,[numel(A),1]);
+        B(B==0) = [];
+        minval = min(B);
+        maxval = max(B);
+        v = linspace(minval,maxval,50);
         
         figure(h);
         subplot(4,2,4)
@@ -972,9 +979,14 @@ for ss=1:ST.params.simulation.num_species
         % % % % % Camera diagnostic % % % % %
         
         A = Psyn_L3';
-        minval = min(min(A));
-        maxval = 0.8*max(max(A));
-        v = linspace(minval,maxval,25);
+        B = reshape(A,[numel(A),1]);
+        B(B==0) = [];
+        if ST.params.synthetic_camera_params.photon_count
+            B(B<1) = [];
+        end
+        minval = min(B);
+        maxval = 3*std(B);
+        v = linspace(minval,maxval,50);
         
         figure(h);
         subplot(4,2,5)
@@ -993,12 +1005,12 @@ for ss=1:ST.params.simulation.num_species
             xlabel(hc,'$\int P_R(\lambda) d\lambda$ (Watts)','Interpreter','latex','FontSize',12)
         end
         
-        
-        
         A = np_L3';
-        minval = min(min(A));
-        maxval = 0.8*max(max(A));
-        v = linspace(minval,maxval,25);
+        B = reshape(A,[numel(A),1]);
+        B(B==0) = [];
+        minval = min(B);
+        maxval = max(B);
+        v = linspace(minval,maxval,50);
         
         figure(h);
         subplot(4,2,6)
@@ -1013,11 +1025,15 @@ for ss=1:ST.params.simulation.num_species
         ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
         
-        
         A = Psyn_L4';
-        minval = min(min(A));
-        maxval = 0.8*max(max(A));
-        v = linspace(minval,maxval,25);
+        B = reshape(A,[numel(A),1]);
+        B(B==0) = [];
+        if ST.params.synthetic_camera_params.photon_count
+            B(B<1) = [];
+        end
+        minval = min(B);
+        maxval = 3*std(B);
+        v = linspace(minval,maxval,50);
         
         figure(h);
         subplot(4,2,7)
@@ -1029,7 +1045,7 @@ for ss=1:ST.params.simulation.num_species
         xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
         
         cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-        ax = gca;ax.Color = [0,0,0];ax.ClippingStyle = 'rectangle';
+        ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         if ST.params.synthetic_camera_params.photon_count
             xlabel(hc,'$P_R$ (Photons)','Interpreter','latex','FontSize',12)
         else
@@ -1038,9 +1054,11 @@ for ss=1:ST.params.simulation.num_species
         
         
         A = np_L4';
-        minval = min(min(A));
-        maxval = 0.8*max(max(A));
-        v = linspace(minval,maxval,25);
+        B = reshape(A,[numel(A),1]);
+        B(B==0) = [];
+        minval = min(B);
+        maxval = max(B);
+        v = linspace(minval,maxval,50);
         
         figure(h);
         subplot(4,2,8)
