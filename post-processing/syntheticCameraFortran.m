@@ -120,15 +120,7 @@ for ll=1:length(list)
     
     for ss=1:ST.params.simulation.num_species
         try
-            if strcmp(list{ll},'P_lambda')
-                data.(['sp' num2str(ss)]).(list{ll}) = zeros(Nl,ST.num_snapshots);
-                for ii=1:ST.num_snapshots % Here
-                    dataset = ...
-                        ['/' num2str(it(ii)) '/spp_' num2str(ss)...
-                        '/' list{ll}];
-                    data.(['sp' num2str(ss)]).(list{ll})(:,ii) = h5read(filename, dataset);
-                end
-            elseif (strcmp(list{ll},'P_lambda') || strcmp(list{ll},'P_a_pixel') || strcmp(list{ll},'P_l_pixel'))
+            if (strcmp(list{ll},'P_lambda') || strcmp(list{ll},'P_a_pixel') || strcmp(list{ll},'P_l_pixel'))
                 if (ST.params.synthetic_camera_params.toroidal_sections == 1)
                     data.(['sp' num2str(ss)]).(list{ll}) = zeros(Nl,Ntor,ST.num_snapshots);
                 else
@@ -144,7 +136,7 @@ for ll=1:length(list)
                         data.(['sp' num2str(ss)]).(list{ll})(:,ii) = h5read(filename, dataset);
                     end
                 end
-            elseif (strcmp(list{ll},'np_pixel') || strcmp(list{ll},'np_lambda'))
+            elseif strcmp(list{ll},'np_pixel')
                 data.(['sp' num2str(ss)]).(list{ll}) = zeros(1,ST.num_snapshots);
                 for ii=1:ST.num_snapshots % Here
                     dataset = ...
@@ -152,14 +144,38 @@ for ll=1:length(list)
                         '/' list{ll}];
                     data.(['sp' num2str(ss)]).(list{ll})(ii) = h5read(filename, dataset);
                 end
-            elseif (strcmp(list{ll},'Psyn_pplane') || strcmp(list{ll},'np_pplane') || strcmp(list{ll},'PTot_pplane'))
-                data.(['sp' num2str(ss)]).(list{ll}) = zeros(NX,NY,ST.num_snapshots);
+            elseif strcmp(list{ll},'np_lambda')
+                if (ST.params.synthetic_camera_params.toroidal_sections == 1)
+                    data.(['sp' num2str(ss)]).(list{ll}) = zeros(Ntor,ST.num_snapshots);
+                else
+                    data.(['sp' num2str(ss)]).(list{ll}) = zeros(1,ST.num_snapshots);
+                end
                 for ii=1:ST.num_snapshots % Here
                     dataset = ...
                         ['/' num2str(it(ii)) '/spp_' num2str(ss)...
                         '/' list{ll}];
-                    
-                    data.(['sp' num2str(ss)]).(list{ll})(:,:,ii) = h5read(filename, dataset);
+                    if (ST.params.synthetic_camera_params.toroidal_sections == 1)
+                        data.(['sp' num2str(ss)]).(list{ll})(:,ii) = h5read(filename, dataset);
+                    else
+                        data.(['sp' num2str(ss)]).(list{ll})(ii) = h5read(filename, dataset);
+                    end
+                end
+            elseif (strcmp(list{ll},'Psyn_pplane') || strcmp(list{ll},'np_pplane') || strcmp(list{ll},'PTot_pplane'))
+                if (ST.params.synthetic_camera_params.toroidal_sections == 1)
+                    data.(['sp' num2str(ss)]).(list{ll}) = zeros(NX,NY,Ntor,ST.num_snapshots);
+                else
+                    data.(['sp' num2str(ss)]).(list{ll}) = zeros(NX,NY,ST.num_snapshots);
+                end
+                               
+                for ii=1:ST.num_snapshots % Here
+                    dataset = ...
+                        ['/' num2str(it(ii)) '/spp_' num2str(ss)...
+                        '/' list{ll}];
+                    if (ST.params.synthetic_camera_params.toroidal_sections == 1)
+                        data.(['sp' num2str(ss)]).(list{ll})(:,:,:,ii) = h5read(filename, dataset);
+                    else
+                        data.(['sp' num2str(ss)]).(list{ll})(:,:,ii) = h5read(filename, dataset);
+                    end
                 end
             else
                 if (ST.params.synthetic_camera_params.toroidal_sections == 1)

@@ -16,7 +16,7 @@ DS = timeStepParams(2);
 
 ST.analytical = false;
 
-load('NIMROD_1100B.mat','S')
+load('NIMROD_LIMITED_1150.mat','S')
 
 B = struct;
 B.ND = '3D';
@@ -49,17 +49,17 @@ for rr=1:B.NR
 end
 
 
-% B.SI.BR = scatteredInterpolant(reshape(R,[numel(R) 1]),reshape(PHI,[numel(PHI) 1]),reshape(Z,[numel(Z) 1]),reshape(S.BR,[numel(S.BR) 1]));
-% B.SI.Bphi = scatteredInterpolant(reshape(R,[numel(R) 1]),reshape(PHI,[numel(PHI) 1]),reshape(Z,[numel(Z) 1]),reshape(S.BPHI,[numel(S.BPHI) 1]));
-% B.SI.BZ = scatteredInterpolant(reshape(R,[numel(R) 1]),reshape(PHI,[numel(PHI) 1]),reshape(Z,[numel(Z) 1]),reshape(S.BZ,[numel(S.BZ) 1]));
+B.SI.BR = scatteredInterpolant(reshape(R,[numel(R) 1]),reshape(PHI,[numel(PHI) 1]),reshape(Z,[numel(Z) 1]),reshape(S.BR,[numel(S.BR) 1]));
+B.SI.Bphi = scatteredInterpolant(reshape(R,[numel(R) 1]),reshape(PHI,[numel(PHI) 1]),reshape(Z,[numel(Z) 1]),reshape(S.BPHI,[numel(S.BPHI) 1]));
+B.SI.BZ = scatteredInterpolant(reshape(R,[numel(R) 1]),reshape(PHI,[numel(PHI) 1]),reshape(Z,[numel(Z) 1]),reshape(S.BZ,[numel(S.BZ) 1]));
 
-load('B.mat')
+% load('B.mat')
 
 P = figure;
 
-Ros = 1.6;%B.Ro;%linspace(B.Ro,2.1,numInitCond);
-phio = 0;
-Zos = linspace(-0.5,0.5,numInitCond);
+Ros = linspace(1.16,2.2,numInitCond);%1.6*ones(1,numInitCond);
+phio = zeros(1,numInitCond);
+Zos = -0.08*ones(1,numInitCond);%linspace(-0.8,0.8,numInitCond);
 
 for ii=1:numInitCond
     
@@ -69,8 +69,8 @@ for ii=1:numInitCond
     phi = zeros(1,numIt);
     Z = zeros(1,numIt);
     
-    R(1) = Ros;
-    phi(1) = phio;
+    R(1) = Ros(ii);
+    phi(1) = phio(ii);
     Z(1) = Zos(ii);
     
     options = odeset('RelTol',1E-6,'AbsTol',1E-10);
@@ -97,7 +97,7 @@ axis equal
 xlabel('$R$ [m]','Interpreter','latex','FontSize',16)
 ylabel('$Z$ [m]','Interpreter','latex','FontSize',16)
 title('Poincare plot','Interpreter','latex','FontSize',16)
-saveas(P,'poincare_25','fig')
+saveas(P,'poincare_limited_1150_2','fig')
 
 end
 
