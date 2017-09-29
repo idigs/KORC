@@ -1792,9 +1792,11 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 !	* * * * * * * * * * * * * * * * * * *
 !	* * * * * * * IMPORTANT * * * * * * *
 
-	if (.NOT.cam%toroidal_sections) then
-		ALLOCATE(array3D(cam%num_pixels(1),cam%num_pixels(2),params%num_species))
-		ALLOCATE(array2D(cam%Nlambda,params%num_species))
+	if (params%mpi_params%rank.EQ.0_idef) then
+		if (.NOT.cam%toroidal_sections) then
+			ALLOCATE(array3D(cam%num_pixels(1),cam%num_pixels(2),params%num_species))
+			ALLOCATE(array2D(cam%Nlambda,params%num_species))
+		end if
 	end if
 
 	units = 1.0_rp
@@ -2038,10 +2040,8 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 
 	DEALLOCATE(photon_energy)
 
-	if (.NOT.cam%toroidal_sections) then
-		DEALLOCATE(array3D)
-		DEALLOCATE(array2D)
-	end if
+	if (ALLOCATED(array3D)) DEALLOCATE(array3D)
+	if (ALLOCATED(array2D)) DEALLOCATE(array2D)
 END SUBROUTINE integrated_SE_toroidal_sections
 
 
@@ -2229,14 +2229,17 @@ SUBROUTINE integrated_SE_3D(params,spp)
 !	* * * * * * * * * * * * * * * * * * *
 !	* * * * * * * IMPORTANT * * * * * * *
 
-	if (.NOT.cam%toroidal_sections) then
-		ALLOCATE(array3D(cam%num_pixels(1),cam%num_pixels(2),params%num_species))
-		ALLOCATE(array2D(cam%Nlambda,params%num_species))
-	end if
-
 	units = 1.0_rp
 
+	if (params%mpi_params%rank.EQ.0_idef) then
+		if (.NOT.cam%toroidal_sections) then
+			ALLOCATE(array3D(cam%num_pixels(1),cam%num_pixels(2),params%num_species))
+			ALLOCATE(array2D(cam%Nlambda,params%num_species))
+		end if
+	end if
+
 	if (params%mpi_params%nmpi.GT.1_idef) then 
+
 		numel = cam%num_pixels(1)*cam%num_pixels(2)*params%num_species*cam%ntor_sections
 
 		ALLOCATE(send_buffer(numel))
@@ -2471,10 +2474,8 @@ SUBROUTINE integrated_SE_3D(params,spp)
 
 	DEALLOCATE(photon_energy)
 
-	if (.NOT.cam%toroidal_sections) then
-		DEALLOCATE(array3D)
-		DEALLOCATE(array2D)
-	end if
+	if (ALLOCATED(array3D)) DEALLOCATE(array3D)
+	if (ALLOCATED(array2D)) DEALLOCATE(array2D)
 END SUBROUTINE integrated_SE_3D
 
 
@@ -2638,26 +2639,34 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	REAL(rp), DIMENSION(3) :: binorm
 	REAL(rp), DIMENSION(3) :: X, V, B, E
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: P
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: P_lambda
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: np_lambda
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: P_lambda
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: np_lambda
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: zeta
-	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: np
-	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: Psyn_lambda
-	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: PTot
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: np
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: Psyn_lambda
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: PTot
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: array3D
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: array2D
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: array1D
+	REAL(rp) :: Dtor
+	REAL(rp) :: phi
 	REAL(rp) :: Rpol, Zpol
 	REAL(rp) :: q, m, k, u, g, lc
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: photon_energy
-	INTEGER :: ii,jj,ll,ss,pp
+	INTEGER :: ii,jj,kk,ll,ss,pp
     REAL(rp), DIMENSION(:), ALLOCATABLE :: send_buffer, receive_buffer
     INTEGER :: numel, mpierr
 	REAL(rp) :: units
 
-	ALLOCATE(np(pplane%grid_dims(1),pplane%grid_dims(2),params%num_species))
-	ALLOCATE(Psyn_lambda(pplane%grid_dims(1),pplane%grid_dims(2),params%num_species))
-	ALLOCATE(PTot(pplane%grid_dims(1),pplane%grid_dims(2),params%num_species))
+	ALLOCATE(Psyn_lambda(pplane%grid_dims(1),pplane%grid_dims(2),cam%ntor_sections,params%num_species))
+	ALLOCATE(np(pplane%grid_dims(1),pplane%grid_dims(2),cam%ntor_sections,params%num_species))
+	ALLOCATE(PTot(pplane%grid_dims(1),pplane%grid_dims(2),cam%ntor_sections,params%num_species))
+
 	ALLOCATE(P(cam%Nlambda))
-	ALLOCATE(P_lambda(cam%Nlambda,params%num_species))
-	ALLOCATE(np_lambda(params%num_species))
+
+	ALLOCATE(P_lambda(cam%Nlambda,cam%ntor_sections,params%num_species))
+	ALLOCATE(np_lambda(cam%ntor_sections,params%num_species))
+
 	ALLOCATE(zeta(cam%Nlambda))
 	ALLOCATE(photon_energy(cam%Nlambda))
 
@@ -2669,11 +2678,13 @@ SUBROUTINE integrated_spectral_density(params,spp)
 
 	np_lambda = 0.0_rp
 	photon_energy = C_h*C_C/cam%lambda
+
+	Dtor = 2.0_rp*C_PI/REAL(cam%ntor_sections,rp)
 	
 	do ss=1_idef,params%num_species
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
-!$OMP PARALLEL DO FIRSTPRIVATE(q,m,photon_energy) PRIVATE(binorm,X,V,B,E,k,u,g,lc,ii,jj,ll,pp,zeta,P,Rpol,Zpol)&
+!$OMP PARALLEL DO FIRSTPRIVATE(q,m,photon_energy,Dtor) PRIVATE(binorm,X,V,B,E,k,u,g,lc,ii,jj,kk,ll,pp,zeta,P,Rpol,Zpol,phi)&
 !$OMP& SHARED(params,spp,ss,Psyn_lambda,PTot,np,P_lambda,np_lambda)
 		do pp=1_idef,spp(ss)%ppp
 			if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
@@ -2691,22 +2702,26 @@ SUBROUTINE integrated_spectral_density(params,spp)
 				lc = (4.0_rp*C_PI/3.0_rp)/(k*g**3)
 				zeta = lc/cam%lambda
 
-				call P_integral(zeta,P)
-
-				P = (C_C*C_E**2)*P/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda**3)
-
-				P_lambda(:,ss) = P_lambda(:,ss) + P
-				np_lambda(ss) = np_lambda(ss) + 1.0_rp
-
 				Rpol = SQRT(SUM(X(1:2)**2))
 				Zpol = X(3)
 				
 				ii = FLOOR((Rpol - pplane%Rmin)/pplane%DR) + 1_idef
 				jj = FLOOR((Zpol + ABS(pplane%Zmin))/pplane%DZ) + 1_idef
 
-				Psyn_lambda(ii,jj,ss) = Psyn_lambda(ii,jj,ss) + trapz(cam%lambda,P)
-				np(ii,jj,ss) = np(ii,jj,ss) + 1_idef
-				PTot(ii,jj,ss) = PTot(ii,jj,ss) + spp(ss)%vars%Prad(pp);
+				phi = ATAN2(X(2),X(1))
+				if (phi.LT.0.0_rp) phi = 2.0_rp*C_PI + phi
+				kk = floor(phi/Dtor) + 1_idef
+
+				call P_integral(zeta,P)
+
+				P = (C_C*C_E**2)*P/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda**3)
+
+				P_lambda(:,kk,ss) = P_lambda(:,kk,ss) + P
+				np_lambda(kk,ss) = np_lambda(kk,ss) + 1.0_rp
+
+				Psyn_lambda(ii,jj,kk,ss) = Psyn_lambda(ii,jj,kk,ss) + trapz(cam%lambda,P)
+				np(ii,jj,kk,ss) = np(ii,jj,kk,ss) + 1_idef
+				PTot(ii,jj,kk,ss) = PTot(ii,jj,kk,ss) + spp(ss)%vars%Prad(pp);
 			end if ! if confined
 		end do ! particles
 !$OMP END PARALLEL DO
@@ -2719,8 +2734,16 @@ SUBROUTINE integrated_spectral_density(params,spp)
 !	* * * * * * * * * * * * * * * * * * *
 !	* * * * * * * IMPORTANT * * * * * * *
 
+	if (params%mpi_params%rank.EQ.0_idef) then
+		if (.NOT.cam%toroidal_sections) then
+			ALLOCATE(array3D(pplane%grid_dims(1),pplane%grid_dims(2),params%num_species))
+			ALLOCATE(array2D(cam%Nlambda,params%num_species))
+			ALLOCATE(array1D(params%num_species))
+		end if
+	end if
+
 	if (params%mpi_params%nmpi.GT.1_idef) then 
-		numel = pplane%grid_dims(1)*pplane%grid_dims(2)*params%num_species
+		numel = pplane%grid_dims(1)*pplane%grid_dims(2)*cam%ntor_sections*params%num_species
 
 		ALLOCATE(send_buffer(numel))
 		ALLOCATE(receive_buffer(numel))
@@ -2729,10 +2752,15 @@ SUBROUTINE integrated_spectral_density(params,spp)
 		receive_buffer = 0.0_rp
 		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
 		if (params%mpi_params%rank.EQ.0_idef) then
-		    Psyn_lambda = RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),params%num_species/))
+		    Psyn_lambda = RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species/))
 
 			var_name = 'Psyn_pplane'
-			call save_snapshot_var(params,Psyn_lambda,var_name)
+			if (cam%toroidal_sections) then
+				call save_snapshot_var(params,Psyn_lambda,var_name)
+			else
+				array3D = SUM(Psyn_lambda,3)
+				call save_snapshot_var(params,array3D,var_name)
+			end if
 		end if
 
 		DEALLOCATE(send_buffer)
@@ -2745,10 +2773,15 @@ SUBROUTINE integrated_spectral_density(params,spp)
 		receive_buffer = 0.0_rp
 		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
 		if (params%mpi_params%rank.EQ.0_idef) then
-		    np = RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),params%num_species/))
+		    np = RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species/))
 
 			var_name = 'np_pplane'
-			call save_snapshot_var(params,np,var_name)
+			if (cam%toroidal_sections) then
+				call save_snapshot_var(params,np,var_name)
+			else
+				array3D = SUM(np,3)
+				call save_snapshot_var(params,array3D,var_name)
+			end if
 		end if
 
 		DEALLOCATE(send_buffer)
@@ -2761,38 +2794,48 @@ SUBROUTINE integrated_spectral_density(params,spp)
 		receive_buffer = 0.0_rp
 		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
 		if (params%mpi_params%rank.EQ.0_idef) then
-		    PTot = RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),params%num_species/))
+		    PTot = RESHAPE(receive_buffer,(/cam%num_pixels(1),cam%num_pixels(2),cam%ntor_sections,params%num_species/))
 
 			units = params%cpp%mass*(params%cpp%velocity**3)/params%cpp%length
 			PTot = units*PTot ! (Watts)
 			var_name = 'PTot_pplane'
-			call save_snapshot_var(params,PTot,var_name)
+			if (cam%toroidal_sections) then
+				call save_snapshot_var(params,PTot,var_name)
+			else
+				array3D = SUM(PTot,3)
+				call save_snapshot_var(params,array3D,var_name)
+			end if
 		end if
 
 		DEALLOCATE(send_buffer)
 		DEALLOCATE(receive_buffer)
 
 
-		numel = params%num_species
+		numel = cam%ntor_sections*params%num_species
 
 		ALLOCATE(send_buffer(numel))
 		ALLOCATE(receive_buffer(numel))
 
-		send_buffer = np_lambda
+		send_buffer = RESHAPE(np_lambda,(/numel/))
 		receive_buffer = 0.0_rp
 		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
 		if (params%mpi_params%rank.EQ.0_idef) then
-		    np_lambda = receive_buffer
+		    np_lambda = RESHAPE(receive_buffer,(/cam%ntor_sections,params%num_species/))
 
 			var_name = 'np_lambda'
-			call save_snapshot_var(params,np_lambda,var_name)
+			if (cam%toroidal_sections) then
+				call save_snapshot_var(params,np_lambda,var_name)
+			else
+				array1D = SUM(np_lambda,1)
+				call save_snapshot_var(params,array1D,var_name)
+			end if
 		end if
 
 		DEALLOCATE(send_buffer)
 		DEALLOCATE(receive_buffer)
 
 
-		numel = cam%Nlambda*params%num_species
+		numel = cam%Nlambda*cam%ntor_sections*params%num_species
 
 		ALLOCATE(send_buffer(numel))
 		ALLOCATE(receive_buffer(numel))
@@ -2801,10 +2844,15 @@ SUBROUTINE integrated_spectral_density(params,spp)
 		receive_buffer = 0.0_rp
 		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
 		if (params%mpi_params%rank.EQ.0_idef) then
-		    P_lambda = RESHAPE(receive_buffer,(/cam%Nlambda,params%num_species/))
+		    P_lambda = RESHAPE(receive_buffer,(/cam%Nlambda,cam%ntor_sections,params%num_species/))
 
 			var_name = 'P_lambda'
-			call save_snapshot_var(params,P_lambda,var_name)
+			if (cam%toroidal_sections) then
+				call save_snapshot_var(params,P_lambda,var_name)
+			else
+				array2D = SUM(P_lambda,2)
+				call save_snapshot_var(params,array2D,var_name)
+			end if
 		end if
 
 		DEALLOCATE(send_buffer)
@@ -2813,21 +2861,46 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 	else
 		var_name = 'np_pplane'
-		call save_snapshot_var(params,np,var_name)
+		if (cam%toroidal_sections) then
+			call save_snapshot_var(params,np,var_name)
+		else
+			array3D = SUM(np,3)
+			call save_snapshot_var(params,array3D,var_name)
+		end if
 
 		var_name = 'Psyn_pplane'
-	    call save_snapshot_var(params,Psyn_lambda,var_name)
+		if (cam%toroidal_sections) then
+			call save_snapshot_var(params,Psyn_lambda,var_name)
+		else
+			array3D = SUM(Psyn_lambda,3)
+			call save_snapshot_var(params,array3D,var_name)
+		end if
 
 		var_name = 'P_lambda'
-		call save_snapshot_var(params,P_lambda,var_name)
+		if (cam%toroidal_sections) then
+			call save_snapshot_var(params,P_lambda,var_name)
+		else
+			array2D = SUM(P_lambda,2)
+			call save_snapshot_var(params,array2D,var_name)
+		end if
 
 		var_name = 'np_lambda'
-		call save_snapshot_var(params,np_lambda,var_name)
+		if (cam%toroidal_sections) then
+			call save_snapshot_var(params,np_lambda,var_name)
+		else
+			array1D = SUM(np_lambda,1)
+			call save_snapshot_var(params,array1D,var_name)
+		end if
 
 		units = params%cpp%mass*(params%cpp%velocity**3)/params%cpp%length
 		PTot = units*PTot ! (Watts)
 		var_name = 'PTot_pplane'
-		call save_snapshot_var(params,PTot,var_name)
+		if (cam%toroidal_sections) then
+			call save_snapshot_var(params,PTot,var_name)
+		else
+			array3D = SUM(PTot,3)
+			call save_snapshot_var(params,array3D,var_name)
+		end if
 	end if
 
 	DEALLOCATE(np)
@@ -2838,6 +2911,10 @@ SUBROUTINE integrated_spectral_density(params,spp)
 	DEALLOCATE(np_lambda)
 	DEALLOCATE(zeta)
 	DEALLOCATE(photon_energy)
+	
+	if (ALLOCATED(array3D)) DEALLOCATE(array3D)
+	if (ALLOCATED(array2D)) DEALLOCATE(array2D)
+	if (ALLOCATED(array1D)) DEALLOCATE(array1D)
 END SUBROUTINE integrated_spectral_density
 
 
