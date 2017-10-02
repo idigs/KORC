@@ -12,7 +12,7 @@ function fields2hdf(R,PHI,Z,BR,BPHI,BZ,FLUX,FLAG,outputfile,Bo,Ro,Zo)
 % fields2hdf(R,[],Z,BR,BPHI,BZ,[],FLAG,'D3D_VMEC.h5',2.4538,1.6282,0.0282)
 % Example for NIMROD fields
 % fields2hdf(R,PHI,Z,BR,BPHI,BZ,[],[],'NIMROD_DIVERTED.h5',2.1170,1.7272,0.0142)
-% fields2hdf(S.R,S.PHI,S.Z,S.BR,S.BPHI,S.BZ,[],[],'NIMROD_DIVERTED_1100D.h5',S.Bo,S.Ro,S.Zo)
+% fields2hdf(S.R,S.PHI,S.Z,S.BR,S.BPHI,S.BZ,[],S.FLAG,'NIMROD_DIVERTED_1100D.h5',S.Bo,S.Ro,S.Zo)
 
 narginchk(9,12)
 
@@ -101,4 +101,5 @@ if nargin > 8
     h5create(outputfile,dsetname, [1])
     h5write(outputfile,dsetname,Zo)
 end
+
 end

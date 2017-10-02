@@ -22,6 +22,7 @@ function S = getNIMRODFields(id,NR,NPHI,NZ)
 % [BR,BPHI,BZ,R,Z,Ro,Zo,Bo]
 S = struct;
 F = struct;
+close all
 
 [r,z,varr]=readcon(id,0); % load data
 
@@ -39,7 +40,7 @@ B = sqrt(Br.^2 + Bphi.^2 + Bz.^2);
 
 [S.Ro,S.Zo,S.Bo,S.bi] = getMagneticAxisParams();% bound(R,Z)
 
-% [X3D,Y3D,Z3D,Br3D]=make_field_real(R_NIMROD,Z_NIMROD,Br,NPHI); % Br3D(Z,R,PHI)
+% [X3D,Y3D,Z3D,F.Br3D]=make_field_real(R_NIMROD,Z_NIMROD,Br,NPHI); % Br3D(Z,R,PHI)
 [~,~,~,F.Br3D]=make_field_real(R_NIMROD,Z_NIMROD,Br,NPHI); % Br3D(Z,R,PHI)
 % X3D(:,:,1) = [];Y3D(:,:,1) = [];Z3D(:,:,1) = [];
 % X3D = flip(X3D,3);Y3D = flip(Y3D,3);Z3D = flip(Z3D,3);
@@ -52,16 +53,17 @@ F.Bz3D(:,:,1) = [];
 % F.Bz3D = flip(F.Bz3D,3);
 
 [~,~,~,F.Bphi3D]=make_field_real(R_NIMROD,Z_NIMROD,Bphi,NPHI);
+F.Bphi3D = -F.Bphi3D;
 F.Bphi3D(:,:,1) = [];
 % F.Bphi3D = flip(F.Bphi3D,3);
 
-[~,~,~,n3D]=make_field_real(R_NIMROD,Z_NIMROD,n,NPHI);
-n3D(:,:,1) = [];
-% n3D = flip(n3D,3);
-
-[~,~,~,n13D]=make_field_real(R_NIMROD,Z_NIMROD,n,NPHI);
-n13D(:,:,1) = [];
-% n13D = flip(n13D,3);
+% [~,~,~,n3D]=make_field_real(R_NIMROD,Z_NIMROD,n,NPHI);
+% n3D(:,:,1) = [];
+% % n3D = flip(n3D,3);
+% 
+% [~,~,~,n13D]=make_field_real(R_NIMROD,Z_NIMROD,n,NPHI);
+% n13D(:,:,1) = [];
+% % n13D = flip(n13D,3);
 
 % Fields to be used in HDF5 file
 S.BR = zeros(NR,NPHI,NZ);
@@ -69,6 +71,9 @@ S.BPHI = zeros(NR,NPHI,NZ);
 S.BZ = zeros(NR,NPHI,NZ);
 S.FLAG = zeros(NR,NPHI,NZ);
 % Fields to be used in HDF5 file
+% 
+% RAxis = squeeze(X3D(:,:,1));
+% ZAxis = squeeze(Z3D(:,:,1));
 
 Rmin = min(min(R_NIMROD));Rmax = max(max(R_NIMROD));
 S.R = linspace(0.9*Rmin,1.1*Rmax,NR);
@@ -82,17 +87,33 @@ for ii=1:NPHI
     S.PHI(ii) = (ii - 1)*Dphi;
 end
 
-list_NIMROD = {'Br3D','Bz3D','Bphi3D'};
-list_outputs = {'BR','BZ','BPHI'}
+list_NIMROD = {'Bz3D','Bphi3D'};
+list_outputs = {'BZ','BPHI'};
 
-% h = figure;
-% subplot(1,2,1)
-% surf(R_NIMROD,Z_NIMROD,Br3D(:,:,1),'linestyle','none');colormap(jet);xlabel('R');ylabel('Z');view([0,90])
+h = figure;
+subplot(2,3,1)
+surf(R_NIMROD,Z_NIMROD,F.Br3D(:,:,1),'linestyle','none');colormap(jet);xlabel('R');ylabel('Z');view([0,90])
+xlabel('$R$','Interpreter','latex')
+ylabel('$Z$','Interpreter','latex')
+title('$B_R$','Interpreter','latex')
+box on;axis equal;axis([Rmin Rmax Zmin Zmax]);colorbar('location','northoutside')
+subplot(2,3,2)
+surf(R_NIMROD,Z_NIMROD,F.Bphi3D(:,:,1),'linestyle','none');colormap(jet);xlabel('R');ylabel('Z');view([0,90])
+xlabel('$R$','Interpreter','latex')
+ylabel('$Z$','Interpreter','latex')
+title('$B_\phi$','Interpreter','latex')
+box on;axis equal;axis([Rmin Rmax Zmin Zmax]);colorbar('location','northoutside')
+subplot(2,3,3)
+surf(R_NIMROD,Z_NIMROD,F.Bz3D(:,:,1),'linestyle','none');colormap(jet);xlabel('R');ylabel('Z');view([0,90])
+xlabel('$R$','Interpreter','latex')
+ylabel('$Z$','Interpreter','latex')
+title('$B_Z$','Interpreter','latex')
+box on;axis equal;axis([Rmin Rmax Zmin Zmax]);colorbar('location','northoutside')
 
 for pp=1:NPHI
     A = squeeze(F.Br3D(:,:,pp));
     SI = scatteredInterpolant(reshape(Z_NIMROD,[numel(Z_NIMROD) 1]),reshape(R_NIMROD,[numel(R_NIMROD) 1]),reshape(A,[numel(A) 1]));
-    
+    disp(['phi: ' num2str(pp)])
     for rr=1:NR
         for zz=1:NZ
             if checkIfInDomain(S.R(rr),S.Z(zz),S)
@@ -103,16 +124,22 @@ for pp=1:NPHI
             end
         end
     end    
-    %     figure(h)
-    %     subplot(1,2,2)
-    %     surf(S.R,S.Z,squeeze(S.BR(:,pp,:))','linestyle','none');colormap(jet);xlabel('R');ylabel('Z');view([0,90])
 end
+figure(h)
+subplot(2,3,4)
+D = squeeze(S.BR(:,1,:));
+surf(S.R,S.Z,D','linestyle','none');colormap(jet);xlabel('R');ylabel('Z');view([0,90])
+box on;axis equal;axis([min(S.R) max(S.R) min(S.Z) max(S.Z)]);colorbar('location','northoutside')
+xlabel('$R$','Interpreter','latex')
+ylabel('$Z$','Interpreter','latex')
+title('Interpolated $B_R$','Interpreter','latex')
 
-for ll=2:numel(list_NIMROD)
+
+for ll=1:numel(list_NIMROD)
     for pp=1:NPHI
         A = squeeze(F.(list_NIMROD{ll})(:,:,pp));
         SI = scatteredInterpolant(reshape(Z_NIMROD,[numel(Z_NIMROD) 1]),reshape(R_NIMROD,[numel(R_NIMROD) 1]),reshape(A,[numel(A) 1]));
-        
+        disp([list_NIMROD{ll} ' phi: ' num2str(pp)])
         for rr=1:NR
             for zz=1:NZ
                 if S.FLAG(rr,pp,zz) == 1
@@ -123,14 +150,34 @@ for ll=2:numel(list_NIMROD)
     end
 end
 
-save('NIMROD_LIMITED_1150')
+figure(h)
+subplot(2,3,5)
+D = squeeze(S.BPHI(:,1,:));
+surf(S.R,S.Z,D','linestyle','none');colormap(jet);xlabel('R');ylabel('Z');view([0,90])
+box on;axis equal;axis([min(S.R) max(S.R) min(S.Z) max(S.Z)]);colorbar('location','northoutside')
+xlabel('$R$','Interpreter','latex')
+ylabel('$Z$','Interpreter','latex')
+title('Interpolated $B_\phi$','Interpreter','latex')
 
+figure(h)
+subplot(2,3,6)
+D = squeeze(S.BZ(:,1,:));
+surf(S.R,S.Z,D','linestyle','none');colormap(jet);xlabel('R');ylabel('Z');view([0,90])
+box on;axis equal;axis([min(S.R) max(S.R) min(S.Z) max(S.Z)]);colorbar('location','northoutside')
+xlabel('$R$','Interpreter','latex')
+ylabel('$Z$','Interpreter','latex')
+title('Interpolated $B_Z$','Interpreter','latex')
+
+save('NIMROD_DIVERTED_1100')
+
+load handel
+sound(y,Fs)
 end
 
 
 function [Ro,Zo,Bo,bi] = getMagneticAxisParams()
 
-[r,z,varr]=readcon(0,0); % load data
+[r,z,varr]=readcon(25,0); % load data
 
 [R_NIMROD,Z_NIMROD,Br]=onegrid(r,z,varr,14); % Obtain magnetic field components
 

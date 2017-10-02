@@ -23,7 +23,7 @@ ST.data = loadData(ST);
 
 % ST.RT = radialTransport(ST);
 
-ST.CP = confined_particles(ST);
+% ST.CP = confined_particles(ST);
 
 % ST.PAD = pitchAngleDiagnostic(ST,30);
 
@@ -3188,23 +3188,32 @@ for sp=1:numel(I)
 end
 
 A = fRE;
+A = log10(A/max(max(A)));
+AA = fnum;
+AA = log10(AA/max(max(AA)));
+
 cmax = max(max(A));
-cmin = min(min(A));
+cmin = -3;%min(min(A(isfinite(A))));
+
+x = linspace(0,4,25);
+levels = cmin + (cmax-cmin)*tanh(x);
 
 figure(h)
 subplot(ntiles,ntiles,ntiles^2)
-contourf(xAxis,yAxis,A,17,'LineStyle','none')
+contourf(xAxis,yAxis,A,levels,'LineStyle','none')
 colormap(jet(1024)); colorbar; caxis([cmin cmax])
 xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 
-AA = fnum;
 cmax = max(max(AA));
-cmin = min(min(A));
+cmin = -3;%min(min(A(isfinite(A))));
+
+x = linspace(0,4,25);
+levels = cmin + (cmax-cmin)*tanh(x);
 
 figure(hh)
 subplot(ntiles,ntiles,ntiles^2)
-contourf(xAxis,yAxis,AA,17,'LineStyle','none')
+contourf(xAxis,yAxis,AA,levels,'LineStyle','none')
 colormap(jet(1024)); colorbar; caxis([cmin cmax])
 xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')

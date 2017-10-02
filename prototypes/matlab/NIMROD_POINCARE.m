@@ -16,7 +16,7 @@ DS = timeStepParams(2);
 
 ST.analytical = false;
 
-load('NIMROD_LIMITED_1150.mat','S')
+load('NIMROD_DIVERTED_1100.mat','S')
 
 B = struct;
 B.ND = '3D';
@@ -53,13 +53,15 @@ B.SI.BR = scatteredInterpolant(reshape(R,[numel(R) 1]),reshape(PHI,[numel(PHI) 1
 B.SI.Bphi = scatteredInterpolant(reshape(R,[numel(R) 1]),reshape(PHI,[numel(PHI) 1]),reshape(Z,[numel(Z) 1]),reshape(S.BPHI,[numel(S.BPHI) 1]));
 B.SI.BZ = scatteredInterpolant(reshape(R,[numel(R) 1]),reshape(PHI,[numel(PHI) 1]),reshape(Z,[numel(Z) 1]),reshape(S.BZ,[numel(S.BZ) 1]));
 
-% load('B.mat')
+% load('B.mat','B')
 
 P = figure;
 
-Ros = linspace(1.16,2.2,numInitCond);%1.6*ones(1,numInitCond);
+Ros = linspace(1.1,2.2,numInitCond);
+% Ros = 1.6*ones(1,numInitCond);
 phio = zeros(1,numInitCond);
-Zos = -0.08*ones(1,numInitCond);%linspace(-0.8,0.8,numInitCond);
+Zos = -0.1*ones(1,numInitCond);
+% Zos = linspace(-0.7,0.7,numInitCond);
 
 for ii=1:numInitCond
     
@@ -97,7 +99,9 @@ axis equal
 xlabel('$R$ [m]','Interpreter','latex','FontSize',16)
 ylabel('$Z$ [m]','Interpreter','latex','FontSize',16)
 title('Poincare plot','Interpreter','latex','FontSize',16)
-saveas(P,'poincare_limited_1150_2','fig')
+
+
+saveas(P,'poincare_limited_1150','fig')
 
 end
 
