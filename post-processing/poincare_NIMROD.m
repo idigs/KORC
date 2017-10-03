@@ -1,14 +1,14 @@
 close all
 % clear all
 
-ST = diagnoseKORC('../KORC-FO/outputFiles/','on',[0,10000])
+ST = diagnoseKORC('../KORC-FO/outputFiles/','on',[0,7000])
 X = ST.data.sp1.X;
 t1 = squeeze(atan2(X(2,:,:),X(1,:,:)));
 t1(t1<0) = t1(t1<0) + 2*pi;
-a1 = diff(t1');
+a1 = abs(diff(t1,1,2));
 
 t2 = squeeze(atan2(X(2,:,:),X(1,:,:)));
-a2 = diff(t2');
+a2 = abs(diff(t2,1,2));
 
 nume = size(t1,1);
 
@@ -40,7 +40,7 @@ nume = size(t1,1);
 
 h = figure;
 for ii=1:nume
-    I = find(a1(:,ii)<0);
+    I = find(a1(ii,:)>6);
     R1 = squeeze(sqrt(X(1,ii,I).^2 + X(2,ii,I).^2));
     Z1 = squeeze(X(3,ii,I));
     figure(h)
@@ -50,7 +50,7 @@ for ii=1:nume
     plot(R1,Z1,'k.','MarkerSize',4);
     hold off;axis equal
     
-    I = find(a2(:,ii)<0);
+    I = find(a2(ii,:)>6);
     R2 = squeeze(sqrt(X(1,ii,I).^2 + X(2,ii,I).^2));
     Z2 = squeeze(X(3,ii,I));
     subplot(1,2,2)

@@ -421,11 +421,25 @@ for ss=1:ST.params.simulation.num_species
             end
         end
     else
-        Psyn_L1 = sum(abs(ST.data.(['sp' num2str(ss)]).PTot_pplane),3);
+        if ndims(ST.data.(['sp' num2str(ss)]).PTot_pplane) == 3
+            Psyn_L1 = sum(abs(ST.data.(['sp' num2str(ss)]).PTot_pplane),3);
+        else
+            Psyn_L1 = sum(abs(ST.data.(['sp' num2str(ss)]).PTot_pplane),4);
+        end
         
-        np_L2 = sum(ST.data.(['sp' num2str(ss)]).np_pplane,3);
-        Psyn_L2 = sum(ST.data.(['sp' num2str(ss)]).Psyn_pplane,3);
+        if ndims(ST.data.(['sp' num2str(ss)]).PTot_pplane) == 3
+            Psyn_L2 = sum(ST.data.(['sp' num2str(ss)]).Psyn_pplane,3);
+        else
+            Psyn_L2 = sum(ST.data.(['sp' num2str(ss)]).Psyn_pplane,4);
+        end        
+
+        if ndims(ST.data.(['sp' num2str(ss)]).np_pplane) == 3
+            np_L2 = sum(ST.data.(['sp' num2str(ss)]).np_pplane,3);
+        else
+            np_L2 = sum(ST.data.(['sp' num2str(ss)]).np_pplane,4);
+        end         
     end
+
     
     if (ST.params.synthetic_camera_params.integrated_opt == 0)
         for ii=1:NX
@@ -451,13 +465,23 @@ for ss=1:ST.params.simulation.num_species
                 Psyn_L4(ii,jj) = trapz(lambda(i1:i2),Psyn_L4_lambda(ii,jj,:));
             end
         end
-    else
-        npl = ST.data.(['sp' num2str(ss)]).np_lambda;
-        
-        P_L2 = squeeze(sum(ST.data.(['sp' num2str(ss)]).P_lambda(i1:i2,:),2))/sum(sum(np_L2));        
-        
+    else        
         if (NT ~= 0)
-            np = ST.data.(['sp' num2str(ss)]).np_pixel;
+            if ndims(ST.data.(['sp' num2str(ss)]).P_lambda) == 2
+                P_L2 = sum(ST.data.(['sp' num2str(ss)]).P_lambda(i1:i2,:),2)/sum(sum(np_L2));
+            else
+                P_L2 = sum(ST.data.(['sp' num2str(ss)]).P_lambda(i1:i2,:,:),3);
+                tmp = squeeze(sum(sum(np_L2,1),2));
+                for tt=1:size(P_L2,2)
+                    P_L2(:,tt) = P_L2(:,tt)/tmp(tt);
+                end
+            end
+            
+            if ndims(ST.data.(['sp' num2str(ss)]).P_l_pixel) == 2
+                P_L3 = ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,:);
+            else
+                P_L3 = squeeze(sum(ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,:,:),3));
+            end
             
             if ndims(ST.data.(['sp' num2str(ss)]).P_l_pixel) == 2
                 P_L3 = ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,:);
@@ -664,7 +688,7 @@ for ss=1:ST.params.simulation.num_species
                     ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
                     xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
                     
-                                saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
+%                                 saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
                 else
                     close(h)
                 end
@@ -679,7 +703,7 @@ for ss=1:ST.params.simulation.num_species
         
         if ~figuresToShare
 
-            A = Psyn_L2';
+            A = sum(Psyn_L2,3)';
             B = reshape(A,[numel(A),1]);
             B(B==0) = [];
             if ST.params.synthetic_camera_params.photon_count
@@ -711,7 +735,7 @@ for ss=1:ST.params.simulation.num_species
             end
             
             
-            A = np_L2';
+            A = sum(np_L2,3)';
             minval = min(min(A(A~=0)));
             maxval = 0.8*max(max(A));
             v = linspace(minval,maxval,25);
@@ -893,7 +917,7 @@ for ss=1:ST.params.simulation.num_species
         ylabel('Box count','FontSize',12,'Interpreter','latex')
         xlabel('Box number','FontSize',12,'Interpreter','latex')
         
-        saveas(h,[ST.path 'Total_SE_ss_' num2str(ss)],'fig')
+%         saveas(h,[ST.path 'Total_SE_ss_' num2str(ss)],'fig')
         
     else
         h = figure;
@@ -1089,7 +1113,7 @@ for ss=1:ST.params.simulation.num_species
         ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
         
-        saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
+%         saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
     end
 end
 end

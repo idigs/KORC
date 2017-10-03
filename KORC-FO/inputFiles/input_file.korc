@@ -22,10 +22,10 @@
 
 &plasma_species
         runaway = .FALSE.,.FALSE. !
-        ppp = 1000000,1000000 ! Number of particles per process (mpi)
+        ppp = 5000,5000 ! Number of particles per process (mpi)
         q = -1.0,-1.0 ! Electric charge
         m = 1.0,1.0 ! In units of electron mass
-		spatial_distribution = 'FLAT','FLAT'
+		spatial_distribution = 'TORUS','TORUS'
         Ro = 1.5,1.5 !
 		PHIo = 0.0, 0.0 ! In degrees
         Zo = 0.0,0.0 !
@@ -33,7 +33,7 @@
 		sigma_r = 0.0, 0.14 !
         energy_distribution = 'MONOENERGETIC','MONOENERGETIC'   ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'
         pitch_distribution = 'MONOPITCH','MONOPITCH'	! Options are: 'MONOPITCH', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'.
-        Eo = 30.0E6,30.0E6 ! Initial energy in eV
+        Eo = 10.0E6,10.0E6 ! Initial energy in eV
         etao = 5.0,10.0  ! Initial pitch angle
         Eo_lims = 1.0E6,50.0E6,1.0E6,50.0E6 ! Lower and upper limit of simulated energy range, in eV.
         etao_lims = 0.0,20.0,0.0,20.0 ! Lower and upper limit of simulated pitch-angle range, in degrees.
@@ -44,7 +44,7 @@
 	Eo = 0.0 ! In V/m
 	pulse_maximum = 3.0E-3 ! Time at which maximum is reached in s
 	pulse_duration = 6.7E-4 ! Duration of intense toroidal electric field
-	current_direction = 'PARALLEL' ! 'PARALLEL' or 'ANTI-PARALLEL'
+	current_direction = 'ANTI-PARALLEL' ! 'PARALLEL' or 'ANTI-PARALLEL'
 	Bo = 2.19 ! In Teslas. ITER: 5.42 DIII-D: 2.19
 	minor_radius = 0.5 ! Minor radius in meters. ITER: 1.5 DIII-D: 0.5
 	major_radius = 1.5 ! Major radius in meters. ITER: 6.5 DIII-D: 1.6
