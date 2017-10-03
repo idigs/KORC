@@ -398,10 +398,10 @@ for ss=1:ST.params.simulation.num_species
         np_L3 = zeros(NX,NY);
     end
     
-    Psyn_L2 = zeros(NR,NZ);
-    np_L2 = zeros(NR,NZ);
-    
-    Psyn_L1 = zeros(NR,NZ);
+%     Psyn_L2 = zeros(NR,NZ);
+%     np_L2 = zeros(NR,NZ);
+%     
+%     Psyn_L1 = zeros(NR,NZ);
     
     if (ST.params.synthetic_camera_params.integrated_opt == 0)
         for ii=1:NR
@@ -427,7 +427,7 @@ for ss=1:ST.params.simulation.num_species
             Psyn_L1 = sum(abs(ST.data.(['sp' num2str(ss)]).PTot_pplane),4);
         end
         
-        if ndims(ST.data.(['sp' num2str(ss)]).PTot_pplane) == 3
+        if ndims(ST.data.(['sp' num2str(ss)]).Psyn_pplane) == 3
             Psyn_L2 = sum(ST.data.(['sp' num2str(ss)]).Psyn_pplane,3);
         else
             Psyn_L2 = sum(ST.data.(['sp' num2str(ss)]).Psyn_pplane,4);
@@ -502,6 +502,8 @@ for ss=1:ST.params.simulation.num_species
             Psyn_L4 = sum(ST.data.(['sp' num2str(ss)]).Psyn_angular_pixel,4);
             
         else
+            P_L2 = sum(ST.data.(['sp' num2str(ss)]).P_lambda(i1:i2,:),2)/sum(sum(np_L2));
+            
             P_L3 = squeeze(sum(ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,:),2));
 
             P_L4 = squeeze(sum(ST.data.(['sp' num2str(ss)]).P_a_pixel(i1:i2,:),2));
@@ -562,6 +564,68 @@ for ss=1:ST.params.simulation.num_species
 %     yAxis_rescaled = yAxis;
     
     if (NT ~= 0)
+        Dtor = 360/double(NT);
+        
+        fig1 = figure;
+        fig2 = figure;
+        numRows = ceil(double(NT)/4);
+        for tt=1:double(NT)
+            A = Psyn_L1(:,:,tt)';
+            B = reshape(A,[numel(A),1]);
+            B(B==0) = [];
+            if ST.params.synthetic_camera_params.photon_count
+                B(B<1) = [];
+            end
+            minval = min(B);
+            maxval = 3*std(B);
+            v = linspace(minval,maxval,50);
+            
+            figure(fig1)
+            subplot(numRows,4,tt)
+            contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
+            ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
+            if ~figuresToShare
+                axis([xmin, xmax, ymin, ymax]);
+            else
+                axis([0.95 2.45 -0.5 1])
+            end
+            box on; axis equal;
+            ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
+            xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+            
+            cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([minval,maxval]);
+            ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
+            if ST.params.synthetic_camera_params.photon_count
+                xlabel(hc,'$\mathcal{P}_{Tot}$ (photons)','Interpreter','latex','FontSize',12)
+            else
+                xlabel(hc,'$\mathcal{P}_{Tot}$ (Watts)','Interpreter','latex','FontSize',12)
+            end
+            title(['$\phi=$ ' num2str(Dtor*(tt-1)) '$^\circ$ - ' num2str(Dtor*tt) '$^\circ$'],'Interpreter','latex','FontSize',12)
+            
+            A = np_L2(:,:,tt)';
+            minval = min(min(A(A~=0)));
+            maxval = 0.8*max(max(A));
+            v = linspace(minval,maxval,25);
+            
+            figure(fig2);
+            subplot(numRows,4,tt)
+            contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
+            ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
+            if ~figuresToShare
+                axis([xmin, xmax, ymin, ymax]);
+            else
+                axis([0.95 2.45 -0.5 1])
+            end
+            box on; axis equal;
+            ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
+            xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+            
+            cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([minval,maxval]);
+            ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
+            xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
+            title(['$\phi=$ ' num2str(Dtor*(tt-1)) '$^\circ$ - ' num2str(Dtor*tt) '$^\circ$'],'Interpreter','latex','FontSize',12)
+        end
+        
         f_L2 = P_L2;
         f_L3 = P_L3;
         f_L4 = P_L4;
@@ -593,7 +657,6 @@ for ss=1:ST.params.simulation.num_species
         
 %         saveas(fig,[ST.path 'Spectra_ss_' num2str(ss)],'fig')
         
-        Dtor = 360/double(NT);
         if plotToroidalSections
             for tt=1:NT
                 h = figure;
@@ -604,13 +667,19 @@ for ss=1:ST.params.simulation.num_species
                 % % % % % Camera diagnostic % % % % %
                 
                 A = Psyn_L3(:,:,tt)';
-                minval = min(min(A(A~=0)));
-                maxval = 0.8*max(max(A));
+                B = reshape(A,[numel(A),1]);
+                B(B==0) = [];
+                if ST.params.synthetic_camera_params.photon_count
+                    B(B<1) = [];
+                end
                 
-                if ~isempty(minval)
-                    v = linspace(minval,maxval,25);                    
+                if ~isempty(B)
+                    minval = min(B);
+                    maxval = 3*std(B);
+                    v = linspace(minval,maxval,50);
+                    
                     figure(h);
-                    subplot(2,2,1)
+                    subplot(3,2,3)
                     contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
                     ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
                     axis([xmin, xmax, ymin, ymax]);
@@ -625,8 +694,7 @@ for ss=1:ST.params.simulation.num_species
                     else
                         xlabel(hc,'$\int P_R(\lambda) d\lambda$ (Watts)','Interpreter','latex','FontSize',12)
                     end
-                    
-                    
+                                       
                     
                     A = np_L3(:,:,tt)';
                     minval = min(min(A(A~=0)));
@@ -634,7 +702,7 @@ for ss=1:ST.params.simulation.num_species
                     v = linspace(minval,maxval,25);
                     
                     figure(h);
-                    subplot(2,2,2)
+                    subplot(3,2,4)
                     contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
                     ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
                     axis([xmin, xmax, ymin, ymax]);
@@ -648,12 +716,17 @@ for ss=1:ST.params.simulation.num_species
                     
                     
                     A = Psyn_L4(:,:,tt)';
-                    minval = min(min(A(A~=0)));
-                    maxval = 0.8*max(max(A));
-                    v = linspace(minval,maxval,25);
+                    B = reshape(A,[numel(A),1]);
+                    B(B==0) = [];
+                    if ST.params.synthetic_camera_params.photon_count
+                        B(B<1) = [];
+                    end
+                    minval = min(B);
+                    maxval = 3*std(B);
+                    v = linspace(minval,maxval,50);
                     
                     figure(h);
-                    subplot(2,2,3)
+                    subplot(3,2,5)
                     contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
                     ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
                     axis([xmin, xmax, ymin, ymax]);
@@ -676,10 +749,65 @@ for ss=1:ST.params.simulation.num_species
                     v = linspace(minval,maxval,25);
                     
                     figure(h);
-                    subplot(2,2,4)
+                    subplot(3,2,6)
                     contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
                     ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
                     axis([xmin, xmax, ymin, ymax]);
+                    box on; axis equal;
+                    ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
+                    xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+                    
+                    cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([minval,maxval]);
+                    ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
+                    xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
+                    
+                    
+                    A = Psyn_L2(:,:,tt)';
+                    B = reshape(A,[numel(A),1]);
+                    B(B==0) = [];
+                    if ST.params.synthetic_camera_params.photon_count
+                        B(B<1) = [];
+                    end
+                    minval = min(B);
+                    maxval = 3*std(B);
+                    v = linspace(minval,maxval,50);
+                    
+                    figure(h);
+                    subplot(3,2,1)
+                    contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
+                    ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
+                    if ~figuresToShare
+                        axis([xmin, xmax, ymin, ymax]);
+                    else
+                        axis([0.95 2.45 -0.5 1])
+                    end
+                    box on; axis equal;
+                    ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
+                    xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+                    
+                    cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([minval,maxval]);
+                    ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
+                    if ST.params.synthetic_camera_params.photon_count
+                        xlabel(hc,'$\int \mathcal{P}_R(\lambda) d\lambda$ (photons)','Interpreter','latex','FontSize',12)
+                    else
+                        xlabel(hc,'$\int \mathcal{P}_R(\lambda) d\lambda$ (Watts)','Interpreter','latex','FontSize',12)
+                    end
+                    
+                    
+                    A = np_L2(:,:,tt)';
+                    minval = min(min(A(A~=0)));
+                    maxval = 0.8*max(max(A));
+                    v = linspace(minval,maxval,25);
+                    
+                    figure(h);
+                    subplot(3,2,2)
+                    contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
+                    ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
+                    if ~figuresToShare
+                        axis([xmin, xmax, ymin, ymax]);
+                    else
+                        axis([0.95 2.45 -0.5 1])
+                    end
                     box on; axis equal;
                     ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
                     xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
@@ -729,9 +857,9 @@ for ss=1:ST.params.simulation.num_species
             cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','northoutside');caxis([minval,maxval]);
             ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
             if ST.params.synthetic_camera_params.photon_count
-                xlabel(hc,'$P_R$ (Photons)','Interpreter','latex','FontSize',12)
+                xlabel(hc,'$\int \mathcal{P}_R(\lambda) d\lambda$ (photons)','Interpreter','latex','FontSize',12)
             else
-                xlabel(hc,'$\int P_R(\lambda) d\lambda$ (Watts)','Interpreter','latex','FontSize',12)
+                xlabel(hc,'$\int \mathcal{P}_R(\lambda) d\lambda$ (Watts)','Interpreter','latex','FontSize',12)
             end
             
             

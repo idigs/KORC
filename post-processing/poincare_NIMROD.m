@@ -1,8 +1,9 @@
 close all
 % clear all
 
-ST = diagnoseKORC('../KORC-FO/outputFiles/','on',[0,7000])
-X = ST.data.sp1.X;
+% ST = diagnoseKORC('../KORC-FO/outputFiles/','on',[0,200])
+ST = diagnoseKORC('/media/l8c/FantomHD/SimulationOutputs/APS_2017/NIMROD_DIVERTED_1100/','on',[0,460])
+X = ST.data.sp3.X;
 t1 = squeeze(atan2(X(2,:,:),X(1,:,:)));
 t1(t1<0) = t1(t1<0) + 2*pi;
 a1 = abs(diff(t1,1,2));

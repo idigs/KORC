@@ -168,7 +168,7 @@ xlabel('$R$','Interpreter','latex')
 ylabel('$Z$','Interpreter','latex')
 title('Interpolated $B_Z$','Interpreter','latex')
 
-save('NIMROD_DIVERTED_1100')
+save('NIMROD_DIVERTED_25')
 
 load handel
 sound(y,Fs)
