@@ -1932,7 +1932,7 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 			if (cam%toroidal_sections) then
 				call save_snapshot_var(params,P_a_pixel,var_name)
 			else
-				array2D = SUM(P_a_pixel,3)
+				array2D = SUM(P_a_pixel,2)
 				call save_snapshot_var(params,array2D,var_name)
 			end if	
 		end if
@@ -1954,7 +1954,7 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 			if (cam%toroidal_sections) then
 		        call save_snapshot_var(params,P_l_pixel,var_name)
 			else
-				array2D = SUM(P_l_pixel,3)
+				array2D = SUM(P_l_pixel,2)
 				call save_snapshot_var(params,array2D,var_name)
 			end if	
 		end if
@@ -2004,7 +2004,7 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 		if (cam%toroidal_sections) then
 	        call save_snapshot_var(params,P_a_pixel,var_name)
 		else
-			array2D = SUM(P_a_pixel,3)
+			array2D = SUM(P_a_pixel,2)
 			call save_snapshot_var(params,array2D,var_name)
 		end if	
 
@@ -2012,7 +2012,7 @@ SUBROUTINE integrated_SE_toroidal_sections(params,spp)
 		if (cam%toroidal_sections) then
 	        call save_snapshot_var(params,P_l_pixel,var_name)
 		else
-			array2D = SUM(P_l_pixel,3)
+			array2D = SUM(P_l_pixel,2)
 			call save_snapshot_var(params,array2D,var_name)
 		end if	
 	end if
@@ -2370,7 +2370,7 @@ SUBROUTINE integrated_SE_3D(params,spp)
 			if (cam%toroidal_sections) then
 				call save_snapshot_var(params,P_a_pixel,var_name)
 			else
-				array2D = SUM(P_a_pixel,3)
+				array2D = SUM(P_a_pixel,2)
 				call save_snapshot_var(params,array2D,var_name)
 			end if	
 		end if
@@ -2392,7 +2392,7 @@ SUBROUTINE integrated_SE_3D(params,spp)
 			if (cam%toroidal_sections) then
 		        call save_snapshot_var(params,P_l_pixel,var_name)
 			else
-				array2D = SUM(P_l_pixel,3)
+				array2D = SUM(P_l_pixel,2)
 				call save_snapshot_var(params,array2D,var_name)
 			end if	
 		end if
@@ -2442,7 +2442,7 @@ SUBROUTINE integrated_SE_3D(params,spp)
 		if (cam%toroidal_sections) then
 	        call save_snapshot_var(params,P_a_pixel,var_name)
 		else
-			array2D = SUM(P_a_pixel,3)
+			array2D = SUM(P_a_pixel,2)
 			call save_snapshot_var(params,array2D,var_name)
 		end if	
 
@@ -2450,7 +2450,7 @@ SUBROUTINE integrated_SE_3D(params,spp)
 		if (cam%toroidal_sections) then
 	        call save_snapshot_var(params,P_l_pixel,var_name)
 		else
-			array2D = SUM(P_l_pixel,3)
+			array2D = SUM(P_l_pixel,2)
 			call save_snapshot_var(params,array2D,var_name)
 		end if	
 	end if

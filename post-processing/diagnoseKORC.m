@@ -1138,10 +1138,10 @@ legends = cell(1,ST.params.simulation.num_species);
 for ss=1:ST.params.simulation.num_species   
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
     passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
-%     bool = pin & passing;
-    bool = pin;
+    bool = pin & passing;
+%     bool = pin;
     
-    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,end));
+    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,1));
     R = sqrt( sum(X(1:2,:).^2,1) );
     Z = X(3,:);
 
@@ -1175,22 +1175,21 @@ legends = cell(1,ST.params.simulation.num_species);
 for ss=ST.params.simulation.num_species:-1:1
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
     trapped = logical( any(ST.data.(['sp' num2str(ss)]).eta > 90,2) );
-
     bool = pin & trapped;
     
-    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,end));
+    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,1));
     R = sqrt( sum(X(1:2,:).^2,1) );
     Z = X(3,:);
     
     figure(h1)
     subplot(1,2,2)
     hold on
-%     plot(R,Z,'.','MarkerSize',8,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+    plot(R,Z,'.','MarkerSize',8,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
 %     plot(R,Z,'.','MarkerSize',10,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
-    his=histogram2(R,Z,'FaceColor','flat',...
-        'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
-    colormap(jet(1024));caxis([min(min(his.Values)) max(max(his.Values))])
-    colorbar
+%     his=histogram2(R,Z,'FaceColor','flat',...
+%         'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
+%     colormap(jet(1024));caxis([min(min(his.Values)) max(max(his.Values))])
+%     colorbar
     hold off
     legends{ST.params.simulation.num_species + 1 -ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
 end

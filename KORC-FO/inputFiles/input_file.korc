@@ -1,42 +1,42 @@
 &input_parameters
-        simulation_time = 1.0E-6 ! Total aimed simulation time in seconds
-        snapshot_frequency = 1.0E-9 ! Time between snapshots in seconds
-        dt = 1.0E-2 ! Time step as fraction of non-relativistic gyro-period
-        num_species = 2
-        minimum_particle_energy = 1.0E3 ! Minimum energy of simulated particles in eV
-        radiation = .FALSE.
-        collisions = .FALSE.
-        collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
-        plasma_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
-                                                                                ! For 'ANALYTICAL', the magnetic field is calculated based on
-                                                                                ! the parameters given in the "analytic_mag_field_params" section.
-                                                                                ! For 'EXTERNAL', the magnetic field is loaded from the file
-                                                                                ! specified in "filename".
-                                                                                ! 'UNIFORM' A uniform magnetic field used to advance only electrons' velocity.
-        poloidal_flux = .FALSE.                  ! .TRUE. if using JFIT poloidal flux, .FALSE. if using the
-                                                                                ! cylindrical components of the magnetic field
-        axisymmetric = .FALSE.                          ! Axisymmetric field?
-        magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/D3D_Q.h5" ! DIII-D_sh165826.h5" !
-        outputs_list = '{}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
+	simulation_time = 1.0E-6 ! Total aimed simulation time in seconds
+	snapshot_frequency = 1.0E-9 ! Time between snapshots in seconds
+	dt = 1.0E-2 ! Time step as fraction of non-relativistic gyro-period
+	num_species = 2
+	minimum_particle_energy = 1.0E3 ! Minimum energy of simulated particles in eV
+	radiation = .FALSE.
+	collisions = .FALSE.
+	collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
+	plasma_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
+										! For 'ANALYTICAL', the magnetic field is calculated based on
+										! the parameters given in the "analytic_mag_field_params" section.
+										! For 'EXTERNAL', the magnetic field is loaded from the file
+										! specified in "filename".
+										! 'UNIFORM' A uniform magnetic field used to advance only electrons' velocity.
+	poloidal_flux = .FALSE.		  ! .TRUE. if using JFIT poloidal flux, .FALSE. if using the
+										! cylindrical components of the magnetic field
+	axisymmetric = .FALSE.			  ! Axisymmetric field?
+	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/D3D_Q.h5" ! DIII-D_sh165826.h5" !
+	outputs_list = '{}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
 /
 
 &plasma_species
-        runaway = .FALSE.,.FALSE. !
-        ppp = 5000,5000 ! Number of particles per process (mpi)
-        q = -1.0,-1.0 ! Electric charge
-        m = 1.0,1.0 ! In units of electron mass
-		spatial_distribution = 'TORUS','TORUS'
-        Ro = 1.5,1.5 !
-		PHIo = 0.0, 0.0 ! In degrees
-        Zo = 0.0,0.0 !
-        r = 0.2,0.2 !
-		sigma_r = 0.0, 0.14 !
-        energy_distribution = 'MONOENERGETIC','MONOENERGETIC'   ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'
-        pitch_distribution = 'MONOPITCH','MONOPITCH'	! Options are: 'MONOPITCH', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'.
-        Eo = 10.0E6,10.0E6 ! Initial energy in eV
-        etao = 5.0,10.0  ! Initial pitch angle
-        Eo_lims = 1.0E6,50.0E6,1.0E6,50.0E6 ! Lower and upper limit of simulated energy range, in eV.
-        etao_lims = 0.0,20.0,0.0,20.0 ! Lower and upper limit of simulated pitch-angle range, in degrees.
+	runaway = .FALSE.,.FALSE. !
+	ppp = 5000,5000 ! Number of particles per process (mpi)
+	q = -1.0,-1.0 ! Electric charge
+	m = 1.0,1.0 ! In units of electron mass
+	spatial_distribution = 'TORUS','TORUS'
+	Ro = 1.5,1.5 !
+	PHIo = 0.0, 0.0 ! In degrees
+	Zo = 0.0,0.0 !
+	r = 0.2,0.2 !
+	sigma_r = 0.0, 0.14 !
+	energy_distribution = 'MONOENERGETIC','MONOENERGETIC'   ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'
+	pitch_distribution = 'MONOPITCH','MONOPITCH'	! Options are: 'MONOPITCH', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'.
+	Eo = 10.0E6,10.0E6 ! Initial energy in eV
+	etao = 5.0,10.0  ! Initial pitch angle
+	Eo_lims = 1.0E6,50.0E6,1.0E6,50.0E6 ! Lower and upper limit of simulated energy range, in eV.
+	etao_lims = 0.0,20.0,0.0,20.0 ! Lower and upper limit of simulated pitch-angle range, in degrees.
 /
 
 &analytical_fields_params
