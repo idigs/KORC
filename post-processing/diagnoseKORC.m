@@ -23,7 +23,7 @@ ST.data = loadData(ST);
 
 % ST.RT = radialTransport(ST);
 
-ST.CP = confined_particles(ST);
+% ST.CP = confined_particles(ST);
 
 % ST.PAD = pitchAngleDiagnostic(ST,30);
 
@@ -54,6 +54,10 @@ ST.CP = confined_particles(ST);
 
 % plotEnergyPitchanglePDF(ST);
 
+
+figuresAPS2017(ST);
+
+NIMROD_figure(ST);
 
 % save('energy_limit','ST')
 end
@@ -388,13 +392,13 @@ for ss=1:ST.params.simulation.num_species
     if ~isempty(eta)
         mean_fx(ss,:) = mean(eta,1);
         std_fx(ss,:) = std(eta,0,1);
-        skewness_fx(ss,:) = skewness(eta,0,1);
-        kurtosis_fx(ss,:) = kurtosis(eta,1,1);
+        skewness_fx(ss,:) = zeros(size(mean_fx(ss,:)));%skewness(eta,0,1);
+        kurtosis_fx(ss,:) = zeros(size(mean_fx(ss,:)));%kurtosis(eta,1,1);
         
         mean_fz(ss,:) = mean(Eo,1);
         std_fz(ss,:) = std(Eo,0,1);
-        skewness_fz(ss,:) = skewness(Eo,0,1);
-        kurtosis_fz(ss,:) = kurtosis(Eo,1,1);
+        skewness_fz(ss,:) = zeros(size(mean_fz(ss,:)));%skewness(Eo,0,1);
+        kurtosis_fz(ss,:) = zeros(size(mean_fz(ss,:)));%kurtosis(Eo,1,1);
         
         for ii=1:ST.num_snapshots
             minVal = min(min( eta(:,ii) ));
@@ -3438,4 +3442,272 @@ for ss=1:ST.params.simulation.num_species
     ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
     saveas(g,[ST.path 'EnergyvsPitch' num2str(ss)],'fig')
 end
+end
+
+function figuresAPS2017(ST)
+
+if isfield(ST.params.fields_and_profiles,'a')
+    t = linspace(0,2*pi,200);
+    Rs = ST.params.fields_and_profiles.Ro + ST.params.fields_and_profiles.a*cos(t);
+    Zs = ST.params.fields_and_profiles.a*sin(t);
+end
+
+legends = cell(1,ST.params.simulation.num_species);
+pitch_angle = zeros(1,ST.params.simulation.num_species);
+confined = zeros(1,ST.params.simulation.num_species);
+confinedParticles = zeros(numel(ST.time),ST.params.simulation.num_species);
+for ss=1:ST.params.simulation.num_species
+    numConfPart = sum(ST.data.(['sp' num2str(ss)]).flag(:,1),1);
+    confinedParticles(:,ss) = 100*sum(ST.data.(['sp' num2str(ss)]).flag,1)/numConfPart;
+        
+    legends{ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
+    
+    confined(ss) = confinedParticles(end,ss);
+    pitch_angle(ss) = ST.params.species.etao(ss);
+end
+
+
+h1 = figure;
+h1.Position(3:4) = [1320,830];
+C = colormap(h1,jet(1024));
+offset = floor(1024/ST.params.simulation.num_species);
+colour = C(1:offset:end,:);
+
+figure(h1)
+subplot(2,3,1)
+plot(ST.time,confinedParticles)
+legend(legends,'interpreter','latex','FontSize',12)
+box on;axis on;
+xlabel('Time $t$ (sec)','Interpreter','latex','FontSize',16)
+ylabel('$\%$ of confined RE','Interpreter','latex','FontSize',16)
+
+figure(h1)
+subplot(2,3,2)
+plot(pitch_angle,confined,'o-')
+box on;axis on;grid on;grid minor;
+xlim([0 70])
+xlabel('$\theta_0$ ($^\circ$)','Interpreter','latex','FontSize',16)
+ylabel('Confined RE ($\%$)','Interpreter','latex','FontSize',16)
+
+
+for ss=1:ST.params.simulation.num_species   
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
+    bool = pin & passing;
+    
+    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,1));
+    R = sqrt( sum(X(1:2,:).^2,1) );
+    Z = X(3,:);
+
+    figure(h1)
+    subplot(2,3,4)
+    hold on
+    plot(R,Z,'.','MarkerSize',8,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+    hold off
+end
+
+figure(h1)
+subplot(2,3,4)
+legend(legends,'interpreter','latex','FontSize',12)
+if isfield(ST.params.fields_and_profiles,'a')
+    hold on
+    plot(Rs,Zs,'k','LineWidth',2,'DisplayName','Plasma edge')
+    hold off
+end
+box on;axis on;grid on;grid minor;axis square
+xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
+
+for ss=ST.params.simulation.num_species:-1:1
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    trapped = logical( any(ST.data.(['sp' num2str(ss)]).eta > 90,2) );
+    bool = pin & trapped;
+    
+    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,1));
+    R = sqrt( sum(X(1:2,:).^2,1) );
+    Z = X(3,:);
+    
+    figure(h1)
+    subplot(2,3,5)
+    hold on
+    plot(R,Z,'.','MarkerSize',8,'MarkerFaceColor',colour(ss,:),'MarkerEdgeColor',colour(ss,:))
+    hold off
+end
+
+
+figure(h1)
+subplot(2,3,5)
+legend(legends,'interpreter','latex','FontSize',12)
+if isfield(ST.params.fields_and_profiles,'a')
+    hold on
+    plot(Rs,Zs,'k','LineWidth',2,'DisplayName','Plasma edge')
+    hold off
+end
+box on;axis on;grid on;grid minor;axis square
+xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
+
+
+PR = zeros(1,ST.params.simulation.num_species);
+for ss=1:ST.params.simulation.num_species   
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    PR(ss) = sum(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,end)),1);
+end
+
+figure(h1)
+subplot(2,3,3)
+plot(pitch_angle,PR,'o-')
+box on;axis on;grid on;grid minor;
+xlim([0 70])
+xlabel('$\theta_0$ ($^\circ$)','Interpreter','latex','FontSize',16)
+ylabel('$\mathcal{P}_R$ (Watts)','Interpreter','latex','FontSize',16)
+
+ep0 = 8.854E-12;% Electric permitivity
+c = 2.9979E8; % Speed of light
+qe = 1.602176E-19; % Electron charge
+me = 9.109382E-31; % Electron mass
+Bo = ST.params.fields_and_profiles.Bo;
+
+hh = figure;
+hs1 = figure;
+
+PR_ratio = zeros(1,ST.params.simulation.num_species);
+etao = zeros(1,ST.params.simulation.num_species);
+Po = zeros(1,ST.params.simulation.num_species);
+for ss=1:ST.params.simulation.num_species
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    B = sqrt(sum(ST.data.(['sp' num2str(ss)]).B(:,pin,end).^2,1))';
+    etao(ss) = ST.params.species.etao(ss);
+    go = ST.params.species.go(ss);
+    vo = c*sqrt(1-1/go^2);
+    g = ST.data.(['sp' num2str(ss)]).g(pin,end);
+    v = c*sqrt(1-1./g.^2);
+    eta = ST.data.(['sp' num2str(ss)]).eta(pin,end);
+    
+    ko = qe*Bo*sin(deg2rad(etao(ss)))/(go*vo*me);
+    kapp = qe*Bo*sin(deg2rad(eta))./(g.*v*me);
+    
+    Po(ss) = qe^2*(go*vo)^4*ko^2/(6*pi*ep0*c^3);
+    Papp = qe^2*(g.*v).^4.*kapp.^2./(6*pi*ep0*c^3);
+    Prad = abs(ST.data.(['sp' num2str(ss)]).Prad(pin,end));
+    
+    
+    hs = figure;
+    subplot(4,5,[2 3 4 5 7 8 9 10 12 13 14 15])
+    plot(eta,Prad,'k.',eta,Papp,'g.','MarkerSize',2)
+    hold on;plot(etao(ss),Po(ss),'ro','MarkerSize',6,'MarkerFaceColor',[1,0,0],'MarkerEdgeColor',[0,0,0]);hold off
+    box on;grid on;grid minor;
+    ax = gca;
+    ax.XTickLabel = {};
+    ax.YTickLabel = {};
+    xlim_main = ax.XLim;
+    ylim_main = ax.YLim;
+    
+    subplot(4,5,[1 6 11])
+    histogram(Prad,'normalization','pdf','LineStyle','none')
+    view([-90 90]);box on;grid on;grid minor;
+    ax = gca;ax.YTickLabel = {};xlim(ylim_main)
+    hold on;plot(Po(ss)*ones(1,10),linspace(0,ax.YLim(2),10),'r','LineWidth',2);hold off
+    xlabel('$\mathcal{P}_R$ (Watts)','Interpreter','latex','FontSize',16)
+    
+    subplot(4,5,[17 18 19 20])
+    histogram(eta,'normalization','pdf','LineStyle','none')
+    view([0 -90]);box on;grid on;grid minor;
+    ax = gca;ax.YTickLabel = {};xlim(xlim_main)
+    hold on;plot(etao(ss)*ones(1,10),linspace(0,ax.YLim(2),10),'r','LineWidth',2);hold off
+    xlabel('$\theta$ ($^\circ$)','Interpreter','latex','FontSize',16)
+    saveas(hs,[ST.path 'Scattered_spp_' num2str(ss)],'fig')
+     
+    figure(hh)
+    hold on;histogram(eta,'normalization','pdf','LineStyle','none');hold off
+    box on;grid on;grid minor;
+    xlabel('$\theta$ ($^\circ$)','Interpreter','latex','FontSize',16)
+    ylabel('$f_{RE}(\theta)$','Interpreter','latex','FontSize',16)
+    
+    figure(hs1)
+    subplot(4,5,[2 3 4 5 7 8 9 10 12 13 14 15])
+    hold on;plot(eta,Prad,'.',eta,Papp,'k.','MarkerSize',2);hold off
+    hold on;plot(etao(ss),Po(ss),'ro','MarkerSize',6,'MarkerFaceColor',[1,0,0],'MarkerEdgeColor',[0,0,0]);hold off
+    figure(hs1)
+    subplot(4,5,[1 6 11])
+    hold on;histogram(Prad,'normalization','pdf','LineStyle','none');hold off
+    figure(hs1)
+    subplot(4,5,[17 18 19 20])
+    hold on;histogram(eta,'normalization','pdf','LineStyle','none');hold off
+    
+    PR_ratio(ss) = mean(Prad)/Po(ss);
+end
+
+figure(hs1)
+subplot(4,5,[2 3 4 5 7 8 9 10 12 13 14 15])
+ax = gca;
+ax.XTickLabel = {};
+ax.YTickLabel = {};
+xlim_main = ax.XLim;
+ylim_main = ax.YLim;
+box on;grid on;grid minor;
+
+figure(hs1)
+subplot(4,5,[1 6 11])
+view([-90 90]);box on;grid on;grid minor;
+ax = gca;ax.YTickLabel = {};xlim(ylim_main)
+for ss=1:ST.params.simulation.num_species
+    hold on;plot(Po(ss)*ones(1,10),linspace(0,ax.YLim(2),10),'r','LineWidth',2);hold off
+end
+xlabel('$\mathcal{P}_R$ (Watts)','Interpreter','latex','FontSize',16)
+
+figure(hs1)
+subplot(4,5,[17 18 19 20])
+view([0 -90]);box on;grid on;grid minor;
+ax = gca;ax.YTickLabel = {};xlim(xlim_main)
+for ss=1:ST.params.simulation.num_species
+    hold on;plot(etao(ss)*ones(1,10),linspace(0,ax.YLim(2),10),'r','LineWidth',2);hold off
+end
+xlabel('$\theta$ ($^\circ$)','Interpreter','latex','FontSize',16)
+
+saveas(hs1,[ST.path 'Scattered_all_spp_' num2str(ss)],'fig')
+
+saveas(hs,[ST.path 'Scattered_spp_' num2str(ss)],'fig')
+
+saveas(hh,[ST.path 'histograms'],'fig')
+
+figure(h1)
+subplot(2,3,6)
+plot(pitch_angle,PR_ratio,'o-')
+box on;axis on;grid on;grid minor;
+xlim([0 70])
+xlabel('$\theta_0$ ($^\circ$)','Interpreter','latex','FontSize',16)
+ylabel('$\langle \mathcal{P}_R \rangle/P_{app}$','Interpreter','latex','FontSize',16)
+
+ saveas(h1,[ST.path 'FigAPS'],'fig')
+end
+
+function NIMROD_figure(ST)
+
+for ss=1:ST.params.simulation.num_species   
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
+    bool = pin;
+    
+    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,1));
+    R = sqrt( sum(X(1:2,:).^2,1) );
+    Z = X(3,:);
+    
+    go = ST.data.(['sp' num2str(ss)]).g(bool,1);
+    gf = ST.data.(['sp' num2str(ss)]).g(bool,end);
+    DE = 100*(go-gf)./go;
+    
+    t = linspace(0,2*pi,100);
+    x = ST.params.species.Ro(ss) + ST.params.species.r(ss)*cos(t);
+    y = ST.params.species.r(ss)*sin(t);
+
+    h = open('poincare_plot_diverted_1100.fig');
+    hold on;scatter(R,Z,16,DE,'filled');hold off
+    hold on;plot(x,y,'m','LineWidth',2);hold off
+    colormap(jet(1024));colorbar;
+    box on;grid on;grid minor;
+    xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+    ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
+end
+
 end

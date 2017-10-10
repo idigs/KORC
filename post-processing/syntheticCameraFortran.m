@@ -1095,9 +1095,14 @@ for ss=1:ST.params.simulation.num_species
         h.Position(3:4) = [800 860];
         
         A = Psyn_L1';
-        minval = min(min(A));
-        maxval = 0.8*max(max(A));
-        v = linspace(minval,maxval,25);
+        B = reshape(A,[numel(A),1]);
+        B(B==0) = [];
+        if ST.params.synthetic_camera_params.photon_count
+            B(B<1) = [];
+        end
+        minval = min(B);
+        maxval = max(B);
+        v = linspace(minval,maxval,50);
         
         figure(h);
         subplot(4,2,1)
