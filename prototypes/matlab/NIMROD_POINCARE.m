@@ -1,4 +1,4 @@
-function NIMROD_POINCARE(timeStepParams,numInitCond)
+function NIMROD_POINCARE(timeStepParams,numInitCond,plane)
 
 close all
 
@@ -16,7 +16,7 @@ DS = timeStepParams(2);
 
 ST.analytical = false;
 
-load('NIMROD_LIMITED_1150.mat','S')
+load('NIMROD_DIVERTED_1100.mat','S')
 
 B = struct;
 B.ND = '3D';
@@ -60,7 +60,7 @@ P = figure;
 Ros = linspace(1.1,2.2,numInitCond);
 % Ros = 1.6*ones(1,numInitCond);
 phio = zeros(1,numInitCond);
-Zos = -0.1*ones(1,numInitCond);
+Zos = zeros(1,numInitCond);
 % Zos = linspace(-0.7,0.7,numInitCond);
 
 for ii=1:numInitCond
@@ -86,7 +86,7 @@ for ii=1:numInitCond
     phi = mod(Y(:,2),2*pi);
     Z = Y(:,3);
     
-    locs = find(abs(diff(phi)) > 6);
+    locs = find(abs(diff(mod(phi-deg2rad(plane),2*pi))) > 6);
     figure(P)
     hold on
     plot(R(locs),Z(locs),'.','MarkerSize',3)
@@ -101,7 +101,7 @@ ylabel('$Z$ [m]','Interpreter','latex','FontSize',16)
 title('Poincare plot','Interpreter','latex','FontSize',16)
 
 
-% saveas(P,'poincare_diverted_25','fig')
+saveas(P,['diverted_' num2str(plane)],'fig')
 
 end
 

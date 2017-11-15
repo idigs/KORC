@@ -16,7 +16,7 @@ ST.time = ...
     double(ST.range(1):1:ST.range(2));
 
 ST.data = loadData(ST);
-
+% 
 % energyConservation(ST);
 
 % angularMomentum(ST);
@@ -55,9 +55,9 @@ ST.data = loadData(ST);
 % plotEnergyPitchanglePDF(ST);
 
 
-figuresAPS2017(ST);
-
-NIMROD_figure(ST);
+% figuresAPS2017(ST);
+% 
+% NIMROD_figure(ST);
 
 % save('energy_limit','ST')
 end
@@ -211,16 +211,16 @@ set(h6,'name','Energy statistics','numbertitle','off')
         end
         
         err(:,ss) = mean(tmp,1);
-%         maxerr(:,ss) = max(tmp,[],1);
-%         minerr(:,ss) = min(tmp,[],1);
-        maxerr(:,ss) = err(:,ss) + std(tmp,0,1)';
-        minerr(:,ss) = err(:,ss) - std(tmp,0,1)';
+        maxerr(:,ss) = max(tmp,[],1);
+        minerr(:,ss) = min(tmp,[],1);
+%         maxerr(:,ss) = err(:,ss) + std(tmp,0,1)';
+%         minerr(:,ss) = err(:,ss) - std(tmp,0,1)';
         
         if (~isempty(tmp))
             st1(:,ss) = mean(tmp,1);
             st2(:,ss) = std(tmp,0,1);
-            st3(:,ss) = skewness(tmp,1,1);
-            st4(:,ss) = kurtosis(tmp,1,1);
+            st3(:,ss) = zeros(size(st1(:,ss)));%skewness(tmp,1,1);
+            st4(:,ss) = zeros(size(st1(:,ss)));%kurtosis(tmp,1,1);
         end
         
         try
@@ -3537,7 +3537,7 @@ end
 
 figure(h1)
 subplot(2,3,5)
-legend(legends,'interpreter','latex','FontSize',12)
+legend(fliplr(legends),'interpreter','latex','FontSize',12)
 if isfield(ST.params.fields_and_profiles,'a')
     hold on
     plot(Rs,Zs,'k','LineWidth',2,'DisplayName','Plasma edge')
@@ -3576,6 +3576,7 @@ etao = zeros(1,ST.params.simulation.num_species);
 Po = zeros(1,ST.params.simulation.num_species);
 for ss=1:ST.params.simulation.num_species
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    
     B = sqrt(sum(ST.data.(['sp' num2str(ss)]).B(:,pin,end).^2,1))';
     etao(ss) = ST.params.species.etao(ss);
     go = ST.params.species.go(ss);
@@ -3665,11 +3666,11 @@ for ss=1:ST.params.simulation.num_species
 end
 xlabel('$\theta$ ($^\circ$)','Interpreter','latex','FontSize',16)
 
-saveas(hs1,[ST.path 'Scattered_all_spp_' num2str(ss)],'fig')
+% saveas(hs1,[ST.path 'Scattered_all_spp_' num2str(ss)],'fig')
 
-saveas(hs,[ST.path 'Scattered_spp_' num2str(ss)],'fig')
+% saveas(hs,[ST.path 'Scattered_spp_' num2str(ss)],'fig')
 
-saveas(hh,[ST.path 'histograms'],'fig')
+% saveas(hh,[ST.path 'histograms'],'fig')
 
 figure(h1)
 subplot(2,3,6)
@@ -3679,35 +3680,96 @@ xlim([0 70])
 xlabel('$\theta_0$ ($^\circ$)','Interpreter','latex','FontSize',16)
 ylabel('$\langle \mathcal{P}_R \rangle/P_{app}$','Interpreter','latex','FontSize',16)
 
- saveas(h1,[ST.path 'FigAPS'],'fig')
+%  saveas(h1,[ST.path 'FigAPS'],'fig')
 end
 
 function NIMROD_figure(ST)
 
+hDE = figure;
+
 for ss=1:ST.params.simulation.num_species   
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
     passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
-    bool = pin;
+    trapped = logical( any(ST.data.(['sp' num2str(ss)]).eta > 90,2) );
     
+    bool = pin&passing;
     X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,1));
     R = sqrt( sum(X(1:2,:).^2,1) );
     Z = X(3,:);
     
     go = ST.data.(['sp' num2str(ss)]).g(bool,1);
     gf = ST.data.(['sp' num2str(ss)]).g(bool,end);
-    DE = 100*(go-gf)./go;
+    DE1 = 100*(go-gf)./go;
+    
+    figure(hDE)
+    subplot(3,1,1)
+    histogram(DE1,'normalization','count')
+    xlabel('$\Delta \mathcal{E}$ ($\%$)','Interpreter','latex','FontSize',16)
+    ylabel('$f_{RE}(\Delta \mathcal{E})$','Interpreter','latex','FontSize',16)
     
     t = linspace(0,2*pi,100);
     x = ST.params.species.Ro(ss) + ST.params.species.r(ss)*cos(t);
     y = ST.params.species.r(ss)*sin(t);
 
-    h = open('poincare_plot_diverted_1100.fig');
-    hold on;scatter(R,Z,16,DE,'filled');hold off
+    I = (DE1>1.5);
+    
+    h1 = open('poincare_plot_diverted_1100.fig');
+    figure(h1)
+    hold on;scatter(R(I),Z(I),12,DE1(I),'filled');hold off
     hold on;plot(x,y,'m','LineWidth',2);hold off
     colormap(jet(1024));colorbar;
+    if ~isempty(DE1(I))
+        caxis([0 max(DE1(I))]);
+    end
     box on;grid on;grid minor;
     xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
     ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
+    
+    bool = pin&trapped;
+    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,1));
+    R = sqrt( sum(X(1:2,:).^2,1) );
+    Z = X(3,:);
+    
+    go = ST.data.(['sp' num2str(ss)]).g(bool,1);
+    gf = ST.data.(['sp' num2str(ss)]).g(bool,end);
+    DE2 = 100*(go-gf)./go;
+    
+    figure(hDE)
+    subplot(3,1,2)
+    histogram(DE2,'normalization','count')
+    xlabel('$\Delta \mathcal{E}$ ($\%$)','Interpreter','latex','FontSize',16)
+    ylabel('$f_{RE}(\Delta \mathcal{E})$','Interpreter','latex','FontSize',16)
+    
+    t = linspace(0,2*pi,100);
+    x = ST.params.species.Ro(ss) + ST.params.species.r(ss)*cos(t);
+    y = ST.params.species.r(ss)*sin(t);
+
+    h2 = open('poincare_plot_diverted_1100.fig');
+    figure(h2)
+    hold on;scatter(R,Z,12,DE2,'filled');hold off
+    hold on;plot(x,y,'m','LineWidth',2);hold off
+    colormap(jet(1024));colorbar;
+    if ~isempty(DE2)
+        caxis([0 max(DE2)]);
+    end
+    box on;grid on;grid minor;
+    xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
+    ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
+    
+    bool = pin;
+    X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,bool,1));
+    R = sqrt( sum(X(1:2,:).^2,1) );
+    Z = X(3,:);
+    
+    go = ST.data.(['sp' num2str(ss)]).g(bool,1);
+    gf = ST.data.(['sp' num2str(ss)]).g(bool,end);
+    DE3 = 100*(go-gf)./go;
+    
+    figure(hDE)
+    subplot(3,1,3)
+    histogram(DE3,'normalization','count')
+    xlabel('$\Delta \mathcal{E}$ ($\%$)','Interpreter','latex','FontSize',16)
+    ylabel('$f_{RE}(\Delta \mathcal{E})$','Interpreter','latex','FontSize',16)
 end
 
 end

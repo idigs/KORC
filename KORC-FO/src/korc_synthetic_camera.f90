@@ -58,6 +58,10 @@ MODULE korc_synthetic_camera
 		REAL(rp), DIMENSION(:), ALLOCATABLE :: psi
 		REAL(rp), DIMENSION(:), ALLOCATABLE :: ax
 		REAL(rp), DIMENSION(:), ALLOCATABLE :: ay
+		REAL(rp) :: max_ax
+		REAL(rp) :: min_ax
+		REAL(rp) :: max_ay
+		REAL(rp) :: min_ay
 		REAL(rp) :: ac
 
 		REAL(rp) :: threshold_angle
@@ -302,9 +306,15 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 			ang%ax(ii) = ATAN2(cam%pixels_nodes_x(ii),cam%focal_length)
 		end do
 
+		ang%min_ax = MINVAL(ang%ax)
+		ang%max_ax = MAXVAL(ang%ax)
+
 		do ii=1_idef,cam%num_pixels(2)
 			ang%ay(ii) = ATAN2(cam%pixels_nodes_y(ii),cam%focal_length)
 		end do
+
+		ang%min_ay = MINVAL(ang%ay)
+		ang%max_ay = MAXVAL(ang%ay)
 
 		if (cam%incline.GT.0.5_rp*C_PI) then
 			ang%ac = cam%incline - 0.5_rp*C_PI
@@ -701,8 +711,6 @@ SUBROUTINE is_visible(X,V,threshold_angle,bool,ii,jj)
 	n = n/SQRT(DOT_PRODUCT(n,n))
 
 	if (psi.LE.threshold_angle) then
-		bool = .TRUE. ! The particle is visible
-
 		t =  ACOS(DOT_PRODUCT(n,(/1.0_rp,0.0_rp,0.0_rp/)))
 
 		if (cam%incline.GT.0.5_rp*C_PI) then
@@ -721,10 +729,15 @@ SUBROUTINE is_visible(X,V,threshold_angle,bool,ii,jj)
 
 		ay = -ASIN(vec(3)/r)
 
-		ii = MINLOC(ABS(ax - ang%ax),1)
-		jj = MINLOC(ABS(ay - ang%ay),1)
-
-		if ((ii.GT.cam%num_pixels(1)).OR.(jj.GT.cam%num_pixels(2))) bool = .FALSE.
+		if ((ax.GT.ang%max_ax).OR.(ax.LT.ang%min_ax)) then
+			bool = .FALSE. ! The particle is not visible
+		else if ((ay.GT.ang%max_ay).OR.(ay.LT.ang%min_ay)) then
+			bool = .FALSE. ! The particle is not visible
+		else
+			bool = .TRUE. ! The particle is visible
+			ii = MINLOC(ABS(ax - ang%ax),1)
+			jj = MINLOC(ABS(ay - ang%ay),1)
+		end if
 	else
 		bool = .FALSE. ! The particle is not visible
 	end if

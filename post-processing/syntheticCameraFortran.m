@@ -333,7 +333,7 @@ disp('Plotting snapshots...')
 xRectangles = [1.41,1.619; 1.537,1.66; 1.943,2.077];
 yRectangles = [-0.1075,0.1161; -0.0626,0.07147; 0.1831,0.363];
 colorRectangles = [0,0,0; 1,0,0; 0,0,1];
-plotToroidalSections = true;
+plotToroidalSections = false;
 figuresToShare = false;
 
 
@@ -477,22 +477,24 @@ for ss=1:ST.params.simulation.num_species
                 end
             end
             
-            if ndims(ST.data.(['sp' num2str(ss)]).P_l_pixel) == 2
-                P_L3 = ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,:);
+            if isempty(ST.data.(['sp' num2str(ss)]).P_l_pixel)
+                P_L3 = zeros(Nl,ST.num_snapshots);
             else
-                P_L3 = squeeze(sum(ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,:,:),3));
+                if ndims(ST.data.(['sp' num2str(ss)]).P_l_pixel) == 2
+                    P_L3 = ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,:);
+                else
+                    P_L3 = squeeze(sum(ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,:,:),3));
+                end
             end
             
-            if ndims(ST.data.(['sp' num2str(ss)]).P_l_pixel) == 2
-                P_L3 = ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,:);
+            if isempty(ST.data.(['sp' num2str(ss)]).P_a_pixel)
+                P_L4 = zeros(Nl,ST.num_snapshots);
             else
-                P_L3 = squeeze(sum(ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,:,:),3));
-            end
-            
-            if ndims(ST.data.(['sp' num2str(ss)]).P_a_pixel) == 2
-                P_L4 = ST.data.(['sp' num2str(ss)]).P_a_pixel(i1:i2,:);
-            else
-                P_L4 = squeeze(sum(ST.data.(['sp' num2str(ss)]).P_a_pixel(i1:i2,:,:),3));
+                if ndims(ST.data.(['sp' num2str(ss)]).P_a_pixel) == 2
+                    P_L4 = ST.data.(['sp' num2str(ss)]).P_a_pixel(i1:i2,:);
+                else
+                    P_L4 = squeeze(sum(ST.data.(['sp' num2str(ss)]).P_a_pixel(i1:i2,:,:),3));
+                end
             end
             
             np_L3 = sum(ST.data.(['sp' num2str(ss)]).np_lambda_pixel,4);
@@ -589,8 +591,8 @@ for ss=1:ST.params.simulation.num_species
             
             figure(fig1)
             subplot(numRows,4,tt)
-            contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
-            ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
+            contourf(RAxis,ZAxis,A,v,'LineStyle','none')
+            ymin=min(ZAxis);ymax=max(ZAxis);xmin=min(RAxis);xmax=max(RAxis);
             if ~figuresToShare
                 axis([xmin, xmax, ymin, ymax]);
             else
@@ -616,8 +618,8 @@ for ss=1:ST.params.simulation.num_species
             
             figure(fig2);
             subplot(numRows,4,tt)
-            contourf(xAxis_rescaled,yAxis_rescaled,AA,v,'LineStyle','none')
-            ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
+            contourf(RAxis,ZAxis,AA,v,'LineStyle','none')
+            ymin=min(ZAxis);ymax=max(ZAxis);xmin=min(RAxis);xmax=max(RAxis);
             if ~figuresToShare
                 axis([xmin, xmax, ymin, ymax]);
             else
@@ -644,8 +646,8 @@ for ss=1:ST.params.simulation.num_species
             
             figure(fig3);
             subplot(numRows,4,tt)
-            contourf(xAxis_rescaled,yAxis_rescaled,AAA,v,'LineStyle','none')
-            ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
+            contourf(RAxis,ZAxis,AAA,v,'LineStyle','none')
+            ymin=min(ZAxis);ymax=max(ZAxis);xmin=min(RAxis);xmax=max(RAxis);
             if ~figuresToShare
                 axis([xmin, xmax, ymin, ymax]);
             else
@@ -695,6 +697,9 @@ for ss=1:ST.params.simulation.num_species
         xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
         
         saveas(fig,[ST.path 'Spectra_ss_' num2str(ss)],'fig')
+        saveas(fig1,[ST.path 'Ptot_toroidal_sections'],'fig')
+        saveas(fig2,[ST.path 'density_toroidal_sections'],'fig')
+        saveas(fig3,[ST.path 'ratio_toroidal_sections'],'fig')
         
         if plotToroidalSections
             for tt=1:NT
@@ -859,7 +864,7 @@ for ss=1:ST.params.simulation.num_species
                     ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
                     xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
                     
-                    saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
+                    saveas(h,[ST.path 'toroidal_section_' num2str(tt)],'fig')
                 else
                     close(h)
                 end
@@ -886,8 +891,8 @@ for ss=1:ST.params.simulation.num_species
             
             figure(h);
             subplot(2,4,1)
-            contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
-            ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
+            contourf(RAxis,ZAxis,A,v,'LineStyle','none')
+            ymin=min(ZAxis);ymax=max(ZAxis);xmin=min(RAxis);xmax=max(RAxis);
             if ~figuresToShare
                 axis([xmin, xmax, ymin, ymax]);
             else
@@ -913,8 +918,8 @@ for ss=1:ST.params.simulation.num_species
             
             figure(h);
             subplot(2,4,5)
-            contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
-            ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
+            contourf(RAxis,ZAxis,A,v,'LineStyle','none')
+            ymin=min(ZAxis);ymax=max(ZAxis);xmin=min(RAxis);xmax=max(RAxis);
             if ~figuresToShare
                 axis([xmin, xmax, ymin, ymax]);
             else
@@ -1029,21 +1034,21 @@ for ss=1:ST.params.simulation.num_species
         else
             subplot(2,2,1)
         end
-%         hold on
-%         for ii=1:size(xRectangles,1)
-%             iX(ii,1) = find(xAxis_rescaled > xRectangles(ii,1),1,'first');
-%             iX(ii,2) = find(xAxis_rescaled > xRectangles(ii,2),1,'first') - 1;
-%             
-%             iY(ii,1) = find(yAxis_rescaled > yRectangles(ii,1),1,'first');
-%             iY(ii,2) = find(yAxis_rescaled > yRectangles(ii,2),1,'first') - 1;
-%             
-%             cameraCount(ii) = sum(sum(A(iY(ii,1):iY(ii,2),iX(ii,1):iX(ii,2))));
-%             
-%             xplot = [xRectangles(ii,1),xRectangles(ii,2),xRectangles(ii,2),xRectangles(ii,1),xRectangles(ii,1)];
-%             yplot = [yRectangles(ii,1),yRectangles(ii,1),yRectangles(ii,2),yRectangles(ii,2),yRectangles(ii,1)];
-%             plot(xplot,yplot,'LineWidth',2,'Color',colorRectangles(ii,:))
-%         end
-%         hold off
+        hold on
+        for ii=1:size(xRectangles,1)
+            iX(ii,1) = find(xAxis_rescaled > xRectangles(ii,1),1,'first');
+            iX(ii,2) = find(xAxis_rescaled > xRectangles(ii,2),1,'first') - 1;
+            
+            iY(ii,1) = find(yAxis_rescaled > yRectangles(ii,1),1,'first');
+            iY(ii,2) = find(yAxis_rescaled > yRectangles(ii,2),1,'first') - 1;
+            
+            cameraCount(ii) = sum(sum(A(iY(ii,1):iY(ii,2),iX(ii,1):iX(ii,2))));
+            
+            xplot = [xRectangles(ii,1),xRectangles(ii,2),xRectangles(ii,2),xRectangles(ii,1),xRectangles(ii,1)];
+            yplot = [yRectangles(ii,1),yRectangles(ii,1),yRectangles(ii,2),yRectangles(ii,2),yRectangles(ii,1)];
+            plot(xplot,yplot,'LineWidth',2,'Color',colorRectangles(ii,:))
+        end
+        hold off
                
         A = sum(np_L4,3)';
         B = reshape(A,[numel(A),1]);
@@ -1291,5 +1296,6 @@ for ss=1:ST.params.simulation.num_species
         
         saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
     end
+    
 end
 end
