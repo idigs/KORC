@@ -1,6 +1,6 @@
 function ST = diagnoseKORC(path,visible,range)
 % ST = diagnoseKORC('../KORC-FO/outputFiles/','on',[0,100])
-close all
+% close all
 
 ST = struct;
 ST.path = path;
@@ -49,7 +49,7 @@ ST.data = loadData(ST);
 
 % calculateTemperatureComponents(ST);
 
-% SE_phaseSpaceAnalisys(ST);
+SE_phaseSpaceAnalisys(ST);
 
 
 % plotEnergyPitchanglePDF(ST);
@@ -2880,6 +2880,8 @@ v = c*sqrt(1-1/g^2);
 ep = 8.854E-12;% Electric permitivity
 
 k = q*ST.params.fields_and_profiles.Bo*sin(eta)/(g*m*v);
+
+% k = 2*q*sin(eta)/(g*m*v);
 l = lambda; 
 lc = 4*pi/(3*k*g^3);
 

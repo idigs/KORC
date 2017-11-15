@@ -94,10 +94,12 @@
 	Zeff = 4.0 ! Effective atomic number
 	max_pitch_angle = 60.0 ! In degrees
 	min_pitch_angle = 0.0 ! In degrees
-	min_energy = 1.0E6 ! In eV
-	max_energy = 30.0E6 ! In eV
+	min_energy = 5.5E6 ! In eV
+	max_energy = 15.5E6 ! In eV
 	k = 11.89 ! Shape factor of Gamma distribution for energy
 	t = 0.65 ! Scale factor of Gamma distribution for energy
+!	Bo = 2.0 ! Characteristic magnetic field
+!	lambda = 890.0E-9 ! Characteristic wavelength
 /
 
 &EnergyGammaPDF

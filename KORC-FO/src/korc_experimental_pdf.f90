@@ -3,6 +3,8 @@ MODULE korc_experimental_pdf
 	USE korc_constants
 	USE korc_HDF5
 	USE korc_hpc
+    USE special_functions
+
 	IMPLICIT NONE
 
 	TYPE, PRIVATE :: PARAMS
@@ -17,13 +19,18 @@ MODULE korc_experimental_pdf
 		REAL(rp) :: max_p ! Maximum momentum of sampled PDF
 		REAL(rp) :: k ! Shape factor of Gamma distribution
 		REAL(rp) :: t ! Scale factor of Gamma distribution
+
+		REAL(rp) :: Bo
+		REAL(rp) :: lambda
 	END TYPE PARAMS
 
 	TYPE(PARAMS), PRIVATE :: pdf_params
 	REAL(rp), PRIVATE, PARAMETER :: xo = (C_ME*C_C**2/C_E)/1.0E6
+	REAL(rp), PRIVATE, PARAMETER :: Tol = 1.0E-5_rp
 
 	PUBLIC :: get_experimental_distribution
-	PRIVATE :: initialize_params,save_params,sample_distribution,deg2rad,fRE,random_norm,fGamma
+	PRIVATE :: initialize_params,save_params,sample_distribution,deg2rad,fRE,random_norm,fGamma,PR,P_integral,IntK,&
+				nintegral_besselk
 
 	CONTAINS
 
@@ -53,7 +60,9 @@ SUBROUTINE initialize_params(params)
 	REAL(rp) :: E
 	REAL(rp) :: k
 	REAL(rp) :: t
-	NAMELIST /ExperimentalPDF/ max_pitch_angle,min_pitch_angle,max_energy,min_energy,Zeff,E,k,t
+	REAL(rp) :: Bo
+	REAL(rp) :: lambda
+	NAMELIST /ExperimentalPDF/ max_pitch_angle,min_pitch_angle,max_energy,min_energy,Zeff,E,k,t,Bo,lambda
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=ExperimentalPDF)
@@ -67,6 +76,8 @@ SUBROUTINE initialize_params(params)
 	pdf_params%E = E
 	pdf_params%k = k
 	pdf_params%t = t
+	pdf_params%Bo = Bo
+	pdf_params%lambda = lambda
 
 	pdf_params%max_p = SQRT((pdf_params%max_energy/(C_ME*C_C**2))**2 - 1.0_rp) ! In units of mc
 	pdf_params%min_p = SQRT((pdf_params%min_energy/(C_ME*C_C**2))**2 - 1.0_rp) ! In units of mc
@@ -102,6 +113,7 @@ FUNCTION fRE(eta,p)
 
 	A = (2.0_rp*pdf_params%E/(pdf_params%Zeff + 1.0_rp))*(p**2/SQRT(p**2.0_rp + 1.0_rp))
 	fRE = 0.5_rp*A*EXP(A*COS(deg2rad(eta)))*fGamma(Eo,pdf_params%k,pdf_params%t/xo)/SINH(A)
+	fRE = fRE*PR(eta,p)
 END FUNCTION fRE
 
 
@@ -116,6 +128,111 @@ FUNCTION random_norm(mean,sigma)
 
 	random_norm = SQRT(-2.0_rp*LOG(1.0_rp-rand1))*COS(2.0_rp*C_PI*rand2);
 END FUNCTION random_norm
+
+
+FUNCTION IntK(v,x)
+	IMPLICIT NONE
+	REAL(rp) :: IntK
+	REAL(rp), INTENT(IN) :: v
+	REAL(rp), INTENT(IN) :: x
+
+	IntK = (C_PI/SQRT(2.0_rp))*(1.0_rp - 0.25_rp*(4.0_rp*v**2 - 1.0_rp))*ERFC(SQRT(x))&
+			 + 0.25_rp*(4.0_rp*v**2 - 1.0_rp)*SQRT(0.5_rp*C_PI/x)*EXP(-x)
+END FUNCTION IntK
+
+FUNCTION besselk(v,x)
+	IMPLICIT NONE
+	REAL(rp) :: besselk
+	REAL(rp), INTENT(IN) :: x
+	REAL(rp), INTENT(IN) :: v
+	REAL(4) :: ri,rk,rip,rkp
+
+	call bessik(REAL(x,4),REAL(v,4),ri,rk,rip,rkp)
+	besselk = REAL(rk,rp)
+END FUNCTION besselk
+
+FUNCTION nintegral_besselk(a,b)
+	IMPLICIT NONE
+	REAL(rp), INTENT(IN) :: a
+	REAL(rp), INTENT(IN) :: b
+	REAL(rp) :: nintegral_besselk
+	REAL(rp) :: Iold, Inew, rerr
+	REAL(rp) :: v,h,z
+	INTEGER :: ii,jj,npoints
+	LOGICAL :: flag
+	
+	v = 5.0_rp/3.0_rp
+
+	h = b - a
+	nintegral_besselk = 0.5*(besselk(v,a) + besselk(v,b))
+	
+	ii = 1_idef
+	flag = .TRUE.
+	do while (flag)
+		Iold = nintegral_besselk*h
+
+		ii = ii + 1_idef
+		npoints = 2_idef**(ii-2_idef)
+		h = 0.5_rp*(b-a)/REAL(npoints,rp)
+
+		do jj=1_idef,npoints
+			z = a + h + 2.0_rp*(REAL(jj,rp) - 1.0_rp)*h
+			nintegral_besselk = nintegral_besselk + besselk(v,z)
+		end do
+
+		Inew = nintegral_besselk*h
+
+		rerr = ABS((Inew - Iold)/Iold)
+
+		flag = .NOT.(rerr.LT.Tol)
+	end do
+	nintegral_besselk = Inew
+END FUNCTION nintegral_besselk
+
+SUBROUTINE P_integral(z,P)
+	REAL(rp), INTENT(OUT) :: P
+	REAL(rp), INTENT(IN) :: z
+	REAL(rp) :: a
+
+	P = 0.0_rp
+
+	IF (z .LT. 0.5_rp) THEN
+		a = (2.16_rp/2.0_rp**(2.0_rp/3.0_rp))*z**(1.0_rp/3.0_rp)
+		P = nintegral_besselk(z,a) + IntK(5.0_rp/3.0_rp,a)
+	ELSE IF ((z .GE. 0.5_rp).AND.(z .LT. 2.5_rp)) THEN
+		a = 0.72_rp*(z + 1.0_rp)
+		P = nintegral_besselk(z,a) + IntK(5.0_rp/3.0_rp,a)
+	ELSE
+		P = IntK(5.0_rp/3.0_rp,z)
+	END IF
+END SUBROUTINE P_integral
+
+
+FUNCTION PR(eta,p)
+	REAL(rp), INTENT(IN) :: eta ! in radians
+	REAL(rp), INTENT(IN) :: p ! dimensionless (in units of mc)
+	REAL(rp) :: PR
+	REAL(rp) :: g
+	REAL(rp) :: v
+	REAL(rp) :: k
+	REAL(rp) :: l,lc
+	REAL(rp) :: z
+	REAL(rp) :: Pi
+
+	g = SQRT(p**2 + 1.0_rp)
+	v = C_C*SQRT(1.0_rp - 1.0_rp/g**2)
+
+	k = C_E*pdf_params%Bo*SIN(deg2rad(eta))/(g*C_ME*v)
+
+	l = pdf_params%lambda
+	lc = (4.0_rp*C_PI/3.0_rp)/(k*g**3) ! Critical wavelength
+
+	z = lc/l
+
+	call P_integral(z,Pi)
+
+	PR = (C_C*C_E**2)*Pi/(SQRT(3.0_rp)*C_E0*g**2*l**3)
+END FUNCTION PR
 
 
 SUBROUTINE sample_distribution(params,g,eta,go,etao)
