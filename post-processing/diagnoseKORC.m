@@ -1,6 +1,6 @@
 function ST = diagnoseKORC(path,visible,range)
 % ST = diagnoseKORC('../KORC-FO/outputFiles/','on',[0,100])
-% close all
+close all
 
 ST = struct;
 ST.path = path;
@@ -16,7 +16,7 @@ ST.time = ...
     double(ST.range(1):1:ST.range(2));
 
 ST.data = loadData(ST);
-% 
+
 % energyConservation(ST);
 
 % angularMomentum(ST);
@@ -49,14 +49,14 @@ ST.data = loadData(ST);
 
 % calculateTemperatureComponents(ST);
 
-SE_phaseSpaceAnalisys(ST);
+% SE_phaseSpaceAnalisys(ST);
 
 
 % plotEnergyPitchanglePDF(ST);
 
 
-% figuresAPS2017(ST);
-% 
+figuresAPS2017(ST);
+
 % NIMROD_figure(ST);
 
 % save('energy_limit','ST')
@@ -133,6 +133,7 @@ for ii=1:size(H.Groups,1)
     it(ii) = str2num(tmpstr);
 end
 it = sort(it,'ascend');
+it(1:ST.range(1)) = [];
 
 
 for ll=1:length(list)
@@ -3397,52 +3398,71 @@ for ss=1:ST.params.simulation.num_species
     E_edges = linspace(0,50,N);
     pa_edges = linspace(0,25,M);
     
-%     figure;
+    figure;
+    subplot(3,1,1)
+    ho = histogram2(pao(pin),Eo(pin),'FaceColor','flat',...
+        'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
+    colormap(jet(1024)); caxis([min(min(ho.Values)) max(max(ho.Values))])
+    colorbar
+    box on; grid minor
+    xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
+    ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
+    
+    subplot(3,1,2)
+    hf = histogram2(paf,Ef,'FaceColor','flat',...
+        'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
+    colormap(jet(1024)); caxis([min(min(ho.Values)) max(max(ho.Values))])
+    colorbar
+    box on; grid minor
+    xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
+    ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
+    
+    ho.NumBins = hf.NumBins;
+    ho.XBinEdges = hf.XBinEdges;
+    ho.YBinEdges = hf.YBinEdges;
+    
+    xAxis = 0.5*(hf.XBinEdges(2:end) + hf.XBinEdges(1:end-1));
+    yAxis = 0.5*(hf.YBinEdges(2:end) + hf.YBinEdges(1:end-1));
+    
+    A = ho.Values - hf.Values;
+    
+    subplot(3,1,3,'ClippingStyle','rectangle')
+    surf(xAxis,yAxis,A','LineStyle','none')
+    colormap(jet(1024)); colorbar;view([0 90]);box on;grid minor
+    xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
+    ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
+    
+    subplot(3,1,1)
+    axis([hf.XBinEdges(1) hf.XBinEdges(end) hf.YBinEdges(1) hf.YBinEdges(end)])
+    subplot(3,1,2)
+    axis([hf.XBinEdges(1) hf.XBinEdges(end) hf.YBinEdges(1) hf.YBinEdges(end)])
+    subplot(3,1,3)
+    axis([hf.XBinEdges(1) hf.XBinEdges(end) hf.YBinEdges(1) hf.YBinEdges(end)])
+    
+%     g = figure;
 %     subplot(2,1,1)
-%     h = histogram2(pao(pin),Eo(pin),pa_edges,E_edges,'FaceColor','flat',...
-%         'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
-%     colormap(jet(1024)); caxis([min(min(h.Values)) max(max(h.Values))])
-%     colorbar
+%     hold on
+%     %     plot(pa,E,'b')
+%     plot(pao,Eo,'k.',paf,Ef,'r.','MarkerSize',8)
+%     hold off
 %     box on
 %     grid on
 %     xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
 %     ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
+%     % legend({['$t=$' num2str(ST.time(1)) ' s'],...
+%     %     ['$t=$' num2str(ST.time(end)) ' s']},'Interpreter','latex')
+%     
+%     
+%     u = paf-pao;
+%     v = Ef-Eo;
 %     
 %     subplot(2,1,2)
-%     histogram2(paf,Ef,pa_edges,E_edges,'FaceColor','flat',...
-%         'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none')
-%     colormap(jet(1024)); caxis([min(min(h.Values)) max(max(h.Values))])
-%     colorbar
+%     quiver(pao,Eo,u,v,'MaxHeadSize',0.02,'AutoScale','off')
 %     box on
 %     grid on
 %     xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
 %     ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
-   
-    
-    g = figure;
-    subplot(2,1,1)
-    hold on
-    %     plot(pa,E,'b')
-    plot(pao,Eo,'k.',paf,Ef,'r.','MarkerSize',8)
-    hold off
-    box on
-    grid on
-    xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
-    ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
-    % legend({['$t=$' num2str(ST.time(1)) ' s'],...
-    %     ['$t=$' num2str(ST.time(end)) ' s']},'Interpreter','latex')
-    
-    
-    u = paf-pao;
-    v = Ef-Eo;
-    
-    subplot(2,1,2)
-    quiver(pao,Eo,u,v,'MaxHeadSize',0.02,'AutoScale','off')
-    box on
-    grid on
-    xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
-    ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
-    saveas(g,[ST.path 'EnergyvsPitch' num2str(ss)],'fig')
+%     saveas(g,[ST.path 'EnergyvsPitch' num2str(ss)],'fig')
 end
 end
 
@@ -3456,15 +3476,24 @@ end
 
 legends = cell(1,ST.params.simulation.num_species);
 pitch_angle = zeros(1,ST.params.simulation.num_species);
-confined = zeros(1,ST.params.simulation.num_species);
+confined = zeros(3,ST.params.simulation.num_species);
 confinedParticles = zeros(numel(ST.time),ST.params.simulation.num_species);
 for ss=1:ST.params.simulation.num_species
     numConfPart = sum(ST.data.(['sp' num2str(ss)]).flag(:,1),1);
     confinedParticles(:,ss) = 100*sum(ST.data.(['sp' num2str(ss)]).flag,1)/numConfPart;
-        
+    
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
+    trapped = logical( any(ST.data.(['sp' num2str(ss)]).eta > 90,2) );
+    pp = pin & passing;
+    pt = pin & trapped;
+    
     legends{ss} = ['$\eta_0 =$' num2str(ST.params.species.etao(ss)) '$^\circ$'];
     
-    confined(ss) = confinedParticles(end,ss);
+    confined(1,ss) = 100*sum(pp)/numConfPart;
+    confined(2,ss) = 100*sum(pt)/numConfPart;
+    confined(3,ss) = confinedParticles(end,ss);
+    
     pitch_angle(ss) = ST.params.species.etao(ss);
 end
 
@@ -3550,10 +3579,16 @@ xlabel('$R$ (m)','Interpreter','latex','FontSize',16)
 ylabel('$Z$ (m)','Interpreter','latex','FontSize',16)
 
 
-PR = zeros(1,ST.params.simulation.num_species);
-for ss=1:ST.params.simulation.num_species   
+PR = zeros(3,ST.params.simulation.num_species);
+for ss=1:ST.params.simulation.num_species     
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
-    PR(ss) = sum(abs(ST.data.(['sp' num2str(ss)]).Prad(pin,end)),1);
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
+    trapped = logical( any(ST.data.(['sp' num2str(ss)]).eta > 90,2) );
+    pp = pin & passing;
+    pt = pin & trapped;
+    PR(1,ss) = sum(abs(ST.data.(['sp' num2str(ss)]).Prad(pp,end)),1);
+    PR(2,ss) = sum(abs(ST.data.(['sp' num2str(ss)]).Prad(pt,end)),1);
+    PR(3,ss) = PR(1,ss) + PR(2,ss);
 end
 
 figure(h1)
@@ -3573,18 +3608,24 @@ Bo = ST.params.fields_and_profiles.Bo;
 hh = figure;
 hs1 = figure;
 
-PR_ratio = zeros(1,ST.params.simulation.num_species);
+PR_ratio = zeros(3,ST.params.simulation.num_species);
 etao = zeros(1,ST.params.simulation.num_species);
 Po = zeros(1,ST.params.simulation.num_species);
 for ss=1:ST.params.simulation.num_species
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
+    trapped = logical( any(ST.data.(['sp' num2str(ss)]).eta > 90,2) );
+    pp = pin & passing;
+    pt = pin & trapped;
     
-    B = sqrt(sum(ST.data.(['sp' num2str(ss)]).B(:,pin,end).^2,1))';
+%     B = sqrt(sum(ST.data.(['sp' num2str(ss)]).B(:,pin,end).^2,1))';
     etao(ss) = ST.params.species.etao(ss);
     go = ST.params.species.go(ss);
     vo = c*sqrt(1-1/go^2);
     g = ST.data.(['sp' num2str(ss)]).g(pin,end);
     v = c*sqrt(1-1./g.^2);
+    eta_pp = ST.data.(['sp' num2str(ss)]).eta(pp,end);
+    eta_pt = ST.data.(['sp' num2str(ss)]).eta(pt,end);
     eta = ST.data.(['sp' num2str(ss)]).eta(pin,end);
     
     ko = qe*Bo*sin(deg2rad(etao(ss)))/(go*vo*me);
@@ -3592,13 +3633,15 @@ for ss=1:ST.params.simulation.num_species
     
     Po(ss) = qe^2*(go*vo)^4*ko^2/(6*pi*ep0*c^3);
     Papp = qe^2*(g.*v).^4.*kapp.^2./(6*pi*ep0*c^3);
+    Prad_pp = abs(ST.data.(['sp' num2str(ss)]).Prad(pp,end));
+    Prad_pt = abs(ST.data.(['sp' num2str(ss)]).Prad(pt,end));
     Prad = abs(ST.data.(['sp' num2str(ss)]).Prad(pin,end));
     
     
     hs = figure;
     subplot(4,5,[2 3 4 5 7 8 9 10 12 13 14 15])
-    plot(eta,Prad,'k.',eta,Papp,'g.','MarkerSize',2)
-    hold on;plot(etao(ss),Po(ss),'ro','MarkerSize',6,'MarkerFaceColor',[1,0,0],'MarkerEdgeColor',[0,0,0]);hold off
+    plot(eta_pp,Prad_pp,'k.',eta_pt,Prad_pt,'r.',eta,Papp,'g.','MarkerSize',2)
+    hold on;plot(etao(ss),Po(ss),'mo','MarkerSize',6,'MarkerFaceColor',[1,0,1],'MarkerEdgeColor',[0,0,0]);hold off
     box on;grid on;grid minor;
     ax = gca;
     ax.XTickLabel = {};
@@ -3607,14 +3650,22 @@ for ss=1:ST.params.simulation.num_species
     ylim_main = ax.YLim;
     
     subplot(4,5,[1 6 11])
-    histogram(Prad,'normalization','pdf','LineStyle','none')
+    hold on;
+    histogram(Prad,'normalization','count','LineStyle','none')
+    histogram(Prad_pp,'normalization','count','LineStyle','none')
+    histogram(Prad_pt,'normalization','count','LineStyle','none')
+    hold off
     view([-90 90]);box on;grid on;grid minor;
     ax = gca;ax.YTickLabel = {};xlim(ylim_main)
     hold on;plot(Po(ss)*ones(1,10),linspace(0,ax.YLim(2),10),'r','LineWidth',2);hold off
     xlabel('$\mathcal{P}_R$ (Watts)','Interpreter','latex','FontSize',16)
     
     subplot(4,5,[17 18 19 20])
-    histogram(eta,'normalization','pdf','LineStyle','none')
+    hold on
+    histogram(eta,'normalization','count','LineStyle','none')
+    histogram(eta_pp,'normalization','count','LineStyle','none')
+    histogram(eta_pt,'normalization','count','LineStyle','none')
+    hold off
     view([0 -90]);box on;grid on;grid minor;
     ax = gca;ax.YTickLabel = {};xlim(xlim_main)
     hold on;plot(etao(ss)*ones(1,10),linspace(0,ax.YLim(2),10),'r','LineWidth',2);hold off
@@ -3622,7 +3673,7 @@ for ss=1:ST.params.simulation.num_species
     saveas(hs,[ST.path 'Scattered_spp_' num2str(ss)],'fig')
      
     figure(hh)
-    hold on;histogram(eta,'normalization','pdf','LineStyle','none');hold off
+    hold on;histogram(eta_pp,'normalization','pdf','LineStyle','none');hold off
     box on;grid on;grid minor;
     xlabel('$\theta$ ($^\circ$)','Interpreter','latex','FontSize',16)
     ylabel('$f_{RE}(\theta)$','Interpreter','latex','FontSize',16)
@@ -3638,7 +3689,13 @@ for ss=1:ST.params.simulation.num_species
     subplot(4,5,[17 18 19 20])
     hold on;histogram(eta,'normalization','pdf','LineStyle','none');hold off
     
-    PR_ratio(ss) = mean(Prad)/Po(ss);
+    PR_ratio(1,ss) = mean(Prad_pp)/Po(ss);
+    if ~isempty(Prad_pt)
+    	PR_ratio(2,ss) = mean(Prad_pt)/Po(ss);
+    else
+        PR_ratio(2,ss) = 0;
+    end
+    PR_ratio(3,ss) = mean(Prad)/Po(ss);
 end
 
 figure(hs1)
@@ -3668,21 +3725,21 @@ for ss=1:ST.params.simulation.num_species
 end
 xlabel('$\theta$ ($^\circ$)','Interpreter','latex','FontSize',16)
 
-% saveas(hs1,[ST.path 'Scattered_all_spp_' num2str(ss)],'fig')
+saveas(hs1,[ST.path 'Scattered_all_spp_' num2str(ss)],'fig')
 
-% saveas(hs,[ST.path 'Scattered_spp_' num2str(ss)],'fig')
+saveas(hs,[ST.path 'Scattered_spp_' num2str(ss)],'fig')
 
-% saveas(hh,[ST.path 'histograms'],'fig')
+saveas(hh,[ST.path 'histograms'],'fig')
 
 figure(h1)
 subplot(2,3,6)
-plot(pitch_angle,PR_ratio,'o-')
+plot(pitch_angle,PR_ratio(3,:),'o-')
 box on;axis on;grid on;grid minor;
 xlim([0 70])
 xlabel('$\theta_0$ ($^\circ$)','Interpreter','latex','FontSize',16)
 ylabel('$\langle \mathcal{P}_R \rangle/P_{app}$','Interpreter','latex','FontSize',16)
 
-%  saveas(h1,[ST.path 'FigAPS'],'fig')
+ saveas(h1,[ST.path 'FigAPS'],'fig')
 end
 
 function NIMROD_figure(ST)
