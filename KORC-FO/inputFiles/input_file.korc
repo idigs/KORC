@@ -124,6 +124,6 @@
  	Nlambda = 100 ! Number of discrete wavelengths
 	photon_count = .FALSE.
 	integrated_opt = .TRUE. ! .TRUE. or .FALSE.
-	toroidal_sections = .TRUE. ! 
+	toroidal_sections = .FALSE. ! 
 	ntor_sections = 12 !
 /
