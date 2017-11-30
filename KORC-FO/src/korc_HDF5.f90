@@ -903,9 +903,13 @@ subroutine save_simulation_parameters(params,spp,F,P)
 		attr_array(1) = "Initial Z position of population"
 		call save_1d_array_to_hdf5(h5file_id,dset,spp%Zo*params%cpp%length,attr_array)
 
-		dset = TRIM(gname) // "/r"
-		attr_array(1) = "Radius of initial spatial distribution"
-		call save_1d_array_to_hdf5(h5file_id,dset,spp%r*params%cpp%length,attr_array)
+		dset = TRIM(gname) // "/ri"
+		attr_array(1) = "Inner radius of initial spatial distribution"
+		call save_1d_array_to_hdf5(h5file_id,dset,spp%r_inner*params%cpp%length,attr_array)
+
+		dset = TRIM(gname) // "/ro"
+		attr_array(1) = "Outter radius of initial spatial distribution"
+		call save_1d_array_to_hdf5(h5file_id,dset,spp%r_outter*params%cpp%length,attr_array)
 
 		dset = TRIM(gname) // "/sigma_r"
 		attr_array(1) = "Standard deviation of Gaussian radial distribution in m (only used for Gaussian PDF)"

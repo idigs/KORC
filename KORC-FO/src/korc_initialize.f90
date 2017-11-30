@@ -209,12 +209,13 @@ subroutine initialize_particles(params,F,spp)
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Ro
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: PHIo
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zo
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: r
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: r_inner
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: r_outter
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: sigma_r
 	INTEGER :: ii,jj, mpierr ! Iterator
 
 	NAMELIST /plasma_species/ ppp,q,m,Eo,etao,Eo_lims,etao_lims,runaway,spatial_distribution,&
-								energy_distribution,pitch_distribution,Ro,PHIo,Zo,r,sigma_r
+								energy_distribution,pitch_distribution,Ro,PHIo,Zo,r_inner,r_outter,sigma_r
 
 	! Allocate array containing variables of particles for each species
 	ALLOCATE(spp(params%num_species))
@@ -233,7 +234,8 @@ subroutine initialize_particles(params,F,spp)
 	ALLOCATE(Ro(params%num_species))
 	ALLOCATE(PHIo(params%num_species))
 	ALLOCATE(Zo(params%num_species))
-	ALLOCATE(r(params%num_species))
+	ALLOCATE(r_inner(params%num_species))
+	ALLOCATE(r_outter(params%num_species))
 	ALLOCATE(sigma_r(params%num_species))
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
@@ -252,7 +254,8 @@ subroutine initialize_particles(params,F,spp)
 		spp(ii)%Ro = Ro(ii)
 		spp(ii)%PHIo = C_PI*PHIo(ii)/180.0_rp
 		spp(ii)%Zo = Zo(ii)
-		spp(ii)%r = r(ii)
+		spp(ii)%r_inner = r_inner(ii)
+		spp(ii)%r_outter = r_outter(ii)
 		spp(ii)%sigma_r = sigma_r(ii)
 		
 
@@ -368,7 +371,8 @@ subroutine initialize_particles(params,F,spp)
 	DEALLOCATE(Ro)
 	DEALLOCATE(PHIo)
 	DEALLOCATE(Zo)
-	DEALLOCATE(r)
+	DEALLOCATE(r_inner)
+	DEALLOCATE(r_outter)
 	DEALLOCATE(sigma_r)
 end subroutine initialize_particles
 
@@ -543,22 +547,25 @@ subroutine set_up_particles_ic(params,F,spp)
 
 			SELECT CASE (TRIM(spp(ii)%spatial_distribution))
 				CASE ('DISK')
-					r = spp(ii)%r*SQRT(r)
+					r = SQRT((spp(ii)%r_outter**2 - spp(ii)%r_inner**2)*r + spp(ii)%r_inner**2)
+!					r = spp(ii)%r*SQRT(r)
 					Xo(1,:) = ( spp(ii)%Ro + r*COS(theta) )*COS(spp(ii)%PHIo)
 					Xo(2,:) = ( spp(ii)%Ro + r*COS(theta) )*SIN(spp(ii)%PHIo)
 					Xo(3,:) = spp(ii)%Zo + r*SIN(theta)
 				CASE ('TORUS')
-					r = spp(ii)%r*SQRT(r)
+					r = SQRT((spp(ii)%r_outter**2 - spp(ii)%r_inner**2)*r + spp(ii)%r_inner**2)
+!					r = spp(ii)%r*SQRT(r)
 					Xo(1,:) = ( spp(ii)%Ro + r*COS(theta) )*SIN(zeta)
 					Xo(2,:) = ( spp(ii)%Ro + r*COS(theta) )*COS(zeta)
 					Xo(3,:) = spp(ii)%Zo + r*SIN(theta)
 				CASE ('GAUSSIAN')
-					r = spp(ii)%sigma_r*SQRT( -2.0_rp*LOG( 1.0_rp - (1.0_rp - EXP(-0.5_rp*spp(ii)%r**2/spp(ii)%sigma_r**2))*r ) )
+					r = &
+					spp(ii)%sigma_r*SQRT( -2.0_rp*LOG( 1.0_rp - (1.0_rp - EXP(-0.5_rp*spp(ii)%r_outter**2/spp(ii)%sigma_r**2))*r ) )
 					Xo(1,:) = ( spp(ii)%Ro + r*COS(theta) )*SIN(zeta)
 					Xo(2,:) = ( spp(ii)%Ro + r*COS(theta) )*COS(zeta)
 					Xo(3,:) = spp(ii)%Zo + r*SIN(theta)
 				CASE DEFAULT
-					r = spp(ii)%r*SQRT(r)
+					r = SQRT((spp(ii)%r_outter**2 - spp(ii)%r_inner**2)*r + spp(ii)%r_inner**2)
 					Xo(1,:) = ( spp(ii)%Ro + r*COS(theta) )*SIN(zeta)
 					Xo(2,:) = ( spp(ii)%Ro + r*COS(theta) )*COS(zeta)
 					Xo(3,:) = spp(ii)%Zo + r*SIN(theta)

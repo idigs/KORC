@@ -141,7 +141,8 @@ TYPE, PUBLIC :: SPECIES
 	REAL(rp) :: Ro
 	REAL(rp) :: PHIo
 	REAL(rp) :: Zo
-	REAL(rp) :: r
+	REAL(rp) :: r_inner
+	REAL(rp) :: r_outter
 	REAL(rp) :: sigma_r
 END TYPE SPECIES
 

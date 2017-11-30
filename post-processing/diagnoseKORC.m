@@ -55,7 +55,7 @@ ST.data = loadData(ST);
 % plotEnergyPitchanglePDF(ST);
 
 
-figuresAPS2017(ST);
+% figuresAPS2017(ST);
 
 % NIMROD_figure(ST);
 

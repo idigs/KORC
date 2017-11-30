@@ -696,10 +696,10 @@ for ss=1:ST.params.simulation.num_species
         xlim([min(axis_lambda) max(axis_lambda)]);box on;grid on;
         xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
         
-        %saveas(fig,[ST.path 'Spectra_ss_' num2str(ss)],'fig')
-        %saveas(fig1,[ST.path 'Ptot_toroidal_sections'],'fig')
-        %saveas(fig2,[ST.path 'density_toroidal_sections'],'fig')
-        %saveas(fig3,[ST.path 'ratio_toroidal_sections'],'fig')
+        saveas(fig,[ST.path 'Spectra_ss_' num2str(ss)],'fig')
+        saveas(fig1,[ST.path 'Ptot_toroidal_sections'],'fig')
+        saveas(fig2,[ST.path 'density_toroidal_sections'],'fig')
+        saveas(fig3,[ST.path 'ratio_toroidal_sections'],'fig')
         
         if plotToroidalSections
             for tt=1:NT
@@ -735,8 +735,8 @@ for ss=1:ST.params.simulation.num_species
                     ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
                     axis([xmin, xmax, ymin, ymax]);
                     box on; axis equal
-                    ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-                    xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+                    ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+                    xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
                     
                     cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([minval,maxval]);
                     ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
@@ -761,8 +761,8 @@ for ss=1:ST.params.simulation.num_species
                     ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
                     axis([xmin, xmax, ymin, ymax]);
                     box on; axis equal;
-                    ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-                    xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+                    ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+                    xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
                     
                     cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([minval,maxval]);
                     ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
@@ -779,8 +779,8 @@ for ss=1:ST.params.simulation.num_species
                     ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
                     axis([xmin, xmax, ymin, ymax]);
                     box on; axis equal;
-                    ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-                    xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+                    ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+                    xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
                     
                     cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([minval,maxval]);
                     ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
@@ -802,8 +802,8 @@ for ss=1:ST.params.simulation.num_species
                     ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
                     axis([xmin, xmax, ymin, ymax]);
                     box on; axis equal;
-                    ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-                    xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+                    ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+                    xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
                     
                     cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([minval,maxval]);
                     ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
@@ -830,8 +830,8 @@ for ss=1:ST.params.simulation.num_species
                         axis([0.95 2.45 -0.5 1])
                     end
                     box on; axis equal;
-                    ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-                    xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+                    ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+                    xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
                     
                     cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([minval,maxval]);
                     ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
@@ -857,14 +857,14 @@ for ss=1:ST.params.simulation.num_species
                         axis([0.95 2.45 -0.5 1])
                     end
                     box on; axis equal;
-                    ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-                    xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+                    ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+                    xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
                     
                     cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([minval,maxval]);
                     ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
                     xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
                     
-                    %saveas(h,[ST.path 'toroidal_section_' num2str(tt)],'fig')
+                    saveas(h,[ST.path 'toroidal_section_' num2str(tt)],'fig')
                 else
                     close(h)
                 end
@@ -899,8 +899,8 @@ for ss=1:ST.params.simulation.num_species
                 axis([0.95 2.45 -0.5 1])
             end
             box on; axis equal;
-            ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-            xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+            ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+            xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
             
             cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','northoutside');caxis([minval,maxval]);
             ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
@@ -926,8 +926,8 @@ for ss=1:ST.params.simulation.num_species
                 axis([0.95 2.45 -0.5 1])
             end
             box on; axis equal;
-            ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-            xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+            ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+            xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
             
             cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','northoutside');caxis([minval,maxval]);
             ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
@@ -954,8 +954,8 @@ for ss=1:ST.params.simulation.num_species
                 axis([0.95 2.45 -0.5 1])
             end
             box on; axis equal;
-            ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-            xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+            ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+            xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
             
             cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','northoutside');caxis([minval,maxval]);
             ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
@@ -981,8 +981,8 @@ for ss=1:ST.params.simulation.num_species
                 axis([0.95 2.45 -0.5 1])
             end
             box on; axis equal;
-            ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-            xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+            ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+            xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
             
             cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','northoutside');caxis([minval,maxval]);
             ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
@@ -1013,8 +1013,8 @@ for ss=1:ST.params.simulation.num_species
         else
             axis([0.95 2.45 -0.5 1])
         end
-        ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-        xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+        ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+        xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
         
         cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','northoutside');caxis([minval,maxval]);
         ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
@@ -1071,8 +1071,8 @@ for ss=1:ST.params.simulation.num_species
         else
             axis([0.95 2.45 -0.5 1])
         end
-        ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-        xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+        ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+        xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
         
         cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','northoutside');caxis([minval,maxval]);
         ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
@@ -1093,7 +1093,7 @@ for ss=1:ST.params.simulation.num_species
         ylabel('Box count','FontSize',12,'Interpreter','latex')
         xlabel('Box number','FontSize',12,'Interpreter','latex')
         
-        %saveas(h,[ST.path 'Total_SE_ss_' num2str(ss)],'fig')
+        saveas(h,[ST.path 'Total_SE_ss_' num2str(ss)],'fig')
         
     else
         h = figure;
@@ -1206,7 +1206,7 @@ for ss=1:ST.params.simulation.num_species
             B(B<1) = [];
         end
         minval = min(B);
-        maxval = 3*std(B);
+        maxval = 5*std(B);
         v = linspace(minval,maxval,50);
         
         figure(h);
@@ -1215,8 +1215,8 @@ for ss=1:ST.params.simulation.num_species
         ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
         axis([xmin, xmax, ymin, ymax]);
         box on; axis equal
-        ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-        xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+        ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+        xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
         
         cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
         ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
@@ -1239,12 +1239,19 @@ for ss=1:ST.params.simulation.num_species
         ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
         axis([xmin, xmax, ymin, ymax]);
         box on; axis equal;
-        ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-        xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+        ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+        xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
         
         cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
         ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
+        
+        
+        I0 = find(yAxis_rescaled>0,1);z0 = yAxis_rescaled(I0);
+        I1 = find(yAxis_rescaled>0.25,1)-1;z1 = yAxis_rescaled(I1);
+        I2 = find(yAxis_rescaled>-0.25,1);z2 = yAxis_rescaled(I2);
+        I3 = find(yAxis_rescaled>0.4,1);z3 = yAxis_rescaled(I3);
+        I4 = find(yAxis_rescaled>-0.4,1);z4 = yAxis_rescaled(I4);
         
         A = Psyn_L4';
         B = reshape(A,[numel(A),1]);
@@ -1253,17 +1260,22 @@ for ss=1:ST.params.simulation.num_species
             B(B<1) = [];
         end
         minval = min(B);
-        maxval = 3*std(B);
+        maxval = 5*std(B);
         v = linspace(minval,maxval,50);
         
         figure(h);
         subplot(4,2,7)
         contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
+        hold on;plot(xAxis_rescaled,z0*ones(size(xAxis_rescaled)),'m',...
+            xAxis_rescaled,z1*ones(size(xAxis_rescaled)),'m',...,
+            xAxis_rescaled,z2*ones(size(xAxis_rescaled)),'m',...,
+            xAxis_rescaled,z3*ones(size(xAxis_rescaled)),'m',...
+            xAxis_rescaled,z4*ones(size(xAxis_rescaled)),'m','LineWidth',1);hold off
         ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
         axis([xmin, xmax, ymin, ymax]);
         box on; axis equal;
-        ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-        xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+        ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+        xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
         
         cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
         ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
@@ -1273,6 +1285,15 @@ for ss=1:ST.params.simulation.num_species
             xlabel(hc,'$\int P_R(\lambda) d\lambda$ (Watts)','Interpreter','latex','FontSize',12)
         end
         
+        C = max(A(I0,:));
+        A0 = A(I0,:)/C;A1 = A(I1,:)/C;A2 = A(I2,:)/C;A3 = A(I3,:)/C;A4 = A(I4,:)/C;        
+        
+        hs=figure;
+        plot(xAxis_rescaled,A0,'r',xAxis_rescaled,A1,'g',xAxis_rescaled,A2,'b',...
+            xAxis_rescaled,A3,'k',xAxis_rescaled,A4,'m')
+        axis([1 2.5 0 1])
+        xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
+        saveas(hs,[ST.path 'camera_slices_ss_' num2str(ss)],'fig')
         
         A = np_L4';
         B = reshape(A,[numel(A),1]);
@@ -1287,14 +1308,14 @@ for ss=1:ST.params.simulation.num_species
         ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
         axis([xmin, xmax, ymin, ymax]);
         box on; axis equal;
-        ylabel('$y$-axis','FontSize',12,'Interpreter','latex')
-        xlabel('$x$-axis','FontSize',12,'Interpreter','latex')
+        ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+        xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
         
         cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
         ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
         
-        %saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
+        saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
     end
     
 end
