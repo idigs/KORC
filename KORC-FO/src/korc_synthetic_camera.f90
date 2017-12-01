@@ -2225,7 +2225,7 @@ SUBROUTINE integrated_spectral_density(params,spp)
 
 				P = (C_C*C_E**2)*P/(SQRT(3.0_rp)*C_E0*g**2*cam%lambda**3)
 
-				if (spp(ss)%vars%eta(pp) .LT. 0.5_rp*C_PI) then
+				if (spp(ss)%vars%eta(pp) .LT. 90.0_rp) then
 					P_lambda_p(:,kk,ss) = P_lambda_p(:,kk,ss) + P
 					np_lambda_p(kk,ss) = np_lambda_p(kk,ss) + 1.0_rp
 

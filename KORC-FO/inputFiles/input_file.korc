@@ -17,7 +17,7 @@
 										! cylindrical components of the magnetic field
 	axisymmetric = .FALSE.			  ! Axisymmetric field?
 	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/D3D_Q.h5" ! DIII-D_sh165826.h5" !
-	outputs_list = '{X,flag}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
+	outputs_list = '{X,flag,eta}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
 /
 
 &plasma_species

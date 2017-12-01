@@ -424,28 +424,28 @@ for ss=1:ST.params.simulation.num_species
             end
         end
     else
-        if ndims(ST.data.(['sp' num2str(ss)]).PTot_p_pplane) == 3
-            Psyn_p_L1 = sum(abs(ST.data.(['sp' num2str(ss)]).PTot_p_pplane),3);
-            Psyn_t_L1 = sum(abs(ST.data.(['sp' num2str(ss)]).PTot_t_pplane),3);
-        else
+        if ndims(ST.data.(['sp' num2str(ss)]).PTot_p_pplane) == 4
             Psyn_p_L1 = sum(abs(ST.data.(['sp' num2str(ss)]).PTot_p_pplane),4);
             Psyn_t_L1 = sum(abs(ST.data.(['sp' num2str(ss)]).PTot_t_pplane),4);
+        else
+            Psyn_p_L1 = abs(ST.data.(['sp' num2str(ss)]).PTot_p_pplane);
+            Psyn_t_L1 = abs(ST.data.(['sp' num2str(ss)]).PTot_t_pplane);
         end
         
-        if ndims(ST.data.(['sp' num2str(ss)]).Psyn_p_pplane) == 3
-            Psyn_p_L2 = sum(ST.data.(['sp' num2str(ss)]).Psyn_p_pplane,3);
-            Psyn_t_L2 = sum(ST.data.(['sp' num2str(ss)]).Psyn_t_pplane,3);
-        else
+        if ndims(ST.data.(['sp' num2str(ss)]).Psyn_p_pplane) == 4
             Psyn_p_L2 = sum(ST.data.(['sp' num2str(ss)]).Psyn_p_pplane,4);
-            Psyn_t_L2 = sum(ST.data.(['sp' num2str(ss)]).Psyn_t_pplane,4);
+            Psyn_t_L2 = sum(ST.data.(['sp' num2str(ss)]).Psyn_t_pplane,4);           
+        else
+            Psyn_p_L2 = ST.data.(['sp' num2str(ss)]).Psyn_p_pplane;
+            Psyn_t_L2 = ST.data.(['sp' num2str(ss)]).Psyn_t_pplane;
         end        
 
-        if ndims(ST.data.(['sp' num2str(ss)]).np_p_pplane) == 3
-            np_p_L2 = sum(ST.data.(['sp' num2str(ss)]).np_p_pplane,3);
-            np_t_L2 = sum(ST.data.(['sp' num2str(ss)]).np_t_pplane,3);
-        else
+        if ndims(ST.data.(['sp' num2str(ss)]).np_p_pplane) == 4
             np_p_L2 = sum(ST.data.(['sp' num2str(ss)]).np_p_pplane,4);
             np_t_L2 = sum(ST.data.(['sp' num2str(ss)]).np_t_pplane,4);
+        else
+            np_p_L2 = ST.data.(['sp' num2str(ss)]).np_p_pplane;
+            np_t_L2 = ST.data.(['sp' num2str(ss)]).np_t_pplane;            
         end         
     end
 
@@ -477,8 +477,10 @@ for ss=1:ST.params.simulation.num_species
     else        
         if (NT ~= 0)
             if ndims(ST.data.(['sp' num2str(ss)]).P_p_lambda) == 2
-                P_p_L2 = sum(ST.data.(['sp' num2str(ss)]).P_p_lambda(i1:i2,:),2)/sum(sum(np_p_L2));
-                P_t_L2 = sum(ST.data.(['sp' num2str(ss)]).P_t_lambda(i1:i2,:),2)/sum(sum(np_t_L2));
+                for tt=1:NT
+                    P_p_L2 = sum(ST.data.(['sp' num2str(ss)]).P_p_lambda(i1:i2,tt),2)/sum(sum(np_p_L2(:,:,tt)));
+                    P_t_L2 = sum(ST.data.(['sp' num2str(ss)]).P_t_lambda(i1:i2,tt),2)/sum(sum(np_t_L2(:,:,tt)));
+                end
             else
                 P_p_L2 = sum(ST.data.(['sp' num2str(ss)]).P_p_lambda(i1:i2,:,:),3);
                 tmp = squeeze(sum(sum(np_p_L2,1),2));
@@ -521,7 +523,7 @@ for ss=1:ST.params.simulation.num_species
             
         else
             P_p_L2 = sum(ST.data.(['sp' num2str(ss)]).P_p_lambda(i1:i2,:),2)/sum(sum(np_p_L2));
-            P_t_L2 = sum(ST.data.(['sp' num2str(ss)]).P_p_lambda(i1:i2,:),2)/sum(sum(np_t_L2));
+            P_t_L2 = sum(ST.data.(['sp' num2str(ss)]).P_t_lambda(i1:i2,:),2)/sum(sum(np_t_L2));
             
             P_L3 = squeeze(sum(ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,:),2));
 
@@ -553,6 +555,8 @@ for ss=1:ST.params.simulation.num_species
     if (ST.params.synthetic_camera_params.integrated_opt == 0)
         Psyn_L4_lambda = 1E-9*Psyn_L4_lambda;
     else
+        P_p_L2 = 1E-9*P_p_L2;
+        P_t_L2 = 1E-9*P_t_L2;
         P_L2 = 1E-9*P_L2;
         P_L3 = 1E-9*P_L3;
         P_L4 = 1E-9*P_L4;
@@ -691,6 +695,8 @@ for ss=1:ST.params.simulation.num_species
         end
         
         f_L2 = P_L2;
+        f_p_L2 = P_p_L2;
+        f_t_L2 = P_t_L2;
         f_L3 = P_L3;
         f_L4 = P_L4;
         if isfield(ST.params,'avalanche_pdf_params')
@@ -701,7 +707,7 @@ for ss=1:ST.params.simulation.num_species
         
         fig = figure;
         subplot(3,1,1)
-        plot(axis_lambda,f_L2,'k','LineWidth',2)
+        plot(axis_lambda,f_L2,'k',axis_lambda,sum(f_p_L2,2),'c',axis_lambda,sum(f_t_L2,2),'m','LineWidth',2)
         hold on;plot(axis_lambda,P_theory,'r');hold off
         ylabel('$P_R(\lambda)$ (Watts)','FontSize',12,'Interpreter','latex')
         xlim([min(axis_lambda) max(axis_lambda)]);box on;grid on;
@@ -719,10 +725,10 @@ for ss=1:ST.params.simulation.num_species
         xlim([min(axis_lambda) max(axis_lambda)]);box on;grid on;
         xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
         
-        saveas(fig,[ST.path 'Spectra_ss_' num2str(ss)],'fig')
-        saveas(fig1,[ST.path 'Ptot_toroidal_sections'],'fig')
-        saveas(fig2,[ST.path 'density_toroidal_sections'],'fig')
-        saveas(fig3,[ST.path 'ratio_toroidal_sections'],'fig')
+        %saveas(fig,[ST.path 'Spectra_ss_' num2str(ss)],'fig')
+        %saveas(fig1,[ST.path 'Ptot_toroidal_sections'],'fig')
+        %saveas(fig2,[ST.path 'density_toroidal_sections'],'fig')
+        %saveas(fig3,[ST.path 'ratio_toroidal_sections'],'fig')
         
         if plotToroidalSections
             for tt=1:NT
@@ -887,14 +893,14 @@ for ss=1:ST.params.simulation.num_species
                     ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
                     xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
                     
-                    saveas(h,[ST.path 'toroidal_section_' num2str(tt)],'fig')
+                    %saveas(h,[ST.path 'toroidal_section_' num2str(tt)],'fig')
                 else
                     close(h)
                 end
             end
         end
         
-        h = figure;
+        h = figure; % Total radiation
         h.Position(3:4) = [1350 815];
         annotation('textbox',[0.03 0.03 0.5 0.05],'String','Total','FitBoxToText','on','Interpreter','latex');
         
@@ -1116,7 +1122,7 @@ for ss=1:ST.params.simulation.num_species
         ylabel('Box count','FontSize',12,'Interpreter','latex')
         xlabel('Box number','FontSize',12,'Interpreter','latex')
         
-        saveas(h,[ST.path 'Total_SE_ss_' num2str(ss)],'fig')
+        %saveas(h,[ST.path 'Total_SE_ss_' num2str(ss)],'fig')
         
     else
         h = figure;
@@ -1316,7 +1322,7 @@ for ss=1:ST.params.simulation.num_species
             xAxis_rescaled,A3,'k',xAxis_rescaled,A4,'m')
         axis([1 2.5 0 1])
         xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
-        saveas(hs,[ST.path 'camera_slices_ss_' num2str(ss)],'fig')
+        %saveas(hs,[ST.path 'camera_slices_ss_' num2str(ss)],'fig')
         
         A = np_L4';
         B = reshape(A,[numel(A),1]);
@@ -1338,7 +1344,7 @@ for ss=1:ST.params.simulation.num_species
         ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
         
-        saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
+        %saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
     end
     
 end

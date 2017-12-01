@@ -696,10 +696,10 @@ for ss=1:ST.params.simulation.num_species
         xlim([min(axis_lambda) max(axis_lambda)]);box on;grid on;
         xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
         
-        saveas(fig,[ST.path 'Spectra_ss_' num2str(ss)],'fig')
-        saveas(fig1,[ST.path 'Ptot_toroidal_sections'],'fig')
-        saveas(fig2,[ST.path 'density_toroidal_sections'],'fig')
-        saveas(fig3,[ST.path 'ratio_toroidal_sections'],'fig')
+        %saveas(fig,[ST.path 'Spectra_ss_' num2str(ss)],'fig')
+        %saveas(fig1,[ST.path 'Ptot_toroidal_sections'],'fig')
+        %saveas(fig2,[ST.path 'density_toroidal_sections'],'fig')
+        %saveas(fig3,[ST.path 'ratio_toroidal_sections'],'fig')
         
         if plotToroidalSections
             for tt=1:NT
@@ -864,7 +864,7 @@ for ss=1:ST.params.simulation.num_species
                     ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
                     xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
                     
-                    saveas(h,[ST.path 'toroidal_section_' num2str(tt)],'fig')
+                    %saveas(h,[ST.path 'toroidal_section_' num2str(tt)],'fig')
                 else
                     close(h)
                 end
@@ -1093,7 +1093,7 @@ for ss=1:ST.params.simulation.num_species
         ylabel('Box count','FontSize',12,'Interpreter','latex')
         xlabel('Box number','FontSize',12,'Interpreter','latex')
         
-        saveas(h,[ST.path 'Total_SE_ss_' num2str(ss)],'fig')
+        %saveas(h,[ST.path 'Total_SE_ss_' num2str(ss)],'fig')
         
     else
         h = figure;
@@ -1293,7 +1293,7 @@ for ss=1:ST.params.simulation.num_species
             xAxis_rescaled,A3,'k',xAxis_rescaled,A4,'m')
         axis([1 2.5 0 1])
         xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
-        saveas(hs,[ST.path 'camera_slices_ss_' num2str(ss)],'fig')
+        %saveas(hs,[ST.path 'camera_slices_ss_' num2str(ss)],'fig')
         
         A = np_L4';
         B = reshape(A,[numel(A),1]);
@@ -1315,7 +1315,7 @@ for ss=1:ST.params.simulation.num_species
         ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
         
-        saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
+        %saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
     end
     
 end
