@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -N 64
+#SBATCH -N 32
 #SBATCH -C haswell
 #SBATCH -p debug
 #SBATCH -J KORC_HASWELL
@@ -14,12 +14,14 @@
 cd $SLURM_SUBMIT_DIR
 
 ## You might want to change the path of the outouts folder
-FILE_ID='D3D_165826_1'
-INPUT_FOLDER='D3DQ_PRL'
+FILE_ID='10MeVB'
+INPUT_FOLDER='confinement_APS'
 
 FOLDER_ID=${INPUT_FOLDER}_${FILE_ID}
 PATH_TO_SCRATCH=$SCRATCH
 OUTPUT_FOLDER=${PATH_TO_SCRATCH}/${FOLDER_ID}
+
+rm -r ${OUTPUT_FOLDER}
 
 mkdir ${OUTPUT_FOLDER}
 
@@ -31,4 +33,3 @@ export OMP_PROC_BIND=spread
 
 #run the application:
 srun -n $((8*SLURM_JOB_NUM_NODES)) -c $((2*OMP_NUM_THREADS)) --cpu_bind=cores ./bin/KORC inputFiles/${INPUT_FOLDER}/input_file_${FILE_ID}.korc ${OUTPUT_FOLDER}/
-

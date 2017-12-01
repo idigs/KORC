@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -N 1
+#SBATCH -N 370
 #SBATCH -C knl,quad,cache
 #SBATCH -p debug
 #SBATCH -J KORC_KNL
@@ -14,8 +14,8 @@
 cd $SLURM_SUBMIT_DIR
 
 ## You might want to change the path of the outouts folder
-FILE_ID='D3D_165826_2'
-INPUT_FOLDER='D3DQ_PRL'
+FILE_ID='D3D_165826_2D'
+INPUT_FOLDER='D3DQ_MONO'
 
 FOLDER_ID=${INPUT_FOLDER}_${FILE_ID}
 PATH_TO_SCRATCH=$SCRATCH
@@ -26,10 +26,10 @@ rm -r ${OUTPUT_FOLDER}
 mkdir ${OUTPUT_FOLDER}
 
 #MPI settings:
-MPI_PROCCESSES=2
+MPI_PROCCESSES=34
 
 #OpenMP settings:
-export OMP_NUM_THREADS=34
+export OMP_NUM_THREADS=2
 export OMP_PLACES=threads
 export OMP_PROC_BIND=spread
 
