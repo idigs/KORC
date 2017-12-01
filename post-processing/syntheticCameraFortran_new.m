@@ -538,10 +538,18 @@ for ss=1:ST.params.simulation.num_species
     end
     
     P_L2 = P_p_L2 + P_t_L2;
-    np_L2 = np_p_L2 + np_t_L2;
+%     np_L2 = np_p_L2 + np_t_L2;
+%     np_L2 = np_p_L2;
+    np_L2 = np_p_L2;
     
-    Psyn_L1 = Psyn_p_L1 + Psyn_t_L1;
-    Psyn_L2 = Psyn_t_L2 + Psyn_t_L2;
+%     Psyn_L1 = Psyn_p_L1 + Psyn_t_L1;
+%     Psyn_L1 = Psyn_p_L1;
+    Psyn_L1 = Psyn_t_L1;
+    
+    
+%     Psyn_L2 = Psyn_p_L2 + Psyn_t_L2;
+%     Psyn_L2 = Psyn_p_L2;
+    Psyn_L2 = Psyn_t_L2;
     
     if isfield(ST.params,'avalanche_pdf_params')
         Psyn_avg = zeros(size(P_L4));%averagedSpectrum(ST,40,50);
@@ -725,7 +733,7 @@ for ss=1:ST.params.simulation.num_species
         xlim([min(axis_lambda) max(axis_lambda)]);box on;grid on;
         xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
         
-        %saveas(fig,[ST.path 'Spectra_ss_' num2str(ss)],'fig')
+%         saveas(fig,[ST.path 'Spectra_ss_' num2str(ss)],'fig')
         %saveas(fig1,[ST.path 'Ptot_toroidal_sections'],'fig')
         %saveas(fig2,[ST.path 'density_toroidal_sections'],'fig')
         %saveas(fig3,[ST.path 'ratio_toroidal_sections'],'fig')
@@ -908,7 +916,7 @@ for ss=1:ST.params.simulation.num_species
         
         if ~figuresToShare
 
-            A = sum(Psyn_L2,3)';
+            A = sum(Psyn_L1,3)';
             B = reshape(A,[numel(A),1]);
             B(B==0) = [];
             if ST.params.synthetic_camera_params.photon_count

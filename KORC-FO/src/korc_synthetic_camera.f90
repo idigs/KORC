@@ -2231,16 +2231,18 @@ SUBROUTINE integrated_spectral_density(params,spp)
 
 					Psyn_lambda_p(ii,jj,kk,ss) = Psyn_lambda_p(ii,jj,kk,ss) + trapz(cam%lambda,P)
 					PTot_p(ii,jj,kk,ss) = PTot_p(ii,jj,kk,ss) + spp(ss)%vars%Prad(pp);
+
+					np_p(ii,jj,kk,ss) = np_p(ii,jj,kk,ss) + 1_idef
 				else
 					P_lambda_t(:,kk,ss) = P_lambda_t(:,kk,ss) + P
 					np_lambda_t(kk,ss) = np_lambda_t(kk,ss) + 1.0_rp
 
 					Psyn_lambda_t(ii,jj,kk,ss) = Psyn_lambda_t(ii,jj,kk,ss) + trapz(cam%lambda,P)
 					PTot_t(ii,jj,kk,ss) = PTot_t(ii,jj,kk,ss) + spp(ss)%vars%Prad(pp);
+	
+					np_t(ii,jj,kk,ss) = np_t(ii,jj,kk,ss) + 1_idef
 				end if
 
-				np_p(ii,jj,kk,ss) = np_p(ii,jj,kk,ss) + 1_idef
-				np_t(ii,jj,kk,ss) = np_t(ii,jj,kk,ss) + 1_idef
 			end if ! if confined
 		end do ! particles
 !$OMP END PARALLEL DO
