@@ -1,6 +1,6 @@
 function ST = syntheticCameraFortran(path,lambdas,visible,range)
 % ST = syntheticCameraFortran('/media/l8c/FantomHD/SimulationOutputs/Avalanche/Z1/',[400E-9,900E-9],'on',[99,100])
-close all
+% close all
 
 ST = struct;
 ST.path = path;
@@ -424,25 +424,28 @@ for ss=1:ST.params.simulation.num_species
             end
         end
     else
-        if ndims(ST.data.(['sp' num2str(ss)]).PTot_p_pplane) == 4
-            Psyn_p_L1 = sum(abs(ST.data.(['sp' num2str(ss)]).PTot_p_pplane),4);
-            Psyn_t_L1 = sum(abs(ST.data.(['sp' num2str(ss)]).PTot_t_pplane),4);
+        if ndims(ST.data.(['sp' num2str(ss)]).PTot_p_pplane) > 2
+            lastDim = ndims(ST.data.(['sp' num2str(ss)]).PTot_p_pplane);
+            Psyn_p_L1 = sum(abs(ST.data.(['sp' num2str(ss)]).PTot_p_pplane),lastDim);
+            Psyn_t_L1 = sum(abs(ST.data.(['sp' num2str(ss)]).PTot_t_pplane),lastDim);
         else
             Psyn_p_L1 = abs(ST.data.(['sp' num2str(ss)]).PTot_p_pplane);
             Psyn_t_L1 = abs(ST.data.(['sp' num2str(ss)]).PTot_t_pplane);
         end
         
-        if ndims(ST.data.(['sp' num2str(ss)]).Psyn_p_pplane) == 4
-            Psyn_p_L2 = sum(ST.data.(['sp' num2str(ss)]).Psyn_p_pplane,4);
-            Psyn_t_L2 = sum(ST.data.(['sp' num2str(ss)]).Psyn_t_pplane,4);           
+        if ndims(ST.data.(['sp' num2str(ss)]).Psyn_p_pplane) > 2
+            lastDim = ndims(ST.data.(['sp' num2str(ss)]).Psyn_p_pplane);
+            Psyn_p_L2 = sum(ST.data.(['sp' num2str(ss)]).Psyn_p_pplane,lastDim);
+            Psyn_t_L2 = sum(ST.data.(['sp' num2str(ss)]).Psyn_t_pplane,lastDim);           
         else
             Psyn_p_L2 = ST.data.(['sp' num2str(ss)]).Psyn_p_pplane;
             Psyn_t_L2 = ST.data.(['sp' num2str(ss)]).Psyn_t_pplane;
         end        
 
-        if ndims(ST.data.(['sp' num2str(ss)]).np_p_pplane) == 4
-            np_p_L2 = sum(ST.data.(['sp' num2str(ss)]).np_p_pplane,4);
-            np_t_L2 = sum(ST.data.(['sp' num2str(ss)]).np_t_pplane,4);
+        if ndims(ST.data.(['sp' num2str(ss)]).np_p_pplane) > 2
+            lastDim = ndims(ST.data.(['sp' num2str(ss)]).np_p_pplane);
+            np_p_L2 = sum(ST.data.(['sp' num2str(ss)]).np_p_pplane,lastDim);
+            np_t_L2 = sum(ST.data.(['sp' num2str(ss)]).np_t_pplane,lastDim);
         else
             np_p_L2 = ST.data.(['sp' num2str(ss)]).np_p_pplane;
             np_t_L2 = ST.data.(['sp' num2str(ss)]).np_t_pplane;            
@@ -474,25 +477,34 @@ for ss=1:ST.params.simulation.num_species
                 Psyn_L4(ii,jj) = trapz(lambda(i1:i2),Psyn_L4_lambda(ii,jj,:));
             end
         end
-    else        
+    else
         if (NT ~= 0)
             if ndims(ST.data.(['sp' num2str(ss)]).P_p_lambda) == 2
-                for tt=1:NT
-                    P_p_L2 = sum(ST.data.(['sp' num2str(ss)]).P_p_lambda(i1:i2,tt),2)/sum(sum(np_p_L2(:,:,tt)));
-                    P_t_L2 = sum(ST.data.(['sp' num2str(ss)]).P_t_lambda(i1:i2,tt),2)/sum(sum(np_t_L2(:,:,tt)));
+                for tt=1:NT                   
+                    P_p_L2 = sum(ST.data.(['sp' num2str(ss)]).P_p_lambda(i1:i2,tt),2);
+                    P_t_L2 = sum(ST.data.(['sp' num2str(ss)]).P_t_lambda(i1:i2,tt),2);
+                    
+                    P_L2 = (P_p_L2 + P_t_L2)/sum(sum(np_p_L2(:,:,tt) + np_t_L2(:,:,tt)));
+                    P_p_L2 = P_p_L2/sum(sum(np_p_L2(:,:,tt)));
+                    P_t_L2 = P_t_L2/sum(sum(np_t_L2(:,:,tt)));
                 end
             else
                 P_p_L2 = sum(ST.data.(['sp' num2str(ss)]).P_p_lambda(i1:i2,:,:),3);
-                tmp = squeeze(sum(sum(np_p_L2,1),2));
+                P_L2 = P_p_L2;
+                tmp_p = squeeze(sum(sum(np_p_L2,1),2));
                 for tt=1:size(P_p_L2,2)
-                    P_p_L2(:,tt) = P_p_L2(:,tt)/tmp(tt);
+                    P_p_L2(:,tt) = P_p_L2(:,tt)/tmp_p(tt);
                 end
                 
                 P_t_L2 = sum(ST.data.(['sp' num2str(ss)]).P_t_lambda(i1:i2,:,:),3);
-                tmp = squeeze(sum(sum(np_t_L2,1),2));
+                P_L2 = P_L2 + P_t_L2;
+                tmp_t = squeeze(sum(sum(np_t_L2,1),2));
                 for tt=1:size(P_t_L2,2)
-                    P_t_L2(:,tt) = P_t_L2(:,tt)/tmp(tt);
+                    P_t_L2(:,tt) = P_t_L2(:,tt)/tmp_t(tt);
+                    P_L2(:,tt) = P_L2(:,tt)/(tmp_p(tt) + tmp_t(tt));
                 end
+                
+                
             end
             
             if isempty(ST.data.(['sp' num2str(ss)]).P_l_pixel)
@@ -522,11 +534,13 @@ for ss=1:ST.params.simulation.num_species
             Psyn_L4 = sum(ST.data.(['sp' num2str(ss)]).Psyn_angular_pixel,4);
             
         else
-            P_p_L2 = sum(ST.data.(['sp' num2str(ss)]).P_p_lambda(i1:i2,:),2)/sum(sum(np_p_L2));
-            P_t_L2 = sum(ST.data.(['sp' num2str(ss)]).P_t_lambda(i1:i2,:),2)/sum(sum(np_t_L2));
+            P_p_L2 = sum(ST.data.(['sp' num2str(ss)]).P_p_lambda(i1:i2,:),2)/sum(sum(sum(np_p_L2)));
+            P_t_L2 = sum(ST.data.(['sp' num2str(ss)]).P_t_lambda(i1:i2,:),2)/sum(sum(sum(np_t_L2)));
+            P_L2 = ...
+                sum(ST.data.(['sp' num2str(ss)]).P_t_lambda(i1:i2,:)+ST.data.(['sp' num2str(ss)]).P_p_lambda(i1:i2,:),2)/sum(sum(sum(np_p_L2 + np_t_L2)));
             
             P_L3 = squeeze(sum(ST.data.(['sp' num2str(ss)]).P_l_pixel(i1:i2,:),2));
-
+            
             P_L4 = squeeze(sum(ST.data.(['sp' num2str(ss)]).P_a_pixel(i1:i2,:),2));
             
             np_L3 = sum(ST.data.(['sp' num2str(ss)]).np_lambda_pixel,3);
@@ -537,19 +551,18 @@ for ss=1:ST.params.simulation.num_species
         end
     end
     
-    P_L2 = P_p_L2 + P_t_L2;
-%     np_L2 = np_p_L2 + np_t_L2;
+    np_L2 = np_p_L2 + np_t_L2;
 %     np_L2 = np_p_L2;
-    np_L2 = np_p_L2;
+%     np_L2 = np_t_L2;
     
-%     Psyn_L1 = Psyn_p_L1 + Psyn_t_L1;
+    Psyn_L1 = Psyn_p_L1 + Psyn_t_L1;
 %     Psyn_L1 = Psyn_p_L1;
-    Psyn_L1 = Psyn_t_L1;
+%     Psyn_L1 = Psyn_t_L1;
     
     
-%     Psyn_L2 = Psyn_p_L2 + Psyn_t_L2;
+    Psyn_L2 = Psyn_p_L2 + Psyn_t_L2;
 %     Psyn_L2 = Psyn_p_L2;
-    Psyn_L2 = Psyn_t_L2;
+%     Psyn_L2 = Psyn_t_L2;
     
     if isfield(ST.params,'avalanche_pdf_params')
         Psyn_avg = zeros(size(P_L4));%averagedSpectrum(ST,40,50);
@@ -715,7 +728,7 @@ for ss=1:ST.params.simulation.num_species
         
         fig = figure;
         subplot(3,1,1)
-        plot(axis_lambda,f_L2,'k',axis_lambda,sum(f_p_L2,2),'c',axis_lambda,sum(f_t_L2,2),'m','LineWidth',2)
+        plot(axis_lambda,mean(f_L2,2),'k',axis_lambda,mean(f_p_L2,2),'c',axis_lambda,mean(f_t_L2,2),'m','LineWidth',2)
         hold on;plot(axis_lambda,P_theory,'r');hold off
         ylabel('$P_R(\lambda)$ (Watts)','FontSize',12,'Interpreter','latex')
         xlim([min(axis_lambda) max(axis_lambda)]);box on;grid on;
@@ -916,7 +929,7 @@ for ss=1:ST.params.simulation.num_species
         
         if ~figuresToShare
 
-            A = sum(Psyn_L1,3)';
+            A = sum(Psyn_L2,3)';
             B = reshape(A,[numel(A),1]);
             B(B==0) = [];
             if ST.params.synthetic_camera_params.photon_count

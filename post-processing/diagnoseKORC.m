@@ -55,9 +55,9 @@ ST.data = loadData(ST);
 % plotEnergyPitchanglePDF(ST);
 
 
-% figuresAPS2017(ST);
+figuresAPS2017(ST);
 
-% NIMROD_figure(ST);
+NIMROD_figure(ST);
 
 % save('energy_limit','ST')
 end
@@ -706,8 +706,8 @@ for ss=1:ST.params.simulation.num_species
         ylabel('$Z$','Interpreter','latex','FontSize',16)
         
         x = ST.params.fields_and_profiles.Ro + ...
-            ST.params.species.r(ss)*cos(linspace(0,2*pi,100));
-        y = ST.params.species.r(ss)*sin(linspace(0,2*pi,100));
+            ST.params.species.ro(ss)*cos(linspace(0,2*pi,100));
+        y = ST.params.species.ro(ss)*sin(linspace(0,2*pi,100));
         hold on; plot3(x,y,1*ones(size(x)),'k');hold off
         
         
@@ -781,8 +781,8 @@ for ss=1:ST.params.simulation.num_species
 %     ylabel('$Z$','Interpreter','latex','FontSize',16)
 %     
 %     x = ST.params.fields_and_profiles.Ro + ...
-%         ST.params.species.r(ss)*cos(linspace(0,2*pi,100));
-%     y = ST.params.species.r(ss)*sin(linspace(0,2*pi,100));
+%         ST.params.species.ro(ss)*cos(linspace(0,2*pi,100));
+%     y = ST.params.species.ro(ss)*sin(linspace(0,2*pi,100));
 %     hold on; plot3(x,y,1*ones(size(x)),'k');hold off
 %     
 %     F(ii) = getframe(gcf);
@@ -3108,6 +3108,8 @@ end
 function regionsOfSE(ST,chiAxis,pAxis,fnum)
 Np = numel(pAxis);
 Nchi = numel(chiAxis);
+minLevel = -5;
+numLevels = 25;
 
 q = abs(ST.params.species.q(1));
 m = ST.params.species.m(1);
@@ -3157,9 +3159,9 @@ for sp=1:numel(I)
     A = log10(A/max(max(A)));
 
     cmax = max(max(A));
-    cmin = -3;%min(min(A(isfinite(A))));
+    cmin = minLevel;%min(min(A(isfinite(A))));
     
-    x = linspace(0,4,25);
+    x = linspace(0,4,numLevels);
     levels = cmin + (cmax-cmin)*tanh(x);
     
     figure(h)
@@ -3179,9 +3181,9 @@ for sp=1:numel(I)
     AA = log10(AA/max(max(AA)));
 
     cmax = max(max(AA));
-    cmin = -3;%min(min(A(isfinite(A))));
+    cmin = minLevel;%min(min(A(isfinite(A))));
     
-    x = linspace(0,4,25);
+    x = linspace(0,4,numLevels);
     levels = cmin + (cmax-cmin)*tanh(x);
     
     figure(hh)
@@ -3199,9 +3201,9 @@ AA = fnum;
 AA = log10(AA/max(max(AA)));
 
 cmax = max(max(A));
-cmin = -3;%min(min(A(isfinite(A))));
+cmin = minLevel;%min(min(A(isfinite(A))));
 
-x = linspace(0,4,25);
+x = linspace(0,4,numLevels);
 levels = cmin + (cmax-cmin)*tanh(x);
 
 figure(h)
@@ -3212,9 +3214,9 @@ xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 
 cmax = max(max(AA));
-cmin = -3;%min(min(A(isfinite(A))));
+cmin = minLevel;%min(min(A(isfinite(A))));
 
-x = linspace(0,4,25);
+x = linspace(0,4,numLevels);
 levels = cmin + (cmax-cmin)*tanh(x);
 
 figure(hh)
@@ -3367,8 +3369,8 @@ end
 
 
 function plotEnergyPitchanglePDF(ST)
-N = 50; % Energy
-M = 50; % Pitch-angle
+N = 100; % Energy
+M = 100; % Pitch-angle
 
 me = ST.params.scales.m;
 qe = ST.params.scales.q;
@@ -3767,10 +3769,10 @@ for ss=1:ST.params.simulation.num_species
     ylabel('$f_{RE}(\Delta \mathcal{E})$','Interpreter','latex','FontSize',16)
     
     t = linspace(0,2*pi,100);
-    x = ST.params.species.Ro(ss) + ST.params.species.r(ss)*cos(t);
-    y = ST.params.species.r(ss)*sin(t);
+    x = ST.params.species.Ro(ss) + ST.params.species.ro(ss)*cos(t);
+    y = ST.params.species.ro(ss)*sin(t);
 
-    I = (DE1>1.5);
+    I = true(size(DE1));%(DE1>1.5);
     
     h1 = open('poincare_plot_diverted_1100.fig');
     figure(h1)
@@ -3800,8 +3802,8 @@ for ss=1:ST.params.simulation.num_species
     ylabel('$f_{RE}(\Delta \mathcal{E})$','Interpreter','latex','FontSize',16)
     
     t = linspace(0,2*pi,100);
-    x = ST.params.species.Ro(ss) + ST.params.species.r(ss)*cos(t);
-    y = ST.params.species.r(ss)*sin(t);
+    x = ST.params.species.Ro(ss) + ST.params.species.ro(ss)*cos(t);
+    y = ST.params.species.ro(ss)*sin(t);
 
     h2 = open('poincare_plot_diverted_1100.fig');
     figure(h2)
