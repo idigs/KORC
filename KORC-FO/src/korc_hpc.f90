@@ -52,15 +52,6 @@ subroutine initialize_mpi(params)
 		call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
 	end if
 
-	! * * * Here a Cartesian topology for MPI is created * * * !
-	ALLOCATE(DIMS(NDIMS))
-	ALLOCATE(PERIODS(NDIMS))
-	! This loop isn't necessary but helps to do things more general in the future
-	do ii=1_idef,NDIMS
-		DIMS(ii) = params%mpi_params%nmpi
-		PERIODS(ii) = .TRUE.
-	end do
-
 	! * * * Getting the rank of the MPI process in the WORLD COMMON communicator * * * !
 	call MPI_COMM_RANK(MPI_COMM_WORLD, params%mpi_params%rank, mpierr)
 	if (mpierr .NE. MPI_SUCCESS) then
@@ -70,19 +61,37 @@ subroutine initialize_mpi(params)
 		call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
 	end if	
 
+
+	! * * * Here a Cartesian topology for MPI is created * * * !
+	ALLOCATE(DIMS(NDIMS))
+	ALLOCATE(PERIODS(NDIMS))
+
+	! This loop isn't necessary but helps to do things more general in the future
+	do ii=1_idef,NDIMS
+		DIMS(ii) = params%mpi_params%nmpi
+		PERIODS(ii) = .TRUE.
+	end do
+
 	! * * * Here a periodic topology for MPI is created * * * !
-!	call MPI_CART_CREATE(MPI_COMM_WORLD, NDIMS, DIMS, PERIODS, REORDER, params%mpi_params%mpi_topo, mpierr)
-!	if (mpierr .NE. MPI_SUCCESS) then
-!		print *,'Error creating new MPI topology. Terminating.'
-!		call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
-!	end if
+	call MPI_CART_CREATE(MPI_COMM_WORLD, NDIMS, DIMS, PERIODS, REORDER, params%mpi_params%mpi_topo, mpierr)
+	if (mpierr .NE. MPI_SUCCESS) then
+		write(6,'(/,"* * * * * * * COMMUNICATIONS * * * * * * *")')
+		write(6,'(/," ERROR: Creating new MPI topology. Aborting... ")')
+		write(6,'(/,"* * * * * * * * * ** * * * * * * * * * * *")')
+		call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
+	end if
 
 	! * * * Getting the rank of the MPI process in the new topology * * * !
-!	call MPI_COMM_RANK(params%mpi_params%mpi_topo, params%mpi_params%rank_topo, mpierr)
-!	if (mpierr .NE. MPI_SUCCESS) then
-!		print *,'Error getting MPI rank in KORC topology. Terminating.'
-!		call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
-!	end if
+	call MPI_COMM_RANK(params%mpi_params%mpi_topo, params%mpi_params%rank_topo, mpierr)
+	if (mpierr .NE. MPI_SUCCESS) then
+		write(6,'(/,"* * * * * * * COMMUNICATIONS * * * * * * *")')
+		write(6,'(/," ERROR: Obtaining new MPI topology ranks. Aborting... ")')
+		write(6,'(/,"* * * * * * * * * ** * * * * * * * * * * *")')
+		call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
+	end if
+
+	DEALLOCATE(DIMS)
+	DEALLOCATE(PERIODS)
 
 	if (params%mpi_params%rank.EQ.0) then
 		if (all_mpis_initialized) then
@@ -97,9 +106,6 @@ subroutine initialize_mpi(params)
 			call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
 		end if
 	end if
-
-	DEALLOCATE(DIMS)
-	DEALLOCATE(PERIODS)
 end subroutine initialize_mpi
 
 

@@ -88,7 +88,6 @@ program main
 		    call advance_particles_position(params,F,spp,params%dt)
 
 			call save_simulation_outputs(params,spp,F)
-
 			call synthetic_camera(params,spp) ! Synthetic camera
         else
             call advance_particles_velocity(params,F,P,spp,params%dt,.FALSE.)

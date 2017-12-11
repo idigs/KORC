@@ -45,7 +45,7 @@ end subroutine set_paths
 subroutine load_korc_params(params)
 	implicit none
 	TYPE (KORC_PARAMS), INTENT(INOUT) :: params
-	LOGICAL :: restart ! Not used, yet.
+	LOGICAL :: restart
 	REAL(rp) :: simulation_time
 	REAL(rp) :: snapshot_frequency
 	REAL(rp) :: dt
@@ -63,14 +63,14 @@ subroutine load_korc_params(params)
 	INTEGER :: imax,imin,ii,jj,num_outputs
 	INTEGER, DIMENSION(2) :: indices
 
-	NAMELIST /input_parameters/ plasma_model,poloidal_flux,magnetic_field_filename,simulation_time,axisymmetric,&
+	NAMELIST /input_parameters/ restart,plasma_model,poloidal_flux,magnetic_field_filename,simulation_time,axisymmetric,&
 			snapshot_frequency,dt,num_species,radiation,collisions,collisions_model,outputs_list,minimum_particle_energy
 	
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=input_parameters)
 	close(default_unit_open)
 
-! 	params%restart = restart
+ 	params%restart = restart
 	params%simulation_time = simulation_time
 	params%snapshot_frequency = snapshot_frequency
 

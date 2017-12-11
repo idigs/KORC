@@ -158,13 +158,13 @@ subroutine advance_particles_velocity(params,F,P,spp,dt,bool)
 
 						!! Radiated power
 						tmp = spp(ii)%q**4/(6.0_rp*C_PI*E0*spp(ii)%m**2)
-
 						vec = spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp))
 
 						spp(ii)%vars%Prad(pp) = tmp*( DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%E(:,pp)) + &
 						DOT_PRODUCT(cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)),spp(ii)%vars%E(:,pp)) +&
 						spp(ii)%vars%g(pp)**2*(DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%V(:,pp))**2 - DOT_PRODUCT(vec,vec)) )
 
+						!! Input power due to electric field
 		                spp(ii)%vars%Pin(pp) = spp(ii)%q*DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%V(:,pp))
 					else
 				        spp(ii)%vars%eta(pp) = 0.0_rp
