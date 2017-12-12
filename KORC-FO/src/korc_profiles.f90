@@ -27,9 +27,10 @@ subroutine get_analytical_profiles(P,Y,ne,Te,flag)
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,fr) SHARED(P,Y,ne,Te,flag)
 	do pp=1_idef,ss
         if ( flag(pp) .EQ. 1_is ) then
-			fr = 1_ip - TANH(2.0_rp*Y(1,pp)/P%a)**P%nfactor
-
+			fr = 1_ip - TANH(2.0_rp*Y(1,pp)/P%a)**P%n_ne
 			ne(pp) = P%neo*fr
+
+			fr = 1_ip - TANH(2.0_rp*Y(1,pp)/P%a)**P%n_Te
 			Te(pp) = P%Teo*fr
         end if
 	end do

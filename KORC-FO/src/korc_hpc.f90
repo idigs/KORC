@@ -1,5 +1,4 @@
 module korc_hpc
-
     use korc_types
     use omp_lib
     use mpi
@@ -7,7 +6,6 @@ module korc_hpc
     implicit none
 
     contains
-
 
 subroutine korc_abort()
 	implicit none
@@ -156,5 +154,58 @@ subroutine finalize_mpi(params)
 		write(6,'(/,"* * * * * * * * * ** * * * * * * * * * * *")')
 	end if
 end subroutine finalize_mpi
+
+
+! * * * * * * * * * * * *  * * * * * * * * * * * * * !
+! ** SUBROUTINES FOR INITIALIZING COMMUNICATIONS  ** !
+! * * * * * * * * * * * *  * * * * * * * * * * * * * !
+
+subroutine initialize_communications(params)
+	implicit none
+	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
+	CHARACTER(MAX_STRING_LENGTH) :: string
+
+	call initialize_mpi(params)
+
+!$OMP PARALLEL SHARED(params)
+        params%num_omp_threads = OMP_GET_NUM_THREADS()
+!$OMP END PARALLEL
+
+	if (params%mpi_params%rank.EQ.0) then
+		write(6,'(/,"* * * * * * * OMP SET-UP * * * * * * *")')
+!$OMP PARALLEL
+!$OMP MASTER
+		write(6,'(/,"OMP threads per MPI process: ",I3)') OMP_GET_NUM_THREADS()
+		write(6,'(/,"Cores available per MPI process: ",I3)') OMP_GET_NUM_PROCS()
+!$OMP END MASTER
+!$OMP END PARALLEL
+#ifdef GNU
+		call GET_ENVIRONMENT_VARIABLE("OMP_PLACES",string)
+		write(6,'(/,"OMP places: ",A30)') TRIM(string)
+		call GET_ENVIRONMENT_VARIABLE("GOMP_CPU_AFFINITY",string)
+		write(6,'(/,"OMP CPU affinity: ",A30)') TRIM(string)
+#endif
+		write(6,'("* * * * * * * * * * * *  * * * * * * *",/)')
+	end if
+
+!	call initialization_sanity_check(params) 
+end subroutine initialize_communications
+
+
+subroutine initialization_sanity_check(params)
+	implicit none
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	INTEGER :: ierr, mpierr
+	LOGICAL :: flag = .FALSE.
+
+	call MPI_INITIALIZED(flag, ierr)
+
+!$OMP PARALLEL SHARED(params) FIRSTPRIVATE(ierr,flag)
+	!$OMP CRITICAL
+	write(6,'("MPI: ",I4," OMP/of: ",I3," / ",I3," Procs: ",I3," Init: ",l1)') &
+	params%mpi_params%rank,OMP_GET_THREAD_NUM(),OMP_GET_NUM_THREADS(),OMP_GET_NUM_PROCS(),flag
+	!$OMP END CRITICAL
+!$OMP END PARALLEL
+end subroutine initialization_sanity_check
 
 end module korc_hpc

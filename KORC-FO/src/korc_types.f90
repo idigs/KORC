@@ -81,6 +81,7 @@ TYPE, PUBLIC :: KORC_PARAMS
 	REAL(rp) :: snapshot_frequency ! Time between snapshots in seconds
 	REAL(rp) :: dt
 	REAL(rp) :: time = 0.0_rp
+	INTEGER(ip) :: ito = 0_ip
 	INTEGER(ip) :: it = 0_ip
 	INTEGER(ip) :: t_steps
 	INTEGER(ip) :: output_cadence
@@ -110,6 +111,7 @@ TYPE, PUBLIC :: PARTICLES
     REAL(rp), DIMENSION(:,:), ALLOCATABLE :: B ! Auxiliar vector for fields interpolations
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: ne ! Auxiliar vector for density interpolations
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Te ! Auxiliar vector for temperature interpolations
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zeff ! Auxiliar vector for temperature interpolations
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: g ! Gamma relativistic
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: eta ! Pitch angle
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: mu ! Instantaneous magnetic moment
@@ -198,7 +200,20 @@ TYPE, PUBLIC :: PROFILES
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: FLAG2D
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: FLAG3D
 
-	REAL(rp) :: nfactor
+	REAL(rp) :: n_ne
+	REAL(rp) :: n_Te
+	REAL(rp) :: n_Zeff
+
+	REAL(rp), DIMENSION(4) :: a_ne
+	REAL(rp), DIMENSION(4) :: a_Te
+	REAL(rp), DIMENSION(4) :: a_Zeff
+
+	! Zeff
+	CHARACTER(MAX_STRING_LENGTH) :: Zeff_profile
+	REAL(rp) :: Zeffo ! Effective atomic number
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: Zeff_3D ! Zeff_3D(R,PHI,Z)
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Zeff_2D ! Zeff_2D(R,Z)
+
 
 	! Density
 	CHARACTER(MAX_STRING_LENGTH) :: ne_profile

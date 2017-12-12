@@ -1,4 +1,5 @@
 &input_parameters
+	restart = .FALSE. !
 	simulation_time = 1.0E-6 ! Total aimed simulation time in seconds
 	snapshot_frequency = 1.0E-8 ! Time between snapshots in seconds
 	dt = 1.0E-2 ! Time step as fraction of non-relativistic gyro-period
@@ -17,7 +18,7 @@
 										! cylindrical components of the magnetic field
 	axisymmetric = .FALSE.			  ! Axisymmetric field?
 	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/D3D_Q.h5" ! DIII-D_sh165826.h5" !
-	outputs_list = '{X,V,g,eta,flag}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
+	outputs_list = '{X,V,g,eta,flag,ne,Te,Zeff}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
 /
 
 &plasma_species
@@ -54,11 +55,19 @@
 /
 
 &analytical_plasma_profiles
+	radius_profile = 0.6
 	ne_profile = 'PARABOLIC' ! Options are 'FLAT' and 'PARABOLIC'
-	neo = 1.0E21 ! In m^-3
+	neo = 2.93E19 ! In m^-3
+	n_ne = 15.0 ! 
+	a_ne = 0.99713,0.047037,0.40023,-1.0466
 	Te_profile = 'PARABOLIC' ! Options are 'FLAT' and 'PARABOLIC'
-	Teo = 1.0E3 ! In eV
-	nfactor = 10.0 ! 
+	Teo = 870.0 ! In eV
+	n_Te = 2.5 ! 
+	a_Te = 1.0046,-0.076652,-2.6429,1.7415
+	Zeff_profile = 'PARABOLIC' ! Options are 'FLAT' and 'PARABOLIC'
+	Zeffo = 1.45 ! In m^-3
+	n_Zeff = 3.0 ! 
+	a_Zeff = -0.11796,0.02834,-0.12081,1.0065
 /
 
 &CollisionParamsMultipleSpecies

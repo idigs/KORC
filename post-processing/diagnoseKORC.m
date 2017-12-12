@@ -24,7 +24,7 @@ ST.data = loadData(ST);
 % ST.RT = radialTransport(ST);
 
 % ST.CP = confined_particles(ST);
-
+% 
 % ST.PAD = pitchAngleDiagnostic(ST,30);
 
 % ST.MMD = magneticMomentDiagnostic(ST,70);
@@ -55,9 +55,9 @@ ST.data = loadData(ST);
 % plotEnergyPitchanglePDF(ST);
 
 
-figuresAPS2017(ST);
+% figuresAPS2017(ST);
 
-NIMROD_figure(ST);
+% NIMROD_figure(ST);
 
 % save('energy_limit','ST')
 end

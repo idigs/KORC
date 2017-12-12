@@ -76,6 +76,12 @@ subroutine load_korc_params(params)
 
 	params%dt = dt
 
+	if (params%restart) then
+		call get_last_iteration(params)
+	else
+		params%ito = 1_ip
+	end if
+
 	params%num_species = num_species
 	params%plasma_model = TRIM(plasma_model)
 	params%poloidal_flux = poloidal_flux
@@ -267,6 +273,7 @@ subroutine initialize_particles(params,F,spp)
 		ALLOCATE( spp(ii)%vars%B(3,spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%ne(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%Te(spp(ii)%ppp) )
+		ALLOCATE( spp(ii)%vars%Zeff(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%g(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%eta(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%mu(spp(ii)%ppp) )
@@ -510,171 +517,122 @@ subroutine set_up_particles_ic(params,F,spp)
 	REAL(rp), DIMENSION(3) :: z = (/0.0_rp,0.0_rp,1.0_rp/)
 	INTEGER :: ii,jj ! Iterator
 
-	do ii=1_idef,params%num_species
-		ALLOCATE( Xo(3,spp(ii)%ppp) )
-		ALLOCATE( Vo(spp(ii)%ppp) )
-		ALLOCATE( V1(spp(ii)%ppp) )
-		ALLOCATE( V2(spp(ii)%ppp) )
-		ALLOCATE( V3(spp(ii)%ppp) )
-		ALLOCATE( b1(3,spp(ii)%ppp) )
-		ALLOCATE( b2(3,spp(ii)%ppp) )
-		ALLOCATE( b3(3,spp(ii)%ppp) )
+	if (params%restart) then
+		call load_particles_ic(params,spp)
+	else
+		do ii=1_idef,params%num_species
+			ALLOCATE( Xo(3,spp(ii)%ppp) )
+			ALLOCATE( Vo(spp(ii)%ppp) )
+			ALLOCATE( V1(spp(ii)%ppp) )
+			ALLOCATE( V2(spp(ii)%ppp) )
+			ALLOCATE( V3(spp(ii)%ppp) )
+			ALLOCATE( b1(3,spp(ii)%ppp) )
+			ALLOCATE( b2(3,spp(ii)%ppp) )
+			ALLOCATE( b3(3,spp(ii)%ppp) )
 
 		
-		ALLOCATE( theta(spp(ii)%ppp) )
-		ALLOCATE( zeta(spp(ii)%ppp) )
-		ALLOCATE( R(spp(ii)%ppp) )
+			ALLOCATE( theta(spp(ii)%ppp) )
+			ALLOCATE( zeta(spp(ii)%ppp) )
+			ALLOCATE( R(spp(ii)%ppp) )
 
-		! * * * * INITIALIZE POSITION * * * * 
-		if (TRIM(params%plasma_model) .EQ. 'UNIFORM') then
-			spp(ii)%vars%X = 0.0_rp
-		else
-			! Initial condition of uniformly distributed particles on a disk in the xz-plane
-			! A unique velocity direction
-			call init_u_random(10986546_8)
+			! * * * * INITIALIZE POSITION * * * * 
+			if (TRIM(params%plasma_model) .EQ. 'UNIFORM') then
+				spp(ii)%vars%X = 0.0_rp
+			else
+				! Initial condition of uniformly distributed particles on a disk in the xz-plane
+				! A unique velocity direction
+				call init_u_random(10986546_8)
 
-			call init_random_seed()
-			call RANDOM_NUMBER(theta)
-			theta = 2.0_rp*C_PI*theta
+				call init_random_seed()
+				call RANDOM_NUMBER(theta)
+				theta = 2.0_rp*C_PI*theta
 
-			call init_random_seed()
-			call RANDOM_NUMBER(zeta)
-			zeta = 2.0_rp*C_PI*zeta
+				call init_random_seed()
+				call RANDOM_NUMBER(zeta)
+				zeta = 2.0_rp*C_PI*zeta
 
-			! Uniform distribution on a disk at a fixed azimuthal theta		
-			call init_random_seed()
-			call RANDOM_NUMBER(r)
+				! Uniform distribution on a disk at a fixed azimuthal theta		
+				call init_random_seed()
+				call RANDOM_NUMBER(r)
 
-			SELECT CASE (TRIM(spp(ii)%spatial_distribution))
-				CASE ('DISK')
-					r = SQRT((spp(ii)%r_outter**2 - spp(ii)%r_inner**2)*r + spp(ii)%r_inner**2)
-!					r = spp(ii)%r*SQRT(r)
-					Xo(1,:) = ( spp(ii)%Ro + r*COS(theta) )*COS(spp(ii)%PHIo)
-					Xo(2,:) = ( spp(ii)%Ro + r*COS(theta) )*SIN(spp(ii)%PHIo)
-					Xo(3,:) = spp(ii)%Zo + r*SIN(theta)
-				CASE ('TORUS')
-					r = SQRT((spp(ii)%r_outter**2 - spp(ii)%r_inner**2)*r + spp(ii)%r_inner**2)
-!					r = spp(ii)%r*SQRT(r)
-					Xo(1,:) = ( spp(ii)%Ro + r*COS(theta) )*SIN(zeta)
-					Xo(2,:) = ( spp(ii)%Ro + r*COS(theta) )*COS(zeta)
-					Xo(3,:) = spp(ii)%Zo + r*SIN(theta)
-				CASE ('GAUSSIAN')
-					r = &
-					spp(ii)%sigma_r*SQRT( -2.0_rp*LOG( 1.0_rp - (1.0_rp - EXP(-0.5_rp*spp(ii)%r_outter**2/spp(ii)%sigma_r**2))*r ) )
-					Xo(1,:) = ( spp(ii)%Ro + r*COS(theta) )*SIN(zeta)
-					Xo(2,:) = ( spp(ii)%Ro + r*COS(theta) )*COS(zeta)
-					Xo(3,:) = spp(ii)%Zo + r*SIN(theta)
-				CASE DEFAULT
-					r = SQRT((spp(ii)%r_outter**2 - spp(ii)%r_inner**2)*r + spp(ii)%r_inner**2)
-					Xo(1,:) = ( spp(ii)%Ro + r*COS(theta) )*SIN(zeta)
-					Xo(2,:) = ( spp(ii)%Ro + r*COS(theta) )*COS(zeta)
-					Xo(3,:) = spp(ii)%Zo + r*SIN(theta)
-			END SELECT
+				SELECT CASE (TRIM(spp(ii)%spatial_distribution))
+					CASE ('DISK')
+						r = SQRT((spp(ii)%r_outter**2 - spp(ii)%r_inner**2)*r + spp(ii)%r_inner**2)
+	!					r = spp(ii)%r*SQRT(r)
+						Xo(1,:) = ( spp(ii)%Ro + r*COS(theta) )*COS(spp(ii)%PHIo)
+						Xo(2,:) = ( spp(ii)%Ro + r*COS(theta) )*SIN(spp(ii)%PHIo)
+						Xo(3,:) = spp(ii)%Zo + r*SIN(theta)
+					CASE ('TORUS')
+						r = SQRT((spp(ii)%r_outter**2 - spp(ii)%r_inner**2)*r + spp(ii)%r_inner**2)
+	!					r = spp(ii)%r*SQRT(r)
+						Xo(1,:) = ( spp(ii)%Ro + r*COS(theta) )*SIN(zeta)
+						Xo(2,:) = ( spp(ii)%Ro + r*COS(theta) )*COS(zeta)
+						Xo(3,:) = spp(ii)%Zo + r*SIN(theta)
+					CASE ('GAUSSIAN')
+						r = &
+						spp(ii)%sigma_r*SQRT(-2.0_rp*LOG(1.0_rp - (1.0_rp - EXP(-0.5_rp*spp(ii)%r_outter**2/spp(ii)%sigma_r**2))*r))
+						Xo(1,:) = ( spp(ii)%Ro + r*COS(theta) )*SIN(zeta)
+						Xo(2,:) = ( spp(ii)%Ro + r*COS(theta) )*COS(zeta)
+						Xo(3,:) = spp(ii)%Zo + r*SIN(theta)
+					CASE DEFAULT
+						r = SQRT((spp(ii)%r_outter**2 - spp(ii)%r_inner**2)*r + spp(ii)%r_inner**2)
+						Xo(1,:) = ( spp(ii)%Ro + r*COS(theta) )*SIN(zeta)
+						Xo(2,:) = ( spp(ii)%Ro + r*COS(theta) )*COS(zeta)
+						Xo(3,:) = spp(ii)%Zo + r*SIN(theta)
+				END SELECT
 
-			spp(ii)%vars%X(1,:) = Xo(1,:)
-			spp(ii)%vars%X(2,:) = Xo(2,:)
-			spp(ii)%vars%X(3,:) = Xo(3,:)
-		end if
-
-
-		! * * * * INITIALIZE VELOCITY * * * * 
-		if ((TRIM(spp(ii)%energy_distribution)).EQ.'THERMAL') then
-            call iso_thermal_distribution(params,spp(ii))
-		else
-			call init_random_seed()
-			call RANDOM_NUMBER(theta)
-			theta = 2.0_rp*C_PI*theta
-
-			Vo = SQRT( 1.0_rp - 1.0_rp/(spp(ii)%vars%g(:)**2) )
-		    V1 = Vo*COS(C_PI*spp(ii)%vars%eta/180.0_rp)
-		    V2 = Vo*SIN(C_PI*spp(ii)%vars%eta/180.0_rp)*COS(theta)
-		    V3 = Vo*SIN(C_PI*spp(ii)%vars%eta/180.0_rp)*SIN(theta)
-
-		    call unitVectors(params,Xo,F,b1,b2,b3,spp(ii)%vars%flag)
-
-			do jj=1_idef,spp(ii)%ppp
-				if ( spp(ii)%vars%flag(jj) .EQ. 1_idef ) then
-					spp(ii)%vars%V(1,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),x) + &
-				                            V2(jj)*DOT_PRODUCT(b2(:,jj),x) + &
-				                            V3(jj)*DOT_PRODUCT(b3(:,jj),x)
-
-					spp(ii)%vars%V(2,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),y) + &
-				                            V2(jj)*DOT_PRODUCT(b2(:,jj),y) + &
-				                            V3(jj)*DOT_PRODUCT(b3(:,jj),y)
-
-					spp(ii)%vars%V(3,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),z) + &
-				                            V2(jj)*DOT_PRODUCT(b2(:,jj),z) + &
-				                            V3(jj)*DOT_PRODUCT(b3(:,jj),z)
-				end if
-			end do
-		end if
-
-		DEALLOCATE(theta)
-		DEALLOCATE(zeta)
-		DEALLOCATE(R)
-		DEALLOCATE(Xo)
-		DEALLOCATE(Vo)
-		DEALLOCATE(V1)
-		DEALLOCATE(V2)
-		DEALLOCATE(V3)
-		DEALLOCATE(b1)
-		DEALLOCATE(b2)
-		DEALLOCATE(b3)
-	end do
-end subroutine set_up_particles_ic
+				spp(ii)%vars%X(1,:) = Xo(1,:)
+				spp(ii)%vars%X(2,:) = Xo(2,:)
+				spp(ii)%vars%X(3,:) = Xo(3,:)
+			end if
 
 
-! * * * * * * * * * * * *  * * * * * * * * * * * * * !
-! ** SUBROUTINES FOR INITIALIZING COMMUNICATIONS  ** !
-! * * * * * * * * * * * *  * * * * * * * * * * * * * !
+			! * * * * INITIALIZE VELOCITY * * * * 
+			if ((TRIM(spp(ii)%energy_distribution)).EQ.'THERMAL') then
+		        call iso_thermal_distribution(params,spp(ii))
+			else
+				call init_random_seed()
+				call RANDOM_NUMBER(theta)
+				theta = 2.0_rp*C_PI*theta
 
-subroutine initialize_communications(params)
-	implicit none
-	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
-	CHARACTER(MAX_STRING_LENGTH) :: string
+				Vo = SQRT( 1.0_rp - 1.0_rp/(spp(ii)%vars%g(:)**2) )
+				V1 = Vo*COS(C_PI*spp(ii)%vars%eta/180.0_rp)
+				V2 = Vo*SIN(C_PI*spp(ii)%vars%eta/180.0_rp)*COS(theta)
+				V3 = Vo*SIN(C_PI*spp(ii)%vars%eta/180.0_rp)*SIN(theta)
 
-	call initialize_mpi(params)
+				call unitVectors(params,Xo,F,b1,b2,b3,spp(ii)%vars%flag)
 
-!$OMP PARALLEL SHARED(params)
-        params%num_omp_threads = OMP_GET_NUM_THREADS()
-!$OMP END PARALLEL
+				do jj=1_idef,spp(ii)%ppp
+					if ( spp(ii)%vars%flag(jj) .EQ. 1_idef ) then
+						spp(ii)%vars%V(1,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),x) + &
+						                        V2(jj)*DOT_PRODUCT(b2(:,jj),x) + &
+						                        V3(jj)*DOT_PRODUCT(b3(:,jj),x)
 
-	if (params%mpi_params%rank.EQ.0) then
-		write(6,'(/,"* * * * * * * OMP SET-UP * * * * * * *")')
-!$OMP PARALLEL
-!$OMP MASTER
-		write(6,'(/,"OMP threads per MPI process: ",I3)') OMP_GET_NUM_THREADS()
-		write(6,'(/,"Cores available per MPI process: ",I3)') OMP_GET_NUM_PROCS()
-!$OMP END MASTER
-!$OMP END PARALLEL
-#ifdef GNU
-		call GET_ENVIRONMENT_VARIABLE("OMP_PLACES",string)
-		write(6,'(/,"OMP places: ",A30)') TRIM(string)
-		call GET_ENVIRONMENT_VARIABLE("GOMP_CPU_AFFINITY",string)
-		write(6,'(/,"OMP CPU affinity: ",A30)') TRIM(string)
-#endif
-		write(6,'("* * * * * * * * * * * *  * * * * * * *",/)')
+						spp(ii)%vars%V(2,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),y) + &
+						                        V2(jj)*DOT_PRODUCT(b2(:,jj),y) + &
+						                        V3(jj)*DOT_PRODUCT(b3(:,jj),y)
+
+						spp(ii)%vars%V(3,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),z) + &
+						                        V2(jj)*DOT_PRODUCT(b2(:,jj),z) + &
+						                        V3(jj)*DOT_PRODUCT(b3(:,jj),z)
+					end if
+				end do
+			end if
+
+			DEALLOCATE(theta)
+			DEALLOCATE(zeta)
+			DEALLOCATE(R)
+			DEALLOCATE(Xo)
+			DEALLOCATE(Vo)
+			DEALLOCATE(V1)
+			DEALLOCATE(V2)
+			DEALLOCATE(V3)
+			DEALLOCATE(b1)
+			DEALLOCATE(b2)
+			DEALLOCATE(b3)
+		end do
 	end if
-
-!	call initialization_sanity_check(params) 
-end subroutine initialize_communications
-
-
-subroutine initialization_sanity_check(params)
-	implicit none
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	INTEGER :: ierr, mpierr
-	LOGICAL :: flag = .FALSE.
-
-	call MPI_INITIALIZED(flag, ierr)
-
-!$OMP PARALLEL SHARED(params) FIRSTPRIVATE(ierr,flag)
-	!$OMP CRITICAL
-	write(6,'("MPI: ",I4," OMP/of: ",I3," / ",I3," Procs: ",I3," Init: ",l1)') &
-	params%mpi_params%rank,OMP_GET_THREAD_NUM(),OMP_GET_NUM_THREADS(),OMP_GET_NUM_PROCS(),flag
-	!$OMP END CRITICAL
-!$OMP END PARALLEL
-end subroutine initialization_sanity_check
+end subroutine set_up_particles_ic
 
 
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
@@ -699,14 +657,24 @@ subroutine initialize_fields_and_profiles(params,F,P)
     REAL(rp) :: pulse_duration
     CHARACTER(MAX_STRING_LENGTH) :: ne_profile
     CHARACTER(MAX_STRING_LENGTH) :: Te_profile
+    CHARACTER(MAX_STRING_LENGTH) :: Zeff_profile
+	REAL(rp) :: radius_profile
 	REAL(rp) :: neo
 	REAL(rp) :: Teo
-	REAL(rp) :: nfactor
+	REAL(rp) :: Zeffo
+	REAL(rp) :: n_ne
+	REAL(rp) :: n_Te
+	REAL(rp) :: n_Zeff
+	REAL(rp), DIMENSION(4) :: a_ne
+	REAL(rp), DIMENSION(4) :: a_Te
+	REAL(rp), DIMENSION(4) :: a_Zeff
 
 	NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
 			qa,qo,electric_field_mode,Eo,pulse_maximum,pulse_duration,current_direction
 
-	NAMELIST /analytical_plasma_profiles/ ne_profile,neo,Te_profile,Teo,nfactor
+	NAMELIST /analytical_plasma_profiles/ radius_profile,ne_profile,neo,n_ne,a_ne,&
+											Te_profile,Teo,n_Te,a_Te,&
+											Zeff_profile,Zeffo,n_Zeff,a_Zeff
 
 	SELECT CASE (TRIM(params%plasma_model))
 		CASE('ANALYTICAL')
@@ -742,12 +710,21 @@ subroutine initialize_fields_and_profiles(params,F,P)
 			read(default_unit_open,nml=analytical_plasma_profiles)
 			close(default_unit_open)
 
-			P%a = minor_radius
+			P%a = radius_profile
 			P%ne_profile = TRIM(ne_profile)
 			P%neo = neo
+			P%n_ne = n_ne
+			P%a_ne = a_ne
+
 			P%Te_profile = TRIM(Te_profile)
 			P%Teo = Teo*C_E
-			P%nfactor = nfactor
+			P%n_Te = n_Te
+			P%a_Te = a_Te
+
+			P%Zeff_profile = TRIM(Zeff_profile)
+			P%Zeffo = Zeffo
+			P%n_Zeff = n_Zeff
+			P%a_Zeff = a_Zeff
 		CASE('EXTERNAL')
 			! Load the magnetic field from an external HDF5 file
 		    call load_dim_data_from_hdf5(params,F%dims)

@@ -60,16 +60,20 @@ program main
 	call set_up_particles_ic(params,F,spp)
 	! * * * INITIALIZATION STAGE * * *
 
-	call save_simulation_parameters(params,spp,F,P)
+	! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !
+	if (.NOT.params%restart) then
+		call save_simulation_parameters(params,spp,F,P)
 
-	call save_collision_params(params)
+		call save_collision_params(params)
 
-	call advance_particles_velocity(params,F,P,spp,0.0_rp,.TRUE.)
+		call advance_particles_velocity(params,F,P,spp,0.0_rp,.TRUE.)
 
-	! Save initial condition
-	call save_simulation_outputs(params,spp,F)
+		! Save initial condition
+		call save_simulation_outputs(params,spp,F)
 
-	call synthetic_camera(params,spp) ! Synthetic camera!
+		call synthetic_camera(params,spp) ! Synthetic camera!
+	end if
+	! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !
 
 	t2 = MPI_WTIME()
 
@@ -80,7 +84,7 @@ program main
 	! Initial half-time particle push
 	call advance_particles_position(params,F,spp,0.5_rp*params%dt)
 
-	do it=1_ip,params%t_steps
+	do it=params%ito,params%t_steps
         params%time = REAL(it,rp)*params%dt
 		params%it = it
 		if ( modulo(it,params%output_cadence) .EQ. 0_ip ) then
