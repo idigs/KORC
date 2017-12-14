@@ -3,7 +3,7 @@ module korc_ppusher
     use korc_types
     use korc_constants
     use korc_fields
-!    use korc_profiles
+    use korc_profiles
     use korc_interp
 	use korc_collisions
     use korc_hpc
@@ -12,8 +12,12 @@ module korc_ppusher
 
 	REAL(rp), PRIVATE :: E0 ! Dimensionless vacuum permittivity
 
-    PRIVATE :: cross,radiation_force,collision_force
-    PUBLIC :: initialize_particle_pusher,advance_particles_position,advance_particles_velocity
+    PRIVATE :: cross,&
+				radiation_force,&
+				collision_force
+    PUBLIC :: initialize_particle_pusher,&
+				advance_particles_position,&
+				advance_particles_velocity
 
     contains
 
@@ -78,16 +82,12 @@ subroutine advance_particles_velocity(params,F,P,spp,dt,bool)
 
 		call get_fields(params,spp(ii)%vars,F)
 
-!		call get_profiles(params,spp(ii)%vars,P)
+		call get_profiles(params,spp(ii)%vars,P)
 
 	    a = spp(ii)%q*dt/spp(ii)%m
 
 !$OMP PARALLEL DO SHARED(params,ii,spp) FIRSTPRIVATE(a,dt,bool)&
 !$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gp,sigma,us,g,t,s,Frad,Fcoll,U_RC,U_os,tmp,b_unit,B,vpar,v,vperp,vec,Prad)
-
-!!$OMP SINGLE
-!	call check_collisions_params(spp(ii))
-!!$OMP END SINGLE
 		do pp=1_idef,spp(ii)%ppp
 			if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
 				U = spp(ii)%vars%g(pp)*spp(ii)%vars%V(:,pp)
@@ -124,9 +124,7 @@ subroutine advance_particles_velocity(params,F,P,spp,dt,bool)
 
 				! ! ! Stochastic differential equations for including collisions
 				if (params%collisions .AND. (TRIM(params%collisions_model) .EQ. 'SINGLE_SPECIES')) then		
-!					call include_CoulombCollisions(params,U,spp(ii)%vars%ne(pp),spp(ii)%vars%Te(pp))
-					call include_CoulombCollisions(params,U,spp(ii)%vars%Y(:,pp),&
-													spp(ii)%vars%ne(pp),spp(ii)%vars%Te(pp),spp(ii)%vars%Zeff(pp))
+					call include_CoulombCollisions(params,U,spp(ii)%vars%ne(pp),spp(ii)%vars%Te(pp),spp(ii)%vars%Zeff(pp))
 				end if
 				! ! ! Stochastic differential equations for including collisions
 

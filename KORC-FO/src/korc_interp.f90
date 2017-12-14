@@ -76,8 +76,14 @@ module korc_interp
 !	  module procedure interp_3D_B_field
 !	END INTERFACE
 
-    PUBLIC :: interp_field,initialize_interpolant,finalize_interpolant
-	PRIVATE :: interp_3D_B_field,interp_2D_B_field,check_if_in_domain2D,check_if_in_domain3D,check_if_in_domain
+    PUBLIC :: interp_field,&
+				initialize_interpolant,&
+				finalize_interpolant
+	PRIVATE :: interp_3D_B_field,&
+				interp_2D_B_field,&
+				check_if_in_domain2D,&
+				check_if_in_domain3D,&
+				check_if_in_domain
 
     contains
 

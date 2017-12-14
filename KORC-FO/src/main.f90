@@ -31,7 +31,9 @@ program main
 
 	call initialize_korc_parameters(params) ! Initialize korc parameters
 
-	call initialize_fields_and_profiles(params,F,P)
+	call initialize_fields(params,F)
+
+	call initialize_profiles(params,P)
 
 	call initialize_particles(params,F,spp) ! Initialize particles
 

@@ -15,8 +15,16 @@ module korc_initialize
     implicit none
 	
 
-	PRIVATE :: set_paths,load_korc_params,initialization_sanity_check,random_norm,fth_1V,fth_3V,iso_thermal_distribution
-	PUBLIC :: initialize_korc_parameters,initialize_particles,initialize_fields_and_profiles,define_time_step
+	PRIVATE :: set_paths,&
+				load_korc_params,&
+				random_norm,&
+				fth_1V,&
+				fth_3V,&
+				iso_thermal_distribution
+	PUBLIC :: initialize_korc_parameters,&
+				initialize_particles,&
+				initialize_fields,&
+				define_time_step
 
     contains
 
@@ -639,11 +647,10 @@ end subroutine set_up_particles_ic
 ! * * *  SUBROUTINES FOR INITIALIZING FIELDS   * * * !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
-subroutine initialize_fields_and_profiles(params,F,P)
+subroutine initialize_fields(params,F)
 	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(FIELDS), INTENT(OUT) :: F
-	TYPE(PROFILES), INTENT(OUT) :: P
 	TYPE(KORC_STRING) :: field
 	REAL(rp) :: Bo
 	REAL(rp) :: minor_radius
@@ -655,26 +662,9 @@ subroutine initialize_fields_and_profiles(params,F,P)
 	REAL(rp) :: Eo
     REAL(rp) :: pulse_maximum
     REAL(rp) :: pulse_duration
-    CHARACTER(MAX_STRING_LENGTH) :: ne_profile
-    CHARACTER(MAX_STRING_LENGTH) :: Te_profile
-    CHARACTER(MAX_STRING_LENGTH) :: Zeff_profile
-	REAL(rp) :: radius_profile
-	REAL(rp) :: neo
-	REAL(rp) :: Teo
-	REAL(rp) :: Zeffo
-	REAL(rp) :: n_ne
-	REAL(rp) :: n_Te
-	REAL(rp) :: n_Zeff
-	REAL(rp), DIMENSION(4) :: a_ne
-	REAL(rp), DIMENSION(4) :: a_Te
-	REAL(rp), DIMENSION(4) :: a_Zeff
 
 	NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
 			qa,qo,electric_field_mode,Eo,pulse_maximum,pulse_duration,current_direction
-
-	NAMELIST /analytical_plasma_profiles/ radius_profile,ne_profile,neo,n_ne,a_ne,&
-											Te_profile,Teo,n_Te,a_Te,&
-											Zeff_profile,Zeffo,n_Zeff,a_Zeff
 
 	SELECT CASE (TRIM(params%plasma_model))
 		CASE('ANALYTICAL')
@@ -705,26 +695,6 @@ subroutine initialize_fields_and_profiles(params,F,P)
 		    F%electric_field_mode = TRIM(electric_field_mode)
 			F%to = pulse_maximum
 			F%sig = pulse_duration
-
-			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-			read(default_unit_open,nml=analytical_plasma_profiles)
-			close(default_unit_open)
-
-			P%a = radius_profile
-			P%ne_profile = TRIM(ne_profile)
-			P%neo = neo
-			P%n_ne = n_ne
-			P%a_ne = a_ne
-
-			P%Te_profile = TRIM(Te_profile)
-			P%Teo = Teo*C_E
-			P%n_Te = n_Te
-			P%a_Te = a_Te
-
-			P%Zeff_profile = TRIM(Zeff_profile)
-			P%Zeffo = Zeffo
-			P%n_Zeff = n_Zeff
-			P%a_Zeff = a_Zeff
 		CASE('EXTERNAL')
 			! Load the magnetic field from an external HDF5 file
 		    call load_dim_data_from_hdf5(params,F%dims)
@@ -748,6 +718,6 @@ subroutine initialize_fields_and_profiles(params,F,P)
 			F%Bo = Bo
 		CASE DEFAULT
 	END SELECT
-end subroutine initialize_fields_and_profiles
+end subroutine initialize_fields
 
 end module korc_initialize

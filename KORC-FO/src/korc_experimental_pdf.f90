@@ -29,7 +29,16 @@ MODULE korc_experimental_pdf
 	REAL(rp), PRIVATE, PARAMETER :: Tol = 1.0E-5_rp
 
 	PUBLIC :: get_experimental_distribution
-	PRIVATE :: initialize_params,save_params,sample_distribution,deg2rad,fRE,random_norm,fGamma,PR,P_integral,IntK,&
+	PRIVATE :: initialize_params,&
+				save_params,&
+				sample_distribution,&
+				deg2rad,&
+				fRE,&
+				random_norm,&
+				fGamma,&
+				PR,&
+				P_integral,&
+				IntK,&
 				nintegral_besselk
 
 	CONTAINS

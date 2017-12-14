@@ -38,13 +38,31 @@ module korc_HDF5
 	  module procedure isave_1d_array_to_hdf5,rsave_1d_array_to_hdf5,rsave_2d_array_to_hdf5,rsave_3d_array_to_hdf5
 	END INTERFACE
 
-	PRIVATE :: rsave_to_hdf5,isave_1d_array_to_hdf5,rsave_1d_array_to_hdf5,rsave_2d_array_to_hdf5,&
-				iload_from_hdf5,rload_from_hdf5,rload_1d_array_from_hdf5,rload_3d_array_from_hdf5,rload_2d_array_from_hdf5,&
-				i1save_to_hdf5,i2save_to_hdf5,i4save_to_hdf5,i8save_to_hdf5
+	PRIVATE :: rsave_to_hdf5,&
+				isave_1d_array_to_hdf5,&
+				rsave_1d_array_to_hdf5,&
+				rsave_2d_array_to_hdf5,&
+				iload_from_hdf5,&
+				rload_from_hdf5,&
+				rload_1d_array_from_hdf5,&
+				rload_3d_array_from_hdf5,&
+				rload_2d_array_from_hdf5,&
+				i1save_to_hdf5,&
+				i2save_to_hdf5,&
+				i4save_to_hdf5,&
+				i8save_to_hdf5
 				
-	PUBLIC :: initialize_HDF5,finalize_HDF5,save_simulation_parameters,save_to_hdf5,save_1d_array_to_hdf5,&
-				save_2d_array_to_hdf5,load_from_hdf5,load_array_from_hdf5,save_string_parameter,&
-				get_last_iteration,load_particles_ic
+	PUBLIC :: initialize_HDF5,&
+				finalize_HDF5,&
+				save_simulation_parameters,&
+				save_to_hdf5,&
+				save_1d_array_to_hdf5,&
+				save_2d_array_to_hdf5,&
+				load_from_hdf5,&
+				load_array_from_hdf5,&
+				save_string_parameter,&
+				get_last_iteration,&
+				load_particles_ic
 
 contains
 
@@ -988,8 +1006,63 @@ subroutine save_simulation_parameters(params,spp,F,P)
 
 		DEALLOCATE(attr_array)
 
-		! Electromagnetic fields and plasma profiles group
-		gname = "fields_and_profiles"
+
+		! Plasma profiles group
+
+		gname = "profiles"
+		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
+
+		dset = TRIM(gname) // "/density_profile"
+		call save_string_parameter(h5file_id,dset,(/P%ne_profile/))
+
+		dset = TRIM(gname) // "/n_ne"
+		attr = "Exponent of tanh(x)^n for density profile"
+		call save_to_hdf5(h5file_id,dset,P%n_ne,attr)
+
+		dset = TRIM(gname) // "/neo"
+		attr = "Density at the magnetic axis (m^-3)"
+		call save_to_hdf5(h5file_id,dset,P%neo*params%cpp%density,attr)
+
+		dset = TRIM(gname) // "/a_ne"
+		attr = "Coefficients f=ao+a1*r+a2*r^2+a3*r^3. a_ne=[a0,a1,a2,a3]"
+		call save_1d_array_to_hdf5(h5file_id,dset,P%a_ne)
+
+		dset = TRIM(gname) // "/temperature_profile"
+		call save_string_parameter(h5file_id,dset,(/P%Te_profile/))
+
+		dset = TRIM(gname) // "/n_Te"
+		attr = "Exponent of tanh(x)^n for density profile"
+		call save_to_hdf5(h5file_id,dset,P%n_Te,attr)
+
+		dset = TRIM(gname) // "/Teo"
+		attr = "Temperature at the magnetic axis (eV)"
+		call save_to_hdf5(h5file_id,dset,P%Teo*params%cpp%temperature/C_E,attr)
+
+		dset = TRIM(gname) // "/a_Te"
+		attr = "Coefficients f=ao+a1*r+a2*r^2+a3*r^3. a_Te=[a0,a1,a2,a3]"
+		call save_1d_array_to_hdf5(h5file_id,dset,P%a_Te)
+
+		dset = TRIM(gname) // "/Zeff_profile"
+		call save_string_parameter(h5file_id,dset,(/P%Zeff_profile/))
+
+		dset = TRIM(gname) // "/n_Zeff"
+		attr = "Exponent of tanh(x)^n for Zeff profile"
+		call save_to_hdf5(h5file_id,dset,P%n_Zeff,attr)
+
+		dset = TRIM(gname) // "/Zeffo"
+		attr = "Zeff at the magnetic axis"
+		call save_to_hdf5(h5file_id,dset,P%Zeffo,attr)
+
+		dset = TRIM(gname) // "/a_Zeff"
+		attr = "Coefficients f=ao+a1*r+a2*r^2+a3*r^3. a_Zeff=[a0,a1,a2,a3]"
+		call save_1d_array_to_hdf5(h5file_id,dset,P%a_Zeff)
+
+		call h5gclose_f(group_id, h5error)
+
+
+		! Electromagnetic fields group
+
+		gname = "fields"
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
 		if (TRIM(params%plasma_model) .EQ. 'ANALYTICAL') then
@@ -1027,51 +1100,6 @@ subroutine save_simulation_parameters(params,spp,F,P)
 			dset = TRIM(gname) // "/Eo"
 			attr = "Electric field at the magnetic axis in V/m"
 			call save_to_hdf5(h5file_id,dset,F%Eo*params%cpp%Eo,attr)
-
-			dset = TRIM(gname) // "/density_profile"
-			call save_string_parameter(h5file_id,dset,(/P%ne_profile/))
-
-			dset = TRIM(gname) // "/n_ne"
-			attr = "Exponent of tanh(x)^n for density profile"
-			call save_to_hdf5(h5file_id,dset,P%n_ne,attr)
-
-			dset = TRIM(gname) // "/neo"
-			attr = "Density at the magnetic axis (m^-3)"
-			call save_to_hdf5(h5file_id,dset,P%neo*params%cpp%density,attr)
-
-			dset = TRIM(gname) // "/a_ne"
-			attr = "Coefficients f=ao+a1*r+a2*r^2+a3*r^3. a_ne=[a0,a1,a2,a3]"
-			call save_1d_array_to_hdf5(h5file_id,dset,P%a_ne)
-
-			dset = TRIM(gname) // "/temperature_profile"
-			call save_string_parameter(h5file_id,dset,(/P%Te_profile/))
-
-			dset = TRIM(gname) // "/n_Te"
-			attr = "Exponent of tanh(x)^n for density profile"
-			call save_to_hdf5(h5file_id,dset,P%n_Te,attr)
-
-			dset = TRIM(gname) // "/Teo"
-			attr = "Temperature at the magnetic axis (eV)"
-			call save_to_hdf5(h5file_id,dset,P%Teo*params%cpp%temperature/C_E,attr)
-
-			dset = TRIM(gname) // "/a_Te"
-			attr = "Coefficients f=ao+a1*r+a2*r^2+a3*r^3. a_Te=[a0,a1,a2,a3]"
-			call save_1d_array_to_hdf5(h5file_id,dset,P%a_Te)
-
-			dset = TRIM(gname) // "/Zeff_profile"
-			call save_string_parameter(h5file_id,dset,(/P%Zeff_profile/))
-
-			dset = TRIM(gname) // "/n_Zeff"
-			attr = "Exponent of tanh(x)^n for Zeff profile"
-			call save_to_hdf5(h5file_id,dset,P%n_Zeff,attr)
-
-			dset = TRIM(gname) // "/Zeffo"
-			attr = "Zeff at the magnetic axis"
-			call save_to_hdf5(h5file_id,dset,P%Zeffo,attr)
-
-			dset = TRIM(gname) // "/a_Zeff"
-			attr = "Coefficients f=ao+a1*r+a2*r^2+a3*r^3. a_Zeff=[a0,a1,a2,a3]"
-			call save_1d_array_to_hdf5(h5file_id,dset,P%a_Zeff)
 		else if (params%plasma_model .EQ. 'EXTERNAL') then
 			ALLOCATE(attr_array(1))
 			dset = TRIM(gname) // "/dims"
@@ -1337,7 +1365,7 @@ subroutine save_simulation_outputs(params,spp,F)
 						call save_1d_array_to_hdf5(subgroup_id, dset, units*spp(ss)%vars%Te/C_E)
 					CASE ('Zeff')
 						dset = "Zeff"
-						call save_1d_array_to_hdf5(subgroup_id, dset, units*spp(ss)%vars%Zeff)
+						call save_1d_array_to_hdf5(subgroup_id, dset, spp(ss)%vars%Zeff)
 					CASE DEFAULT
 				
 				END SELECT

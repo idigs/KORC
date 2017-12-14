@@ -19,7 +19,13 @@ MODULE korc_energy_pdfs
 	REAL(rp), PRIVATE, PARAMETER :: co = (C_E*1.0E6)/(C_ME*C_C**2)
 
 	PUBLIC :: get_gamma_distribution
-	PRIVATE :: initialize_gamma_params,save_gamma_params,sample_gamma_distribution,deg2rad,fRE,random_norm,fGamma
+	PRIVATE :: initialize_gamma_params,&
+				save_gamma_params,&
+				sample_gamma_distribution,&
+				deg2rad,&
+				fRE,&
+				random_norm,&
+				fGamma
 
 	CONTAINS
 

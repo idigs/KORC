@@ -7,9 +7,19 @@ module korc_fields
 
     implicit none
 
-	PUBLIC :: mean_F_field,get_fields,load_field_data_from_hdf5,load_dim_data_from_hdf5
-	PRIVATE :: get_analytical_fields,analytical_fields,analytical_magnetic_field,analytical_electric_field,uniform_magnetic_field,&
-				uniform_electric_field,check_if_confined,uniform_fields,cross
+	PUBLIC :: mean_F_field,&
+				get_fields,&
+				load_field_data_from_hdf5,&
+				load_dim_data_from_hdf5
+	PRIVATE :: get_analytical_fields,&
+				analytical_fields,&
+				analytical_magnetic_field,&
+				analytical_electric_field,&
+				uniform_magnetic_field,&
+				uniform_electric_field,&
+				check_if_confined,&
+				uniform_fields,&
+				cross
 
     contains
 

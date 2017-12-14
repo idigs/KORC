@@ -4,7 +4,8 @@ module korc_units
 
     implicit none
 
-	PUBLIC :: compute_charcs_plasma_params,normalize_variables
+	PUBLIC :: compute_charcs_plasma_params,&
+				normalize_variables
 
     contains
 

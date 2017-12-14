@@ -82,10 +82,30 @@ MODULE korc_synthetic_camera
 	  module procedure save_snapshot_var_1d,save_snapshot_var_2d,save_snapshot_var_3d,save_snapshot_var_4d
 	END INTERFACE
 
-	PRIVATE :: clockwise_rotation,anticlockwise_rotation,cross,check_if_visible,calculate_rotation_angles,&
-				zeta,fx,arg,Po,P1,Psyn,chic,psic,save_synthetic_camera_params,besselk,&
-				angular_density,spectral_density,IntK,nintegral_besselk,save_snapshot_var,trapz,integrated_SE_3D
-	PUBLIC :: initialize_synthetic_camera,synthetic_camera
+	PRIVATE :: clockwise_rotation,&
+				anticlockwise_rotation,&
+				cross,&
+				check_if_visible,&
+				calculate_rotation_angles,&
+				zeta,&
+				fx,&
+				arg,&
+				Po,&
+				P1,&
+				Psyn,&
+				chic,&
+				psic,&
+				save_synthetic_camera_params,&
+				besselk,&
+				angular_density,&
+				spectral_density,&
+				IntK,&
+				nintegral_besselk,&
+				save_snapshot_var,&
+				trapz,&
+				integrated_SE_3D
+	PUBLIC :: initialize_synthetic_camera,&
+				synthetic_camera
 
 	CONTAINS
 

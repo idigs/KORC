@@ -4,6 +4,9 @@ module korc_finalize
 
 	implicit none
 
+	PUBLIC :: finalize_communications,&
+				deallocate_variables
+
 	contains
 
 subroutine finalize_communications(params)

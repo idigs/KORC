@@ -5,7 +5,9 @@ module korc_coords
 
     implicit none
 
-    PUBLIC :: cart_to_cyl,cart_to_tor,cart_to_tor_check_if_confined
+    PUBLIC :: cart_to_cyl,&
+				cart_to_tor,&
+				cart_to_tor_check_if_confined
 
     contains
 

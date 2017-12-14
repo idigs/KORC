@@ -33,7 +33,11 @@ MODULE korc_avalanche
 	TYPE(AVALANCHE_PDF_PARAMS), PRIVATE :: aval_params
 
 	PUBLIC :: get_avalanche_PDF_params
-	PRIVATE :: initialize_avalanche_params,save_avalanche_params,random_norm,fRE,sample_distribution
+	PRIVATE :: initialize_avalanche_params,&
+				save_avalanche_params,&
+				random_norm,&
+				fRE,&
+				sample_distribution
 
 	CONTAINS
 

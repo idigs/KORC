@@ -3,8 +3,14 @@ MODULE hammersley_generator
 
 	IMPLICIT NONE
 
-	PUBLIC :: hammersley, dummy_subroutine
-	PRIVATE :: hammersley_inverse, hammersley_sequence, r8mat_print, r8mat_print_some, timestamp, prime
+	PUBLIC :: hammersley,&
+				dummy_subroutine
+	PRIVATE :: hammersley_inverse,&
+				 hammersley_sequence,&
+				 r8mat_print,&
+				 r8mat_print_some,&
+				 timestamp,&
+				 prime
 
 	CONTAINS
 

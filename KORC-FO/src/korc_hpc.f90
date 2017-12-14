@@ -5,6 +5,12 @@ module korc_hpc
 
     implicit none
 
+	PUBLIC :: korc_abort,&
+				initialize_mpi,&
+				finalize_mpi,&
+				initialize_communications,&
+				timing_KORC
+	PRIVATE :: initialization_sanity_check
     contains
 
 subroutine korc_abort()

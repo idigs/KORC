@@ -63,14 +63,39 @@ module korc_collisions
 	TYPE(PARAMS_MS), PRIVATE :: cparams_ms
 	TYPE(PARAMS_SS), PRIVATE :: cparams_ss
 
-	PUBLIC :: initialize_collision_params,normalize_collisions_params,&
-				collision_force,deallocate_collisions_params,&
-				save_collision_params,include_CoulombCollisions,check_collisions_params
-	PRIVATE :: load_params_ms,load_params_ss,normalize_params_ms,&
-				normalize_params_ss,save_params_ms,save_params_ss,&
-				deallocate_params_ms,cross,unitVectors,CA,CB,CF,fun,&
-				nu_S,nu_par,nu_D,Gammac_wu,CLog_wu,VTe_wu,Gammac,CLog,VTe,&
-				CA_SD,CB_SD,CF_SD,delta
+	PUBLIC :: initialize_collision_params,&
+				normalize_collisions_params,&
+				collision_force,&
+				deallocate_collisions_params,&
+				save_collision_params,&
+				include_CoulombCollisions,&
+				check_collisions_params
+	PRIVATE :: load_params_ms,&
+				load_params_ss,&
+				normalize_params_ms,&
+				normalize_params_ss,&
+				save_params_ms,&
+				save_params_ss,&
+				deallocate_params_ms,&
+				cross,&
+				unitVectors,&
+				CA,&
+				CB,&
+				CF,&
+				fun,&
+				nu_S,&
+				nu_par,&
+				nu_D,&
+				Gammac_wu,&
+				CLog_wu,&
+				VTe_wu,&
+				Gammac,&
+				CLog,&
+				VTe,&
+				CA_SD,&
+				CB_SD,&
+				CF_SD,&
+				delta
 
 	contains
 
@@ -479,15 +504,16 @@ function CB(v)
 end function CB
 
 
-function CB_SD(v,ne,Te)
+function CB_SD(v,ne,Te,Zeff)
 	REAL(rp), INTENT(IN) :: v
 	REAL(rp), INTENT(IN) :: ne 
 	REAL(rp), INTENT(IN) :: Te
+	REAL(rp), INTENT(IN) :: Zeff
 	REAL(rp) :: CB_SD
 	REAL(rp) :: x
 
 	x = v/VTe(Te)
-	CB_SD  = (0.5_rp*Gammac(ne,Te)/v)*( cparams_ss%Zeff + ERF(x) - psi(x) + 0.5_rp*delta(Te)**4*x**2 )
+	CB_SD  = (0.5_rp*Gammac(ne,Te)/v)*( Zeff + ERF(x) - psi(x) + 0.5_rp*delta(Te)**4*x**2 )
 end function CB_SD
 
 
@@ -575,65 +601,6 @@ end subroutine check_collisions_params
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
 
 
-! * * * * * * * * * * * *  * * * * * * * * * *  * !
-! * SUBROUTINES FOR CALCULATING PLASMA PROFILES * !
-! * * * * * * * * * * * *  * * * * * * * * * *  * !
-
-subroutine get_analytical_profiles(Y,ne,Te,Zeff)
-	REAL(rp), DIMENSION(3), INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
-	REAL(rp), INTENT(OUT) :: ne
-	REAL(rp), INTENT(OUT) :: Te
-	REAL(rp), INTENT(OUT) :: Zeff
-	REAL(rp) :: fr
-	INTEGER(ip) pp ! Iterator(s)
-	INTEGER(ip) :: ss
-
-	fr = 1_ip - TANH(2.0_rp*Y(1)/cparams_ss%P%a)**cparams_ss%P%n_ne
-	ne = cparams_ss%P%neo*fr
-
-	fr = 1_ip - TANH(2.0_rp*Y(1)/cparams_ss%P%a)**cparams_ss%P%n_Te
-	Te = cparams_ss%P%Teo*fr
-
-	fr = 1_ip - TANH(2.0_rp*Y(1)/cparams_ss%P%a)**cparams_ss%P%n_Zeff
-	Zeff = cparams_ss%P%Zeffo*fr
-end subroutine get_analytical_profiles
-
-
-subroutine uniform_profiles(ne,Te,Zeff)
-	REAL(rp), INTENT(OUT) :: ne
-	REAL(rp), INTENT(OUT) :: Te
-	REAL(rp), INTENT(OUT) :: Zeff
-
-	ne = cparams_ss%P%neo
-	Te = cparams_ss%P%Teo
-	Zeff = cparams_ss%P%Zeffo
-end subroutine uniform_profiles
-
-
-subroutine get_profiles(params,Y,ne,Te,Zeff)
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	REAL(rp), DIMENSION(3), INTENT(IN) :: Y
-	REAL(rp), INTENT(OUT) :: ne
-	REAL(rp), INTENT(OUT) :: Te
-	REAL(rp), INTENT(OUT) :: Zeff
-
-	SELECT CASE (TRIM(params%plasma_model))
-		CASE('ANALYTICAL')
-			call get_analytical_profiles(Y,ne,Te,Zeff)
-		CASE('EXTERNAL')
-!			Something to be coded here!
-		CASE('UNIFORM')
-			call uniform_profiles(ne,Te,Zeff)
-		CASE DEFAULT
-			call uniform_profiles(ne,Te,Zeff)
-	END SELECT
-end subroutine get_profiles
-
-! * * * * * * * * * * * *  * * * * * * * * * *  * !
-! * SUBROUTINES FOR CALCULATING PLASMA PROFILES * !
-! * * * * * * * * * * * *  * * * * * * * * * *  * !
-
-
 !subroutine include_CoulombCollisions(params,U,ne,Te)
 !	TYPE(KORC_PARAMS), INTENT(IN) :: params
 !	REAL(rp), DIMENSION(3), INTENT(INOUT) :: U
@@ -687,13 +654,12 @@ end subroutine get_profiles
 !end subroutine include_CoulombCollisions
 
 
-subroutine include_CoulombCollisions(params,U,R,ne,Te,Zeff)
+subroutine include_CoulombCollisions(params,U,ne,Te,Zeff)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), DIMENSION(3), INTENT(INOUT) :: U
-	REAL(rp), DIMENSION(3), INTENT(IN) :: R
-	REAL(rp), INTENT(INOUT) :: ne
-	REAL(rp), INTENT(INOUT) :: Te
-	REAL(rp), INTENT(INOUT) :: Zeff
+	REAL(rp), INTENT(IN) :: ne
+	REAL(rp), INTENT(IN) :: Te
+	REAL(rp), INTENT(IN) :: Zeff
 	REAL(rp), DIMENSION(3) :: v1, v2, v3
 	REAL(rp), DIMENSION(3) :: dW
 	REAL(rp), DIMENSION(3) :: rnd1, rnd2
@@ -708,9 +674,6 @@ subroutine include_CoulombCollisions(params,U,R,ne,Te,Zeff)
 	REAL(rp) :: CAL,CFL,CBL
 
 	if (MODULO(params%it+1_ip,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
-
-		call get_profiles(params,Y,ne,Te,Zeff)
-
 		dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt
 
 		um = SQRT(DOT_PRODUCT(U,U))
@@ -722,13 +685,16 @@ subroutine include_CoulombCollisions(params,U,R,ne,Te,Zeff)
 		U2 = DOT_PRODUCT(U,v2);
 		U3 = DOT_PRODUCT(U,v3);
 
+!		call RANDOM_NUMBER(rnd1)
+!		call RANDOM_NUMBER(rnd2)
+!		dW = SQRT(dt)*SQRT(-2.0_rp*LOG(1.0_rp-rnd1))*COS(2.0_rp*C_PI*rnd2)
+
 		call RANDOM_NUMBER(rnd1)
-		call RANDOM_NUMBER(rnd2)
-		dW = SQRT(dt)*SQRT(-2.0_rp*LOG(1.0_rp-rnd1))*COS(2.0_rp*C_PI*rnd2)
+		dW = SQRT(dt)*SQRT(3.0_rp)*(-1.0_rp + 2.0_rp*rnd1);
 
 		CAL = CA_SD(v,ne,Te)
 		CFL = CF_SD(v,ne,Te)
-		CBL = CB_SD(v,ne,Te)
+		CBL = CB_SD(v,ne,Te,Zeff)
 
 		dU1 = -2.0_rp*CFL*dt + SQRT(2.0_rp*CAL)*dW(1)
 		dU2 = SQRT(2.0_rp*CBL)*dW(2)
@@ -933,56 +899,6 @@ subroutine save_params_ss(params)
 		attr = "Dreicer electric field"
 		units = params%cpp%Eo
 		call save_to_hdf5(h5file_id,dset,units*cparams_ss%ED,attr)
-
-		subgname = "profiles"
-		call h5gcreate_f(group_id, TRIM(subgname), subgroup_id, h5error)
-
-		dset = "density_profile"
-		call save_string_parameter(subgroup_id,dset,(/cparams_ss%P%ne_profile/))
-
-		dset = "n_ne"
-		attr = "Exponent of tanh(x)^n for density profile"
-		call save_to_hdf5(subgroup_id,dset,cparams_ss%P%n_ne,attr)
-
-		dset = "neo"
-		attr = "Density at the magnetic axis (m^-3)"
-		call save_to_hdf5(subgroup_id,dset,cparams_ss%P%neo*params%cpp%density,attr)
-
-		dset = "a_ne"
-		attr = "Coefficients f=ao+a1*r+a2*r^2+a3*r^3. a_ne=[a0,a1,a2,a3]"
-		call save_1d_array_to_hdf5(subgroup_id,dset,cparams_ss%P%a_ne)
-
-		dset = "temperature_profile"
-		call save_string_parameter(subgroup_id,dset,(/cparams_ss%P%Te_profile/))
-
-		dset = "n_Te"
-		attr = "Exponent of tanh(x)^n for density profile"
-		call save_to_hdf5(subgroup_id,dset,cparams_ss%P%n_Te,attr)
-
-		dset = "Teo"
-		attr = "Temperature at the magnetic axis (eV)"
-		call save_to_hdf5(subgroup_id,dset,cparams_ss%P%Teo*params%cpp%temperature/C_E,attr)
-
-		dset = "a_Te"
-		attr = "Coefficients f=ao+a1*r+a2*r^2+a3*r^3. a_Te=[a0,a1,a2,a3]"
-		call save_1d_array_to_hdf5(subgroup_id,dset,cparams_ss%P%a_Te)
-
-		dset = "Zeff_profile"
-		call save_string_parameter(subgroup_id,dset,(/cparams_ss%P%Zeff_profile/))
-
-		dset = "n_Zeff"
-		attr = "Exponent of tanh(x)^n for Zeff profile"
-		call save_to_hdf5(subgroup_id,dset,cparams_ss%P%n_Zeff,attr)
-
-		dset = "Zeffo"
-		attr = "Zeff at the magnetic axis"
-		call save_to_hdf5(subgroup_id,dset,cparams_ss%P%Zeffo,attr)
-
-		dset = "a_Zeff"
-		attr = "Coefficients f=ao+a1*r+a2*r^2+a3*r^3. a_Zeff=[a0,a1,a2,a3]"
-		call save_1d_array_to_hdf5(subgroup_id,dset,cparams_ss%P%a_Zeff)
-
-		call h5gclose_f(subgroup_id, h5error)
 
 		call h5gclose_f(group_id, h5error)
 

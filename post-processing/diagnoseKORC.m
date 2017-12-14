@@ -17,7 +17,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
 % angularMomentum(ST);
 
@@ -25,7 +25,7 @@ ST.data = loadData(ST);
 
 % ST.CP = confined_particles(ST);
 % 
-% ST.PAD = pitchAngleDiagnostic(ST,30);
+ST.PAD = pitchAngleDiagnostic(ST,30);
 
 % ST.MMD = magneticMomentDiagnostic(ST,70);
 
