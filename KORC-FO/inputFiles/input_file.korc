@@ -1,7 +1,7 @@
 &input_parameters
-	restart = .FALSE. !
+	restart = .TRUE. !
 	simulation_time = 1.0E-6 ! Total aimed simulation time in seconds
-	snapshot_frequency = 1.0E-8 ! Time between snapshots in seconds
+	snapshot_frequency = 1.0E-7 ! Time between snapshots in seconds
 	dt = 1.0E-2 ! Time step as fraction of non-relativistic gyro-period
 	num_species = 2
 	minimum_particle_energy = 1.0E3 ! Minimum energy of simulated particles in eV
@@ -23,7 +23,7 @@
 
 &plasma_species
 	runaway = .FALSE.,.FALSE. !
-	ppp = 1000,1000 ! Number of particles per process (mpi)
+	ppp = 100,100 ! Number of particles per process (mpi)
 	q = -1.0,-1.0 ! Electric charge
 	m = 1.0,1.0 ! In units of electron mass
 	spatial_distribution = 'TORUS','GAUSSIAN'

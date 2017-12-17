@@ -63,11 +63,12 @@ program main
 	! * * * INITIALIZATION STAGE * * *
 
 	! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !
+
+	call save_simulation_parameters(params,spp,F,P)
+	
+	call save_collision_params(params)
+		
 	if (.NOT.params%restart) then
-		call save_simulation_parameters(params,spp,F,P)
-
-		call save_collision_params(params)
-
 		call advance_particles_velocity(params,F,P,spp,0.0_rp,.TRUE.)
 
 		! Save initial condition

@@ -909,16 +909,20 @@ end subroutine save_params_ss
 
 subroutine save_collision_params(params)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	
+	if (.NOT.params%restart) then
 
-	if (params%collisions) then
-		SELECT CASE (TRIM(params%collisions_model))
-			CASE (MODEL1)
-				call save_params_ss(params)
-			CASE (MODEL2)
-				call save_params_ms(params)
-			CASE DEFAULT
-				write(6,'("Default case")')
-		END SELECT
+		if (params%collisions) then
+			SELECT CASE (TRIM(params%collisions_model))
+				CASE (MODEL1)
+					call save_params_ss(params)
+				CASE (MODEL2)
+					call save_params_ms(params)
+				CASE DEFAULT
+					write(6,'("Default case")')
+			END SELECT
+		end if
+		
 	end if
 end subroutine save_collision_params
 

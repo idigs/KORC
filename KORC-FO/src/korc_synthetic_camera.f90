@@ -2638,6 +2638,8 @@ SUBROUTINE save_synthetic_camera_params(params)
 	CHARACTER(19) :: tmp_str
 	INTEGER :: h5error
 	REAL(rp) :: units
+	
+	if (.NOT.params%restart) then
 
 	if (params%mpi_params%rank .EQ. 0) then
 		filename = TRIM(params%path_to_outputs) // "synthetic_camera.h5"
@@ -2774,6 +2776,8 @@ SUBROUTINE save_synthetic_camera_params(params)
 	    filename = TRIM(params%path_to_outputs) //"synthetic_camera_snapshots.h5"
 	    call h5fcreate_f(TRIM(filename), H5F_ACC_TRUNC_F, h5file_id, h5error)
 	    call h5fclose_f(h5file_id, h5error)
+    end if
+    
     end if
 END SUBROUTINE save_synthetic_camera_params
 

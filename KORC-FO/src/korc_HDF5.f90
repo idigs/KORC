@@ -845,6 +845,8 @@ subroutine save_simulation_parameters(params,spp,F,P)
 	CHARACTER(19) :: tmp_str
 	REAL(rp) :: units
 
+	if (.NOT.params%restart) then
+
 	if (SIZE(params%outputs_list).GT.1_idef) then
 		write(tmp_str,'(I18)') params%mpi_params%rank
 		filename = TRIM(params%path_to_outputs) // "file_" // TRIM(ADJUSTL(tmp_str)) // ".h5"
@@ -1199,6 +1201,7 @@ subroutine save_simulation_parameters(params,spp,F,P)
 		call h5fclose_f(h5file_id, h5error)
 	end if
 
+	end if
 end subroutine save_simulation_parameters
 
 
