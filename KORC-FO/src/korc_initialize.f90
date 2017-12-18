@@ -5,22 +5,21 @@ module korc_initialize
     use korc_hpc
     use korc_HDF5
     use korc_fields
-    use rnd_numbers
+    use korc_rnd_numbers
 	use hammersley_generator
+	use korc_spatial_distribution
+	use korc_velocity_distribution
 
 	use korc_avalanche ! external module
 	use korc_experimental_pdf ! external module
 	use korc_energy_pdfs ! external module
 
+
     implicit none
 	
 
 	PRIVATE :: set_paths,&
-				load_korc_params,&
-				random_norm,&
-				fth_1V,&
-				fth_3V,&
-				iso_thermal_distribution
+				load_korc_params
 	PUBLIC :: initialize_korc_parameters,&
 				initialize_particles,&
 				initialize_fields,&
@@ -33,7 +32,6 @@ module korc_initialize
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
 subroutine set_paths(params)
-	implicit none
 	INTEGER :: argn
 	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
 
@@ -51,7 +49,6 @@ end subroutine set_paths
 
 
 subroutine load_korc_params(params)
-	implicit none
 	TYPE (KORC_PARAMS), INTENT(INOUT) :: params
 	LOGICAL :: restart
 	REAL(rp) :: simulation_time
@@ -159,11 +156,8 @@ end subroutine load_korc_params
 
 
 subroutine initialize_korc_parameters(params)
-	use korc_types
-	implicit none
 	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
 	INTEGER :: mpierr
-
 
 	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
@@ -178,7 +172,6 @@ end subroutine initialize_korc_parameters
 
 
 subroutine define_time_step(params)
-    implicit none
 	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
 
 ! 	This definition will be changed as more species and electromagnetic fields
@@ -205,7 +198,6 @@ end subroutine define_time_step
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
 subroutine initialize_particles(params,F,spp) 
-	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(FIELDS), INTENT(IN) :: F
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: spp
@@ -297,6 +289,11 @@ subroutine initialize_particles(params,F,spp)
 
 				spp(ii)%vars%g = spp(ii)%go ! Monoenergetic
 				spp(ii)%Eo_lims = (/spp(ii)%Eo , spp(ii)%Eo /)
+			CASE ('THERMAL')
+				call thermal_distribution(params,spp(ii))
+
+				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
+									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
 			CASE ('AVALANCHE')
 				call get_avalanche_PDF_params(params,spp(ii)%vars%g,spp(ii)%vars%eta,spp(ii)%go,spp(ii)%etao)
 
@@ -336,6 +333,8 @@ subroutine initialize_particles(params,F,spp)
 
 				spp(ii)%vars%eta = spp(ii)%etao ! Mono-pitch-angle
 				spp(ii)%etao_lims = (/spp(ii)%etao , spp(ii)%etao/)
+			CASE ('THERMAL')
+				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
 			CASE ('AVALANCHE')
 				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
 			CASE ('EXPERIMENTAL')
@@ -392,124 +391,7 @@ subroutine initialize_particles(params,F,spp)
 end subroutine initialize_particles
 
 
-FUNCTION fth_3V(Vth,V)
-	IMPLICIT NONE
-	REAL(rp), DIMENSION(3), INTENT(IN) :: V
-    REAL(rp), INTENT(IN) :: Vth
-	REAL(rp) :: fth_3V
-
-    fth_3V = EXP(-0.5_rp*DOT_PRODUCT(V,V)/Vth**2.0_rp)
-END FUNCTION fth_3V
-
-
-FUNCTION fth_1V(Vth,V)
-	IMPLICIT NONE
-	REAL(rp), INTENT(IN) :: V
-    REAL(rp), INTENT(IN) :: Vth
-	REAL(rp) :: fth_1V
-
-    fth_1V = EXP(-0.5_rp*(V/Vth)**2)
-END FUNCTION fth_1V
-
-
-FUNCTION random_norm(mean,sigma)
-	REAL(rp), INTENT(IN) :: mean
-	REAL(rp), INTENT(IN) :: sigma
-	REAL(rp) :: random_norm
-	REAL(rp) :: rand1, rand2
-
-	call RANDOM_NUMBER(rand1)
-	call RANDOM_NUMBER(rand2)
-
-	random_norm = SQRT(-2.0_rp*LOG(1.0_rp-rand1))*COS(2.0_rp*C_PI*rand2);
-END FUNCTION random_norm
-
-
-subroutine iso_thermal_distribution(params,spp)
-    implicit none
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-    TYPE(SPECIES), INTENT(INOUT) :: spp
-    REAL(rp) :: Vmax,Vth, sv
-    REAL(rp) :: ratio, rand_unif
-    REAL(rp), DIMENSION(3) :: V, U
-    REAL(rp), DIMENSION(3) :: b = (/1.0_rp,0.0_rp,0.0_rp/)
-	INTEGER :: ii,ppp
-
-	Vmax = 0.8_rp
-    Vth = SQRT(spp%Eo*ABS(spp%q)/spp%m)
-    ppp = spp%ppp
-
-    V = (/0.0_rp,0.0_rp,0.0_rp/)
-    sv = Vth/10.0_rp
-
-    ii=2_idef
-	do while (ii .LE. 1000_idef)
-		U(1) = V(1) + random_norm(0.0_rp,sv)
-		do while (ABS(U(1)) .GT. Vmax)
-			U(1) = V(1) + random_norm(0.0_rp,sv)
-		end do
-		U(2) = V(2) + random_norm(0.0_rp,sv)
-		do while (ABS(U(2)) .GT. Vmax)
-			U(2) = V(2) + random_norm(0.0_rp,sv)
-		end do
-		U(3) = V(3) + random_norm(0.0_rp,sv)
-		do while (ABS(U(3)) .GT. Vmax)
-			U(3) = V(3) + random_norm(0.0_rp,sv)
-		end do
-
-		ratio = fth_3V(Vth,U)/fth_3V(Vth,V)
-
-		if (ratio .GE. 1.0_rp) then
-			V = U
-			ii = ii + 1_idef
-		else 
-			call RANDOM_NUMBER(rand_unif)
-			if (ratio .GT. rand_unif) then
-				V = U
-				ii = ii + 1_idef
-			end if
-		end if
-	end do	
-
-    spp%vars%V(:,1) = V
-    ii=2_idef
-	do while (ii .LE. ppp)
-		U(1) = spp%vars%V(1,ii-1) + random_norm(0.0_rp,sv)
-		do while (ABS(U(1)) .GT. Vmax)
-			U(1) = spp%vars%V(1,ii-1) + random_norm(0.0_rp,sv)
-		end do
-		U(2) = spp%vars%V(2,ii-1) + random_norm(0.0_rp,sv)
-		do while (ABS(U(2)) .GT. Vmax)
-			U(2) = spp%vars%V(2,ii-1) + random_norm(0.0_rp,sv)
-		end do
-		U(3) = spp%vars%V(3,ii-1) + random_norm(0.0_rp,sv)
-		do while (ABS(U(3)) .GT. Vmax)
-			U(3) = spp%vars%V(3,ii-1) + random_norm(0.0_rp,sv)
-		end do
-
-		ratio = fth_3V(Vth,U)/fth_3V(Vth,spp%vars%V(:,ii-1))
-
-		if (ratio .GE. 1.0_rp) then
-			spp%vars%V(:,ii) = U
-			ii = ii + 1_idef
-		else 
-			call RANDOM_NUMBER(rand_unif)
-			if (ratio .GT. rand_unif) then
-				spp%vars%V(:,ii) = U
-				ii = ii + 1_idef
-			end if
-		end if
-	end do
-
-    do ii=1_idef,ppp
-        spp%vars%g(ii) = 1.0_rp/SQRT(1.0_rp - SUM(spp%vars%V(:,ii)**2,1))
-        spp%vars%eta(ii) = ACOS(DOT_PRODUCT(b,spp%vars%V(:,ii)/SQRT(SUM(spp%vars%V(:,ii)**2,1))))
-    end do
-end subroutine iso_thermal_distribution
-
-
 subroutine set_up_particles_ic(params,F,spp) 
-	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(FIELDS), INTENT(IN) :: F
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
@@ -518,8 +400,7 @@ subroutine set_up_particles_ic(params,F,spp)
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: V2
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: V3
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: b1, b2, b3
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Xo
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: theta, zeta, r ! temporary vars
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: theta ! temporary vars
 	REAL(rp), DIMENSION(3) :: x = (/1.0_rp,0.0_rp,0.0_rp/)
 	REAL(rp), DIMENSION(3) :: y = (/0.0_rp,1.0_rp,0.0_rp/)
 	REAL(rp), DIMENSION(3) :: z = (/0.0_rp,0.0_rp,1.0_rp/)
@@ -528,117 +409,9 @@ subroutine set_up_particles_ic(params,F,spp)
 	if (params%restart) then
 		call load_particles_ic(params,spp)
 	else
-		do ii=1_idef,params%num_species
-			ALLOCATE( Xo(3,spp(ii)%ppp) )
-			ALLOCATE( Vo(spp(ii)%ppp) )
-			ALLOCATE( V1(spp(ii)%ppp) )
-			ALLOCATE( V2(spp(ii)%ppp) )
-			ALLOCATE( V3(spp(ii)%ppp) )
-			ALLOCATE( b1(3,spp(ii)%ppp) )
-			ALLOCATE( b2(3,spp(ii)%ppp) )
-			ALLOCATE( b3(3,spp(ii)%ppp) )
+		call intitial_spatial_distribution(params,spp)
 
-		
-			ALLOCATE( theta(spp(ii)%ppp) )
-			ALLOCATE( zeta(spp(ii)%ppp) )
-			ALLOCATE( R(spp(ii)%ppp) )
-
-			! * * * * INITIALIZE POSITION * * * * 
-			if (TRIM(params%plasma_model) .EQ. 'UNIFORM') then
-				spp(ii)%vars%X = 0.0_rp
-			else
-				! Initial condition of uniformly distributed particles on a disk in the xz-plane
-				! A unique velocity direction
-				call init_u_random(10986546_8)
-
-				call init_random_seed()
-				call RANDOM_NUMBER(theta)
-				theta = 2.0_rp*C_PI*theta
-
-				call init_random_seed()
-				call RANDOM_NUMBER(zeta)
-				zeta = 2.0_rp*C_PI*zeta
-
-				! Uniform distribution on a disk at a fixed azimuthal theta		
-				call init_random_seed()
-				call RANDOM_NUMBER(r)
-
-				SELECT CASE (TRIM(spp(ii)%spatial_distribution))
-					CASE ('DISK')
-						r = SQRT((spp(ii)%r_outter**2 - spp(ii)%r_inner**2)*r + spp(ii)%r_inner**2)
-	!					r = spp(ii)%r*SQRT(r)
-						Xo(1,:) = ( spp(ii)%Ro + r*COS(theta) )*COS(spp(ii)%PHIo)
-						Xo(2,:) = ( spp(ii)%Ro + r*COS(theta) )*SIN(spp(ii)%PHIo)
-						Xo(3,:) = spp(ii)%Zo + r*SIN(theta)
-					CASE ('TORUS')
-						r = SQRT((spp(ii)%r_outter**2 - spp(ii)%r_inner**2)*r + spp(ii)%r_inner**2)
-	!					r = spp(ii)%r*SQRT(r)
-						Xo(1,:) = ( spp(ii)%Ro + r*COS(theta) )*SIN(zeta)
-						Xo(2,:) = ( spp(ii)%Ro + r*COS(theta) )*COS(zeta)
-						Xo(3,:) = spp(ii)%Zo + r*SIN(theta)
-					CASE ('GAUSSIAN')
-						r = &
-						spp(ii)%sigma_r*SQRT(-2.0_rp*LOG(1.0_rp - (1.0_rp - EXP(-0.5_rp*spp(ii)%r_outter**2/spp(ii)%sigma_r**2))*r))
-						Xo(1,:) = ( spp(ii)%Ro + r*COS(theta) )*SIN(zeta)
-						Xo(2,:) = ( spp(ii)%Ro + r*COS(theta) )*COS(zeta)
-						Xo(3,:) = spp(ii)%Zo + r*SIN(theta)
-					CASE DEFAULT
-						r = SQRT((spp(ii)%r_outter**2 - spp(ii)%r_inner**2)*r + spp(ii)%r_inner**2)
-						Xo(1,:) = ( spp(ii)%Ro + r*COS(theta) )*SIN(zeta)
-						Xo(2,:) = ( spp(ii)%Ro + r*COS(theta) )*COS(zeta)
-						Xo(3,:) = spp(ii)%Zo + r*SIN(theta)
-				END SELECT
-
-				spp(ii)%vars%X(1,:) = Xo(1,:)
-				spp(ii)%vars%X(2,:) = Xo(2,:)
-				spp(ii)%vars%X(3,:) = Xo(3,:)
-			end if
-
-
-			! * * * * INITIALIZE VELOCITY * * * * 
-			if ((TRIM(spp(ii)%energy_distribution)).EQ.'THERMAL') then
-		        call iso_thermal_distribution(params,spp(ii))
-			else
-				call init_random_seed()
-				call RANDOM_NUMBER(theta)
-				theta = 2.0_rp*C_PI*theta
-
-				Vo = SQRT( 1.0_rp - 1.0_rp/(spp(ii)%vars%g(:)**2) )
-				V1 = Vo*COS(C_PI*spp(ii)%vars%eta/180.0_rp)
-				V2 = Vo*SIN(C_PI*spp(ii)%vars%eta/180.0_rp)*COS(theta)
-				V3 = Vo*SIN(C_PI*spp(ii)%vars%eta/180.0_rp)*SIN(theta)
-
-				call unitVectors(params,Xo,F,b1,b2,b3,spp(ii)%vars%flag)
-
-				do jj=1_idef,spp(ii)%ppp
-					if ( spp(ii)%vars%flag(jj) .EQ. 1_idef ) then
-						spp(ii)%vars%V(1,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),x) + &
-						                        V2(jj)*DOT_PRODUCT(b2(:,jj),x) + &
-						                        V3(jj)*DOT_PRODUCT(b3(:,jj),x)
-
-						spp(ii)%vars%V(2,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),y) + &
-						                        V2(jj)*DOT_PRODUCT(b2(:,jj),y) + &
-						                        V3(jj)*DOT_PRODUCT(b3(:,jj),y)
-
-						spp(ii)%vars%V(3,jj) = V1(jj)*DOT_PRODUCT(b1(:,jj),z) + &
-						                        V2(jj)*DOT_PRODUCT(b2(:,jj),z) + &
-						                        V3(jj)*DOT_PRODUCT(b3(:,jj),z)
-					end if
-				end do
-			end if
-
-			DEALLOCATE(theta)
-			DEALLOCATE(zeta)
-			DEALLOCATE(R)
-			DEALLOCATE(Xo)
-			DEALLOCATE(Vo)
-			DEALLOCATE(V1)
-			DEALLOCATE(V2)
-			DEALLOCATE(V3)
-			DEALLOCATE(b1)
-			DEALLOCATE(b2)
-			DEALLOCATE(b3)
-		end do
+		call initial_velocity_distribution(params,F,spp)
 	end if
 end subroutine set_up_particles_ic
 
@@ -648,7 +421,6 @@ end subroutine set_up_particles_ic
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
 subroutine initialize_fields(params,F)
-	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(FIELDS), INTENT(OUT) :: F
 	TYPE(KORC_STRING) :: field

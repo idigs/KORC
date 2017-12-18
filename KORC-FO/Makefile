@@ -92,7 +92,7 @@ special_fun_modules.o   \
 special_fun_subroutines.o       \
 korc_collisions.o       \
 korc_hpc.o      \
-rnd_numbers.o   \
+korc_rnd_numbers.o   \
 korc_coords.o   \
 korc_interp.o   \
 korc_fields.o   \
@@ -101,13 +101,14 @@ korc_avalanche.o        \
 korc_experimental_pdf.o	\
 korc_energy_pdfs.o	\
 hammersley_generator.o  \
+korc_spatial_distribution.o \
+korc_velocity_distribution.o \
 korc_initialize.o       \
 korc_finalize.o \
 korc_units.o    \
 korc_ppusher.o  \
 korc_synthetic_camera.o \
 main.o)
-
 
 
 all: $(BIN)/KORC

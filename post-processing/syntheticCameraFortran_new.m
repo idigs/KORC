@@ -1,6 +1,6 @@
 function ST = syntheticCameraFortran(path,lambdas,visible,range)
 % ST = syntheticCameraFortran('/media/l8c/FantomHD/SimulationOutputs/Avalanche/Z1/',[400E-9,900E-9],'on',[99,100])
-% close all
+close all
 
 ST = struct;
 ST.path = path;
@@ -215,7 +215,7 @@ c = ST.params.scales.v;
 v = c*sqrt(1-1/g^2);
 ep = 8.854E-12;% Electric permitivity
 
-k = q*ST.params.fields_and_profiles.Bo*sin(eta)/(g*m*v);
+k = q*ST.params.fields.Bo*sin(eta)/(g*m*v);
 l = lambda;
 lc = 4*pi/(3*k*g^3);
 
@@ -585,12 +585,12 @@ for ss=1:ST.params.simulation.num_species
     
     nt = 100;
     t = linspace(0,2*pi,nt);
-    if isfield(ST.params.fields_and_profiles,'a')
-        a95 = ST.params.fields_and_profiles.a;
+    if isfield(ST.params.fields,'a')
+        a95 = ST.params.fields.a;
     else
-        a95 = max(ST.params.fields_and_profiles.R) - ST.params.fields_and_profiles.Ro;
+        a95 = max(ST.params.fields.R) - ST.params.fields.Ro;
     end
-    x = ST.params.fields_and_profiles.Ro + a95*cos(t);
+    x = ST.params.fields.Ro + a95*cos(t);
     y = a95*sin(t);
     
     xpixel = zeros(1,nt);
@@ -747,9 +747,9 @@ for ss=1:ST.params.simulation.num_species
         xlabel('$\lambda$ (nm)','FontSize',12,'Interpreter','latex')
         
 %         saveas(fig,[ST.path 'Spectra_ss_' num2str(ss)],'fig')
-        %saveas(fig1,[ST.path 'Ptot_toroidal_sections'],'fig')
-        %saveas(fig2,[ST.path 'density_toroidal_sections'],'fig')
-        %saveas(fig3,[ST.path 'ratio_toroidal_sections'],'fig')
+        saveas(fig1,[ST.path 'Ptot_toroidal_sections'],'fig')
+        saveas(fig2,[ST.path 'density_toroidal_sections'],'fig')
+        saveas(fig3,[ST.path 'ratio_toroidal_sections'],'fig')
         
         if plotToroidalSections
             for tt=1:NT
@@ -914,7 +914,7 @@ for ss=1:ST.params.simulation.num_species
                     ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
                     xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
                     
-                    %saveas(h,[ST.path 'toroidal_section_' num2str(tt)],'fig')
+                    saveas(h,[ST.path 'toroidal_section_' num2str(tt)],'fig')
                 else
                     close(h)
                 end
@@ -1143,7 +1143,7 @@ for ss=1:ST.params.simulation.num_species
         ylabel('Box count','FontSize',12,'Interpreter','latex')
         xlabel('Box number','FontSize',12,'Interpreter','latex')
         
-        %saveas(h,[ST.path 'Total_SE_ss_' num2str(ss)],'fig')
+        saveas(h,[ST.path 'Total_SE_ss_' num2str(ss)],'fig')
         
     else
         h = figure;
@@ -1256,11 +1256,14 @@ for ss=1:ST.params.simulation.num_species
             B(B<1) = [];
         end
         minval = min(B);
-        maxval = 5*std(B);
+        maxval = 3*std(B);
         v = linspace(minval,maxval,50);
         
         figure(h);
         subplot(4,2,5)
+        if (any(xAxis_rescaled<0))
+            xAxis_rescaled = -xAxis_rescaled;
+        end
         contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
         ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
         axis([xmin, xmax, ymin, ymax]);
@@ -1310,7 +1313,7 @@ for ss=1:ST.params.simulation.num_species
             B(B<1) = [];
         end
         minval = min(B);
-        maxval = 5*std(B);
+        maxval = 3*std(B);
         v = linspace(minval,maxval,50);
         
         figure(h);
@@ -1343,7 +1346,7 @@ for ss=1:ST.params.simulation.num_species
             xAxis_rescaled,A3,'k',xAxis_rescaled,A4,'m')
         axis([1 2.5 0 1])
         xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
-        %saveas(hs,[ST.path 'camera_slices_ss_' num2str(ss)],'fig')
+        saveas(hs,[ST.path 'camera_slices_ss_' num2str(ss)],'fig')
         
         A = np_L4';
         B = reshape(A,[numel(A),1]);
@@ -1365,7 +1368,7 @@ for ss=1:ST.params.simulation.num_species
         ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
         
-        %saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
+        saveas(h,[ST.path 'SyntheticCamera_ss_' num2str(ss)],'fig')
     end
     
 end

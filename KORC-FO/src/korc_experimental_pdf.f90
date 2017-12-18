@@ -268,7 +268,7 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 	ALLOCATE(p(ppp))
 
 	deta = pdf_params%max_pitch_angle/50.0_rp
-	dp = 1.0_rp
+	dp = 0.5_rp
 
 	if (params%mpi_params%rank.EQ.0_idef) then
 		ALLOCATE(p_samples(nsamples))! Number of samples to distribute among all MPI processes

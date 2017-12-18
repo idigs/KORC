@@ -3,7 +3,7 @@ function fields2hdf(R,PHI,Z,BR,BPHI,BZ,FLUX,FLAG,outputfile,Bo,Ro,Zo)
 % size(A) = [numel(R),numel(Z)], where A can be any of the field
 % components or magnetic flux.
 % Example for JFIT D3D fields:
-% fields2hdf(R,PHI,Z,[],[],[],D,[],outputfile,2.19,1.695,0.0)
+% fields2hdf(R,[],Z,[],[],[],D,[],outputfile,2.19,1.695,0.0)
 % Example for EFIT axisymmetric D3D magnetic fields
 % fields2hdf(R,[],Z,BR,BPHI,BZ,[],FLAG,'D3D_165826_1.h5',1.4096,1.7033,0.025)
 % Example for ITER fields using XPANDER fields

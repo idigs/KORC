@@ -17,7 +17,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
 % angularMomentum(ST);
 
@@ -25,7 +25,7 @@ energyConservation(ST);
 
 % ST.CP = confined_particles(ST);
 % 
-ST.PAD = pitchAngleDiagnostic(ST,30);
+% ST.PAD = pitchAngleDiagnostic(ST,30);
 
 % ST.MMD = magneticMomentDiagnostic(ST,70);
 
@@ -705,7 +705,7 @@ for ss=1:ST.params.simulation.num_species
         xlabel('$R$','Interpreter','latex','FontSize',16)
         ylabel('$Z$','Interpreter','latex','FontSize',16)
         
-        x = ST.params.fields_and_profiles.Ro + ...
+        x = ST.params.fields.Ro + ...
             ST.params.species.ro(ss)*cos(linspace(0,2*pi,100));
         y = ST.params.species.ro(ss)*sin(linspace(0,2*pi,100));
         hold on; plot3(x,y,1*ones(size(x)),'k');hold off
@@ -780,7 +780,7 @@ for ss=1:ST.params.simulation.num_species
 %     xlabel('$R$','Interpreter','latex','FontSize',16)
 %     ylabel('$Z$','Interpreter','latex','FontSize',16)
 %     
-%     x = ST.params.fields_and_profiles.Ro + ...
+%     x = ST.params.fields.Ro + ...
 %         ST.params.species.ro(ss)*cos(linspace(0,2*pi,100));
 %     y = ST.params.species.ro(ss)*sin(linspace(0,2*pi,100));
 %     hold on; plot3(x,y,1*ones(size(x)),'k');hold off
@@ -792,10 +792,10 @@ end
 end
 
 function angularMomentum(ST)
-Bo = ST.params.fields_and_profiles.Bo;
-Ro = ST.params.fields_and_profiles.Ro; % Major radius in meters.
-lambda = ST.params.fields_and_profiles.lambda;
-qo = ST.params.fields_and_profiles.qo;
+Bo = ST.params.fields.Bo;
+Ro = ST.params.fields.Ro; % Major radius in meters.
+lambda = ST.params.fields.lambda;
+qo = ST.params.fields.qo;
 
 st1 = zeros(ST.num_snapshots,ST.params.simulation.num_species);
 st2 = zeros(ST.num_snapshots,ST.params.simulation.num_species);
@@ -1000,7 +1000,7 @@ RT = struct;
 
 % cad = ST.params.simulation.output_cadence;
 % time = ST.params.simulation.dt*double(0:cad:ST.params.simulation.t_steps);
-Ro = ST.params.fields_and_profiles.Ro;
+Ro = ST.params.fields.Ro;
 rc = zeros(1,ST.params.simulation.num_species);
 
 C = colormap(jet(512));
@@ -1029,7 +1029,7 @@ for ss=1:ST.params.simulation.num_species
         
         bool = all(ST.data.(['sp' num2str(ss)]).eta(pp,:) < 90);
         
-        if all(r < ST.params.fields_and_profiles.a) && bool && all
+        if all(r < ST.params.fields.a) && bool && all
 %             rc(ss) = r(1);
             pin(pp) = 1;
         end
@@ -1040,8 +1040,8 @@ for ss=1:ST.params.simulation.num_species
     end
     
     t = linspace(0,2*pi,200);
-    Rs = ST.params.fields_and_profiles.Ro + ST.params.fields_and_profiles.a*cos(t);
-    Zs = ST.params.fields_and_profiles.a*sin(t);
+    Rs = ST.params.fields.Ro + ST.params.fields.a*cos(t);
+    Zs = ST.params.fields.a*sin(t);
 
     X = squeeze(ST.data.(['sp' num2str(ss)]).X(:,logical(pin),1));
     R = sqrt( sum(X(1:2,:).^2,1) );
@@ -1096,10 +1096,10 @@ CP = struct;
 tmax = max(ST.time);
 tmin = min(ST.time);
 
-if isfield(ST.params.fields_and_profiles,'a')
+if isfield(ST.params.fields,'a')
     t = linspace(0,2*pi,200);
-    Rs = ST.params.fields_and_profiles.Ro + ST.params.fields_and_profiles.a*cos(t);
-    Zs = ST.params.fields_and_profiles.a*sin(t);
+    Rs = ST.params.fields.Ro + ST.params.fields.a*cos(t);
+    Zs = ST.params.fields.a*sin(t);
 end
 
 CP.confined = zeros(1,ST.params.simulation.num_species);
@@ -1165,7 +1165,7 @@ end
 figure(h1)
 subplot(1,2,1)
 legend(legends,'interpreter','latex','FontSize',12)
-if isfield(ST.params.fields_and_profiles,'a')
+if isfield(ST.params.fields,'a')
     hold on
     plot(Rs,Zs,'r')
     hold off
@@ -1203,7 +1203,7 @@ end
 figure(h1)
 subplot(1,2,2)
 legend(legends,'interpreter','latex','FontSize',12)
-if isfield(ST.params.fields_and_profiles,'a')
+if isfield(ST.params.fields,'a')
     hold on
     plot(Rs,Zs,'r')
     box on
@@ -1272,18 +1272,18 @@ function B = analyticalB(ST,X)
 narginchk(1,2);
 
 % Parameters of the analytical magnetic field
-Bo = ST.params.fields_and_profiles.Bo;
-a = ST.params.fields_and_profiles.a;
-Ro = ST.params.fields_and_profiles.Ro;
-qa = ST.params.fields_and_profiles.qa;
-lamb = ST.params.fields_and_profiles.lambda;
+Bo = ST.params.fields.Bo;
+a = ST.params.fields.a;
+Ro = ST.params.fields.Ro;
+qa = ST.params.fields.qa;
+lamb = ST.params.fields.lambda;
 try
-    co = ST.params.fields_and_profiles.co;
+    co = ST.params.fields.co;
 catch
-    qo = ST.params.fields_and_profiles.qa;
+    qo = ST.params.fields.qa;
     co = a/lamb;
 end
-Bpo = ST.params.fields_and_profiles.Bpo;
+Bpo = ST.params.fields.Bpo;
 % Parameters of the analytical magnetic field
 
 
@@ -1322,8 +1322,8 @@ function E = analyticalE(ST,X)
 narginchk(1,2);
 
 % Parameters of the analytical magnetic field
-Eo = ST.params.fields_and_profiles.Eo;
-Ro = ST.params.fields_and_profiles.Ro;
+Eo = ST.params.fields.Eo;
+Ro = ST.params.fields.Ro;
 % Parameters of the analytical magnetic field
 
 
@@ -1417,7 +1417,7 @@ for ss=1:ST.params.simulation.num_species
 
     % Approximation of <1/R^2> ~ sin^4(eta)/rg^2
     vperp = vo.*sin(etao);
-    wc = q*ST.params.fields_and_profiles.Bo./(gammapo*m);
+    wc = q*ST.params.fields.Bo./(gammapo*m);
     rg = vperp./wc;
     kappa2 = sin(etao).^4./rg.^2;
  
@@ -1434,7 +1434,7 @@ for ss=1:ST.params.simulation.num_species
     
     % Larmor approximation using approximation for curvature
 %     PR_app = 2*Kc*q^2*(gammapo.*v).^4.*kappa2/(3*c^3);
-    Tr = 6*pi*ep*(m*ST.params.scales.v)^3/(q^4*ST.params.fields_and_profiles.Bo^2);
+    Tr = 6*pi*ep*(m*ST.params.scales.v)^3/(q^4*ST.params.fields.Bo^2);
     PR_app = gammapo.*vo.*(m*gammapo.*vo).*sin(etao).^2/Tr;
     
     figure(h1)
@@ -1618,7 +1618,7 @@ Dlambda_camera = mean(diff(lambda_camera));
 
 rmin = 0;
 try
-    rmax = ST.params.fields_and_profiles.a;
+    rmax = ST.params.fields.a;
     Nr = 25;
     Ntheta = 80;
     
@@ -1631,8 +1631,8 @@ try
     NR = 50;
     NZ = 50;
 catch
-    %     Ro = ST.params.fields_and_profiles.Ro;
-    %     rmax = max([max(ST.params.fields_and_profiles.R) - Ro, Ro - min(ST.params.fields_and_profiles.R)]);
+    %     Ro = ST.params.fields.Ro;
+    %     rmax = max([max(ST.params.fields.R) - Ro, Ro - min(ST.params.fields.R)]);
     rmax = 1.2;
     Nr = 40;
     Ntheta = 80;
@@ -1669,7 +1669,7 @@ for ss=1:num_species
 % for ss=6:6
     q = abs(ST.params.species.q(ss));
     m = ST.params.species.m(ss);
-    Ro = ST.params.fields_and_profiles.Ro;
+    Ro = ST.params.fields.Ro;
     
     if strcmp(geometry,'poloidal')
         Psyn = zeros(Ntheta,Nr);
@@ -1822,7 +1822,7 @@ for ss=1:num_species
 
         % % % % NO CUTOFF % % %
 %         k = ...
-%             q*ST.params.fields_and_profiles.Bo*sin(pi*ST.params.species.etao(ss)/180)...
+%             q*ST.params.fields.Bo*sin(pi*ST.params.species.etao(ss)/180)...
 %             /(ST.params.species.go(ss)*ST.params.species.m(ss)*v(1))*ones(size(v));
         
         % % % % Beyond this point all variables are in cgs units % % % %
@@ -2517,7 +2517,7 @@ anticlockwise_rotation = @(t,x) [cos(t),-sin(t);sin(t),cos(t)]*x;
 for ss=1:num_species
     q = abs(ST.params.species.q(ss));
     m = ST.params.species.m(ss);
-    Ro = ST.params.fields_and_profiles.Ro;
+    Ro = ST.params.fields.Ro;
     
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
     passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
@@ -2880,7 +2880,7 @@ c = ST.params.scales.v;
 v = c*sqrt(1-1/g^2);
 ep = 8.854E-12;% Electric permitivity
 
-k = q*ST.params.fields_and_profiles.Bo*sin(eta)/(g*m*v);
+k = q*ST.params.fields.Bo*sin(eta)/(g*m*v);
 
 % k = 2*q*sin(eta)/(g*m*v);
 l = lambda; 
@@ -3470,10 +3470,10 @@ end
 
 function figuresAPS2017(ST)
 
-if isfield(ST.params.fields_and_profiles,'a')
+if isfield(ST.params.fields,'a')
     t = linspace(0,2*pi,200);
-    Rs = ST.params.fields_and_profiles.Ro + ST.params.fields_and_profiles.a*cos(t);
-    Zs = ST.params.fields_and_profiles.a*sin(t);
+    Rs = ST.params.fields.Ro + ST.params.fields.a*cos(t);
+    Zs = ST.params.fields.a*sin(t);
 end
 
 legends = cell(1,ST.params.simulation.num_species);
@@ -3542,7 +3542,7 @@ end
 figure(h1)
 subplot(2,3,4)
 legend(legends,'interpreter','latex','FontSize',12)
-if isfield(ST.params.fields_and_profiles,'a')
+if isfield(ST.params.fields,'a')
     hold on
     plot(Rs,Zs,'k','LineWidth',2,'DisplayName','Plasma edge')
     hold off
@@ -3571,7 +3571,7 @@ end
 figure(h1)
 subplot(2,3,5)
 legend(fliplr(legends),'interpreter','latex','FontSize',12)
-if isfield(ST.params.fields_and_profiles,'a')
+if isfield(ST.params.fields,'a')
     hold on
     plot(Rs,Zs,'k','LineWidth',2,'DisplayName','Plasma edge')
     hold off
@@ -3605,7 +3605,7 @@ ep0 = 8.854E-12;% Electric permitivity
 c = 2.9979E8; % Speed of light
 qe = 1.602176E-19; % Electron charge
 me = 9.109382E-31; % Electron mass
-Bo = ST.params.fields_and_profiles.Bo;
+Bo = ST.params.fields.Bo;
 
 hh = figure;
 hs1 = figure;

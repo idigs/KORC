@@ -2,7 +2,7 @@ module korc_interp
 
     use korc_types
     use korc_coords
-    use rnd_numbers
+    use korc_rnd_numbers
     use EZspline_obj	! psplines module
     use EZspline		! psplines module
 

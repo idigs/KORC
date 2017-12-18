@@ -1,4 +1,4 @@
-module rnd_numbers
+module korc_rnd_numbers
 
 #ifdef INTEL
     use ifport
@@ -164,4 +164,4 @@ subroutine init_random_seed()
 
 end subroutine init_random_seed
 
-end module rnd_numbers
+end module korc_rnd_numbers
