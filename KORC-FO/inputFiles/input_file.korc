@@ -32,7 +32,7 @@
 	Zo = 0.0,0.0 !
 	r_inner = 0.0,0.0 !
 	r_outter = 0.5,0.6 !
-	sigma_r = 0.0, 0.14 !
+	falloff_rate = 0.0, 0.14 !
 	energy_distribution = 'MONOENERGETIC','MONOENERGETIC'   ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'
 	pitch_distribution = 'MONOPITCH','MONOPITCH'	! Options are: 'MONOPITCH', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'.
 	Eo = 10.0E6,10.0E6 ! Initial energy in eV

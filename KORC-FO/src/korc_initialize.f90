@@ -217,11 +217,11 @@ subroutine initialize_particles(params,F,spp)
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zo
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: r_inner
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: r_outter
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: sigma_r
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: falloff_rate
 	INTEGER :: ii,jj, mpierr ! Iterator
 
 	NAMELIST /plasma_species/ ppp,q,m,Eo,etao,Eo_lims,etao_lims,runaway,spatial_distribution,&
-								energy_distribution,pitch_distribution,Ro,PHIo,Zo,r_inner,r_outter,sigma_r
+								energy_distribution,pitch_distribution,Ro,PHIo,Zo,r_inner,r_outter,falloff_rate
 
 	! Allocate array containing variables of particles for each species
 	ALLOCATE(spp(params%num_species))
@@ -242,7 +242,7 @@ subroutine initialize_particles(params,F,spp)
 	ALLOCATE(Zo(params%num_species))
 	ALLOCATE(r_inner(params%num_species))
 	ALLOCATE(r_outter(params%num_species))
-	ALLOCATE(sigma_r(params%num_species))
+	ALLOCATE(falloff_rate(params%num_species))
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=plasma_species)
@@ -262,7 +262,7 @@ subroutine initialize_particles(params,F,spp)
 		spp(ii)%Zo = Zo(ii)
 		spp(ii)%r_inner = r_inner(ii)
 		spp(ii)%r_outter = r_outter(ii)
-		spp(ii)%sigma_r = sigma_r(ii)
+		spp(ii)%falloff_rate = falloff_rate(ii)
 		
 
 		ALLOCATE( spp(ii)%vars%X(3,spp(ii)%ppp) )
@@ -387,7 +387,7 @@ subroutine initialize_particles(params,F,spp)
 	DEALLOCATE(Zo)
 	DEALLOCATE(r_inner)
 	DEALLOCATE(r_outter)
-	DEALLOCATE(sigma_r)
+	DEALLOCATE(falloff_rate)
 end subroutine initialize_particles
 
 

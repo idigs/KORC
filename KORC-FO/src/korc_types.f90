@@ -145,7 +145,7 @@ TYPE, PUBLIC :: SPECIES
 	REAL(rp) :: Zo
 	REAL(rp) :: r_inner
 	REAL(rp) :: r_outter
-	REAL(rp) :: sigma_r
+	REAL(rp) :: falloff_rate
 END TYPE SPECIES
 
 

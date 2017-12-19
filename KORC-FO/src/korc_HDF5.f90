@@ -1000,9 +1000,9 @@ subroutine save_simulation_parameters(params,spp,F,P)
 		attr_array(1) = "Outter radius of initial spatial distribution"
 		call save_1d_array_to_hdf5(h5file_id,dset,spp%r_outter*params%cpp%length,attr_array)
 
-		dset = TRIM(gname) // "/sigma_r"
-		attr_array(1) = "Standard deviation of Gaussian radial distribution in m (only used for Gaussian PDF)"
-		call save_1d_array_to_hdf5(h5file_id,dset,spp%sigma_r*params%cpp%length,attr_array)
+		dset = TRIM(gname) // "/falloff_rate"
+		attr_array(1) = "Falloff of gaussian or exponential radial profile in m"
+		call save_1d_array_to_hdf5(h5file_id,dset,spp%falloff_rate*params%cpp%length,attr_array)
 
 		call h5gclose_f(group_id, h5error)
 
