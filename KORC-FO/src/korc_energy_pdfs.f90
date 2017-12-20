@@ -17,6 +17,7 @@ MODULE korc_energy_pdfs
 	TYPE(GAMMA_PARAMS), PRIVATE :: gamma_pdf_params
 	REAL(rp), PRIVATE, PARAMETER :: xo = (C_ME*C_C**2/C_E)/1.0E6
 	REAL(rp), PRIVATE, PARAMETER :: co = (C_E*1.0E6)/(C_ME*C_C**2)
+	REAL(rp), PRIVATE, PARAMETER :: minmax_buffer_size = 10.0_rp
 
 	PUBLIC :: get_gamma_distribution
 	PRIVATE :: initialize_gamma_params,&

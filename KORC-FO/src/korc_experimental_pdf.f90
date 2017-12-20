@@ -262,8 +262,8 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: p_tmp
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: eta_tmp
 	REAL(rp) :: minmax,min_p, max_p, min_pitch_angle, max_pitch_angle
-	REAL(rp) :: deta,deta_step
-	REAL(rp) :: dp,dp_step
+	REAL(rp) :: deta
+	REAL(rp) :: dp
 	LOGICAL :: lp,leta
 	INTEGER :: num_accepted
 	INTEGER :: ii,jj,ppp,nsamples
@@ -321,7 +321,7 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 		p_buffer = pdf_params%min_p + (pdf_params%max_p - pdf_params%min_p)*rand_unif
 
 		ii=2_idef
-		do while (ii .LE. 1000000_idef)
+		do while (ii .LE. 1000_idef)
 			eta_test = eta_buffer + random_norm(0.0_rp,deta)
 			do while ((ABS(eta_test) .GT. pdf_params%max_pitch_angle).OR.(ABS(eta_test) .LT. pdf_params%min_pitch_angle))
 				eta_test = eta_buffer + random_norm(0.0_rp,deta)

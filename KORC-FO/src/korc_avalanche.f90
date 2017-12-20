@@ -31,6 +31,7 @@ MODULE korc_avalanche
 	END TYPE AVALANCHE_PDF_PARAMS
 
 	TYPE(AVALANCHE_PDF_PARAMS), PRIVATE :: aval_params
+	REAL(rp), PRIVATE, PARAMETER :: minmax_buffer_size = 10.0_rp
 
 	PUBLIC :: get_avalanche_PDF_params
 	PRIVATE :: initialize_avalanche_params,&
@@ -166,11 +167,16 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 	REAL(rp) :: ratio, rand_unif
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: p_samples
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: eta_samples
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: p_tmp
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: eta_tmp
+	REAL(rp) :: minmax,min_p, max_p, min_pitch_angle, max_pitch_angle
 	REAL(4), DIMENSION(2) :: tarray
 	REAL(4) :: time_elapsed
 	REAL(rp) :: deta
 	REAL(rp) :: dp
-	INTEGER :: ii,ppp,nsamples
+	LOGICAL :: lp,leta
+	INTEGER :: num_accepted
+	INTEGER :: ii,jj,ppp,nsamples
 	INTEGER :: mpierr
 
 !	call DTIME(tarray,time_elapsed)
@@ -180,21 +186,53 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 	nsamples = ppp*params%mpi_params%nmpi
 	ALLOCATE(p(ppp))
 
-	deta = aval_params%max_pitch_angle/50.0_rp
-	dp = 1.0_rp
+	deta = (aval_params%max_pitch_angle - aval_params%min_pitch_angle)/100.0_rp
+	dp = (aval_params%max_p - aval_params%min_p)/100.0_rp
+
+	do jj=1_idef,INT(minmax_buffer_size,idef)
+		minmax = aval_params%min_p - REAL(jj,rp)*dp
+		if (minmax.GT.0.0_rp) then
+			min_p = minmax
+		end if
+	end do
+
+	max_p = aval_params%max_p + minmax_buffer_size*dp
+
+	if (aval_params%min_pitch_angle.GE.korc_zero) then
+		do jj=1_idef,INT(minmax_buffer_size,idef)
+			minmax = aval_params%min_pitch_angle -  REAL(jj,rp)*deta
+			if (minmax.GT.0.0_rp) then
+				min_pitch_angle = minmax
+			end if
+		end do
+	else
+		min_pitch_angle = aval_params%min_pitch_angle
+	end if
+
+	do jj=1_idef,INT(minmax_buffer_size,idef)
+		minmax = aval_params%max_pitch_angle + REAL(jj,rp)*deta
+		if (minmax.LE.90.0_rp) then
+			max_pitch_angle = minmax
+		end if
+	end do
 
 	if (params%mpi_params%rank.EQ.0_idef) then
 		ALLOCATE(p_samples(nsamples))! Number of samples to distribute among all MPI processes
 		ALLOCATE(eta_samples(nsamples))! Number of samples to distribute among all MPI processes
+		ALLOCATE(p_tmp(nsamples))! Number of samples to distribute among all MPI processes
+		ALLOCATE(eta_tmp(nsamples))! Number of samples to distribute among all MPI processes
 
+		!* * * Transient * * *!
 		call RANDOM_SEED()
+
 		call RANDOM_NUMBER(rand_unif)
-		eta_buffer = aval_params%max_pitch_angle*rand_unif
+		eta_buffer = aval_params%min_pitch_angle + (aval_params%max_pitch_angle - aval_params%min_pitch_angle)*rand_unif
+
 		call RANDOM_NUMBER(rand_unif)
 		p_buffer = aval_params%min_p + (aval_params%max_p - aval_params%min_p)*rand_unif
 
 		ii=2_idef
-		do while (ii .LE. 1000000_idef)
+		do while (ii .LE. 10000_idef)
 			eta_test = eta_buffer + random_norm(0.0_rp,deta)
 			do while ((ABS(eta_test) .GT. aval_params%max_pitch_angle).OR.(ABS(eta_test) .LT. aval_params%min_pitch_angle))
 				eta_test = eta_buffer + random_norm(0.0_rp,deta)
@@ -222,43 +260,59 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 				end if
 			end if
 		end do	
+		!* * * Transient * * *!
 
 		eta_samples(1) = eta_buffer
 		call RANDOM_SEED()
 		call RANDOM_NUMBER(rand_unif)
 		p_samples(1) = p_buffer
 
-		ii=2_idef
-		do while (ii .LE. nsamples)
-			eta_test = eta_samples(ii-1) + random_norm(0.0_rp,deta)
-			do while ((ABS(eta_test) .GT. aval_params%max_pitch_angle).OR.(ABS(eta_test) .LT. aval_params%min_pitch_angle))
-				eta_test = eta_samples(ii-1) + random_norm(0.0_rp,deta)
-			end do
-			chi_test = COS(deg2rad(eta_test))
-			chi = COS(deg2rad(eta_samples(ii-1)))
+		num_accepted = 0_idef
+		do while(num_accepted.LT.nsamples)
+			ii=2_idef
+			do while (ii .LE. nsamples)
+				eta_test = eta_tmp(ii-1) + random_norm(0.0_rp,deta)
+				do while ((ABS(eta_test) .GT. max_pitch_angle).OR.(ABS(eta_test) .LT. min_pitch_angle))
+					eta_test = eta_tmp(ii-1) + random_norm(0.0_rp,deta)
+				end do
+				chi_test = COS(deg2rad(eta_test))
+				chi = COS(deg2rad(eta_tmp(ii-1)))
 
-			p_test = p_samples(ii-1) + random_norm(0.0_rp,dp)
-			do while ((p_test.LT.aval_params%min_p).OR.(p_test.GT.aval_params%max_p))
-				p_test = p_samples(ii-1) + random_norm(0.0_rp,dp)
-			end do
+				p_test = p_tmp(ii-1) + random_norm(0.0_rp,dp)
+				do while ((p_test.LT.min_p).OR.(p_test.GT.max_p))
+					p_test = p_tmp(ii-1) + random_norm(0.0_rp,dp)
+				end do
 
-			ratio = fRE(chi_test,p_test)/fRE(chi,p_samples(ii-1))
+				ratio = fRE(chi_test,p_test)/fRE(chi,p_samples(ii-1))
 
-			if (ratio .GE. 1.0_rp) then
-				p_samples(ii) = p_test
-				eta_samples(ii) = eta_test
-				ii = ii + 1_idef
-			else 
-				call RANDOM_NUMBER(rand_unif)
-				if (rand_unif .LT. ratio) then
-					p_samples(ii) = p_test
-					eta_samples(ii) = eta_test
+				if (ratio .GE. 1.0_rp) then
+					p_tmp(ii) = p_test
+					eta_tmp(ii) = eta_test
 					ii = ii + 1_idef
+				else 
+					call RANDOM_NUMBER(rand_unif)
+					if (rand_unif .LT. ratio) then
+						p_tmp(ii) = p_test
+						eta_tmp(ii) = eta_test
+						ii = ii + 1_idef
+					end if
 				end if
-			end if
-		end do	
+			end do	
 
-		eta_samples = ABS(eta_samples)
+			eta_samples = ABS(eta_samples)
+
+			ii = 1_idef
+			do while ( (ii.LT.nsamples).AND.(num_accepted.LT.nsamples) )
+				lp = (p_tmp(ii).LE.aval_params%max_p).AND.(p_tmp(ii).GE.aval_params%min_p)
+				leta = (eta_tmp(ii).LE.aval_params%max_pitch_angle).AND.(eta_tmp(ii).GE.aval_params%min_pitch_angle)
+				if (lp.AND.leta) then
+					num_accepted = num_accepted + 1_idef
+					p_samples(num_accepted) = p_tmp(ii)
+					eta_samples(num_accepted) = eta_tmp(ii)
+				end if
+				ii = ii + 1_idef
+			end do
+		end do
 
 		go = SUM(SQRT(1.0_rp + p_samples**2))/nsamples
 		etao = SUM(eta_samples)/nsamples
