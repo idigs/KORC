@@ -52,7 +52,7 @@ ST.data = loadData(ST);
 % SE_phaseSpaceAnalisys(ST);
 
 
-% plotEnergyPitchanglePDF(ST);
+plotEnergyPitchanglePDF(ST);
 
 
 % figuresAPS2017(ST);
