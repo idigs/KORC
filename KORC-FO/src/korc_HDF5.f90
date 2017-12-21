@@ -1,5 +1,5 @@
 module korc_HDF5
-
+	use korc_hpc
 	use korc_types
 	use korc_constants
 	use HDF5
@@ -1225,6 +1225,7 @@ subroutine restart_dump(params,spp,F)
 	CHARACTER(19) :: tmp_str
 	REAL(rp) :: units
     INTEGER :: ss,jj
+	INTEGER :: mpierr
 
 	write(tmp_str,'(I18)') params%mpi_params%rank
 	filename = TRIM(params%path_to_outputs) // "restart_file_" // TRIM(ADJUSTL(tmp_str)) // ".h5"
@@ -1263,6 +1264,8 @@ subroutine restart_dump(params,spp,F)
 	end do
 
 	call h5fclose_f(h5file_id, h5error)
+
+    CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 end subroutine restart_dump
 
 
