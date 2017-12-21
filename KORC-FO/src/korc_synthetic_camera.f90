@@ -2641,142 +2641,142 @@ SUBROUTINE save_synthetic_camera_params(params)
 	
 	if (.NOT.params%restart) then
 
-	if (params%mpi_params%rank .EQ. 0) then
-		filename = TRIM(params%path_to_outputs) // "synthetic_camera.h5"
-		call h5fcreate_f(TRIM(filename), H5F_ACC_TRUNC_F, h5file_id, h5error)
+		if (params%mpi_params%rank .EQ. 0) then
+			filename = TRIM(params%path_to_outputs) // "synthetic_camera.h5"
+			call h5fcreate_f(TRIM(filename), H5F_ACC_TRUNC_F, h5file_id, h5error)
 
-		gname = "synthetic_camera_params"
-		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
+			gname = "synthetic_camera_params"
+			call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
-!		dset = TRIM(gname) // "/aperture"
-!		attr = "Aperture of the camera (m)"
-!		call save_to_hdf5(h5file_id,dset,cam%aperture,attr)
+	!		dset = TRIM(gname) // "/aperture"
+	!		attr = "Aperture of the camera (m)"
+	!		call save_to_hdf5(h5file_id,dset,cam%aperture,attr)
 
-		dset = TRIM(gname) // "/pixel_area"
-		attr = "Pixel area (m^2)"
-		call save_to_hdf5(h5file_id,dset,cam%pixel_area,attr)
+			dset = TRIM(gname) // "/pixel_area"
+			attr = "Pixel area (m^2)"
+			call save_to_hdf5(h5file_id,dset,cam%pixel_area,attr)
 
-		dset = TRIM(gname) // "/start_at"
-		attr = "Time at which camera starts working (s)"
-		call save_to_hdf5(h5file_id,dset,cam%start_at,attr)
+			dset = TRIM(gname) // "/start_at"
+			attr = "Time at which camera starts working (s)"
+			call save_to_hdf5(h5file_id,dset,cam%start_at,attr)
 
-		dset = TRIM(gname) // "/Riw"
-		attr = "Radial position of inner wall (m)"
-		call save_to_hdf5(h5file_id,dset,cam%Riw,attr)
+			dset = TRIM(gname) // "/Riw"
+			attr = "Radial position of inner wall (m)"
+			call save_to_hdf5(h5file_id,dset,cam%Riw,attr)
 
-		dset = TRIM(gname) // "/focal_length"
-		attr = "Focal length of the camera (m)"
-		call save_to_hdf5(h5file_id,dset,cam%focal_length,attr)
+			dset = TRIM(gname) // "/focal_length"
+			attr = "Focal length of the camera (m)"
+			call save_to_hdf5(h5file_id,dset,cam%focal_length,attr)
 
-		dset = TRIM(gname) // "/incline"
-		attr = "Incline of camera in degrees"
-		units = 180.0_rp/C_PI
-		call save_to_hdf5(h5file_id,dset,units*cam%incline,attr)
+			dset = TRIM(gname) // "/incline"
+			attr = "Incline of camera in degrees"
+			units = 180.0_rp/C_PI
+			call save_to_hdf5(h5file_id,dset,units*cam%incline,attr)
 
-		dset = TRIM(gname) // "/horizontal_angle_view"
-		attr = "Horizontal angle of view in degrees"
-		units = 180.0_rp/C_PI
-		call save_to_hdf5(h5file_id,dset,units*cam%horizontal_angle_view,attr)
+			dset = TRIM(gname) // "/horizontal_angle_view"
+			attr = "Horizontal angle of view in degrees"
+			units = 180.0_rp/C_PI
+			call save_to_hdf5(h5file_id,dset,units*cam%horizontal_angle_view,attr)
 
-		dset = TRIM(gname) // "/vertical_angle_view"
-		attr = "Vertical angle of view in degrees"
-		units = 180.0_rp/C_PI
-		call save_to_hdf5(h5file_id,dset,units*cam%vertical_angle_view,attr)
+			dset = TRIM(gname) // "/vertical_angle_view"
+			attr = "Vertical angle of view in degrees"
+			units = 180.0_rp/C_PI
+			call save_to_hdf5(h5file_id,dset,units*cam%vertical_angle_view,attr)
 
-		dset = TRIM(gname) // "/lambda_min"
-		attr = "Minimum wavelength (m)"
-		call save_to_hdf5(h5file_id,dset,cam%lambda_min,attr)
+			dset = TRIM(gname) // "/lambda_min"
+			attr = "Minimum wavelength (m)"
+			call save_to_hdf5(h5file_id,dset,cam%lambda_min,attr)
 
-		dset = TRIM(gname) // "/lambda_max"
-		attr = "Minimum wavelength (m)"
-		call save_to_hdf5(h5file_id,dset,cam%lambda_max,attr)
+			dset = TRIM(gname) // "/lambda_max"
+			attr = "Minimum wavelength (m)"
+			call save_to_hdf5(h5file_id,dset,cam%lambda_max,attr)
 
-		dset = TRIM(gname) // "/Dlambda"
-		attr = "Step between finite wavelengths (m)"
-		call save_to_hdf5(h5file_id,dset,cam%Dlambda,attr)
+			dset = TRIM(gname) // "/Dlambda"
+			attr = "Step between finite wavelengths (m)"
+			call save_to_hdf5(h5file_id,dset,cam%Dlambda,attr)
 
-		dset = TRIM(gname) // "/Nlambda"
-		attr = "Number of finite wavelengths (m)"
-		call save_to_hdf5(h5file_id,dset,cam%Nlambda,attr)
+			dset = TRIM(gname) // "/Nlambda"
+			attr = "Number of finite wavelengths (m)"
+			call save_to_hdf5(h5file_id,dset,cam%Nlambda,attr)
 
-	    dset = TRIM(gname) // "/lambda"
-	    call save_1d_array_to_hdf5(h5file_id,dset,cam%lambda)
+			dset = TRIM(gname) // "/lambda"
+			call save_1d_array_to_hdf5(h5file_id,dset,cam%lambda)
 
-	    dset = TRIM(gname) // "/num_pixels"
-	    call save_1d_array_to_hdf5(h5file_id,dset,cam%num_pixels)
+			dset = TRIM(gname) // "/num_pixels"
+			call save_1d_array_to_hdf5(h5file_id,dset,cam%num_pixels)
 
-	    dset = TRIM(gname) // "/sensor_size"
-	    call save_1d_array_to_hdf5(h5file_id,dset,cam%sensor_size)
+			dset = TRIM(gname) // "/sensor_size"
+			call save_1d_array_to_hdf5(h5file_id,dset,cam%sensor_size)
 
-	    dset = TRIM(gname) // "/position"
-	    call save_1d_array_to_hdf5(h5file_id,dset,cam%position)
+			dset = TRIM(gname) // "/position"
+			call save_1d_array_to_hdf5(h5file_id,dset,cam%position)
 
-	    dset = TRIM(gname) // "/pixels_nodes_x"
-	    call save_1d_array_to_hdf5(h5file_id,dset,cam%pixels_nodes_x)
+			dset = TRIM(gname) // "/pixels_nodes_x"
+			call save_1d_array_to_hdf5(h5file_id,dset,cam%pixels_nodes_x)
 
-	    dset = TRIM(gname) // "/pixels_nodes_y"
-	    call save_1d_array_to_hdf5(h5file_id,dset,cam%pixels_nodes_y)
+			dset = TRIM(gname) // "/pixels_nodes_y"
+			call save_1d_array_to_hdf5(h5file_id,dset,cam%pixels_nodes_y)
 
-	    dset = TRIM(gname) // "/pixels_edges_x"
-	    call save_1d_array_to_hdf5(h5file_id,dset,cam%pixels_edges_x)
+			dset = TRIM(gname) // "/pixels_edges_x"
+			call save_1d_array_to_hdf5(h5file_id,dset,cam%pixels_edges_x)
 
-	    dset = TRIM(gname) // "/pixels_edges_y"
-	    call save_1d_array_to_hdf5(h5file_id,dset,cam%pixels_edges_y)
+			dset = TRIM(gname) // "/pixels_edges_y"
+			call save_1d_array_to_hdf5(h5file_id,dset,cam%pixels_edges_y)
 
-		dset = TRIM(gname) // "/photon_count"
-		attr = "Logical variable: 1=Psyn is in number of photons, 0=Psyn is in Watts"
-		if (cam%photon_count) then
-			call save_to_hdf5(h5file_id,dset,1_idef,attr)
-		else
-			call save_to_hdf5(h5file_id,dset,0_idef,attr)
+			dset = TRIM(gname) // "/photon_count"
+			attr = "Logical variable: 1=Psyn is in number of photons, 0=Psyn is in Watts"
+			if (cam%photon_count) then
+				call save_to_hdf5(h5file_id,dset,1_idef,attr)
+			else
+				call save_to_hdf5(h5file_id,dset,0_idef,attr)
+			end if
+
+			dset = TRIM(gname) // "/integrated_opt"
+			attr = "Logical variable: 1=integrated spectra, 0=detailed spectral info"
+			if (cam%integrated_opt) then
+				call save_to_hdf5(h5file_id,dset,1_idef,attr)
+			else
+				call save_to_hdf5(h5file_id,dset,0_idef,attr)
+			end if
+
+				dset = TRIM(gname) // "/toroidal_sections"
+				attr = "Logical variable: 1=decomposed in toroidal sections, 0=no toroidal decomposition"
+			if (cam%toroidal_sections) then
+				call save_to_hdf5(h5file_id,dset,1_idef,attr)
+
+				dset = TRIM(gname) // "/ntor_sections"
+				attr = "Number of toroidal sections"
+				call save_to_hdf5(h5file_id,dset,cam%ntor_sections,attr)
+			else
+				call save_to_hdf5(h5file_id,dset,0_idef,attr)
+			end if
+
+			call h5gclose_f(group_id, h5error)
+
+
+			gname = "poloidal_plane_params"
+			call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
+
+			dset = TRIM(gname) // "/grid_dims"
+			call save_1d_array_to_hdf5(h5file_id,dset,pplane%grid_dims)
+
+			dset = TRIM(gname) // "/nodes_R"
+			call save_1d_array_to_hdf5(h5file_id,dset,pplane%nodes_R)
+
+			dset = TRIM(gname) // "/nodes_Z"
+			call save_1d_array_to_hdf5(h5file_id,dset,pplane%nodes_Z)
+
+			call h5gclose_f(group_id, h5error)
+
+
+			call h5fclose_f(h5file_id, h5error)
 		end if
 
-		dset = TRIM(gname) // "/integrated_opt"
-		attr = "Logical variable: 1=integrated spectra, 0=detailed spectral info"
-		if (cam%integrated_opt) then
-			call save_to_hdf5(h5file_id,dset,1_idef,attr)
-		else
-			call save_to_hdf5(h5file_id,dset,0_idef,attr)
+		if (params%mpi_params%rank.EQ.0_idef) then
+			filename = TRIM(params%path_to_outputs) //"synthetic_camera_snapshots.h5"
+			call h5fcreate_f(TRIM(filename), H5F_ACC_TRUNC_F, h5file_id, h5error)
+			call h5fclose_f(h5file_id, h5error)
 		end if
-
-			dset = TRIM(gname) // "/toroidal_sections"
-			attr = "Logical variable: 1=decomposed in toroidal sections, 0=no toroidal decomposition"
-		if (cam%toroidal_sections) then
-			call save_to_hdf5(h5file_id,dset,1_idef,attr)
-
-			dset = TRIM(gname) // "/ntor_sections"
-			attr = "Number of toroidal sections"
-			call save_to_hdf5(h5file_id,dset,cam%ntor_sections,attr)
-		else
-			call save_to_hdf5(h5file_id,dset,0_idef,attr)
-		end if
-
-		call h5gclose_f(group_id, h5error)
-
-
-		gname = "poloidal_plane_params"
-		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
-
-	    dset = TRIM(gname) // "/grid_dims"
-	    call save_1d_array_to_hdf5(h5file_id,dset,pplane%grid_dims)
-
-	    dset = TRIM(gname) // "/nodes_R"
-	    call save_1d_array_to_hdf5(h5file_id,dset,pplane%nodes_R)
-
-	    dset = TRIM(gname) // "/nodes_Z"
-	    call save_1d_array_to_hdf5(h5file_id,dset,pplane%nodes_Z)
-
-		call h5gclose_f(group_id, h5error)
-
-
-		call h5fclose_f(h5file_id, h5error)
-	end if
-
-    if (params%mpi_params%rank.EQ.0_idef) then
-	    filename = TRIM(params%path_to_outputs) //"synthetic_camera_snapshots.h5"
-	    call h5fcreate_f(TRIM(filename), H5F_ACC_TRUNC_F, h5file_id, h5error)
-	    call h5fclose_f(h5file_id, h5error)
-    end if
     
     end if
 END SUBROUTINE save_synthetic_camera_params
@@ -2831,7 +2831,10 @@ IMPLICIT NONE
 		end if
 
 		dset = TRIM(var_name)
-		call save_to_hdf5(subgroup_id,dset,var(ss))
+		call h5lexists_f(subgroup_id,TRIM(dset),object_exists,h5error)
+		if (.NOT.object_exists) then
+			call save_to_hdf5(subgroup_id,dset,var(ss))
+		end if
 
 		call h5gclose_f(subgroup_id, h5error)
 	end do	
@@ -2891,7 +2894,10 @@ IMPLICIT NONE
 		end if
 
 		dset = TRIM(var_name)
-		call save_array_to_hdf5(subgroup_id, dset, var(:,ss))
+		call h5lexists_f(subgroup_id,TRIM(dset),object_exists,h5error)
+		if (.NOT.object_exists) then
+			call save_array_to_hdf5(subgroup_id, dset, var(:,ss))
+		end if
 
 		call h5gclose_f(subgroup_id, h5error)
 	end do	
@@ -2951,7 +2957,10 @@ SUBROUTINE save_snapshot_var_3d(params,var,var_name)
 		end if
 
 		dset = TRIM(var_name)
-		call save_array_to_hdf5(subgroup_id, dset, var(:,:,ss))
+		call h5lexists_f(subgroup_id,TRIM(dset),object_exists,h5error)
+		if (.NOT.object_exists) then
+			call save_array_to_hdf5(subgroup_id, dset, var(:,:,ss))
+		end if
 
 		call h5gclose_f(subgroup_id, h5error)
 	end do	
@@ -3011,7 +3020,10 @@ SUBROUTINE save_snapshot_var_4d(params,var,var_name)
 		end if
 
 		dset = TRIM(var_name)
-		call save_array_to_hdf5(subgroup_id, dset, var(:,:,:,ss))
+		call h5lexists_f(subgroup_id,TRIM(dset),object_exists,h5error)
+		if (.NOT.object_exists) then
+			call save_array_to_hdf5(subgroup_id, dset, var(:,:,:,ss))
+		end if
 
 		call h5gclose_f(subgroup_id, h5error)
 	end do	

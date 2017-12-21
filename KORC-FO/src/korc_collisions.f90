@@ -321,10 +321,10 @@ subroutine collision_force(spp,U,Fcoll)
 	REAL(rp) :: ae, ai, Clog_ef, Clog_eb, Clog_eH, Clog_eZj, Clog_eZo
 	INTEGER :: ppi
 	
-	gamma = sqrt(1.0_rp + DOT_PRODUCT(U,U))
+	gamma = SQRT(1.0_rp + DOT_PRODUCT(U,U))
 	V = U/gamma
 	
-	tmp = (gamma - 1.0_rp)*sqrt(gamma + 1.0_rp)
+	tmp = (gamma - 1.0_rp)*SQRT(gamma + 1.0_rp)
 	Clog_ef = log(0.5_rp*tmp*(cparams_ms%rD/cparams_ms%re)/gamma)
 	ae = cparams_ms%nef*Clog_ef
 	do ppi=1_idef,cparams_ms%num_impurity_species
@@ -342,10 +342,10 @@ subroutine collision_force(spp,U,Fcoll)
 			cparams_ms%nz(ppi)*(Clog_eZj*cparams_ms%Zj(ppi)**2 + Clog_eZo*cparams_ms%Zo(ppi)**2)
 	end do
 
-	tmp = gamma*(gamma + 1.0_rp)/(sqrt(DOT_PRODUCT(U,U))**3)
+	tmp = gamma*(gamma + 1.0_rp)/(SQRT(DOT_PRODUCT(U,U))**3)
 	Fcolle = -4.0_rp*C_PI*ae*spp%m*(cparams_ms%re**2)*tmp*U
 
-	tmp = gamma/(sqrt(DOT_PRODUCT(U,U))**3)
+	tmp = gamma/(SQRT(DOT_PRODUCT(U,U))**3)
 	Fcolli = -4.0_rp*C_PI*ai*spp%m*(cparams_ms%re**2)*tmp*U
 
 	Fcoll = Fcolle + Fcolli

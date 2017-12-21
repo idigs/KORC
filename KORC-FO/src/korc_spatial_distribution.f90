@@ -219,6 +219,8 @@ END FUNCTION fzero
 
 
 subroutine exponential_energy_distribution(params,spp)
+! * The falloff coefficients are calculated as function of r with units. All these routines need to be modified so they can
+! * used as function of an arbitrary plasma radius 'a'.
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), INTENT(INOUT) :: spp
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: theta, zeta, r ! temporary vars

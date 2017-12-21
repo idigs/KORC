@@ -19,6 +19,7 @@
 	axisymmetric = .FALSE.			  ! Axisymmetric field?
 	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/D3D_Q.h5" ! DIII-D_sh165826.h5" !
 	outputs_list = '{X,V,g,eta,flag,ne,Te,Zeff}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
+	HDF5_error_handling = .TRUE. ! 
 /
 
 &plasma_species

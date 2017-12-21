@@ -1183,7 +1183,7 @@ CONTAINS
 	FUNCTION vabs(v)
 	REAL(SP), DIMENSION(:), INTENT(IN) :: v
 	REAL(SP) :: vabs
-	vabs=sqrt(dot_product(v,v))
+	vabs=SQRT(dot_product(v,v))
 	END FUNCTION vabs
 !BL
 END MODULE nrutil
@@ -2962,12 +2962,12 @@ MODULE nr
 		END SUBROUTINE mprove
 	END INTERFACE
 	INTERFACE
-		SUBROUTINE mpsqrt(w,u,v,n,m)
+		SUBROUTINE mpSQRT(w,u,v,n,m)
 		USE nrtype
 		CHARACTER(1), DIMENSION(:), INTENT(OUT) :: w,u
 		CHARACTER(1), DIMENSION(:), INTENT(IN) :: v
 		INTEGER(I4B), INTENT(IN) :: n,m
-		END SUBROUTINE mpsqrt
+		END SUBROUTINE mpSQRT
 	END INTERFACE
 	INTERFACE
 		SUBROUTINE mrqcof(x,y,sig,a,maska,alpha,beta,chisq,funcs)
@@ -4519,7 +4519,7 @@ SUBROUTINE bessik(x,xnu,ri,rk,rip,rkp)
 		end do
 		if (i > MAXIT) call nrerror('bessik: failure to converge in cf2')
 		h=a1*h
-		rkmu=sqrt(PI_D/(2.0_dp*x))*exp(-x)/s
+		rkmu=SQRT(PI_D/(2.0_dp*x))*exp(-x)/s
 		rk1=rkmu*(xmu+x+0.5_dp-h)*xi
 	end if
 	rkmup=xmu*xi*rkmu-rk1

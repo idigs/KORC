@@ -67,9 +67,11 @@ subroutine load_korc_params(params)
 	INTEGER :: num_impurity_species
 	INTEGER :: imax,imin,ii,jj,num_outputs
 	INTEGER, DIMENSION(2) :: indices
+	LOGICAL :: HDF5_error_handling
 
 	NAMELIST /input_parameters/ restart,plasma_model,poloidal_flux,magnetic_field_filename,simulation_time,axisymmetric,&
-			snapshot_frequency,dt,num_species,radiation,collisions,collisions_model,outputs_list,minimum_particle_energy
+								snapshot_frequency,dt,num_species,radiation,collisions,collisions_model,outputs_list,&
+								minimum_particle_energy,HDF5_error_handling
 	
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=input_parameters)
@@ -96,6 +98,11 @@ subroutine load_korc_params(params)
 	params%radiation = radiation
 	params%collisions = collisions
 	params%collisions_model = TRIM(collisions_model)
+	if (HDF5_error_handling) then
+		params%HDF5_error_handling = 1_idef
+	else
+		params%HDF5_error_handling = 0_idef
+	end if
 
 	! Loading list of output parameters
 	imin = SCAN(outputs_list,'{')
@@ -183,6 +190,11 @@ subroutine define_time_step(params)
 	params%output_cadence = FLOOR(params%snapshot_frequency/params%dt,ip)
 	if (params%output_cadence.EQ.0_ip) params%output_cadence = 1_ip
 	params%num_snapshots = params%t_steps/params%output_cadence
+	if (params%output_cadence.LT.1000_ip) then
+		params%restart_output_cadence = 1000_ip
+	else
+		params%restart_output_cadence = params%output_cadence
+	end if
 
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'(/,"* * * * * TIME STEPPING PARAMETERS * * * * *")')

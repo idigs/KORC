@@ -85,6 +85,7 @@ TYPE, PUBLIC :: KORC_PARAMS
 	INTEGER(ip) :: it = 0_ip
 	INTEGER(ip) :: t_steps
 	INTEGER(ip) :: output_cadence
+	INTEGER(ip) :: restart_output_cadence
 	INTEGER(ip) :: num_snapshots
 	INTEGER :: num_species
 	REAL(rp) :: minimum_particle_energy ! Minimum energy of simulated particles in eV
@@ -96,6 +97,7 @@ TYPE, PUBLIC :: KORC_PARAMS
 	LOGICAL :: axisymmetric
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: outputs_list
+	INTEGER :: HDF5_error_handling
 
 	TYPE(KORC_MPI) :: mpi_params
 	TYPE(CHARCS_PARAMS) :: cpp
