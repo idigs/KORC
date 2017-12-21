@@ -87,12 +87,13 @@ OMP_LIB_FLAGS =
 
 BINARIES = $(addprefix $(OBJ)/,korc_types.o     \
 korc_constants.o        \
+korc_hpc.o      \
 korc_HDF5.o     \
 special_fun_modules.o   \
 special_fun_subroutines.o       \
-korc_collisions.o       \
-korc_hpc.o      \
+hammersley_generator.o  \
 korc_rnd_numbers.o   \
+korc_collisions.o       \
 korc_coords.o   \
 korc_interp.o   \
 korc_fields.o   \
@@ -100,7 +101,6 @@ korc_profiles.o   \
 korc_avalanche.o        \
 korc_experimental_pdf.o	\
 korc_energy_pdfs.o	\
-hammersley_generator.o  \
 korc_spatial_distribution.o \
 korc_velocity_distribution.o \
 korc_initialize.o       \
