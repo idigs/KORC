@@ -1219,69 +1219,6 @@ subroutine save_simulation_parameters(params,spp,F,P)
 end subroutine save_simulation_parameters
 
 
-subroutine save_restart_variables(params,spp,F)
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
-	TYPE(FIELDS), INTENT(IN) :: F
-	CHARACTER(MAX_STRING_LENGTH) :: filename
-	CHARACTER(MAX_STRING_LENGTH) :: gname
-	CHARACTER(MAX_STRING_LENGTH) :: subgname
-	CHARACTER(MAX_STRING_LENGTH) :: dset
-	INTEGER(HID_T) :: h5file_id
-	INTEGER(HID_T) :: group_id
-	INTEGER(HID_T) :: subgroup_id
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: rdata
-	INTEGER, DIMENSION(:), ALLOCATABLE :: idata
-	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: attr_array
-	CHARACTER(MAX_STRING_LENGTH) :: attr
-	INTEGER :: h5error
-	CHARACTER(19) :: tmp_str
-	REAL(rp) :: units
-    INTEGER :: ss,jj
-	INTEGER :: mpierr
-
-	if ( MODULO(params%it,params%restart_output_cadence) .EQ. 0_ip ) then
-
-		CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-
-		write(tmp_str,'(I18)') params%mpi_params%rank
-		filename = TRIM(params%path_to_outputs) // "restart_file_" // TRIM(ADJUSTL(tmp_str)) // ".h5"
-		call h5fcreate_f(TRIM(filename), H5F_ACC_TRUNC_F, h5file_id, h5error)
-
-		dset = "it"
-		attr = "Iteration"
-		call save_to_hdf5(h5file_id,dset,params%it,attr)
-		
-		dset = "time"
-		attr = "Simulation time in secs"
-		call save_to_hdf5(h5file_id,dset,REAL(params%it,rp)*params%dt*params%cpp%time,attr)
-
-		do ss=1_idef,params%num_species
-			write(tmp_str,'(I18)') ss
-			subgname = "spp_" // TRIM(ADJUSTL(tmp_str))
-			call h5gcreate_f(h5file_id, TRIM(subgname), group_id, h5error)
-
-			dset = "X"
-			call rsave_2d_array_to_hdf5(group_id, dset, spp(ss)%vars%X)
-
-			dset = "V"
-			units = params%cpp%velocity
-			call rsave_2d_array_to_hdf5(group_id, dset, spp(ss)%vars%V)
-
-			dset = "flag"
-			call save_1d_array_to_hdf5(group_id,dset, INT(spp(ss)%vars%flag,idef))
-
-			call h5gclose_f(group_id, h5error)
-		end do
-
-		call h5fclose_f(h5file_id, h5error)
-
-		CALL MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-	end if
-end subroutine save_restart_variables
-
-
 subroutine save_simulation_outputs(params,spp,F)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
@@ -1402,6 +1339,128 @@ subroutine save_simulation_outputs(params,spp,F)
 	end if
 end subroutine save_simulation_outputs
 
+
+subroutine save_restart_variables(params,spp,F)
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
+	TYPE(FIELDS), INTENT(IN) :: F
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: send_buffer_rp, receive_buffer_rp
+    INTEGER(is), DIMENSION(:), ALLOCATABLE :: send_buffer_is, receive_buffer_is
+    REAL(rp), DIMENSION(:,:), ALLOCATABLE :: X
+    REAL(rp), DIMENSION(:,:), ALLOCATABLE :: V
+	INTEGER(is), DIMENSION(:), ALLOCATABLE :: flag
+	CHARACTER(MAX_STRING_LENGTH) :: filename
+	CHARACTER(MAX_STRING_LENGTH) :: gname
+	CHARACTER(MAX_STRING_LENGTH) :: subgname
+	CHARACTER(MAX_STRING_LENGTH) :: dset
+	INTEGER(HID_T) :: h5file_id
+	INTEGER(HID_T) :: group_id
+	INTEGER(HID_T) :: subgroup_id
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: rdata
+	INTEGER, DIMENSION(:), ALLOCATABLE :: idata
+	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: attr_array
+	CHARACTER(MAX_STRING_LENGTH) :: attr
+	INTEGER :: h5error
+	CHARACTER(19) :: tmp_str
+	REAL(rp) :: units
+    INTEGER :: ss,jj
+	INTEGER :: mpierr
+	INTEGER :: numel_send, numel_receive
+
+
+	if ( MODULO(params%it,params%restart_output_cadence) .EQ. 0_ip ) then
+		if (params%mpi_params%rank.EQ.0_idef) then
+			filename = TRIM(params%path_to_outputs) // "restart_file.h5"
+			call h5fcreate_f(TRIM(filename), H5F_ACC_TRUNC_F, h5file_id, h5error)
+
+			dset = "it"
+			attr = "Iteration"
+			call save_to_hdf5(h5file_id,dset,params%it,attr)
+		
+			dset = "time"
+			attr = "Simulation time in secs"
+			call save_to_hdf5(h5file_id,dset,REAL(params%it,rp)*params%dt*params%cpp%time,attr)
+		end if
+
+		do ss=1_idef,params%num_species
+			numel_send = 3_idef*spp(ss)%ppp
+			numel_receive = 3_idef*spp(ss)%ppp*params%mpi_params%nmpi
+
+			if (params%mpi_params%rank.EQ.0_idef) then
+				ALLOCATE(X(3,spp(ss)%ppp*params%mpi_params%nmpi))
+				ALLOCATE(V(3,spp(ss)%ppp*params%mpi_params%nmpi))
+				ALLOCATE(flag(spp(ss)%ppp*params%mpi_params%nmpi))
+			end if
+
+			ALLOCATE(send_buffer_rp(numel_send))
+			ALLOCATE(receive_buffer_rp(numel_receive))
+
+			send_buffer_rp = RESHAPE(spp(ss)%vars%X,(/numel_send/))
+			receive_buffer_rp = 0.0_rp
+			CALL MPI_GATHER(send_buffer_rp,numel_send,MPI_REAL8,receive_buffer_rp,numel_send,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+			if (params%mpi_params%rank.EQ.0_idef) then
+				X = RESHAPE(receive_buffer_rp,(/3,spp(ss)%ppp*params%mpi_params%nmpi/))
+			end if
+
+			send_buffer_rp = RESHAPE(spp(ss)%vars%V,(/numel_send/))
+			receive_buffer_rp = 0.0_rp
+			CALL MPI_GATHER(send_buffer_rp,numel_send,MPI_REAL8,receive_buffer_rp,numel_send,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+			if (params%mpi_params%rank.EQ.0_idef) then
+				V = RESHAPE(receive_buffer_rp,(/3,spp(ss)%ppp*params%mpi_params%nmpi/))
+			end if
+
+			DEALLOCATE(send_buffer_rp)
+			DEALLOCATE(receive_buffer_rp)
+
+			numel_send = spp(ss)%ppp
+			numel_receive = spp(ss)%ppp*params%mpi_params%nmpi
+
+			ALLOCATE(send_buffer_is(numel_send))
+			ALLOCATE(receive_buffer_is(numel_receive))
+
+			send_buffer_is = spp(ss)%vars%flag
+			receive_buffer_is = 0_is
+			CALL MPI_GATHER(send_buffer_is,numel_send,MPI_INTEGER1,receive_buffer_is,numel_send,&
+							MPI_INTEGER1,0,MPI_COMM_WORLD,mpierr)
+			if (params%mpi_params%rank.EQ.0_idef) then
+				flag = receive_buffer_is
+			end if
+
+			DEALLOCATE(send_buffer_is)
+			DEALLOCATE(receive_buffer_is)
+
+			if (params%mpi_params%rank.EQ.0_idef) then
+				write(tmp_str,'(I18)') ss
+				subgname = "spp_" // TRIM(ADJUSTL(tmp_str))
+				call h5gcreate_f(h5file_id, TRIM(subgname), group_id, h5error)
+
+				dset = "X"
+				call rsave_2d_array_to_hdf5(group_id, dset, X)
+
+				dset = "V"
+				call rsave_2d_array_to_hdf5(group_id, dset, V)
+
+				dset = "flag"
+				call save_1d_array_to_hdf5(group_id,dset, INT(flag,idef))
+
+				call h5gclose_f(group_id, h5error)
+			end if
+
+			if (params%mpi_params%rank.EQ.0_idef) then
+				DEALLOCATE(X)
+				DEALLOCATE(V)
+				DEALLOCATE(flag)
+			end if
+		end do
+
+		if (params%mpi_params%rank.EQ.0_idef) then
+			call h5fclose_f(h5file_id, h5error)
+		end if
+
+	end if
+end subroutine save_restart_variables
+
 ! * * * * * * * * * * * * * * * * * * * * * * * * * !
 ! * * * SUBROUTINES FOR RESTARTING SIMULATION * * * !
 ! * * * * * * * * * * * * * * * * * * * * * * * * * !
@@ -1435,34 +1494,73 @@ end subroutine get_last_iteration
 subroutine load_particles_ic(params,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
+    REAL(rp), DIMENSION(:,:), ALLOCATABLE :: X
+    REAL(rp), DIMENSION(:,:), ALLOCATABLE :: V
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: AUX
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: send_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: receive_buffer
 	CHARACTER(MAX_STRING_LENGTH) :: filename
 	CHARACTER(MAX_STRING_LENGTH) :: dset
 	INTEGER(HID_T) :: h5file_id
 	CHARACTER(19) :: tmp_str
 	INTEGER :: h5error
+	INTEGER :: mpierr
 	INTEGER :: ss
 
-	write(tmp_str,'(I18)') params%mpi_params%rank
-	filename = TRIM(params%path_to_outputs) // "restart_file_" // TRIM(ADJUSTL(tmp_str)) // ".h5"
-	call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
-	if (h5error .EQ. -1) then
-		write(6,'("KORC ERROR: Something went wrong in: load_particles_ic --> h5fopen_f")')
+	ALLOCATE(X(3,spp(ss)%ppp*params%mpi_params%nmpi))
+	ALLOCATE(V(3,spp(ss)%ppp*params%mpi_params%nmpi))
+	ALLOCATE(AUX(spp(ss)%ppp*params%mpi_params%nmpi))
+
+	if (params%mpi_params%rank.EQ.0_idef) then
+		filename = TRIM(params%path_to_outputs) // "restart_file.h5"
+		call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
+		if (h5error .EQ. -1) then
+			write(6,'("KORC ERROR: Something went wrong in: load_particles_ic --> h5fopen_f")')
+			call KORC_ABORT()
+		end if
+
+		do ss=1_idef,params%num_species
+			write(tmp_str,'(I18)') ss
+
+			ALLOCATE(send_buffer(3*spp(ss)%ppp*params%mpi_params%nmpi))
+			ALLOCATE(receive_buffer(3*spp(ss)%ppp))
+
+			dset = "/spp_" // TRIM(ADJUSTL(tmp_str)) // "/X"
+			call load_array_from_hdf5(h5file_id,dset,send_buffer)
+
+			receive_buffer = 0.0_rp
+			CALL MPI_SCATTER(send_buffer,3*spp(ss)%ppp,MPI_REAL8,receive_buffer,3*spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)	! this has to go outside the first if
+			spp(ss)%vars%X = RESHAPE(receive_buffer,(/3,spp(ss)%ppp/))
+
+			dset = "/spp_" // TRIM(ADJUSTL(tmp_str)) // "/V"
+			call load_array_from_hdf5(h5file_id,dset,send_buffer)
+
+			receive_buffer = 0.0_rp
+			CALL MPI_SCATTER(send_buffer,3*spp(ss)%ppp,MPI_REAL8,receive_buffer,3*spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)	
+			spp(ss)%vars%V = RESHAPE(receive_buffer,(/3,spp(ss)%ppp/))
+
+			DEALLOCATE(send_buffer)
+			DEALLOCATE(receive_buffer)
+
+			ALLOCATE(send_buffer(spp(ss)%ppp*params%mpi_params%nmpi))
+			ALLOCATE(receive_buffer(spp(ss)%ppp))
+
+			dset = "/spp_" // TRIM(ADJUSTL(tmp_str)) // "/flag"
+			call load_array_from_hdf5(h5file_id,dset,send_buffer)
+
+			receive_buffer = 0.0_rp
+			CALL MPI_SCATTER(send_buffer,spp(ss)%ppp,MPI_REAL8,receive_buffer,spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)	
+			spp(ss)%vars%flag = INT(receive_buffer,is)
+
+			DEALLOCATE(send_buffer)
+			DEALLOCATE(receive_buffer)
+		end do
+		call h5fclose_f(h5file_id, h5error)
 	end if
 
-	do ss=1_idef,params%num_species
-	    write(tmp_str,'(I18)') ss
-
-		dset = "/spp_" // TRIM(ADJUSTL(tmp_str)) // "/X"
-		call load_array_from_hdf5(h5file_id,dset,spp(ss)%vars%X)
-
-		dset = "/spp_" // TRIM(ADJUSTL(tmp_str)) // "/V"
-		call load_array_from_hdf5(h5file_id,dset,spp(ss)%vars%V)
-
-		dset = "/spp_" // TRIM(ADJUSTL(tmp_str)) // "/flag"
-		call load_array_from_hdf5(h5file_id,dset,spp(ss)%vars%AUX)
-	end do
-
-	call h5fclose_f(h5file_id, h5error)
+	DEALLOCATE(X)
+	DEALLOCATE(V)
+	DEALLOCATE(AUX)
 end subroutine load_particles_ic
 
 end module korc_HDF5
