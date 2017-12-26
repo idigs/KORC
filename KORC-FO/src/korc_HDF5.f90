@@ -1494,11 +1494,12 @@ end subroutine get_last_iteration
 subroutine load_particles_ic(params,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
-    REAL(rp), DIMENSION(:,:), ALLOCATABLE :: X
-    REAL(rp), DIMENSION(:,:), ALLOCATABLE :: V
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: AUX
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: send_buffer
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: receive_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: X_send_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: X_receive_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: V_send_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: V_receive_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: AUX_send_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: AUX_receive_buffer
 	CHARACTER(MAX_STRING_LENGTH) :: filename
 	CHARACTER(MAX_STRING_LENGTH) :: dset
 	INTEGER(HID_T) :: h5file_id
@@ -1507,60 +1508,85 @@ subroutine load_particles_ic(params,spp)
 	INTEGER :: mpierr
 	INTEGER :: ss
 
-	ALLOCATE(X(3,spp(ss)%ppp*params%mpi_params%nmpi))
-	ALLOCATE(V(3,spp(ss)%ppp*params%mpi_params%nmpi))
-	ALLOCATE(AUX(spp(ss)%ppp*params%mpi_params%nmpi))
+	do ss=1_idef,params%num_species
+		ALLOCATE(X_send_buffer(3*spp(ss)%ppp*params%mpi_params%nmpi))
+		ALLOCATE(X_receive_buffer(3*spp(ss)%ppp))
 
-	if (params%mpi_params%rank.EQ.0_idef) then
-		filename = TRIM(params%path_to_outputs) // "restart_file.h5"
-		call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
-		if (h5error .EQ. -1) then
-			write(6,'("KORC ERROR: Something went wrong in: load_particles_ic --> h5fopen_f")')
-			call KORC_ABORT()
-		end if
+		ALLOCATE(V_send_buffer(3*spp(ss)%ppp*params%mpi_params%nmpi))
+		ALLOCATE(V_receive_buffer(3*spp(ss)%ppp))
 
-		do ss=1_idef,params%num_species
+		ALLOCATE(AUX_send_buffer(spp(ss)%ppp*params%mpi_params%nmpi))
+		ALLOCATE(AUX_receive_buffer(spp(ss)%ppp))
+
+		if (params%mpi_params%rank.EQ.0_idef) then
+			filename = TRIM(params%path_to_outputs) // "restart_file.h5"
+			call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
+			if (h5error .EQ. -1) then
+				write(6,'("KORC ERROR: Something went wrong in: load_particles_ic --> h5fopen_f")')
+				call KORC_ABORT()
+			end if
+
 			write(tmp_str,'(I18)') ss
 
-			ALLOCATE(send_buffer(3*spp(ss)%ppp*params%mpi_params%nmpi))
-			ALLOCATE(receive_buffer(3*spp(ss)%ppp))
-
 			dset = "/spp_" // TRIM(ADJUSTL(tmp_str)) // "/X"
-			call load_array_from_hdf5(h5file_id,dset,send_buffer)
+			call load_array_from_hdf5(h5file_id,dset,X_send_buffer)
 
-			receive_buffer = 0.0_rp
-			CALL MPI_SCATTER(send_buffer,3*spp(ss)%ppp,MPI_REAL8,receive_buffer,3*spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)	! this has to go outside the first if
-			spp(ss)%vars%X = RESHAPE(receive_buffer,(/3,spp(ss)%ppp/))
+			call h5fclose_f(h5file_id, h5error)
+		end if
+
+		X_receive_buffer = 0.0_rp
+		CALL MPI_SCATTER(X_send_buffer,3*spp(ss)%ppp,MPI_REAL8,X_receive_buffer,3*spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+		spp(ss)%vars%X = RESHAPE(X_receive_buffer,(/3,spp(ss)%ppp/))
+
+		if (params%mpi_params%rank.EQ.0_idef) then
+			filename = TRIM(params%path_to_outputs) // "restart_file.h5"
+			call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
+			if (h5error .EQ. -1) then
+				write(6,'("KORC ERROR: Something went wrong in: load_particles_ic --> h5fopen_f")')
+				call KORC_ABORT()
+			end if
+
+			write(tmp_str,'(I18)') ss
 
 			dset = "/spp_" // TRIM(ADJUSTL(tmp_str)) // "/V"
-			call load_array_from_hdf5(h5file_id,dset,send_buffer)
+			call load_array_from_hdf5(h5file_id,dset,V_send_buffer)
 
-			receive_buffer = 0.0_rp
-			CALL MPI_SCATTER(send_buffer,3*spp(ss)%ppp,MPI_REAL8,receive_buffer,3*spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)	
-			spp(ss)%vars%V = RESHAPE(receive_buffer,(/3,spp(ss)%ppp/))
+			call h5fclose_f(h5file_id, h5error)
+		end if
 
-			DEALLOCATE(send_buffer)
-			DEALLOCATE(receive_buffer)
+		V_receive_buffer = 0.0_rp
+		CALL MPI_SCATTER(V_send_buffer,3*spp(ss)%ppp,MPI_REAL8,V_receive_buffer,3*spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+		spp(ss)%vars%V = RESHAPE(V_receive_buffer,(/3,spp(ss)%ppp/))
 
-			ALLOCATE(send_buffer(spp(ss)%ppp*params%mpi_params%nmpi))
-			ALLOCATE(receive_buffer(spp(ss)%ppp))
+		if (params%mpi_params%rank.EQ.0_idef) then
+			filename = TRIM(params%path_to_outputs) // "restart_file.h5"
+			call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
+			if (h5error .EQ. -1) then
+				write(6,'("KORC ERROR: Something went wrong in: load_particles_ic --> h5fopen_f")')
+				call KORC_ABORT()
+			end if
+
+			write(tmp_str,'(I18)') ss
 
 			dset = "/spp_" // TRIM(ADJUSTL(tmp_str)) // "/flag"
-			call load_array_from_hdf5(h5file_id,dset,send_buffer)
+			call load_array_from_hdf5(h5file_id,dset,AUX_send_buffer)
 
-			receive_buffer = 0.0_rp
-			CALL MPI_SCATTER(send_buffer,spp(ss)%ppp,MPI_REAL8,receive_buffer,spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)	
-			spp(ss)%vars%flag = INT(receive_buffer,is)
+			call h5fclose_f(h5file_id, h5error)
+		end if
 
-			DEALLOCATE(send_buffer)
-			DEALLOCATE(receive_buffer)
-		end do
-		call h5fclose_f(h5file_id, h5error)
-	end if
+		AUX_receive_buffer = 0.0_rp
+		CALL MPI_SCATTER(AUX_send_buffer,spp(ss)%ppp,MPI_REAL8,AUX_receive_buffer,spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+		spp(ss)%vars%flag = INT(AUX_receive_buffer,is)
 
-	DEALLOCATE(X)
-	DEALLOCATE(V)
-	DEALLOCATE(AUX)
+		DEALLOCATE(X_send_buffer)
+		DEALLOCATE(X_receive_buffer)
+
+		DEALLOCATE(V_send_buffer)
+		DEALLOCATE(V_receive_buffer)
+
+		DEALLOCATE(AUX_send_buffer)
+		DEALLOCATE(AUX_receive_buffer)
+	end do
 end subroutine load_particles_ic
 
 end module korc_HDF5
