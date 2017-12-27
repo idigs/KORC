@@ -1473,21 +1473,26 @@ subroutine get_last_iteration(params)
 	REAL(KIND=8) :: it
 	CHARACTER(19) :: tmp_str
 	INTEGER :: h5error
+	INTEGER :: mpierr
 	INTEGER :: ss
 
-	write(tmp_str,'(I18)') params%mpi_params%rank
-	filename = TRIM(params%path_to_outputs) // "restart_file_" // TRIM(ADJUSTL(tmp_str)) // ".h5"
-	call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
-	if (h5error .EQ. -1) then
-		write(6,'("KORC ERROR: Something went wrong in: load_particles_ic --> h5fopen_f")')
+	if (params%mpi_params%rank.EQ.0_idef) then
+		filename = TRIM(params%path_to_outputs) // "restart_file.h5"
+		call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
+		if (h5error .EQ. -1) then
+			write(6,'("KORC ERROR: Something went wrong in: load_particles_ic --> h5fopen_f")')
+		end if
+
+		dset = "/it"
+		call load_from_hdf5(h5file_id,dset,it)
+
+		params%ito = INT(it,ip) + 1_ip
+
+		call h5fclose_f(h5file_id, h5error)
 	end if
 
-	dset = "/it"
-	call load_from_hdf5(h5file_id,dset,it)
 
-	params%ito = INT(it,ip) + 1_ip
-
-	call h5fclose_f(h5file_id, h5error)
+	CALL MPI_BCAST(params%ito,1,MPI_INTEGER8,0,MPI_COMM_WORLD,mpierr)
 end subroutine get_last_iteration
 
 
