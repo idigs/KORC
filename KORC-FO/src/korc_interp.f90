@@ -415,7 +415,6 @@ end subroutine interp_3D_B_field
 
 
 subroutine calculate_magnetic_field(Y,F,B,flag)
-	implicit none
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = R, Y(2,:) = PHI, Y(3,:) = Z
 	TYPE(FIELDS), INTENT(IN) :: F
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz	
@@ -429,6 +428,7 @@ subroutine calculate_magnetic_field(Y,F,B,flag)
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(F,Y,A,B,flag,interp2d)
 	do pp=1_idef,ss
 		if ( flag(pp) .EQ. 1_is ) then
+			! FR = (dA/dZ)/R
 			call EZspline_derivative(interp2d%A, 0, 1, Y(1,pp), Y(3,pp), A(1,pp), ezerr)
 !			call EZspline_error(ezerr)
 
@@ -437,8 +437,10 @@ subroutine calculate_magnetic_field(Y,F,B,flag)
 			else
 				A(1,pp) = A(1,pp)/Y(1,pp)
 
-				A(2,pp) = - F%Bo*F%Ro/Y(1,pp)
+				! FPHI = Fo*Ro/R
+				A(2,pp) = F%Bo*F%Ro/Y(1,pp)
 
+				! FR = -(dA/dR)/R
 				call EZspline_derivative(interp2d%A, 1, 0, Y(1,pp), Y(3,pp), A(3,pp), ezerr)
 				call EZspline_error(ezerr)
 				A(3,pp) = -A(3,pp)/Y(1,pp)
