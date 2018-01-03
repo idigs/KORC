@@ -1,4 +1,4 @@
-function fields2hdf(R,PHI,Z,BR,BPHI,BZ,FLUX,FLAG,outputfile,Bo,Ro,Zo)
+function fields2hdf(R,PHI,Z,BR,BPHI,BZ,FLUX,FLAG,NE,TE,ZEFF,outputfile,Bo,Ro,Zo)
 % size(A) = [numel(R),numel(PHI),numel(Z)], where A can be any of the field
 % size(A) = [numel(R),numel(Z)], where A can be any of the field
 % components or magnetic flux.
@@ -14,7 +14,7 @@ function fields2hdf(R,PHI,Z,BR,BPHI,BZ,FLUX,FLAG,outputfile,Bo,Ro,Zo)
 % fields2hdf(R,PHI,Z,BR,BPHI,BZ,[],[],'NIMROD_DIVERTED.h5',2.1170,1.7272,0.0142)
 % fields2hdf(S.R,S.PHI,S.Z,S.BR,S.BPHI,S.BZ,[],S.FLAG,'NIMROD_DIVERTED_1100D.h5',S.Bo,S.Ro,S.Zo)
 
-narginchk(9,12)
+narginchk(9,15)
 
 NR = numel(R);
 NPHI = numel(PHI);
@@ -62,6 +62,24 @@ if ~isempty(FLUX)
     dsetname = '/PSIp';
     h5create(outputfile,dsetname,dims)
     h5write(outputfile,dsetname,FLUX)
+end
+
+if ~isempty(NE)
+    dsetname = '/ne';
+    h5create(outputfile,dsetname,dims)
+    h5write(outputfile,dsetname,NE)
+end
+
+if ~isempty(TE)
+    dsetname = '/Te';
+    h5create(outputfile,dsetname,dims)
+    h5write(outputfile,dsetname,TE)
+end
+
+if ~isempty(ZEFF)
+    dsetname = '/Zeff';
+    h5create(outputfile,dsetname,dims)
+    h5write(outputfile,dsetname,ZEFF)
 end
 
 if ~isempty(BR)

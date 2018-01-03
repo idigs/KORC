@@ -49,7 +49,7 @@ ST.data = loadData(ST);
 
 % calculateTemperatureComponents(ST);
 
-SE_phaseSpaceAnalisys(ST);
+% SE_phaseSpaceAnalisys(ST);
 
 
 % plotEnergyPitchanglePDF(ST);
@@ -3518,7 +3518,7 @@ figure(h1)
 subplot(2,3,2)
 plot(pitch_angle,confined,'o-')
 box on;axis on;grid on;grid minor;
-xlim([0 70])
+xlim([0 180])
 xlabel('$\theta_0$ ($^\circ$)','Interpreter','latex','FontSize',16)
 ylabel('Confined RE ($\%$)','Interpreter','latex','FontSize',16)
 
@@ -3597,7 +3597,7 @@ figure(h1)
 subplot(2,3,3)
 plot(pitch_angle,PR,'o-')
 box on;axis on;grid on;grid minor;
-xlim([0 70])
+xlim([0 180])
 xlabel('$\theta_0$ ($^\circ$)','Interpreter','latex','FontSize',16)
 ylabel('$\mathcal{P}_R$ (Watts)','Interpreter','latex','FontSize',16)
 
@@ -3737,7 +3737,7 @@ figure(h1)
 subplot(2,3,6)
 plot(pitch_angle,PR_ratio(3,:),'o-')
 box on;axis on;grid on;grid minor;
-xlim([0 70])
+xlim([0 180])
 xlabel('$\theta_0$ ($^\circ$)','Interpreter','latex','FontSize',16)
 ylabel('$\langle \mathcal{P}_R \rangle/P_{app}$','Interpreter','latex','FontSize',16)
 
