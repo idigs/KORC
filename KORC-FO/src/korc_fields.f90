@@ -9,6 +9,7 @@ module korc_fields
 
 	PUBLIC :: mean_F_field,&
 				get_fields,&
+				initialize_fields,&
 				load_field_data_from_hdf5,&
 				load_dim_data_from_hdf5
 	PRIVATE :: get_analytical_fields,&
@@ -189,17 +190,9 @@ subroutine get_analytical_fields(vars,F)
 	TYPE(PARTICLES), INTENT(INOUT) :: vars
 	TYPE(FIELDS), INTENT(IN) :: F
 
-!	call cart_to_tor(vars%X, F%AB%Ro, vars%Y, vars%flag)
-
-!	call check_if_confined(F, vars%Y, vars%flag)
-
 	call cart_to_tor_check_if_confined(vars%X,F,vars%Y,vars%flag)
 
 	call analytical_fields(F,vars%Y, vars%E, vars%B, vars%flag)
-
-!	call analytical_magnetic_field(F, vars%Y, vars%B, vars%flag)
-
-!	call analytical_electric_field(F, vars%Y, vars%E, vars%flag)
 end subroutine get_analytical_fields
 
 
@@ -295,9 +288,88 @@ subroutine get_fields(params,vars,F)
 end subroutine get_fields
 
 
+! * * * * * * * * * * * *  * * * * * * * * * * * * * !
+! * * *  SUBROUTINES FOR INITIALIZING FIELDS   * * * !
+! * * * * * * * * * * * *  * * * * * * * * * * * * * !
+
+
+subroutine initialize_fields(params,F)
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(FIELDS), INTENT(OUT) :: F
+	TYPE(KORC_STRING) :: field
+	REAL(rp) :: Bo
+	REAL(rp) :: minor_radius
+	REAL(rp) :: major_radius
+	REAL(rp) :: qa
+	REAL(rp) :: qo
+    CHARACTER(MAX_STRING_LENGTH) :: current_direction
+    CHARACTER(MAX_STRING_LENGTH) :: electric_field_mode
+	REAL(rp) :: Eo
+    REAL(rp) :: pulse_maximum
+    REAL(rp) :: pulse_duration
+
+	NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
+			qa,qo,electric_field_mode,Eo,pulse_maximum,pulse_duration,current_direction
+
+	SELECT CASE (TRIM(params%plasma_model))
+		CASE('ANALYTICAL')
+			! Load the parameters of the analytical magnetic field
+			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
+			read(default_unit_open,nml=analytical_fields_params)
+			close(default_unit_open)
+
+			F%AB%Bo = Bo
+			F%AB%a = minor_radius
+			F%AB%Ro = major_radius
+			F%Ro = major_radius
+			F%AB%qa = qa
+			F%AB%qo = qo
+			F%AB%lambda = F%AB%a/SQRT(qa/qo - 1.0_rp)
+			F%AB%Bpo = F%AB%lambda*F%AB%Bo/(F%AB%qo*F%AB%Ro)
+			F%AB%current_direction = TRIM(current_direction)
+			SELECT CASE (TRIM(F%AB%current_direction))
+				CASE('PARALLEL')
+					F%AB%Bp_sign = 1.0_rp
+				CASE('ANTI-PARALLEL')
+					F%AB%Bp_sign = -1.0_rp
+				CASE DEFAULT
+			END SELECT
+			F%Eo = Eo
+			F%Bo = F%AB%Bo
+
+		    F%electric_field_mode = TRIM(electric_field_mode)
+			F%to = pulse_maximum
+			F%sig = pulse_duration
+		CASE('EXTERNAL')
+			! Load the magnetic field from an external HDF5 file
+		    call load_dim_data_from_hdf5(params,F%dims)
+
+			if (params%poloidal_flux) then
+				call ALLOCATE_FLUX_ARRAYS(F)
+			else if (params%axisymmetric) then
+				call ALLOCATE_2D_FIELDS_ARRAYS(F)
+			else
+				call ALLOCATE_3D_FIELDS_ARRAYS(F)
+			end if
+		
+		    call load_field_data_from_hdf5(params,F)
+		CASE('UNIFORM')
+			! Load the parameters of the analytical magnetic field
+			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
+			read(default_unit_open,nml=analytical_fields_params)
+			close(default_unit_open)
+
+			F%Eo = Eo
+			F%Bo = Bo
+		CASE DEFAULT
+	END SELECT
+end subroutine initialize_fields
+
+
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
 ! Subroutines for getting the fields data from HDF5 files
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+
 
 subroutine load_dim_data_from_hdf5(params,field_dims)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params

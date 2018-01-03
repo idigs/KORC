@@ -66,8 +66,8 @@ module korc_interp
 		REAL(rp) :: DZ
 	END TYPE 
 
-	TYPE(KORC_3DINTERPOLANT), PRIVATE :: interp3d
-	TYPE(KORC_2DINTERPOLANT), PRIVATE :: interp2d
+	TYPE(KORC_3DINTERPOLANT), PRIVATE :: ifield3d
+	TYPE(KORC_2DINTERPOLANT), PRIVATE :: ifield2d
 	TYPE(KORC_INTERPOLANT_DOMAIN), PRIVATE :: domain
 	INTEGER :: ezerr
 
@@ -81,8 +81,6 @@ module korc_interp
 				finalize_interpolant
 	PRIVATE :: interp_3D_B_field,&
 				interp_2D_B_field,&
-				check_if_in_domain2D,&
-				check_if_in_domain3D,&
 				check_if_in_domain
 
     contains
@@ -101,106 +99,106 @@ subroutine initialize_interpolant(params,F)
 		end if
 
 		if ((.NOT.params%poloidal_flux).AND.(.NOT.params%axisymmetric)) then
-			interp3d%NR = F%dims(1)
-			interp3d%NPHI = F%dims(2)
-			interp3d%NZ = F%dims(3)
+			ifield3d%NR = F%dims(1)
+			ifield3d%NPHI = F%dims(2)
+			ifield3d%NZ = F%dims(3)
 
 			! Initializing R component of interpolant
-			call EZspline_init(interp3d%R, interp3d%NR, interp3d%NPHI, interp3d%NZ,&
-								interp3d%BCSR, interp3d%BCSPHI, interp3d%BCSZ, ezerr)
+			call EZspline_init(ifield3d%R, ifield3d%NR, ifield3d%NPHI, ifield3d%NZ,&
+								ifield3d%BCSR, ifield3d%BCSPHI, ifield3d%BCSZ, ezerr)
 		  	call EZspline_error(ezerr)
 
-			interp3d%R%x1 = F%X%R
-			! interp3d%R%x2 = F%X%PHI
-			interp3d%R%x3 = F%X%Z
+			ifield3d%R%x1 = F%X%R
+			! ifield3d%R%x2 = F%X%PHI
+			ifield3d%R%x3 = F%X%Z
 
-			call EZspline_setup(interp3d%R, F%B_3D%R, ezerr)
+			call EZspline_setup(ifield3d%R, F%B_3D%R, ezerr)
 			call EZspline_error(ezerr)
 
 			! Initializing PHI component of interpolant
-			call EZspline_init(interp3d%PHI, interp3d%NR, interp3d%NPHI, interp3d%NZ,&
-								interp3d%BCSR, interp3d%BCSPHI, interp3d%BCSZ, ezerr)
+			call EZspline_init(ifield3d%PHI, ifield3d%NR, ifield3d%NPHI, ifield3d%NZ,&
+								ifield3d%BCSR, ifield3d%BCSPHI, ifield3d%BCSZ, ezerr)
 		  	call EZspline_error(ezerr)
 
-			interp3d%PHI%x1 = F%X%R
-			! interp3d%PHI%x2 = F%X%PHI
-			interp3d%PHI%x3 = F%X%Z
+			ifield3d%PHI%x1 = F%X%R
+			! ifield3d%PHI%x2 = F%X%PHI
+			ifield3d%PHI%x3 = F%X%Z
 
-			call EZspline_setup(interp3d%PHI, F%B_3D%PHI, ezerr)
+			call EZspline_setup(ifield3d%PHI, F%B_3D%PHI, ezerr)
 			call EZspline_error(ezerr)
 
 			! Initializing Z component of interpolant
-			call EZspline_init(interp3d%Z, interp3d%NR, interp3d%NPHI, interp3d%NZ,&
-								interp3d%BCSR, interp3d%BCSPHI, interp3d%BCSZ, ezerr)
+			call EZspline_init(ifield3d%Z, ifield3d%NR, ifield3d%NPHI, ifield3d%NZ,&
+								ifield3d%BCSR, ifield3d%BCSPHI, ifield3d%BCSZ, ezerr)
 		  	call EZspline_error(ezerr)
 
-			interp3d%Z%x1 = F%X%R
-			! interp3d%Z%x2 = F%X%PHI
-			interp3d%Z%x3 = F%X%Z
+			ifield3d%Z%x1 = F%X%R
+			! ifield3d%Z%x2 = F%X%PHI
+			ifield3d%Z%x3 = F%X%Z
 
-			call EZspline_setup(interp3d%Z, F%B_3D%Z, ezerr)
+			call EZspline_setup(ifield3d%Z, F%B_3D%Z, ezerr)
 			call EZspline_error(ezerr)
 
-			ALLOCATE(domain%FLAG3D(interp3d%NR,interp3d%NPHI,interp3d%NZ))
+			ALLOCATE(domain%FLAG3D(ifield3d%NR,ifield3d%NPHI,ifield3d%NZ))
 			domain%FLAG3D = F%FLAG3D
 
 			domain%DR = ABS(F%X%R(2) - F%X%R(1))
-			domain%DPHI = 2.0_rp*C_PI/interp3d%NPHI
+			domain%DPHI = 2.0_rp*C_PI/ifield3d%NPHI
 			domain%DZ = ABS(F%X%Z(2) - F%X%Z(1))
 		else if (params%poloidal_flux) then
-			interp2d%NR = F%dims(1)
-			interp2d%NZ = F%dims(3)
+			ifield2d%NR = F%dims(1)
+			ifield2d%NZ = F%dims(3)
 
 			! Initializing poloidal flux interpolant
-			call EZspline_init(interp2d%A,interp2d%NR,interp2d%NZ,interp2d%BCSR,interp2d%BCSZ,ezerr)
+			call EZspline_init(ifield2d%A,ifield2d%NR,ifield2d%NZ,ifield2d%BCSR,ifield2d%BCSZ,ezerr)
 		  	call EZspline_error(ezerr)
 
-			interp2d%A%x1 = F%X%R
-			interp2d%A%x2 = F%X%Z
+			ifield2d%A%x1 = F%X%R
+			ifield2d%A%x2 = F%X%Z
 
-			call EZspline_setup(interp2d%A, F%PSIp, ezerr, .TRUE.)
+			call EZspline_setup(ifield2d%A, F%PSIp, ezerr, .TRUE.)
 			call EZspline_error(ezerr)
 
-			ALLOCATE(domain%FLAG2D(interp3d%NR,interp3d%NZ))
+			ALLOCATE(domain%FLAG2D(ifield3d%NR,ifield3d%NZ))
 			domain%FLAG2D = F%FLAG2D
 
 			domain%DR = ABS(F%X%R(2) - F%X%R(1))
 			domain%DZ = ABS(F%X%Z(2) - F%X%Z(1))
 		else if (params%axisymmetric) then
-			interp2d%NR = F%dims(1)
-			interp2d%NZ = F%dims(3)
+			ifield2d%NR = F%dims(1)
+			ifield2d%NZ = F%dims(3)
 
 			! Initializing R component
-			call EZspline_init(interp2d%R,interp2d%NR,interp2d%NZ,interp2d%BCSR,interp2d%BCSZ,ezerr)
+			call EZspline_init(ifield2d%R,ifield2d%NR,ifield2d%NZ,ifield2d%BCSR,ifield2d%BCSZ,ezerr)
 		  	call EZspline_error(ezerr)
 			
-			interp2d%R%x1 = F%X%R
-			interp2d%R%x2 = F%X%Z
+			ifield2d%R%x1 = F%X%R
+			ifield2d%R%x2 = F%X%Z
 
-			call EZspline_setup(interp2d%R, F%B_2D%R, ezerr, .TRUE.)
+			call EZspline_setup(ifield2d%R, F%B_2D%R, ezerr, .TRUE.)
 			call EZspline_error(ezerr)
 
 			! Initializing PHI component
-			call EZspline_init(interp2d%PHI,interp2d%NR,interp2d%NZ,interp2d%BCSR,interp2d%BCSZ,ezerr)
+			call EZspline_init(ifield2d%PHI,ifield2d%NR,ifield2d%NZ,ifield2d%BCSR,ifield2d%BCSZ,ezerr)
 		  	call EZspline_error(ezerr)
 			
-			interp2d%PHI%x1 = F%X%R
-			interp2d%PHI%x2 = F%X%Z
+			ifield2d%PHI%x1 = F%X%R
+			ifield2d%PHI%x2 = F%X%Z
 
-			call EZspline_setup(interp2d%PHI, F%B_2D%PHI, ezerr, .TRUE.)
+			call EZspline_setup(ifield2d%PHI, F%B_2D%PHI, ezerr, .TRUE.)
 			call EZspline_error(ezerr)
 
 			! Initializing Z component
-			call EZspline_init(interp2d%Z,interp2d%NR,interp2d%NZ,interp2d%BCSR,interp2d%BCSZ,ezerr)
+			call EZspline_init(ifield2d%Z,ifield2d%NR,ifield2d%NZ,ifield2d%BCSR,ifield2d%BCSZ,ezerr)
 		  	call EZspline_error(ezerr)
 			
-			interp2d%Z%x1 = F%X%R
-			interp2d%Z%x2 = F%X%Z
+			ifield2d%Z%x1 = F%X%R
+			ifield2d%Z%x2 = F%X%Z
 
-			call EZspline_setup(interp2d%Z, F%B_2D%Z, ezerr, .TRUE.)
+			call EZspline_setup(ifield2d%Z, F%B_2D%Z, ezerr, .TRUE.)
 			call EZspline_error(ezerr)
 
-			ALLOCATE(domain%FLAG2D(interp3d%NR,interp3d%NZ))
+			ALLOCATE(domain%FLAG2D(ifield3d%NR,ifield3d%NZ))
 			domain%FLAG2D = F%FLAG2D
 
 			domain%DR = ABS(F%X%R(2) - F%X%R(1))
@@ -239,13 +237,13 @@ subroutine finalize_interpolant(params)
 			write(6,'("* * * * FINALIZING INTERPOLANT * * * *")')
 		end if
 
-		if (EZspline_allocated(interp3d%R)) call Ezspline_free(interp3d%R, ezerr)
-		if (EZspline_allocated(interp3d%PHI))call Ezspline_free(interp3d%PHI, ezerr)
-		if (EZspline_allocated(interp3d%Z)) call Ezspline_free(interp3d%Z, ezerr)
-		if (EZspline_allocated(interp2d%A)) call Ezspline_free(interp2d%A, ezerr)
-		if (EZspline_allocated(interp2d%R)) call Ezspline_free(interp2d%R, ezerr)
-		if (EZspline_allocated(interp2d%PHI)) call Ezspline_free(interp2d%PHI, ezerr)
-		if (EZspline_allocated(interp2d%Z)) call Ezspline_free(interp2d%Z, ezerr)
+		if (EZspline_allocated(ifield3d%R)) call Ezspline_free(ifield3d%R, ezerr)
+		if (EZspline_allocated(ifield3d%PHI))call Ezspline_free(ifield3d%PHI, ezerr)
+		if (EZspline_allocated(ifield3d%Z)) call Ezspline_free(ifield3d%Z, ezerr)
+		if (EZspline_allocated(ifield2d%A)) call Ezspline_free(ifield2d%A, ezerr)
+		if (EZspline_allocated(ifield2d%R)) call Ezspline_free(ifield2d%R, ezerr)
+		if (EZspline_allocated(ifield2d%PHI)) call Ezspline_free(ifield2d%PHI, ezerr)
+		if (EZspline_allocated(ifield2d%Z)) call Ezspline_free(ifield2d%Z, ezerr)
 !		call EZspline_error(ezerr)
 
 		if (ALLOCATED(domain%FLAG2D)) DEALLOCATE(domain%FLAG2D)
@@ -268,75 +266,30 @@ subroutine check_if_in_domain(Y,flag)
 	ss = SIZE(Y,2)
 
 	if (ALLOCATED(domain%FLAG3D)) then
-!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,IR,IPHI,IZ) SHARED(Y,flag,domain,interp3d)
+!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,IR,IPHI,IZ) SHARED(Y,flag,domain,ifield3d)
 		do pp=1_idef,ss
 			IR = INT(FLOOR((Y(1,pp)  - domain%Ro + 0.5_rp*domain%DR)/domain%DR) + 1.0_rp,idef)
 			IPHI = INT(FLOOR((Y(2,pp)  + 0.5_rp*domain%DPHI)/domain%DPHI) + 1.0_rp,idef)
 			IZ = INT(FLOOR((Y(3,pp)  + ABS(domain%Zo) + 0.5_rp*domain%DZ)/domain%DZ) + 1.0_rp,idef)
 	
-			if ((domain%FLAG3D(IR,IPHI,IZ).NE.1_is).OR.((IR.GT.interp3d%NR).OR.(IZ.GT.interp3d%NZ))) then
+			if ((domain%FLAG3D(IR,IPHI,IZ).NE.1_is).OR.((IR.GT.ifield3d%NR).OR.(IZ.GT.ifield3d%NZ))) then
 				flag(pp) = 0_is
 			end if
 		end do
 !$OMP END PARALLEL DO
 	else 
-!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,IR,IZ) SHARED(Y,flag,domain,interp2d)
+!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,IR,IZ) SHARED(Y,flag,domain,ifield2d)
 		do pp=1_idef,ss
 			IR = INT(FLOOR((Y(1,pp)  - domain%Ro + 0.5_rp*domain%DR)/domain%DR) + 1.0_rp,idef)
 			IZ = INT(FLOOR((Y(3,pp)  + ABS(domain%Zo) + 0.5_rp*domain%DZ)/domain%DZ) + 1.0_rp,idef)
 
-			if ((domain%FLAG2D(IR,IZ).NE.1_is).OR.((IR.GT.interp2d%NR).OR.(IZ.GT.interp2d%NZ))) then
+			if ((domain%FLAG2D(IR,IZ).NE.1_is).OR.((IR.GT.ifield2d%NR).OR.(IZ.GT.ifield2d%NZ))) then
 				flag(pp) = 0_is
 			end if
 		end do
 !$OMP END PARALLEL DO
 	end if
 end subroutine check_if_in_domain
-
-
-subroutine check_if_in_domain2D(Y,flag)
-    implicit none
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
-	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
-	INTEGER(ip) :: pp,ss
-
-    ss = SIZE(Y,2)
-!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(Y,flag,interp2d)
-	do pp=1_idef,ss
-        if ( flag(pp) .EQ. 1_is ) then
-			if (EZspline_allocated(interp2d%A)) call EZspline_isInDomain(interp2d%A, Y(1,pp), Y(3,pp), ezerr)
-			if (EZspline_allocated(interp2d%R)) call EZspline_isInDomain(interp2d%R, Y(1,pp), Y(3,pp), ezerr)
-
-			if (ezerr .NE. 0) then
-				flag(pp) = 0_is
-			end if
-!			write(6,'("Error code is:",I3)') ezerr
-        end if
-	end do
-!$OMP END PARALLEL DO
-end subroutine check_if_in_domain2D
-
-
-subroutine check_if_in_domain3D(Y,flag)
-    implicit none
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
-	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
-	INTEGER(ip) :: pp,ss
-
-
-    ss = SIZE(Y,2)
-!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(Y,flag,interp3d)
-	do pp=1_idef,ss
-        if ( flag(pp) .EQ. 1_is ) then
-			call EZspline_isInDomain3_r8(interp3d%R, Y(1,pp), Y(2,pp), Y(3,pp), ezerr)
-			if (ezerr .NE. 0) then
-				flag(pp) = 0_is
-			end if
-!			write(6,'("Error code is:",I3)') ezerr
-        end if
-	end do
-!$OMP END PARALLEL DO
-end subroutine check_if_in_domain3D
 
 
 subroutine interp_2D_B_field(Y,B,flag)
@@ -351,20 +304,20 @@ subroutine interp_2D_B_field(Y,B,flag)
 
 
 	ALLOCATE(F(3,ss))
-!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(F,Y,B,flag,interp2d)
+!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(F,Y,B,flag,ifield2d)
 	do pp=1_idef,ss
 		if ( flag(pp) .EQ. 1_is ) then
-			call EZspline_interp(interp2d%R, Y(1,pp), Y(3,pp), F(1,pp), ezerr)
+			call EZspline_interp(ifield2d%R, Y(1,pp), Y(3,pp), F(1,pp), ezerr)
 			call EZspline_error(ezerr)
 
 			if (ezerr .NE. 0) then ! We flag the particle as lost
 				flag(pp) = 0_is
 			end if
 
-			call EZspline_interp(interp2d%PHI, Y(1,pp), Y(3,pp), F(2,pp), ezerr)
+			call EZspline_interp(ifield2d%PHI, Y(1,pp), Y(3,pp), F(2,pp), ezerr)
 			call EZspline_error(ezerr)
 
-			call EZspline_interp(interp2d%Z, Y(1,pp), Y(3,pp), F(3,pp), ezerr)
+			call EZspline_interp(ifield2d%Z, Y(1,pp), Y(3,pp), F(3,pp), ezerr)
 			call EZspline_error(ezerr)
 
 			B(1,pp) = F(1,pp)*COS(Y(2,pp)) - F(2,pp)*SIN(Y(2,pp))
@@ -388,20 +341,20 @@ subroutine interp_3D_B_field(Y,B,flag)
 	ss = size(Y,2)
 
 	ALLOCATE(F(3,ss))
-!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(F,Y,B,flag,interp3d)
+!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(F,Y,B,flag,ifield3d)
 	do pp=1_idef,ss
 		if ( flag(pp) .EQ. 1_is ) then
-			call EZspline_interp(interp3d%R, Y(1,pp), Y(2,pp), Y(3,pp), F(1,pp), ezerr)
+			call EZspline_interp(ifield3d%R, Y(1,pp), Y(2,pp), Y(3,pp), F(1,pp), ezerr)
 			call EZspline_error(ezerr)
 
 			if (ezerr .NE. 0) then ! We flag the particle as lost
 				flag(pp) = 0_is
 			end if
 
-			call EZspline_interp(interp3d%PHI, Y(1,pp), Y(2,pp), Y(3,pp), F(2,pp), ezerr)
+			call EZspline_interp(ifield3d%PHI, Y(1,pp), Y(2,pp), Y(3,pp), F(2,pp), ezerr)
 			call EZspline_error(ezerr)
 
-			call EZspline_interp(interp3d%Z, Y(1,pp), Y(2,pp), Y(3,pp), F(3,pp), ezerr)
+			call EZspline_interp(ifield3d%Z, Y(1,pp), Y(2,pp), Y(3,pp), F(3,pp), ezerr)
 			call EZspline_error(ezerr)
 
 			B(1,pp) = F(1,pp)*COS(Y(2,pp)) - F(2,pp)*SIN(Y(2,pp))
@@ -425,11 +378,11 @@ subroutine calculate_magnetic_field(Y,F,B,flag)
 	ss = size(Y,2)
 
 	ALLOCATE(A(3,ss))
-!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(F,Y,A,B,flag,interp2d)
+!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(F,Y,A,B,flag,ifield2d)
 	do pp=1_idef,ss
 		if ( flag(pp) .EQ. 1_is ) then
 			! FR = (dA/dZ)/R
-			call EZspline_derivative(interp2d%A, 0, 1, Y(1,pp), Y(3,pp), A(1,pp), ezerr)
+			call EZspline_derivative(ifield2d%A, 0, 1, Y(1,pp), Y(3,pp), A(1,pp), ezerr)
 !			call EZspline_error(ezerr)
 
 			if (ezerr .NE. 0) then ! We flag the particle as lost
@@ -441,7 +394,7 @@ subroutine calculate_magnetic_field(Y,F,B,flag)
 				A(2,pp) = F%Bo*F%Ro/Y(1,pp)
 
 				! FR = -(dA/dR)/R
-				call EZspline_derivative(interp2d%A, 1, 0, Y(1,pp), Y(3,pp), A(3,pp), ezerr)
+				call EZspline_derivative(ifield2d%A, 1, 0, Y(1,pp), Y(3,pp), A(3,pp), ezerr)
 				call EZspline_error(ezerr)
 				A(3,pp) = -A(3,pp)/Y(1,pp)
 

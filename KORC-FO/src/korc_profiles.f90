@@ -8,10 +8,12 @@ module korc_profiles
     implicit none
 
 	PUBLIC :: get_profiles,&
-				load_profiles_data_from_hdf5,&
 				initialize_profiles
 	PRIVATE :: get_analytical_profiles,&
-				uniform_profiles
+				uniform_profiles,&
+				load_profiles_data_from_hdf5,&
+				ALLOCATE_2D_PROFILES_ARRAYS,&
+				ALLOCATE_3D_PROFILES_ARRAYS
 
     contains
 
@@ -22,6 +24,7 @@ subroutine initialize_profiles(params,P)
     CHARACTER(MAX_STRING_LENGTH) :: ne_profile
     CHARACTER(MAX_STRING_LENGTH) :: Te_profile
     CHARACTER(MAX_STRING_LENGTH) :: Zeff_profile
+    CHARACTER(MAX_STRING_LENGTH) :: filename
 	REAL(rp) :: radius_profile
 	REAL(rp) :: neo
 	REAL(rp) :: Teo
@@ -33,14 +36,14 @@ subroutine initialize_profiles(params,P)
 	REAL(rp), DIMENSION(4) :: a_Te
 	REAL(rp), DIMENSION(4) :: a_Zeff
 
-	NAMELIST /analytical_plasma_profiles/ radius_profile,ne_profile,neo,n_ne,a_ne,&
+	NAMELIST /plasma_profiles/ radius_profile,ne_profile,neo,n_ne,a_ne,&
 											Te_profile,Teo,n_Te,a_Te,&
-											Zeff_profile,Zeffo,n_Zeff,a_Zeff
+											Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename
 
 	SELECT CASE (TRIM(params%plasma_model))
 		CASE('ANALYTICAL')
 			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-			read(default_unit_open,nml=analytical_plasma_profiles)
+			read(default_unit_open,nml=plasma_profiles)
 			close(default_unit_open)
 
 			P%a = radius_profile
@@ -59,10 +62,20 @@ subroutine initialize_profiles(params,P)
 			P%n_Zeff = n_Zeff
 			P%a_Zeff = a_Zeff
 		CASE('EXTERNAL')
-			! Something here
+			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
+			read(default_unit_open,nml=plasma_profiles)
+			close(default_unit_open)
+
+			P%neo = neo
+			P%Teo = Teo
+			P%Zeffo = Zeffo
+
+			P%filename = TRIM(filename)
+			
+			call load_profiles_data_from_hdf5(params,P)
 		CASE('UNIFORM')
 			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-			read(default_unit_open,nml=analytical_plasma_profiles)
+			read(default_unit_open,nml=plasma_profiles)
 			close(default_unit_open)
 
 			P%a = radius_profile
@@ -189,10 +202,109 @@ subroutine load_profiles_data_from_hdf5(params,P)
 	INTEGER(HID_T) :: h5file_id
 	INTEGER(HID_T) :: group_id
 	INTEGER(HID_T) :: subgroup_id
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: A
+	REAL(rp) :: rdatum
 	INTEGER :: h5error
     INTEGER ir, iphi, iz
 
+	filename = TRIM(P%filename)
+	call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
+	if (h5error .EQ. -1) then
+		write(6,'("KORC ERROR: Something went wrong in: load_profiles_data_from_hdf5 --> h5fopen_f")')
+	end if
+
+
+	dset = "/NR"
+	call load_from_hdf5(h5file_id,dset,rdatum)
+	P%dims(1) = INT(rdatum)
+
+	if (params%axisymmetric) then
+		P%dims(2) = 0
+	else
+		dset = "/NPHI"
+		call load_from_hdf5(h5file_id,dset,rdatum)
+		P%dims(2) = INT(rdatum)
+	end if
+
+	dset = "/NZ"
+	call load_from_hdf5(h5file_id,dset,rdatum)
+	P%dims(3) = INT(rdatum)
+
+	if (params%axisymmetric) then
+		call ALLOCATE_2D_PROFILES_ARRAYS(P)
+	else
+		call ALLOCATE_3D_PROFILES_ARRAYS(P)
+	end if
+
+	dset = "/R"
+	call load_array_from_hdf5(h5file_id,dset,P%X%R)
+
+	if (.NOT.params%axisymmetric) then
+		dset = "/PHI"
+		call load_array_from_hdf5(h5file_id,dset,P%X%PHI)
+	end if
+
+	dset = "/Z"
+	call load_array_from_hdf5(h5file_id,dset,P%X%Z)
+
+	dset = "/FLAG"
+	if (params%axisymmetric) then
+		call load_array_from_hdf5(h5file_id,dset,P%FLAG2D)
+	else
+		call load_array_from_hdf5(h5file_id,dset,P%FLAG3D)
+	end if
+
+	dset = "/ne"
+	if (params%axisymmetric) then
+		call load_array_from_hdf5(h5file_id,dset,P%ne_2D)
+	else
+		call load_array_from_hdf5(h5file_id,dset,P%ne_3D)
+	end if
+
+	dset = "/Te"
+	if (params%axisymmetric) then
+		call load_array_from_hdf5(h5file_id,dset,P%Te_2D)
+	else
+		call load_array_from_hdf5(h5file_id,dset,P%Te_3D)
+	end if
+
+	dset = "/Zeff"
+	if (params%axisymmetric) then
+		call load_array_from_hdf5(h5file_id,dset,P%Zeff_2D)
+	else
+		call load_array_from_hdf5(h5file_id,dset,P%Zeff_3D)
+	end if
+
+	call h5fclose_f(h5file_id, h5error)
+	if (h5error .EQ. -1) then
+		write(6,'("KORC ERROR: Something went wrong in: load_profiles_data_from_hdf5 --> h5fclose_f")')
+	end if
+
+	call KORC_ABORT()
 end subroutine load_profiles_data_from_hdf5
+
+
+subroutine ALLOCATE_2D_PROFILES_ARRAYS(P)
+	TYPE(PROFILES), INTENT(INOUT) :: P
+
+	ALLOCATE(P%X%R(P%dims(1)))
+	ALLOCATE(P%X%Z(P%dims(3)))
+	ALLOCATE(P%FLAG2D(P%dims(1),P%dims(3)))
+	ALLOCATE(P%ne_2D(P%dims(1),P%dims(3)))
+	ALLOCATE(P%Te_2D(P%dims(1),P%dims(3)))
+	ALLOCATE(P%Zeff_2D(P%dims(1),P%dims(3)))
+end subroutine ALLOCATE_2D_PROFILES_ARRAYS
+
+
+subroutine ALLOCATE_3D_PROFILES_ARRAYS(P)
+	TYPE(PROFILES), INTENT(INOUT) :: P
+
+	ALLOCATE(P%X%R(P%dims(1)))
+	ALLOCATE(P%X%PHI(P%dims(2)))
+	ALLOCATE(P%X%Z(P%dims(3)))
+	ALLOCATE(P%FLAG3D(P%dims(1),P%dims(2),P%dims(3)))
+	ALLOCATE(P%ne_3D(P%dims(1),P%dims(2),P%dims(3)))
+	ALLOCATE(P%Te_3D(P%dims(1),P%dims(2),P%dims(3)))
+	ALLOCATE(P%Zeff_3D(P%dims(1),P%dims(2),P%dims(3)))
+end subroutine ALLOCATE_3D_PROFILES_ARRAYS
 
 end module korc_profiles

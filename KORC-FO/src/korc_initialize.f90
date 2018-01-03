@@ -22,7 +22,6 @@ module korc_initialize
 				load_korc_params
 	PUBLIC :: initialize_korc_parameters,&
 				initialize_particles,&
-				initialize_fields,&
 				define_time_step
 
     contains
@@ -426,82 +425,5 @@ subroutine set_up_particles_ic(params,F,spp)
 		call initial_velocity_distribution(params,F,spp)
 	end if
 end subroutine set_up_particles_ic
-
-
-! * * * * * * * * * * * *  * * * * * * * * * * * * * !
-! * * *  SUBROUTINES FOR INITIALIZING FIELDS   * * * !
-! * * * * * * * * * * * *  * * * * * * * * * * * * * !
-
-subroutine initialize_fields(params,F)
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(FIELDS), INTENT(OUT) :: F
-	TYPE(KORC_STRING) :: field
-	REAL(rp) :: Bo
-	REAL(rp) :: minor_radius
-	REAL(rp) :: major_radius
-	REAL(rp) :: qa
-	REAL(rp) :: qo
-    CHARACTER(MAX_STRING_LENGTH) :: current_direction
-    CHARACTER(MAX_STRING_LENGTH) :: electric_field_mode
-	REAL(rp) :: Eo
-    REAL(rp) :: pulse_maximum
-    REAL(rp) :: pulse_duration
-
-	NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
-			qa,qo,electric_field_mode,Eo,pulse_maximum,pulse_duration,current_direction
-
-	SELECT CASE (TRIM(params%plasma_model))
-		CASE('ANALYTICAL')
-			! Load the parameters of the analytical magnetic field
-			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-			read(default_unit_open,nml=analytical_fields_params)
-			close(default_unit_open)
-
-			F%AB%Bo = Bo
-			F%AB%a = minor_radius
-			F%AB%Ro = major_radius
-			F%Ro = major_radius
-			F%AB%qa = qa
-			F%AB%qo = qo
-			F%AB%lambda = F%AB%a/SQRT(qa/qo - 1.0_rp)
-			F%AB%Bpo = F%AB%lambda*F%AB%Bo/(F%AB%qo*F%AB%Ro)
-			F%AB%current_direction = TRIM(current_direction)
-			SELECT CASE (TRIM(F%AB%current_direction))
-				CASE('PARALLEL')
-					F%AB%Bp_sign = 1.0_rp
-				CASE('ANTI-PARALLEL')
-					F%AB%Bp_sign = -1.0_rp
-				CASE DEFAULT
-			END SELECT
-			F%Eo = Eo
-			F%Bo = F%AB%Bo
-
-		    F%electric_field_mode = TRIM(electric_field_mode)
-			F%to = pulse_maximum
-			F%sig = pulse_duration
-		CASE('EXTERNAL')
-			! Load the magnetic field from an external HDF5 file
-		    call load_dim_data_from_hdf5(params,F%dims)
-
-			if (params%poloidal_flux) then
-				call ALLOCATE_FLUX_ARRAYS(F)
-			else if (params%axisymmetric) then
-				call ALLOCATE_2D_FIELDS_ARRAYS(F)
-			else
-				call ALLOCATE_3D_FIELDS_ARRAYS(F)
-			end if
-		
-		    call load_field_data_from_hdf5(params,F)
-		CASE('UNIFORM')
-			! Load the parameters of the analytical magnetic field
-			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-			read(default_unit_open,nml=analytical_fields_params)
-			close(default_unit_open)
-
-			F%Eo = Eo
-			F%Bo = Bo
-		CASE DEFAULT
-	END SELECT
-end subroutine initialize_fields
 
 end module korc_initialize

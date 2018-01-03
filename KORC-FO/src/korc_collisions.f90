@@ -601,59 +601,6 @@ end subroutine check_collisions_params
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
 
 
-!subroutine include_CoulombCollisions(params,U,ne,Te)
-!	TYPE(KORC_PARAMS), INTENT(IN) :: params
-!	REAL(rp), DIMENSION(3), INTENT(INOUT) :: U
-!	REAL(rp), INTENT(IN) :: ne
-!	REAL(rp), INTENT(IN) :: Te
-!	REAL(rp), DIMENSION(3) :: v1, v2, v3
-!	REAL(rp), DIMENSION(3) :: dW
-!	REAL(rp), DIMENSION(3) :: rnd1, rnd2
-!	REAL(rp), DIMENSION(3) :: x = (/1.0_rp,0.0_rp,0.0_rp/)
-!	REAL(rp), DIMENSION(3) :: y = (/0.0_rp,1.0_rp,0.0_rp/)
-!	REAL(rp), DIMENSION(3) :: z = (/0.0_rp,0.0_rp,1.0_rp/)
-!	REAL(rp) :: dt
-!	REAL(rp) :: U1, U2, U3
-!	REAL(rp) :: dU1, dU2, dU3
-!	REAL(rp) :: um
-!	REAL(rp) :: v ! speed of particle
-!	REAL(rp) :: CAL,CFL,CBL
-
-!	if (MODULO(params%it+1_ip,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
-!		dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt
-!!		dt = params%dt
-
-!		um = SQRT(DOT_PRODUCT(U,U))
-!		v = um/SQRT(1.0_rp + um**2)
-
-!		call unitVectors(U,v1,v2,v3)
-
-!		U1 = DOT_PRODUCT(U,v1);
-!		U2 = DOT_PRODUCT(U,v2);
-!		U3 = DOT_PRODUCT(U,v3);
-
-!	!	call RANDOM_NUMBER(rnd1)
-!	!	call RANDOM_NUMBER(rnd2)
-!	!	dW = SQRT(dt)*SQRT(-2.0_rp*LOG(1.0_rp-rnd1))*COS(2.0_rp*C_PI*rnd2)
-
-!		call RANDOM_NUMBER(rnd1)
-!		dW = SQRT(dt)*SQRT(3.0_rp)*(-1.0_rp + 2.0_rp*rnd1);
-
-!		CAL = CA_SD(v,ne,Te)
-!		CFL = CF_SD(v,ne,Te)
-!		CBL = CB_SD(v,ne,Te)
-
-!		dU1 = -2.0_rp*CFL*dt + SQRT(2.0_rp*CAL)*dW(1)
-!		dU2 = SQRT(2.0_rp*CBL)*dW(2)
-!		dU3 = SQRT(2.0_rp*CBL)*dW(3)
-
-!		U(1) = (U1+dU1)*DOT_PRODUCT(v1,x) + (U2+dU2)*DOT_PRODUCT(v2,x) + (U3+dU3)*DOT_PRODUCT(v3,x)
-!		U(2) = (U1+dU1)*DOT_PRODUCT(v1,y) + (U2+dU2)*DOT_PRODUCT(v2,y) + (U3+dU3)*DOT_PRODUCT(v3,y)
-!		U(3) = (U1+dU1)*DOT_PRODUCT(v1,z) + (U2+dU2)*DOT_PRODUCT(v2,z) + (U3+dU3)*DOT_PRODUCT(v3,z)
-!	end if
-!end subroutine include_CoulombCollisions
-
-
 subroutine include_CoulombCollisions(params,U,ne,Te,Zeff)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), DIMENSION(3), INTENT(INOUT) :: U
@@ -675,6 +622,7 @@ subroutine include_CoulombCollisions(params,U,ne,Te,Zeff)
 
 	if (MODULO(params%it+1_ip,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
 		dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt
+!		dt = params%dt
 
 		um = SQRT(DOT_PRODUCT(U,U))
 		v = um/SQRT(1.0_rp + um**2)

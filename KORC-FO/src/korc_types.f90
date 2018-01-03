@@ -228,6 +228,8 @@ TYPE, PUBLIC :: PROFILES
 	REAL(rp) :: Teo ! Electron temperature at the magnetic axis
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: Te_3D ! Te_3D(R,PHI,Z)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Te_2D ! Te_2D(R,Z)
+
+	CHARACTER(MAX_STRING_LENGTH) :: filename
 END TYPE PROFILES
 
 

@@ -55,7 +55,7 @@
 	qo = 1.0 ! Safety factor at the separatrix (r=a)
 /
 
-&analytical_plasma_profiles
+&plasma_profiles
 	radius_profile = 0.6
 	ne_profile = 'PARABOLIC' ! Options are 'FLAT' and 'PARABOLIC'
 	neo = 2.93E19 ! In m^-3
@@ -69,6 +69,7 @@
 	Zeffo = 1.45 ! In m^-3
 	n_Zeff = 3.0 ! 
 	a_Zeff = 1.0065,-0.12081,0.02834,-0.11796
+	filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/D3D_Q.h5" !
 /
 
 &CollisionParamsSingleSpecies

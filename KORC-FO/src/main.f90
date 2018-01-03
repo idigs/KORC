@@ -1,5 +1,4 @@
 program main
-
 	use korc_types
 	use korc_units
 	use korc_hpc
@@ -10,6 +9,7 @@ program main
 	use korc_collisions
 	use korc_initialize
 	use korc_finalize
+	use korc_profiles
 
 	use korc_synthetic_camera
 
