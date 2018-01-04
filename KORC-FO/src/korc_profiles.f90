@@ -66,8 +66,11 @@ subroutine initialize_profiles(params,P)
 			read(default_unit_open,nml=plasma_profiles)
 			close(default_unit_open)
 
+			P%ne_profile = TRIM(ne_profile)
 			P%neo = neo
-			P%Teo = Teo
+			P%Te_profile = TRIM(Te_profile)
+			P%Teo = Teo*C_E ! Converted to Joules
+			P%Zeff_profile = TRIM(Zeff_profile)
 			P%Zeffo = Zeffo
 
 			P%filename = TRIM(filename)
@@ -81,18 +84,18 @@ subroutine initialize_profiles(params,P)
 			P%a = radius_profile
 			P%ne_profile = TRIM(ne_profile)
 			P%neo = neo
-			P%n_ne = n_ne
-			P%a_ne = a_ne
+			P%n_ne = 0.0_rp
+			P%a_ne = (/0.0_rp,0.0_rp,0.0_rp,0.0_rp/)
 
 			P%Te_profile = TRIM(Te_profile)
 			P%Teo = Teo*C_E ! Converted to Joules
-			P%n_Te = n_Te
-			P%a_Te = a_Te
+			P%n_Te = 0.0_rp
+			P%a_Te = (/0.0_rp,0.0_rp,0.0_rp,0.0_rp/)
 
 			P%Zeff_profile = TRIM(Zeff_profile)
 			P%Zeffo = Zeffo
-			P%n_Zeff = n_Zeff
-			P%a_Zeff = a_Zeff
+			P%n_Zeff = 0.0_rp
+			P%a_Zeff = (/0.0_rp,0.0_rp,0.0_rp,0.0_rp/)
 		CASE DEFAULT
 	END SELECT
 end subroutine initialize_profiles
@@ -181,7 +184,7 @@ subroutine get_profiles(params,vars,P)
 		CASE('ANALYTICAL')
 			call get_analytical_profiles(P,vars%Y,vars%ne,vars%Te,vars%Zeff,vars%flag)
 		CASE('EXTERNAL')
-!			call interp_profiles(vars,P)
+			call interp_profiles(vars,P)
 		CASE('UNIFORM')
 			call uniform_profiles(vars,P)
 		CASE DEFAULT
@@ -263,8 +266,10 @@ subroutine load_profiles_data_from_hdf5(params,P)
 	dset = "/Te"
 	if (params%axisymmetric) then
 		call load_array_from_hdf5(h5file_id,dset,P%Te_2D)
+		P%Te_2D = P%Te_2D*C_E
 	else
 		call load_array_from_hdf5(h5file_id,dset,P%Te_3D)
+		P%Te_3D = P%Te_3D*C_E
 	end if
 
 	dset = "/Zeff"
@@ -278,8 +283,6 @@ subroutine load_profiles_data_from_hdf5(params,P)
 	if (h5error .EQ. -1) then
 		write(6,'("KORC ERROR: Something went wrong in: load_profiles_data_from_hdf5 --> h5fclose_f")')
 	end if
-
-	call KORC_ABORT()
 end subroutine load_profiles_data_from_hdf5
 
 

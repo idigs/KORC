@@ -280,7 +280,7 @@ subroutine get_fields(params,vars,F)
 		CASE('ANALYTICAL')
 			call get_analytical_fields(vars, F)
 		CASE('EXTERNAL')
-			call interp_field(vars, F)
+			call interp_fields(vars, F)
 		CASE('UNIFORM')
 			call uniform_fields(vars, F)
 		CASE DEFAULT
@@ -322,6 +322,7 @@ subroutine initialize_fields(params,F)
 			F%AB%a = minor_radius
 			F%AB%Ro = major_radius
 			F%Ro = major_radius
+			F%Zo = 0.0_rp
 			F%AB%qa = qa
 			F%AB%qo = qo
 			F%AB%lambda = F%AB%a/SQRT(qa/qo - 1.0_rp)

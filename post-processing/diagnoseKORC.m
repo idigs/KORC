@@ -1,6 +1,6 @@
 function ST = diagnoseKORC(path,visible,range)
 % ST = diagnoseKORC('../KORC-FO/outputFiles/','on',[0,100])
-close all
+% close all
 
 ST = struct;
 ST.path = path;
@@ -55,9 +55,9 @@ ST.data = loadData(ST);
 % plotEnergyPitchanglePDF(ST);
 
 
-figuresAPS2017(ST);
-
-NIMROD_figure(ST);
+% figuresAPS2017(ST);
+% 
+% NIMROD_figure(ST);
 
 % save('energy_limit','ST')
 end

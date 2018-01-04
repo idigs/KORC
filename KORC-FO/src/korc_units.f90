@@ -77,14 +77,19 @@ subroutine normalize_variables(params,spp,F,P)
 		spp(ii)%falloff_rate = spp(ii)%falloff_rate/params%cpp%length
 	end do
 
-!	Normalize electromagnetic fields and plasma profiles
-	if (params%plasma_model .EQ. 'ANALYTICAL') then
-		F%Bo = F%Bo/params%cpp%Bo
+!	Normalize electromagnetic fields and profiles
+	F%Bo = F%Bo/params%cpp%Bo
+	F%Ro = F%Ro/params%cpp%length
+	F%Zo = F%Zo/params%cpp%length
 
+	P%a = P%a/params%cpp%length
+	P%neo = P%neo/params%cpp%density
+	P%Teo = P%Teo/params%cpp%temperature
+
+	if (params%plasma_model .EQ. 'ANALYTICAL') then
 		F%AB%Bo = F%AB%Bo/params%cpp%Bo
 		F%AB%a = F%AB%a/params%cpp%length
 		F%AB%Ro = F%AB%Ro/params%cpp%length
-		F%Ro = F%Ro/params%cpp%length
 		F%AB%lambda = F%AB%lambda/params%cpp%length
 		F%AB%Bpo = F%AB%Bpo/params%cpp%Bo
 
@@ -92,15 +97,7 @@ subroutine normalize_variables(params,spp,F,P)
 		F%Eo = F%Eo/params%cpp%Eo
         F%to = F%to/params%cpp%time
         F%sig = F%sig/params%cpp%time
-
-		P%a = P%a/params%cpp%length
-		P%neo = P%neo/params%cpp%density
-		P%Teo = P%Teo/params%cpp%temperature
 	else if (params%plasma_model .EQ. 'EXTERNAL') then
-		F%Bo = F%Bo/params%cpp%Bo
-		F%Ro = F%Ro/params%cpp%length
-		F%Zo = F%Zo/params%cpp%length
-
 		if (ALLOCATED(F%B_3D%R)) F%B_3D%R = F%B_3D%R/params%cpp%Bo
 		if (ALLOCATED(F%B_3D%PHI)) F%B_3D%PHI = F%B_3D%PHI/params%cpp%Bo
 		if (ALLOCATED(F%B_3D%Z)) F%B_3D%Z = F%B_3D%Z/params%cpp%Bo
@@ -114,8 +111,16 @@ subroutine normalize_variables(params,spp,F,P)
 		F%X%R = F%X%R/params%cpp%length
 		! Nothing to do for the PHI component
 		F%X%Z = F%X%Z/params%cpp%length
+
+		P%X%R = P%X%R/params%cpp%length
+		P%X%Z = P%X%Z/params%cpp%length
+
+		if (ALLOCATED(P%ne_2D)) P%ne_2D = P%ne_2D/params%cpp%density
+		if (ALLOCATED(P%Te_2D)) P%Te_2D = P%Te_2D/params%cpp%temperature
+
+		if (ALLOCATED(P%ne_3D)) P%ne_3D = P%ne_3D/params%cpp%density
+		if (ALLOCATED(P%Te_3D)) P%Te_3D = P%Te_3D/params%cpp%temperature
 	else if (params%plasma_model .EQ. 'UNIFORM') then
-		F%Bo = F%Bo/params%cpp%Bo
 		F%Eo = F%Eo/params%cpp%Eo
 	end if	
 end subroutine normalize_variables

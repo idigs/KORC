@@ -57,7 +57,9 @@ program main
 	! *** BEYOND THIS POINT VARIABLES ARE DIMENSIONLESS ***
 	! *** *** *** *** *** ***   *** *** *** *** *** *** ***
 
-	call initialize_interpolant(params,F)
+	call initialize_fields_interpolant(params,F)
+
+	call initialize_profiles_interpolant(params,P)
 
 	call set_up_particles_ic(params,F,spp)
 	! * * * INITIALIZATION STAGE * * *
@@ -110,7 +112,7 @@ program main
 	! * * * FINALIZING SIMULATION * * * 
 	call finalize_HDF5()
 
-	call finalize_interpolant(params)
+	call finalize_interpolants(params)
 
 	! DEALLOCATION OF VARIABLES
 	call deallocate_variables(params,F,spp)
