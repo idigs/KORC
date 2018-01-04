@@ -1,5 +1,6 @@
 module korc_finalize
 	use korc_types
+	use korc_fields
 	use korc_hpc
 
 	implicit none

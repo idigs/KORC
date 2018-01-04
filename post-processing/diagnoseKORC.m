@@ -1,6 +1,6 @@
 function ST = diagnoseKORC(path,visible,range)
 % ST = diagnoseKORC('../KORC-FO/outputFiles/','on',[0,100])
-% close all
+close all
 
 ST = struct;
 ST.path = path;
@@ -25,7 +25,7 @@ ST.data = loadData(ST);
 
 % ST.CP = confined_particles(ST);
 % 
-% ST.PAD = pitchAngleDiagnostic(ST,30);
+ST.PAD = pitchAngleDiagnostic(ST,30);
 
 % ST.MMD = magneticMomentDiagnostic(ST,70);
 
@@ -56,7 +56,7 @@ ST.data = loadData(ST);
 
 
 % figuresAPS2017(ST);
-% 
+
 % NIMROD_figure(ST);
 
 % save('energy_limit','ST')

@@ -1165,6 +1165,10 @@ subroutine save_simulation_parameters(params,spp,F,P)
 			attr = "Toroidal field at the magnetic axis in T"
 			call save_to_hdf5(h5file_id,dset,F%Bo*params%cpp%Bo,attr)
 
+			dset = TRIM(gname) // "/Eo"
+			attr = "Electric field at the magnetic axis in V/m"
+			call save_to_hdf5(h5file_id,dset,F%Eo*params%cpp%Eo,attr)
+
 			dset = TRIM(gname) // "/Ro"
 			attr = "Radial position of magnetic axis"
 			call save_to_hdf5(h5file_id,dset,F%Ro*params%cpp%length,attr)

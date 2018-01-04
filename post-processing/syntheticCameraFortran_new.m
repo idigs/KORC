@@ -334,7 +334,7 @@ disp('Plotting snapshots...')
 xRectangles = [1.41,1.619; 1.537,1.66; 1.943,2.077];
 yRectangles = [-0.1075,0.1161; -0.0626,0.07147; 0.1831,0.363];
 colorRectangles = [0,0,0; 1,0,0; 0,0,1];
-plotToroidalSections = false;
+plotToroidalSections = true;
 figuresToShare = false;
 
 
@@ -728,7 +728,8 @@ for ss=1:ST.params.simulation.num_species
         
         fig = figure;
         subplot(3,1,1)
-        plot(axis_lambda,mean(f_L2,2),'k',axis_lambda,mean(f_p_L2,2),'c',axis_lambda,mean(f_t_L2,2),'m','LineWidth',2)
+%         plot(axis_lambda,mean(f_L2,2),'k',axis_lambda,mean(f_p_L2,2),'c',axis_lambda,mean(f_t_L2,2),'m','LineWidth',2)
+        plot(axis_lambda,f_L2,'k',axis_lambda,f_p_L2,'c',axis_lambda,f_t_L2,'m','LineWidth',2)
         hold on;plot(axis_lambda,P_theory,'r');hold off
         ylabel('$P_R(\lambda)$ (Watts)','FontSize',12,'Interpreter','latex')
         xlim([min(axis_lambda) max(axis_lambda)]);box on;grid on;

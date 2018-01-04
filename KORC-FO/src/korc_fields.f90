@@ -11,7 +11,11 @@ module korc_fields
 				get_fields,&
 				initialize_fields,&
 				load_field_data_from_hdf5,&
-				load_dim_data_from_hdf5
+				load_dim_data_from_hdf5,&
+				ALLOCATE_FLUX_ARRAYS,&
+				ALLOCATE_2D_FIELDS_ARRAYS,&
+				ALLOCATE_3D_FIELDS_ARRAYS,&
+				DEALLOCATE_FIELDS_ARRAYS
 	PRIVATE :: get_analytical_fields,&
 				analytical_fields,&
 				analytical_magnetic_field,&
@@ -20,12 +24,14 @@ module korc_fields
 				uniform_electric_field,&
 				check_if_confined,&
 				uniform_fields,&
-				cross
+				cross,&
+				analytical_electric_field_cyl,&
+				ALLOCATE_V_FIELD_2D,&
+				ALLOCATE_V_FIELD_3D
 
     contains
 
 subroutine analytical_fields(F,Y,E,B,flag)
-    implicit none
 	TYPE(FIELDS), INTENT(IN) :: F
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz
@@ -64,7 +70,6 @@ end subroutine analytical_fields
 
 
 subroutine analytical_magnetic_field(F,Y,B,flag)
-    implicit none
 	TYPE(FIELDS), INTENT(IN) :: F
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz
@@ -93,7 +98,6 @@ end subroutine analytical_magnetic_field
 
 
 subroutine uniform_magnetic_field(F,B)
-    implicit none
 	TYPE(FIELDS), INTENT(IN) :: F
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz
 
@@ -103,7 +107,6 @@ end subroutine uniform_magnetic_field
 
 
 subroutine uniform_electric_field(F,E)
-    implicit none
 	TYPE(FIELDS), INTENT(IN) :: F
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: E ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz
 
@@ -113,7 +116,6 @@ end subroutine uniform_electric_field
 
 
 subroutine analytical_electric_field(F,Y,E,flag)
-    implicit none
 	TYPE(FIELDS), INTENT(IN) :: F
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: E ! E(1,:) = Ex, E(2,:) = Ey, E(3,:) = Ez
@@ -140,8 +142,33 @@ subroutine analytical_electric_field(F,Y,E,flag)
 end subroutine analytical_electric_field
 
 
+subroutine analytical_electric_field_cyl(F,Y,E,flag)
+	TYPE(FIELDS), INTENT(IN) :: F
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = R, Y(2,:) = PHI, Y(3,:) = Z
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: E ! E(1,:) = Ex, E(2,:) = Ey, E(3,:) = Ez
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: flag
+	REAL(rp) :: Ephi
+	INTEGER(ip) pp ! Iterator(s)
+	INTEGER(ip) :: ss
+
+	if (abs(F%Eo) > 0) then
+		ss = SIZE(Y,2)
+!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,Ephi) SHARED(F,Y,E,flag)
+		do pp=1_idef,ss
+            if ( flag(pp) .EQ. 1_is ) then
+			    Ephi = F%Eo*F%Ro/Y(1,pp)
+
+			    E(1,pp) = -Ephi*SIN(Y(2,pp))
+			    E(2,pp) = Ephi*COS(Y(2,pp))
+			    E(3,pp) = 0.0_rp
+            end if
+		end do
+!$OMP END PARALLEL DO
+	end if
+end subroutine analytical_electric_field_cyl
+
+
 subroutine mean_F_field(F,Fo,op_field)
-	implicit none
 	TYPE(FIELDS), INTENT(IN) :: F
 	REAL(rp), INTENT(OUT) :: Fo
 	TYPE(KORC_STRING), INTENT(IN) :: op_field
@@ -166,7 +193,6 @@ end subroutine mean_F_field
 
 
 subroutine check_if_confined(F,Y,flag)
-    implicit none
 	TYPE(FIELDS), INTENT(IN) :: F
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
 	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
@@ -186,7 +212,6 @@ end subroutine check_if_confined
 
 
 subroutine get_analytical_fields(vars,F)
-    implicit none
 	TYPE(PARTICLES), INTENT(INOUT) :: vars
 	TYPE(FIELDS), INTENT(IN) :: F
 
@@ -197,7 +222,6 @@ end subroutine get_analytical_fields
 
 
 subroutine uniform_fields(vars,F)
-    implicit none
 	TYPE(PARTICLES), INTENT(INOUT) :: vars
 	TYPE(FIELDS), INTENT(IN) :: F
 
@@ -219,7 +243,6 @@ end function cross
 
 
 subroutine unitVectors(params,Xo,F,b1,b2,b3,flag)
-    implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Xo
 	TYPE(FIELDS), INTENT(IN) :: F
@@ -271,7 +294,6 @@ end subroutine unitVectors
 
 
 subroutine get_fields(params,vars,F)
-	implicit none
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(PARTICLES), INTENT(INOUT) :: vars
 	TYPE(FIELDS), INTENT(IN) :: F
@@ -347,10 +369,12 @@ subroutine initialize_fields(params,F)
 
 			if (params%poloidal_flux) then
 				call ALLOCATE_FLUX_ARRAYS(F)
-			else if (params%axisymmetric) then
-				call ALLOCATE_2D_FIELDS_ARRAYS(F)
+			end if
+
+			if (params%axisymmetric) then
+				call ALLOCATE_2D_FIELDS_ARRAYS(F,.FALSE.,.TRUE.)
 			else
-				call ALLOCATE_3D_FIELDS_ARRAYS(F)
+				call ALLOCATE_3D_FIELDS_ARRAYS(F,.TRUE.,.TRUE.)
 			end if
 		
 		    call load_field_data_from_hdf5(params,F)
@@ -459,31 +483,47 @@ subroutine load_field_data_from_hdf5(params,F)
 	dset = '/Bo'
 	call load_from_hdf5(h5file_id,dset,F%Bo)
 
+	dset = '/Eo'
+	call load_from_hdf5(h5file_id,dset,F%Eo)
+
 	dset = '/Ro'
 	call load_from_hdf5(h5file_id,dset,F%Ro)
 
 	dset = '/Zo'
 	call load_from_hdf5(h5file_id,dset,F%Zo)
 
-	if ((.NOT.params%poloidal_flux).AND.(.NOT.params%axisymmetric)) then
-		dset = "/BR"
-		call load_array_from_hdf5(h5file_id,dset,F%B_3D%R)
-
-		dset = "/BPHI"
-		call load_array_from_hdf5(h5file_id,dset,F%B_3D%PHI)
-
-		dset = "/BZ"
-		call load_array_from_hdf5(h5file_id,dset,F%B_3D%Z)
-
-		dset = "/FLAG"
-		call load_array_from_hdf5(h5file_id,dset,F%FLAG3D)
-	else if (params%poloidal_flux) then
-		dset = "/PSIp"
-		call load_array_from_hdf5(h5file_id,dset,F%PSIp)
-
+	if (params%axisymmetric) then
 		dset = "/FLAG"
 		call load_array_from_hdf5(h5file_id,dset,F%FLAG2D)
+
+		dset = "/ER"
+		call load_array_from_hdf5(h5file_id,dset,F%E_2D%R)
+
+		dset = "/EPHI"
+		call load_array_from_hdf5(h5file_id,dset,F%E_2D%PHI)
+
+		dset = "/EZ"
+		call load_array_from_hdf5(h5file_id,dset,F%E_2D%Z)
+	else
+		dset = "/FLAG"
+		call load_array_from_hdf5(h5file_id,dset,F%FLAG3D)
+
+		dset = "/ER"
+		call load_array_from_hdf5(h5file_id,dset,F%E_3D%R)
+
+		dset = "/EPHI"
+		call load_array_from_hdf5(h5file_id,dset,F%E_3D%PHI)
+
+		dset = "/EZ"
+		call load_array_from_hdf5(h5file_id,dset,F%E_3D%Z)
+	end if
+
+	if (params%poloidal_flux) then
+		dset = "/PSIp"
+		call load_array_from_hdf5(h5file_id,dset,F%PSIp)
 	else if (params%axisymmetric) then
+		dset = "/FLAG"
+		call load_array_from_hdf5(h5file_id,dset,F%FLAG2D)
 
 		dset = "/BR"
 		call load_array_from_hdf5(h5file_id,dset,F%B_2D%R)
@@ -493,9 +533,18 @@ subroutine load_field_data_from_hdf5(params,F)
 
 		dset = "/BZ"
 		call load_array_from_hdf5(h5file_id,dset,F%B_2D%Z)
-
+	else
 		dset = "/FLAG"
-		call load_array_from_hdf5(h5file_id,dset,F%FLAG2D)
+		call load_array_from_hdf5(h5file_id,dset,F%FLAG3D)
+
+		dset = "/BR"
+		call load_array_from_hdf5(h5file_id,dset,F%B_3D%R)
+
+		dset = "/BPHI"
+		call load_array_from_hdf5(h5file_id,dset,F%B_3D%PHI)
+
+		dset = "/BZ"
+		call load_array_from_hdf5(h5file_id,dset,F%B_3D%Z)
 	end if
 
 	call h5fclose_f(h5file_id, h5error)
@@ -505,4 +554,100 @@ subroutine load_field_data_from_hdf5(params,F)
 
 end subroutine load_field_data_from_hdf5
 
+subroutine ALLOCATE_FLUX_ARRAYS(F)
+	TYPE(FIELDS), INTENT(INOUT) :: F
+
+	ALLOCATE(F%PSIp(F%dims(1),F%dims(3)))
+end subroutine ALLOCATE_FLUX_ARRAYS
+
+
+subroutine ALLOCATE_2D_FIELDS_ARRAYS(F,bfield,efield)
+	TYPE(FIELDS), INTENT(INOUT) :: F
+	LOGICAL, INTENT(IN) :: bfield
+	LOGICAL, INTENT(IN) :: efield
+
+	if (bfield) then
+		call ALLOCATE_V_FIELD_2D(F%B_2D,F%dims)
+	end if
+	
+	if (efield) then
+		call ALLOCATE_V_FIELD_2D(F%E_2D,F%dims)
+	end if
+
+	ALLOCATE(F%FLAG2D(F%dims(1),F%dims(3)))
+		
+	ALLOCATE(F%X%R(F%dims(1)))
+	ALLOCATE(F%X%Z(F%dims(3)))
+end subroutine ALLOCATE_2D_FIELDS_ARRAYS
+
+
+subroutine ALLOCATE_3D_FIELDS_ARRAYS(F,bfield,efield)
+	TYPE(FIELDS), INTENT(INOUT) :: F
+	LOGICAL, INTENT(IN) :: bfield
+	LOGICAL, INTENT(IN) :: efield
+
+	if (bfield) then
+		call ALLOCATE_V_FIELD_3D(F%B_3D,F%dims)
+	end if
+
+	if (efield) then
+		call ALLOCATE_V_FIELD_3D(F%E_3D,F%dims)	
+	end if
+
+	ALLOCATE(F%FLAG3D(F%dims(1),F%dims(2),F%dims(3)))
+		
+	ALLOCATE(F%X%R(F%dims(1)))
+	ALLOCATE(F%X%PHI(F%dims(2)))
+	ALLOCATE(F%X%Z(F%dims(3)))
+end subroutine ALLOCATE_3D_FIELDS_ARRAYS
+
+
+subroutine ALLOCATE_V_FIELD_2D(F,dims)
+	TYPE(V_FIELD_2D), INTENT(INOUT) :: F
+	INTEGER, DIMENSION(3), INTENT(IN) :: dims
+    
+    ALLOCATE(F%R(dims(1),dims(3)))
+    ALLOCATE(F%PHI(dims(1),dims(3)))
+    ALLOCATE(F%Z(dims(1),dims(3)))
+end subroutine ALLOCATE_V_FIELD_2D
+
+
+subroutine ALLOCATE_V_FIELD_3D(F,dims)
+	TYPE(V_FIELD_3D), INTENT(INOUT) :: F
+	INTEGER, DIMENSION(3), INTENT(IN) :: dims
+    
+    ALLOCATE(F%R(dims(1),dims(2),dims(3)))
+    ALLOCATE(F%PHI(dims(1),dims(2),dims(3)))
+    ALLOCATE(F%Z(dims(1),dims(2),dims(3)))
+end subroutine ALLOCATE_V_FIELD_3D
+
+
+subroutine DEALLOCATE_FIELDS_ARRAYS(F)
+	TYPE(FIELDS), INTENT(INOUT) :: F
+
+	if (ALLOCATED(F%PSIp)) DEALLOCATE(F%PSIp)
+
+	if (ALLOCATED(F%B_2D%R)) DEALLOCATE(F%B_2D%R)
+	if (ALLOCATED(F%B_2D%PHI)) DEALLOCATE(F%B_2D%PHI)
+	if (ALLOCATED(F%B_2D%Z)) DEALLOCATE(F%B_2D%Z)
+
+	if (ALLOCATED(F%B_3D%R)) DEALLOCATE(F%B_3D%R)
+	if (ALLOCATED(F%B_3D%PHI)) DEALLOCATE(F%B_3D%PHI)
+	if (ALLOCATED(F%B_3D%Z)) DEALLOCATE(F%B_3D%Z)
+
+	if (ALLOCATED(F%E_2D%R)) DEALLOCATE(F%E_2D%R)
+	if (ALLOCATED(F%E_2D%PHI)) DEALLOCATE(F%E_2D%PHI)
+	if (ALLOCATED(F%E_2D%Z)) DEALLOCATE(F%E_2D%Z)
+
+	if (ALLOCATED(F%E_3D%R)) DEALLOCATE(F%E_3D%R)
+	if (ALLOCATED(F%E_3D%PHI)) DEALLOCATE(F%E_3D%PHI)
+	if (ALLOCATED(F%E_3D%Z)) DEALLOCATE(F%E_3D%Z)
+
+	if (ALLOCATED(F%X%R)) DEALLOCATE(F%X%R)
+	if (ALLOCATED(F%X%PHI)) DEALLOCATE(F%X%PHI)
+	if (ALLOCATED(F%X%Z)) DEALLOCATE(F%X%Z)
+
+	if (ALLOCATED(F%FLAG2D)) DEALLOCATE(F%FLAG2D)
+	if (ALLOCATED(F%FLAG3D)) DEALLOCATE(F%FLAG3D)
+end subroutine DEALLOCATE_FIELDS_ARRAYS
 end module korc_fields
