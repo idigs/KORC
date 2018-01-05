@@ -926,6 +926,10 @@ subroutine save_simulation_parameters(params,spp,F,P)
         attr = "Minimum energy of simulated particles in eV"
 		call save_to_hdf5(h5file_id,dset,params%minimum_particle_energy*params%cpp%energy/C_E,attr)
 
+		dset = TRIM(gname) // "/minimum_particle_g"
+        attr = "Minimum relativistic factor gamma of simulated particles"
+		call save_to_hdf5(h5file_id,dset,params%minimum_particle_g,attr)
+
 		dset = TRIM(gname) // "/radiation"
 		attr = "Radiation losses included in simulation"
 		if(params%radiation) then

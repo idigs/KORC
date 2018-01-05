@@ -94,6 +94,7 @@ subroutine load_korc_params(params)
 	params%axisymmetric = axisymmetric
 	params%magnetic_field_filename = TRIM(magnetic_field_filename)
 	params%minimum_particle_energy = minimum_particle_energy*C_E
+	params%minimum_particle_g = 1.0_rp + params%minimum_particle_energy/(C_ME*C_C**2) ! Minimum value of relativistic gamma factor	
 	params%radiation = radiation
 	params%collisions = collisions
 	params%collisions_model = TRIM(collisions_model)
@@ -293,6 +294,23 @@ subroutine initialize_particles(params,F,spp)
 		ALLOCATE( spp(ii)%vars%flag(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%AUX(spp(ii)%ppp) )
 
+		spp(ii)%vars%X = 0.0_rp
+		spp(ii)%vars%V(3,spp(ii)%ppp) = 0.0_rp
+		spp(ii)%vars%Rgc = 0.0_rp
+		spp(ii)%vars%Y = 0.0_rp
+		spp(ii)%vars%E = 0.0_rp
+		spp(ii)%vars%B = 0.0_rp
+		spp(ii)%vars%ne = 0.0_rp
+		spp(ii)%vars%Te = 0.0_rp
+		spp(ii)%vars%Zeff = 0.0_rp
+		spp(ii)%vars%g = 0.0_rp
+		spp(ii)%vars%eta = 0.0_rp
+		spp(ii)%vars%mu = 0.0_rp
+		spp(ii)%vars%Prad = 0.0_rp
+		spp(ii)%vars%Pin = 0.0_rp
+		spp(ii)%vars%flag = 1_is
+		spp(ii)%vars%AUX = 0.0_rp
+
 		SELECT CASE (TRIM(spp(ii)%energy_distribution))
 			CASE ('MONOENERGETIC')
 				spp(ii)%Eo = Eo(ii)*C_E
@@ -311,8 +329,14 @@ subroutine initialize_particles(params,F,spp)
 				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
 				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
 									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
-			CASE ('EXPERIMENTAL')
-				call get_experimental_distribution(params,spp(ii)%vars%g,spp(ii)%vars%eta,spp(ii)%go,spp(ii)%etao)
+			CASE ('HOLLMANN')
+				call get_Hollmann_distribution(params,spp(ii)%vars%g,spp(ii)%vars%eta,spp(ii)%go)
+
+				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
+				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
+									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
+			CASE ('EXPERIMENTAL-GAMMA')
+				call get_experimentalG_distribution(params,spp(ii)%vars%g,spp(ii)%vars%eta,spp(ii)%go,spp(ii)%etao)
 
 				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
 				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
@@ -348,7 +372,16 @@ subroutine initialize_particles(params,F,spp)
 				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
 			CASE ('AVALANCHE')
 				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
-			CASE ('EXPERIMENTAL')
+			CASE ('HOLLMANN')
+				spp(ii)%etao = etao(ii)
+
+				spp(ii)%vars%eta = spp(ii)%etao ! Mono-pitch-angle
+				spp(ii)%etao_lims = (/spp(ii)%etao , spp(ii)%etao/)
+
+!				call get_Hollmann_pitch_angle_pdf(params,spp(ii)%vars%g,spp(ii)%vars%eta,spp(ii)%etao)
+
+!				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
+			CASE ('EXPERIMENTAL-GAMMA')
 				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
 			CASE ('UNIFORM')
 				spp(ii)%etao_lims = etao_lims((ii-1_idef)*2_idef + 1_idef:2_idef*ii)

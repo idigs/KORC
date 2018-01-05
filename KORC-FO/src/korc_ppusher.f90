@@ -133,6 +133,10 @@ subroutine advance_particles_velocity(params,F,P,spp,dt,bool)
 				end if
 		        spp(ii)%vars%V(:,pp) = U/g
 				spp(ii)%vars%g(pp) = g
+
+				if (g.LT.params%minimum_particle_g) then
+					spp(ii)%vars%flag(pp) = 0_is
+				end if
 		    
                 if (bool) then
 				    !! Parallel unit vector

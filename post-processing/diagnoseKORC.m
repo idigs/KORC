@@ -25,7 +25,7 @@ ST.data = loadData(ST);
 
 % ST.CP = confined_particles(ST);
 % 
-ST.PAD = pitchAngleDiagnostic(ST,30);
+% ST.PAD = pitchAngleDiagnostic(ST,30);
 
 % ST.MMD = magneticMomentDiagnostic(ST,70);
 
@@ -199,8 +199,8 @@ set(h6,'name','Energy statistics','numbertitle','off')
         c = ST.params.scales.v;
         
         
-%         pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
-        pin = true(1,size(ST.data.(['sp' num2str(ss)]).g,1));
+        pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+%         pin = true(1,size(ST.data.(['sp' num2str(ss)]).g,1));
 %         passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
 %         bool = pin & passing;
 

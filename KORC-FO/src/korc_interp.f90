@@ -754,13 +754,13 @@ subroutine interp_fields(prtcls,F)
 		call interp_3D_bfields(prtcls%Y,prtcls%B,prtcls%flag)
 	end if
 
-	if (ALLOCATED(F%E_2D%R)) then
-		call interp_2D_efields(prtcls%Y,prtcls%E,prtcls%flag)
-	end if	
+!	if (ALLOCATED(F%E_2D%R)) then
+!		call interp_2D_efields(prtcls%Y,prtcls%E,prtcls%flag)
+!	end if	
 	
-	if (ALLOCATED(F%E_3D%R)) then
-		call interp_3D_efields(prtcls%Y,prtcls%E,prtcls%flag)
-	end if
+!	if (ALLOCATED(F%E_3D%R)) then
+!		call interp_3D_efields(prtcls%Y,prtcls%E,prtcls%flag)
+!	end if
 end subroutine interp_fields
 
 
