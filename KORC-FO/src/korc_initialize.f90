@@ -330,7 +330,7 @@ subroutine initialize_particles(params,F,spp)
 				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
 									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
 			CASE ('HOLLMANN')
-				call get_Hollmann_distribution(params,spp(ii)%vars%g,spp(ii)%vars%eta,spp(ii)%go)
+				call get_Hollmann_distribution(params,spp(ii)%vars%g,spp(ii)%vars%eta,spp(ii)%go,spp(ii)%etao)
 
 				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
 				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
@@ -373,14 +373,7 @@ subroutine initialize_particles(params,F,spp)
 			CASE ('AVALANCHE')
 				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
 			CASE ('HOLLMANN')
-				spp(ii)%etao = etao(ii)
-
-				spp(ii)%vars%eta = spp(ii)%etao ! Mono-pitch-angle
-				spp(ii)%etao_lims = (/spp(ii)%etao , spp(ii)%etao/)
-
-!				call get_Hollmann_pitch_angle_pdf(params,spp(ii)%vars%g,spp(ii)%vars%eta,spp(ii)%etao)
-
-!				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
+				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
 			CASE ('EXPERIMENTAL-GAMMA')
 				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
 			CASE ('UNIFORM')
