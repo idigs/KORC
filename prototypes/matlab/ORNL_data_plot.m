@@ -135,21 +135,61 @@ title('D densities vs radius')
  
 % plot initial distribution function estimate
 fEfigure = figure;
-subplot(2,1,1)
-loglog(EfitVc,ffitV1,'k') % starting distribution function
+subplot(2,2,1)
+loglog(EfitVc,ffitV1,'k.-') % starting distribution function
 xlabel('electron energy [MeV]')
 ylabel('f_E [/cm^3/MeV]')
 axis([1e-3 100 1e5 1e15])
 title('distribution function')
-subplot(2,1,2)
+subplot(2,2,2)
+f = sin(thetafitV1);
 fy = rad2deg(thetafitV1);
-% fy = sin(thetafitV1);
-semilogx(EfitVc,fy,'k');
+semilogx(EfitVc,fy,'k.-');
 xlabel('electron energy [MeV]')
 ylabel('sin(\theta)')
 axis([1e-3 100 0 max(fy)])
 title('pitch angle')
- 
+
+subplot(2,2,4)
+plot3(EfitVc,rad2deg(thetafitV1),ffitV1,'k.-')
+grid minor;box on;
+xlabel('electron energy [MeV]')
+ylabel('\theta')
+zlabel('f_E [/cm^3/MeV]')
+
+c = 2.9979E8; % Speed of light
+qe = 1.602176E-19; % Electron charge
+me = 9.109382E-31; % Electron mass
+
+g = 1 + 1E6*EfitVc*qe/(me*c^2);
+v = c*sqrt(1 - 1./g.^2);
+vpar = v.*cos(thetafitV1);
+jpar = vpar.*ffitV1;
+
+figure(fEfigure)
+subplot(2,2,3)
+semilogx(EfitVc,jpar,'k.-');
+xlabel('electron energy [MeV]')
+ylabel('$j_{\parallel}$','Interpreter','latex')
+
+
+lambda = [3E-6 5E-6]; % 3 um
+fRE_E = ffitV1/trapz(EfitVc,ffitV1);
+eta = thetafitV1;
+for ll=1:numel(lambda)
+    P = zeros(size(g));
+    
+    for gg=1:numel(g)
+        P(gg) =  fRE_E(gg)*singleParticleSpectrum(B0,lambda(ll),g(gg),eta(gg));
+    end
+    subplot(2,2,4)
+    hold on;
+    plot3(EfitVc,rad2deg(thetafitV1),P,'.-')
+    hold off
+    grid minor;box on;
+end
+
+
 % plot out IR camera images
 fnorm = 0.2; % normalization constant for images
 IRcamfigure = figure;
