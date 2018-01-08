@@ -113,10 +113,12 @@ SUBROUTINE initialize_Hollmann_params(params)
 	close(default_unit_open)
 
 	h_params%filename = TRIM(filename)
-	h_params%min_sampling_energy = min_energy*C_E ! In Joules	
+
+	h_params%min_sampling_energy = min_energy*C_E ! In Joules
+	h_params%min_sampling_g = 1.0_rp + h_params%min_sampling_energy/(C_ME*C_C**2)
+	
 	h_params%max_sampling_energy = max_energy*C_E ! In Joules.
 	h_params%max_sampling_g = 1.0_rp + h_params%max_sampling_energy/(C_ME*C_C**2)
-	h_params%min_sampling_g = 1.0_rp + h_params%min_sampling_energy/(C_ME*C_C**2)
 
 	call load_data_from_hdf5()
 
@@ -256,8 +258,8 @@ SUBROUTINE sample_Hollmann_distribution(params,g,eta,go,etao)
 	index_i = MINLOC(ABS(h_params%g - h_params%min_sampling_g),1)
 	index_f = MINLOC(ABS(h_params%g - h_params%max_sampling_g),1)
 
-!	dg = MINVAL(h_params%g(index_i+1:index_f) - h_params%g(index_i:index_f-1))
-	dg = (h_params%max_sampling_g - h_params%min_sampling_g)/50.0_rp
+	dg = MINVAL(h_params%g(index_i+1:index_f) - h_params%g(index_i:index_f-1))
+!	dg = (h_params%max_sampling_g - h_params%min_sampling_g)/100.0_rp
 
 	do jj=1_idef,INT(minmax_buffer_size,idef)
 		minmax = h_params%min_sampling_g - REAL(jj,rp)*dg
@@ -313,12 +315,12 @@ SUBROUTINE sample_Hollmann_distribution(params,g,eta,go,etao)
 		do while(num_accepted.LT.nsamples)
 			ii=2_idef
 			do while (ii .LE. nsamples)
-				g_test = g_buffer + random_norm(0.0_rp,dg)
+				g_test = g_tmp(ii-1) + random_norm(0.0_rp,dg)
 				do while ((g_test.LT.min_g).OR.(g_test.GT.max_g))
-					g_test = g_buffer + random_norm(0.0_rp,dg)
+					g_test = g_tmp(ii-1) + random_norm(0.0_rp,dg)
 				end do
 
-				ratio = fRE_H(g_test)/fRE_H(g_buffer)
+				ratio = fRE_H(g_test)/fRE_H(g_tmp(ii-1))
 
 				if (ratio .GE. 1.0_rp) then
 					g_tmp(ii) = g_test
