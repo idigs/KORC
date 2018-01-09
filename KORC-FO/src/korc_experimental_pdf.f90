@@ -116,15 +116,19 @@ SUBROUTINE initialize_Hollmann_params(params)
 
 	h_params%min_sampling_energy = min_energy*C_E ! In Joules
 	h_params%min_sampling_g = 1.0_rp + h_params%min_sampling_energy/(C_ME*C_C**2)
+!	h_params%min_sampling_g = LOG10(h_params%min_sampling_g)
 	
 	h_params%max_sampling_energy = max_energy*C_E ! In Joules.
 	h_params%max_sampling_g = 1.0_rp + h_params%max_sampling_energy/(C_ME*C_C**2)
+!	h_params%max_sampling_g = LOG10(h_params%max_sampling_g)
 
 	call load_data_from_hdf5()
 
 	ALLOCATE(h_params%g(h_params%N))
 
 	h_params%g = 1.0_rp + h_params%E/(C_ME*C_C**2)
+!	h_params%g = LOG10(h_params%g)
+
 	h_params%max_g = MAXVAL(h_params%g)
 	h_params%min_g = MINVAL(h_params%g)
 END SUBROUTINE initialize_Hollmann_params
@@ -157,10 +161,12 @@ SUBROUTINE load_data_from_hdf5()
 
 	dset = "/E"
 	call load_array_from_hdf5(h5file_id,dset,h_params%E)
-	h_params%E = h_params%E*C_E	
+	h_params%E = h_params%E*C_E
 
 	dset = "/fRE_E"
 	call load_array_from_hdf5(h5file_id,dset,h_params%fRE_E)
+!	h_params%fRE_E = h_params%E*h_params%fRE_E
+!	h_params%fRE_E = LOG10(h_params%fRE_E)
 
 	dset = "/fRE_pitch"
 	call load_array_from_hdf5(h5file_id,dset,h_params%fRE_pitch)
@@ -273,6 +279,8 @@ SUBROUTINE sample_Hollmann_distribution(params,g,eta,go,etao)
 		end if
 	end do
 
+!WRITE(6,*) dg,min_g,max_g,h_params%min_g,h_params%max_g
+
 	if (params%mpi_params%rank.EQ.0_idef) then
 		ALLOCATE(g_samples(nsamples))! Number of samples to distribute among all MPI processes
 		ALLOCATE(eta_samples(nsamples))! Number of samples to distribute among all MPI processes
@@ -350,7 +358,9 @@ SUBROUTINE sample_Hollmann_distribution(params,g,eta,go,etao)
 			end do
 		end do
 
-		go = SUM(SQRT(1.0_rp + g_samples**2))/nsamples
+!		g_samples = 10**g_samples
+
+		go = SUM(g_samples)/nsamples
 		etao = SUM(eta_samples)/nsamples
 	end if
 
