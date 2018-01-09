@@ -258,8 +258,8 @@ SUBROUTINE sample_Hollmann_distribution(params,g,eta,go,etao)
 	index_i = MINLOC(ABS(h_params%g - h_params%min_sampling_g),1)
 	index_f = MINLOC(ABS(h_params%g - h_params%max_sampling_g),1)
 
-	dg = MINVAL(h_params%g(index_i+1:index_f) - h_params%g(index_i:index_f-1))
-!	dg = (h_params%max_sampling_g - h_params%min_sampling_g)/100.0_rp
+!	dg = MINVAL(h_params%g(index_i+1:index_f) - h_params%g(index_i:index_f-1))
+	dg = (h_params%max_sampling_g - h_params%min_sampling_g)/100.0_rp
 
 	do jj=1_idef,INT(minmax_buffer_size,idef)
 		minmax = h_params%min_sampling_g - REAL(jj,rp)*dg
