@@ -361,7 +361,9 @@ subroutine check_if_in_fields_domain(Y,flag)
 	ss = SIZE(Y,2)
 
 	if (ALLOCATED(fields_domain%FLAG3D)) then
+#ifdef GNU
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,IR,IPHI,IZ) SHARED(Y,flag,fields_domain,bfield_3d)
+#endif
 		do pp=1_idef,ss
 			IR = INT(FLOOR((Y(1,pp)  - fields_domain%Ro + 0.5_rp*fields_domain%DR)/fields_domain%DR) + 1.0_rp,idef)
 			IPHI = INT(FLOOR((Y(2,pp)  + 0.5_rp*fields_domain%DPHI)/fields_domain%DPHI) + 1.0_rp,idef)
@@ -371,9 +373,13 @@ subroutine check_if_in_fields_domain(Y,flag)
 				flag(pp) = 0_is
 			end if
 		end do
+#ifdef GNU
 !$OMP END PARALLEL DO
+#endif
 	else 
+#ifdef GNU
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,IR,IZ) SHARED(Y,flag,fields_domain,bfield_2d)
+#endif
 		do pp=1_idef,ss
 			IR = INT(FLOOR((Y(1,pp)  - fields_domain%Ro + 0.5_rp*fields_domain%DR)/fields_domain%DR) + 1.0_rp,idef)
 			IZ = INT(FLOOR((Y(3,pp)  + ABS(fields_domain%Zo) + 0.5_rp*fields_domain%DZ)/fields_domain%DZ) + 1.0_rp,idef)
@@ -382,7 +388,9 @@ subroutine check_if_in_fields_domain(Y,flag)
 				flag(pp) = 0_is
 			end if
 		end do
+#ifdef GNU
 !$OMP END PARALLEL DO
+#endif
 	end if
 end subroutine check_if_in_fields_domain
 
@@ -521,7 +529,9 @@ subroutine check_if_in_profiles_domain(Y,flag)
 	ss = SIZE(Y,2)
 
 	if (ALLOCATED(profiles_domain%FLAG3D)) then
+#ifdef GNU
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,IR,IPHI,IZ) SHARED(Y,flag,profiles_domain,profiles_3d)
+#endif
 		do pp=1_idef,ss
 			IR = INT(FLOOR((Y(1,pp)  - profiles_domain%Ro + 0.5_rp*profiles_domain%DR)/profiles_domain%DR) + 1.0_rp,idef)
 			IPHI = INT(FLOOR((Y(2,pp)  + 0.5_rp*profiles_domain%DPHI)/profiles_domain%DPHI) + 1.0_rp,idef)
@@ -531,9 +541,13 @@ subroutine check_if_in_profiles_domain(Y,flag)
 				flag(pp) = 0_is
 			end if
 		end do
+#ifdef GNU
 !$OMP END PARALLEL DO
+#endif
 	else 
+#ifdef GNU
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,IR,IZ) SHARED(Y,flag,profiles_domain,profiles_2d)
+#endif
 		do pp=1_idef,ss
 			IR = INT(FLOOR((Y(1,pp)  - profiles_domain%Ro + 0.5_rp*profiles_domain%DR)/profiles_domain%DR) + 1.0_rp,idef)
 			IZ = INT(FLOOR((Y(3,pp)  + ABS(profiles_domain%Zo) + 0.5_rp*profiles_domain%DZ)/profiles_domain%DZ) + 1.0_rp,idef)
@@ -542,7 +556,9 @@ subroutine check_if_in_profiles_domain(Y,flag)
 				flag(pp) = 0_is
 			end if
 		end do
+#ifdef GNU
 !$OMP END PARALLEL DO
+#endif
 	end if
 end subroutine check_if_in_profiles_domain
 
@@ -557,7 +573,9 @@ subroutine interp_2D_bfields(Y,B,flag)
 	ss = size(Y,2)
 
 	ALLOCATE(F(3,ss))
+#ifdef GNU
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(F,Y,B,flag,bfield_2d)
+#endif
 	do pp=1_idef,ss
 		if ( flag(pp) .EQ. 1_is ) then
 			call EZspline_interp(bfield_2d%R, Y(1,pp), Y(3,pp), F(1,pp), ezerr)
@@ -578,7 +596,9 @@ subroutine interp_2D_bfields(Y,B,flag)
 			B(3,pp) = F(3,pp)
 		end if
 	end do
+#ifdef GNU
 !$OMP END PARALLEL DO
+#endif
 	DEALLOCATE(F)
 end subroutine interp_2D_bfields
 
@@ -593,7 +613,9 @@ subroutine interp_3D_bfields(Y,B,flag)
 	ss = size(Y,2)
 
 	ALLOCATE(F(3,ss))
+#ifdef GNU
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(F,Y,B,flag,bfield_3d)
+#endif
 	do pp=1_idef,ss
 		if ( flag(pp) .EQ. 1_is ) then
 			call EZspline_interp(bfield_3d%R, Y(1,pp), Y(2,pp), Y(3,pp), F(1,pp), ezerr)
@@ -614,7 +636,9 @@ subroutine interp_3D_bfields(Y,B,flag)
 			B(3,pp) = F(3,pp)
 		end if
 	end do
+#ifdef GNU
 !$OMP END PARALLEL DO
+#endif
 	DEALLOCATE(F)
 end subroutine interp_3D_bfields
 
@@ -630,7 +654,9 @@ subroutine calculate_magnetic_field(Y,F,B,flag)
 	ss = size(Y,2)
 
 	ALLOCATE(A(3,ss))
+#ifdef GNU
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(F,Y,A,B,flag,bfield_2d)
+#endif
 	do pp=1_idef,ss
 		if ( flag(pp) .EQ. 1_is ) then
 			! FR = (dA/dZ)/R
@@ -656,7 +682,9 @@ subroutine calculate_magnetic_field(Y,F,B,flag)
 			end if
 		end if
 	end do
+#ifdef GNU
 !$OMP END PARALLEL DO
+#endif
 	DEALLOCATE(A)
 end subroutine calculate_magnetic_field
 
@@ -671,7 +699,9 @@ subroutine interp_2D_efields(Y,E,flag)
 	ss = size(Y,2)
 
 	ALLOCATE(F(3,ss))
+#ifdef GNU
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(F,Y,E,flag,efield_2d)
+#endif
 	do pp=1_idef,ss
 		if ( flag(pp) .EQ. 1_is ) then
 			call EZspline_interp(efield_2d%R, Y(1,pp), Y(3,pp), F(1,pp), ezerr)
@@ -692,7 +722,9 @@ subroutine interp_2D_efields(Y,E,flag)
 			E(3,pp) = F(3,pp)
 		end if
 	end do
+#ifdef GNU
 !$OMP END PARALLEL DO
+#endif
 	DEALLOCATE(F)
 end subroutine interp_2D_efields
 
@@ -707,7 +739,9 @@ subroutine interp_3D_efields(Y,E,flag)
 	ss = size(Y,2)
 
 	ALLOCATE(F(3,ss))
+#ifdef GNU
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(F,Y,E,flag,efield_3d)
+#endif
 	do pp=1_idef,ss
 		if ( flag(pp) .EQ. 1_is ) then
 			call EZspline_interp(efield_3d%R, Y(1,pp), Y(2,pp), Y(3,pp), F(1,pp), ezerr)
@@ -728,7 +762,9 @@ subroutine interp_3D_efields(Y,E,flag)
 			E(3,pp) = F(3,pp)
 		end if
 	end do
+#ifdef GNU
 !$OMP END PARALLEL DO
+#endif
 	DEALLOCATE(F)
 end subroutine interp_3D_efields
 
@@ -774,7 +810,9 @@ subroutine interp_2D_profiles(Y,ne,Te,Zeff,flag)
 
 	ss = size(Y,2)
 
+#ifdef GNU
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(Y,ne,Te,Zeff,flag,profiles_2d)
+#endif
 	do pp=1_idef,ss
 		if ( flag(pp) .EQ. 1_is ) then
 			call EZspline_interp(profiles_2d%ne, Y(1,pp), Y(3,pp), ne(pp), ezerr)
@@ -791,7 +829,9 @@ subroutine interp_2D_profiles(Y,ne,Te,Zeff,flag)
 			call EZspline_error(ezerr)
 		end if
 	end do
+#ifdef GNU
 !$OMP END PARALLEL DO
+#endif
 end subroutine interp_2D_profiles
 
 
@@ -805,7 +845,9 @@ subroutine interp_3D_profiles(Y,ne,Te,Zeff,flag)
 
 	ss = size(Y,2)
 
+#ifdef GNU
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) SHARED(Y,ne,Te,Zeff,flag,profiles_2d)
+#endif
 	do pp=1_idef,ss
 		if ( flag(pp) .EQ. 1_is ) then
 			call EZspline_interp(profiles_3d%ne, Y(1,pp), Y(2,pp), Y(3,pp), ne(pp), ezerr)
@@ -822,7 +864,9 @@ subroutine interp_3D_profiles(Y,ne,Te,Zeff,flag)
 			call EZspline_error(ezerr)
 		end if
 	end do
+#ifdef GNU
 !$OMP END PARALLEL DO
+#endif
 end subroutine interp_3D_profiles
 
 
