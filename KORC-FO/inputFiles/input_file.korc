@@ -115,9 +115,9 @@
 /
 
 &HollmannPDF
-	filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/Hollmann_PDFs.h5" !
+	filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/Hollmann_PDFs_hi-res.h5" !
 	min_energy = 1.0E6 ! In eV
-	max_energy = 60.0E6 ! In eV
+	max_energy = 10.0E6 ! In eV
 	Bo = 2.0 ! Characteristic magnetic field
 	lambda = 890.0E-9 ! Characteristic wavelength
 /

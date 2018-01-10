@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -N 370
+#SBATCH -N 1
 #SBATCH -C knl,quad,cache
 #SBATCH -p debug
 #SBATCH -J KORC_KNL
@@ -9,13 +9,13 @@
 #SBATCH -L SCRATCH
 #SBATCH -o KORC_KNL_%j.out 
 #SBATCH -e KORC_KNL_%j.err
-#SBATCH -A atom
+#SBATCH -A mp202
 
 cd $SLURM_SUBMIT_DIR
 
 ## You might want to change the path of the outouts folder
-FILE_ID='D3D_165826_2D'
-INPUT_FOLDER='D3DQ_MONO'
+FILE_ID='t1580'
+INPUT_FOLDER='D3D_157576'
 
 FOLDER_ID=${INPUT_FOLDER}_${FILE_ID}
 PATH_TO_SCRATCH=$SCRATCH

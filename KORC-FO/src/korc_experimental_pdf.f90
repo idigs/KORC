@@ -63,6 +63,7 @@ MODULE korc_experimental_pdf
 				save_params,&
 				sample_distribution,&
 				deg2rad,&
+				rad2deg,&
 				fRE,&
 				random_norm,&
 				fGamma,&
@@ -214,7 +215,7 @@ FUNCTION fRE_H(eta,g)
 	m = (f1-f0)/(g1-g0)	
 
 	fRE_H = f0 + m*(g - g0)
-!	fRE_H = fRE_H*PR(eta,SQRT(g**2 - 1.0_rp))
+!	fRE_H = fRE_H*PR(eta,SQRT(g**2 - 1.0_rp),h_params%Bo,h_params%lambda)
 END FUNCTION fRE_H
 
 
@@ -302,6 +303,7 @@ SUBROUTINE sample_Hollmann_distribution(params,g,eta,go,etao)
 		call RANDOM_SEED()
 		call RANDOM_NUMBER(rand_unif)
 		g_buffer = h_params%min_sampling_g + (h_params%max_sampling_g - h_params%min_sampling_g)*rand_unif
+		eta_buffer = fRE_pitch(g_buffer)
 
 		ii=2_idef
 		do while (ii .LE. 1000_idef)
@@ -330,6 +332,7 @@ SUBROUTINE sample_Hollmann_distribution(params,g,eta,go,etao)
 		call RANDOM_SEED()
 		call RANDOM_NUMBER(rand_unif)
 		g_tmp(1) = g_buffer
+		eta_tmp(ii-1) = fRE_pitch(g_tmp(1))
 
 		num_accepted = 0_idef
 		do while(num_accepted.LT.nsamples)
@@ -438,6 +441,14 @@ FUNCTION deg2rad(x)
 END FUNCTION
 
 
+FUNCTION rad2deg(x)
+	REAL(rp), INTENT(IN) :: x
+	REAL(rp) :: rad2deg
+	
+	rad2deg = 180.0_rp*x/C_PI
+END FUNCTION
+
+
 FUNCTION fGamma(x,k,t)
 	REAL(rp), INTENT(IN) :: x ! Independent variable
 	REAL(rp), INTENT(IN) :: k ! Shape factor
@@ -459,7 +470,7 @@ FUNCTION fRE(eta,p)
 
 	A = (2.0_rp*pdf_params%E/(pdf_params%Zeff + 1.0_rp))*(p**2/SQRT(p**2.0_rp + 1.0_rp))
 	fRE = 0.5_rp*A*EXP(A*COS(deg2rad(eta)))*fGamma(Eo,pdf_params%k,pdf_params%t/xo)/SINH(A)
-	fRE = fRE*PR(eta,p)
+	fRE = fRE*PR(eta,p,pdf_params%Bo,pdf_params%lambda)
 END FUNCTION fRE
 
 
@@ -557,23 +568,24 @@ SUBROUTINE P_integral(z,P)
 END SUBROUTINE P_integral
 
 
-FUNCTION PR(eta,p)
+FUNCTION PR(eta,p,Bo,l)
 	REAL(rp), INTENT(IN) :: eta ! in radians
 	REAL(rp), INTENT(IN) :: p ! dimensionless (in units of mc)
+	REAL(rp), INTENT(IN) :: Bo
+	REAL(rp), INTENT(IN) :: l
 	REAL(rp) :: PR
 	REAL(rp) :: g
 	REAL(rp) :: v
 	REAL(rp) :: k
-	REAL(rp) :: l,lc
+	REAL(rp) :: lc
 	REAL(rp) :: z
 	REAL(rp) :: Pi
 
 	g = SQRT(p**2 + 1.0_rp)
 	v = C_C*SQRT(1.0_rp - 1.0_rp/g**2)
 
-	k = C_E*pdf_params%Bo*SIN(deg2rad(eta))/(g*C_ME*v)
+	k = C_E*Bo*SIN(deg2rad(eta))/(g*C_ME*v)
 
-	l = pdf_params%lambda
 	lc = (4.0_rp*C_PI/3.0_rp)/(k*g**3) ! Critical wavelength
 
 	z = lc/l

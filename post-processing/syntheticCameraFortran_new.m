@@ -215,7 +215,7 @@ c = ST.params.scales.v;
 v = c*sqrt(1-1/g^2);
 ep = 8.854E-12;% Electric permitivity
 
-k = q*ST.params.fields_and_profiles.Bo*sin(eta)/(g*m*v);
+k = q*ST.params.fields.Bo*sin(eta)/(g*m*v);
 l = lambda;
 lc = 4*pi/(3*k*g^3);
 
@@ -585,12 +585,12 @@ for ss=1:ST.params.simulation.num_species
     
     nt = 100;
     t = linspace(0,2*pi,nt);
-    if isfield(ST.params.fields_and_profiles,'a')
-        a95 = ST.params.fields_and_profiles.a;
+    if isfield(ST.params.fields,'a')
+        a95 = ST.params.fields.a;
     else
-        a95 = max(ST.params.fields_and_profiles.R) - ST.params.fields_and_profiles.Ro;
+        a95 = max(ST.params.fields.R) - ST.params.fields.Ro;
     end
-    x = ST.params.fields_and_profiles.Ro + a95*cos(t);
+    x = ST.params.fields.Ro + a95*cos(t);
     y = a95*sin(t);
     
     xpixel = zeros(1,nt);
@@ -992,7 +992,7 @@ for ss=1:ST.params.simulation.num_species
                 B(B<1) = [];
             end
             minval = min(B);
-            maxval = 3*std(B);
+            maxval = 5*std(B);
             v = linspace(minval,maxval,50);
             
             figure(h);
@@ -1047,7 +1047,7 @@ for ss=1:ST.params.simulation.num_species
             B(B<1) = [];
         end
         minval = min(B);
-        maxval = 3*std(B);
+        maxval = 5*std(B);
         v = linspace(minval,maxval,50);
         
         figure(h);
@@ -1257,7 +1257,7 @@ for ss=1:ST.params.simulation.num_species
             B(B<1) = [];
         end
         minval = min(B);
-        maxval = 3*std(B);
+        maxval = 5*std(B);
         v = linspace(minval,maxval,50);
         
         figure(h);
@@ -1314,7 +1314,7 @@ for ss=1:ST.params.simulation.num_species
             B(B<1) = [];
         end
         minval = min(B);
-        maxval = 3*std(B);
+        maxval = 5*std(B);
         v = linspace(minval,maxval,50);
         
         figure(h);
