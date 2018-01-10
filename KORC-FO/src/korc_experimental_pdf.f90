@@ -44,6 +44,9 @@ MODULE korc_experimental_pdf
 		REAL(rp), DIMENSION(:), ALLOCATABLE :: g
 		REAL(rp), DIMENSION(:), ALLOCATABLE :: fRE_E
 		REAL(rp), DIMENSION(:), ALLOCATABLE :: fRE_pitch
+
+		REAL(rp) :: Bo
+		REAL(rp) :: lambda
 	END TYPE HOLLMANN_PARAMS
 
 	TYPE(PARAMS), PRIVATE :: pdf_params
@@ -105,8 +108,10 @@ SUBROUTINE initialize_Hollmann_params(params)
     CHARACTER(MAX_STRING_LENGTH) :: filename
 	REAL(rp) :: max_energy
 	REAL(rp) :: min_energy
+	REAL(rp) :: Bo
+	REAL(rp) :: lambda
 
-	NAMELIST /HollmannPDF/ max_energy,min_energy,filename
+	NAMELIST /HollmannPDF/ max_energy,min_energy,filename,Bo,lambda
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=HollmannPDF)
@@ -131,6 +136,9 @@ SUBROUTINE initialize_Hollmann_params(params)
 
 	h_params%max_g = MAXVAL(h_params%g)
 	h_params%min_g = MINVAL(h_params%g)
+
+	h_params%Bo = Bo
+	h_params%lambda = lambda
 END SUBROUTINE initialize_Hollmann_params
 
 
@@ -178,7 +186,8 @@ SUBROUTINE load_data_from_hdf5()
 END SUBROUTINE load_data_from_hdf5
 
 
-FUNCTION fRE_H(g)
+FUNCTION fRE_H(eta,g)
+	REAL(rp), INTENT(IN) :: eta ! pitch angle in degrees
 	REAL(rp), INTENT(IN) :: g ! Relativistic gamma factor
 	REAL(rp) :: fRE_H
 	REAL(rp) :: D
@@ -205,6 +214,7 @@ FUNCTION fRE_H(g)
 	m = (f1-f0)/(g1-g0)	
 
 	fRE_H = f0 + m*(g - g0)
+!	fRE_H = fRE_H*PR(eta,SQRT(g**2 - 1.0_rp))
 END FUNCTION fRE_H
 
 
@@ -245,7 +255,7 @@ SUBROUTINE sample_Hollmann_distribution(params,g,eta,go,etao)
 	REAL(rp), INTENT(OUT) :: go
 	REAL(rp), INTENT(OUT) :: etao
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: p
-	REAL(rp) :: g_buffer, g_test
+	REAL(rp) :: g_buffer,g_test,eta_buffer,eta_test
 	REAL(rp) :: ratio, rand_unif
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: g_samples
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: eta_samples
@@ -299,8 +309,9 @@ SUBROUTINE sample_Hollmann_distribution(params,g,eta,go,etao)
 			do while ((g_test.LT.h_params%min_sampling_g).OR.(g_test.GT.h_params%max_sampling_g))
 				g_test = g_buffer + random_norm(0.0_rp,dg)
 			end do
+			eta_test = fRE_pitch(g_test)
 
-			ratio = fRE_H(g_test)/fRE_H(g_buffer)
+			ratio = fRE_H(eta_test,g_test)/fRE_H(eta_buffer,g_buffer)
 
 			if (ratio .GE. 1.0_rp) then
 				g_buffer = g_test
@@ -309,6 +320,7 @@ SUBROUTINE sample_Hollmann_distribution(params,g,eta,go,etao)
 				call RANDOM_NUMBER(rand_unif)
 				if (rand_unif .LT. ratio) then
 					g_buffer = g_test
+					eta_buffer = fRE_pitch(g_buffer)
 					ii = ii + 1_idef
 				end if
 			end if
@@ -327,8 +339,9 @@ SUBROUTINE sample_Hollmann_distribution(params,g,eta,go,etao)
 				do while ((g_test.LT.min_g).OR.(g_test.GT.max_g))
 					g_test = g_tmp(ii-1) + random_norm(0.0_rp,dg)
 				end do
+				eta_test = fRE_pitch(g_test)
 
-				ratio = fRE_H(g_test)/fRE_H(g_tmp(ii-1))
+				ratio = fRE_H(eta_test,g_test)/fRE_H(eta_tmp(ii-1),g_tmp(ii-1))
 
 				if (ratio .GE. 1.0_rp) then
 					g_tmp(ii) = g_test
@@ -473,6 +486,7 @@ FUNCTION IntK(v,x)
 			 + 0.25_rp*(4.0_rp*v**2 - 1.0_rp)*SQRT(0.5_rp*C_PI/x)*EXP(-x)
 END FUNCTION IntK
 
+
 FUNCTION besselk(v,x)
 	IMPLICIT NONE
 	REAL(rp) :: besselk
@@ -483,6 +497,7 @@ FUNCTION besselk(v,x)
 	call bessik(REAL(x,4),REAL(v,4),ri,rk,rip,rkp)
 	besselk = REAL(rk,rp)
 END FUNCTION besselk
+
 
 FUNCTION nintegral_besselk(a,b)
 	IMPLICIT NONE
@@ -521,6 +536,7 @@ FUNCTION nintegral_besselk(a,b)
 	end do
 	nintegral_besselk = Inew
 END FUNCTION nintegral_besselk
+
 
 SUBROUTINE P_integral(z,P)
 	REAL(rp), INTENT(OUT) :: P
