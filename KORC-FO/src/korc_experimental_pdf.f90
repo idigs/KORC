@@ -122,18 +122,15 @@ SUBROUTINE initialize_Hollmann_params(params)
 
 	h_params%min_sampling_energy = min_energy*C_E ! In Joules
 	h_params%min_sampling_g = 1.0_rp + h_params%min_sampling_energy/(C_ME*C_C**2)
-!	h_params%min_sampling_g = LOG10(h_params%min_sampling_g)
 	
 	h_params%max_sampling_energy = max_energy*C_E ! In Joules.
 	h_params%max_sampling_g = 1.0_rp + h_params%max_sampling_energy/(C_ME*C_C**2)
-!	h_params%max_sampling_g = LOG10(h_params%max_sampling_g)
 
 	call load_data_from_hdf5()
 
 	ALLOCATE(h_params%g(h_params%N))
 
 	h_params%g = 1.0_rp + h_params%E/(C_ME*C_C**2)
-!	h_params%g = LOG10(h_params%g)
 
 	h_params%max_g = MAXVAL(h_params%g)
 	h_params%min_g = MINVAL(h_params%g)
@@ -174,8 +171,6 @@ SUBROUTINE load_data_from_hdf5()
 
 	dset = "/fRE_E"
 	call load_array_from_hdf5(h5file_id,dset,h_params%fRE_E)
-!	h_params%fRE_E = h_params%E*h_params%fRE_E
-!	h_params%fRE_E = LOG10(h_params%fRE_E)
 
 	dset = "/fRE_pitch"
 	call load_array_from_hdf5(h5file_id,dset,h_params%fRE_pitch)
@@ -246,6 +241,7 @@ FUNCTION fRE_pitch(g)
 	m = (f1-f0)/(g1-g0)	
 
 	fRE_pitch = f0 + m*(g - g0)
+	fRE_pitch = 180.0_rp - fRE_pitch
 END FUNCTION fRE_pitch
 
 
