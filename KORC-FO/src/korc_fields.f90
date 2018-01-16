@@ -329,6 +329,7 @@ subroutine initialize_fields(params,F)
 	REAL(rp) :: Eo
     REAL(rp) :: pulse_maximum
     REAL(rp) :: pulse_duration
+	LOGICAL :: Efield, Bfield, Bflux
 
 	NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
 			qa,qo,electric_field_mode,Eo,pulse_maximum,pulse_duration,current_direction
@@ -367,14 +368,19 @@ subroutine initialize_fields(params,F)
 			! Load the magnetic field from an external HDF5 file
 		    call load_dim_data_from_hdf5(params,F%dims)
 
-			if (params%poloidal_flux) then
+			call which_fields(params,Bfield,Efield,Bflux)
+
+			if (params%poloidal_flux.AND.Bflux) then
 				call ALLOCATE_FLUX_ARRAYS(F)
+			else
+				write(6,'("ERROR: inconsistency between input file and data on file!")')
+				call KORC_ABORT()
 			end if
 
 			if (params%axisymmetric) then
-				call ALLOCATE_2D_FIELDS_ARRAYS(F,.FALSE.,.TRUE.)
+				call ALLOCATE_2D_FIELDS_ARRAYS(F,Bfield,Efield)
 			else
-				call ALLOCATE_3D_FIELDS_ARRAYS(F,.TRUE.,.TRUE.)
+				call ALLOCATE_3D_FIELDS_ARRAYS(F,Bfield,Efield)
 			end if
 		
 		    call load_field_data_from_hdf5(params,F)
@@ -394,7 +400,6 @@ end subroutine initialize_fields
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
 ! Subroutines for getting the fields data from HDF5 files
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
-
 
 subroutine load_dim_data_from_hdf5(params,field_dims)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
@@ -447,6 +452,43 @@ subroutine load_dim_data_from_hdf5(params,field_dims)
 		write(6,'("KORC ERROR: Something went wrong in: load_dim_data_from_hdf5 --> h5fclose_f")')
 	end if
 end subroutine load_dim_data_from_hdf5
+
+
+subroutine which_fields(params,Bfield,Efield,Bflux)
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	LOGICAL, INTENT(OUT) :: Bfield
+	LOGICAL, INTENT(OUT) :: Efield
+	LOGICAL, INTENT(OUT) :: Bflux
+	CHARACTER(MAX_STRING_LENGTH) :: filename
+	CHARACTER(MAX_STRING_LENGTH) :: gname
+	CHARACTER(MAX_STRING_LENGTH) :: subgname
+	CHARACTER(MAX_STRING_LENGTH) :: dset
+	INTEGER(HID_T) :: h5file_id
+	INTEGER(HID_T) :: group_id
+	INTEGER(HID_T) :: subgroup_id
+	INTEGER :: h5error
+
+	filename = TRIM(params%magnetic_field_filename)
+	call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
+	if (h5error .EQ. -1) then
+		write(6,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fopen_f")')
+	end if
+
+	gname = "BR"
+	call h5lexists_f(h5file_id,TRIM(gname),Bfield,h5error)
+
+	gname = "ER"
+	call h5lexists_f(h5file_id,TRIM(gname),Efield,h5error)
+
+	gname = "PSIp"
+	call h5lexists_f(h5file_id,TRIM(gname),Bflux,h5error)
+
+
+	call h5fclose_f(h5file_id, h5error)
+	if (h5error .EQ. -1) then
+		write(6,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fclose_f")')
+	end if
+end subroutine
 
 
 subroutine load_field_data_from_hdf5(params,F)

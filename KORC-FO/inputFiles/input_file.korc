@@ -1,5 +1,5 @@
 &input_parameters
-	restart = .TRUE. !
+	restart = .FALSE. !
 	simulation_time = 1.0E-7 ! Total aimed simulation time in seconds
 	snapshot_frequency = 1.0E-8 ! Time between snapshots in seconds
 	dt = 1.0E-2 ! Time step as fraction of non-relativistic gyro-period
@@ -145,4 +145,14 @@
 	integrated_opt = .TRUE. ! .TRUE. or .FALSE.
 	toroidal_sections = .FALSE. ! 
 	ntor_sections = 12 !
+/
+
+&BinningDiagnostic
+	diagnostic_on = .TRUE.
+	start_at = 0.0E-6 ! Seconds
+ 	num_bins = 75, 75 ! Number of bins
+	rlim = 1.0,2.0
+	zlim = -0.5,0.5
+	toroidal_sections = .FALSE.
+	ntor_sections = 18
 /

@@ -96,6 +96,10 @@ MODULE korc_synthetic_camera
 				chic,&
 				psic,&
 				save_synthetic_camera_params,&
+				save_snapshot_var_1d,&
+				save_snapshot_var_2d,&
+				save_snapshot_var_3d,&
+				save_snapshot_var_4d,&
 				besselk,&
 				angular_density,&
 				spectral_density,&
@@ -2739,8 +2743,8 @@ SUBROUTINE save_synthetic_camera_params(params)
 				call save_to_hdf5(h5file_id,dset,0_idef,attr)
 			end if
 
-				dset = TRIM(gname) // "/toroidal_sections"
-				attr = "Logical variable: 1=decomposed in toroidal sections, 0=no toroidal decomposition"
+			dset = TRIM(gname) // "/toroidal_sections"
+			attr = "Logical variable: 1=decomposed in toroidal sections, 0=no toroidal decomposition"
 			if (cam%toroidal_sections) then
 				call save_to_hdf5(h5file_id,dset,1_idef,attr)
 
@@ -3046,7 +3050,7 @@ SUBROUTINE synthetic_camera(params,spp)
 
 	if (cam%camera_on.AND.(params%time*params%cpp%time >= cam%start_at)) then
 		if (params%mpi_params%rank .EQ. 0) then
-			write(6,'("Synthetic camera diagnostic: ON!")')
+			write(6,'("Synthetic camera diagnostic: ON")',advance="no")
 		end if
 
 		if (cam%integrated_opt) then
@@ -3058,7 +3062,7 @@ SUBROUTINE synthetic_camera(params,spp)
 		end if
 
 		if (params%mpi_params%rank .EQ. 0) then
-			write(6,'("Synthetic camera diagnostic: OFF!")')
+			write(6,'(" ---> OFF")')
 		end if
 	end if
 END SUBROUTINE synthetic_camera

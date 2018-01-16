@@ -12,6 +12,7 @@ program main
 	use korc_profiles
 
 	use korc_synthetic_camera
+	use korc_binning_diagnostic
 
 	implicit none
 
@@ -40,6 +41,8 @@ program main
 	call initialize_collision_params(params)
 
 	call initialize_synthetic_camera(params,F) ! Synthetic camera
+
+	call initialize_binning_diagnostic(params) ! Binning diagnostic
 
 	call compute_charcs_plasma_params(params,spp,F)
 
@@ -98,6 +101,7 @@ program main
 
 			call save_simulation_outputs(params,spp,F)
 			call synthetic_camera(params,spp) ! Synthetic camera
+			call binning_diagnostic(params,spp) ! Binning diagnostic
         else
             call advance_particles_velocity(params,F,P,spp,params%dt,.FALSE.)
 		    call advance_particles_position(params,F,spp,params%dt)

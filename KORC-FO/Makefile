@@ -108,6 +108,7 @@ korc_finalize.o \
 korc_units.o    \
 korc_ppusher.o  \
 korc_synthetic_camera.o \
+korc_binning_diagnostic.o\
 main.o)
 
 
