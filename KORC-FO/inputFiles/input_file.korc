@@ -148,7 +148,7 @@
 /
 
 &BinningDiagnostic
-	diagnostic_on = .FALSE.
+	diagnostic_on = .TRUE.
 	start_at = 0.0E-6 ! Seconds
  	num_bins = 75, 75 ! Number of bins
 	rlim = 1.0,2.0
