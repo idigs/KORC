@@ -130,7 +130,7 @@
 /
 
 &SyntheticCamera
-	camera_on = .TRUE. ! .TRUE. or .FALSE.
+	camera_on = .FALSE. ! .TRUE. or .FALSE.
 	start_at = 0.0E-6 ! Seconds
  	Riw = 1.0 ! Radial position of inner wall
  	num_pixels = 75, 75 ! Number of pixels (X,Y)
@@ -148,7 +148,7 @@
 /
 
 &BinningDiagnostic
-	diagnostic_on = .TRUE.
+	diagnostic_on = .FALSE.
 	start_at = 0.0E-6 ! Seconds
  	num_bins = 75, 75 ! Number of bins
 	rlim = 1.0,2.0

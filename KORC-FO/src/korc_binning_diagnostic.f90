@@ -57,53 +57,56 @@ SUBROUTINE initialize_binning_diagnostic(params)
 
 	NAMELIST /BinningDiagnostic/ diagnostic_on,start_at,num_bins,rlim,zlim,toroidal_sections,ntor_sections
 
-	if (params%mpi_params%rank .EQ. 0) then
-		write(6,'(/,"* * * * * * * * * * * * * * * * * *")')
-		write(6,'("* Initializing Binning diagnostic *")')
-	end if
-
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=BinningDiagnostic)
 	close(default_unit_open)
 
 	
 	binning_params%diagnostic_on = diagnostic_on
-	binning_params%start_at = start_at
-	binning_params%num_bins = num_bins
-	binning_params%rlim = rlim
-	binning_params%zlim = zlim
-	binning_params%toroidal_sections = toroidal_sections
-	if (binning_params%toroidal_sections) then
-		binning_params%ntor_sections = ntor_sections
-	else
-		binning_params%ntor_sections = 1_idef
-	end if	
 
-	binning_params%dr = (binning_params%rlim(2) - binning_params%rlim(1))/REAL(binning_params%num_bins(1),rp)
-	binning_params%dz = (binning_params%zlim(2) - binning_params%zlim(1))/REAL(binning_params%num_bins(2),rp)
-
-	binning_params%rmin = MINVAL(binning_params%rlim)
-	binning_params%rmax = MAXVAL(binning_params%rlim)
-
-	binning_params%zmin = MINVAL(binning_params%zlim)
-	binning_params%zmax = MAXVAL(binning_params%zlim)
+	if (binning_params%diagnostic_on) then
+		if (params%mpi_params%rank .EQ. 0) then
+			write(6,'(/,"* * * * * * * * * * * * * * * * * *")')
+			write(6,'("* Initializing Binning diagnostic *")')
+		end if
 	
-	ALLOCATE(binning_params%rnodes(binning_params%num_bins(1)))
-	ALLOCATE(binning_params%znodes(binning_params%num_bins(2)))
+		binning_params%start_at = start_at
+		binning_params%num_bins = num_bins
+		binning_params%rlim = rlim
+		binning_params%zlim = zlim
+		binning_params%toroidal_sections = toroidal_sections
+		if (binning_params%toroidal_sections) then
+			binning_params%ntor_sections = ntor_sections
+		else
+			binning_params%ntor_sections = 1_idef
+		end if	
 
-	do ii=1_idef,binning_params%num_bins(1)
-		binning_params%rnodes(ii) = binning_params%rmin + (REAL(ii-1_idef,rp)+0.5_rp)*binning_params%dr
-	end do
+		binning_params%dr = (binning_params%rlim(2) - binning_params%rlim(1))/REAL(binning_params%num_bins(1),rp)
+		binning_params%dz = (binning_params%zlim(2) - binning_params%zlim(1))/REAL(binning_params%num_bins(2),rp)
 
-	do ii=1_idef,binning_params%num_bins(2)
-		binning_params%znodes(ii) = binning_params%zmin + (REAL(ii-1_idef,rp)+0.5_rp)*binning_params%dr
-	end do
+		binning_params%rmin = MINVAL(binning_params%rlim)
+		binning_params%rmax = MAXVAL(binning_params%rlim)
 
-	call save_binning_diagnostic_params(params)
+		binning_params%zmin = MINVAL(binning_params%zlim)
+		binning_params%zmax = MAXVAL(binning_params%zlim)
+	
+		ALLOCATE(binning_params%rnodes(binning_params%num_bins(1)))
+		ALLOCATE(binning_params%znodes(binning_params%num_bins(2)))
 
-	if (params%mpi_params%rank .EQ. 0) then
-		write(6,'("*    Binning diagnostic ready!    *")')
-		write(6,'("* * * * * * * * * * * * * * * * * *")')
+		do ii=1_idef,binning_params%num_bins(1)
+			binning_params%rnodes(ii) = binning_params%rmin + (REAL(ii-1_idef,rp)+0.5_rp)*binning_params%dr
+		end do
+
+		do ii=1_idef,binning_params%num_bins(2)
+			binning_params%znodes(ii) = binning_params%zmin + (REAL(ii-1_idef,rp)+0.5_rp)*binning_params%dr
+		end do
+
+		call save_binning_diagnostic_params(params)
+
+		if (params%mpi_params%rank .EQ. 0) then
+			write(6,'("*    Binning diagnostic ready!    *")')
+			write(6,'("* * * * * * * * * * * * * * * * * *")')
+		end if
 	end if
 END SUBROUTINE initialize_binning_diagnostic
 
@@ -157,6 +160,7 @@ SUBROUTINE bin_variables(params,spp)
 	REAL(rp), DIMENSION(3) :: X
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: eta
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: E
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: N
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: array3D
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: array2D
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: array1D
@@ -170,9 +174,11 @@ SUBROUTINE bin_variables(params,spp)
 
 	ALLOCATE(eta(binning_params%num_bins(1),binning_params%num_bins(2),binning_params%ntor_sections,params%num_species))
 	ALLOCATE(E(binning_params%num_bins(1),binning_params%num_bins(2),binning_params%ntor_sections,params%num_species))
+	ALLOCATE(N(binning_params%num_bins(1),binning_params%num_bins(2),binning_params%ntor_sections,params%num_species))
 
-	eta = 0.0
-	E = 0.0
+	eta = 0.0_rp
+	E = 0.0_rp
+	N = 0.0_rp
 
 	Dtor = 2.0_rp*C_PI/REAL(binning_params%ntor_sections,rp)
 
@@ -180,7 +186,7 @@ SUBROUTINE bin_variables(params,spp)
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
 !$OMP PARALLEL DO FIRSTPRIVATE(q,m,Dtor) PRIVATE(X,ii,jj,kk,pp)&
-!$OMP& SHARED(params,spp,ss,eta,E)
+!$OMP& SHARED(params,spp,ss,eta,E,N)
 		do pp=1_idef,spp(ss)%ppp
 			if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
 				X = spp(ss)%vars%X(:,pp)*params%cpp%length
@@ -197,6 +203,7 @@ SUBROUTINE bin_variables(params,spp)
 
 				eta(ii,jj,kk,ss) = eta(ii,jj,kk,ss) + spp(ss)%vars%eta(pp)
 				E(ii,jj,kk,ss) = E(ii,jj,kk,ss) + spp(ss)%vars%g(pp)*m*C_C**2
+				N(ii,jj,kk,ss) = N(ii,jj,kk,ss) + 1.0_rp
 			end if ! if confined
 		end do ! particles
 !$OMP END PARALLEL DO
@@ -255,6 +262,28 @@ SUBROUTINE bin_variables(params,spp)
 
 		DEALLOCATE(send_buffer)
 		DEALLOCATE(receive_buffer)
+		
+		ALLOCATE(send_buffer(numel))
+		ALLOCATE(receive_buffer(numel))
+
+		send_buffer = RESHAPE(N,(/numel/))
+		receive_buffer = 0.0_rp
+		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
+		if (params%mpi_params%rank.EQ.0_idef) then
+		    N = RESHAPE(receive_buffer,(/binning_params%num_bins(1),binning_params%num_bins(2),&
+							binning_params%ntor_sections,params%num_species/))
+
+			var_name = 'N'
+			if (binning_params%toroidal_sections) then
+				call save_snapshot_var(params,N,var_name)
+			else
+				array3D = SUM(N,3)
+				call save_snapshot_var(params,array3D,var_name)
+			end if
+		end if
+
+		DEALLOCATE(send_buffer)
+		DEALLOCATE(receive_buffer)
 	else
 		var_name = 'eta'
 		if (binning_params%toroidal_sections) then
@@ -272,10 +301,19 @@ SUBROUTINE bin_variables(params,spp)
 			array3D = SUM(E,3)
 			call save_snapshot_var(params,array3D,var_name)
 		end if
+		
+		var_name = 'N'
+		if (binning_params%toroidal_sections) then
+			call save_snapshot_var(params,N,var_name)
+		else
+			array3D = SUM(N,3)
+			call save_snapshot_var(params,array3D,var_name)
+		end if
 	end if
 
 	DEALLOCATE(eta)
 	DEALLOCATE(E)
+	DEALLOCATE(N)
 	
 	if (ALLOCATED(array3D)) DEALLOCATE(array3D)
 	if (ALLOCATED(array2D)) DEALLOCATE(array2D)

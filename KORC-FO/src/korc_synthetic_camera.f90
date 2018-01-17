@@ -228,11 +228,6 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 								position,incline,lambda_min,lambda_max,Nlambda,integrated_opt,&
 								toroidal_sections,ntor_sections,start_at,photon_count
 
-	if (params%mpi_params%rank .EQ. 0) then
-		write(6,'(/,"* * * * * * * * * * * * * * * * * *")')
-		write(6,'("*  Initializing synthetic camera  *")')
-	end if
-
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=SyntheticCamera)
 	close(default_unit_open)
@@ -240,32 +235,38 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 	!	write(*,nml=SyntheticCamera)
 	
 	cam%camera_on = camera_on
-!	cam%aperture = aperture
-	cam%start_at = start_at
-	cam%Riw = Riw
-	cam%num_pixels = num_pixels
-	cam%sensor_size = sensor_size
-	cam%pixel_area = PRODUCT(sensor_size/num_pixels)
-	cam%focal_length = focal_length
-	cam%position = position
-	cam%incline = C_PI*incline/180.0_rp
-	cam%horizontal_angle_view = ATAN2(0.5_rp*cam%sensor_size(1),cam%focal_length)
-	cam%vertical_angle_view = ATAN2(0.5_rp*cam%sensor_size(2),cam%focal_length)
-	cam%lambda_min = lambda_min ! In meters
-	cam%lambda_max = lambda_max ! In meters
-	cam%Nlambda = Nlambda
-	cam%Dlambda = (cam%lambda_max - cam%lambda_min)/REAL(cam%Nlambda,rp)
-	ALLOCATE(cam%lambda(cam%Nlambda))
-	cam%photon_count = photon_count
-	cam%integrated_opt = integrated_opt
-	cam%toroidal_sections = toroidal_sections
-	if (cam%toroidal_sections) then
-		cam%ntor_sections = ntor_sections
-	else
-		cam%ntor_sections = 1_idef
-	end if
-	
+
 	if (cam%camera_on) then
+		if (params%mpi_params%rank .EQ. 0) then
+			write(6,'(/,"* * * * * * * * * * * * * * * * * *")')
+			write(6,'("*  Initializing synthetic camera  *")')
+		end if
+	
+	!	cam%aperture = aperture
+		cam%start_at = start_at
+		cam%Riw = Riw
+		cam%num_pixels = num_pixels
+		cam%sensor_size = sensor_size
+		cam%pixel_area = PRODUCT(sensor_size/num_pixels)
+		cam%focal_length = focal_length
+		cam%position = position
+		cam%incline = C_PI*incline/180.0_rp
+		cam%horizontal_angle_view = ATAN2(0.5_rp*cam%sensor_size(1),cam%focal_length)
+		cam%vertical_angle_view = ATAN2(0.5_rp*cam%sensor_size(2),cam%focal_length)
+		cam%lambda_min = lambda_min ! In meters
+		cam%lambda_max = lambda_max ! In meters
+		cam%Nlambda = Nlambda
+		cam%Dlambda = (cam%lambda_max - cam%lambda_min)/REAL(cam%Nlambda,rp)
+		ALLOCATE(cam%lambda(cam%Nlambda))
+		cam%photon_count = photon_count
+		cam%integrated_opt = integrated_opt
+		cam%toroidal_sections = toroidal_sections
+		if (cam%toroidal_sections) then
+			cam%ntor_sections = ntor_sections
+		else
+			cam%ntor_sections = 1_idef
+		end if
+	
 		cam%r = (/COS(0.5_rp*C_PI - cam%incline),-SIN(0.5_rp*C_PI - cam%incline),0.0_rp/)
 
 		do ii=1_idef,cam%Nlambda
@@ -345,11 +346,6 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 			ang%ac = 0.5_rp*C_PI - cam%incline
 		end if
 
-		if (params%mpi_params%rank .EQ. 0) then
-			write(6,'("*     Synthetic camera ready!     *")')
-			write(6,'("* * * * * * * * * * * * * * * * * *",/)')
-		end if
-
 
 		! Initialize poloidal plane parameters
 	
@@ -384,6 +380,11 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 		! * * * * * * * ALL IN METERS * * * * * * * 
 
 		call save_synthetic_camera_params(params)
+		
+		if (params%mpi_params%rank .EQ. 0) then
+			write(6,'("*     Synthetic camera ready!     *")')
+			write(6,'("* * * * * * * * * * * * * * * * * *",/)')
+		end if
 	end if
 END SUBROUTINE initialize_synthetic_camera
 
