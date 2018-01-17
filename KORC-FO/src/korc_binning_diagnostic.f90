@@ -159,7 +159,7 @@ SUBROUTINE bin_variables(params,spp)
 	CHARACTER(MAX_STRING_LENGTH) :: var_name
 	REAL(rp), DIMENSION(3) :: X
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: eta
-	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: E
+	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: g
 	REAL(rp), DIMENSION(:,:,:,:), ALLOCATABLE :: N
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: array3D
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: array2D
@@ -173,11 +173,11 @@ SUBROUTINE bin_variables(params,spp)
 	REAL(rp) :: units
 
 	ALLOCATE(eta(binning_params%num_bins(1),binning_params%num_bins(2),binning_params%ntor_sections,params%num_species))
-	ALLOCATE(E(binning_params%num_bins(1),binning_params%num_bins(2),binning_params%ntor_sections,params%num_species))
+	ALLOCATE(g(binning_params%num_bins(1),binning_params%num_bins(2),binning_params%ntor_sections,params%num_species))
 	ALLOCATE(N(binning_params%num_bins(1),binning_params%num_bins(2),binning_params%ntor_sections,params%num_species))
 
 	eta = 0.0_rp
-	E = 0.0_rp
+	g = 0.0_rp
 	N = 0.0_rp
 
 	Dtor = 2.0_rp*C_PI/REAL(binning_params%ntor_sections,rp)
@@ -186,7 +186,7 @@ SUBROUTINE bin_variables(params,spp)
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
 !$OMP PARALLEL DO FIRSTPRIVATE(q,m,Dtor) PRIVATE(X,ii,jj,kk,pp)&
-!$OMP& SHARED(params,spp,ss,eta,E,N)
+!$OMP& SHARED(params,spp,ss,eta,g,N)
 		do pp=1_idef,spp(ss)%ppp
 			if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
 				X = spp(ss)%vars%X(:,pp)*params%cpp%length
@@ -202,7 +202,7 @@ SUBROUTINE bin_variables(params,spp)
 				kk = floor(phi/Dtor) + 1_idef
 
 				eta(ii,jj,kk,ss) = eta(ii,jj,kk,ss) + spp(ss)%vars%eta(pp)
-				E(ii,jj,kk,ss) = E(ii,jj,kk,ss) + spp(ss)%vars%g(pp)*m*C_C**2
+				g(ii,jj,kk,ss) = g(ii,jj,kk,ss) + spp(ss)%vars%g(pp)
 				N(ii,jj,kk,ss) = N(ii,jj,kk,ss) + 1.0_rp
 			end if ! if confined
 		end do ! particles
@@ -243,19 +243,18 @@ SUBROUTINE bin_variables(params,spp)
 		ALLOCATE(send_buffer(numel))
 		ALLOCATE(receive_buffer(numel))
 
-		send_buffer = RESHAPE(E,(/numel/))
+		send_buffer = RESHAPE(g,(/numel/))
 		receive_buffer = 0.0_rp
 		CALL MPI_REDUCE(send_buffer,receive_buffer,numel,MPI_REAL8,MPI_SUM,0,MPI_COMM_WORLD,mpierr)
 		if (params%mpi_params%rank.EQ.0_idef) then
-		    E = RESHAPE(receive_buffer,(/binning_params%num_bins(1),binning_params%num_bins(2),&
+		    g = RESHAPE(receive_buffer,(/binning_params%num_bins(1),binning_params%num_bins(2),&
 							binning_params%ntor_sections,params%num_species/))
-			E = E*params%cpp%energy
 
-			var_name = 'E'
+			var_name = 'g'
 			if (binning_params%toroidal_sections) then
-				call save_snapshot_var(params,E,var_name)
+				call save_snapshot_var(params,g,var_name)
 			else
-				array3D = SUM(E,3)
+				array3D = SUM(g,3)
 				call save_snapshot_var(params,array3D,var_name)
 			end if
 		end if
@@ -293,12 +292,11 @@ SUBROUTINE bin_variables(params,spp)
 			call save_snapshot_var(params,array3D,var_name)
 		end if
 
-		E = E*params%cpp%energy
-		var_name = 'E'
+		var_name = 'g'
 		if (binning_params%toroidal_sections) then
-			call save_snapshot_var(params,E,var_name)
+			call save_snapshot_var(params,g,var_name)
 		else
-			array3D = SUM(E,3)
+			array3D = SUM(g,3)
 			call save_snapshot_var(params,array3D,var_name)
 		end if
 		
@@ -312,7 +310,7 @@ SUBROUTINE bin_variables(params,spp)
 	end if
 
 	DEALLOCATE(eta)
-	DEALLOCATE(E)
+	DEALLOCATE(g)
 	DEALLOCATE(N)
 	
 	if (ALLOCATED(array3D)) DEALLOCATE(array3D)
