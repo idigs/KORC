@@ -80,6 +80,8 @@ program main
 		call save_simulation_outputs(params,spp,F)
 
 		call synthetic_camera(params,spp) ! Synthetic camera!
+
+		call binning_diagnostic(params,spp) ! Binning diagnostic
 	end if
 	! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !
 

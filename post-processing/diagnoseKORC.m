@@ -1,6 +1,6 @@
 function ST = diagnoseKORC(path,visible,range)
 % ST = diagnoseKORC('../KORC-FO/outputFiles/','on',[0,100])
-% close all
+close all
 
 ST = struct;
 ST.path = path;
@@ -49,10 +49,10 @@ ST.data = loadData(ST);
 
 % calculateTemperatureComponents(ST);
 
-% SE_phaseSpaceAnalisys(ST);
+SE_phaseSpaceAnalisys(ST);
 
 
-% plotEnergyPitchanglePDF(ST);
+plotEnergyPitchanglePDF(ST);
 
 
 % figuresAPS2017(ST);
@@ -151,7 +151,7 @@ for ll=1:length(list)
             filename = [ST.path 'file_' num2str(ff-1) '.h5'];
             indi = (ff - 1)*double(ST.params.species.ppp(ss)) + 1;
             indf = ff*double(ST.params.species.ppp(ss));
-            for ii=1:ST.num_snapshots
+            for ii=ST.range(1)+1:ST.range(2)+1
                 dataset = ...
                     ['/' num2str(it(ii)) '/spp_' num2str(ss)...
                     '/' list{ll}];
@@ -3277,7 +3277,7 @@ for ss=1:ST.params.simulation.num_species
     if (strcmp(ST.params.species.energy_distribution(ss),'AVALANCHE'))
         pmax = ST.params.avalanche_pdf_params.max_p;
         pmin = ST.params.avalanche_pdf_params.min_p;
-    elseif (strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL'))
+    elseif (strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL-GAMMA'))
         pmax = ST.params.params.max_p;
         pmin = ST.params.params.min_p;
     end
@@ -3291,7 +3291,7 @@ for ss=1:ST.params.simulation.num_species
     if (strcmp(ST.params.species.energy_distribution(ss),'AVALANCHE'))
         pitchmax = ST.params.avalanche_pdf_params.max_pitch_angle;
         pitchmin = ST.params.avalanche_pdf_params.min_pitch_angle;
-    elseif (strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL'))
+    elseif (strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL-GAMMA'))
         pitchmax = ST.params.params.max_pitch_angle;
         pitchmin = ST.params.params.min_pitch_angle;
     end
@@ -3342,7 +3342,7 @@ for ss=1:ST.params.simulation.num_species
         axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
         xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
         ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
-    elseif (strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL'))
+    elseif (strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL-GAMMA'))
         regionsOfSE(ST,chiAxis,pAxis,fRE);
     end
     

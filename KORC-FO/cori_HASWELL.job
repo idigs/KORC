@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -N 32
+#SBATCH -N 1
 #SBATCH -C haswell
 #SBATCH -p debug
 #SBATCH -J KORC_HASWELL
@@ -9,13 +9,13 @@
 #SBATCH -L SCRATCH
 #SBATCH -o KORC_HASWELL_%j.out 
 #SBATCH -e KORC_HASWELL_%j.err
-#SBATCH -A atom
+#SBATCH -A mp202
 
 cd $SLURM_SUBMIT_DIR
 
 ## You might want to change the path of the outouts folder
-FILE_ID='10MeVB'
-INPUT_FOLDER='confinement_APS'
+FILE_ID='t1580'
+INPUT_FOLDER='D3D_157576'
 
 FOLDER_ID=${INPUT_FOLDER}_${FILE_ID}
 PATH_TO_SCRATCH=$SCRATCH
@@ -26,10 +26,11 @@ rm -r ${OUTPUT_FOLDER}
 mkdir ${OUTPUT_FOLDER}
 
 #OpenMP settings:
-export OMP_NUM_THREADS=4
+export OMP_NUM_THREADS=2
 export OMP_PLACES=threads
 export OMP_PROC_BIND=spread
 
 
 #run the application:
-srun -n $((8*SLURM_JOB_NUM_NODES)) -c $((2*OMP_NUM_THREADS)) --cpu_bind=cores ./bin/KORC inputFiles/${INPUT_FOLDER}/input_file_${FILE_ID}.korc ${OUTPUT_FOLDER}/
+srun -n $((16*SLURM_JOB_NUM_NODES)) -c $((2*OMP_NUM_THREADS)) --cpu_bind=cores ./bin/KORC inputFiles/${INPUT_FOLDER}/input_file_${FILE_ID}.korc ${OUTPUT_FOLDER}/
+

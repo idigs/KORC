@@ -466,7 +466,7 @@ FUNCTION fRE(eta,p)
 
 	A = (2.0_rp*pdf_params%E/(pdf_params%Zeff + 1.0_rp))*(p**2/SQRT(p**2.0_rp + 1.0_rp))
 	fRE = 0.5_rp*A*EXP(A*COS(deg2rad(eta)))*fGamma(Eo,pdf_params%k,pdf_params%t/xo)/SINH(A)
-	fRE = fRE*PR(eta,p,pdf_params%Bo,pdf_params%lambda)
+!	fRE = fRE*PR(eta,p,pdf_params%Bo,pdf_params%lambda)
 END FUNCTION fRE
 
 

@@ -1,5 +1,5 @@
 function ST = binningDiagnostic(path,range)
-% ST = syntheticCameraFortran('/media/l8c/FantomHD/SimulationOutputs/Avalanche/Z1/',[400E-9,900E-9],'on',[99,100])
+% ST = binningDiagnostic('../KORC-FO/outputFiles/',[99,100])
 close all
 
 ST = struct;
@@ -80,7 +80,7 @@ for ll=1:length(list)
         else
             data.(['sp' num2str(ss)]).(list{ll}) = zeros(NX,NY,ST.num_snapshots);
         end
-        for ii=1:ST.num_snapshots
+        for ii=ST.range(1)+1:ST.range(2)+1
             dataset = ...
                 ['/' num2str(it(ii)) '/spp_' num2str(ss)...
                 '/' list{ll}];
@@ -116,9 +116,16 @@ end
 
 for ss=1:ST.params.simulation.num_species
     num_dims = ndims(ST.data.sp1.eta);
-    eta = sum(ST.data.(['sp' num2str(ss)]).eta,num_dims);
-    g = sum(ST.data.(['sp' num2str(ss)]).g,num_dims);
-    N = sum(ST.data.(['sp' num2str(ss)]).N,num_dims);
+    
+    if num_dims > 2
+        eta = sum(ST.data.(['sp' num2str(ss)]).eta,num_dims);
+        g = sum(ST.data.(['sp' num2str(ss)]).g,num_dims);
+        N = sum(ST.data.(['sp' num2str(ss)]).N,num_dims);
+    else
+        eta = ST.data.(['sp' num2str(ss)]).eta;
+        g = ST.data.(['sp' num2str(ss)]).g;
+        N = ST.data.(['sp' num2str(ss)]).N;
+    end
     
     eta(N~=0) = eta(N~=0)./N(N~=0);
     g(N~=0) = g(N~=0)./N(N~=0);
@@ -130,7 +137,7 @@ for ss=1:ST.params.simulation.num_species
     
     fig1 = figure;
     subplot(1,2,1)
-    surf(xAxis,yAxis,eta,'LineStyle','none')
+    surfc(xAxis,yAxis,eta,'LineStyle','none')
     axis equal;view([0 90])
     colormap(jet);cb = colorbar;
     xlabel('$R$','Interpreter','latex')
@@ -138,7 +145,7 @@ for ss=1:ST.params.simulation.num_species
     ylabel(cb,'Mean pitch angle ($^\circ$)','Interpreter','latex')
     
     subplot(1,2,2)
-    surf(xAxis,yAxis,g,'LineStyle','none')
+    surfc(xAxis,yAxis,g,'LineStyle','none')
     axis equal;view([0 90])
     colormap(jet);cb = colorbar;
     xlabel('$R$','Interpreter','latex')
