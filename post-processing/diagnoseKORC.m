@@ -17,7 +17,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
 % angularMomentum(ST);
 
@@ -49,10 +49,9 @@ ST.data = loadData(ST);
 
 % calculateTemperatureComponents(ST);
 
-SE_phaseSpaceAnalisys(ST);
+% SE_phaseSpaceAnalisys(ST);
 
-
-plotEnergyPitchanglePDF(ST);
+% plotEnergyPitchanglePDF(ST);
 
 
 % figuresAPS2017(ST);
@@ -3109,7 +3108,7 @@ function regionsOfSE(ST,chiAxis,pAxis,fnum)
 Np = numel(pAxis);
 Nchi = numel(chiAxis);
 minLevel = -5;
-numLevels = 25;
+numLevels = 10;
 
 q = abs(ST.params.species.q(1));
 m = ST.params.species.m(1);

@@ -35,15 +35,18 @@ subroutine initialize_profiles(params,P)
 	REAL(rp), DIMENSION(4) :: a_ne
 	REAL(rp), DIMENSION(4) :: a_Te
 	REAL(rp), DIMENSION(4) :: a_Zeff
+	LOGICAL :: Efield, Bfield, Bflux, axisymmetric
 
-	NAMELIST /plasma_profiles/ radius_profile,ne_profile,neo,n_ne,a_ne,&
+	NAMELIST /plasmaProfiles/ radius_profile,ne_profile,neo,n_ne,a_ne,&
 											Te_profile,Teo,n_Te,a_Te,&
 											Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename
+
+	NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux, axisymmetric
 
 	SELECT CASE (TRIM(params%plasma_model))
 		CASE('ANALYTICAL')
 			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-			read(default_unit_open,nml=plasma_profiles)
+			read(default_unit_open,nml=plasmaProfiles)
 			close(default_unit_open)
 
 			P%a = radius_profile
@@ -63,7 +66,7 @@ subroutine initialize_profiles(params,P)
 			P%a_Zeff = a_Zeff
 		CASE('EXTERNAL')
 			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-			read(default_unit_open,nml=plasma_profiles)
+			read(default_unit_open,nml=plasmaProfiles)
 			close(default_unit_open)
 
 			P%ne_profile = TRIM(ne_profile)
@@ -74,11 +77,17 @@ subroutine initialize_profiles(params,P)
 			P%Zeffo = Zeffo
 
 			P%filename = TRIM(filename)
+
+			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
+			read(default_unit_open,nml=externalPlasmaModel)
+			close(default_unit_open)
+
+			P%axisymmetric = axisymmetric
 			
 			call load_profiles_data_from_hdf5(params,P)
 		CASE('UNIFORM')
 			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-			read(default_unit_open,nml=plasma_profiles)
+			read(default_unit_open,nml=plasmaProfiles)
 			close(default_unit_open)
 
 			P%a = radius_profile
@@ -220,7 +229,7 @@ subroutine load_profiles_data_from_hdf5(params,P)
 	call load_from_hdf5(h5file_id,dset,rdatum)
 	P%dims(1) = INT(rdatum)
 
-	if (params%axisymmetric) then
+	if (P%axisymmetric) then
 		P%dims(2) = 0
 	else
 		dset = "/NPHI"
@@ -232,7 +241,7 @@ subroutine load_profiles_data_from_hdf5(params,P)
 	call load_from_hdf5(h5file_id,dset,rdatum)
 	P%dims(3) = INT(rdatum)
 
-	if (params%axisymmetric) then
+	if (P%axisymmetric) then
 		call ALLOCATE_2D_PROFILES_ARRAYS(P)
 	else
 		call ALLOCATE_3D_PROFILES_ARRAYS(P)
@@ -241,7 +250,7 @@ subroutine load_profiles_data_from_hdf5(params,P)
 	dset = "/R"
 	call load_array_from_hdf5(h5file_id,dset,P%X%R)
 
-	if (.NOT.params%axisymmetric) then
+	if (.NOT.P%axisymmetric) then
 		dset = "/PHI"
 		call load_array_from_hdf5(h5file_id,dset,P%X%PHI)
 	end if
@@ -250,21 +259,21 @@ subroutine load_profiles_data_from_hdf5(params,P)
 	call load_array_from_hdf5(h5file_id,dset,P%X%Z)
 
 	dset = "/FLAG"
-	if (params%axisymmetric) then
+	if (P%axisymmetric) then
 		call load_array_from_hdf5(h5file_id,dset,P%FLAG2D)
 	else
 		call load_array_from_hdf5(h5file_id,dset,P%FLAG3D)
 	end if
 
 	dset = "/ne"
-	if (params%axisymmetric) then
+	if (P%axisymmetric) then
 		call load_array_from_hdf5(h5file_id,dset,P%ne_2D)
 	else
 		call load_array_from_hdf5(h5file_id,dset,P%ne_3D)
 	end if
 
 	dset = "/Te"
-	if (params%axisymmetric) then
+	if (P%axisymmetric) then
 		call load_array_from_hdf5(h5file_id,dset,P%Te_2D)
 		P%Te_2D = P%Te_2D*C_E
 	else
@@ -273,7 +282,7 @@ subroutine load_profiles_data_from_hdf5(params,P)
 	end if
 
 	dset = "/Zeff"
-	if (params%axisymmetric) then
+	if (P%axisymmetric) then
 		call load_array_from_hdf5(h5file_id,dset,P%Zeff_2D)
 	else
 		call load_array_from_hdf5(h5file_id,dset,P%Zeff_3D)

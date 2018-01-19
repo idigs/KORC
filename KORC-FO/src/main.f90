@@ -35,7 +35,7 @@ program main
 	call initialize_fields(params,F)
 
 	call initialize_profiles(params,P)
-
+	
 	call initialize_particles(params,F,spp) ! Initialize particles
 
 	call initialize_collision_params(params)
@@ -70,7 +70,7 @@ program main
 	! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !
 
 	call save_simulation_parameters(params,spp,F,P)
-	
+
 	call save_collision_params(params)
 		
 	if (.NOT.params%restart) then

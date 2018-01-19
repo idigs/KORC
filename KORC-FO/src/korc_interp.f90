@@ -120,6 +120,7 @@ module korc_interp
 
     PUBLIC :: interp_fields,&
 				initialize_fields_interpolant,&
+				initialize_profiles_interpolant,&
 				finalize_interpolants
 	PRIVATE :: interp_3D_bfields,&
 				interp_2D_bfields,&
@@ -146,7 +147,7 @@ subroutine initialize_fields_interpolant(params,F)
 
 
 		! * * * * * * * * MAGNETIC FIELD * * * * * * * * !
-		if (params%poloidal_flux) then
+		if (F%Bflux) then
 			bfield_2d%NR = F%dims(1)
 			bfield_2d%NZ = F%dims(3)
 
@@ -165,7 +166,7 @@ subroutine initialize_fields_interpolant(params,F)
 
 			fields_domain%DR = ABS(F%X%R(2) - F%X%R(1))
 			fields_domain%DZ = ABS(F%X%Z(2) - F%X%Z(1))
-		else if (params%axisymmetric) then
+		else if (F%axisymmetric) then
 			bfield_2d%NR = F%dims(1)
 			bfield_2d%NZ = F%dims(3)
 
@@ -257,79 +258,81 @@ subroutine initialize_fields_interpolant(params,F)
 		fields_domain%Zo = F%X%Z(1)
 
 		! * * * * * * * * ELECTRIC FIELD * * * * * * * * !
-		if (params%axisymmetric) then
-			efield_2d%NR = F%dims(1)
-			efield_2d%NZ = F%dims(3)
+		if (F%Efield.AND.F%Efield_in_file) then
+			if (F%axisymmetric) then
+				efield_2d%NR = F%dims(1)
+				efield_2d%NZ = F%dims(3)
 
-			! Initializing R component
-			call EZspline_init(efield_2d%R,efield_2d%NR,efield_2d%NZ,efield_2d%BCSR,efield_2d%BCSZ,ezerr)
-		  	call EZspline_error(ezerr)
+				! Initializing R component
+				call EZspline_init(efield_2d%R,efield_2d%NR,efield_2d%NZ,efield_2d%BCSR,efield_2d%BCSZ,ezerr)
+			  	call EZspline_error(ezerr)
 			
-			efield_2d%R%x1 = F%X%R
-			efield_2d%R%x2 = F%X%Z
+				efield_2d%R%x1 = F%X%R
+				efield_2d%R%x2 = F%X%Z
 
-			call EZspline_setup(efield_2d%R, F%E_2D%R, ezerr, .TRUE.)
-			call EZspline_error(ezerr)
+				call EZspline_setup(efield_2d%R, F%E_2D%R, ezerr, .TRUE.)
+				call EZspline_error(ezerr)
 
-			! Initializing PHI component
-			call EZspline_init(efield_2d%PHI,efield_2d%NR,efield_2d%NZ,efield_2d%BCSR,efield_2d%BCSZ,ezerr)
-		  	call EZspline_error(ezerr)
+				! Initializing PHI component
+				call EZspline_init(efield_2d%PHI,efield_2d%NR,efield_2d%NZ,efield_2d%BCSR,efield_2d%BCSZ,ezerr)
+			  	call EZspline_error(ezerr)
 			
-			efield_2d%PHI%x1 = F%X%R
-			efield_2d%PHI%x2 = F%X%Z
+				efield_2d%PHI%x1 = F%X%R
+				efield_2d%PHI%x2 = F%X%Z
 
-			call EZspline_setup(efield_2d%PHI, F%E_2D%PHI, ezerr, .TRUE.)
-			call EZspline_error(ezerr)
+				call EZspline_setup(efield_2d%PHI, F%E_2D%PHI, ezerr, .TRUE.)
+				call EZspline_error(ezerr)
 
-			! Initializing Z component
-			call EZspline_init(efield_2d%Z,efield_2d%NR,efield_2d%NZ,efield_2d%BCSR,efield_2d%BCSZ,ezerr)
-		  	call EZspline_error(ezerr)
+				! Initializing Z component
+				call EZspline_init(efield_2d%Z,efield_2d%NR,efield_2d%NZ,efield_2d%BCSR,efield_2d%BCSZ,ezerr)
+			  	call EZspline_error(ezerr)
 			
-			efield_2d%Z%x1 = F%X%R
-			efield_2d%Z%x2 = F%X%Z
+				efield_2d%Z%x1 = F%X%R
+				efield_2d%Z%x2 = F%X%Z
 
-			call EZspline_setup(efield_2d%Z, F%E_2D%Z, ezerr, .TRUE.)
-			call EZspline_error(ezerr)
-		else
-			efield_3d%NR = F%dims(1)
-			efield_3d%NPHI = F%dims(2)
-			efield_3d%NZ = F%dims(3)
+				call EZspline_setup(efield_2d%Z, F%E_2D%Z, ezerr, .TRUE.)
+				call EZspline_error(ezerr)
+			else
+				efield_3d%NR = F%dims(1)
+				efield_3d%NPHI = F%dims(2)
+				efield_3d%NZ = F%dims(3)
 
-			! Initializing R component of interpolant
-			call EZspline_init(efield_3d%R, efield_3d%NR, efield_3d%NPHI, efield_3d%NZ,&
-								efield_3d%BCSR, efield_3d%BCSPHI, efield_3d%BCSZ, ezerr)
-		  	call EZspline_error(ezerr)
+				! Initializing R component of interpolant
+				call EZspline_init(efield_3d%R, efield_3d%NR, efield_3d%NPHI, efield_3d%NZ,&
+									efield_3d%BCSR, efield_3d%BCSPHI, efield_3d%BCSZ, ezerr)
+			  	call EZspline_error(ezerr)
 
-			efield_3d%R%x1 = F%X%R
-			! efield_3d%R%x2 = F%X%PHI
-			efield_3d%R%x3 = F%X%Z
+				efield_3d%R%x1 = F%X%R
+				! efield_3d%R%x2 = F%X%PHI
+				efield_3d%R%x3 = F%X%Z
 
-			call EZspline_setup(efield_3d%R, F%E_3D%R, ezerr)
-			call EZspline_error(ezerr)
+				call EZspline_setup(efield_3d%R, F%E_3D%R, ezerr)
+				call EZspline_error(ezerr)
 
-			! Initializing PHI component of interpolant
-			call EZspline_init(efield_3d%PHI, efield_3d%NR, efield_3d%NPHI, efield_3d%NZ,&
-								efield_3d%BCSR, efield_3d%BCSPHI, efield_3d%BCSZ, ezerr)
-		  	call EZspline_error(ezerr)
+				! Initializing PHI component of interpolant
+				call EZspline_init(efield_3d%PHI, efield_3d%NR, efield_3d%NPHI, efield_3d%NZ,&
+									efield_3d%BCSR, efield_3d%BCSPHI, efield_3d%BCSZ, ezerr)
+			  	call EZspline_error(ezerr)
 
-			efield_3d%PHI%x1 = F%X%R
-			! efield_3d%PHI%x2 = F%X%PHI
-			efield_3d%PHI%x3 = F%X%Z
+				efield_3d%PHI%x1 = F%X%R
+				! efield_3d%PHI%x2 = F%X%PHI
+				efield_3d%PHI%x3 = F%X%Z
 
-			call EZspline_setup(efield_3d%PHI, F%E_3D%PHI, ezerr)
-			call EZspline_error(ezerr)
+				call EZspline_setup(efield_3d%PHI, F%E_3D%PHI, ezerr)
+				call EZspline_error(ezerr)
 
-			! Initializing Z component of interpolant
-			call EZspline_init(efield_3d%Z, efield_3d%NR, efield_3d%NPHI, efield_3d%NZ,&
-								efield_3d%BCSR, efield_3d%BCSPHI, efield_3d%BCSZ, ezerr)
-		  	call EZspline_error(ezerr)
+				! Initializing Z component of interpolant
+				call EZspline_init(efield_3d%Z, efield_3d%NR, efield_3d%NPHI, efield_3d%NZ,&
+									efield_3d%BCSR, efield_3d%BCSPHI, efield_3d%BCSZ, ezerr)
+			  	call EZspline_error(ezerr)
 
-			efield_3d%Z%x1 = F%X%R
-			! efield_3d%Z%x2 = F%X%PHI
-			efield_3d%Z%x3 = F%X%Z
+				efield_3d%Z%x1 = F%X%R
+				! efield_3d%Z%x2 = F%X%PHI
+				efield_3d%Z%x3 = F%X%Z
 
-			call EZspline_setup(efield_3d%Z, F%E_3D%Z, ezerr)
-			call EZspline_error(ezerr)
+				call EZspline_setup(efield_3d%Z, F%E_3D%Z, ezerr)
+				call EZspline_error(ezerr)
+			end if
 		end if
 
 		if (params%mpi_params%rank .EQ. 0) then
@@ -406,7 +409,7 @@ subroutine initialize_profiles_interpolant(params,P)
 			write(6,'("* * * * INITIALIZING PROFILES INTERPOLANT * * * *")')
 		end if
 
-		if (params%axisymmetric) then
+		if (P%axisymmetric) then
 			profiles_2d%NR = P%dims(1)
 			profiles_2d%NZ = P%dims(3)
 

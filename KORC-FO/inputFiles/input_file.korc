@@ -14,9 +14,6 @@
 										! For 'EXTERNAL', the magnetic field is loaded from the file
 										! specified in "filename".
 										! 'UNIFORM' A uniform magnetic field used to advance only electrons' velocity.
-	poloidal_flux = .FALSE.		  ! .TRUE. if using JFIT poloidal flux, .FALSE. if using the
-										! cylindrical components of the magnetic field
-	axisymmetric = .FALSE.			  ! Axisymmetric field?
 	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/D3D_Q.h5" ! DIII-D_sh165826.h5" !
 	outputs_list = '{X,V,g,eta,flag,ne,Te,Zeff}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
 	HDF5_error_handling = .TRUE. ! 
@@ -55,7 +52,14 @@
 	qo = 1.0 ! Safety factor at the separatrix (r=a)
 /
 
-&plasma_profiles
+&externalPlasmaModel
+	Bfield = .TRUE.
+	Bflux = .TRUE.
+	Efield = .TRUE.
+	axisymmetric = .FALSE.
+/
+
+&plasmaProfiles
 	radius_profile = 0.6
 	ne_profile = 'PARABOLIC' ! Options are 'FLAT' and 'PARABOLIC'
 	neo = 2.93E19 ! In m^-3

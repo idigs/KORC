@@ -58,8 +58,6 @@ subroutine load_korc_params(params)
 	LOGICAL :: collisions
 	CHARACTER(MAX_STRING_LENGTH) :: collisions_model
 	CHARACTER(MAX_STRING_LENGTH) :: plasma_model
-	LOGICAL :: poloidal_flux
-	LOGICAL :: axisymmetric
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
 	CHARACTER(MAX_STRING_LENGTH) :: outputs_list
 	INTEGER :: num_species
@@ -68,7 +66,7 @@ subroutine load_korc_params(params)
 	INTEGER, DIMENSION(2) :: indices
 	LOGICAL :: HDF5_error_handling
 
-	NAMELIST /input_parameters/ restart,plasma_model,poloidal_flux,magnetic_field_filename,simulation_time,axisymmetric,&
+	NAMELIST /input_parameters/ restart,plasma_model,magnetic_field_filename,simulation_time,&
 								snapshot_frequency,dt,num_species,radiation,collisions,collisions_model,outputs_list,&
 								minimum_particle_energy,HDF5_error_handling
 	
@@ -90,8 +88,6 @@ subroutine load_korc_params(params)
 
 	params%num_species = num_species
 	params%plasma_model = TRIM(plasma_model)
-	params%poloidal_flux = poloidal_flux
-	params%axisymmetric = axisymmetric
 	params%magnetic_field_filename = TRIM(magnetic_field_filename)
 	params%minimum_particle_energy = minimum_particle_energy*C_E
 	params%minimum_particle_g = 1.0_rp + params%minimum_particle_energy/(C_ME*C_C**2) ! Minimum value of relativistic gamma factor	
@@ -147,8 +143,6 @@ subroutine load_korc_params(params)
 		write(6,'("Number of electron populations: ",I16)') params%num_species
 		write(6,'("Magnetic field model: ",A50)') TRIM(params%plasma_model)
 		if (TRIM(params%plasma_model).EQ.'EXTERNAL') then
-			write(6,'("USINg (JFIT) poloidal flux: ", L1)') params%poloidal_flux
-			write(6,'("Axisymmetric external field: ", L1)') params%axisymmetric
 			write(6,'("Magnetic field file: ",A100)') TRIM(params%magnetic_field_filename)
 		end if
 

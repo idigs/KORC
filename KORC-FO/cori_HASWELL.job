@@ -25,12 +25,16 @@ rm -r ${OUTPUT_FOLDER}
 
 mkdir ${OUTPUT_FOLDER}
 
+NUM_CORES=32
+
+#MPI settings:
+MPI_PROCCESSES=16
+
 #OpenMP settings:
-export OMP_NUM_THREADS=2
+export OMP_NUM_THREADS=$((NUM_CORES/MPI_PROCCESSES))
 export OMP_PLACES=threads
 export OMP_PROC_BIND=spread
 
 
 #run the application:
-srun -n $((16*SLURM_JOB_NUM_NODES)) -c $((2*OMP_NUM_THREADS)) --cpu_bind=cores ./bin/KORC inputFiles/${INPUT_FOLDER}/input_file_${FILE_ID}.korc ${OUTPUT_FOLDER}/
-
+srun -n $((MPI_PROCCESSES*SLURM_JOB_NUM_NODES)) -c $((2*OMP_NUM_THREADS)) --cpu_bind=cores ./bin/KORC inputFiles/${INPUT_FOLDER}/input_file_${FILE_ID}.korc ${OUTPUT_FOLDER}/

@@ -94,8 +94,6 @@ TYPE, PUBLIC :: KORC_PARAMS
 	LOGICAL :: collisions
 	CHARACTER(MAX_STRING_LENGTH) :: collisions_model
 	CHARACTER(MAX_STRING_LENGTH) :: plasma_model
-	LOGICAL :: poloidal_flux
-	LOGICAL :: axisymmetric
 	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: outputs_list
 	INTEGER :: HDF5_error_handling
@@ -192,6 +190,16 @@ TYPE, PUBLIC :: FIELDS
 	REAL(rp) :: Eo ! Characteristic electric field
     REAL(rp) :: to
     REAL(rp) :: sig
+
+	LOGICAL :: Bfield
+	LOGICAL :: Bflux
+	LOGICAL :: Efield
+
+	LOGICAL :: Bfield_in_file
+	LOGICAL :: Bflux_in_file
+	LOGICAL :: Efield_in_file
+
+	LOGICAL :: axisymmetric
 END TYPE FIELDS
 
 
@@ -231,5 +239,6 @@ TYPE, PUBLIC :: PROFILES
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Te_2D ! Te_2D(R,Z)
 
 	CHARACTER(MAX_STRING_LENGTH) :: filename
+	LOGICAL :: axisymmetric
 END TYPE PROFILES
 end module korc_types

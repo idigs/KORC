@@ -303,6 +303,9 @@ subroutine get_fields(params,vars,F)
 			call get_analytical_fields(vars, F)
 		CASE('EXTERNAL')
 			call interp_fields(vars, F)
+			if (F%Efield.AND..NOT.F%Efield_in_file) then
+				call analytical_electric_field_cyl(F,vars%Y,vars%E,vars%flag)
+			end if
 		CASE('UNIFORM')
 			call uniform_fields(vars, F)
 		CASE DEFAULT
@@ -329,10 +332,12 @@ subroutine initialize_fields(params,F)
 	REAL(rp) :: Eo
     REAL(rp) :: pulse_maximum
     REAL(rp) :: pulse_duration
-	LOGICAL :: Efield, Bfield, Bflux
+	LOGICAL :: Efield, Bfield, Bflux, axisymmetric
 
 	NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
 			qa,qo,electric_field_mode,Eo,pulse_maximum,pulse_duration,current_direction
+
+	NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux, axisymmetric
 
 	SELECT CASE (TRIM(params%plasma_model))
 		CASE('ANALYTICAL')
@@ -366,23 +371,39 @@ subroutine initialize_fields(params,F)
 			F%sig = pulse_duration
 		CASE('EXTERNAL')
 			! Load the magnetic field from an external HDF5 file
-		    call load_dim_data_from_hdf5(params,F%dims)
+			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
+			read(default_unit_open,nml=externalPlasmaModel)
+			close(default_unit_open)
 
-			call which_fields(params,Bfield,Efield,Bflux)
+			F%Bfield = Bfield
+			F%Bflux = Bflux
+			F%Efield = Efield
+			F%axisymmetric = axisymmetric
 
-			if (params%poloidal_flux.AND.Bflux) then
+		    call load_dim_data_from_hdf5(params,F)
+
+			call which_fields_in_file(params,F%Bfield_in_file,F%Efield_in_file,F%Bflux_in_file)
+
+			if (F%Bflux.AND.F%Bflux_in_file) then
 				call ALLOCATE_FLUX_ARRAYS(F)
-			else
-				write(6,'("ERROR: inconsistency between input file and data on file!")')
-				call KORC_ABORT()
+			elseif (F%Bflux.AND..NOT.F%Bflux_in_file) then
+				write(6,'("ERROR: Magnetic flux to be used but no data in file!")')
 			end if
 
-			if (params%axisymmetric) then
-				call ALLOCATE_2D_FIELDS_ARRAYS(F,Bfield,Efield)
+			if (F%axisymmetric) then
+				if (F%Efield.AND.F%Efield_in_file) then
+					call ALLOCATE_2D_FIELDS_ARRAYS(F,.TRUE.,.TRUE.)
+				else
+					call ALLOCATE_2D_FIELDS_ARRAYS(F,.TRUE.,.FALSE.)
+				end if
 			else
-				call ALLOCATE_3D_FIELDS_ARRAYS(F,Bfield,Efield)
+				if (F%Efield.AND.F%Efield_in_file) then
+					call ALLOCATE_3D_FIELDS_ARRAYS(F,.TRUE.,.TRUE.)
+				else
+					call ALLOCATE_3D_FIELDS_ARRAYS(F,.TRUE.,.FALSE.)
+				end if
 			end if
-		
+
 		    call load_field_data_from_hdf5(params,F)
 		CASE('UNIFORM')
 			! Load the parameters of the analytical magnetic field
@@ -401,9 +422,9 @@ end subroutine initialize_fields
 ! Subroutines for getting the fields data from HDF5 files
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
 
-subroutine load_dim_data_from_hdf5(params,field_dims)
+subroutine load_dim_data_from_hdf5(params,F)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	INTEGER, DIMENSION(3), INTENT(OUT) :: field_dims
+	TYPE(FIELDS), INTENT(INOUT) :: F
 	CHARACTER(MAX_STRING_LENGTH) :: filename
 	CHARACTER(MAX_STRING_LENGTH) :: gname
 	CHARACTER(MAX_STRING_LENGTH) :: subgname
@@ -422,28 +443,28 @@ subroutine load_dim_data_from_hdf5(params,field_dims)
 		write(6,'("KORC ERROR: Something went wrong in: load_dim_data_from_hdf5 --> h5fopen_f")')
 	end if
 
-	if (params%poloidal_flux.OR.params%axisymmetric) then
+	if (F%Bflux.OR.F%axisymmetric) then
 			dset = "/NR"
 			call load_from_hdf5(h5file_id,dset,rdatum)
-			field_dims(1) = INT(rdatum)
+			F%dims(1) = INT(rdatum)
 
-			field_dims(2) = 0
+			F%dims(2) = 0
 
 			dset = "/NZ"
 			call load_from_hdf5(h5file_id,dset,rdatum)
-			field_dims(3) = INT(rdatum)
+			F%dims(3) = INT(rdatum)
 	else
 			dset = "/NR"
 			call load_from_hdf5(h5file_id,dset,rdatum)
-			field_dims(1) = INT(rdatum)
+			F%dims(1) = INT(rdatum)
 
 			dset = "/NPHI"
 			call load_from_hdf5(h5file_id,dset,rdatum)
-			field_dims(2) = INT(rdatum)
+			F%dims(2) = INT(rdatum)
 
 			dset = "/NZ"
 			call load_from_hdf5(h5file_id,dset,rdatum)
-			field_dims(3) = INT(rdatum)
+			F%dims(3) = INT(rdatum)
 	end if
 
 
@@ -454,7 +475,7 @@ subroutine load_dim_data_from_hdf5(params,field_dims)
 end subroutine load_dim_data_from_hdf5
 
 
-subroutine which_fields(params,Bfield,Efield,Bflux)
+subroutine which_fields_in_file(params,Bfield,Efield,Bflux)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	LOGICAL, INTENT(OUT) :: Bfield
 	LOGICAL, INTENT(OUT) :: Efield
@@ -488,7 +509,7 @@ subroutine which_fields(params,Bfield,Efield,Bflux)
 	if (h5error .EQ. -1) then
 		write(6,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fclose_f")')
 	end if
-end subroutine
+end subroutine which_fields_in_file
 
 
 subroutine load_field_data_from_hdf5(params,F)
@@ -514,7 +535,7 @@ subroutine load_field_data_from_hdf5(params,F)
 	dset = "/R"
 	call load_array_from_hdf5(h5file_id,dset,F%X%R)
 
-	if ((.NOT.params%poloidal_flux).AND.(.NOT.params%axisymmetric)) then
+	if ((.NOT.F%Bflux).AND.(.NOT.F%axisymmetric)) then
 		dset = "/PHI"
 		call load_array_from_hdf5(h5file_id,dset,F%X%PHI)
 	end if
@@ -534,36 +555,40 @@ subroutine load_field_data_from_hdf5(params,F)
 	dset = '/Zo'
 	call load_from_hdf5(h5file_id,dset,F%Zo)
 
-	if (params%axisymmetric) then
+	if (F%axisymmetric) then
 		dset = "/FLAG"
 		call load_array_from_hdf5(h5file_id,dset,F%FLAG2D)
 
-		dset = "/ER"
-		call load_array_from_hdf5(h5file_id,dset,F%E_2D%R)
+		if (F%Efield.AND.F%Efield_in_file) then
+			dset = "/ER"
+			call load_array_from_hdf5(h5file_id,dset,F%E_2D%R)
 
-		dset = "/EPHI"
-		call load_array_from_hdf5(h5file_id,dset,F%E_2D%PHI)
+			dset = "/EPHI"
+			call load_array_from_hdf5(h5file_id,dset,F%E_2D%PHI)
 
-		dset = "/EZ"
-		call load_array_from_hdf5(h5file_id,dset,F%E_2D%Z)
+			dset = "/EZ"
+			call load_array_from_hdf5(h5file_id,dset,F%E_2D%Z)
+		end if
 	else
 		dset = "/FLAG"
 		call load_array_from_hdf5(h5file_id,dset,F%FLAG3D)
 
-		dset = "/ER"
-		call load_array_from_hdf5(h5file_id,dset,F%E_3D%R)
+		if (F%Efield.AND.F%Efield_in_file) then
+			dset = "/ER"
+			call load_array_from_hdf5(h5file_id,dset,F%E_3D%R)
 
-		dset = "/EPHI"
-		call load_array_from_hdf5(h5file_id,dset,F%E_3D%PHI)
+			dset = "/EPHI"
+			call load_array_from_hdf5(h5file_id,dset,F%E_3D%PHI)
 
-		dset = "/EZ"
-		call load_array_from_hdf5(h5file_id,dset,F%E_3D%Z)
+			dset = "/EZ"
+			call load_array_from_hdf5(h5file_id,dset,F%E_3D%Z)
+		end if
 	end if
 
-	if (params%poloidal_flux) then
+	if (F%Bflux) then
 		dset = "/PSIp"
 		call load_array_from_hdf5(h5file_id,dset,F%PSIp)
-	else if (params%axisymmetric) then
+	else if (F%axisymmetric) then
 		dset = "/FLAG"
 		call load_array_from_hdf5(h5file_id,dset,F%FLAG2D)
 

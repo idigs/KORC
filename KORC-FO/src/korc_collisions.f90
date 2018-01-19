@@ -174,7 +174,7 @@ subroutine load_params_ss(params)
 
 	NAMELIST /CollisionParamsSingleSpecies/ Te, Ti, ne, Zeff, dTau
 
-	NAMELIST /plasma_profiles/ radius_profile,ne_profile,neo,n_ne,a_ne,&
+	NAMELIST /plasmaProfiles/ radius_profile,ne_profile,neo,n_ne,a_ne,&
 											Te_profile,Teo,n_Te,a_Te,&
 											Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename
 
@@ -211,7 +211,7 @@ subroutine load_params_ss(params)
 	cparams_ss%rnd_num_count = 1_idef
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-	read(default_unit_open,nml=plasma_profiles)
+	read(default_unit_open,nml=plasmaProfiles)
 	close(default_unit_open)
 
 	cparams_ss%P%a = radius_profile
