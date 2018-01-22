@@ -17,7 +17,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
 % angularMomentum(ST);
 
@@ -58,6 +58,8 @@ energyConservation(ST);
 
 % NIMROD_figure(ST);
 
+movieEnergyPitchAngle(ST)
+
 % save('energy_limit','ST')
 end
 
@@ -89,7 +91,7 @@ try
 catch
 end
 
-
+ST.range(2)+1
 try
     info = h5info([ST.path 'experimental_distribution_parameters.h5']);
     
@@ -150,7 +152,7 @@ for ll=1:length(list)
             filename = [ST.path 'file_' num2str(ff-1) '.h5'];
             indi = (ff - 1)*double(ST.params.species.ppp(ss)) + 1;
             indf = ff*double(ST.params.species.ppp(ss));
-            for ii=ST.range(1)+1:ST.range(2)+1
+            for ii=1:ST.num_snapshots
                 dataset = ...
                     ['/' num2str(it(ii)) '/spp_' num2str(ss)...
                     '/' list{ll}];
@@ -3833,3 +3835,40 @@ for ss=1:ST.params.simulation.num_species
 end
 
 end
+
+function movieEnergyPitchAngle(ST)
+
+for ss=1:ST.params.simulation.num_species
+    m = ST.params.species.m(ss);
+    q = abs(ST.params.species.q(ss));
+    c = ST.params.scales.v;
+    
+    fig=figure;
+    F(ST.num_snapshots) = struct('cdata',[],'colormap',[]);
+    
+    g_max = max(max(ST.data.(['sp' num2str(ss)]).g));
+    g_min = min(min(ST.data.(['sp' num2str(ss)]).g));
+    E_max = (g_max-1)*m*c^2/(q*1E6);
+    E_min = (g_min-1)*m*c^2/(q*1E6);
+    
+    eta_max = max(max(ST.data.(['sp' num2str(ss)]).eta));
+    
+    for it=1:ST.num_snapshots
+        E = (ST.data.(['sp' num2str(ss)]).g(:,it)-1)*m*c^2/(q*1E6);
+        eta = ST.data.(['sp' num2str(ss)]).eta(:,it);
+        
+        figure(fig)
+        plot(eta,E,'k.')
+        title(['$t=$' num2str(ST.time(it)/1E-3) ' ms'],'Interpreter','latex')
+        axis([0 eta_max E_min E_max])
+        xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
+        ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
+        
+        drawnow
+        F(it) = getframe;
+    end
+end
+
+end
+
+
