@@ -102,6 +102,8 @@ disp('Plotting snapshots...')
 plotToroidalSections = false;
 figuresToShare = false;
 
+c = ST.params.scales.v;
+
 xAxis = ST.params.binning_diagnostic_params.rnodes;
 yAxis = ST.params.binning_diagnostic_params.znodes;
 
@@ -115,6 +117,9 @@ else
 end
 
 for ss=1:ST.params.simulation.num_species
+    m = ST.params.species.m(ss);
+    q = abs(ST.params.species.q(ss));
+    
     num_dims = ndims(ST.data.sp1.eta);
     
     if num_dims > 2
@@ -135,9 +140,11 @@ for ss=1:ST.params.simulation.num_species
         g = squeeze(sum(g,3));
     end
     
+    E = (g-1)*m*c^2/(1E6*q);
+    
     fig1 = figure;
     subplot(1,2,1)
-    surfc(xAxis,yAxis,eta,'LineStyle','none')
+    surfc(xAxis,yAxis,eta','LineStyle','none')
     axis equal;view([0 90])
     colormap(jet);cb = colorbar;
     xlabel('$R$','Interpreter','latex')
@@ -145,7 +152,7 @@ for ss=1:ST.params.simulation.num_species
     ylabel(cb,'Mean pitch angle ($^\circ$)','Interpreter','latex')
     
     subplot(1,2,2)
-    surfc(xAxis,yAxis,g,'LineStyle','none')
+    surfc(xAxis,yAxis,E','LineStyle','none')
     axis equal;view([0 90])
     colormap(jet);cb = colorbar;
     xlabel('$R$','Interpreter','latex')

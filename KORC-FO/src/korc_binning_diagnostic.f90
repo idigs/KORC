@@ -98,7 +98,7 @@ SUBROUTINE initialize_binning_diagnostic(params)
 		end do
 
 		do ii=1_idef,binning_params%num_bins(2)
-			binning_params%znodes(ii) = binning_params%zmin + (REAL(ii-1_idef,rp)+0.5_rp)*binning_params%dr
+			binning_params%znodes(ii) = binning_params%zmin + (REAL(ii-1_idef,rp)+0.5_rp)*binning_params%dz
 		end do
 
 		call save_binning_diagnostic_params(params)

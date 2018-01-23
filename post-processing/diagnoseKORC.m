@@ -53,12 +53,11 @@ ST.data = loadData(ST);
 
 % plotEnergyPitchanglePDF(ST);
 
-
 % figuresAPS2017(ST);
 
 % NIMROD_figure(ST);
 
-movieEnergyPitchAngle(ST)
+% movieEnergyPitchAngle(ST)
 
 % save('energy_limit','ST')
 end
@@ -3197,12 +3196,16 @@ for sp=1:numel(I)
 end
 
 A = fRE;
+% A = A/max(max(A));
 A = log10(A/max(max(A)));
 AA = fnum;
+% AA = AA/max(max(AA));
 AA = log10(AA/max(max(AA)));
 
 cmax = max(max(A));
-cmin = minLevel;%min(min(A(isfinite(A))));
+cmin = minLevel;
+% cmin = min(min(A(isfinite(A))));
+
 
 x = linspace(0,4,numLevels);
 levels = cmin + (cmax-cmin)*tanh(x);
@@ -3215,7 +3218,8 @@ xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
 ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
 
 cmax = max(max(AA));
-cmin = minLevel;%min(min(A(isfinite(A))));
+cmin = minLevel;
+% cmin = min(min(A(isfinite(A))));
 
 x = linspace(0,4,numLevels);
 levels = cmin + (cmax-cmin)*tanh(x);
@@ -3367,7 +3371,6 @@ for ss=1:ST.params.simulation.num_species
 end
 
 end
-
 
 function plotEnergyPitchanglePDF(ST)
 N = 100; % Energy
@@ -3844,10 +3847,15 @@ for ss=1:ST.params.simulation.num_species
     c = ST.params.scales.v;
     
     fig=figure;
+    fig.Position(3) = 840;
     F(ST.num_snapshots) = struct('cdata',[],'colormap',[]);
     
     g_max = max(max(ST.data.(['sp' num2str(ss)]).g));
     g_min = min(min(ST.data.(['sp' num2str(ss)]).g));
+    
+    p_max = sqrt(g_max^2 - 1);
+    p_min = sqrt(g_min^2 - 1);
+    
     E_max = (g_max-1)*m*c^2/(q*1E6);
     E_min = (g_min-1)*m*c^2/(q*1E6);
     
@@ -3856,32 +3864,54 @@ for ss=1:ST.params.simulation.num_species
     pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
     passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
     trapped = logical( any(ST.data.(['sp' num2str(ss)]).eta > 90,2) );
-      
+    
     inAndPassing = pin&passing;
     inAndTrapped = pin&trapped;
     
     for it=1:ST.num_snapshots
         
-        C = ST.data.(['sp' num2str(ss)]).flag(:,it);
-        P = ST.data.(['sp' num2str(ss)]).eta(:,it) < 90;
-        T = ST.data.(['sp' num2str(ss)]).eta(:,it) > 90;
+        C = logical(all(ST.data.(['sp' num2str(ss)]).flag(:,1:it),2));
+        P = logical( all(ST.data.(['sp' num2str(ss)]).eta(:,1:it) < 90,2) );
+        T = logical( any(ST.data.(['sp' num2str(ss)]).eta(:,1:it) > 90,2) );
         
         P = 100*sum(P)/sum(C);
         T = 100*sum(T)/sum(C);
         C = 100*sum(C)/ST.params.species.ppp(ss);
         
+        p = sqrt(ST.data.(['sp' num2str(ss)]).g(:,it).^2 - 1);
         E = (ST.data.(['sp' num2str(ss)]).g(:,it)-1)*m*c^2/(q*1E6);
         eta = ST.data.(['sp' num2str(ss)]).eta(:,it);
         
-        figure(fig)
+        ppar = p.*cos(deg2rad(eta));
+        pper = p.*sin(deg2rad(eta));
+        
+        xi = cos(deg2rad(eta));
+        
+        figure(fig);subplot(1,2,1)
         plot(eta(inAndPassing),E(inAndPassing),'k.',eta(inAndTrapped),E(inAndTrapped),'r.')
         title(['$t=$' num2str(ST.time(it)/1E-3) ' ms'],'Interpreter','latex')
         axis([0 eta_max E_min E_max]);grid minor
         xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
         ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
-        text(0.5*eta_max,E_min + 0.95*(E_max-E_min),...
+        text(0.1*eta_max,E_min + 0.95*(E_max-E_min),...
             ['C: ' num2str(C) '$\%$ P: ' num2str(P) '$\%$ T: ' num2str(T) '$\%$'],...
             'Interpreter','latex','Color','m','FontSize',12)
+        
+%         figure(fig);subplot(1,2,2)
+%         plot(ppar(inAndPassing),pper(inAndPassing),'k.',ppar(inAndTrapped),pper(inAndTrapped),'r.')
+%         title(['$t=$' num2str(ST.time(it)/1E-3) ' ms'],'Interpreter','latex')
+%         axis([-p_max p_max 0 p_max]);grid minor
+%         xlabel('$p_\parallel$ ($m_ec$)','Interpreter','latex')
+%         ylabel('$p_\perp$ ($m_ec$)','Interpreter','latex')
+%         text(0,0.95*p_max,['C: ' num2str(C) '$\%$ P: ' num2str(P) '$\%$ T: ' num2str(T) '$\%$'],...
+%             'Interpreter','latex','Color','m','FontSize',12)
+
+        figure(fig);subplot(1,2,2)
+        plot(p(inAndPassing),xi(inAndPassing),'k.',p(inAndTrapped),xi(inAndTrapped),'r.')
+        title(['$t=$' num2str(ST.time(it)/1E-3) ' ms'],'Interpreter','latex')
+        axis([p_min p_max -1 1]);grid minor
+        xlabel('$p$ ($m_ec$)','Interpreter','latex')
+        ylabel('$\xi$','Interpreter','latex')
         
         drawnow
         F(it) = getframe;
