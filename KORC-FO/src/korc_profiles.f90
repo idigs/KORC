@@ -39,9 +39,7 @@ subroutine initialize_profiles(params,P)
 
 	NAMELIST /plasmaProfiles/ radius_profile,ne_profile,neo,n_ne,a_ne,&
 											Te_profile,Teo,n_Te,a_Te,&
-											Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename
-
-	NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux, axisymmetric
+											Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename,axisymmetric
 
 	SELECT CASE (TRIM(params%plasma_model))
 		CASE('ANALYTICAL')
@@ -77,11 +75,6 @@ subroutine initialize_profiles(params,P)
 			P%Zeffo = Zeffo
 
 			P%filename = TRIM(filename)
-
-			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-			read(default_unit_open,nml=externalPlasmaModel)
-			close(default_unit_open)
-
 			P%axisymmetric = axisymmetric
 			
 			call load_profiles_data_from_hdf5(params,P)

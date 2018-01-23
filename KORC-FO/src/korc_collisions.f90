@@ -171,12 +171,13 @@ subroutine load_params_ss(params)
 	REAL(rp), DIMENSION(4) :: a_ne
 	REAL(rp), DIMENSION(4) :: a_Te
 	REAL(rp), DIMENSION(4) :: a_Zeff
+	LOGICAL :: axisymmetric
 
 	NAMELIST /CollisionParamsSingleSpecies/ Te, Ti, ne, Zeff, dTau
 
 	NAMELIST /plasmaProfiles/ radius_profile,ne_profile,neo,n_ne,a_ne,&
 											Te_profile,Teo,n_Te,a_Te,&
-											Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename
+											Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename,axisymmetric
 
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')

@@ -3853,16 +3853,35 @@ for ss=1:ST.params.simulation.num_species
     
     eta_max = max(max(ST.data.(['sp' num2str(ss)]).eta));
     
+    pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
+    trapped = logical( any(ST.data.(['sp' num2str(ss)]).eta > 90,2) );
+      
+    inAndPassing = pin&passing;
+    inAndTrapped = pin&trapped;
+    
     for it=1:ST.num_snapshots
+        
+        C = ST.data.(['sp' num2str(ss)]).flag(:,it);
+        P = ST.data.(['sp' num2str(ss)]).eta(:,it) < 90;
+        T = ST.data.(['sp' num2str(ss)]).eta(:,it) > 90;
+        
+        P = 100*sum(P)/sum(C);
+        T = 100*sum(T)/sum(C);
+        C = 100*sum(C)/ST.params.species.ppp(ss);
+        
         E = (ST.data.(['sp' num2str(ss)]).g(:,it)-1)*m*c^2/(q*1E6);
         eta = ST.data.(['sp' num2str(ss)]).eta(:,it);
         
         figure(fig)
-        plot(eta,E,'k.')
+        plot(eta(inAndPassing),E(inAndPassing),'k.',eta(inAndTrapped),E(inAndTrapped),'r.')
         title(['$t=$' num2str(ST.time(it)/1E-3) ' ms'],'Interpreter','latex')
-        axis([0 eta_max E_min E_max])
+        axis([0 eta_max E_min E_max]);grid minor
         xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
         ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
+        text(0.5*eta_max,E_min + 0.95*(E_max-E_min),...
+            ['C: ' num2str(C) '$\%$ P: ' num2str(P) '$\%$ T: ' num2str(T) '$\%$'],...
+            'Interpreter','latex','Color','m','FontSize',12)
         
         drawnow
         F(it) = getframe;

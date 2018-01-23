@@ -1,12 +1,12 @@
 &input_parameters
-	restart = .FALSE. !
+	restart = F !
 	simulation_time = 1.0E-7 ! Total aimed simulation time in seconds
 	snapshot_frequency = 1.0E-8 ! Time between snapshots in seconds
 	dt = 1.0E-2 ! Time step as fraction of non-relativistic gyro-period
 	num_species = 2
 	minimum_particle_energy = 1.0E3 ! Minimum energy of simulated particles in eV
-	radiation = .TRUE.
-	collisions = .TRUE.
+	radiation = T
+	collisions = T
 	collisions_model = 'SINGLE_SPECIES' ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
 	plasma_model = 'ANALYTICAL' !  The two options for this parameter are 'ANALYTICAL' or 'EXTERNAL'.
 										! For 'ANALYTICAL', the magnetic field is calculated based on
@@ -16,11 +16,11 @@
 										! 'UNIFORM' A uniform magnetic field used to advance only electrons' velocity.
 	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/D3D_Q.h5" ! DIII-D_sh165826.h5" !
 	outputs_list = '{X,V,g,eta,flag,ne,Te,Zeff}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
-	HDF5_error_handling = .TRUE. ! 
+	HDF5_error_handling = T ! 
 /
 
 &plasma_species
-	runaway = .FALSE.,.FALSE. !
+	runaway = F,F !
 	ppp = 1000,1000 ! Number of particles per process (mpi)
 	q = -1.0,-1.0 ! Electric charge
 	m = 1.0,1.0 ! In units of electron mass
@@ -53,13 +53,15 @@
 /
 
 &externalPlasmaModel
-	Bfield = .TRUE.
-	Bflux = .TRUE.
-	Efield = .TRUE.
-	axisymmetric = .FALSE.
+	Bfield = T
+	Bflux = T
+	Efield = T
+	axisymmetric = F
 /
 
 &plasmaProfiles
+	axisymmetric = T
+	filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/D3D_Q.h5" !
 	radius_profile = 0.6
 	ne_profile = 'PARABOLIC' ! Options are 'FLAT' and 'PARABOLIC'
 	neo = 2.93E19 ! In m^-3
@@ -73,7 +75,6 @@
 	Zeffo = 1.45 ! In m^-3
 	n_Zeff = 3.0 ! 
 	a_Zeff = 1.0065,-0.12081,0.02834,-0.11796
-	filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/D3D_Q.h5" !
 /
 
 &CollisionParamsSingleSpecies
@@ -134,7 +135,7 @@
 /
 
 &SyntheticCamera
-	camera_on = .FALSE. ! .TRUE. or .FALSE.
+	camera_on = F ! T or F
 	start_at = 0.0E-6 ! Seconds
  	Riw = 1.0 ! Radial position of inner wall
  	num_pixels = 75, 75 ! Number of pixels (X,Y)
@@ -145,18 +146,18 @@
  	lambda_min = 400.0E-9 ! Minimum wavelength in meters
  	lambda_max = 900.0E-9 ! Maximum wavelength in meters
  	Nlambda = 25 ! Number of discrete wavelengths
-	photon_count = .FALSE.
-	integrated_opt = .TRUE. ! .TRUE. or .FALSE.
-	toroidal_sections = .FALSE. ! 
+	photon_count = F
+	integrated_opt = T ! T or F
+	toroidal_sections = F ! 
 	ntor_sections = 12 !
 /
 
 &BinningDiagnostic
-	diagnostic_on = .TRUE.
+	diagnostic_on = T
 	start_at = 0.0E-6 ! Seconds
  	num_bins = 75, 75 ! Number of bins
 	rlim = 1.0,2.0
 	zlim = -0.5,0.5
-	toroidal_sections = .FALSE.
+	toroidal_sections = F
 	ntor_sections = 18
 /
