@@ -1381,6 +1381,7 @@ subroutine save_restart_variables(params,spp,F)
     INTEGER(is), DIMENSION(:), ALLOCATABLE :: send_buffer_is, receive_buffer_is
     REAL(rp), DIMENSION(:,:), ALLOCATABLE :: X
     REAL(rp), DIMENSION(:,:), ALLOCATABLE :: V
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: g
 	INTEGER(is), DIMENSION(:), ALLOCATABLE :: flag
 	CHARACTER(MAX_STRING_LENGTH) :: filename
 	CHARACTER(MAX_STRING_LENGTH) :: gname
@@ -1423,6 +1424,7 @@ subroutine save_restart_variables(params,spp,F)
 			if (params%mpi_params%rank.EQ.0_idef) then
 				ALLOCATE(X(3,spp(ss)%ppp*params%mpi_params%nmpi))
 				ALLOCATE(V(3,spp(ss)%ppp*params%mpi_params%nmpi))
+				ALLOCATE(g(spp(ss)%ppp*params%mpi_params%nmpi))
 				ALLOCATE(flag(spp(ss)%ppp*params%mpi_params%nmpi))
 			end if
 
@@ -1463,6 +1465,20 @@ subroutine save_restart_variables(params,spp,F)
 			DEALLOCATE(send_buffer_is)
 			DEALLOCATE(receive_buffer_is)
 
+			ALLOCATE(send_buffer_rp(numel_send))
+			ALLOCATE(receive_buffer_rp(numel_receive))
+
+			send_buffer_rp = spp(ss)%vars%g
+			receive_buffer_rp = 0_rp
+			CALL MPI_GATHER(send_buffer_rp,numel_send,MPI_REAL8,receive_buffer_rp,numel_send,&
+							MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+			if (params%mpi_params%rank.EQ.0_idef) then
+				g = receive_buffer_rp
+			end if
+
+			DEALLOCATE(send_buffer_rp)
+			DEALLOCATE(receive_buffer_rp)
+
 			if (params%mpi_params%rank.EQ.0_idef) then
 				write(tmp_str,'(I18)') ss
 				subgname = "spp_" // TRIM(ADJUSTL(tmp_str))
@@ -1477,12 +1493,16 @@ subroutine save_restart_variables(params,spp,F)
 				dset = "flag"
 				call save_1d_array_to_hdf5(group_id,dset, INT(flag,idef))
 
+				dset = "g"
+				call save_1d_array_to_hdf5(group_id,dset, g)
+
 				call h5gclose_f(group_id, h5error)
 			end if
 
 			if (params%mpi_params%rank.EQ.0_idef) then
 				DEALLOCATE(X)
 				DEALLOCATE(V)
+				DEALLOCATE(g)
 				DEALLOCATE(flag)
 			end if
 		end do
@@ -1615,6 +1635,26 @@ subroutine load_particles_ic(params,spp)
 		AUX_receive_buffer = 0.0_rp
 		CALL MPI_SCATTER(AUX_send_buffer,spp(ss)%ppp,MPI_REAL8,AUX_receive_buffer,spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
 		spp(ss)%vars%flag = INT(AUX_receive_buffer,is)
+
+		if (params%mpi_params%rank.EQ.0_idef) then
+			filename = TRIM(params%path_to_outputs) // "restart_file.h5"
+			call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
+			if (h5error .EQ. -1) then
+				write(6,'("KORC ERROR: Something went wrong in: load_particles_ic --> h5fopen_f")')
+				call KORC_ABORT()
+			end if
+
+			write(tmp_str,'(I18)') ss
+
+			dset = "/spp_" // TRIM(ADJUSTL(tmp_str)) // "/g"
+			call load_array_from_hdf5(h5file_id,dset,AUX_send_buffer)
+
+			call h5fclose_f(h5file_id, h5error)
+		end if
+
+		AUX_receive_buffer = 0.0_rp
+		CALL MPI_SCATTER(AUX_send_buffer,spp(ss)%ppp,MPI_REAL8,AUX_receive_buffer,spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+		spp(ss)%vars%g = AUX_receive_buffer
 
 		DEALLOCATE(X_send_buffer)
 		DEALLOCATE(X_receive_buffer)
