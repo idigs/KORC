@@ -53,10 +53,10 @@
 /
 
 &externalPlasmaModel
-	Bfield = T
+	Bfield = F
+	axisymmetric_fields = T
 	Bflux = T
-	Efield = T
-	axisymmetric = F
+	Efield = F
 /
 
 &plasmaProfiles
