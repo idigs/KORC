@@ -57,7 +57,7 @@ ST.data = loadData(ST);
 
 % NIMROD_figure(ST);
 
-% movieEnergyPitchAngle(ST)
+movieEnergyPitchAngle(ST)
 
 % save('energy_limit','ST')
 end
@@ -3847,7 +3847,7 @@ for ss=1:ST.params.simulation.num_species
     c = ST.params.scales.v;
     
     fig=figure;
-    fig.Position(3) = 840;
+    fig.Position(3) = 1300;
     F(ST.num_snapshots) = struct('cdata',[],'colormap',[]);
     
     g_max = max(max(ST.data.(['sp' num2str(ss)]).g));
@@ -3871,13 +3871,12 @@ for ss=1:ST.params.simulation.num_species
     for it=1:ST.num_snapshots
         
         C = logical(all(ST.data.(['sp' num2str(ss)]).flag(:,1:it),2));
+        D = ~C;
         P = logical( all(ST.data.(['sp' num2str(ss)]).eta(:,1:it) < 90,2) );
+        P = P & C;
         T = logical( any(ST.data.(['sp' num2str(ss)]).eta(:,1:it) > 90,2) );
-        
-        P = 100*sum(P)/sum(C);
-        T = 100*sum(T)/sum(C);
-        C = 100*sum(C)/ST.params.species.ppp(ss);
-        
+        T = T & C;
+              
         p = sqrt(ST.data.(['sp' num2str(ss)]).g(:,it).^2 - 1);
         E = (ST.data.(['sp' num2str(ss)]).g(:,it)-1)*m*c^2/(q*1E6);
         eta = ST.data.(['sp' num2str(ss)]).eta(:,it);
@@ -3887,27 +3886,29 @@ for ss=1:ST.params.simulation.num_species
         
         xi = cos(deg2rad(eta));
         
-        figure(fig);subplot(1,2,1)
-        plot(eta(inAndPassing),E(inAndPassing),'k.',eta(inAndTrapped),E(inAndTrapped),'r.')
+        NC = 100*sum(C)/ST.params.species.ppp(ss);
+        NP = 100*sum(P)/sum(C);
+        NT = 100*sum(T)/sum(C);
+        
+        figure(fig);subplot(1,3,1)
+        plot(eta(P),E(P),'k.',eta(T),E(T),'r.',eta(D),E(D),'bx')
         title(['$t=$' num2str(ST.time(it)/1E-3) ' ms'],'Interpreter','latex')
         axis([0 eta_max E_min E_max]);grid minor
         xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
         ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
         text(0.1*eta_max,E_min + 0.95*(E_max-E_min),...
-            ['C: ' num2str(C) '$\%$ P: ' num2str(P) '$\%$ T: ' num2str(T) '$\%$'],...
+            ['C: ' num2str(NC) '$\%$ P: ' num2str(NP) '$\%$ T: ' num2str(NT) '$\%$'],...
             'Interpreter','latex','Color','m','FontSize',12)
         
-%         figure(fig);subplot(1,2,2)
-%         plot(ppar(inAndPassing),pper(inAndPassing),'k.',ppar(inAndTrapped),pper(inAndTrapped),'r.')
-%         title(['$t=$' num2str(ST.time(it)/1E-3) ' ms'],'Interpreter','latex')
-%         axis([-p_max p_max 0 p_max]);grid minor
-%         xlabel('$p_\parallel$ ($m_ec$)','Interpreter','latex')
-%         ylabel('$p_\perp$ ($m_ec$)','Interpreter','latex')
-%         text(0,0.95*p_max,['C: ' num2str(C) '$\%$ P: ' num2str(P) '$\%$ T: ' num2str(T) '$\%$'],...
-%             'Interpreter','latex','Color','m','FontSize',12)
+        figure(fig);subplot(1,3,2)
+        plot(ppar(P),pper(P),'k.',ppar(T),pper(T),'r.',ppar(D),pper(D),'bx')
+        title(['$t=$' num2str(ST.time(it)/1E-3) ' ms'],'Interpreter','latex')
+        axis([-p_max p_max 0 p_max]);grid minor
+        xlabel('$p_\parallel$ ($m_ec$)','Interpreter','latex')
+        ylabel('$p_\perp$ ($m_ec$)','Interpreter','latex')
 
-        figure(fig);subplot(1,2,2)
-        plot(p(inAndPassing),xi(inAndPassing),'k.',p(inAndTrapped),xi(inAndTrapped),'r.')
+        figure(fig);subplot(1,3,3)
+        plot(p(P),xi(P),'k.',p(T),xi(T),'r.',p(D),xi(D),'bx')
         title(['$t=$' num2str(ST.time(it)/1E-3) ' ms'],'Interpreter','latex')
         axis([p_min p_max -1 1]);grid minor
         xlabel('$p$ ($m_ec$)','Interpreter','latex')

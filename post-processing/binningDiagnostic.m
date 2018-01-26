@@ -1,6 +1,6 @@
 function ST = binningDiagnostic(path,range)
 % ST = binningDiagnostic('../KORC-FO/outputFiles/',[99,100])
-close all
+% close all
 
 ST = struct;
 ST.path = path;
@@ -142,19 +142,25 @@ for ss=1:ST.params.simulation.num_species
     
     E = (g-1)*m*c^2/(1E6*q);
     
+    cmax = max(max(eta));
+    cmin = min(min(eta));
+    
     fig1 = figure;
     subplot(1,2,1)
     surfc(xAxis,yAxis,eta','LineStyle','none')
     axis equal;view([0 90])
-    colormap(jet);cb = colorbar;
+    colormap(jet);cb = colorbar;caxis([cmin cmax])
     xlabel('$R$','Interpreter','latex')
     ylabel('$Z$','Interpreter','latex')
     ylabel(cb,'Mean pitch angle ($^\circ$)','Interpreter','latex')
     
+    cmax = max(max(E(g~=0)));
+    cmin = min(min(E(g~=0)));
+    
     subplot(1,2,2)
     surfc(xAxis,yAxis,E','LineStyle','none')
     axis equal;view([0 90])
-    colormap(jet);cb = colorbar;
+    colormap(jet);cb = colorbar;caxis([cmin cmax])
     xlabel('$R$','Interpreter','latex')
     ylabel('$Z$','Interpreter','latex')
     ylabel(cb,'Mean energy (MeV)','Interpreter','latex')

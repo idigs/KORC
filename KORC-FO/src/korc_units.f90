@@ -121,14 +121,16 @@ subroutine normalize_variables(params,spp,F,P)
 		! Nothing to do for the PHI component
 		F%X%Z = F%X%Z/params%cpp%length
 
-		P%X%R = P%X%R/params%cpp%length
-		P%X%Z = P%X%Z/params%cpp%length
+		if (params%collisions) then
+			P%X%R = P%X%R/params%cpp%length
+			P%X%Z = P%X%Z/params%cpp%length
 
-		if (ALLOCATED(P%ne_2D)) P%ne_2D = P%ne_2D/params%cpp%density
-		if (ALLOCATED(P%Te_2D)) P%Te_2D = P%Te_2D/params%cpp%temperature
+			if (ALLOCATED(P%ne_2D)) P%ne_2D = P%ne_2D/params%cpp%density
+			if (ALLOCATED(P%Te_2D)) P%Te_2D = P%Te_2D/params%cpp%temperature
 
-		if (ALLOCATED(P%ne_3D)) P%ne_3D = P%ne_3D/params%cpp%density
-		if (ALLOCATED(P%Te_3D)) P%Te_3D = P%Te_3D/params%cpp%temperature
+			if (ALLOCATED(P%ne_3D)) P%ne_3D = P%ne_3D/params%cpp%density
+			if (ALLOCATED(P%Te_3D)) P%Te_3D = P%Te_3D/params%cpp%temperature
+		end if
 	else if (params%plasma_model .EQ. 'UNIFORM') then
 		F%Eo = F%Eo/params%cpp%Eo
 	end if	

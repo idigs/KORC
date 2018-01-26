@@ -199,7 +199,7 @@ TYPE, PUBLIC :: FIELDS
 	LOGICAL :: Bflux_in_file
 	LOGICAL :: Efield_in_file
 
-	LOGICAL :: axisymmetric
+	LOGICAL :: axisymmetric_fields
 END TYPE FIELDS
 
 

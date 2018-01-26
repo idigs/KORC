@@ -1028,81 +1028,82 @@ subroutine save_simulation_parameters(params,spp,F,P)
 
 
 		! Plasma profiles group
+		if (params%collisions) then
+			gname = "profiles"
+			call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
-		gname = "profiles"
-		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
+			dset = TRIM(gname) // "/density_profile"
+			call save_string_parameter(h5file_id,dset,(/P%ne_profile/))
 
-		dset = TRIM(gname) // "/density_profile"
-		call save_string_parameter(h5file_id,dset,(/P%ne_profile/))
+			dset = TRIM(gname) // "/temperature_profile"
+			call save_string_parameter(h5file_id,dset,(/P%Te_profile/))
 
-		dset = TRIM(gname) // "/temperature_profile"
-		call save_string_parameter(h5file_id,dset,(/P%Te_profile/))
+			dset = TRIM(gname) // "/Zeff_profile"
+			call save_string_parameter(h5file_id,dset,(/P%Zeff_profile/))
 
-		dset = TRIM(gname) // "/Zeff_profile"
-		call save_string_parameter(h5file_id,dset,(/P%Zeff_profile/))
+			dset = TRIM(gname) // "/neo"
+			attr = "Density at the magnetic axis (m^-3)"
+			call save_to_hdf5(h5file_id,dset,P%neo*params%cpp%density,attr)
 
-		dset = TRIM(gname) // "/neo"
-		attr = "Density at the magnetic axis (m^-3)"
-		call save_to_hdf5(h5file_id,dset,P%neo*params%cpp%density,attr)
+			dset = TRIM(gname) // "/Teo"
+			attr = "Temperature at the magnetic axis (eV)"
+			call save_to_hdf5(h5file_id,dset,P%Teo*params%cpp%temperature/C_E,attr)
 
-		dset = TRIM(gname) // "/Teo"
-		attr = "Temperature at the magnetic axis (eV)"
-		call save_to_hdf5(h5file_id,dset,P%Teo*params%cpp%temperature/C_E,attr)
+			dset = TRIM(gname) // "/Zeffo"
+			attr = "Zeff at the magnetic axis"
+			call save_to_hdf5(h5file_id,dset,P%Zeffo,attr)
 
-		dset = TRIM(gname) // "/Zeffo"
-		attr = "Zeff at the magnetic axis"
-		call save_to_hdf5(h5file_id,dset,P%Zeffo,attr)
+			if (TRIM(params%plasma_model) .EQ. 'ANALYTICAL') then
+				dset = TRIM(gname) // "/n_ne"
+				attr = "Exponent of tanh(x)^n for density profile"
+				call save_to_hdf5(h5file_id,dset,P%n_ne,attr)
 
-		if (TRIM(params%plasma_model) .EQ. 'ANALYTICAL') then
-			dset = TRIM(gname) // "/n_ne"
-			attr = "Exponent of tanh(x)^n for density profile"
-			call save_to_hdf5(h5file_id,dset,P%n_ne,attr)
+				dset = TRIM(gname) // "/a_ne"
+				attr = "Coefficients f=ao+a1*r+a2*r^2+a3*r^3. a_ne=[a0,a1,a2,a3]"
+				call save_1d_array_to_hdf5(h5file_id,dset,P%a_ne)
 
-			dset = TRIM(gname) // "/a_ne"
-			attr = "Coefficients f=ao+a1*r+a2*r^2+a3*r^3. a_ne=[a0,a1,a2,a3]"
-			call save_1d_array_to_hdf5(h5file_id,dset,P%a_ne)
+				dset = TRIM(gname) // "/n_Te"
+				attr = "Exponent of tanh(x)^n for density profile"
+				call save_to_hdf5(h5file_id,dset,P%n_Te,attr)
 
-			dset = TRIM(gname) // "/n_Te"
-			attr = "Exponent of tanh(x)^n for density profile"
-			call save_to_hdf5(h5file_id,dset,P%n_Te,attr)
+				dset = TRIM(gname) // "/a_Te"
+				attr = "Coefficients f=ao+a1*r+a2*r^2+a3*r^3. a_Te=[a0,a1,a2,a3]"
+				call save_1d_array_to_hdf5(h5file_id,dset,P%a_Te)
 
-			dset = TRIM(gname) // "/a_Te"
-			attr = "Coefficients f=ao+a1*r+a2*r^2+a3*r^3. a_Te=[a0,a1,a2,a3]"
-			call save_1d_array_to_hdf5(h5file_id,dset,P%a_Te)
+				dset = TRIM(gname) // "/n_Zeff"
+				attr = "Exponent of tanh(x)^n for Zeff profile"
+				call save_to_hdf5(h5file_id,dset,P%n_Zeff,attr)
 
-			dset = TRIM(gname) // "/n_Zeff"
-			attr = "Exponent of tanh(x)^n for Zeff profile"
-			call save_to_hdf5(h5file_id,dset,P%n_Zeff,attr)
+				dset = TRIM(gname) // "/a_Zeff"
+				attr = "Coefficients f=ao+a1*r+a2*r^2+a3*r^3. a_Zeff=[a0,a1,a2,a3]"
+				call save_1d_array_to_hdf5(h5file_id,dset,P%a_Zeff)
+			else if (params%plasma_model .EQ. 'EXTERNAL') then
+				ALLOCATE(attr_array(1))
+				dset = TRIM(gname) // "/dims"
+				attr_array(1) = "Mesh dimension of the profiles (NR,NPHI,NZ)"
+				call save_1d_array_to_hdf5(h5file_id,dset,P%dims,attr_array)		
 
-			dset = TRIM(gname) // "/a_Zeff"
-			attr = "Coefficients f=ao+a1*r+a2*r^2+a3*r^3. a_Zeff=[a0,a1,a2,a3]"
-			call save_1d_array_to_hdf5(h5file_id,dset,P%a_Zeff)
-		else if (params%plasma_model .EQ. 'EXTERNAL') then
-			ALLOCATE(attr_array(1))
-			dset = TRIM(gname) // "/dims"
-			attr_array(1) = "Mesh dimension of the profiles (NR,NPHI,NZ)"
-			call save_1d_array_to_hdf5(h5file_id,dset,P%dims,attr_array)		
+				dset = TRIM(gname) // "/R"
+				attr_array(1) = "Grid nodes of profiles along the radial position"
+				call save_1d_array_to_hdf5(h5file_id,dset,P%X%R*params%cpp%length,attr_array)
 
-			dset = TRIM(gname) // "/R"
-			attr_array(1) = "Grid nodes of profiles along the radial position"
-			call save_1d_array_to_hdf5(h5file_id,dset,P%X%R*params%cpp%length,attr_array)
+				if (ALLOCATED(F%X%PHI)) then
+					dset = TRIM(gname) // "/PHI"
+				attr_array(1) = "Grid nodes of profiles along the azimuthal position"
+					call save_1d_array_to_hdf5(h5file_id,dset,P%X%PHI,attr_array)
+				end if
 
-			if (ALLOCATED(F%X%PHI)) then
-				dset = TRIM(gname) // "/PHI"
-			attr_array(1) = "Grid nodes of profiles along the azimuthal position"
-				call save_1d_array_to_hdf5(h5file_id,dset,P%X%PHI,attr_array)
+				dset = TRIM(gname) // "/Z"
+				attr_array(1) = "Grid nodes of profiles along the Z position"
+				call save_1d_array_to_hdf5(h5file_id,dset,P%X%Z*params%cpp%length,attr_array)
+
+				DEALLOCATE(attr_array)
+			else if (params%plasma_model .EQ. 'UNIFORM') then
+				! Something
 			end if
 
-			dset = TRIM(gname) // "/Z"
-			attr_array(1) = "Grid nodes of profiles along the Z position"
-			call save_1d_array_to_hdf5(h5file_id,dset,P%X%Z*params%cpp%length,attr_array)
-
-			DEALLOCATE(attr_array)
-		else if (params%plasma_model .EQ. 'UNIFORM') then
-			! Something
+			call h5gclose_f(group_id, h5error)
 		end if
-
-		call h5gclose_f(group_id, h5error)
 
 
 		! Electromagnetic fields group

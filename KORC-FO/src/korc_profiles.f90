@@ -41,65 +41,67 @@ subroutine initialize_profiles(params,P)
 											Te_profile,Teo,n_Te,a_Te,&
 											Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename,axisymmetric
 
-	SELECT CASE (TRIM(params%plasma_model))
-		CASE('ANALYTICAL')
-			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-			read(default_unit_open,nml=plasmaProfiles)
-			close(default_unit_open)
+	if (params%collisions) then
+		SELECT CASE (TRIM(params%plasma_model))
+			CASE('ANALYTICAL')
+				open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
+				read(default_unit_open,nml=plasmaProfiles)
+				close(default_unit_open)
 
-			P%a = radius_profile
-			P%ne_profile = TRIM(ne_profile)
-			P%neo = neo
-			P%n_ne = n_ne
-			P%a_ne = a_ne
+				P%a = radius_profile
+				P%ne_profile = TRIM(ne_profile)
+				P%neo = neo
+				P%n_ne = n_ne
+				P%a_ne = a_ne
 
-			P%Te_profile = TRIM(Te_profile)
-			P%Teo = Teo*C_E ! Converted to Joules
-			P%n_Te = n_Te
-			P%a_Te = a_Te
+				P%Te_profile = TRIM(Te_profile)
+				P%Teo = Teo*C_E ! Converted to Joules
+				P%n_Te = n_Te
+				P%a_Te = a_Te
 
-			P%Zeff_profile = TRIM(Zeff_profile)
-			P%Zeffo = Zeffo
-			P%n_Zeff = n_Zeff
-			P%a_Zeff = a_Zeff
-		CASE('EXTERNAL')
-			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-			read(default_unit_open,nml=plasmaProfiles)
-			close(default_unit_open)
+				P%Zeff_profile = TRIM(Zeff_profile)
+				P%Zeffo = Zeffo
+				P%n_Zeff = n_Zeff
+				P%a_Zeff = a_Zeff
+			CASE('EXTERNAL')
+				open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
+				read(default_unit_open,nml=plasmaProfiles)
+				close(default_unit_open)
 
-			P%ne_profile = TRIM(ne_profile)
-			P%neo = neo
-			P%Te_profile = TRIM(Te_profile)
-			P%Teo = Teo*C_E ! Converted to Joules
-			P%Zeff_profile = TRIM(Zeff_profile)
-			P%Zeffo = Zeffo
+				P%ne_profile = TRIM(ne_profile)
+				P%neo = neo
+				P%Te_profile = TRIM(Te_profile)
+				P%Teo = Teo*C_E ! Converted to Joules
+				P%Zeff_profile = TRIM(Zeff_profile)
+				P%Zeffo = Zeffo
 
-			P%filename = TRIM(filename)
-			P%axisymmetric = axisymmetric
+				P%filename = TRIM(filename)
+				P%axisymmetric = axisymmetric
 			
-			call load_profiles_data_from_hdf5(params,P)
-		CASE('UNIFORM')
-			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-			read(default_unit_open,nml=plasmaProfiles)
-			close(default_unit_open)
+				call load_profiles_data_from_hdf5(params,P)
+			CASE('UNIFORM')
+				open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
+				read(default_unit_open,nml=plasmaProfiles)
+				close(default_unit_open)
 
-			P%a = radius_profile
-			P%ne_profile = TRIM(ne_profile)
-			P%neo = neo
-			P%n_ne = 0.0_rp
-			P%a_ne = (/0.0_rp,0.0_rp,0.0_rp,0.0_rp/)
+				P%a = radius_profile
+				P%ne_profile = TRIM(ne_profile)
+				P%neo = neo
+				P%n_ne = 0.0_rp
+				P%a_ne = (/0.0_rp,0.0_rp,0.0_rp,0.0_rp/)
 
-			P%Te_profile = TRIM(Te_profile)
-			P%Teo = Teo*C_E ! Converted to Joules
-			P%n_Te = 0.0_rp
-			P%a_Te = (/0.0_rp,0.0_rp,0.0_rp,0.0_rp/)
+				P%Te_profile = TRIM(Te_profile)
+				P%Teo = Teo*C_E ! Converted to Joules
+				P%n_Te = 0.0_rp
+				P%a_Te = (/0.0_rp,0.0_rp,0.0_rp,0.0_rp/)
 
-			P%Zeff_profile = TRIM(Zeff_profile)
-			P%Zeffo = Zeffo
-			P%n_Zeff = 0.0_rp
-			P%a_Zeff = (/0.0_rp,0.0_rp,0.0_rp,0.0_rp/)
-		CASE DEFAULT
+				P%Zeff_profile = TRIM(Zeff_profile)
+				P%Zeffo = Zeffo
+				P%n_Zeff = 0.0_rp
+				P%a_Zeff = (/0.0_rp,0.0_rp,0.0_rp,0.0_rp/)
+			CASE DEFAULT
 	END SELECT
+	end if
 end subroutine initialize_profiles
 
 
@@ -182,15 +184,17 @@ subroutine get_profiles(params,vars,P)
 	TYPE(PARTICLES), INTENT(INOUT) :: vars
 	TYPE(PROFILES), INTENT(IN) :: P
 
-	SELECT CASE (TRIM(params%plasma_model))
-		CASE('ANALYTICAL')
-			call get_analytical_profiles(P,vars%Y,vars%ne,vars%Te,vars%Zeff,vars%flag)
-		CASE('EXTERNAL')
-			call interp_profiles(vars,P)
-		CASE('UNIFORM')
-			call uniform_profiles(vars,P)
-		CASE DEFAULT
-	END SELECT
+	if (params%collisions) then
+		SELECT CASE (TRIM(params%plasma_model))
+			CASE('ANALYTICAL')
+				call get_analytical_profiles(P,vars%Y,vars%ne,vars%Te,vars%Zeff,vars%flag)
+			CASE('EXTERNAL')
+				call interp_profiles(vars,P)
+			CASE('UNIFORM')
+				call uniform_profiles(vars,P)
+			CASE DEFAULT
+		END SELECT
+	end if
 end subroutine get_profiles
 
 
