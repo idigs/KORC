@@ -393,12 +393,12 @@ subroutine initialize_fields(params,F)
 				call KORC_ABORT()
 			end if
 
-			if (F%Efield.AND..NOT.F%Bfield_in_file) then
+			if (F%Efield.AND..NOT.F%Efield_in_file) then
 				write(6,'("MESSAGE: Analytical electric field will be used.")')
 			end if
 
 			if (F%axisymmetric_fields) then
-				call ALLOCATE_2D_FIELDS_ARRAYS(F,F%Bfield,F%Bflux,F%Efield)
+				call ALLOCATE_2D_FIELDS_ARRAYS(F,F%Bfield,F%Bflux,F%Efield.AND.F%Efield_in_file)
 			else
 				call ALLOCATE_3D_FIELDS_ARRAYS(F,F%Bfield,F%Efield)
 			end if
@@ -585,7 +585,7 @@ subroutine load_field_data_from_hdf5(params,F)
 		end if
 	end if
 
-	if (F%Efield) then
+	if (F%Efield.AND.F%Efield_in_file) then
 		if (F%axisymmetric_fields) then
 			dset = "/ER"
 			call load_array_from_hdf5(h5file_id,dset,F%E_2D%R)

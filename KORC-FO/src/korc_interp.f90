@@ -146,7 +146,7 @@ subroutine initialize_fields_interpolant(params,F)
 		end if
 
 		! * * * * * * * * MAGNETIC FIELD * * * * * * * * !
-		if (F%Bflux) then
+		if (F%Bflux_in_file) then
 			bfield_2d%NR = F%dims(1)
 			bfield_2d%NZ = F%dims(3)
 

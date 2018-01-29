@@ -373,7 +373,7 @@ subroutine define_collisions_time_step(params)
 
 		 if (params%mpi_params%rank .EQ. 0) then
 			write(6,'("* * * * * * * SUBCYCLING FOR COLLISIONS * * * * * * *")')
-			write(6,'(/,"The shorter collisional time in the simulations is: ",F25.15," s")') Tau*params%cpp%time
+			write(6,'("The shorter collisional time in the simulations is: ",F25.15," s")') Tau*params%cpp%time
 			write(6,'("Number of KORC iterations per collision: ",I16)') cparams_ss%subcycling_iterations
 			write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * * * *",/)')
 		end if
