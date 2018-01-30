@@ -17,7 +17,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
 % angularMomentum(ST);
 
@@ -57,7 +57,7 @@ ST.data = loadData(ST);
 
 % NIMROD_figure(ST);
 
-movieEnergyPitchAngle(ST)
+% movieEnergyPitchAngle(ST)
 
 % save('energy_limit','ST')
 end
@@ -3850,6 +3850,14 @@ for ss=1:ST.params.simulation.num_species
     fig.Position(3) = 1300;
     F(ST.num_snapshots) = struct('cdata',[],'colormap',[]);
     
+    go = ST.params.species.go(ss);
+    etao = ST.params.species.etao(ss);
+    xio = cos(deg2rad(etao));
+    Eo = (go-1)*m*c^2/(q*1E6);
+    po = sqrt(go^2 - 1);
+    pparo = po*cos(deg2rad(etao));
+    ppero = po*sin(deg2rad(etao));
+    
     g_max = max(max(ST.data.(['sp' num2str(ss)]).g));
     g_min = min(min(ST.data.(['sp' num2str(ss)]).g));
     
@@ -3891,7 +3899,7 @@ for ss=1:ST.params.simulation.num_species
         NT = 100*sum(T)/sum(C);
         
         figure(fig);subplot(1,3,1)
-        plot(eta(P),E(P),'k.',eta(T),E(T),'r.',eta(D),E(D),'bx')
+        plot(etao,Eo,'m*',eta(P),E(P),'k.',eta(T),E(T),'r.',eta(D),E(D),'bx')
         title(['$t=$' num2str(ST.time(it)/1E-3) ' ms'],'Interpreter','latex')
         axis([0 eta_max E_min E_max]);grid minor
         xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
@@ -3901,14 +3909,14 @@ for ss=1:ST.params.simulation.num_species
             'Interpreter','latex','Color','m','FontSize',12)
         
         figure(fig);subplot(1,3,2)
-        plot(ppar(P),pper(P),'k.',ppar(T),pper(T),'r.',ppar(D),pper(D),'bx')
+        plot(pparo,ppero,'m*',ppar(P),pper(P),'k.',ppar(T),pper(T),'r.',ppar(D),pper(D),'bx')
         title(['$t=$' num2str(ST.time(it)/1E-3) ' ms'],'Interpreter','latex')
         axis([-p_max p_max 0 p_max]);grid minor
         xlabel('$p_\parallel$ ($m_ec$)','Interpreter','latex')
         ylabel('$p_\perp$ ($m_ec$)','Interpreter','latex')
 
         figure(fig);subplot(1,3,3)
-        plot(p(P),xi(P),'k.',p(T),xi(T),'r.',p(D),xi(D),'bx')
+        plot(po,xio,'m*',p(P),xi(P),'k.',p(T),xi(T),'r.',p(D),xi(D),'bx')
         title(['$t=$' num2str(ST.time(it)/1E-3) ' ms'],'Interpreter','latex')
         axis([p_min p_max -1 1]);grid minor
         xlabel('$p$ ($m_ec$)','Interpreter','latex')

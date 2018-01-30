@@ -939,7 +939,7 @@ subroutine save_simulation_parameters(params,spp,F,P)
 		end if
 
 		dset = TRIM(gname) // "/collisions"
-		attr = "Radiation losses included in simulation"
+		attr = "Collisions included in simulation"
 		if(params%collisions) then
 			call save_to_hdf5(h5file_id,dset,1_idef,attr)
 		else

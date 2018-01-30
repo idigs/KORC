@@ -673,12 +673,12 @@ subroutine save_params_ms(params)
 		filename = TRIM(params%path_to_outputs) // "simulation_parameters.h5"
 		call h5fopen_f(TRIM(filename), H5F_ACC_RDWR_F, h5file_id, h5error)
 
-		gname = "collision_params"
+		gname = "collisions"
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
 		ALLOCATE(attr_array(cparams_ms%num_impurity_species))
 
-		dset = TRIM(gname) // "/collisions_model"
+		dset = TRIM(gname) // "/model"
 		call save_string_parameter(h5file_id,dset,(/params%collisions_model/))
 
 		dset = TRIM(gname) // "/num_impurity_species"
@@ -766,7 +766,7 @@ subroutine save_params_ss(params)
 		filename = TRIM(params%path_to_outputs) // "simulation_parameters.h5"
 		call h5fopen_f(TRIM(filename), H5F_ACC_RDWR_F, h5file_id, h5error)
 
-		gname = "collision_params"
+		gname = "collisions"
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
 		ALLOCATE(attr_array(cparams_ms%num_impurity_species))

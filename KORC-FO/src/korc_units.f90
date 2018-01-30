@@ -79,6 +79,7 @@ subroutine normalize_variables(params,spp,F,P)
 
 !	Normalize electromagnetic fields and profiles
 	F%Bo = F%Bo/params%cpp%Bo
+write(6,*) F%Eo
 	F%Eo = F%Eo/params%cpp%Eo
 	F%Ro = F%Ro/params%cpp%length
 	F%Zo = F%Zo/params%cpp%length
@@ -95,7 +96,6 @@ subroutine normalize_variables(params,spp,F,P)
 		F%AB%Bpo = F%AB%Bpo/params%cpp%Bo
 
         ! Electric field parameters
-		F%Eo = F%Eo/params%cpp%Eo
         F%to = F%to/params%cpp%time
         F%sig = F%sig/params%cpp%time
 	else if (params%plasma_model .EQ. 'EXTERNAL') then
