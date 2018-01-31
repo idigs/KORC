@@ -69,7 +69,6 @@ end
 
 filename = [ST.path 'binning_diagnostic_snapshots.h5'];
 
-
 list = {'eta','g','N'};
 
 for ll=1:length(list)
@@ -94,6 +93,38 @@ for ll=1:length(list)
     end
 end
 
+list = ST.params.simulation.outputs_list;
+
+for ll=1:length(list)
+    disp(['Loading ' list{ll}])
+    for ss=1:ST.params.simulation.num_species
+        tnp = double(ST.params.species.ppp(ss)*ST.params.simulation.nmpi);
+        
+        if (strcmp(list{ll},'X') || strcmp(list{ll},'V') || strcmp(list{ll},'B') || strcmp(list{ll},'E'))
+            data.(['sp' num2str(ss)]).('raw').(list{ll}) = zeros(3,tnp,ST.num_snapshots);
+        else
+            data.(['sp' num2str(ss)]).('raw').(list{ll}) = zeros(tnp,ST.num_snapshots);
+        end
+        
+        for ff=1:ST.params.simulation.nmpi
+            filename = [ST.path 'file_' num2str(ff-1) '.h5'];
+            indi = (ff - 1)*double(ST.params.species.ppp(ss)) + 1;
+            indf = ff*double(ST.params.species.ppp(ss));
+            for ii=1:ST.num_snapshots
+                dataset = ...
+                    ['/' num2str(it(ii)) '/spp_' num2str(ss)...
+                    '/' list{ll}];
+                if (strcmp(list{ll},'X') || strcmp(list{ll},'V') || strcmp(list{ll},'B') || strcmp(list{ll},'E'))
+                    data.(['sp' num2str(ss)]).('raw').(list{ll})(:,indi:indf,ii) = ...
+                        h5read(filename, dataset);
+                else
+                    data.(['sp' num2str(ss)]).('raw').(list{ll})(indi:indf,ii) = ...
+                        h5read(filename, dataset);
+                end
+            end
+        end
+    end
+end
 
 end
 

@@ -1,6 +1,7 @@
 function ST = diagnoseKORC(path,visible,range)
 % ST = diagnoseKORC('../KORC-FO/outputFiles/','on',[0,100])
-close all
+% close all
+% close all
 
 ST = struct;
 ST.path = path;
@@ -17,7 +18,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
 % angularMomentum(ST);
 
@@ -57,7 +58,9 @@ energyConservation(ST);
 
 % NIMROD_figure(ST);
 
-% movieEnergyPitchAngle(ST)
+movieEnergyPitchAngle(ST)
+
+% pitchAnglePDFSlices(ST)
 
 % save('energy_limit','ST')
 end
@@ -3924,6 +3927,95 @@ for ss=1:ST.params.simulation.num_species
         
         drawnow
         F(it) = getframe;
+    end
+end
+
+end
+
+function pitchAnglePDFSlices(ST)
+slices = 10;
+N = 100;
+
+hatE = ST.params.params.E;
+Zeff = ST.params.params.Zeff;
+
+% Here p is normalized by mc and eta is in radians
+A = @(E,Z,p) 2*E*p.^2./((Z+1)*sqrt(p.^2 + 1)); 
+ft = @(E,Z,p,t) 0.5*A(E,Z,p).*exp(A(E,Z,p).*cos(t))./sinh(A(E,Z,p));
+
+for ss=1:ST.params.simulation.num_species
+    q = abs(ST.params.species.q(ss));
+    m = ST.params.species.m(ss);
+    c = ST.params.scales.v;
+    
+    try
+        pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+        passing = logical( all(ST.data.(['sp' num2str(ss)]).eta < 90,2) );
+        bool = pin;% & passing;
+    catch
+        bool = true(size(ST.data.(['sp' num2str(ss)]).g(:,1)));
+    end
+    
+    g = [];
+    eta = [];
+    for ii=1:ST.num_snapshots
+        g = [g;ST.data.(['sp' num2str(ss)]).g(bool,ii)];
+        eta = [eta;ST.data.(['sp' num2str(ss)]).eta(bool,ii)];
+    end
+    
+    E = (g-1)*m*c^2;
+    E = E/(q*1E6);
+    p = sqrt(g.^2 - 1);
+    chi = cos(deg2rad(eta));
+    
+    if (strcmp(ST.params.species.energy_distribution(ss),'AVALANCHE'))
+        pmax = ST.params.avalanche_pdf_params.max_p;
+        pmin = ST.params.avalanche_pdf_params.min_p;
+    elseif (strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL-GAMMA'))
+        pmax = ST.params.params.max_p;
+        pmin = ST.params.params.min_p;
+    end
+    
+    Emin = (sqrt(pmin.^2 + 1)-1)*m*c^2/(q*1E6);
+    Emax = (sqrt(pmax.^2 + 1)-1)*m*c^2/(q*1E6);
+    DE = (Emax-Emin)/slices;
+    
+    EAxis = linspace(Emin,Emax-DE,slices) + 0.5*DE;
+    
+    if (strcmp(ST.params.species.energy_distribution(ss),'AVALANCHE'))
+        pitchmax = ST.params.avalanche_pdf_params.max_pitch_angle;
+        pitchmin = ST.params.avalanche_pdf_params.min_pitch_angle;
+    elseif (strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL-GAMMA'))
+        pitchmax = ST.params.params.max_pitch_angle;
+        pitchmin = ST.params.params.min_pitch_angle;
+    end
+    
+    pitchAxis = linspace(pitchmin,pitchmax,N);  
+    chiAxis = cos(deg2rad(pitchAxis));
+    
+    xAxis = pitchAxis;
+    yAxis = EAxis;
+
+    fig = figure;
+    for sl=1:slices
+        go = 1E6*q*EAxis(sl)/(m*c^2);
+        po = sqrt(go^2 - 1);
+        f = ft(hatE,Zeff,po,deg2rad(pitchAxis));
+        f = f/trapz(pitchAxis,f);
+    
+        El = EAxis(sl) - 0.5*DE;
+        Eu = EAxis(sl) + 0.5*DE;
+        I = (E > El) & (E < Eu);
+        
+        fh = histcounts(eta(I),pitchAxis);
+        fh = fh/trapz(pitchAxis(1:N-1),fh);
+        
+        figure(fig)
+        subplot(5,slices/5,sl)
+        plot(pitchAxis,f,'r',pitchAxis(1:N-1),fh,'b')
+%         semilogy(pitchAxis,f,'r',pitchAxis(1:N-1),fh,'b')
+        title(['$\mathcal{E}\in($' num2str(El) ',' num2str(Eu) ') MeV'],'Interpreter','latex')
+        xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
     end
 end
 

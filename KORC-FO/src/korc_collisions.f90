@@ -69,7 +69,8 @@ module korc_collisions
 				deallocate_collisions_params,&
 				save_collision_params,&
 				include_CoulombCollisions,&
-				check_collisions_params
+				check_collisions_params,&
+				define_collisions_time_step
 	PRIVATE :: load_params_ms,&
 				load_params_ss,&
 				normalize_params_ms,&
@@ -361,6 +362,7 @@ subroutine define_collisions_time_step(params)
 	REAL(rp) :: v
 	REAL(rp) :: Tau
 	REAL(rp), DIMENSION(3) :: nu
+	REAL(rp) :: num_collisions_in_simulation
 
 
 	if (params%collisions) then
@@ -371,11 +373,14 @@ subroutine define_collisions_time_step(params)
 		
 		cparams_ss%subcycling_iterations = FLOOR(cparams_ss%dTau*Tau/params%dt,ip) + 1_ip
 
+		num_collisions_in_simulation = params%simulation_time/Tau
+
 		 if (params%mpi_params%rank .EQ. 0) then
-			write(6,'("* * * * * * * SUBCYCLING FOR COLLISIONS * * * * * * *")')
+			write(6,'("* * * * * * * * * * * * * * SUBCYCLING FOR COLLISIONS * * * * * * * * * * * * * *")')
 			write(6,'("The shorter collisional time in the simulations is: ",F25.15," s")') Tau*params%cpp%time
 			write(6,'("Number of KORC iterations per collision: ",I16)') cparams_ss%subcycling_iterations
-			write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * * * *",/)')
+			write(6,'("Number of collisions in simulated time: ",F25.12)')  num_collisions_in_simulation
+			write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *",/)')
 		end if
 	end if
 end subroutine define_collisions_time_step
