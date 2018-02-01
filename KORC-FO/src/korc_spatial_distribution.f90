@@ -5,7 +5,7 @@ MODULE korc_spatial_distribution
 	USE korc_hpc
     use korc_fields
     use korc_rnd_numbers
-	use hammersley_generator
+	use korc_hammersley_generator
 
 	IMPLICIT NONE
 
@@ -13,6 +13,7 @@ MODULE korc_spatial_distribution
 	PRIVATE :: uniform_distribution,&
 				disk_distribution,&
 				torus_distribution,&
+				elliptic_torus_distribution,&
 				gaussian_distribution,&
 				gaussian_energy_distribution,&
 				calculate_falloff,&
@@ -96,6 +97,63 @@ subroutine torus_distribution(params,spp)
 	DEALLOCATE(zeta)
 	DEALLOCATE(r)
 end subroutine torus_distribution
+
+
+subroutine elliptic_torus_distribution(params,spp)
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(SPECIES), INTENT(INOUT) :: spp
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: rotation_angle, theta, zeta, r ! temporary vars
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: X,Y,X1,Y1
+	INTEGER :: jj ! Iterator
+
+	ALLOCATE(X1(spp%ppp))
+	ALLOCATE(Y1(spp%ppp))
+	ALLOCATE(X(spp%ppp))
+	ALLOCATE(Y(spp%ppp))
+	ALLOCATE( rotation_angle(spp%ppp) )
+	ALLOCATE( theta(spp%ppp) )
+	ALLOCATE( zeta(spp%ppp) )
+	ALLOCATE( r(spp%ppp) )
+
+	! Initial condition of uniformly distributed particles on a disk in the xz-plane
+	! A unique velocity direction
+	call init_u_random(10986546_8)
+
+	call init_random_seed()
+	call RANDOM_NUMBER(theta)
+	theta = 2.0_rp*C_PI*theta
+
+	call init_random_seed()
+	call RANDOM_NUMBER(zeta)
+	zeta = 2.0_rp*C_PI*zeta
+
+	! Uniform distribution on a disk at a fixed azimuthal theta		
+	call init_random_seed()
+	call RANDOM_NUMBER(r)
+
+	r = SQRT((spp%r_outter**2 - spp%r_inner**2)*r + spp%r_inner**2)
+
+	Y = r*SIN(theta)
+	X = r*COS(theta) + spp%shear_factor*Y
+
+	rotation_angle = 0.5_rp*C_PI - ATAN(1.0_rp,1.0_rp + spp%shear_factor);
+
+	X1 = X*COS(rotation_angle) - Y*SIN(rotation_angle) + spp%Ro
+ 	Y1 = X*SIN(rotation_angle) + Y*COS(rotation_angle) + spp%Zo
+
+	spp%vars%X(1,:) = X1*SIN(zeta)
+	spp%vars%X(2,:) = X1*COS(zeta)
+	spp%vars%X(3,:) = Y1
+
+	DEALLOCATE(X1)
+	DEALLOCATE(Y1)
+	DEALLOCATE(X)
+	DEALLOCATE(Y)
+	DEALLOCATE(rotation_angle)
+	DEALLOCATE(theta)
+	DEALLOCATE(zeta)
+	DEALLOCATE(r)
+end subroutine elliptic_torus_distribution
 
 
 subroutine gaussian_distribution(params,spp)
@@ -291,6 +349,8 @@ subroutine intitial_spatial_distribution(params,spp)
 		SELECT CASE (TRIM(spp(ss)%spatial_distribution))
 			CASE ('UNIFORM')
 				call uniform_distribution(spp(ss))
+			CASE ('ELLIPTIC-TORUS')
+				call elliptic_torus_distribution(params,spp(ss))
 			CASE ('DISK')
 				call disk_distribution(params,spp(ss))
 			CASE ('TORUS')

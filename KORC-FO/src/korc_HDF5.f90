@@ -1022,6 +1022,11 @@ subroutine save_simulation_parameters(params,spp,F,P)
 		attr_array(1) = "Falloff of gaussian or exponential radial profile in m"
 		call save_1d_array_to_hdf5(h5file_id,dset,spp%falloff_rate*params%cpp%length,attr_array)
 
+
+		dset = TRIM(gname) // "/shear_factor"
+		attr_array(1) = "Shear factor (in case ELLIPTIC-TORUS spatial distribution is used."
+		call save_1d_array_to_hdf5(h5file_id,dset,spp%shear_factor,attr_array)
+
 		call h5gclose_f(group_id, h5error)
 
 		DEALLOCATE(attr_array)

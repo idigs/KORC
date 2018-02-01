@@ -1,7 +1,6 @@
 function ST = diagnoseKORC(path,visible,range)
 % ST = diagnoseKORC('../KORC-FO/outputFiles/','on',[0,100])
 % close all
-% close all
 
 ST = struct;
 ST.path = path;
@@ -58,7 +57,7 @@ ST.data = loadData(ST);
 
 % NIMROD_figure(ST);
 
-movieEnergyPitchAngle(ST)
+% movieEnergyPitchAngle(ST)
 
 % pitchAnglePDFSlices(ST)
 
@@ -93,7 +92,21 @@ try
 catch
 end
 
-ST.range(2)+1
+try
+    info = h5info([ST.path 'simple_equilibrium_pdf.h5']);
+    
+    for ii=1:length(info.Groups)
+        for jj=1:length(info.Groups(ii).Datasets)
+            name = info.Groups(ii).Name(2:end);
+            subname = info.Groups(ii).Datasets(jj).Name;
+            params.(name).(subname) = ...
+                h5read(info.Filename,['/' name '/' subname]);
+        end
+    end
+catch
+end
+
+ST.range(2)+1;
 try
     info = h5info([ST.path 'experimental_distribution_parameters.h5']);
     
@@ -3936,8 +3949,8 @@ function pitchAnglePDFSlices(ST)
 slices = 10;
 N = 100;
 
-hatE = ST.params.params.E;
-Zeff = ST.params.params.Zeff;
+hatE = ST.params.pdf_params.E;
+Zeff = ST.params.pdf_params.Zeff;
 
 % Here p is normalized by mc and eta is in radians
 A = @(E,Z,p) 2*E*p.^2./((Z+1)*sqrt(p.^2 + 1)); 
@@ -3968,12 +3981,12 @@ for ss=1:ST.params.simulation.num_species
     p = sqrt(g.^2 - 1);
     chi = cos(deg2rad(eta));
     
-    if (strcmp(ST.params.species.energy_distribution(ss),'AVALANCHE'))
-        pmax = ST.params.avalanche_pdf_params.max_p;
-        pmin = ST.params.avalanche_pdf_params.min_p;
-    elseif (strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL-GAMMA'))
-        pmax = ST.params.params.max_p;
-        pmin = ST.params.params.min_p;
+    if (strcmp(ST.params.species.energy_distribution(ss),'AVALANCHE') || strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL-GAMMA'))
+        pmax = ST.params.pdf_params.max_p;
+        pmin = ST.params.pdf_params.min_p;
+    elseif (strcmp(ST.params.species.energy_distribution(ss),'MONOENERGETIC'))
+        pmax = sqrt(ST.params.species.go(ss)^2 - 1);
+        pmin = sqrt(ST.params.species.go(ss)^2 - 1);
     end
     
     Emin = (sqrt(pmin.^2 + 1)-1)*m*c^2/(q*1E6);
@@ -3982,30 +3995,33 @@ for ss=1:ST.params.simulation.num_species
     
     EAxis = linspace(Emin,Emax-DE,slices) + 0.5*DE;
     
-    if (strcmp(ST.params.species.energy_distribution(ss),'AVALANCHE'))
-        pitchmax = ST.params.avalanche_pdf_params.max_pitch_angle;
-        pitchmin = ST.params.avalanche_pdf_params.min_pitch_angle;
-    elseif (strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL-GAMMA'))
-        pitchmax = ST.params.params.max_pitch_angle;
-        pitchmin = ST.params.params.min_pitch_angle;
+    if (~strcmp(ST.params.species.energy_distribution(ss),'MONOPITCH'))
+        pitchmax = ST.params.pdf_params.max_pitch_angle;
+        pitchmin = ST.params.pdf_params.min_pitch_angle;
     end
     
-    pitchAxis = linspace(pitchmin,pitchmax,N);  
+    pitchAxis = linspace(pitchmin,pitchmax,N);
     chiAxis = cos(deg2rad(pitchAxis));
     
     xAxis = pitchAxis;
     yAxis = EAxis;
-
+    
     fig = figure;
     for sl=1:slices
         go = 1E6*q*EAxis(sl)/(m*c^2);
         po = sqrt(go^2 - 1);
         f = ft(hatE,Zeff,po,deg2rad(pitchAxis));
         f = f/trapz(pitchAxis,f);
-    
-        El = EAxis(sl) - 0.5*DE;
-        Eu = EAxis(sl) + 0.5*DE;
-        I = (E > El) & (E < Eu);
+        
+        if (~strcmp(ST.params.species.energy_distribution(ss),'MONOENERGETIC'))
+            El = EAxis(sl) - 0.5*DE;
+            Eu = EAxis(sl) + 0.5*DE;
+            I = (E > El) & (E < Eu);
+        else
+            El = EAxis(sl);
+            Eu = EAxis(sl);
+            I = true(size(eta));
+        end
         
         fh = histcounts(eta(I),pitchAxis);
         fh = fh/trapz(pitchAxis(1:N-1),fh);

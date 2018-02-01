@@ -1,4 +1,4 @@
-MODULE hammersley_generator
+MODULE korc_hammersley_generator
 	use korc_types
 
 	IMPLICIT NONE
@@ -815,4 +815,4 @@ subroutine timestamp ( )
   return
 end
 
-END MODULE hammersley_generator
+END MODULE korc_hammersley_generator

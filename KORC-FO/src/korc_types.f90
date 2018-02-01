@@ -147,6 +147,7 @@ TYPE, PUBLIC :: SPECIES
 	REAL(rp) :: r_inner
 	REAL(rp) :: r_outter
 	REAL(rp) :: falloff_rate
+	REAL(rp) :: shear_factor
 END TYPE SPECIES
 
 

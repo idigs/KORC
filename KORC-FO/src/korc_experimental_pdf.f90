@@ -790,7 +790,7 @@ SUBROUTINE save_params(params)
 		filename = TRIM(params%path_to_outputs) // "experimental_distribution_parameters.h5"
 		call h5fcreate_f(TRIM(filename), H5F_ACC_TRUNC_F, h5file_id, h5error)
 
-		gname = "params"
+		gname = "pdf_params"
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
 		dset = TRIM(gname) // "/max_pitch_angle"

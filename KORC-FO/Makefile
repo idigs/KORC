@@ -91,7 +91,7 @@ korc_hpc.o      \
 korc_HDF5.o     \
 special_fun_modules.o   \
 special_fun_subroutines.o       \
-hammersley_generator.o  \
+korc_hammersley_generator.o  \
 korc_rnd_numbers.o   \
 korc_collisions.o       \
 korc_coords.o   \
@@ -103,6 +103,7 @@ korc_experimental_pdf.o	\
 korc_energy_pdfs.o	\
 korc_spatial_distribution.o \
 korc_velocity_distribution.o \
+korc_simple_equilibrium_pdf.o	\
 korc_initialize.o       \
 korc_finalize.o \
 korc_units.o    \

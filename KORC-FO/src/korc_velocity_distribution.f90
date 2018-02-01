@@ -5,7 +5,7 @@ MODULE korc_velocity_distribution
 	USE korc_hpc
     use korc_fields
     use korc_rnd_numbers
-	use hammersley_generator
+	use korc_hammersley_generator
 
 	IMPLICIT NONE
 

@@ -6,13 +6,13 @@ module korc_initialize
     use korc_HDF5
     use korc_fields
     use korc_rnd_numbers
-	use hammersley_generator
 	use korc_spatial_distribution
 	use korc_velocity_distribution
 
 	use korc_avalanche ! external module
 	use korc_experimental_pdf ! external module
 	use korc_energy_pdfs ! external module
+	use korc_simple_equilibrium_pdf ! external module
 
 
     implicit none
@@ -100,7 +100,7 @@ subroutine load_korc_params(params)
 		params%HDF5_error_handling = 0_idef
 	end if
 
-	! Loading list of output parameters
+	! Loading list of output parameters (parsing)
 	imin = SCAN(outputs_list,'{')
 	imax = SCAN(outputs_list,'}')
 
@@ -224,10 +224,11 @@ subroutine initialize_particles(params,F,spp)
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: r_inner
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: r_outter
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: falloff_rate
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: shear_factor
 	INTEGER :: ii,jj, mpierr ! Iterator
 
 	NAMELIST /plasma_species/ ppp,q,m,Eo,etao,Eo_lims,etao_lims,runaway,spatial_distribution,&
-								energy_distribution,pitch_distribution,Ro,PHIo,Zo,r_inner,r_outter,falloff_rate
+								energy_distribution,pitch_distribution,Ro,PHIo,Zo,r_inner,r_outter,falloff_rate,shear_factor
 
 	! Allocate array containing variables of particles for each species
 	ALLOCATE(spp(params%num_species))
@@ -249,6 +250,7 @@ subroutine initialize_particles(params,F,spp)
 	ALLOCATE(r_inner(params%num_species))
 	ALLOCATE(r_outter(params%num_species))
 	ALLOCATE(falloff_rate(params%num_species))
+	ALLOCATE(shear_factor(params%num_species))
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=plasma_species)
@@ -269,6 +271,7 @@ subroutine initialize_particles(params,F,spp)
 		spp(ii)%r_inner = r_inner(ii)
 		spp(ii)%r_outter = r_outter(ii)
 		spp(ii)%falloff_rate = falloff_rate(ii)
+		spp(ii)%shear_factor = shear_factor(ii)
 		
 
 		ALLOCATE( spp(ii)%vars%X(3,spp(ii)%ppp) )
@@ -318,7 +321,7 @@ subroutine initialize_particles(params,F,spp)
 				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
 									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
 			CASE ('AVALANCHE')
-				call get_avalanche_PDF_params(params,spp(ii)%vars%g,spp(ii)%vars%eta,spp(ii)%go,spp(ii)%etao)
+				call get_avalanche_distribution(params,spp(ii)%vars%g,spp(ii)%vars%eta,spp(ii)%go,spp(ii)%etao)
 
 				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
 				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
@@ -375,6 +378,10 @@ subroutine initialize_particles(params,F,spp)
 				spp(ii)%etao = spp(ii)%etao_lims(1)
 
 				spp(ii)%vars%eta = (spp(ii)%etao_lims(2) - spp(ii)%etao_lims(1))*spp(ii)%vars%eta + spp(ii)%etao_lims(1)
+			CASE ('SIMPLE-EQUILIBRIUM')
+				call get_equilibrium_distribution(params,spp(ii)%vars%eta,spp(ii)%go,spp(ii)%etao)
+
+				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
 			CASE DEFAULT
 				! Something to be done
 		END SELECT

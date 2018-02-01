@@ -30,6 +30,7 @@
 	Zo = 0.0,0.0 !
 	r_inner = 0.0,0.0 !
 	r_outter = 0.5,0.6 !
+	shear_factor = 0.35 !
 	falloff_rate = 0.0, 0.14 !
 	energy_distribution = 'MONOENERGETIC','MONOENERGETIC'   ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'
 	pitch_distribution = 'MONOPITCH','MONOPITCH'	! Options are: 'MONOPITCH', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'.
@@ -132,6 +133,15 @@
 	max_energy = 30.0E6 ! In eV
 	k = 11.89 ! Shape factor of Gamma distribution for energy
 	t = 0.65 ! Scale factor of Gamma distribution for energy
+/
+
+&SimpleEquilibriumPDF
+	E = 4.5 ! Parallel electric field in units of Ec
+	Zeff = 4.0 ! Effective atomic number
+	max_pitch_angle = 60.0 ! In degrees
+	min_pitch_angle = 0.0 ! In degrees
+	Bo = 2.0 ! Characteristic magnetic field
+	lambda = 890.0E-9 ! Characteristic wavelength
 /
 
 &SyntheticCamera

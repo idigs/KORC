@@ -33,7 +33,7 @@ MODULE korc_avalanche
 	TYPE(AVALANCHE_PDF_PARAMS), PRIVATE :: aval_params
 	REAL(rp), PRIVATE, PARAMETER :: minmax_buffer_size = 10.0_rp
 
-	PUBLIC :: get_avalanche_PDF_params
+	PUBLIC :: get_avalanche_distribution
 	PRIVATE :: initialize_avalanche_params,&
 				save_avalanche_params,&
 				random_norm,&
@@ -42,7 +42,7 @@ MODULE korc_avalanche
 
 	CONTAINS
 
-SUBROUTINE get_avalanche_PDF_params(params,g,eta,go,etao)
+SUBROUTINE get_avalanche_distribution(params,g,eta,go,etao)
 	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: g
@@ -55,7 +55,7 @@ SUBROUTINE get_avalanche_PDF_params(params,g,eta,go,etao)
 	call save_avalanche_params(params)
 
 	call sample_distribution(params,g,eta,go,etao)
-END SUBROUTINE get_avalanche_PDF_params
+END SUBROUTINE get_avalanche_distribution
 
 
 SUBROUTINE initialize_avalanche_params(params)
@@ -358,7 +358,7 @@ SUBROUTINE save_avalanche_params(params)
 	REAL(rp) :: units
 
 	if (params%mpi_params%rank .EQ. 0) then
-		filename = TRIM(params%path_to_outputs) // "avalanche_parameters.h5"
+		filename = TRIM(params%path_to_outputs) // "pdf_parameters.h5"
 		call h5fcreate_f(TRIM(filename), H5F_ACC_TRUNC_F, h5file_id, h5error)
 
 		gname = "avalanche_pdf_params"
