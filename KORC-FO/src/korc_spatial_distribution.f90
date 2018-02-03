@@ -10,28 +10,29 @@ MODULE korc_spatial_distribution
 	IMPLICIT NONE
 
 	PUBLIC :: intitial_spatial_distribution
-	PRIVATE :: uniform_distribution,&
-				disk_distribution,&
-				torus_distribution,&
-				elliptic_torus_distribution,&
-				gaussian_distribution,&
-				gaussian_energy_distribution,&
+	PRIVATE :: uniform,&
+				disk,&
+				torus,&
+				elliptic_torus,&
+				exponential_elliptic_torus,&
+				gaussian,&
+				gaussian_energy,&
 				calculate_falloff,&
-				exponential_energy_distribution,&
+				exponential_energy,&
 				ko,&
 				fzero
 
 	CONTAINS
 
 
-subroutine uniform_distribution(spp)
+subroutine uniform(spp)
 	TYPE(SPECIES), INTENT(INOUT) :: spp
 
 	spp%vars%X = 0.0_rp
-end subroutine uniform_distribution
+end subroutine uniform
 
 
-subroutine disk_distribution(params,spp)
+subroutine disk(params,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), INTENT(INOUT) :: spp
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: theta, r ! temporary vars
@@ -59,10 +60,10 @@ subroutine disk_distribution(params,spp)
 
 	DEALLOCATE(theta)
 	DEALLOCATE(r)
-end subroutine disk_distribution
+end subroutine disk
 
 
-subroutine torus_distribution(params,spp)
+subroutine torus(params,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), INTENT(INOUT) :: spp
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: theta, zeta, r ! temporary vars
@@ -96,10 +97,10 @@ subroutine torus_distribution(params,spp)
 	DEALLOCATE(theta)
 	DEALLOCATE(zeta)
 	DEALLOCATE(r)
-end subroutine torus_distribution
+end subroutine torus
 
 
-subroutine elliptic_torus_distribution(params,spp)
+subroutine elliptic_torus(params,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), INTENT(INOUT) :: spp
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: rotation_angle, theta, zeta, r ! temporary vars
@@ -153,10 +154,67 @@ subroutine elliptic_torus_distribution(params,spp)
 	DEALLOCATE(theta)
 	DEALLOCATE(zeta)
 	DEALLOCATE(r)
-end subroutine elliptic_torus_distribution
+end subroutine elliptic_torus
 
 
-subroutine gaussian_distribution(params,spp)
+subroutine exponential_elliptic_torus(params,spp)
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(SPECIES), INTENT(INOUT) :: spp
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: rotation_angle, theta, zeta, r ! temporary vars
+	REAL(rp), DIMENSION(:), ALLOCATABLE :: X,Y,X1,Y1
+	INTEGER :: jj ! Iterator
+
+	ALLOCATE(X1(spp%ppp))
+	ALLOCATE(Y1(spp%ppp))
+	ALLOCATE(X(spp%ppp))
+	ALLOCATE(Y(spp%ppp))
+	ALLOCATE( rotation_angle(spp%ppp) )
+	ALLOCATE( theta(spp%ppp) )
+	ALLOCATE( zeta(spp%ppp) )
+	ALLOCATE( r(spp%ppp) )
+
+	! Initial condition of uniformly distributed particles on a disk in the xz-plane
+	! A unique velocity direction
+	call init_u_random(10986546_8)
+
+	call init_random_seed()
+	call RANDOM_NUMBER(theta)
+	theta = 2.0_rp*C_PI*theta
+
+	call init_random_seed()
+	call RANDOM_NUMBER(zeta)
+	zeta = 2.0_rp*C_PI*zeta
+
+	! Uniform distribution on a disk at a fixed azimuthal theta		
+	call init_random_seed()
+	call RANDOM_NUMBER(r)
+
+	r = SQRT((spp%r_outter**2 - spp%r_inner**2)*r + spp%r_inner**2)
+
+	Y = r*SIN(theta)
+	X = r*COS(theta) + spp%shear_factor*Y
+
+	rotation_angle = 0.5_rp*C_PI - ATAN(1.0_rp,1.0_rp + spp%shear_factor);
+
+	X1 = X*COS(rotation_angle) - Y*SIN(rotation_angle) + spp%Ro
+ 	Y1 = X*SIN(rotation_angle) + Y*COS(rotation_angle) + spp%Zo
+
+	spp%vars%X(1,:) = X1*SIN(zeta)
+	spp%vars%X(2,:) = X1*COS(zeta)
+	spp%vars%X(3,:) = Y1
+
+	DEALLOCATE(X1)
+	DEALLOCATE(Y1)
+	DEALLOCATE(X)
+	DEALLOCATE(Y)
+	DEALLOCATE(rotation_angle)
+	DEALLOCATE(theta)
+	DEALLOCATE(zeta)
+	DEALLOCATE(r)
+end subroutine exponential_elliptic_torus
+
+
+subroutine gaussian(params,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), INTENT(INOUT) :: spp
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: theta, zeta, r ! temporary vars
@@ -190,7 +248,7 @@ subroutine gaussian_distribution(params,spp)
 	DEALLOCATE(theta)
 	DEALLOCATE(zeta)
 	DEALLOCATE(r)
-end subroutine gaussian_distribution
+end subroutine gaussian
 
 
 subroutine calculate_falloff(params,falloff,g)
@@ -207,7 +265,7 @@ subroutine calculate_falloff(params,falloff,g)
 end subroutine calculate_falloff
 
 
-subroutine gaussian_energy_distribution(params,spp)
+subroutine gaussian_energy(params,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), INTENT(INOUT) :: spp
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: theta, zeta, r ! temporary vars
@@ -246,7 +304,7 @@ subroutine gaussian_energy_distribution(params,spp)
 	DEALLOCATE(theta)
 	DEALLOCATE(zeta)
 	DEALLOCATE(r)
-end subroutine gaussian_energy_distribution
+end subroutine gaussian_energy
 
 
 FUNCTION ko(g)
@@ -276,7 +334,7 @@ FUNCTION fzero(params,r,a,g,P) RESULT(f)
 END FUNCTION fzero
 
 
-subroutine exponential_energy_distribution(params,spp)
+subroutine exponential_energy(params,spp)
 ! * The falloff coefficients are calculated as function of r with units. All these routines need to be modified so they can
 ! * used as function of an arbitrary plasma radius 'a'.
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
@@ -337,7 +395,7 @@ subroutine exponential_energy_distribution(params,spp)
 	DEALLOCATE(theta)
 	DEALLOCATE(zeta)
 	DEALLOCATE(r)
-end subroutine exponential_energy_distribution
+end subroutine exponential_energy
 
 
 subroutine intitial_spatial_distribution(params,spp)
@@ -348,21 +406,23 @@ subroutine intitial_spatial_distribution(params,spp)
 	do ss=1_idef,params%num_species
 		SELECT CASE (TRIM(spp(ss)%spatial_distribution))
 			CASE ('UNIFORM')
-				call uniform_distribution(spp(ss))
+				call uniform(spp(ss))
+			CASE ('EXPONENTIAL-ELLIPTIC-TORUS')
+				call exponential_elliptic_torus(params,spp(ss))
 			CASE ('ELLIPTIC-TORUS')
-				call elliptic_torus_distribution(params,spp(ss))
+				call elliptic_torus(params,spp(ss))
 			CASE ('DISK')
-				call disk_distribution(params,spp(ss))
+				call disk(params,spp(ss))
 			CASE ('TORUS')
-				call torus_distribution(params,spp(ss))
+				call torus(params,spp(ss))
 			CASE ('GAUSSIAN')
-				call gaussian_distribution(params,spp(ss))
+				call gaussian(params,spp(ss))
 			CASE ('GAUSSIAN-ENERGY')
-				call gaussian_energy_distribution(params,spp(ss))
+				call gaussian_energy(params,spp(ss))
 			CASE ('EXPONENTIAL-ENERGY')
-				call exponential_energy_distribution(params,spp(ss))
+				call exponential_energy(params,spp(ss))
 			CASE DEFAULT
-				call torus_distribution(params,spp(ss))
+				call torus(params,spp(ss))
 		END SELECT
 	end do		
 end subroutine intitial_spatial_distribution

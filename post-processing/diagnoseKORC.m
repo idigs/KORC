@@ -49,7 +49,7 @@ ST.data = loadData(ST);
 
 % calculateTemperatureComponents(ST);
 
-% SE_phaseSpaceAnalisys(ST);
+SE_phaseSpaceAnalisys(ST);
 
 % plotEnergyPitchanglePDF(ST);
 
@@ -3103,10 +3103,10 @@ q = abs(ST.params.species.q(1));
 m = ST.params.species.m(1);
 c = ST.params.scales.v;
 
-E = ST.params.params.E;
-Z = ST.params.params.Zeff;
-k = ST.params.params.k;
-t = ST.params.params.t;
+E = ST.params.pdf_params.E;
+Z = ST.params.pdf_params.Zeff;
+k = ST.params.pdf_params.k;
+t = ST.params.pdf_params.t;
 xo = (m*c^2/q)/1E6;
 
 fG = @(x,k,t) x.^(k-1).*exp(-x/t)/(gamma(k)*t.^k);
@@ -3295,12 +3295,9 @@ for ss=1:ST.params.simulation.num_species
     p = sqrt(g.^2 - 1);
     chi = cos(deg2rad(eta));
     
-    if (strcmp(ST.params.species.energy_distribution(ss),'AVALANCHE'))
-        pmax = ST.params.avalanche_pdf_params.max_p;
-        pmin = ST.params.avalanche_pdf_params.min_p;
-    elseif (strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL-GAMMA'))
-        pmax = ST.params.params.max_p;
-        pmin = ST.params.params.min_p;
+    if (strcmp(ST.params.species.energy_distribution(ss),'AVALANCHE') || strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL-GAMMA'))
+        pmax = ST.params.pdf_params.max_p;
+        pmin = ST.params.pdf_params.min_p;
     end
     
     Emin = sqrt(pmin.^2 + 1)*m*c^2/(q*1E6);
@@ -3309,12 +3306,9 @@ for ss=1:ST.params.simulation.num_species
     pAxis = pmin + (0:1:nbins_p-1)*Dp + 0.5*Dp;
     EAxis = sqrt(pAxis.^2 + 1)*m*c^2/(q*1E6);
     
-    if (strcmp(ST.params.species.energy_distribution(ss),'AVALANCHE'))
-        pitchmax = ST.params.avalanche_pdf_params.max_pitch_angle;
-        pitchmin = ST.params.avalanche_pdf_params.min_pitch_angle;
-    elseif (strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL-GAMMA'))
-        pitchmax = ST.params.params.max_pitch_angle;
-        pitchmin = ST.params.params.min_pitch_angle;
+    if (strcmp(ST.params.species.energy_distribution(ss),'AVALANCHE') || strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL-GAMMA'))
+        pitchmax = ST.params.pdf_params.max_pitch_angle;
+        pitchmin = ST.params.pdf_params.min_pitch_angle;
     end
     Dpitch = (pitchmax - pitchmin)/nbins_chi;
     pitchAxis = pitchmin + (0:1:nbins_chi-1)*Dpitch + 0.5*Dpitch;
@@ -3412,13 +3406,13 @@ for ss=1:ST.params.simulation.num_species
     E = (ST.data.(['sp' num2str(ss)]).g(pin,:)-1)'*me*c^2/(qe*1E6);
     pa = ST.data.(['sp' num2str(ss)]).eta(pin,:)';
     
-    %     E_edges = linspace(min([min(Eo(pin)) min(Ef)]),...
-    %         max([max(Eo(pin)) max(Ef)]),N);
-    %     pa_edges = linspace(min([min(pao(pin)) min(paf)]),...
-    %         max([max(pao(pin)) max(paf)]),M);
+        E_edges = linspace(min([min(Eo(pin)) min(Ef)]),...
+            max([max(Eo(pin)) max(Ef)]),N);
+        pa_edges = linspace(min([min(pao(pin)) min(paf)]),...
+            max([max(pao(pin)) max(paf)]),M);
     
-    E_edges = linspace(0,50,N);
-    pa_edges = linspace(0,25,M);
+%     E_edges = linspace(0,50,N);
+%     pa_edges = linspace(0,25,M);
     
     figure;
     subplot(3,1,1)

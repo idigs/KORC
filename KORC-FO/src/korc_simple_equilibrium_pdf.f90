@@ -49,7 +49,7 @@ SUBROUTINE get_equilibrium_distribution(params,eta,go,etao)
 
 	call save_params(params)
 
-	call sample_distribution(params,eta,go,etao)
+	call sample_distribution(params,eta,etao)
 END SUBROUTINE get_equilibrium_distribution
 
 
@@ -229,10 +229,9 @@ FUNCTION PR(eta,p,Bo,l)
 END FUNCTION PR
 
 
-SUBROUTINE sample_distribution(params,eta,go,etao)
+SUBROUTINE sample_distribution(params,eta,etao)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: eta
-	REAL(rp), INTENT(OUT) :: go
 	REAL(rp), INTENT(OUT) :: etao
 	REAL(rp) :: go_root
 	REAL(rp) :: etao_root

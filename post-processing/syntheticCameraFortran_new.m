@@ -73,6 +73,11 @@ for ii=1:size(H.Groups,1)
 end
 it = sort(it,'ascend');
 
+
+cadence = double(ST.params.simulation.output_cadence);
+[~,I1] = min(abs(cadence*ST.range(1)-it));
+[~,I2] = min(abs(cadence*ST.range(2)-it));
+
 % it = ST.range(1):1:ST.range(2);
 
 NX = ST.params.synthetic_camera_params.num_pixels(1);
@@ -97,7 +102,7 @@ if (ST.params.synthetic_camera_params.integrated_opt == 0)
         disp(['Loading ' list{ll}])
         for ss=1:ST.params.simulation.num_species
             data.(['sp' num2str(ss)]).(list{ll}) = zeros(NX,NY,Nl,ST.num_snapshots);
-            for ii=ST.range(1)+1:ST.range(2)+1
+            for ii=I1:I2
                 dataset = ...
                     ['/' num2str(it(ii)) '/spp_' num2str(ss)...
                     '/' list{ll}];
@@ -126,7 +131,7 @@ for ll=1:length(list)
                 else
                     data.(['sp' num2str(ss)]).(list{ll}) = zeros(Nl,ST.num_snapshots);
                 end
-                for ii=ST.range(1)+1:ST.range(2)+1
+                for ii=I1:I2
                     dataset = ...
                         ['/' num2str(it(ii)) '/spp_' num2str(ss)...
                         '/' list{ll}];
@@ -138,7 +143,7 @@ for ll=1:length(list)
                 end
             elseif strcmp(list{ll},'np_pixel')
                 data.(['sp' num2str(ss)]).(list{ll}) = zeros(1,ST.num_snapshots);
-                for ii=ST.range(1)+1:ST.range(2)+1
+                for ii=I1:I2
                     dataset = ...
                         ['/' num2str(it(ii)) '/spp_' num2str(ss)...
                         '/' list{ll}];
@@ -150,7 +155,7 @@ for ll=1:length(list)
                 else
                     data.(['sp' num2str(ss)]).(list{ll}) = zeros(1,ST.num_snapshots);
                 end
-                for ii=ST.range(1)+1:ST.range(2)+1
+                for ii=I1:I2
                     dataset = ...
                         ['/' num2str(it(ii)) '/spp_' num2str(ss)...
                         '/' list{ll}];
@@ -168,7 +173,7 @@ for ll=1:length(list)
                     data.(['sp' num2str(ss)]).(list{ll}) = zeros(NX,NY,ST.num_snapshots);
                 end
                                
-                for ii=ST.range(1)+1:ST.range(2)+1
+                for ii=I1:I2
                     dataset = ...
                         ['/' num2str(it(ii)) '/spp_' num2str(ss)...
                         '/' list{ll}];
@@ -185,7 +190,7 @@ for ll=1:length(list)
                     data.(['sp' num2str(ss)]).(list{ll}) = zeros(NX,NY,ST.num_snapshots);
                 end
                 
-                for ii=ST.range(1)+1:ST.range(2)+1
+                for ii=I1:I2
                     dataset = ...
                         ['/' num2str(it(ii)) '/spp_' num2str(ss)...
                         '/' list{ll}];
@@ -1272,6 +1277,12 @@ for ss=1:ST.params.simulation.num_species
         ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
         xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
         
+        I0 = find(yAxis_rescaled>0,1);z0 = yAxis_rescaled(I0);
+        I1 = find(yAxis_rescaled>0.25,1)-1;z1 = yAxis_rescaled(I1);
+        I2 = find(yAxis_rescaled>-0.25,1);z2 = yAxis_rescaled(I2);
+        I3 = find(yAxis_rescaled>0.4,1)-1;z3 = yAxis_rescaled(I3);
+        I4 = find(yAxis_rescaled>-0.4,1);z4 = yAxis_rescaled(I4);
+        
         cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
         ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         if ST.params.synthetic_camera_params.photon_count
@@ -1279,6 +1290,15 @@ for ss=1:ST.params.simulation.num_species
         else
             xlabel(hc,'$\int P_R(\lambda) d\lambda$ (Watts)','Interpreter','latex','FontSize',12)
         end
+        
+        C = max(A(I0,:));
+        A0 = A(I0,:)/C;A1 = A(I1,:)/C;A2 = A(I2,:)/C;A3 = A(I3,:)/C;A4 = A(I4,:)/C;        
+        
+        hs=figure;
+        plot(xAxis_rescaled,A0,'r--',xAxis_rescaled,A1,'g--',xAxis_rescaled,A2,'b--',...
+            xAxis_rescaled,A3,'k--',xAxis_rescaled,A4,'m--')
+        axis([1 2.5 0 1])
+        xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
         
         A = np_L3';
         B = reshape(A,[numel(A),1]);
@@ -1299,13 +1319,6 @@ for ss=1:ST.params.simulation.num_species
         cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
         ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
-        
-        
-        I0 = find(yAxis_rescaled>0,1);z0 = yAxis_rescaled(I0);
-        I1 = find(yAxis_rescaled>0.25,1)-1;z1 = yAxis_rescaled(I1);
-        I2 = find(yAxis_rescaled>-0.25,1);z2 = yAxis_rescaled(I2);
-        I3 = find(yAxis_rescaled>0.4,1);z3 = yAxis_rescaled(I3);
-        I4 = find(yAxis_rescaled>-0.4,1);z4 = yAxis_rescaled(I4);
         
         A = Psyn_L4';
         B = reshape(A,[numel(A),1]);
@@ -1342,9 +1355,11 @@ for ss=1:ST.params.simulation.num_species
         C = max(A(I0,:));
         A0 = A(I0,:)/C;A1 = A(I1,:)/C;A2 = A(I2,:)/C;A3 = A(I3,:)/C;A4 = A(I4,:)/C;        
         
-        hs=figure;
+        figure(hs);
+        hold on;
         plot(xAxis_rescaled,A0,'r',xAxis_rescaled,A1,'g',xAxis_rescaled,A2,'b',...
             xAxis_rescaled,A3,'k',xAxis_rescaled,A4,'m')
+        hold off;
         axis([1 2.5 0 1])
         xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
         saveas(hs,[ST.path 'camera_slices_ss_' num2str(ss)],'fig')
