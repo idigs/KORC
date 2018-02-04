@@ -17,9 +17,9 @@ MODULE korc_spatial_distribution
 				exponential_elliptic_torus,&
 				gaussian,&
 				gaussian_energy,&
-				calculate_falloff,&
+				calculate_gaussian_falloff,&
 				exponential_energy,&
-				ko,&
+				calculate_exponential_falloff,&
 				fzero
 
 	CONTAINS
@@ -160,9 +160,12 @@ end subroutine elliptic_torus
 subroutine exponential_elliptic_torus(params,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(SPECIES), INTENT(INOUT) :: spp
+	REAL(rp) :: fo, fn
+	REAL(rp) :: ro, rn, rt
+	REAL(rp) :: relerr
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: rotation_angle, theta, zeta, r ! temporary vars
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: X,Y,X1,Y1
-	INTEGER :: jj ! Iterator
+	INTEGER :: pp,jj ! Iterator
 
 	ALLOCATE(X1(spp%ppp))
 	ALLOCATE(Y1(spp%ppp))
@@ -189,7 +192,22 @@ subroutine exponential_elliptic_torus(params,spp)
 	call init_random_seed()
 	call RANDOM_NUMBER(r)
 
-	r = SQRT((spp%r_outter**2 - spp%r_inner**2)*r + spp%r_inner**2)
+	do pp=1_idef,spp%ppp
+		ro = 0.0_rp
+		rn = spp%r_outter
+		relerr = ABS(100.0_rp*(ro - rn)/rn)
+		do while(relerr.GT.1.0_rp)
+			fo = fzero(params,ro,spp%r_outter,spp%vars%g(pp),spp%falloff_rate,r(pp))
+			fn = fzero(params,rn,spp%r_outter,spp%vars%g(pp),spp%falloff_rate,r(pp))
+
+			rt = rn
+			rn = rn - fn*(rn - ro)/(fn - fo)
+			ro = rt
+
+			relerr = ABS(100.0_rp*(rn - ro)/ro)
+		end do
+		r(pp) = rn
+	end do
 
 	Y = r*SIN(theta)
 	X = r*COS(theta) + spp%shear_factor*Y
@@ -251,7 +269,7 @@ subroutine gaussian(params,spp)
 end subroutine gaussian
 
 
-subroutine calculate_falloff(params,falloff,g)
+subroutine calculate_gaussian_falloff(params,falloff,g)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: falloff
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: g ! temporary vars
@@ -262,7 +280,7 @@ subroutine calculate_falloff(params,falloff,g)
 
 	falloff = a + b/g
 	falloff = falloff/params%cpp%length
-end subroutine calculate_falloff
+end subroutine calculate_gaussian_falloff
 
 
 subroutine gaussian_energy(params,spp)
@@ -293,7 +311,7 @@ subroutine gaussian_energy(params,spp)
 	call init_random_seed()
 	call RANDOM_NUMBER(r)
 
-	call calculate_falloff(params,falloff_rate,spp%vars%g)
+	call calculate_gaussian_falloff(params,falloff_rate,spp%vars%g)
 
 	r = falloff_rate*SQRT(-2.0_rp*LOG(1.0_rp - (1.0_rp - EXP(-0.5_rp*spp%r_outter**2/falloff_rate**2))*r))
 	spp%vars%X(1,:) = ( spp%Ro + r*COS(theta) )*SIN(zeta)
@@ -307,30 +325,31 @@ subroutine gaussian_energy(params,spp)
 end subroutine gaussian_energy
 
 
-FUNCTION ko(g)
-	REAL(rp) :: ko
-	REAL(rp), INTENT(IN) :: g
+SUBROUTINE calculate_exponential_falloff(g,ko)
+	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: ko
+	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: g
 	REAL(rp) :: a, b
 	
 	a = 2.0768_rp
 	b = -16.945_rp
 
 	ko = a + b/g
-END FUNCTION ko
+END SUBROUTINE calculate_exponential_falloff
 
-FUNCTION fzero(params,r,a,g,P) RESULT(f)
+FUNCTION fzero(params,r,a,g,ko,P) RESULT(f)
 	REAL(rp) :: f
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), INTENT(IN) :: r	
 	REAL(rp), INTENT(IN) :: g
 	REAL(rp), INTENT(IN) :: a
+	REAL(rp), INTENT(IN) :: ko
 	REAL(rp), INTENT(IN) :: P
 	REAL(rp) :: ru,au
 
 	ru = r*params%cpp%length
 	au = a*params%cpp%length
 
-	f = EXP(-ko(g)*ru)*(1.0_rp + ru*ko(g)) + (1.0_rp - EXP(-ko(g)*au)*(1.0_rp + au*ko(g)))*P - 1.0_rp
+	f = EXP(-ko*ru)*(1.0_rp + ru*ko) + (1.0_rp - EXP(-ko*au)*(1.0_rp + au*ko))*P - 1.0_rp
 END FUNCTION fzero
 
 
@@ -367,15 +386,17 @@ subroutine exponential_energy(params,spp)
 	! Uniform distribution on a disk at a fixed azimuthal theta		
 	call init_random_seed()
 	call RANDOM_NUMBER(r)
+	
+	call calculate_exponential_falloff(spp%vars%g,falloff_rate)
 
-!!$OMP PARALLEL DO SHARED(params,r,spp) PRIVATE(pp,ro,rn,rt,fo,fn,relerr)
+!!$OMP PARALLEL DO SHARED(params,r,spp,falloff_rate) PRIVATE(pp,ro,rn,rt,fo,fn,relerr)
 	do pp=1_idef,spp%ppp
 		ro = 0.0_rp
 		rn = spp%r_outter
 		relerr = ABS(100.0_rp*(ro - rn)/rn)
 		do while(relerr.GT.1.0_rp)
-			fo = fzero(params,ro,spp%r_outter,spp%vars%g(pp),r(pp))
-			fn = fzero(params,rn,spp%r_outter,spp%vars%g(pp),r(pp))
+			fo = fzero(params,ro,spp%r_outter,spp%vars%g(pp),falloff_rate(pp),r(pp))
+			fn = fzero(params,rn,spp%r_outter,spp%vars%g(pp),falloff_rate(pp),r(pp))
 
 			rt = rn
 			rn = rn - fn*(rn - ro)/(fn - fo)
