@@ -1020,7 +1020,7 @@ subroutine save_simulation_parameters(params,spp,F,P)
 
 		dset = TRIM(gname) // "/falloff_rate"
 		attr_array(1) = "Falloff of gaussian or exponential radial profile in m"
-		call save_1d_array_to_hdf5(h5file_id,dset,spp%falloff_rate*params%cpp%length,attr_array)
+		call save_1d_array_to_hdf5(h5file_id,dset,spp%falloff_rate/params%cpp%length,attr_array)
 
 
 		dset = TRIM(gname) // "/shear_factor"

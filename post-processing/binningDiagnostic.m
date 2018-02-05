@@ -1,6 +1,6 @@
 function ST = binningDiagnostic(path,range)
 % ST = binningDiagnostic('../KORC-FO/outputFiles/',[99,100])
-% close all
+close all
 
 ST = struct;
 ST.path = path;
@@ -16,6 +16,8 @@ ST.time = ...
 ST.data = loadData(ST);
 
 plotBinningSnapshots(ST);
+
+plotRadialDensity(ST)
 
 end
 
@@ -177,7 +179,7 @@ for ss=1:ST.params.simulation.num_species
     cmin = min(min(eta));
     
     fig1 = figure;
-    subplot(1,2,1)
+    subplot(1,3,1)
     surfc(xAxis,yAxis,eta','LineStyle','none')
     axis equal;view([0 90])
     colormap(jet);cb = colorbar;caxis([cmin cmax])
@@ -188,7 +190,7 @@ for ss=1:ST.params.simulation.num_species
     cmax = max(max(E(g~=0)));
     cmin = min(min(E(g~=0)));
     
-    subplot(1,2,2)
+    subplot(1,3,2)
     surfc(xAxis,yAxis,E','LineStyle','none')
     axis equal;view([0 90])
     colormap(jet);cb = colorbar;caxis([cmin cmax])
@@ -196,5 +198,94 @@ for ss=1:ST.params.simulation.num_species
     ylabel('$Z$','Interpreter','latex')
     ylabel(cb,'Mean energy (MeV)','Interpreter','latex')
     
+    
+    cmin = min(min(N));
+    cmax = max(max(N));
+    
+    subplot(1,3,3)
+    surfc(xAxis,yAxis,N','LineStyle','none')
+    axis equal;view([0 90])
+    colormap(jet);cb = colorbar;caxis([cmin cmax])
+    xlabel('$R$','Interpreter','latex')
+    ylabel('$Z$','Interpreter','latex')
+    ylabel(cb,'No. particles','Interpreter','latex')
+    
+end
+end
+
+function plotRadialDensity(ST)
+disp('Plotting radial density...')
+Nq = 20;
+angle = [30 45 55];
+falloff_rate = 3.6;
+
+xAxis = ST.params.binning_diagnostic_params.rnodes;
+yAxis = ST.params.binning_diagnostic_params.znodes;
+
+NX = ST.params.binning_diagnostic_params.num_bins(1);
+NY = ST.params.binning_diagnostic_params.num_bins(2);
+
+if (ST.params.binning_diagnostic_params.toroidal_sections == 1)
+    NT = ST.params.binning_diagnostic_params.ntor_sections;
+else
+    NT = 0;
+end
+
+Ro = ST.params.fields.Ro;
+Zo = ST.params.fields.Zo;
+
+for ss=1:ST.params.simulation.num_species
+    num_dims = ndims(ST.data.sp1.eta);
+    
+    if num_dims > 2
+        N = sum(ST.data.(['sp' num2str(ss)]).N,num_dims);
+    else
+        N = ST.data.(['sp' num2str(ss)]).N;
+    end
+    
+    cmin = min(min(N));
+    cmax = max(max(N));
+    
+    N = N';
+
+    for aa=1:numel(angle)
+        Rq1 = linspace(Ro,max(xAxis),Nq);
+        Zq1 = tan(deg2rad(angle(aa)))*(Rq1 - Ro) + Zo;
+        rq1 = 100*sqrt((Rq1 - Ro).^2 + (Zq1 - Zo).^2);
+        
+        Rq2 = linspace(min(xAxis),Ro,Nq);
+        Zq2 = tan(deg2rad(angle(aa)))*(Rq2 - Ro) + Zo;
+        rq2 = 100*sqrt((Rq2 - Ro).^2 + (Zq2 - Zo).^2);
+        
+        
+        fig = figure;
+        subplot(1,2,1)
+        contourf(xAxis,yAxis,N,10,'LineStyle','none')
+        axis equal;view([0 90])
+        colormap(jet);cb = colorbar;caxis([cmin cmax])
+        xlabel('$R$','Interpreter','latex')
+        ylabel('$Z$','Interpreter','latex')
+        ylabel(cb,'No. particles','Interpreter','latex')
+        
+        [R,Z] = meshgrid(xAxis,yAxis);
+        
+        Nq1 = interp2(R,Z,N,Rq1,Zq1);
+        Nq2 = interp2(R,Z,N,Rq2,Zq2);
+        
+        figure(fig)
+        subplot(1,2,1)
+        hold on;plot(Rq1(Nq1~=0),Zq1(Nq1~=0),'yo--',Rq2(Nq2~=0),Zq2(Nq2~=0),'ms--','LineWidth',1);hold off
+        
+        r = linspace(0,max([max(rq1) max(rq2)]),Nq);
+        log10No = max([max(log10(Nq1)) max(log10(Nq2))]);
+        log10Nq = -0.01*falloff_rate*r + log10No;
+        
+        figure(fig)
+        subplot(1,2,2)
+        plot(rq1,log10(Nq1),'yo--',rq2,log10(Nq2),'ms--',r,log10Nq,'k','MarkerFaceColor',[0,0,0])
+        grid minor; box on
+        xlabel('$r$ (cm)','Interpreter','latex')
+        ylabel('$N$','Interpreter','latex')
+    end
 end
 end

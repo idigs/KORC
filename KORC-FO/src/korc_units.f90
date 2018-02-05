@@ -74,7 +74,7 @@ subroutine normalize_variables(params,spp,F,P)
 		spp(ii)%Zo = spp(ii)%Zo/params%cpp%length
 		spp(ii)%r_inner = spp(ii)%r_inner/params%cpp%length
 		spp(ii)%r_outter = spp(ii)%r_outter/params%cpp%length
-		spp(ii)%falloff_rate = spp(ii)%falloff_rate/params%cpp%length
+		spp(ii)%falloff_rate = spp(ii)%falloff_rate*params%cpp%length
 	end do
 
 !	Normalize electromagnetic fields and profiles
