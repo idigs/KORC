@@ -59,7 +59,7 @@ ST.data = loadData(ST);
 
 % movieEnergyPitchAngle(ST)
 
-% pitchAnglePDFSlices(ST)
+pitchAnglePDFSlices(ST)
 
 % save('energy_limit','ST')
 end
@@ -4020,11 +4020,17 @@ for ss=1:ST.params.simulation.num_species
         fh = histcounts(eta(I),pitchAxis);
         fh = fh/trapz(pitchAxis(1:N-1),fh);
         
+        mean_pitch = trapz(pitchAxis,pitchAxis.*f);
+        mean_pitch_h = trapz(pitchAxis(1:N-1),pitchAxis(1:N-1).*fh);
+        
         figure(fig)
         subplot(5,slices/5,sl)
         plot(pitchAxis,f,'r',pitchAxis(1:N-1),fh,'b')
 %         semilogy(pitchAxis,f,'r',pitchAxis(1:N-1),fh,'b')
-        title(['$\mathcal{E}\in($' num2str(El) ',' num2str(Eu) ') MeV'],'Interpreter','latex')
+        title(['$\mathcal{E}\in($' num2str(El) ',' num2str(Eu)...
+            ') MeV $\langle \theta \rangle=$' num2str(mean_pitch)...
+            '$^\circ$ $\langle \theta \rangle=$' num2str(mean_pitch_h) '$^\circ$'],...
+            'Interpreter','latex')
         xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
     end
 end

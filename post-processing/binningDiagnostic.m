@@ -1,6 +1,6 @@
 function ST = binningDiagnostic(path,range)
 % ST = binningDiagnostic('../KORC-FO/outputFiles/',[99,100])
-close all
+% close all
 
 ST = struct;
 ST.path = path;
@@ -95,37 +95,41 @@ for ll=1:length(list)
     end
 end
 
-list = ST.params.simulation.outputs_list;
-
-for ll=1:length(list)
-    disp(['Loading ' list{ll}])
-    for ss=1:ST.params.simulation.num_species
-        tnp = double(ST.params.species.ppp(ss)*ST.params.simulation.nmpi);
-        
-        if (strcmp(list{ll},'X') || strcmp(list{ll},'V') || strcmp(list{ll},'B') || strcmp(list{ll},'E'))
-            data.(['sp' num2str(ss)]).('raw').(list{ll}) = zeros(3,tnp,ST.num_snapshots);
-        else
-            data.(['sp' num2str(ss)]).('raw').(list{ll}) = zeros(tnp,ST.num_snapshots);
-        end
-        
-        for ff=1:ST.params.simulation.nmpi
-            filename = [ST.path 'file_' num2str(ff-1) '.h5'];
-            indi = (ff - 1)*double(ST.params.species.ppp(ss)) + 1;
-            indf = ff*double(ST.params.species.ppp(ss));
-            for ii=1:ST.num_snapshots
-                dataset = ...
-                    ['/' num2str(it(ii)) '/spp_' num2str(ss)...
-                    '/' list{ll}];
-                if (strcmp(list{ll},'X') || strcmp(list{ll},'V') || strcmp(list{ll},'B') || strcmp(list{ll},'E'))
-                    data.(['sp' num2str(ss)]).('raw').(list{ll})(:,indi:indf,ii) = ...
-                        h5read(filename, dataset);
-                else
-                    data.(['sp' num2str(ss)]).('raw').(list{ll})(indi:indf,ii) = ...
-                        h5read(filename, dataset);
+try
+    list = ST.params.simulation.outputs_list;
+    
+    for ll=1:length(list)
+        disp(['Loading ' list{ll}])
+        for ss=1:ST.params.simulation.num_species
+            tnp = double(ST.params.species.ppp(ss)*ST.params.simulation.nmpi);
+            
+            if (strcmp(list{ll},'X') || strcmp(list{ll},'V') || strcmp(list{ll},'B') || strcmp(list{ll},'E'))
+                data.(['sp' num2str(ss)]).('raw').(list{ll}) = zeros(3,tnp,ST.num_snapshots);
+            else
+                data.(['sp' num2str(ss)]).('raw').(list{ll}) = zeros(tnp,ST.num_snapshots);
+            end
+            
+            for ff=1:ST.params.simulation.nmpi
+                filename = [ST.path 'file_' num2str(ff-1) '.h5'];
+                indi = (ff - 1)*double(ST.params.species.ppp(ss)) + 1;
+                indf = ff*double(ST.params.species.ppp(ss));
+                for ii=1:ST.num_snapshots
+                    dataset = ...
+                        ['/' num2str(it(ii)) '/spp_' num2str(ss)...
+                        '/' list{ll}];
+                    if (strcmp(list{ll},'X') || strcmp(list{ll},'V') || strcmp(list{ll},'B') || strcmp(list{ll},'E'))
+                        data.(['sp' num2str(ss)]).('raw').(list{ll})(:,indi:indf,ii) = ...
+                            h5read(filename, dataset);
+                    else
+                        data.(['sp' num2str(ss)]).('raw').(list{ll})(indi:indf,ii) = ...
+                            h5read(filename, dataset);
+                    end
                 end
             end
         end
     end
+catch
+	disp('No RAW data found...')
 end
 
 end
@@ -216,8 +220,8 @@ end
 function plotRadialDensity(ST)
 disp('Plotting radial density...')
 Nq = 20;
-angle = [30 45 55];
-falloff_rate = 3.6;
+angle = [30 45 60];
+falloff_rate = [1 2 3 4];
 
 xAxis = ST.params.binning_diagnostic_params.rnodes;
 yAxis = ST.params.binning_diagnostic_params.znodes;
@@ -234,6 +238,8 @@ end
 Ro = ST.params.fields.Ro;
 Zo = ST.params.fields.Zo;
 
+fig = figure;
+nrows = numel(angle);
 for ss=1:ST.params.simulation.num_species
     num_dims = ndims(ST.data.sp1.eta);
     
@@ -248,7 +254,7 @@ for ss=1:ST.params.simulation.num_species
     
     N = N';
 
-    for aa=1:numel(angle)
+    for aa=1:nrows
         Rq1 = linspace(Ro,max(xAxis),Nq);
         Zq1 = tan(deg2rad(angle(aa)))*(Rq1 - Ro) + Zo;
         rq1 = 100*sqrt((Rq1 - Ro).^2 + (Zq1 - Zo).^2);
@@ -258,10 +264,9 @@ for ss=1:ST.params.simulation.num_species
         rq2 = 100*sqrt((Rq2 - Ro).^2 + (Zq2 - Zo).^2);
         
         
-        fig = figure;
-        subplot(1,2,1)
+        subplot(nrows,2,(aa-1)*2 + 1)
         contourf(xAxis,yAxis,N,10,'LineStyle','none')
-        axis equal;view([0 90])
+        axis equal;view([0 90]);axis([1 2.5 -1 1])
         colormap(jet);cb = colorbar;caxis([cmin cmax])
         xlabel('$R$','Interpreter','latex')
         ylabel('$Z$','Interpreter','latex')
@@ -273,19 +278,30 @@ for ss=1:ST.params.simulation.num_species
         Nq2 = interp2(R,Z,N,Rq2,Zq2);
         
         figure(fig)
-        subplot(1,2,1)
-        hold on;plot(Rq1(Nq1~=0),Zq1(Nq1~=0),'yo--',Rq2(Nq2~=0),Zq2(Nq2~=0),'ms--','LineWidth',1);hold off
-        
-        r = linspace(0,max([max(rq1) max(rq2)]),Nq);
-        log10No = max([max(log10(Nq1)) max(log10(Nq2))]);
-        log10Nq = -0.01*falloff_rate*r + log10No;
-        
+        subplot(nrows,2,(aa-1)*2 + 1)
+        hold on;
+        plot(Rq1(Nq1~=0),Zq1(Nq1~=0),'go',Rq2(Nq2~=0),Zq2(Nq2~=0),'mo','MarkerFaceColor',[0.6,0.6,0.6],'MarkerSize',4)
+        hold off
+               
         figure(fig)
-        subplot(1,2,2)
-        plot(rq1,log10(Nq1),'yo--',rq2,log10(Nq2),'ms--',r,log10Nq,'k','MarkerFaceColor',[0,0,0])
-        grid minor; box on
+        subplot(nrows,2,(aa-1)*2 + 2)
+        plot(rq1,log10(Nq1),'go-',rq2,log10(Nq2),'mo-','MarkerFaceColor',[0,0,0])
+        grid minor; box on;xlim([0 60])
         xlabel('$r$ (cm)','Interpreter','latex')
         ylabel('$N$','Interpreter','latex')
+        
+        for ff=1:numel(falloff_rate)
+            r = linspace(0,max([max(rq1(Nq1~=0)) max(rq2(Nq2~=0))]),Nq);
+            log10No = max([max(log10(Nq1(Nq1~=0))) max(log10(Nq2(Nq2~=0)))]);
+            log10Nq = -0.01*falloff_rate(ff)*r + log10No;
+            
+            figure(fig)
+            subplot(nrows,2,(aa-1)*2 + 2)
+            hold on
+            plot(r,log10Nq,'k--')
+            hold off
+            text(1.05*max(r),min(log10Nq),num2str(falloff_rate(ff)),'Interpreter','latex')
+        end
     end
 end
 end
