@@ -1280,8 +1280,10 @@ for ss=1:ST.params.simulation.num_species
         I0 = find(yAxis_rescaled>0,1);z0 = yAxis_rescaled(I0);
         I1 = find(yAxis_rescaled>0.25,1)-1;z1 = yAxis_rescaled(I1);
         I2 = find(yAxis_rescaled>-0.25,1);z2 = yAxis_rescaled(I2);
-        I3 = find(yAxis_rescaled>0.4,1)-1;z3 = yAxis_rescaled(I3);
-        I4 = find(yAxis_rescaled>-0.4,1);z4 = yAxis_rescaled(I4);
+        
+        J0 = find(xAxis_rescaled>1.3,1)-1;r0 = xAxis_rescaled(J0);
+        J1 = find(xAxis_rescaled>1.5,1)-1;r1 = xAxis_rescaled(J1);
+        J2 = find(xAxis_rescaled>1.7,1)-1;r2 = xAxis_rescaled(J2);
         
         cm = colormap(jet(1024));cm(1,:) = [1,1,1];colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
         ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
@@ -1292,13 +1294,36 @@ for ss=1:ST.params.simulation.num_species
         end
         
         C = max(A(I0,:));
-        A0 = A(I0,:)/C;A1 = A(I1,:)/C;A2 = A(I2,:)/C;A3 = A(I3,:)/C;A4 = A(I4,:)/C;        
+        A0 = A(I0,:)/C;A1 = A(I1,:)/C;A2 = A(I2,:)/C;
+        CC = max(A(:,J1));
+        AA0 = A(:,J0)/CC;AA1 = A(:,J1)/CC;AA2 = A(:,J2)/CC;
         
         hs=figure;
-        plot(xAxis_rescaled,A0,'r--',xAxis_rescaled,A1,'g--',xAxis_rescaled,A2,'b--',...
-            xAxis_rescaled,A3,'k--',xAxis_rescaled,A4,'m--')
-        axis([1 2.5 0 1])
+        subplot(3,2,1)
+        plot(xAxis_rescaled,A1,'g--','LineWidth',2)
+        axis([1 2.0 0 1]);box on;grid minor;
         xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
+        subplot(3,2,3)
+        plot(xAxis_rescaled,A0,'r--','LineWidth',2)
+        axis([1 2.0 0 1]);box on;grid minor;
+        xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
+        subplot(3,2,5)
+        plot(xAxis_rescaled,A2,'b--','LineWidth',2)
+        axis([1 2.0 0 1]);box on;grid minor;
+        xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
+        
+        subplot(3,2,2)
+        plot(yAxis_rescaled,AA0,'g--','LineWidth',2)
+        axis([-0.8 0.8 0 1]);box on;grid minor;
+        xlabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+        subplot(3,2,4)
+        plot(yAxis_rescaled,AA1,'r--','LineWidth',2)
+        axis([-0.8 0.8 0 1]);box on;grid minor;
+        xlabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+        subplot(3,2,6)
+        plot(yAxis_rescaled,AA2,'b--','LineWidth',2)
+        axis([-0.8 0.8 0 1]);box on;grid minor;
+        xlabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
         
         A = np_L3';
         B = reshape(A,[numel(A),1]);
@@ -1333,11 +1358,12 @@ for ss=1:ST.params.simulation.num_species
         figure(h);
         subplot(4,2,7)
         contourf(xAxis_rescaled,yAxis_rescaled,A,v,'LineStyle','none')
-        hold on;plot(xAxis_rescaled,z0*ones(size(xAxis_rescaled)),'m',...
-            xAxis_rescaled,z1*ones(size(xAxis_rescaled)),'m',...,
-            xAxis_rescaled,z2*ones(size(xAxis_rescaled)),'m',...,
-            xAxis_rescaled,z3*ones(size(xAxis_rescaled)),'m',...
-            xAxis_rescaled,z4*ones(size(xAxis_rescaled)),'m','LineWidth',1);hold off
+        hold on;plot(xAxis_rescaled,z0*ones(size(xAxis_rescaled)),'r',...
+            xAxis_rescaled,z1*ones(size(xAxis_rescaled)),'g',...,
+            xAxis_rescaled,z2*ones(size(xAxis_rescaled)),'b','LineWidth',1);hold off
+        hold on;plot(r1*ones(size(yAxis_rescaled)),yAxis_rescaled,'r',...
+            r0*ones(size(yAxis_rescaled)),yAxis_rescaled,'g',...
+            r2*ones(size(yAxis_rescaled)),yAxis_rescaled,'b','LineWidth',1);hold off
         ymin=min(yAxis_rescaled);ymax=max(yAxis_rescaled);xmin=min(xAxis_rescaled);xmax=max(xAxis_rescaled);
         axis([xmin, xmax, ymin, ymax]);
         box on; axis equal;
@@ -1353,15 +1379,36 @@ for ss=1:ST.params.simulation.num_species
         end
         
         C = max(A(I0,:));
-        A0 = A(I0,:)/C;A1 = A(I1,:)/C;A2 = A(I2,:)/C;A3 = A(I3,:)/C;A4 = A(I4,:)/C;        
+        A0 = A(I0,:)/C;A1 = A(I1,:)/C;A2 = A(I2,:)/C;
+        CC = max(A(:,J1));
+        AA0 = A(:,J0)/CC;AA1 = A(:,J1)/CC;AA2 = A(:,J2)/CC;
         
         figure(hs);
-        hold on;
-        plot(xAxis_rescaled,A0,'r',xAxis_rescaled,A1,'g',xAxis_rescaled,A2,'b',...
-            xAxis_rescaled,A3,'k',xAxis_rescaled,A4,'m')
-        hold off;
-        axis([1 2.5 0 1])
+        subplot(3,2,1)
+        hold on;plot(xAxis_rescaled,A1,'g-','LineWidth',2);hold off
+%         axis([1 2.0 0 1]);box on;grid minor;
         xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
+        subplot(3,2,3)
+        hold on;plot(xAxis_rescaled,A0,'r-','LineWidth',2);hold off
+%         axis([1 2.0 0 1]);box on;grid minor;
+        xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
+        subplot(3,2,5)
+        hold on;plot(xAxis_rescaled,A2,'b-','LineWidth',2);hold off
+%         axis([1 2.0 0 1]);box on;grid minor;
+        xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
+        
+        subplot(3,2,2)
+        hold on;plot(yAxis_rescaled,AA0,'g-','LineWidth',2);hold off
+%         axis([-0.8 0.8 0 1]);box on;grid minor;
+        xlabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+        subplot(3,2,4)
+        hold on;plot(yAxis_rescaled,AA1,'r-','LineWidth',2);hold off
+%         axis([-0.8 0.8 0 1]);box on;grid minor;
+        xlabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+        subplot(3,2,6)
+        hold on;plot(yAxis_rescaled,AA2,'b-','LineWidth',2);hold off
+%         axis([-0.8 0.8 0 1]);box on;grid minor;
+        xlabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
         saveas(hs,[ST.path 'camera_slices_ss_' num2str(ss)],'fig')
         
         A = np_L4';
