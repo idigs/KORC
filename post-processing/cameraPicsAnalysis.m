@@ -17,7 +17,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-% plotCameraSnapshots(ST);
+plotCameraSnapshots(ST);
 
 picsAnalysis(ST);
 
@@ -631,7 +631,7 @@ for ss=1:ST.params.simulation.num_species
 end
 end
 
-function D = svdAnalysis(A,Eo)
+function [D,Ef] = svdAnalysis(A,Eo)
 % A has to be a matrix with L2 norm equal to 1
 
 [U,S,V] = svd(A);
@@ -649,6 +649,8 @@ end
 
 [~,I] = find(E>Eo,1,'first');
 
+Ef = E(I);
+
 SS = zeros(size(S));
 SS(1:I,1:I) = S(1:I,1:I);
 
@@ -665,6 +667,7 @@ disp('Plotting snapshots...')
 
 plotToroidalSections = true; % <-------------------------------------------
 threshold = 4; % <---------------------------------------------------------
+numLevels = 25;
 
 lambda = ST.params.synthetic_camera_params.lambda;
 xAxis = ST.params.synthetic_camera_params.pixels_nodes_x;
@@ -789,7 +792,7 @@ for ss=1:ST.params.simulation.num_species
     Ac = sum(PR_c,3)';
     Ac = Ac/(sum(sum(Ac))*DX*DY);
     Ac = Ac/sqrt(sum(sum(Ac.^2)));
-    Ac = svdAnalysis(Ac,90.0);
+%     Ac = svdAnalysis(Ac,90.0);
     
     B = reshape(Ac,[numel(Ac),1]);
     B(B==0) = [];
@@ -797,8 +800,8 @@ for ss=1:ST.params.simulation.num_species
         B(B<1) = [];
     end
     minval = min(B);
-    maxval = threshold*std(B);
-    v = linspace(minval,maxval,50);
+    maxval = max(B);%threshold*std(B);
+    v = linspace(minval,maxval,numLevels);
     
     figure(fig);subplot(1,2,1)
     contourf(xAxis_rescaled,yAxis_rescaled,Ac,v,'LineStyle','none')
@@ -819,7 +822,7 @@ for ss=1:ST.params.simulation.num_species
     Af = sum(PR_f,3)';
     Af = Af/(sum(sum(Af))*DX*DY);
     Af = Af/sqrt(sum(sum(Af.^2)));
-    Af = svdAnalysis(Af,90.0);
+%     Af = svdAnalysis(Af,90.0);
     
     B = reshape(Af,[numel(Af),1]);
     B(B==0) = [];
@@ -827,8 +830,8 @@ for ss=1:ST.params.simulation.num_species
         B(B<1) = [];
     end
     minval = min(B);
-    maxval = threshold*std(B);
-    v = linspace(minval,maxval,50);
+    maxval = max(B);%threshold*std(B);
+    v = linspace(minval,maxval,numLevels);
     
     figure(fig);subplot(1,2,2)
     contourf(xAxis_rescaled,yAxis_rescaled,Af,v,'LineStyle','none')
@@ -895,6 +898,6 @@ for ss=1:ST.params.simulation.num_species
     end
     
     
-    saveas(fig,[ST.path 'cameraPicsAnalysis_' num2str(ss)],'fig')
+    saveas(fig,[ST.path 'picsAnalysis_' num2str(ss)],'fig')
 end
 end

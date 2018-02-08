@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -N 1
+#SBATCH -N 64
 #SBATCH -C haswell
 #SBATCH -p debug
 #SBATCH -J KORC_HASWELL
@@ -14,8 +14,8 @@
 cd $SLURM_SUBMIT_DIR
 
 ## You might want to change the path of the outouts folder
-FILE_ID='t1580'
-INPUT_FOLDER='D3D_157576'
+FILE_ID='ellipse7'
+INPUT_FOLDER='D3D_165826'
 
 FOLDER_ID=${INPUT_FOLDER}_${FILE_ID}
 PATH_TO_SCRATCH=$SCRATCH
