@@ -643,6 +643,8 @@ function [D,Ef] = svdAnalysis(ST)
 disp('SVD analysis...')
 
 numLevels = 25; % <--------------------------------------------------------
+left_color = [0.6 0.6 0.6]; % <--------------------------------------------
+right_color = [1.0 0.0 1.0]; % <-------------------------------------------
 
 load('camera_data_165826.mat')
 
@@ -651,91 +653,128 @@ P = P/sqrt(sum(sum(P.^2)));
 for ss=1:ST.params.simulation.num_species   
     [PRf,~,PRc,~,xAxis,yAxis,~] = calculateCameraPics(ST,ss);
     
-    fig = figure;
-    
     Ac = sum(PRc,3)';
     Ac = Ac/sqrt(sum(sum(Ac.^2)));
-    
-    B = reshape(Ac,[numel(Ac),1]);
-    B(B==0) = [];
-    if ST.params.synthetic_camera_params.photon_count
-        B(B<1) = [];
-    end
-    minval = min(B);
-    maxval = max(B);
-    vc = linspace(minval,maxval,numLevels);
         
     Af = sum(PRf,3)';
     Af = Af/sqrt(sum(sum(Af.^2)));
     
-    B = reshape(Af,[numel(Af),1]);
-    B(B==0) = [];
-    if ST.params.synthetic_camera_params.photon_count
-        B(B<1) = [];
-    end
-    minval = min(B);
-    maxval = max(B);
-    vf = linspace(minval,maxval,numLevels);
+    axisPic = [max([min(xAxis) min(xAxisc)]) min([max(xAxis) max(xAxisc)])...
+        max([min(yAxis) min(yAxisc)]) min([max(yAxis) max(yAxisc)])];
     
-    figure(fig);subplot(1,2,1)
-    contourf(xAxis,yAxis,Ac,vc,'LineStyle','none')
-    ymin=min(yAxis);ymax=max(yAxis);xmin=min(xAxis);xmax=max(xAxis);
-    axis([xmin, xmax, ymin, ymax]);
-    box on; axis equal;grid minor
+    I = zeros(1,4);
+    Ic = zeros(1,4);
+    
+    [~,I(1)] = min(abs(xAxis - axisPic(1)));
+    [~,I(2)] = min(abs(xAxis - axisPic(2)));
+    [~,I(3)] = min(abs(yAxis - axisPic(3)));
+    [~,I(4)] = min(abs(yAxis - axisPic(4)));
+    
+    [~,Ic(1)] = min(abs(xAxisc - axisPic(1)));
+    [~,Ic(2)] = min(abs(xAxisc - axisPic(2)));
+    [~,Ic(3)] = min(abs(yAxisc - axisPic(3)));
+    [~,Ic(4)] = min(abs(yAxisc - axisPic(4)));
+    
+    A = Af(I(3):I(4),I(1):I(2));
+    xAxisA = xAxis(I(1):I(2));yAxisA = yAxis(I(3):I(4));
+    NX = numel(xAxisA);
+    NY = numel(yAxisA);
+    
+    B = P(Ic(3):Ic(4),Ic(1):Ic(2));
+    xAxisB = xAxisc(Ic(1):Ic(2));yAxisB = yAxisc(Ic(3):Ic(4));
+    
+    [X,Y]=meshgrid(xAxisB,yAxisB);
+    [Xq,Yq]=meshgrid(xAxisA,yAxisA);
+    Bq = interp2(X,Y,B,Xq,Yq,'linear',0);
+    Bq = Bq/sqrt(sum(sum(Bq.^2)));
+    
+    % SVD analysis starts here
+    rankA = rank(A);
+    rankBq = rank(Bq);
+    rankAnalysis = min([rankA rankBq]);
+    rankAxis = 1:1:rankAnalysis;
+    
+    [UA,SA,VA] = svd(A);    
+    [UBq,SBq,VBq] = svd(Bq);
+    
+    diagSA = diag(SA);
+    diagSBq = diag(SBq);
+    
+    frobenius_norm = 100*norm(A-Bq,'fro');
+    
+    DX = zeros(1,rankAnalysis);
+    DY = zeros(1,rankAnalysis);
+    
+    for rr=1:rankAnalysis
+        DX(rr) = sum( (diagSA(rr)*VA(:,rr) - diagSBq(rr)*VBq(:,rr)).^2 );
+        DY(rr) = sum( (diagSA(rr)*UA(:,rr) - diagSBq(rr)*UBq(:,rr)).^2 );
+    end
+    
+    DX = sum((VA(:,1:rankAnalysis) - VBq(:,1:rankAnalysis)).^2,1);
+    DY = sum((UA(:,1:rankAnalysis) - UBq(:,1:rankAnalysis)).^2,1);
+    
+    TDX = sum(DX);
+    TDY = sum(DY);
+    
+    EA = 100*sum(diagSA(1:rankAnalysis).^2);
+    EBq = 100*sum(diagSBq(1:rankAnalysis).^2);    
+    
+    fig = figure;
+    set(fig,'defaultAxesColorOrder',[left_color; right_color]);
+    
+    figure(fig);subplot(2,3,1)
+    image(xAxisA,yAxisA,A,'CDataMapping','scaled')
+    axis xy;colormap(jet);hc=colorbar;box on; axis equal;grid minor
     ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
     xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
+    ax = gca;ax.ClippingStyle = 'rectangle';
+    xlabel(hc,'$\hat{P}_R$','Interpreter','latex','FontSize',12)
     
-    cm = colormap(jet(1024));colormap(cm);hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-    ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
-    if ST.params.synthetic_camera_params.photon_count
-        xlabel(hc,'$P_R$ (Photons)','Interpreter','latex','FontSize',12)
-    else
-        xlabel(hc,'$\int P_R(\lambda) d\lambda$ (Watts)','Interpreter','latex','FontSize',12)
-    end  
-        
-    figure(fig);subplot(1,2,2)
-    contourf(xAxis,yAxis,Af,vf,'LineStyle','none')
-    ymin=min(yAxis);ymax=max(yAxis);xmin=min(xAxis);xmax=max(xAxis);
-    axis([xmin, xmax, ymin, ymax]);
-    box on; axis equal;grid minor
+    figure(fig);subplot(2,3,2)
+    image(xAxisB,yAxisB,B,'CDataMapping','scaled')
+    axis xy;colormap(jet);hc=colorbar;box on; axis equal;grid minor
     ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
     xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
+    ax = gca;ax.ClippingStyle = 'rectangle';
+    xlabel(hc,'$\hat{P}_R$','Interpreter','latex','FontSize',12)
     
-    cm = colormap(jet(1024));hc = colorbar('Location','eastoutside');caxis([0,maxval]);
-    ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
-    if ST.params.synthetic_camera_params.photon_count
-        xlabel(hc,'$P_R$ (Photons)','Interpreter','latex','FontSize',12)
-    else
-        xlabel(hc,'$\int P_R(\lambda) d\lambda$ (Watts)','Interpreter','latex','FontSize',12)
-    end
+    figure(fig);subplot(2,3,3)
+    image(xAxisA,yAxisA,Bq,'CDataMapping','scaled')
+    axis xy;colormap(jet);hc=colorbar;box on; axis equal;grid minor
+    ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+    xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
+    ax = gca;ax.ClippingStyle = 'rectangle';
+    xlabel(hc,'$\hat{P}_R$','Interpreter','latex','FontSize',12)
+    
+    figure(fig);subplot(2,3,4)
+    yyaxis left
+    plot(1,rankA,'ko',1,rankBq,'k^','MarkerFaceColor',[0.6,0.6,0.6])
+    ylabel('Rank','Interpreter','latex')
+    yyaxis right
+    plot(1,EA,'ko',1,EBq,'k^',1,frobenius_norm,'m*','MarkerFaceColor',[1.0,0.0,1.0])
+    ylabel('Energy','Interpreter','latex')
+    xlim([0 2]);grid minor;box on;
+    
+    figure(fig);subplot(2,3,5)
+    semilogy(rankAxis,DX,'rs--',rankAxis,DY,'bo--')
+    box on;grid minor;xlim([1 rankAnalysis])
+    xlabel('Rank','Interpreter','latex')
+    ylabel('Pondered difference','Interpreter','latex')
+    
+    figure(fig);subplot(2,3,6)
+    yyaxis left
+    plot(1,TDX,'ko','MarkerFaceColor',[0.6,0.6,0.6])
+    ylim([min(0.9*[TDX TDY]) max(1.1*[TDX TDY])])
+    ylabel('$\sum (w_i v_i - w_i^* v_i^*)^2$','Interpreter','latex')
+    yyaxis right
+    plot(1,TDY,'k^','MarkerFaceColor',[1.0,0.0,1.0])
+    ylim([min(0.9*[TDX TDY]) max(1.1*[TDX TDY])])
+    ylabel('$\sum (w_i u_i - w_i^* u_i^*)^2$','Interpreter','latex')
+    xlim([0 2]);grid minor;box on;
+    
+    saveas(fig,[ST.path 'svdAnalysis' num2str(ss)],'fig')
 end
 
-% [U,S,V] = svd(A);
-% 
-% diagS = diag(S);
-% s = sum(diagS.^2);
-% 
-% rankS = numel(diagS);
-% 
-% E = zeros(1,rankS);
-% 
-% for ii=1:rankS
-%     E(ii) = 100*sum(diagS(1:ii).^2)/s;
-% end
-% 
-% [~,I] = find(E>Eo,1,'first');
-% 
-% Ef = E(I);
-% 
-% SS = zeros(size(S));
-% SS(1:I,1:I) = S(1:I,1:I);
-% 
-% D = U*SS*V';
-% 
-% figure;
-% plot(1:1:rankS,E,'ko--')
-% xlabel('Mode number','Interpreter','latex')
-% ylabel('Energy (\%)','Interpreter','latex')
 end
 
 function [D,Ef] = svdOperation(A,Eo)
