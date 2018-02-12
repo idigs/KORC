@@ -702,6 +702,15 @@ for ss=1:ST.params.simulation.num_species
     
     frobenius_norm = 100*norm(A-Bq,'fro');
     
+    norms = zeros(1,rankAnalysis);
+    for rr=1:rankAnalysis
+        WA = SA(rr,rr)*UA(:,rr)*VA(:,rr)';
+        WBq = SBq(rr,rr)*UBq(:,rr)*VBq(:,rr)';
+        norms(rr) = norm(WA-WBq,'fro');
+    end
+    
+    TN = sum(norms);
+    
     DX = zeros(1,rankAnalysis);
     DY = zeros(1,rankAnalysis);
     
@@ -748,28 +757,31 @@ for ss=1:ST.params.simulation.num_species
     
     figure(fig);subplot(2,3,4)
     yyaxis left
-    plot(1,rankA,'ko',1,rankBq,'k^','MarkerFaceColor',[0.6,0.6,0.6])
+    plot(1,rankA,'ko',1,rankBq,'k^','MarkerFaceColor',left_color)
     ylabel('Rank','Interpreter','latex')
     yyaxis right
-    plot(1,EA,'ko',1,EBq,'k^',1,frobenius_norm,'m*','MarkerFaceColor',[1.0,0.0,1.0])
+    plot(1,EA,'ko',1,EBq,'k^',1,frobenius_norm,'m*','MarkerFaceColor',right_color)
     ylabel('Energy','Interpreter','latex')
     xlim([0 2]);grid minor;box on;
     
     figure(fig);subplot(2,3,5)
-    semilogy(rankAxis,DX,'rs--',rankAxis,DY,'bo--')
+    yyaxis left
+    semilogy(rankAxis,DX,'s--',rankAxis,DY,'o--','Color',left_color)
+    ylabel('Pondered difference','Interpreter','latex')
+    yyaxis right
+    semilogy(rankAxis,norms,'^--','Color',right_color)
+    ylabel('Frobenius norm','Interpreter','latex')
     box on;grid minor;xlim([1 rankAnalysis])
     xlabel('Rank','Interpreter','latex')
-    ylabel('Pondered difference','Interpreter','latex')
     
     figure(fig);subplot(2,3,6)
     yyaxis left
-    plot(1,TDX,'ko','MarkerFaceColor',[0.6,0.6,0.6])
+    plot(1,TDX,'ko',1,TDY,'k^','MarkerFaceColor',left_color)
     ylim([min(0.9*[TDX TDY]) max(1.1*[TDX TDY])])
-    ylabel('$\sum (w_i v_i - w_i^* v_i^*)^2$','Interpreter','latex')
+    ylabel('$\sum (w_i v_i - w_i^* v_i^*)^2$,$\sum (w_i u_i - w_i^* u_i^*)^2$','Interpreter','latex')
     yyaxis right
-    plot(1,TDY,'k^','MarkerFaceColor',[1.0,0.0,1.0])
-    ylim([min(0.9*[TDX TDY]) max(1.1*[TDX TDY])])
-    ylabel('$\sum (w_i u_i - w_i^* u_i^*)^2$','Interpreter','latex')
+    plot(1,TN,'ko','MarkerFaceColor',right_color)
+    ylabel('$\sum ||A_k-B_k||$','Interpreter','latex')
     xlim([0 2]);grid minor;box on;
     
     saveas(fig,[ST.path 'svdAnalysis' num2str(ss)],'fig')
