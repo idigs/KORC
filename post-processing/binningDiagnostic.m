@@ -17,7 +17,7 @@ ST.data = loadData(ST);
 
 plotBinningSnapshots(ST);
 
-plotRadialDensity(ST)
+plotRadialDensity(ST);
 
 end
 

@@ -700,7 +700,10 @@ for ss=1:ST.params.simulation.num_species
     diagSA = diag(SA);
     diagSBq = diag(SBq);
     
-    frobenius_norm = 100*norm(A-Bq,'fro');
+    WA = UA(:,1:rankAnalysis)*SA(1:rankAnalysis,1:rankAnalysis)*VA(:,1:rankAnalysis)';
+    WBq = UBq(:,1:rankAnalysis)*SBq(1:rankAnalysis,1:rankAnalysis)*VBq(:,1:rankAnalysis)';
+%     frobenius_norm = 100*norm(A-Bq,'fro');
+    frobenius_norm = 100*norm(WA-WBq,'fro');
     
     norms = zeros(1,rankAnalysis);
     for rr=1:rankAnalysis
@@ -719,8 +722,8 @@ for ss=1:ST.params.simulation.num_species
         DY(rr) = sum( (diagSA(rr)*UA(:,rr) - diagSBq(rr)*UBq(:,rr)).^2 );
     end
     
-    DX = sum((VA(:,1:rankAnalysis) - VBq(:,1:rankAnalysis)).^2,1);
-    DY = sum((UA(:,1:rankAnalysis) - UBq(:,1:rankAnalysis)).^2,1);
+%     DX = sum((VA(:,1:rankAnalysis) - VBq(:,1:rankAnalysis)).^2,1);
+%     DY = sum((UA(:,1:rankAnalysis) - UBq(:,1:rankAnalysis)).^2,1);
     
     TDX = sum(DX);
     TDY = sum(DY);

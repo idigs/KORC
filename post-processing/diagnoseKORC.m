@@ -1,6 +1,6 @@
 function ST = diagnoseKORC(path,visible,range)
 % ST = diagnoseKORC('../KORC-FO/outputFiles/','on',[0,100])
-% close all
+close all
 
 ST = struct;
 ST.path = path;
@@ -2896,7 +2896,9 @@ c = ST.params.scales.v;
 v = c*sqrt(1-1/g^2);
 ep = 8.854E-12;% Electric permitivity
 
-k = q*ST.params.fields.Bo*sin(eta)/(g*m*v);
+Bo = abs(ST.params.fields.Bo);
+
+k = q*Bo*sin(eta)/(g*m*v);
 
 % k = 2*q*sin(eta)/(g*m*v);
 l = lambda; 
@@ -3296,8 +3298,8 @@ for ss=1:ST.params.simulation.num_species
     chi = cos(deg2rad(eta));
     
     if (strcmp(ST.params.species.energy_distribution(ss),'AVALANCHE') || strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL-GAMMA'))
-        pmax = ST.params.pdf_params.max_p;
-        pmin = ST.params.pdf_params.min_p;
+        pmax = max([ST.params.pdf_params.max_p max(p)]);
+        pmin = min([ST.params.pdf_params.min_p min(p)]);
     end
     
     Emin = sqrt(pmin.^2 + 1)*m*c^2/(q*1E6);
@@ -3307,8 +3309,8 @@ for ss=1:ST.params.simulation.num_species
     EAxis = sqrt(pAxis.^2 + 1)*m*c^2/(q*1E6);
     
     if (strcmp(ST.params.species.energy_distribution(ss),'AVALANCHE') || strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL-GAMMA'))
-        pitchmax = ST.params.pdf_params.max_pitch_angle;
-        pitchmin = ST.params.pdf_params.min_pitch_angle;
+        pitchmax = max([ST.params.pdf_params.max_pitch_angle max(eta)]);
+        pitchmin = min([ST.params.pdf_params.min_pitch_angle min(eta)]);
     end
     Dpitch = (pitchmax - pitchmin)/nbins_chi;
     pitchAxis = pitchmin + (0:1:nbins_chi-1)*Dpitch + 0.5*Dpitch;
@@ -3619,7 +3621,7 @@ ep0 = 8.854E-12;% Electric permitivity
 c = 2.9979E8; % Speed of light
 qe = 1.602176E-19; % Electron charge
 me = 9.109382E-31; % Electron mass
-Bo = ST.params.fields.Bo;
+Bo = abs(ST.params.fields.Bo);
 
 hh = figure;
 hs1 = figure;
@@ -3939,8 +3941,44 @@ end
 
 end
 
+function P = Psp(ST,Bo,lambda,g,eta)
+P = zeros(size(eta));
+
+q = abs(ST.params.species.q(1));
+m = ST.params.species.m(1);
+c = ST.params.scales.v;
+
+v = c*sqrt(1-1/g^2);
+ep = 8.854E-12;% Electric permitivity
+
+k = q*Bo*sin(eta)/(g*m*v);
+
+l = lambda; 
+lc = 4*pi./(3*k*g^3);
+
+z = lc./l;
+
+BK53 = @(x) besselk(5/3,x);
+IntBKv = @(nu,x) (pi/sqrt(2))*(1 - 0.25*(4*nu^2 -1))*erfc(sqrt(x)) + ...
+    0.25*(4*nu^2 - 1)*sqrt(0.5*pi./x).*exp(-x);
+
+for ii=1:numel(z)
+    if (z(ii) < 0.5)
+        a = (2.16/2^(2/3))*z(ii)^(1/3);
+        P(ii) = integral(BK53,z(ii),a) + IntBKv(5/3,a);
+    elseif (z(ii) >= 0.5) && (z(ii) < 2.5)
+        a = 0.72*(z(ii) + 1);
+        P(ii) = integral(BK53,z(ii),a) + IntBKv(5/3,a);
+    else
+        P(ii) = IntBKv(5/3,z(ii));
+    end
+end
+
+P = c*q^2*P./(sqrt(3)*ep*g^2*l.^3);
+end
+
 function pitchAnglePDFSlices(ST)
-slices = 10;
+slices = 5;
 N = 100;
 
 hatE = ST.params.pdf_params.E;
@@ -3976,18 +4014,18 @@ for ss=1:ST.params.simulation.num_species
     chi = cos(deg2rad(eta));
     
     if (strcmp(ST.params.species.energy_distribution(ss),'AVALANCHE') || strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL-GAMMA'))
-        pmax = ST.params.pdf_params.max_p;
-        pmin = ST.params.pdf_params.min_p;
+        pmax = max([ST.params.pdf_params.max_p max(p)]);
+        pmin = min([ST.params.pdf_params.min_p min(p)]);
     elseif (strcmp(ST.params.species.energy_distribution(ss),'MONOENERGETIC'))
-        pmax = sqrt(ST.params.species.go(ss)^2 - 1);
-        pmin = sqrt(ST.params.species.go(ss)^2 - 1);
+        pmax = max([sqrt(ST.params.species.go(ss)^2 - 1); max(p)]);
+        pmin = min([sqrt(ST.params.species.go(ss)^2 - 1); min(p)]);
     end
     
-    Emin = (sqrt(pmin.^2 + 1)-1)*m*c^2/(q*1E6);
-    Emax = (sqrt(pmax.^2 + 1)-1)*m*c^2/(q*1E6);
+    Emin = sqrt(pmin.^2 + 1)*m*c^2/(q*1E6);
+    Emax = sqrt(pmax.^2 + 1)*m*c^2/(q*1E6);
     DE = (Emax-Emin)/slices;
     
-    EAxis = linspace(Emin,Emax-DE,slices) + 0.5*DE;
+    EAxis = linspace(Emin,Emax - DE,slices) + 0.5*DE;
     
     if (~strcmp(ST.params.species.energy_distribution(ss),'MONOPITCH'))
         pitchmax = ST.params.pdf_params.max_pitch_angle;
@@ -4003,8 +4041,10 @@ for ss=1:ST.params.simulation.num_species
     fig = figure;
     for sl=1:slices
         go = 1E6*q*EAxis(sl)/(m*c^2);
+%         go = mean(g);
         po = sqrt(go^2 - 1);
-        f = ft(hatE,Zeff,po,deg2rad(pitchAxis));
+        Psyn = Psp(ST,ST.params.pdf_params.Bo,ST.params.pdf_params.lambda,go,deg2rad(pitchAxis));
+        f = Psyn.*ft(hatE,Zeff,po,deg2rad(pitchAxis));
         f = f/trapz(pitchAxis,f);
         
         if (~strcmp(ST.params.species.energy_distribution(ss),'MONOENERGETIC'))
@@ -4017,19 +4057,22 @@ for ss=1:ST.params.simulation.num_species
             I = true(size(eta));
         end
         
-        fh = histcounts(eta(I),pitchAxis);
-        fh = fh/trapz(pitchAxis(1:N-1),fh);
+        pitchAxish = linspace(min(pitchAxis),max(pitchAxis),numel(pitchAxis)+1);
+        fh = histcounts(eta(I),pitchAxish);
+        fh = fh/trapz(pitchAxish(1:N),fh);
+        
+        pAh = pitchAxish(1:N) + 0.5*mean(diff(pitchAxish));
         
         mean_pitch = trapz(pitchAxis,pitchAxis.*f);
-        mean_pitch_h = trapz(pitchAxis(1:N-1),pitchAxis(1:N-1).*fh);
-        
+        mean_pitch_h = trapz(pitchAxish(1:N),pAh.*fh);
+                   
         figure(fig)
         subplot(5,slices/5,sl)
-        plot(pitchAxis,f,'r',pitchAxis(1:N-1),fh,'b')
+        plot(pitchAxis,f,'r',pAh,fh,'b')
 %         semilogy(pitchAxis,f,'r',pitchAxis(1:N-1),fh,'b')
         title(['$\mathcal{E}\in($' num2str(El) ',' num2str(Eu)...
             ') MeV $\langle \theta \rangle=$' num2str(mean_pitch)...
-            '$^\circ$ $\langle \theta \rangle=$' num2str(mean_pitch_h) '$^\circ$'],...
+            '$^\circ$ $\langle \vartheta \rangle=$' num2str(mean_pitch_h) '$^\circ$'],...
             'Interpreter','latex')
         xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
     end

@@ -835,6 +835,14 @@ SUBROUTINE save_params(params)
 		attr = "Scale factor"
 		call save_to_hdf5(h5file_id,dset,pdf_params%t,attr)
 
+		dset = TRIM(gname) // "/lambda"
+		attr = "Wavelength used when PDF is weighted with the distribution of synchrotron radiation."
+		call save_to_hdf5(h5file_id,dset,pdf_params%lambda,attr)
+
+		dset = TRIM(gname) // "/Bo"
+		attr = "Magnetic field used when PDF is weighted with the distribution of synchrotron radiation."
+		call save_to_hdf5(h5file_id,dset,pdf_params%Bo,attr)
+
 		call h5gclose_f(group_id, h5error)
 
 		call h5fclose_f(h5file_id, h5error)

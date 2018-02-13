@@ -14,7 +14,7 @@
 cd $SLURM_SUBMIT_DIR
 
 ## You might want to change the path of the outouts folder
-FILE_ID='ellipse7'
+FILE_ID='ellipse17'
 INPUT_FOLDER='D3D_165826'
 
 FOLDER_ID=${INPUT_FOLDER}_${FILE_ID}
