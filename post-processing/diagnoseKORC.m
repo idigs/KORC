@@ -17,7 +17,7 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-% energyConservation(ST);
+energyConservation(ST);
 
 % angularMomentum(ST);
 
@@ -59,7 +59,7 @@ ST.data = loadData(ST);
 
 % movieEnergyPitchAngle(ST)
 
-pitchAnglePDFSlices(ST)
+% pitchAnglePDFSlices(ST)
 
 % save('energy_limit','ST')
 end
@@ -151,6 +151,9 @@ end
 it = sort(it,'ascend');
 it(1:ST.range(1)) = [];
 
+cadence = double(ST.params.simulation.output_cadence);
+[~,I1] = min(abs(cadence*ST.range(1)-it));
+[~,I2] = min(abs(cadence*ST.range(2)-it));
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])
@@ -162,21 +165,41 @@ for ll=1:length(list)
         else
             data.(['sp' num2str(ss)]).(list{ll}) = zeros(tnp,ST.num_snapshots);
         end
-        
+    end
+end
+
+for ll=1:length(list)
+    disp(['Loading ' list{ll}])
+    for ss=1:ST.params.simulation.num_species
         for ff=1:ST.params.simulation.nmpi
             filename = [ST.path 'file_' num2str(ff-1) '.h5'];
             indi = (ff - 1)*double(ST.params.species.ppp(ss)) + 1;
             indf = ff*double(ST.params.species.ppp(ss));
-            for ii=1:ST.num_snapshots
-                dataset = ...
-                    ['/' num2str(it(ii)) '/spp_' num2str(ss)...
-                    '/' list{ll}];
-                if (strcmp(list{ll},'X') || strcmp(list{ll},'V') || strcmp(list{ll},'B') || strcmp(list{ll},'E'))
-                    data.(['sp' num2str(ss)]).(list{ll})(:,indi:indf,ii) = ...
-                        h5read(filename, dataset);
-                else
-                    data.(['sp' num2str(ss)]).(list{ll})(indi:indf,ii) = ...
-                        h5read(filename, dataset);
+            for ii=I1:I2
+                try
+                    dataset = ...
+                        ['/' num2str(it(ii)) '/spp_' num2str(ss)...
+                        '/' list{ll}];
+                    if (strcmp(list{ll},'X') || strcmp(list{ll},'V') || strcmp(list{ll},'B') || strcmp(list{ll},'E'))
+                        data.(['sp' num2str(ss)]).(list{ll})(:,indi:indf,ii) = ...
+                            h5read(filename, dataset);
+                    else
+                        data.(['sp' num2str(ss)]).(list{ll})(indi:indf,ii) = ...
+                            h5read(filename, dataset);
+                    end
+                catch EX
+                    if ~isempty(strfind(EX.message,'not found'))
+                        ST.num_snapshots = ST.num_snapshots - 1;
+                        ST.time(ii) = [];
+                        it(ii) = [];
+                        for jj=1:ST.params.simulation.num_species
+                            if (strcmp(list{jj},'X') || strcmp(list{jj},'V') || strcmp(list{jj},'B') || strcmp(list{jj},'E'))
+                                data.(['sp' num2str(ss)]).(list{jj})(:,:,ii) = [];
+                            else
+                                data.(['sp' num2str(ss)]).(list{jj})(:,ii) = [];
+                            end
+                        end
+                    end
                 end
             end
         end
@@ -4041,11 +4064,22 @@ for ss=1:ST.params.simulation.num_species
     fig = figure;
     for sl=1:slices
         go = 1E6*q*EAxis(sl)/(m*c^2);
-%         go = mean(g);
         po = sqrt(go^2 - 1);
         Psyn = Psp(ST,ST.params.pdf_params.Bo,ST.params.pdf_params.lambda,go,deg2rad(pitchAxis));
         f = Psyn.*ft(hatE,Zeff,po,deg2rad(pitchAxis));
         f = f/trapz(pitchAxis,f);
+        
+        go = 1E6*q*(EAxis(sl)+0.5*DE)/(m*c^2);
+        po = sqrt(go^2 - 1);
+        Psyn = Psp(ST,ST.params.pdf_params.Bo,ST.params.pdf_params.lambda,go,deg2rad(pitchAxis));
+        fu = Psyn.*ft(hatE,Zeff,po,deg2rad(pitchAxis));
+        fu = fu/trapz(pitchAxis,fu);
+        
+        go = 1E6*q*(EAxis(sl)-0.5*DE)/(m*c^2);
+        po = sqrt(go^2 - 1);
+        Psyn = Psp(ST,ST.params.pdf_params.Bo,ST.params.pdf_params.lambda,go,deg2rad(pitchAxis));
+        fl = Psyn.*ft(hatE,Zeff,po,deg2rad(pitchAxis));
+        fl = fl/trapz(pitchAxis,fl);
         
         if (~strcmp(ST.params.species.energy_distribution(ss),'MONOENERGETIC'))
             El = EAxis(sl) - 0.5*DE;
@@ -4068,7 +4102,8 @@ for ss=1:ST.params.simulation.num_species
                    
         figure(fig)
         subplot(5,slices/5,sl)
-        plot(pitchAxis,f,'r',pAh,fh,'b')
+        plot(pitchAxis,f,'r',pitchAxis,fl,'b-.',pitchAxis,fu,'b--',pAh,fh,'k')
+        legend({'$f_o$,','$f_l$','$f_u$','$f_{\mbox{sim}}$'},'Interpreter','latex')
 %         semilogy(pitchAxis,f,'r',pitchAxis(1:N-1),fh,'b')
         title(['$\mathcal{E}\in($' num2str(El) ',' num2str(Eu)...
             ') MeV $\langle \theta \rangle=$' num2str(mean_pitch)...

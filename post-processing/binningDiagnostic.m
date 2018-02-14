@@ -1,6 +1,6 @@
 function ST = binningDiagnostic(path,range)
 % ST = binningDiagnostic('../KORC-FO/outputFiles/',[99,100])
-% close all
+close all
 
 ST = struct;
 ST.path = path;
