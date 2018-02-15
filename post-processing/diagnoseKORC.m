@@ -16,9 +16,9 @@ ST.params = loadSimulationParameters(ST);
 %     ST.params.simulation.dt*double(ST.params.simulation.output_cadence)*...
 %     double(ST.range(1):1:ST.range(2));
 
-ST.data = loadData(ST);
+ST = loadData(ST);
 
-energyConservation(ST);
+% energyConservation(ST);
 
 % angularMomentum(ST);
 
@@ -60,7 +60,7 @@ energyConservation(ST);
 
 % movieEnergyPitchAngle(ST)
 
-% pitchAnglePDFSlices(ST)
+pitchAnglePDFSlices(ST)
 
 % save('energy_limit','ST')
 end
@@ -137,7 +137,7 @@ end
 
 end
 
-function data = loadData(ST)
+function ST = loadData(ST)
 data = struct;
 
 list = ST.params.simulation.outputs_list;
@@ -155,14 +155,15 @@ cadence = double(ST.params.simulation.output_cadence);
 [~,I1] = min(abs(cadence*ST.range(1)-it));
 [~,I2] = min(abs(cadence*ST.range(2)-it));
 
+indices = it(I1:I2);
+
 ST.num_snapshots = I2 - I1 + 1;
 
 ST.params = loadSimulationParameters(ST);
 
-ST.time = 1:1:ST.num_snapshots;
+ST.time = zeros(1,ST.num_snapshots);
 
 for ll=1:length(list)
-    disp(['Loading ' list{ll}])
     for ss=1:ST.params.simulation.num_species
         tnp = double(ST.params.species.ppp(ss)*ST.params.simulation.nmpi);
         
@@ -174,17 +175,18 @@ for ll=1:length(list)
     end
 end
 
-for ll=1:length(list)
-    disp(['Loading ' list{ll}])
+for impi=1:ST.params.simulation.nmpi
+    disp(['Loading file:' num2str(impi) ' out of ' num2str(ST.params.simulation.nmpi)])
+    filename = [ST.path 'file_' num2str(impi-1) '.h5'];
     for ss=1:ST.params.simulation.num_species
-        for ff=1:ST.params.simulation.nmpi
-            filename = [ST.path 'file_' num2str(ff-1) '.h5'];
-            indi = (ff - 1)*double(ST.params.species.ppp(ss)) + 1;
-            indf = ff*double(ST.params.species.ppp(ss));
-            for ii=I1:I2
+        indi = (impi - 1)*double(ST.params.species.ppp(ss)) + 1;
+        indf = impi*double(ST.params.species.ppp(ss));
+        
+        for ii=1:ST.num_snapshots
+            for ll=1:length(list)
                 try
                     dataset = ...
-                        ['/' num2str(it(ii)) '/spp_' num2str(ss)...
+                        ['/' num2str(indices(ii)) '/spp_' num2str(ss)...
                         '/' list{ll}];
                     if (strcmp(list{ll},'X') || strcmp(list{ll},'V') || strcmp(list{ll},'B') || strcmp(list{ll},'E'))
                         data.(['sp' num2str(ss)]).(list{ll})(:,indi:indf,ii) = ...
@@ -193,24 +195,71 @@ for ll=1:length(list)
                         data.(['sp' num2str(ss)]).(list{ll})(indi:indf,ii) = ...
                             h5read(filename, dataset);
                     end
+                    
+                    dataset = ...
+                        ['/' num2str(indices(ii)) '/time'];
+                    
+                    ST.time(ii) = h5read(filename, dataset);
                 catch EX
                     if ~isempty(strfind(EX.message,'not found'))
                         ST.num_snapshots = ST.num_snapshots - 1;
                         ST.time(ii) = [];
-                        it(ii) = [];
-                        for jj=1:ST.params.simulation.num_species
+                        indices(ii) = [];
+                        for jj=1:length(list)
                             if (strcmp(list{jj},'X') || strcmp(list{jj},'V') || strcmp(list{jj},'B') || strcmp(list{jj},'E'))
                                 data.(['sp' num2str(ss)]).(list{jj})(:,:,ii) = [];
                             else
                                 data.(['sp' num2str(ss)]).(list{jj})(:,ii) = [];
                             end
                         end
+                        break
                     end
                 end
             end
         end
     end
 end
+
+
+% for ll=1:length(list)
+%     disp(['Loading ' list{ll}])
+%     for ss=1:ST.params.simulation.num_species
+%         for impi=1:ST.params.simulation.nmpi
+%             filename = [ST.path 'file_' num2str(impi-1) '.h5'];
+%             indi = (impi - 1)*double(ST.params.species.ppp(ss)) + 1;
+%             indf = impi*double(ST.params.species.ppp(ss));
+%             for ii=I1:I2
+%                 try
+%                     dataset = ...
+%                         ['/' num2str(it(ii)) '/spp_' num2str(ss)...
+%                         '/' list{ll}];
+%                     if (strcmp(list{ll},'X') || strcmp(list{ll},'V') || strcmp(list{ll},'B') || strcmp(list{ll},'E'))
+%                         data.(['sp' num2str(ss)]).(list{ll})(:,indi:indf,ii) = ...
+%                             h5read(filename, dataset);
+%                     else
+%                         data.(['sp' num2str(ss)]).(list{ll})(indi:indf,ii) = ...
+%                             h5read(filename, dataset);
+%                     end
+%                 catch EX
+%                     if ~isempty(strfind(EX.message,'not found'))
+%                         ST.num_snapshots = ST.num_snapshots - 1;
+%                         ST.time(ii) = [];
+%                         it(ii) = [];
+%                         for jj=1:ST.params.simulation.num_species
+%                             if (strcmp(list{jj},'X') || strcmp(list{jj},'V') || strcmp(list{jj},'B') || strcmp(list{jj},'E'))
+%                                 data.(['sp' num2str(ss)]).(list{jj})(:,:,ii) = [];
+%                             else
+%                                 data.(['sp' num2str(ss)]).(list{jj})(:,ii) = [];
+%                             end
+%                         end
+%                     end
+%                 end
+%             end
+%         end
+%     end
+% end
+
+ST.data = data;
 
 end
 
