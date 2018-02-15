@@ -61,7 +61,7 @@ module korc_HDF5
 				load_from_hdf5,&
 				load_array_from_hdf5,&
 				save_string_parameter,&
-				get_last_iteration,&
+				load_time_stepping_params,&
 				save_restart_variables,&
 				load_particles_ic
 
@@ -488,6 +488,7 @@ subroutine i8save_to_hdf5(h5file_id,dset,idata,attr)
 	call h5screate_simple_f(rank,dims,dspace_id,h5error)
 	call h5dcreate_f(h5file_id, TRIM(dset), H5T_NATIVE_DOUBLE, dspace_id, dset_id, h5error)
 	call h5dwrite_f(dset_id, H5T_NATIVE_DOUBLE, REAL(idata,8), dims, h5error)
+
 
 	if (PRESENT(attr)) then
 		! * * * Write attribute of data to file * * *
@@ -1419,8 +1420,36 @@ subroutine save_restart_variables(params,spp,F)
 			call save_to_hdf5(h5file_id,dset,params%it,attr)
 		
 			dset = "time"
-			attr = "Simulation time in secs"
+			attr = "Current simulation time in secs"
 			call save_to_hdf5(h5file_id,dset,REAL(params%it,rp)*params%dt*params%cpp%time,attr)
+
+			dset = "simulation_time"
+			attr = "Total simulation time in secs"
+			call save_to_hdf5(h5file_id,dset,params%simulation_time*params%cpp%time,attr)
+
+			dset = "snapshot_frequency"
+			attr = "Snapshot frequency in secs"
+			call save_to_hdf5(h5file_id,dset,params%snapshot_frequency*params%cpp%time,attr)
+
+			dset = "dt"
+			attr = "Time step in secs"
+			call save_to_hdf5(h5file_id,dset,params%dt*params%cpp%time,attr)
+
+			dset = "t_steps"
+			attr = "Time steps in simulation"
+			call save_to_hdf5(h5file_id,dset,params%t_steps,attr)
+
+			dset = "output_cadence"
+			attr = "Output cadence"
+			call save_to_hdf5(h5file_id,dset,params%output_cadence,attr)
+
+			dset = "restart_output_cadence"
+			attr = "Restart output cadence"
+			call save_to_hdf5(h5file_id,dset,params%restart_output_cadence,attr)
+
+			dset = "num_snapshots"
+			attr = "Number of snapshots in time for saving simulation variables"
+			call save_to_hdf5(h5file_id,dset,params%num_snapshots,attr)
 		end if
 
 		do ss=1_idef,params%num_species
@@ -1524,12 +1553,12 @@ end subroutine save_restart_variables
 ! * * * SUBROUTINES FOR RESTARTING SIMULATION * * * !
 ! * * * * * * * * * * * * * * * * * * * * * * * * * !
 
-subroutine get_last_iteration(params)
+subroutine load_time_stepping_params(params)
 	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
 	CHARACTER(MAX_STRING_LENGTH) :: filename
 	CHARACTER(MAX_STRING_LENGTH) :: dset
 	INTEGER(HID_T) :: h5file_id
-	REAL(KIND=8) :: it
+	REAL(KIND=8) :: real_number
 	CHARACTER(19) :: tmp_str
 	INTEGER :: h5error
 	INTEGER :: mpierr
@@ -1543,16 +1572,53 @@ subroutine get_last_iteration(params)
 		end if
 
 		dset = "/it"
-		call load_from_hdf5(h5file_id,dset,it)
+		call load_from_hdf5(h5file_id,dset,real_number)
+		params%ito = INT(real_number,ip) + 1_ip
 
-		params%ito = INT(it,ip) + 1_ip
+		dset = "/dt"
+		call load_from_hdf5(h5file_id,dset,params%dt)
+
+		dset = "/t_steps"
+		call load_from_hdf5(h5file_id,dset,real_number)
+		params%t_steps = INT(real_number,ip)
+
+		dset = "/simulation_time"
+		call load_from_hdf5(h5file_id,dset,params%simulation_time)
+
+		dset = "/snapshot_frequency"
+		call load_from_hdf5(h5file_id,dset,params%snapshot_frequency)
+
+		dset = "/output_cadence"
+		call load_from_hdf5(h5file_id,dset,real_number)
+		params%output_cadence = INT(real_number,ip)
+
+		dset = "/restart_output_cadence"
+		call load_from_hdf5(h5file_id,dset,real_number)
+		params%restart_output_cadence = INT(real_number,ip)
+
+		dset = "/num_snapshots"
+		call load_from_hdf5(h5file_id,dset,real_number)
+		params%num_snapshots = INT(real_number,ip)
 
 		call h5fclose_f(h5file_id, h5error)
 	end if
 
-
 	CALL MPI_BCAST(params%ito,1,MPI_INTEGER8,0,MPI_COMM_WORLD,mpierr)
-end subroutine get_last_iteration
+
+	CALL MPI_BCAST(params%dt,1,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+
+	CALL MPI_BCAST(params%t_steps,1,MPI_INTEGER8,0,MPI_COMM_WORLD,mpierr)
+
+	CALL MPI_BCAST(params%simulation_time,1,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+
+	CALL MPI_BCAST(params%snapshot_frequency,1,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+
+	CALL MPI_BCAST(params%output_cadence,1,MPI_INTEGER8,0,MPI_COMM_WORLD,mpierr)
+
+	CALL MPI_BCAST(params%restart_output_cadence,1,MPI_INTEGER8,0,MPI_COMM_WORLD,mpierr)
+
+	CALL MPI_BCAST(params%num_snapshots,1,MPI_INTEGER8,0,MPI_COMM_WORLD,mpierr)
+end subroutine load_time_stepping_params
 
 
 subroutine load_particles_ic(params,spp)

@@ -7,13 +7,14 @@ ST.path = path;
 ST.visible = visible;
 
 ST.range = range;
-ST.num_snapshots = ST.range(2) - ST.range(1) + 1;
+
+% ST.num_snapshots = ST.range(2) - ST.range(1) + 1;
 
 ST.params = loadSimulationParameters(ST);
 
-ST.time = ...
-    ST.params.simulation.dt*double(ST.params.simulation.output_cadence)*...
-    double(ST.range(1):1:ST.range(2));
+% ST.time = ...
+%     ST.params.simulation.dt*double(ST.params.simulation.output_cadence)*...
+%     double(ST.range(1):1:ST.range(2));
 
 ST.data = loadData(ST);
 
@@ -149,11 +150,16 @@ for ii=1:size(H.Groups,1)
     it(ii) = str2num(tmpstr);
 end
 it = sort(it,'ascend');
-it(1:ST.range(1)) = [];
 
 cadence = double(ST.params.simulation.output_cadence);
 [~,I1] = min(abs(cadence*ST.range(1)-it));
 [~,I2] = min(abs(cadence*ST.range(2)-it));
+
+ST.num_snapshots = I2 - I1 + 1;
+
+ST.params = loadSimulationParameters(ST);
+
+ST.time = 1:1:ST.num_snapshots;
 
 for ll=1:length(list)
     disp(['Loading ' list{ll}])

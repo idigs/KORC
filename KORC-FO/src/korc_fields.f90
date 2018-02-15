@@ -383,6 +383,7 @@ subroutine initialize_fields(params,F)
 
 			call which_fields_in_file(params,F%Bfield_in_file,F%Efield_in_file,F%Bflux_in_file)
 
+
 			if (F%Bflux.AND..NOT.F%Bflux_in_file) then
 				write(6,'("ERROR: Magnetic flux to be used but no data in file!")')
 				call KORC_ABORT()
@@ -394,7 +395,11 @@ subroutine initialize_fields(params,F)
 			end if
 
 			if (F%Efield.AND..NOT.F%Efield_in_file) then
-				write(6,'("MESSAGE: Analytical electric field will be used.")')
+				if (params%mpi_params%rank.EQ.0_idef) then
+					write(6,'(/,"* * * * * * * * * *  FIELDS  * * * * * * * * * *")')
+					write(6,'("MESSAGE: Analytical electric field will be used.")')
+					write(6,'("* * * * * * * * * * * * ** * * * * * * * * * * *",/)')
+				end if
 			end if
 
 			if (F%axisymmetric_fields) then

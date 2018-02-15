@@ -75,16 +75,10 @@ subroutine load_korc_params(params)
 	close(default_unit_open)
 
  	params%restart = restart
+
 	params%simulation_time = simulation_time
 	params%snapshot_frequency = snapshot_frequency
-
 	params%dt = dt
-
-	if (params%restart) then
-		call get_last_iteration(params)
-	else
-		params%ito = 1_ip
-	end if
 
 	params%num_species = num_species
 	params%plasma_model = TRIM(plasma_model)
@@ -137,9 +131,7 @@ subroutine load_korc_params(params)
 
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'(/,"* * * * * SIMULATION PARAMETERS * * * * *")')
-		write(6,'("Simulation time: ",E17.10," s")') params%simulation_time
-		write(6,'("Output frequency: ",E17.10," s")') params%snapshot_frequency
-		write(6,'("Time step in fraction of relativistic gyro-period: ",F15.10)') params%dt
+		write(6,'("Restarting simulation: ",L1)') params%restart
 		write(6,'("Number of electron populations: ",I16)') params%num_species
 		write(6,'("Magnetic field model: ",A50)') TRIM(params%plasma_model)
 		if (TRIM(params%plasma_model).EQ.'EXTERNAL') then
@@ -147,9 +139,9 @@ subroutine load_korc_params(params)
 		end if
 
 		write(6,'("Radiation losses included: ",L1)') params%radiation
-		write(6,'("collisions losses included: ",L1)') params%collisions
+		write(6,'("Collisions losses included: ",L1)') params%collisions
 		if (params%collisions) then
-			write(6,'("collisions model: ",A50)') TRIM(params%collisions_model)
+			write(6,'("Collisions model: ",A50)') TRIM(params%collisions_model)
 		end if
 		write(6,'("* * * * * * * * * * * * * * * * * * * * *",/)')
 	end if	
@@ -175,24 +167,35 @@ end subroutine initialize_korc_parameters
 subroutine define_time_step(params)
 	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
 
-! 	This definition will be changed as more species and electromagnetic fields
-!	are included.
-
-	params%dt = params%dt*(2.0_rp*C_PI*params%cpp%time_r)
-
-	params%t_steps = CEILING(params%simulation_time/params%dt,ip)
-	params%output_cadence = FLOOR(params%snapshot_frequency/params%dt,ip)
-	if (params%output_cadence.EQ.0_ip) params%output_cadence = 1_ip
-	params%num_snapshots = params%t_steps/params%output_cadence
-	if (params%output_cadence.LT.1000_ip) then
-		params%restart_output_cadence = 1000_ip
+	if (params%restart) then
+		call load_time_stepping_params(params)
 	else
-		params%restart_output_cadence = params%output_cadence
+		params%ito = 1_ip
+
+		params%dt = params%dt*(2.0_rp*C_PI*params%cpp%time_r)
+
+		params%t_steps = CEILING(params%simulation_time/params%dt,ip)
+
+		params%output_cadence = FLOOR(params%snapshot_frequency/params%dt,ip)
+
+		if (params%output_cadence.EQ.0_ip) params%output_cadence = 1_ip
+
+		params%num_snapshots = params%t_steps/params%output_cadence
+
+		if (params%output_cadence.LT.1000_ip) then
+			params%restart_output_cadence = 1000_ip
+		else
+			params%restart_output_cadence = params%output_cadence
+		end if
 	end if
 
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'(/,"* * * * * TIME STEPPING PARAMETERS * * * * *")')
+		write(6,'("Simulation time: ",E17.10," s")') params%simulation_time
+		write(6,'("Output frequency: ",E17.10," s")') params%snapshot_frequency
+		write(6,'("Time step in fraction of relativistic gyro-period: ",E17.10)') params%dt
 		write(6,'("Number of time steps: ",I16)') params%t_steps
+		write(6,'("Starting simulation at time step: ",I16)') params%ito
 		write(6,'("Output cadence: ",I16)') params%output_cadence
 		write(6,'("Number of outputs: ",I16)') params%num_snapshots
 		write(6,'("* * * * * * * * * ** * * * * * * * * * * * *",/)')
