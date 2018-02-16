@@ -50,7 +50,7 @@ ST = loadData(ST);
 
 % calculateTemperatureComponents(ST);
 
-% SE_phaseSpaceAnalisys(ST);
+SE_phaseSpaceAnalisys(ST);
 
 % plotEnergyPitchanglePDF(ST);
 

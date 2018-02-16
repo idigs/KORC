@@ -21,7 +21,7 @@ FLUX = G.psirz; % NZ x NR
 Z0 = G.zmaxis;
 R0 = G.rmaxis;
 
-E0 = 0.6/(2*pi*R0);
+% E0 = 0.6/(2*pi*R0);
 B0 = G.bzero;
 
 clear B G
@@ -104,6 +104,8 @@ rho = eq.oneD.rho(1,:);
 time = eq.oneD.t(:,1);
 
 [~,it] = min(abs(timeB - time));
+
+E0 = -sign(B0)*eq.zeroD.calc.E_phi(it);
 
 ne = eq.oneD.raw.ne(it,:);
 Te = eq.oneD.raw.Te(it,:);
