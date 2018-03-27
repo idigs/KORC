@@ -50,7 +50,7 @@ ST = loadData(ST);
 
 % calculateTemperatureComponents(ST);
 
-SE_phaseSpaceAnalisys(ST);
+% SE_phaseSpaceAnalisys(ST);
 
 % plotEnergyPitchanglePDF(ST);
 
@@ -58,9 +58,13 @@ SE_phaseSpaceAnalisys(ST);
 
 % NIMROD_figure(ST);
 
-% movieEnergyPitchAngle(ST)
+% ST.M = movieEnergyPitchAngle(ST);
 
-pitchAnglePDFSlices(ST)
+% pitchAnglePDFSlices(ST)
+
+% pitchAnglePDFSlicesVsTime(ST)
+
+spatialAndVelocityPDF(ST)
 
 % save('energy_limit','ST')
 end
@@ -159,7 +163,7 @@ indices = it(I1:I2);
 
 ST.num_snapshots = I2 - I1 + 1;
 
-ST.params = loadSimulationParameters(ST);
+% ST.params = loadSimulationParameters(ST);
 
 ST.time = zeros(1,ST.num_snapshots);
 
@@ -3003,181 +3007,6 @@ end
 Psyn = c*q^2*Psyn./(sqrt(3)*ep*g^2*l.^3);
 end
 
-function [Psyn,fRE] = averagedSpectrum(ST,chiAxis,pAxis,fnum)
-Np = numel(pAxis);
-Nchi = numel(chiAxis);
-
-q = abs(ST.params.species.q(1));
-m = ST.params.species.m(1);
-c = ST.params.scales.v;
-
-Ebar = ST.params.avalanche_pdf_params.Epar/ST.params.avalanche_pdf_params.Ec;
-Zeff = ST.params.avalanche_pdf_params.Zeff;
-Ehat = (Ebar - 1)/(1 + Zeff);
-Cz = sqrt(3*(Zeff + 5)/pi)*ST.params.avalanche_pdf_params.Clog;
-
-g = @(p) sqrt(p.^2 + 1);
-eta = @(x) acos(x);
-
-f = @(p,x) (Ehat/Cz)*p.*exp( -p.*(x/Cz + 0.5*Ehat*(1 - x.^2)./x) )./x;
-
-% sanityIntegral = integral2(f,pmin,pmax,chimin,1);
-% sanityIntegral = integral2(f,0,500,0,1);
-
-try
-    l = ST.params.synthetic_camera_params.lambda;
-catch
-    l = linspace(1E-7,1E-5,20);
-end
-
-Psyn_p_chi = zeros(numel(l),Np,Nchi);
-ddPsyndpchi = zeros(numel(l),Np,Nchi);
-Psyn_p = zeros(numel(l),Np);
-Psyn = zeros(size(l));
-fRE = zeros(Np,Nchi);
-Psyn_sp = zeros(numel(l),Np,Nchi);
-
-for pp=1:Np
-    for cc=1:Nchi
-        fRE(pp,cc) = f(pAxis(pp),chiAxis(cc));
-    end
-end
-
-S = trapz(fliplr(chiAxis),trapz(pAxis,fRE));
-fRE = fRE/S;
-
-for ll=1:numel(l)
-    for pp=1:Np
-        for cc=1:Nchi
-            Psyn_sp(ll,pp,cc) = singleParticleSpectrum(ST,l(ll),g(pAxis(pp)),eta(chiAxis(cc)));
-            Psyn_p_chi(ll,pp,cc) = fRE(pp,cc)*Psyn_sp(ll,pp,cc);
-            ddPsyndpchi(ll,pp,cc) = fnum(pp,cc)*Psyn_sp(ll,pp,cc);
-        end
-%         Psyn_p(ll,pp) = trapz(fliplr(chiAxis),squeeze(Psyn_p_chi(ll,pp,:)));
-    end
-%     Psyn(ll) = trapz(pAxis,squeeze(Psyn_p(ll,:)));
-end
-
-E = (g(pAxis)*m*c^2/q)/1E6; % MeV
-% xAxis = chiAxis;
-xAxis = rad2deg(acos(chiAxis));
-% yAxis = pAxis;
-yAxis = E;
-lAxis = l/1E-9;
-
-
-I = floor(linspace(1,numel(l),15));
-ntiles = ceil(sqrt(numel(I)));
-
-h = figure;
-hh = figure;
-for sp=1:numel(I)
-    A = squeeze(Psyn_p_chi(I(sp),:,:));
-    A = log10(A/max(max(A)));
-    
-    AA = squeeze(ddPsyndpchi(I(sp),:,:));
-    AA = log10(AA/max(max(AA)));
-
-    cmax = max(max(A));
-    cmin = -3;%min(min(A(isfinite(A))));
-    
-    x = linspace(0,4,25);
-    levels = cmin + (cmax-cmin)*tanh(x);
-    
-    figure(h)
-    subplot(ntiles,ntiles,sp)    
-    contourf(xAxis,yAxis,A,levels,'LineStyle','none')
-    colormap(jet(1024)); colorbar; caxis([cmin cmax])
-    title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
-    xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
-    ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
-    
-    cmax = max(max(AA));
-    cmin = -3;%min(min(A(isfinite(A))));
-    
-    x = linspace(0,4,25);
-    levels = cmin + (cmax-cmin)*tanh(x);
-    
-    figure(hh)
-    subplot(ntiles,ntiles,sp)    
-    contourf(xAxis,yAxis,AA,levels,'LineStyle','none')
-    colormap(jet(1024)); colorbar; caxis([cmin cmax])
-    title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
-    xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
-    ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
-end
-
-A = fRE;
-A = log10(A/max(max(A)));
-AA = fnum;
-AA = log10(AA/max(max(AA)));
-
-cmax = max(max(A));
-cmin = -10;%min(min(A(isfinite(A))));
-    
-x = linspace(0,4,25);
-levels = cmin + (cmax-cmin)*tanh(x);
-
-figure(h)
-subplot(ntiles,ntiles,ntiles^2)
-contourf(xAxis,yAxis,A,levels,'ShowText','on')%'LineStyle','none')
-colormap(jet(1024)); colorbar; caxis([cmin cmax])
-xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
-ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
-
-cmax = max(max(AA));
-cmin = -10;%min(min(A(isfinite(A))));
-    
-x = linspace(0,4,25);
-levels = cmin + (cmax-cmin)*tanh(x);
-
-figure(hh)
-subplot(ntiles,ntiles,ntiles^2)
-contourf(xAxis,yAxis,AA,levels,'ShowText','on')%'LineStyle','none')
-colormap(jet(1024)); colorbar; caxis([cmin cmax])
-xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
-ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
-
-
-hhh = figure;
-for sp=1:numel(I)
-    figure(hhh)
-    subplot(ntiles,ntiles,sp)
-    A = squeeze(Psyn_sp(I(sp),:,:));
-    contourf(xAxis,yAxis,A,17,'LineStyle','none')
-    colormap(jet(1024));
-    colorbar
-    title(['$\lambda=$ ' num2str(lAxis(I(sp))) ' nm'],'Interpreter','latex')
-    xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
-    ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
-end
-
-figure(hhh)
-subplot(ntiles,ntiles,ntiles^2)
-A = fRE;
-contourf(xAxis,yAxis,A,17,'LineStyle','none')
-colormap(jet(1024));
-colorbar
-xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
-ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
-
-saveas(h,[ST.path 'ddPdpdchi_theory'],'fig')
-saveas(hh,[ST.path 'ddPdpdchi_simulation'],'fig')
-saveas(hhh,[ST.path 'Synchrotron_radiation'],'fig')
-
-% figure;
-% surf(E,lAxis,squeeze(Psyn_p),'LineStyle','none');
-% colormap(jet(1024));
-% xlabel('$\lambda$ (nm)','Interpreter','latex')
-% xlabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
-
-
-% figure
-% plot(lAxis,Psyn)
-% xlabel('$\lambda$ (nm)','Interpreter','latex')
-% ylabel('$P_{R}$ (Watts)','Interpreter','latex')
-end
-
 function fRE = experimentalfRE(ST,p,eta)
 q = abs(ST.params.species.q(1));
 m = ST.params.species.m(1);
@@ -3225,12 +3054,31 @@ Psyn_sp = zeros(numel(l),Np,Nchi);
 ddPsyndpchi = zeros(numel(l),Np,Nchi);
 ddPsyndpchi_theory = zeros(numel(l),Np,Nchi);
 
+if (strcmp(ST.params.species.energy_distribution,'AVALANCHE'))
+    Ebar = ST.params.pdf_params.Epar/ST.params.pdf_params.Ec;
+    Zeff = ST.params.pdf_params.Zeff;
+    Ehat = (Ebar - 1)/(1 + Zeff);
+    Cz = sqrt(3*(Zeff + 5)/pi)*ST.params.pdf_params.Clog;
+    f = @(p,x) (Ehat/Cz)*p.*exp( -p.*(x/Cz + 0.5*Ehat*(1 - x.^2)./x) )./x;
+    
+    for pp=1:Np
+        for cc=1:Nchi
+            fRE(pp,cc) = f(pAxis(pp),chiAxis(cc));
+        end
+    end
+elseif (strcmp(ST.params.species.energy_distribution,'EXPERIMENTAL-GAMMA'))
+    for pp=1:Np
+        for cc=1:Nchi
+            fRE(pp,cc) = experimentalfRE(ST,pAxis(pp),eta(chiAxis(cc)));
+        end
+    end
+end
+
 for ll=1:numel(l)
     for pp=1:Np
         for cc=1:Nchi
             Psyn_sp(ll,pp,cc) = singleParticleSpectrum(ST,l(ll),g(pAxis(pp)),eta(chiAxis(cc)));
             ddPsyndpchi(ll,pp,cc) = fnum(pp,cc)*Psyn_sp(ll,pp,cc);
-            fRE(pp,cc) = experimentalfRE(ST,pAxis(pp),eta(chiAxis(cc)));
             ddPsyndpchi_theory(ll,pp,cc) = fRE(pp,cc)*Psyn_sp(ll,pp,cc);
         end
     end
@@ -3253,6 +3101,8 @@ for sp=1:numel(I)
     A = squeeze(ddPsyndpchi_theory(I(sp),:,:));
 
     A = log10(A/max(max(A)));
+%     A(A~=0) = log10(A(A~=0)/max(max(A)));
+%     A(~isfinite(A)) = 0;
 
     cmax = max(max(A));
     cmin = minLevel;%min(min(A(isfinite(A))));
@@ -3270,11 +3120,10 @@ for sp=1:numel(I)
     
     
     AA = squeeze(ddPsyndpchi(I(sp),:,:));
-%     cmax = max(max(AA));
-%     cmin = min(min(AA));
-%     cmin = 10*cmax;
 
     AA = log10(AA/max(max(AA)));
+%     AA(AA~=0) = log10(AA(AA~=0)/max(max(AA)));
+%     AA(~isfinite(AA)) = 0;
 
     cmax = max(max(AA));
     cmin = minLevel;%min(min(A(isfinite(A))));
@@ -3293,10 +3142,13 @@ end
 
 A = fRE;
 % A = A/max(max(A));
-A = log10(A/max(max(A)));
+A(A~=0) = log10(A(A~=0)/max(max(A)));
+% A(~isfinite(A)) = 0;
+
 AA = fnum;
 % AA = AA/max(max(AA));
-AA = log10(AA/max(max(AA)));
+AA(AA~=0) = log10(AA(AA~=0)/max(max(AA)));
+% AA(~isfinite(AA)) = 0;
 
 cmax = max(max(A));
 cmin = minLevel;
@@ -3413,33 +3265,8 @@ for ss=1:ST.params.simulation.num_species
     %     xAxis = cos(deg2rad(pitchAxis));
     %     yAxis = pAxis;
     
-    if (strcmp(ST.params.species.energy_distribution(ss),'AVALANCHE'))
-        figure;
-        A = fRE;
-        contourf(xAxis,yAxis,A,17,'LineStyle','none')
-        colormap(jet(1024));
-        colorbar
-        axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
-        xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
-        ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
-        
-        [~,fRE_theory] = averagedSpectrum(ST,chiAxis,pAxis,fRE);
-        
-        DfRE = sqrt((fRE_theory - fRE).^2);
-        
-        xAxis = pitchAxis;
-        yAxis = EAxis;
-        
-        figure;
-        contourf(xAxis,yAxis,DfRE,17,'LineStyle','none')
-        colormap(jet(1024));
-        colorbar
-        axis([min(xAxis) max(xAxis) min(yAxis) max(yAxis)])
-        xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
-        ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
-    elseif (strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL-GAMMA'))
-        regionsOfSE(ST,chiAxis,pAxis,fRE);
-    end
+
+    regionsOfSE(ST,chiAxis,pAxis,fRE);
     
     figure
     subplot(2,1,1)
@@ -3477,26 +3304,28 @@ for ss=1:ST.params.simulation.num_species
         pin = true(1,size(ST.data.(['sp' num2str(ss)]).g,1));
     end
     
-    Eo = (ST.data.(['sp' num2str(ss)]).g(pin,1)-1)*me*c^2/(qe*1E6);
+    Eo = ST.data.(['sp' num2str(ss)]).g(pin,1)*me*c^2/(qe*1E6);
+%     Eo = (ST.data.(['sp' num2str(ss)]).g(pin,1)-1)*me*c^2/(qe*1E6);
     pao = ST.data.(['sp' num2str(ss)]).eta(pin,1);
     
-    Ef = (ST.data.(['sp' num2str(ss)]).g(pin,end)-1)*me*c^2/(qe*1E6);
+    Ef = ST.data.(['sp' num2str(ss)]).g(pin,end)*me*c^2/(qe*1E6);
+%     Ef = (ST.data.(['sp' num2str(ss)]).g(pin,end)-1)*me*c^2/(qe*1E6);
     paf = ST.data.(['sp' num2str(ss)]).eta(pin,end);
     
-    E = (ST.data.(['sp' num2str(ss)]).g(pin,:)-1)'*me*c^2/(qe*1E6);
-    pa = ST.data.(['sp' num2str(ss)]).eta(pin,:)';
-    
-        E_edges = linspace(min([min(Eo(pin)) min(Ef)]),...
-            max([max(Eo(pin)) max(Ef)]),N);
-        pa_edges = linspace(min([min(pao(pin)) min(paf)]),...
-            max([max(pao(pin)) max(paf)]),M);
+%     E = (ST.data.(['sp' num2str(ss)]).g(pin,:)-1)'*me*c^2/(qe*1E6);
+%     pa = ST.data.(['sp' num2str(ss)]).eta(pin,:)';
+%     
+%     E_edges = linspace(min([min(Eo(pin)) min(Ef)]),...
+%         max([max(Eo(pin)) max(Ef)]),N);
+%     pa_edges = linspace(min([min(pao(pin)) min(paf)]),...
+%         max([max(pao(pin)) max(paf)]),M);
     
 %     E_edges = linspace(0,50,N);
 %     pa_edges = linspace(0,25,M);
     
     figure;
     subplot(3,1,1)
-    ho = histogram2(pao(pin),Eo(pin),'FaceColor','flat',...
+    ho = histogram2(pao,Eo,'FaceColor','flat',...
         'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
     colormap(jet(1024)); caxis([min(min(ho.Values)) max(max(ho.Values))])
     colorbar
@@ -3682,9 +3511,13 @@ for ss=1:ST.params.simulation.num_species
     trapped = logical( any(ST.data.(['sp' num2str(ss)]).eta > 90,2) );
     pp = pin & passing;
     pt = pin & trapped;
-    PR(1,ss) = sum(abs(ST.data.(['sp' num2str(ss)]).Prad(pp,end)),1);
-    PR(2,ss) = sum(abs(ST.data.(['sp' num2str(ss)]).Prad(pt,end)),1);
-    PR(3,ss) = PR(1,ss) + PR(2,ss);
+    try
+        PR(1,ss) = sum(abs(ST.data.(['sp' num2str(ss)]).Prad(pp,end)),1);
+        PR(2,ss) = sum(abs(ST.data.(['sp' num2str(ss)]).Prad(pt,end)),1);
+        PR(3,ss) = PR(1,ss) + PR(2,ss);
+    catch
+        disp('MESSAGE: No raw radiation data.')
+    end
 end
 
 figure(h1)
@@ -3727,105 +3560,109 @@ for ss=1:ST.params.simulation.num_species
     ko = qe*Bo*sin(deg2rad(etao(ss)))/(go*vo*me);
     kapp = qe*Bo*sin(deg2rad(eta))./(g.*v*me);
     
-    Po(ss) = qe^2*(go*vo)^4*ko^2/(6*pi*ep0*c^3);
-    Papp = qe^2*(g.*v).^4.*kapp.^2./(6*pi*ep0*c^3);
-    Prad_pp = abs(ST.data.(['sp' num2str(ss)]).Prad(pp,end));
-    Prad_pt = abs(ST.data.(['sp' num2str(ss)]).Prad(pt,end));
-    Prad = abs(ST.data.(['sp' num2str(ss)]).Prad(pin,end));
-    
-    
-    hs = figure;
-    subplot(4,5,[2 3 4 5 7 8 9 10 12 13 14 15])
-    plot(eta_pp,Prad_pp,'k.',eta_pt,Prad_pt,'r.',eta,Papp,'g.','MarkerSize',2)
-    hold on;plot(etao(ss),Po(ss),'mo','MarkerSize',6,'MarkerFaceColor',[1,0,1],'MarkerEdgeColor',[0,0,0]);hold off
-    box on;grid on;grid minor;
-    ax = gca;
-    ax.XTickLabel = {};
-    ax.YTickLabel = {};
-    xlim_main = ax.XLim;
-    ylim_main = ax.YLim;
-    
-    subplot(4,5,[1 6 11])
-    hold on;
-    histogram(Prad,'normalization','count','LineStyle','none')
-    histogram(Prad_pp,'normalization','count','LineStyle','none')
-    histogram(Prad_pt,'normalization','count','LineStyle','none')
-    hold off
-    view([-90 90]);box on;grid on;grid minor;
-    ax = gca;ax.YTickLabel = {};xlim(ylim_main)
-    hold on;plot(Po(ss)*ones(1,10),linspace(0,ax.YLim(2),10),'r','LineWidth',2);hold off
-    xlabel('$\mathcal{P}_R$ (Watts)','Interpreter','latex','FontSize',16)
-    
-    subplot(4,5,[17 18 19 20])
-    hold on
-    histogram(eta,'normalization','count','LineStyle','none')
-    histogram(eta_pp,'normalization','count','LineStyle','none')
-    histogram(eta_pt,'normalization','count','LineStyle','none')
-    hold off
-    view([0 -90]);box on;grid on;grid minor;
-    ax = gca;ax.YTickLabel = {};xlim(xlim_main)
-    hold on;plot(etao(ss)*ones(1,10),linspace(0,ax.YLim(2),10),'r','LineWidth',2);hold off
-    xlabel('$\theta$ ($^\circ$)','Interpreter','latex','FontSize',16)
-    saveas(hs,[ST.path 'Scattered_spp_' num2str(ss)],'fig')
-     
-    figure(hh)
-    hold on;histogram(eta_pp,'normalization','pdf','LineStyle','none');hold off
-    box on;grid on;grid minor;
-    xlabel('$\theta$ ($^\circ$)','Interpreter','latex','FontSize',16)
-    ylabel('$f_{RE}(\theta)$','Interpreter','latex','FontSize',16)
-    
-    figure(hs1)
-    subplot(4,5,[2 3 4 5 7 8 9 10 12 13 14 15])
-    hold on;plot(eta,Prad,'.',eta,Papp,'k.','MarkerSize',2);hold off
-    hold on;plot(etao(ss),Po(ss),'ro','MarkerSize',6,'MarkerFaceColor',[1,0,0],'MarkerEdgeColor',[0,0,0]);hold off
-    figure(hs1)
-    subplot(4,5,[1 6 11])
-    hold on;histogram(Prad,'normalization','pdf','LineStyle','none');hold off
-    figure(hs1)
-    subplot(4,5,[17 18 19 20])
-    hold on;histogram(eta,'normalization','pdf','LineStyle','none');hold off
-    
-    PR_ratio(1,ss) = mean(Prad_pp)/Po(ss);
-    if ~isempty(Prad_pt)
-    	PR_ratio(2,ss) = mean(Prad_pt)/Po(ss);
-    else
-        PR_ratio(2,ss) = 0;
+    try
+        Po(ss) = qe^2*(go*vo)^4*ko^2/(6*pi*ep0*c^3);
+        Papp = qe^2*(g.*v).^4.*kapp.^2./(6*pi*ep0*c^3);
+        Prad_pp = abs(ST.data.(['sp' num2str(ss)]).Prad(pp,end));
+        Prad_pt = abs(ST.data.(['sp' num2str(ss)]).Prad(pt,end));
+        Prad = abs(ST.data.(['sp' num2str(ss)]).Prad(pin,end));
+        
+        
+        hs = figure;
+        subplot(4,5,[2 3 4 5 7 8 9 10 12 13 14 15])
+        plot(eta_pp,Prad_pp,'k.',eta_pt,Prad_pt,'r.',eta,Papp,'g.','MarkerSize',2)
+        hold on;plot(etao(ss),Po(ss),'mo','MarkerSize',6,'MarkerFaceColor',[1,0,1],'MarkerEdgeColor',[0,0,0]);hold off
+        box on;grid on;grid minor;
+        ax = gca;
+        ax.XTickLabel = {};
+        ax.YTickLabel = {};
+        xlim_main = ax.XLim;
+        ylim_main = ax.YLim;
+        
+        subplot(4,5,[1 6 11])
+        hold on;
+        histogram(Prad,'normalization','count','LineStyle','none')
+        histogram(Prad_pp,'normalization','count','LineStyle','none')
+        histogram(Prad_pt,'normalization','count','LineStyle','none')
+        hold off
+        view([-90 90]);box on;grid on;grid minor;
+        ax = gca;ax.YTickLabel = {};xlim(ylim_main)
+        hold on;plot(Po(ss)*ones(1,10),linspace(0,ax.YLim(2),10),'r','LineWidth',2);hold off
+        xlabel('$\mathcal{P}_R$ (Watts)','Interpreter','latex','FontSize',16)
+        
+        subplot(4,5,[17 18 19 20])
+        hold on
+        histogram(eta,'normalization','count','LineStyle','none')
+        histogram(eta_pp,'normalization','count','LineStyle','none')
+        histogram(eta_pt,'normalization','count','LineStyle','none')
+        hold off
+        view([0 -90]);box on;grid on;grid minor;
+        ax = gca;ax.YTickLabel = {};xlim(xlim_main)
+        hold on;plot(etao(ss)*ones(1,10),linspace(0,ax.YLim(2),10),'r','LineWidth',2);hold off
+        xlabel('$\theta$ ($^\circ$)','Interpreter','latex','FontSize',16)
+        saveas(hs,[ST.path 'Scattered_spp_' num2str(ss)],'fig')
+        
+        figure(hh)
+        hold on;histogram(eta_pp,'normalization','pdf','LineStyle','none');hold off
+        box on;grid on;grid minor;
+        xlabel('$\theta$ ($^\circ$)','Interpreter','latex','FontSize',16)
+        ylabel('$f_{RE}(\theta)$','Interpreter','latex','FontSize',16)
+        
+        figure(hs1)
+        subplot(4,5,[2 3 4 5 7 8 9 10 12 13 14 15])
+        hold on;plot(eta,Prad,'.',eta,Papp,'k.','MarkerSize',2);hold off
+        hold on;plot(etao(ss),Po(ss),'ro','MarkerSize',6,'MarkerFaceColor',[1,0,0],'MarkerEdgeColor',[0,0,0]);hold off
+        figure(hs1)
+        subplot(4,5,[1 6 11])
+        hold on;histogram(Prad,'normalization','pdf','LineStyle','none');hold off
+        figure(hs1)
+        subplot(4,5,[17 18 19 20])
+        hold on;histogram(eta,'normalization','pdf','LineStyle','none');hold off
+        
+        PR_ratio(1,ss) = mean(Prad_pp)/Po(ss);
+        if ~isempty(Prad_pt)
+            PR_ratio(2,ss) = mean(Prad_pt)/Po(ss);
+        else
+            PR_ratio(2,ss) = 0;
+        end
+        PR_ratio(3,ss) = mean(Prad)/Po(ss);
+        
+        figure(hs1)
+        subplot(4,5,[2 3 4 5 7 8 9 10 12 13 14 15])
+        ax = gca;
+        ax.XTickLabel = {};
+        ax.YTickLabel = {};
+        xlim_main = ax.XLim;
+        ylim_main = ax.YLim;
+        box on;grid on;grid minor;
+        
+        figure(hs1)
+        subplot(4,5,[1 6 11])
+        view([-90 90]);box on;grid on;grid minor;
+        ax = gca;ax.YTickLabel = {};xlim(ylim_main)
+        for ss=1:ST.params.simulation.num_species
+            hold on;plot(Po(ss)*ones(1,10),linspace(0,ax.YLim(2),10),'r','LineWidth',2);hold off
+        end
+        xlabel('$\mathcal{P}_R$ (Watts)','Interpreter','latex','FontSize',16)
+        
+        figure(hs1)
+        subplot(4,5,[17 18 19 20])
+        view([0 -90]);box on;grid on;grid minor;
+        ax = gca;ax.YTickLabel = {};xlim(xlim_main)
+        for ss=1:ST.params.simulation.num_species
+            hold on;plot(etao(ss)*ones(1,10),linspace(0,ax.YLim(2),10),'r','LineWidth',2);hold off
+        end
+        xlabel('$\theta$ ($^\circ$)','Interpreter','latex','FontSize',16)
+        
+        saveas(hs1,[ST.path 'Scattered_all_spp_' num2str(ss)],'fig')
+        
+        saveas(hs,[ST.path 'Scattered_spp_' num2str(ss)],'fig')
+        
+        saveas(hh,[ST.path 'histograms'],'fig')
+    catch
+        disp('MESSAGE: No raw radiation data.')
     end
-    PR_ratio(3,ss) = mean(Prad)/Po(ss);
 end
-
-figure(hs1)
-subplot(4,5,[2 3 4 5 7 8 9 10 12 13 14 15])
-ax = gca;
-ax.XTickLabel = {};
-ax.YTickLabel = {};
-xlim_main = ax.XLim;
-ylim_main = ax.YLim;
-box on;grid on;grid minor;
-
-figure(hs1)
-subplot(4,5,[1 6 11])
-view([-90 90]);box on;grid on;grid minor;
-ax = gca;ax.YTickLabel = {};xlim(ylim_main)
-for ss=1:ST.params.simulation.num_species
-    hold on;plot(Po(ss)*ones(1,10),linspace(0,ax.YLim(2),10),'r','LineWidth',2);hold off
-end
-xlabel('$\mathcal{P}_R$ (Watts)','Interpreter','latex','FontSize',16)
-
-figure(hs1)
-subplot(4,5,[17 18 19 20])
-view([0 -90]);box on;grid on;grid minor;
-ax = gca;ax.YTickLabel = {};xlim(xlim_main)
-for ss=1:ST.params.simulation.num_species
-    hold on;plot(etao(ss)*ones(1,10),linspace(0,ax.YLim(2),10),'r','LineWidth',2);hold off
-end
-xlabel('$\theta$ ($^\circ$)','Interpreter','latex','FontSize',16)
-
-saveas(hs1,[ST.path 'Scattered_all_spp_' num2str(ss)],'fig')
-
-saveas(hs,[ST.path 'Scattered_spp_' num2str(ss)],'fig')
-
-saveas(hh,[ST.path 'histograms'],'fig')
 
 figure(h1)
 subplot(2,3,6)
@@ -3929,7 +3766,7 @@ end
 
 end
 
-function movieEnergyPitchAngle(ST)
+function M = movieEnergyPitchAngle(ST)
 
 for ss=1:ST.params.simulation.num_species
     m = ST.params.species.m(ss);
@@ -3938,7 +3775,7 @@ for ss=1:ST.params.simulation.num_species
     
     fig=figure;
     fig.Position(3) = 1300;
-    F(ST.num_snapshots) = struct('cdata',[],'colormap',[]);
+    M(ST.num_snapshots) = struct('cdata',[],'colormap',[]);
     
     go = ST.params.species.go(ss);
     etao = ST.params.species.etao(ss);
@@ -4013,7 +3850,7 @@ for ss=1:ST.params.simulation.num_species
         ylabel('$\xi$','Interpreter','latex')
         
         drawnow
-        F(it) = getframe;
+        M(it) = getframe;
     end
 end
 
@@ -4056,7 +3893,7 @@ P = c*q^2*P./(sqrt(3)*ep*g^2*l.^3);
 end
 
 function pitchAnglePDFSlices(ST)
-slices = 5;
+slices = 7;
 N = 100;
 
 hatE = ST.params.pdf_params.E;
@@ -4064,7 +3901,7 @@ Zeff = ST.params.pdf_params.Zeff;
 
 % Here p is normalized by mc and eta is in radians
 A = @(E,Z,p) 2*E*p.^2./((Z+1)*sqrt(p.^2 + 1)); 
-ft = @(E,Z,p,t) 0.5*A(E,Z,p).*exp(A(E,Z,p).*cos(t))./sinh(A(E,Z,p));
+ft = @(E,Z,p,t) 0.5*A(E,Z,p).*exp(5*A(E,Z,p).*cos(t))./sinh(A(E,Z,p));
 
 for ss=1:ST.params.simulation.num_species
     q = abs(ST.params.species.q(ss));
@@ -4098,9 +3935,11 @@ for ss=1:ST.params.simulation.num_species
         pmax = max([sqrt(ST.params.species.go(ss)^2 - 1); max(p)]);
         pmin = min([sqrt(ST.params.species.go(ss)^2 - 1); min(p)]);
     end
-    
-    Emin = sqrt(pmin.^2 + 1)*m*c^2/(q*1E6);
-    Emax = sqrt(pmax.^2 + 1)*m*c^2/(q*1E6);
+
+    Emin = 8.0;
+    Emax = 15.0;
+%     Emin = sqrt(pmin.^2 + 1)*m*c^2/(q*1E6);
+%     Emax = sqrt(pmax.^2 + 1)*m*c^2/(q*1E6);
     DE = (Emax-Emin)/slices;
     
     EAxis = linspace(Emin,Emax - DE,slices) + 0.5*DE;
@@ -4156,7 +3995,7 @@ for ss=1:ST.params.simulation.num_species
         mean_pitch_h = trapz(pitchAxish(1:N),pAh.*fh);
                    
         figure(fig)
-        subplot(5,slices/5,sl)
+        subplot(5,ceil(slices/5),sl)
         plot(pitchAxis,f,'r',pitchAxis,fl,'b-.',pitchAxis,fu,'b--',pAh,fh,'k')
         legend({'$f_o$,','$f_l$','$f_u$','$f_{\mbox{sim}}$'},'Interpreter','latex')
 %         semilogy(pitchAxis,f,'r',pitchAxis(1:N-1),fh,'b')
@@ -4166,6 +4005,363 @@ for ss=1:ST.params.simulation.num_species
             'Interpreter','latex')
         xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
     end
+    saveas(fig,[ST.path 'pitch_angle_slices_spp_' num2str(ss) '_range_' num2str(ST.range(2))],'fig')
+end
+
+end
+
+function pitchAnglePDFSlicesVsTime(ST)
+slices = 7;
+N = 100;
+
+Emin = 8.0;
+Emax = 15.0;
+
+DE = (Emax-Emin)/slices;
+EAxis = linspace(Emin,Emax - DE,slices) + 0.5*DE;
+
+hatE = ST.params.pdf_params.E;
+Zeff = ST.params.pdf_params.Zeff;
+
+% Here p is normalized by mc and eta is in radians
+A = @(E,Z,p) 2*E*p.^2./((Z+1)*sqrt(p.^2 + 1));
+ft = @(E,Z,p,t) 0.5*A(E,Z,p).*exp(A(E,Z,p).*cos(t))./sinh(A(E,Z,p));
+
+for ss=1:ST.params.simulation.num_species
+    q = abs(ST.params.species.q(ss));
+    m = ST.params.species.m(ss);
+    c = ST.params.scales.v;
+    
+    E_stats = zeros(2,ST.num_snapshots,slices);
+    E_error = zeros(ST.num_snapshots,slices);
+    
+    pa_stats = zeros(2,ST.num_snapshots,slices);
+    pa_error = zeros(ST.num_snapshots,slices);
+    
+    for ii=1:ST.num_snapshots
+        try
+            pin = logical(ST.data.(['sp' num2str(ss)]).flag(:,ii));
+            passing = logical( ST.data.(['sp' num2str(ss)]).eta(:,ii) < 90 );
+            trapped = logical( ST.data.(['sp' num2str(ss)]).eta(:,ii) >= 90 );
+            bool = pin;% & passing;
+        catch
+            bool = true(size(ST.data.(['sp' num2str(ss)]).g(:,1)));
+        end
+        
+        g = ST.data.(['sp' num2str(ss)]).g(bool,ii);
+        eta = ST.data.(['sp' num2str(ss)]).eta(bool,ii);
+        
+        E = (g-1)*m*c^2;
+        E = E/(q*1E6);
+        
+        for sl=1:slices
+            El = EAxis(sl) - 0.5*DE;
+            Eu = EAxis(sl) + 0.5*DE;
+            I = (E > El) & (E < Eu);
+            
+            E_stats(1,ii,sl) = mean(E(I));
+            E_stats(2,ii,sl) = std(E(I));
+            E_error(ii,sl) = E_stats(2,ii,sl)/sqrt(sum(bool));
+            
+            pa_stats(1,ii,sl) = mean(eta(I));
+            pa_stats(2,ii,sl) = std(eta(I));
+            pa_error(ii,sl) = pa_stats(2,ii,sl)/sqrt(sum(bool));
+        end
+    end
+    
+    fig1 = figure;
+    fig2 = figure;
+    for sl=1:slices
+        El = EAxis(sl) - 0.5*DE;
+        Eu = EAxis(sl) + 0.5*DE;
+        
+        xAxis = [ST.time,flip(ST.time)]/1E-3;
+        fu = squeeze(E_stats(1,:,sl)) + squeeze(E_error(:,sl))';
+        fl = squeeze(E_stats(1,:,sl)) - squeeze(E_error(:,sl))';
+        fx = [fu,flip(fl)];
+        
+        figure(fig1)
+        subplot(5,ceil(slices/5),sl)
+        fill(xAxis,fx,[0.6,0.6,0.6],'LineStyle','none')
+        hold on;
+        plot(ST.time/1E-3,squeeze(E_stats(1,:,sl)),'m','LineWidth',2)
+        hold off
+        title(['$\mathcal{E}\in($' num2str(El) ',' num2str(Eu) ') MeV'],...
+            'Interpreter','latex')
+        xlabel('$t$ (ms)','Interpreter','latex')
+        ylabel('$\langle \mathcal{E} \rangle$ (MeV)','Interpreter','latex')
+        
+        fu = squeeze(pa_stats(1,:,sl)) + squeeze(pa_error(:,sl))';
+        fl = squeeze(pa_stats(1,:,sl)) - squeeze(pa_error(:,sl))';
+        fx = [fu,flip(fl)];
+        
+        figure(fig2)
+        subplot(5,ceil(slices/5),sl)
+        fill(xAxis,fx,[0.6,0.6,0.6],'LineStyle','none')
+        hold on;
+        plot(ST.time/1E-3,squeeze(pa_stats(1,:,sl)),'m','LineWidth',2)
+        hold off
+        title(['$\mathcal{E}\in($' num2str(El) ',' num2str(Eu) ') MeV'],...
+            'Interpreter','latex')
+        xlabel('$t$ (ms)','Interpreter','latex')
+        ylabel('$\langle \theta \rangle$ ($^\circ$)','Interpreter','latex')
+    end
+    
+    saveas(fig1,[ST.path 'energy_slices_vs_time_spp_' num2str(ss) '_range_' num2str(ST.range(2))],'fig')
+    saveas(fig2,[ST.path 'pitch_angle_slices_vs_time_spp_' num2str(ss) '_range_' num2str(ST.range(2))],'fig')
+end
+
+end
+
+function spatialAndVelocityPDF(ST)
+load('C-struct.mat')
+num_fs = 7;
+q = [1 1.5 2 3 4 5 6];
+
+N = 100; % Energy
+M = 100; % Pitch-angle
+
+slices = 7;
+Emin = 8.0;
+Emax = 15.0;
+
+DE = (Emax-Emin)/slices;
+EAxis = linspace(Emin,Emax - DE,slices) + 0.5*DE;
+
+% % Parameters
+
+me = ST.params.scales.m;
+qe = ST.params.scales.q;
+c = ST.params.scales.v;
+
+t = linspace(0,2*pi,500);
+
+Ro = 1.67;
+Zo = 0.02;
+ro = [0.1 0.2 0.3 0.4 0.5 0.6];
+sf = 0.3;
+
+for ss=1:ST.params.simulation.num_species 
+    try
+        pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    catch
+        pin = true(1,size(ST.data.(['sp' num2str(ss)]).g,1));
+    end
+    
+
+    
+    X = ST.data.(['sp' num2str(ss)]).X(:,pin,:);
+    X = reshape(X,[3 size(X,2)*size(X,3)]);
+    
+    R = sqrt(sum(X(1:2,:).^2,1));
+    Z = X(3,:);
+    
+    r = sqrt((R-Ro).^2 + (Z-Zo).^2);
+    a = atan2(Z-Zo,R-Ro);
+    a(a<0) = a(a<0) + 2*pi;
+    
+%     E = (ST.data.(['sp' num2str(ss)]).g(pin,:)-1)*me*c^2/(qe*1E6);
+    E = ST.data.(['sp' num2str(ss)]).g(pin,:)*me*c^2/(qe*1E6);
+    E = reshape(E,[size(E,1)*size(E,2) 1]);
+    
+    pa = ST.data.(['sp' num2str(ss)]).eta(pin,:);
+    pa = reshape(pa,[size(pa,1)*size(pa,2) 1]);
+       
+    
+    npart = numel(pa);
+    nparto = 0.9626*double(ST.params.species(ss).ppp*ST.params.simulation.nmpi)*size(ST.data.(['sp' num2str(ss)]).X,3);
+    
+    fig1 = figure;
+    fig2 = figure;
+    fige = figure;
+    for rr=1:num_fs
+        E_in = [];
+        pa_in = [];
+        
+%         Ze = ro(rr)*sin(t);
+%         Re = ro(rr)*cos(t) + sf*Ze;
+%         
+%         ra = 0.5*pi - atan2(1.0,1.0 + sf);
+%         
+%         Rb = Re*cos(ra) - Ze*sin(ra) + Ro;
+%         Zb = Re*sin(ra) + Ze*cos(ra) + Zo;
+%         
+%         rb = sqrt((Rb-Ro).^2 +(Zb-Zo).^2);
+%         ab = atan2(Zb-Zo,Rb-Ro);
+%         ab(ab<0) = ab(ab<0) + 2*pi;
+%         [~,I] = min(ab);
+%         ab = [ab(I:end) ab(1:I-1)];
+%         rb = [rb(I:end) rb(1:I-1)];
+%         
+%         rb = [rb(end), rb, rb(1)];
+%         ab = [ab(end)-2*pi, ab, 2*pi + ab(1)];
+        
+%         rp = interp1(ab,rb,a,'pchip'); 
+
+
+        if rr == 1
+            rp = interp1(C.(['q_' num2str(rr)]).a,C.(['q_' num2str(rr)]).r,a,'pchip'); 
+            for pp=1:npart
+                if (r(pp) < rp(pp))
+                    E_in = [E_in E(pp)];
+                    pa_in = [pa_in pa(pp)];
+                end
+            end
+        else
+            rp1 = interp1(C.(['q_' num2str(rr-1)]).a,C.(['q_' num2str(rr-1)]).r,a,'pchip'); 
+            rp2 = interp1(C.(['q_' num2str(rr)]).a,C.(['q_' num2str(rr)]).r,a,'pchip'); 
+            for pp=1:npart
+                if ((r(pp) < rp2(pp)) & (r(pp) > rp1(pp)))
+                    E_in = [E_in E(pp)];
+                    pa_in = [pa_in pa(pp)];
+                end
+            end
+        end
+        
+        figure(fig1)
+        subplot(num_fs,1,rr)
+        ho = histogram2(pa_in,E_in,'FaceColor','flat',...
+            'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
+        colormap(jet(1024)); caxis([min(min(ho.Values)) max(max(ho.Values))])
+        colorbar; box on; grid minor
+        xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
+        ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
+        title(num2str(sum(sum(ho.BinCounts))))
+        
+        E_in = [];
+        pa_in = [];
+        
+        rp = interp1(C.(['q_' num2str(rr)]).a,C.(['q_' num2str(rr)]).r,a,'pchip');
+        for pp=1:npart
+            if (r(pp) < rp(pp))
+                E_in = [E_in E(pp)];
+                pa_in = [pa_in pa(pp)];
+            end
+        end
+        
+        
+        figure(fig2)
+        subplot(num_fs,1,rr)
+        ho = histogram2(pa_in,E_in,'FaceColor','flat',...
+            'DisplayStyle','tile','ShowEmptyBins','on','LineStyle','none');
+        colormap(jet(1024)); caxis([min(min(ho.Values)) max(max(ho.Values))])
+        colorbar; box on; grid minor
+        xlabel('$\eta$ ($^\circ$)','FontSize',14,'Interpreter','latex')
+        ylabel('$\mathcal{E}$ (MeV)','FontSize',14,'Interpreter','latex')
+        title(num2str(sum(sum(ho.BinCounts))))
+        
+        figure(fige)
+        hold on
+        plot(C.(['q_' num2str(rr)]).fs(1,:),C.(['q_' num2str(rr)]).fs(2,:))
+        hold off
+        
+    end
+    
+    figure(fige)
+    box on;
+    grid minor;
+    axis equal;
+    
+    saveas(fig1,[ST.path 'pdfs_rings_spp_' num2str(ss) '_range_' num2str(ST.range(end))],'fig')
+    saveas(fig2,[ST.path 'pdfs_disks_spp_' num2str(ss) '_range_' num2str(ST.range(end))],'fig')
+   
+    
+    np = zeros(2,num_fs);
+    
+    pa = zeros(2,num_fs);
+    Upa = zeros(2,num_fs);
+    
+    np_slices = zeros(slices,num_fs);
+    pa_slices = zeros(slices,num_fs);
+    Upa_slices = zeros(slices,num_fs);
+    
+    E = zeros(2,num_fs);
+    UE = zeros(2,num_fs);
+    
+    for ii=1:num_fs
+        figure(fig1)
+        subplot(num_fs,1,ii)
+        ax = gca;
+        
+        np(1,ii) = sum(sum(ax.Children.BinCounts));
+        pa(1,ii) = mean(ax.Children.Data(:,1));
+        Upa(1,ii) = std(ax.Children.Data(:,1))/sqrt(np(1,ii));
+        E(1,ii) = mean(ax.Children.Data(:,2));
+        UE(1,ii) = std(ax.Children.Data(:,2))/sqrt(np(1,ii));
+        
+        for sl=1:slices
+            El = EAxis(sl) - 0.5*DE;
+            Eu = EAxis(sl) + 0.5*DE;
+            I = (ax.Children.Data(:,2) > El) & (ax.Children.Data(:,2) < Eu);
+            
+            np_slices(sl,ii) = sum(I);
+            
+            pa_slices(sl,ii) = mean(ax.Children.Data(I,1));
+            Upa_slices(sl,ii) = std(ax.Children.Data(I,1))/sqrt(np_slices(sl,ii));
+        end
+        
+        figure(fig2)
+        subplot(num_fs,1,ii)
+        ax = gca;
+        
+        np(2,ii) = sum(sum(ax.Children.BinCounts));
+        pa(2,ii) = mean(ax.Children.Data(:,1));
+        Upa(2,ii) = std(ax.Children.Data(:,1))/sqrt(np(2,ii));
+        E(2,ii) = mean(ax.Children.Data(:,2));
+        UE(2,ii) = std(ax.Children.Data(:,2))/sqrt(np(2,ii));
+    end 
+    
+    np = 100*np/nparto;
+    np_slices = 100*np_slices/nparto;
+    
+    fig3 = figure;
+    subplot(2,3,1)
+    plot(q,np(1,:),'o-')
+    for sl=1:slices
+        hold on;
+        plot(q,np_slices(sl,:),'o-')
+        hold off
+    end
+    box on;grid minor;
+    xlabel('$q$','Interpreter','latex')
+    ylabel('$Number of RE$','Interpreter','latex')
+    
+    subplot(2,3,2)
+    errorbar(q,E(1,:),UE(1,:),'o-')
+    box on;grid minor;
+    xlabel('$q$','Interpreter','latex')
+    ylabel('$\left\langle \mathcal{E} \right\rangle$','Interpreter','latex')
+    
+    subplot(2,3,3)
+    errorbar(q,pa(1,:),Upa(1,:),'o-')
+    for sl=1:slices
+        hold on;
+        errorbar(q,pa_slices(sl,:),Upa_slices(sl,:),'o-')
+        hold off
+    end
+    box on;grid minor;
+    xlabel('$q$','Interpreter','latex')
+    ylabel('$\left\langle \theta \right\rangle$','Interpreter','latex')
+    
+    subplot(2,3,4)
+    plot(q,np(2,:),'o-')
+    box on;grid minor;
+    xlabel('$q$','Interpreter','latex')
+    ylabel('$Number of RE$','Interpreter','latex')
+    
+    subplot(2,3,5)
+    errorbar(q,E(2,:),UE(2,:),'o-')
+    box on;grid minor;
+    xlabel('$q$','Interpreter','latex')
+    ylabel('$\left\langle \mathcal{E} \right\rangle$','Interpreter','latex')
+    
+    subplot(2,3,6)
+    errorbar(q,pa(2,:),Upa(2,:),'o-')
+    box on;grid minor;
+    xlabel('$q$','Interpreter','latex')
+    ylabel('$\left\langle \theta \right\rangle$','Interpreter','latex')
+    
+    saveas(fig3,[ST.path 'pdfs_stats_spp_' num2str(ss) '_range_' num2str(ST.range(end))],'fig')
 end
 
 end

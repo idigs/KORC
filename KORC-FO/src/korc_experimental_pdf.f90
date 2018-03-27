@@ -466,7 +466,7 @@ FUNCTION fRE(eta,p)
 
 	A = (2.0_rp*pdf_params%E/(pdf_params%Zeff + 1.0_rp))*(p**2/SQRT(p**2.0_rp + 1.0_rp))
 	fRE = 0.5_rp*A*EXP(A*COS(deg2rad(eta)))*fGamma(Eo,pdf_params%k,pdf_params%t/xo)/SINH(A)
-	fRE = fRE*PR(eta,p,pdf_params%Bo,pdf_params%lambda)
+!	fRE = fRE*PR(eta,p,pdf_params%Bo,pdf_params%lambda)
 END FUNCTION fRE
 
 
@@ -647,6 +647,9 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 		minmax = pdf_params%max_pitch_angle + REAL(jj,rp)*deta
 		if (minmax.LE.90.0_rp) then
 			max_pitch_angle = minmax
+		else
+			max_pitch_angle = pdf_params%max_pitch_angle
+			EXIT
 		end if
 	end do
 
@@ -662,8 +665,10 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 
 		!* * * Transient * * *!
 		call RANDOM_SEED()
+
 		call RANDOM_NUMBER(rand_unif)
 		eta_buffer = pdf_params%min_pitch_angle + (pdf_params%max_pitch_angle - pdf_params%min_pitch_angle)*rand_unif
+
 		call RANDOM_NUMBER(rand_unif)
 		p_buffer = pdf_params%min_p + (pdf_params%max_p - pdf_params%min_p)*rand_unif
 

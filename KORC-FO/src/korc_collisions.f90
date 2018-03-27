@@ -424,7 +424,7 @@ end function Gammac
 
 
 function CLog_wu(ne,Te) ! With units
-	REAL(rp), INTENT(IN) :: ne 
+	REAL(rp), INTENT(IN) :: ne ! ne is in m^-3 and below is converted to cm^-3
 	REAL(rp), INTENT(IN) :: Te ! In Joules
 	REAL(rp) :: CLog_wu
 

@@ -1,12 +1,12 @@
-% Other code lines
+% Script to plot D3D quiescent plasma's profiles.
 clear all
 % close all
 
-BfieldsTime = 6.0120;
-load('eq165139.mat')
+% BfieldsTime = 6.0120;
+% load('eq165139.mat')
 
-% load('eq165826.mat')
-% BfieldsTime = 5.635;
+load('eq165826.mat')
+BfieldsTime = 5.635;
 
 r = eq.oneD.rho(1,:);
 time = eq.oneD.t(:,1);

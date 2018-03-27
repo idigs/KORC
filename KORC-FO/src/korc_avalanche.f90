@@ -43,7 +43,6 @@ MODULE korc_avalanche
 	CONTAINS
 
 SUBROUTINE get_avalanche_distribution(params,g,eta,go,etao)
-	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: g
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: eta
@@ -59,7 +58,6 @@ END SUBROUTINE get_avalanche_distribution
 
 
 SUBROUTINE initialize_avalanche_params(params)
-	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp) :: max_pitch_angle
 	REAL(rp) :: min_pitch_angle
@@ -122,7 +120,6 @@ END FUNCTION
 
 
 FUNCTION fRE(x,p)
-	IMPLICIT NONE
 	REAL(rp), INTENT(IN) :: x ! x = cos(pitch)
 	REAL(rp), INTENT(IN) :: p ! momentum
 	REAL(rp) :: fRE
@@ -131,7 +128,6 @@ FUNCTION fRE(x,p)
 END FUNCTION fRE
 
 FUNCTION log10fRE(x,p)
-	IMPLICIT NONE
 	REAL(rp), INTENT(IN) :: x ! x = cos(pitch)
 	REAL(rp), INTENT(IN) :: p ! momentum
 	REAL(rp) :: log10fRE
@@ -154,7 +150,6 @@ END FUNCTION random_norm
 
 
 SUBROUTINE sample_distribution(params,g,eta,go,etao)
-	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: g
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: eta
@@ -179,8 +174,6 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 	INTEGER :: ii,jj,ppp,nsamples
 	INTEGER :: mpierr
 
-!	call DTIME(tarray,time_elapsed)
-!	write(6,'("Time elapsed: ",F15.10)') time_elapsed
 
 	ppp = SIZE(g)
 	nsamples = ppp*params%mpi_params%nmpi
@@ -213,8 +206,14 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 		minmax = aval_params%max_pitch_angle + REAL(jj,rp)*deta
 		if (minmax.LE.90.0_rp) then
 			max_pitch_angle = minmax
+		else
+			max_pitch_angle = aval_params%max_pitch_angle
+			EXIT
 		end if
 	end do
+
+!	write(6,*) aval_params%min_p,aval_params%max_p,aval_params%min_pitch_angle,aval_params%max_pitch_angle
+!	write(6,*) min_p,max_p,min_pitch_angle,max_pitch_angle
 
 	if (params%mpi_params%rank.EQ.0_idef) then
 		ALLOCATE(p_samples(nsamples))! Number of samples to distribute among all MPI processes
@@ -232,7 +231,7 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 		p_buffer = aval_params%min_p + (aval_params%max_p - aval_params%min_p)*rand_unif
 
 		ii=2_idef
-		do while (ii .LE. 10000_idef)
+		do while (ii .LE. 1000_idef)
 			eta_test = eta_buffer + random_norm(0.0_rp,deta)
 			do while ((ABS(eta_test) .GT. aval_params%max_pitch_angle).OR.(ABS(eta_test) .LT. aval_params%min_pitch_angle))
 				eta_test = eta_buffer + random_norm(0.0_rp,deta)
@@ -262,10 +261,12 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 		end do	
 		!* * * Transient * * *!
 
-		eta_samples(1) = eta_buffer
+
 		call RANDOM_SEED()
 		call RANDOM_NUMBER(rand_unif)
-		p_samples(1) = p_buffer
+
+		eta_tmp(1) = eta_buffer
+		p_tmp(1) = p_buffer
 
 		num_accepted = 0_idef
 		do while(num_accepted.LT.nsamples)
@@ -283,7 +284,7 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 					p_test = p_tmp(ii-1) + random_norm(0.0_rp,dp)
 				end do
 
-				ratio = fRE(chi_test,p_test)/fRE(chi,p_samples(ii-1))
+				ratio = fRE(chi_test,p_test)/fRE(chi,p_tmp(ii-1))
 
 				if (ratio .GE. 1.0_rp) then
 					p_tmp(ii) = p_test
@@ -297,9 +298,9 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 						ii = ii + 1_idef
 					end if
 				end if
-			end do	
+			end do
 
-			eta_samples = ABS(eta_samples)
+			eta_tmp = ABS(eta_tmp)
 
 			ii = 1_idef
 			do while ( (ii.LT.nsamples).AND.(num_accepted.LT.nsamples) )
@@ -312,6 +313,9 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 				end if
 				ii = ii + 1_idef
 			end do
+	
+			eta_tmp(1) = eta_tmp(ii)
+			p_tmp(1) = p_tmp(ii)
 		end do
 
 		go = SUM(SQRT(1.0_rp + p_samples**2))/nsamples
@@ -331,11 +335,6 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 
 	g = SQRT(1.0_rp + p**2)
 
-
-!	write(6,'("MPI:",I4," Minimum gamma: ",F30.16," "I6)') params%mpi_params%rank,MINVAL(p),indices(MINLOC(p))
-!	call DTIME(tarray,time_elapsed)
-!	write(6,'("Time elapsed: ",F15.10)') time_elapsed
-
 	DEALLOCATE(p)
 	if (params%mpi_params%rank.EQ.0_idef) then
 		DEALLOCATE(p_samples)
@@ -345,7 +344,6 @@ END SUBROUTINE sample_distribution
 
 
 SUBROUTINE save_avalanche_params(params)
-	IMPLICIT NONE
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	CHARACTER(MAX_STRING_LENGTH) :: filename
 	CHARACTER(MAX_STRING_LENGTH) :: gname
@@ -358,10 +356,10 @@ SUBROUTINE save_avalanche_params(params)
 	REAL(rp) :: units
 
 	if (params%mpi_params%rank .EQ. 0) then
-		filename = TRIM(params%path_to_outputs) // "pdf_parameters.h5"
+		filename = TRIM(params%path_to_outputs) // "avalanche_parameters.h5"
 		call h5fcreate_f(TRIM(filename), H5F_ACC_TRUNC_F, h5file_id, h5error)
 
-		gname = "avalanche_pdf_params"
+		gname = "pdf_params"
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
 		dset = TRIM(gname) // "/max_pitch_angle"

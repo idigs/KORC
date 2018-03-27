@@ -1,8 +1,8 @@
 close all
 clear variables
 
-% load('165826_camdata.mat')
-load('165139_camdata.mat')
+load('165826_camdata.mat')
+% load('165139_camdata.mat')
 
 pixelPlot=1;
 
@@ -262,7 +262,7 @@ for k=1:length(in.ts)
         figure(hf)
         plot(G.rmaxis,G.zmaxis,'sk','LineWidth',5)% Magnetic Axis
         % Overlay rational surfaces
-        qToPlot=[1 1.5 2 3 4];
+        qToPlot=[1 1.5 2 3 4 5 6];
         G.psiLevels=linspace(G.psimag,G.psibry,length(G.qpsi));
         for jj=1:length(qToPlot)
             [~, qBins(jj)]=min(abs(G.qpsi-qToPlot(jj)));

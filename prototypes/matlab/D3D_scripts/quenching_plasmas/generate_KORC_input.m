@@ -41,6 +41,78 @@ load(myfile)
 % BrevV - brightness in reverse direction along midplane [1e13 photons/cm^2/s/ster/nm]
 
 pscaleval = 2; % scale factor for plotting of vis image
+ 
+% Generate FLAG
+[RG,ZG]=meshgrid(rg,zg);
+load([path 'wall.mat']);
+
+nr = numel(rg);
+nz = numel(zg);
+
+fig = figure;
+
+FLAG = zeros(nr,nz);
+for rr=1:nr
+    for zz=1:nz
+        a = atan2(zg(zz),rg(rr)-Ro);
+        if (a<0); a=a+2*pi; end;
+        r = sqrt( (rg(rr)-Ro).^2 + zg(zz).^2 );
+        
+        [~,ia] = min(abs(a-angle));
+        
+        if ( (ia>1) && (ia~=numel(angle)) )
+            d = a - angle(ia);
+            dp = a - angle(ia+1);
+            dm = a - angle(ia-1);
+        elseif (ia == numel(angle))
+            d = sign(a - angle(ia));
+            dp = sign(d);
+            dm = -sign(d);
+        elseif (ia == 1)
+            d = sign(a - angle(ia));
+            if (sign(d) ~= 0)
+                dp = -sign(d);
+                dm = sign(d);
+            else
+                dp = 1;
+            end
+        end
+        
+        if ( sign(d) == sign(dp) )
+            m = (radius(ia) - radius(ia-1))/(angle(ia) - angle(ia-1));
+            y = m*(a - angle(ia-1)) + radius(ia-1);
+        else
+            m = (radius(ia+1) - radius(ia))/(angle(ia+1) - angle(ia));
+            y = m*(a - angle(ia)) + radius(ia);
+        end
+        
+        if (r > y)
+            FLAG(rr,zz) = 0;
+            figure(fig)
+            hold on;plot(rg(rr),zg(zz),'r.');hold off
+        else
+            FLAG(rr,zz) = 1;
+            figure(fig)
+            hold on;plot(rg(rr),zg(zz),'k.');hold off
+        end
+    end
+end
+
+
+figure
+ne = nDIIV + nArIIV + 2*nArIIIV;
+Zeff = (nDIIV + nArIIV + 4*nArIIIV)./ne;
+
+To = 2.0;
+Te = -rhoV + To;
+
+yyaxis left
+plot(rhoV,ne)
+ylabel('$n_e$','interpreter','latex')
+yyaxis right
+plot(rhoV,Zeff)
+xlabel('$\rho/a$','interpreter','latex')
+ylabel('$Z_{eff}$','interpreter','latex')
 
 % **** plot density data *****
 densfigure = figure;
@@ -151,6 +223,54 @@ hold on
 plot(rg(II),zg(I(II)),'g+','LineWidth',2)
 hold off
 
+ctr(:,1:2) = [];
+Ro = rg(II);
+Zo = zg(I(II));
+
+rspx = sqrt( (ctr(1,:)-Ro).^2 + (ctr(2,:)-Zo).^2 );
+aspx = atan2(ctr(2,:)-Zo,ctr(1,:)-Ro);
+aspx(aspx<0) = aspx(aspx<0) + 2*pi;
+aspx = flip(aspx);
+rspx = flip(rspx);
+[~,I] = min(aspx);
+aspx = [aspx(I:end) aspx(1:I-1) 2*pi];
+rspx = [rspx(I:end) rspx(1:I-1) rspx(I)];
+
+figure(fig)
+hold on;
+plot(ctr(1,:),ctr(2,:),'g','LineWidth',2);
+plot(limdatax(2,:),limdatax(1,:),'g','LineWidth',2)
+hold off
+
+
+ZEFF = zeros(nr,nz);
+NE = zeros(nr,nz);
+TE = zeros(nr,nz);
+for rr=1:nr
+    for zz=1:nz
+        a = atan2(zg(zz)-Zo,rg(rr)-Ro);
+        if (a<0); a=a+2*pi; end;
+        r = sqrt( (rg(rr)-Ro).^2 + (zg(zz)-Zo).^2 );
+        
+        rspx_i = interp1(aspx,rspx,a,'pchip');
+        
+        if (r < rspx_i)
+            ZEFF(rr,zz) = interp1(rhoV,Zeff,r/rspx_i,'pchip');
+            NE(rr,zz) = interp1(rhoV,ne,r/rspx_i,'pchip');
+            TE(rr,zz) = interp1(rhoV,Te,r/rspx_i,'pchip');
+            figure(fig)
+            hold on;plot(rg(rr),zg(zz),'ms');hold off
+        else
+            ZEFF(rr,zz) = Zeff(end);
+            NE(rr,zz) = ne(end);
+            TE(rr,zz) = Te(end);
+            figure(fig)
+            hold on;plot(rg(rr),zg(zz),'mx');hold off
+        end        
+    end
+end
+
+ 
 fIR1 = BIRrA(2,:,:);
 fIR1 = squeeze(fIR1);
 fIR1 = flipud(fIR1);
@@ -173,6 +293,7 @@ colormap('jet')%colormap('hot')
 xlabel('R [m]')
 ylabel('Z [m]')
  
+ctr(:,1) = [];
 [V,I] = min(abs(rhoMuse));
 [~,II] = min(V);
 hold on
@@ -201,6 +322,7 @@ colormap('jet')%colormap('hot')
 xlabel('R [m]')
 ylabel('Z [m]')
  
+ctr(:,1) = [];
 [V,I] = min(abs(rhoMuse));
 [~,II] = min(V);
 hold on
@@ -230,6 +352,7 @@ colormap('jet')%colormap('hot')
 xlabel('R [m]')
 ylabel('Z [m]')
  
+ctr(:,1) = [];
 [V,I] = min(abs(rhoMuse));
 [~,II] = min(V);
 hold on

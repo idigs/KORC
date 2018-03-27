@@ -6,12 +6,12 @@ ST = struct;
 ST.path = path;
 
 ST.range = range;
-ST.num_snapshots = ST.range(2) - ST.range(1) + 1;
+% ST.num_snapshots = ST.range(2) - ST.range(1) + 1;
 
 ST.params = loadSimulationParameters(ST);
 
-ST.time = ...
-    ST.params.simulation.dt*double(ST.params.simulation.output_cadence)*double(ST.range(1):1:ST.range(2));
+% ST.time = ...
+%     ST.params.simulation.dt*double(ST.params.simulation.output_cadence)*double(ST.range(1):1:ST.range(2));
 
 ST.data = loadData(ST);
 
@@ -60,6 +60,18 @@ for ii=1:size(H.Groups,1)
 end
 it = sort(it,'ascend');
 
+cadence = double(ST.params.simulation.output_cadence);
+[~,I1] = min(abs(cadence*ST.range(1)-it));
+[~,I2] = min(abs(cadence*ST.range(2)-it));
+
+indices = it(I1:I2);
+
+ST.num_snapshots = I2 - I1 + 1;
+
+% ST.params = loadSimulationParameters(ST);
+
+ST.time = zeros(1,ST.num_snapshots);
+
 NX = ST.params.binning_diagnostic_params.num_bins(1);
 NY = ST.params.binning_diagnostic_params.num_bins(2);
 
@@ -81,9 +93,9 @@ for ll=1:length(list)
         else
             data.(['sp' num2str(ss)]).(list{ll}) = zeros(NX,NY,ST.num_snapshots);
         end
-        for ii=ST.range(1)+1:ST.range(2)+1
+        for ii=1:ST.num_snapshots
             dataset = ...
-                ['/' num2str(it(ii)) '/spp_' num2str(ss)...
+                ['/' num2str(indices(ii)) '/spp_' num2str(ss)...
                 '/' list{ll}];
             if (ST.params.binning_diagnostic_params.toroidal_sections == 1)
                 data.(['sp' num2str(ss)]).(list{ll})(:,:,:,ii) = h5read(filename, dataset);
@@ -95,42 +107,42 @@ for ll=1:length(list)
     end
 end
 
-try
-    list = ST.params.simulation.outputs_list;
-    
-    for ll=1:length(list)
-        disp(['Loading ' list{ll}])
-        for ss=1:ST.params.simulation.num_species
-            tnp = double(ST.params.species.ppp(ss)*ST.params.simulation.nmpi);
-            
-            if (strcmp(list{ll},'X') || strcmp(list{ll},'V') || strcmp(list{ll},'B') || strcmp(list{ll},'E'))
-                data.(['sp' num2str(ss)]).('raw').(list{ll}) = zeros(3,tnp,ST.num_snapshots);
-            else
-                data.(['sp' num2str(ss)]).('raw').(list{ll}) = zeros(tnp,ST.num_snapshots);
-            end
-            
-            for ff=1:ST.params.simulation.nmpi
-                filename = [ST.path 'file_' num2str(ff-1) '.h5'];
-                indi = (ff - 1)*double(ST.params.species.ppp(ss)) + 1;
-                indf = ff*double(ST.params.species.ppp(ss));
-                for ii=1:ST.num_snapshots
-                    dataset = ...
-                        ['/' num2str(it(ii)) '/spp_' num2str(ss)...
-                        '/' list{ll}];
-                    if (strcmp(list{ll},'X') || strcmp(list{ll},'V') || strcmp(list{ll},'B') || strcmp(list{ll},'E'))
-                        data.(['sp' num2str(ss)]).('raw').(list{ll})(:,indi:indf,ii) = ...
-                            h5read(filename, dataset);
-                    else
-                        data.(['sp' num2str(ss)]).('raw').(list{ll})(indi:indf,ii) = ...
-                            h5read(filename, dataset);
-                    end
-                end
-            end
-        end
-    end
-catch
-	disp('No RAW data found...')
-end
+% try
+%     list = ST.params.simulation.outputs_list;
+%     
+%     for ll=1:length(list)
+%         disp(['Loading ' list{ll}])
+%         for ss=1:ST.params.simulation.num_species
+%             tnp = double(ST.params.species.ppp(ss)*ST.params.simulation.nmpi);
+%             
+%             if (strcmp(list{ll},'X') || strcmp(list{ll},'V') || strcmp(list{ll},'B') || strcmp(list{ll},'E'))
+%                 data.(['sp' num2str(ss)]).('raw').(list{ll}) = zeros(3,tnp,ST.num_snapshots);
+%             else
+%                 data.(['sp' num2str(ss)]).('raw').(list{ll}) = zeros(tnp,ST.num_snapshots);
+%             end
+%             
+%             for ff=1:ST.params.simulation.nmpi
+%                 filename = [ST.path 'file_' num2str(ff-1) '.h5'];
+%                 indi = (ff - 1)*double(ST.params.species.ppp(ss)) + 1;
+%                 indf = ff*double(ST.params.species.ppp(ss));
+%                 for ii=1:ST.num_snapshots
+%                     dataset = ...
+%                         ['/' num2str(indices(ii)) '/spp_' num2str(ss)...
+%                         '/' list{ll}];
+%                     if (strcmp(list{ll},'X') || strcmp(list{ll},'V') || strcmp(list{ll},'B') || strcmp(list{ll},'E'))
+%                         data.(['sp' num2str(ss)]).('raw').(list{ll})(:,indi:indf,ii) = ...
+%                             h5read(filename, dataset);
+%                     else
+%                         data.(['sp' num2str(ss)]).('raw').(list{ll})(indi:indf,ii) = ...
+%                             h5read(filename, dataset);
+%                     end
+%                 end
+%             end
+%         end
+%     end
+% catch
+% 	disp('No RAW data found...')
+% end
 
 end
 

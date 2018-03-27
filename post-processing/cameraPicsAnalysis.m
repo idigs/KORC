@@ -1,6 +1,6 @@
 function ST = cameraPicsAnalysis(path,lambdas,visible,range)
 % ST = syntheticCameraFortran('/media/l8c/FantomHD/SimulationOutputs/Avalanche/Z1/',[400E-9,900E-9],'on',[99,100])
-close all
+% close all
 
 ST = struct;
 ST.path = path;
@@ -18,7 +18,7 @@ ST.time = ...
 ST.data = loadData(ST);
 
 % plotCameraSnapshots(ST);
-% 
+
 % picsAnalysis(ST);
 
 svdAnalysis(ST);
@@ -362,8 +362,8 @@ for ss=1:ST.params.simulation.num_species
                         xlabel(hc,'$\int P_R(\lambda) d\lambda$ (Watts)','Interpreter','latex','FontSize',12)
                     end
                     
-                    saveas(fig_tor_c,[ST.path 'toroidal_section_cone_' num2str(tt)],'fig')
-                    saveas(fig_tor_f,[ST.path 'toroidal_section_full_' num2str(tt)],'fig')
+                    %saveas(fig_tor_c,[ST.path 'toroidal_section_cone_' num2str(tt)],'fig')
+                    %saveas(fig_tor_f,[ST.path 'toroidal_section_full_' num2str(tt)],'fig')
                 else
                     close(h)
                 end
@@ -463,7 +463,7 @@ for ss=1:ST.params.simulation.num_species
         ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
         
-        saveas(h,[ST.path 'Total_PR_' num2str(ss)],'fig')
+        %saveas(h,[ST.path 'Total_PR_' num2str(ss)],'fig')
     else
         fig = figure;
         
@@ -611,7 +611,7 @@ for ss=1:ST.params.simulation.num_species
         hold on;plot(yAxis,AA2,'b-','LineWidth',2);hold off
 %         axis([-0.8 0.8 0 1]);box on;grid minor;
         xlabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
-        saveas(fig_slices,[ST.path 'camera_slices_ss_' num2str(ss)],'fig')
+        %saveas(fig_slices,[ST.path 'camera_slices_ss_' num2str(ss)],'fig')
         
         A = npf';
         B = reshape(A,[numel(A),1]);
@@ -632,7 +632,7 @@ for ss=1:ST.params.simulation.num_species
         ax = gca;ax.Color = [1,1,1];ax.ClippingStyle = 'rectangle';
         xlabel(hc,'$\rho_{RE}(R,Z)$ (No. particles)','Interpreter','latex','FontSize',12)
         
-        saveas(fig,[ST.path 'cameraPicsAnalysis_' num2str(ss)],'fig')
+        %saveas(fig,[ST.path 'cameraPicsAnalysis_' num2str(ss)],'fig')
     end
     
 end
@@ -642,7 +642,7 @@ function [D,Ef] = svdAnalysis(ST)
 % A has to be a matrix with L2 norm equal to 1
 disp('SVD analysis...')
 
-rankCamera = 3; % <--------------------------------------------------------
+rankCamera = [1 2 3]; % <--------------------------------------------------------
 numLevels = 25; % <--------------------------------------------------------
 left_color = [0.6 0.6 0.6]; % <--------------------------------------------
 right_color = [1.0 0.0 1.0]; % <-------------------------------------------
@@ -692,140 +692,142 @@ for ss=1:ST.params.simulation.num_species
     % SVD analysis starts here
     rankA = rank(A);
     rankBq = rank(Bq);
-    rankAnalysis = min([rankA rankBq rankCamera]);
-    rankAxis = 1:1:rankAnalysis;
-    
-    [UA,SA,VA] = svd(A);    
-    [UBq,SBq,VBq] = svd(Bq);
-    
-    diagSA = diag(SA);
-    diagSBq = diag(SBq);
-    
-    % Here A and Bq are re-calculated
-    Q = UA(:,1:rankAnalysis)*SA(1:rankAnalysis,1:rankAnalysis)*VA(:,1:rankAnalysis)';
-    Q = Q/norm(Q,'fro');
-    
-    QBq = UBq(:,1:rankAnalysis)*SBq(1:rankAnalysis,1:rankAnalysis)*VBq(:,1:rankAnalysis)';
-    RBq = Bq - QBq;
-    RBq = RBq/norm(RBq,'fro');
-    QBq = QBq/norm(QBq,'fro');
-      
-    [~,SRBq,~] = svd(RBq);
-    diagSRBq = diag(SRBq);
-    
-    diagAxis = 1:1:min([numel(diagSA) numel(diagSBq) numel(diagSRBq)]);
-    
-    frobenius_norm = norm(Q-QBq,'fro');
-    
-    norms = zeros(1,rankAnalysis);
-    for rr=1:rankAnalysis
-        WA = SA(rr,rr)*UA(:,rr)*VA(:,rr)';
-        WBq = SBq(rr,rr)*UBq(:,rr)*VBq(:,rr)';
-        norms(rr) = norm(WA-WBq,'fro');
+    for ll=1:numel(rankCamera)
+        rankAnalysis = min([rankA rankBq rankCamera(ll)]);
+        rankAxis = 1:1:rankAnalysis;
+        
+        [UA,SA,VA] = svd(A);
+        [UBq,SBq,VBq] = svd(Bq);
+        
+        diagSA = diag(SA);
+        diagSBq = diag(SBq);
+        
+        % Here A and Bq are re-calculated
+        Q = UA(:,1:rankAnalysis)*SA(1:rankAnalysis,1:rankAnalysis)*VA(:,1:rankAnalysis)';
+        Q = Q/norm(Q,'fro');
+        
+        QBq = UBq(:,1:rankAnalysis)*SBq(1:rankAnalysis,1:rankAnalysis)*VBq(:,1:rankAnalysis)';
+        RBq = Bq - QBq;
+%         RBq = RBq/norm(RBq,'fro');
+%         QBq = QBq/norm(QBq,'fro');
+        
+        [~,SRBq,~] = svd(RBq);
+        diagSRBq = diag(SRBq);
+        
+        diagAxis = 1:1:min([numel(diagSA) numel(diagSBq) numel(diagSRBq)]);
+        
+        frobenius_norm = norm(Q-QBq,'fro');
+        
+        norms = zeros(1,rankAnalysis);
+        for rr=1:rankAnalysis
+            WA = SA(rr,rr)*UA(:,rr)*VA(:,rr)';
+            WBq = SBq(rr,rr)*UBq(:,rr)*VBq(:,rr)';
+            norms(rr) = norm(WA-WBq,'fro');
+        end
+        
+        TN = sum(norms);
+        
+        DX = sum((VA(:,1:rankAnalysis) - VBq(:,1:rankAnalysis)).^2,1);
+        DY = sum((UA(:,1:rankAnalysis) - UBq(:,1:rankAnalysis)).^2,1);
+        
+        TDX = sum(DX);
+        TDY = sum(DY);
+        
+        EA = sum(diagSA(1:rankAnalysis).^2);
+        EBq = sum(diagSBq(1:rankAnalysis).^2);
+        
+        fig = figure;
+        set(fig,'defaultAxesColorOrder',[left_color; right_color]);
+        
+        figure(fig);subplot(3,3,1)
+        image(xAxisA,yAxisA,A,'CDataMapping','scaled')
+        axis xy;colormap(jet);hc=colorbar;box on; axis equal;grid minor
+        ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+        xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
+        title('$A_s$','FontSize',12,'Interpreter','latex')
+        ax = gca;ax.ClippingStyle = 'rectangle';
+        xlabel(hc,'$\hat{P}_R$','Interpreter','latex','FontSize',12)
+        
+        figure(fig);subplot(3,3,4)
+        image(xAxisA,yAxisA,Q,'CDataMapping','scaled')
+        axis xy;colormap(jet);hc=colorbar;box on; axis equal;grid minor
+        ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+        xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
+        title(['$A_s^{(' num2str(rankCamera(ll)) ')}$'],'FontSize',12,'Interpreter','latex')
+        ax = gca;ax.ClippingStyle = 'rectangle';
+        xlabel(hc,'$\hat{P}_R$','Interpreter','latex','FontSize',12)
+        
+        figure(fig);subplot(3,3,2)
+        image(xAxisB,yAxisB,B,'CDataMapping','scaled')
+        axis xy;colormap(jet);hc=colorbar;box on; axis equal;grid minor
+        ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+        xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
+        title('$A_c$','FontSize',12,'Interpreter','latex')
+        ax = gca;ax.ClippingStyle = 'rectangle';
+        xlabel(hc,'$\hat{P}_R$','Interpreter','latex','FontSize',12)
+        
+        figure(fig);subplot(3,3,5)
+        image(xAxisB,yAxisB,QBq,'CDataMapping','scaled')
+        axis xy;colormap(jet);hc=colorbar;box on; axis equal;grid minor
+        ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+        xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
+        title(['$A_c^{(' num2str(rankCamera(ll)) ')}$'],'FontSize',12,'Interpreter','latex')
+        ax = gca;ax.ClippingStyle = 'rectangle';
+        xlabel(hc,'$\hat{P}_R$','Interpreter','latex','FontSize',12)
+        
+        figure(fig);subplot(3,3,3)
+        image(xAxisA,yAxisA,RBq,'CDataMapping','scaled')
+        axis xy;colormap(jet);hc=colorbar;box on; axis equal;grid minor
+        ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+        xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
+        title(['$A_c - A_c^{(' num2str(rankCamera(ll)) ')}$'],'FontSize',12,'Interpreter','latex')
+        ax = gca;ax.ClippingStyle = 'rectangle';
+        xlabel(hc,'$\hat{P}_R$','Interpreter','latex','FontSize',12)
+        
+        figure(fig);subplot(3,3,6)
+        semilogy(diagAxis,diagSA(diagAxis),'mo--',diagAxis,diagSBq(diagAxis),'bs--',...
+            diagAxis,diagSRBq(diagAxis),'kp--','MarkerFaceColor',left_color,'MarkerSize',4)
+        legend({'diag($A_s$)','diag($A_c$)',['diag($A_c - A_c^{(' num2str(rankCamera(ll)) ')}$)']},...
+            'Interpreter','latex','Location','SouthWest')
+        ylabel('diag(S)','FontSize',12,'Interpreter','latex')
+        xlabel('Rank','FontSize',12,'Interpreter','latex')
+        grid minor;box on;
+        ax = gca;ax.ClippingStyle = 'rectangle';
+        
+        figure(fig);subplot(3,3,7)
+        plot(diagAxis,cumsum(diagSA(diagAxis).^2),'mo--',diagAxis,cumsum(diagSBq(diagAxis).^2),'bs--',...
+            diagAxis,cumsum(diagSRBq(diagAxis).^2),'kp--','MarkerFaceColor',left_color,'MarkerSize',4)
+        legend({'$A_s$','$A_c$',['$A_c - A_c^{(' num2str(rankCamera(ll)) ')}$']},...
+            'Interpreter','latex','Location','SouthWest')
+        ylabel('Energy','Interpreter','latex')
+        xlabel('Rank','FontSize',12,'Interpreter','latex')
+        grid minor;box on;
+        ax = gca;ax.ClippingStyle = 'rectangle';
+        
+        figure(fig);subplot(3,3,8)
+        yyaxis left
+        semilogy(rankAxis,DX,'s--',rankAxis,DY,'o--','Color',left_color)
+        ylabel('$(w_i v_i - w_i^* v_i^*)^2$, $(w_i u_i - w_i^* u_i^*)^2$','Interpreter','latex')
+        yyaxis right
+        semilogy(rankAxis,norms,'^--','Color',right_color)
+        ylabel('Frobenius norm','Interpreter','latex')
+        title(['$||A_s^{(' num2str(rankCamera(ll)) ')} - A_c^{(' num2str(rankCamera(ll)) ')}||^2=$' num2str(frobenius_norm)],'Interpreter','latex')
+        box on;grid minor;%xlim([1 rankAnalysis])
+        xlabel('Rank','Interpreter','latex')
+        
+        figure(fig);subplot(3,3,9)
+        yyaxis left
+        plot(1,TDX,'ks',1,TDY,'ko','MarkerFaceColor',left_color)
+        legend({'$f(R)$','g(Z)'},'Interpreter','latex')
+        ylim([min(0.9*[TDX TDY]) max(1.1*[TDX TDY])])
+        ylabel('$\sum (w_i v_i - w_i^* v_i^*)^2$,$\sum (w_i u_i - w_i^* u_i^*)^2$','Interpreter','latex')
+        yyaxis right
+        plot(1,TN,'k^','MarkerFaceColor',right_color)
+        ylabel('$\sum ||A_k-B_k||$','Interpreter','latex')
+        xlim([0 2]);grid minor;box on;
+        
+        saveas(fig,[ST.path 'svdAnalysis_k' num2str(rankAnalysis) '_' num2str(ss)],'fig')
     end
-    
-    TN = sum(norms);
-    
-    DX = sum((VA(:,1:rankAnalysis) - VBq(:,1:rankAnalysis)).^2,1);
-    DY = sum((UA(:,1:rankAnalysis) - UBq(:,1:rankAnalysis)).^2,1);
-    
-    TDX = sum(DX);
-    TDY = sum(DY);
-    
-    EA = sum(diagSA(1:rankAnalysis).^2);
-    EBq = sum(diagSBq(1:rankAnalysis).^2);    
-    
-    fig = figure;
-    set(fig,'defaultAxesColorOrder',[left_color; right_color]);
-    
-    figure(fig);subplot(3,3,1)
-    image(xAxisA,yAxisA,A,'CDataMapping','scaled')
-    axis xy;colormap(jet);hc=colorbar;box on; axis equal;grid minor
-    ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
-    xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
-    title('$A_s$','FontSize',12,'Interpreter','latex')
-    ax = gca;ax.ClippingStyle = 'rectangle';
-    xlabel(hc,'$\hat{P}_R$','Interpreter','latex','FontSize',12)
-    
-    figure(fig);subplot(3,3,4)
-    image(xAxisA,yAxisA,Q,'CDataMapping','scaled')
-    axis xy;colormap(jet);hc=colorbar;box on; axis equal;grid minor
-    ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
-    xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
-    title(['$A_s^{(' num2str(rankCamera) ')}$'],'FontSize',12,'Interpreter','latex')
-    ax = gca;ax.ClippingStyle = 'rectangle';
-    xlabel(hc,'$\hat{P}_R$','Interpreter','latex','FontSize',12)
-    
-    figure(fig);subplot(3,3,2)
-    image(xAxisB,yAxisB,B,'CDataMapping','scaled')
-    axis xy;colormap(jet);hc=colorbar;box on; axis equal;grid minor
-    ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
-    xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
-    title('$A_c$','FontSize',12,'Interpreter','latex')
-    ax = gca;ax.ClippingStyle = 'rectangle';
-    xlabel(hc,'$\hat{P}_R$','Interpreter','latex','FontSize',12)
-    
-    figure(fig);subplot(3,3,5)
-    image(xAxisB,yAxisB,QBq,'CDataMapping','scaled')
-    axis xy;colormap(jet);hc=colorbar;box on; axis equal;grid minor
-    ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
-    xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
-    title(['$A_c^{(' num2str(rankCamera) ')}$'],'FontSize',12,'Interpreter','latex')
-    ax = gca;ax.ClippingStyle = 'rectangle';
-    xlabel(hc,'$\hat{P}_R$','Interpreter','latex','FontSize',12)
-    
-    figure(fig);subplot(3,3,3)
-    image(xAxisA,yAxisA,RBq,'CDataMapping','scaled')
-    axis xy;colormap(jet);hc=colorbar;box on; axis equal;grid minor
-    ylabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
-    xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
-    title(['$A_c - A_c^{(' num2str(rankCamera) ')}$'],'FontSize',12,'Interpreter','latex')
-    ax = gca;ax.ClippingStyle = 'rectangle';
-    xlabel(hc,'$\hat{P}_R$','Interpreter','latex','FontSize',12)
-    
-    figure(fig);subplot(3,3,6)
-    semilogy(diagAxis,diagSA(diagAxis),'mo--',diagAxis,diagSBq(diagAxis),'bs--',...
-        diagAxis,diagSRBq(diagAxis),'kp--','MarkerFaceColor',left_color,'MarkerSize',4)
-    legend({'diag($A_s$)','diag($A_c$)',['diag($A_c - A_c^{(' num2str(rankCamera) ')}$)']},...
-        'Interpreter','latex','Location','SouthWest')
-    ylabel('diag(S)','FontSize',12,'Interpreter','latex')
-    xlabel('Rank','FontSize',12,'Interpreter','latex')
-    grid minor;box on;
-    ax = gca;ax.ClippingStyle = 'rectangle';
-    
-    figure(fig);subplot(3,3,7)
-    plot(diagAxis,cumsum(diagSA(diagAxis).^2),'mo--',diagAxis,cumsum(diagSBq(diagAxis).^2),'bs--',...
-        diagAxis,cumsum(diagSRBq(diagAxis).^2),'kp--','MarkerFaceColor',left_color,'MarkerSize',4)
-    legend({'$A_s$','$A_c$',['$A_c - A_c^{(' num2str(rankCamera) ')}$']},...
-        'Interpreter','latex','Location','SouthWest')
-    ylabel('Energy','Interpreter','latex')
-    xlabel('Rank','FontSize',12,'Interpreter','latex')
-    grid minor;box on;
-    ax = gca;ax.ClippingStyle = 'rectangle';
-    
-    figure(fig);subplot(3,3,8)
-    yyaxis left
-    semilogy(rankAxis,DX,'s--',rankAxis,DY,'o--','Color',left_color)
-    ylabel('$(w_i v_i - w_i^* v_i^*)^2$, $(w_i u_i - w_i^* u_i^*)^2$','Interpreter','latex')
-    yyaxis right
-    semilogy(rankAxis,norms,'^--','Color',right_color)
-    ylabel('Frobenius norm','Interpreter','latex')
-    title(['$||A_s^{(' num2str(rankCamera) ')} - A_c^{(' num2str(rankCamera) ')}||^2=$' num2str(frobenius_norm)],'Interpreter','latex')
-    box on;grid minor;xlim([1 rankAnalysis])
-    xlabel('Rank','Interpreter','latex')
-    
-    figure(fig);subplot(3,3,9)
-    yyaxis left
-    plot(1,TDX,'ks',1,TDY,'ko','MarkerFaceColor',left_color)
-    legend({'$f(R)$','g(Z)'},'Interpreter','latex')
-    ylim([min(0.9*[TDX TDY]) max(1.1*[TDX TDY])])
-    ylabel('$\sum (w_i v_i - w_i^* v_i^*)^2$,$\sum (w_i u_i - w_i^* u_i^*)^2$','Interpreter','latex')
-    yyaxis right
-    plot(1,TN,'k^','MarkerFaceColor',right_color)
-    ylabel('$\sum ||A_k-B_k||$','Interpreter','latex')
-    xlim([0 2]);grid minor;box on;
-    
-    saveas(fig,[ST.path 'svdAnalysis' num2str(ss)],'fig')
 end
 
 end
@@ -976,7 +978,7 @@ for ss=1:ST.params.simulation.num_species
     axis([-0.8 0.8 0 ymax]);box on;grid minor;
     xlabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
     
-    saveas(fig_slices,[ST.path 'slices_ss_' num2str(ss)],'fig')
+    %saveas(fig_slices,[ST.path 'slices_ss_' num2str(ss)],'fig')
     
     for ii=1:2
         figure(fig);subplot(1,2,ii);
@@ -989,6 +991,6 @@ for ss=1:ST.params.simulation.num_species
     end
     
     
-    saveas(fig,[ST.path 'picsAnalysis_' num2str(ss)],'fig')
+    %saveas(fig,[ST.path 'picsAnalysis_' num2str(ss)],'fig')
 end
 end
