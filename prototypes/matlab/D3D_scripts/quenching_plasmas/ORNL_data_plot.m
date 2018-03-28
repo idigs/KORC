@@ -43,25 +43,14 @@ load(myfile)
 pscaleval = 2; % scale factor for plotting of vis image
 
 % **** plot density data *****
-densfigure = figure;
-subplot(2,1,1)
-plot(rhoV,nArIV,'k')
-hold on
-plot(rhoV,nArIIV,'r')
-plot(rhoV,nArIIIV,'b')
-legend({'Ar','Ar$^{+}$','Ar$^{+2}$'},'interpreter','latex')
-xlabel('rho')
-ylabel('[1e13/cm^3]')
-title('Ar densities vs radius')
+ne = nDIIV + nArIIV + 2*nArIIIV;
 
-subplot(2,1,2)
-plot(rhoV,nDIV,'k')
-hold on
-plot(rhoV,nDIIV,'r')
-legend({'D','D$^{+}$'},'interpreter','latex')
-xlabel('rho')
-ylabel('[1e13/cm^3]')
-title('D densities vs radius')
+densfigure = figure;
+plot(rhoV,ne,'k-',rhoV,nArIV,'r--',rhoV,nArIIV,'b--',rhoV,nArIIIV,'m--',rhoV,nDIV,'c.-',rhoV,nDIIV,'.-')
+legend({'$n_e$','Ar','Ar$^{+}$','Ar$^{+2}$','D','D$^{+}$'},'interpreter','latex')
+xlabel('$\rho$','interpreter','latex')
+ylabel('[$1\times 10^{13}$/cm$^3$]','interpreter','latex')
+title('Electron density vs radius')
  
 % plot initial distribution function estimate
 fEfigure = figure;

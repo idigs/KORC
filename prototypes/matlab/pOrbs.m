@@ -172,7 +172,7 @@ end
 
 ST.time = ST.time;%/(2*pi/ST.params.wc);
 
-% ST.cOp = initializeCollisionOperators(ST);
+ST.cOp = initializeCollisionOperators(ST);
 
 % ST.PP = particlePusherLeapfrog(ST);
 
