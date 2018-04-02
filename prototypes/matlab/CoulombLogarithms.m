@@ -1,25 +1,18 @@
 % Script for studying Coulomb logarithms of fast electrons collisioning
 % with bound and free electrons as well as with ions.
 
-function CLog = CoulombLogarithms(Te,E)
+function CoulombLogarithms(Te,E,iSpp)
+close all
+
 % Te: background electron temperature in eV.
 % E: test electron's energy in eV.
-% iZ: cell array with the inpurity variables.
-% nZ: density of neutral impurities.
-% nZ: density of impurities with mean ionization level Z.
-% Iz: ionization energy of different impurities in eV.
-% Z: mean ionization level of impurities.
-
-% Deuterium:
-% Z = [0]; % Corresponding ionization level of D.
-% Iz = [15.46658]; % Ionization energy of unique electron in eV.
-% Argon:
-% Z = [0,1,2]; % Corresponding ionization level of Ar.
-% Iz = [15.7596117,27.62967,40.735]; % Ionization energy of different Ar impurities.
-
-iZ = loadStruct();
-
-CLog = struct;
+% iSpp: Array containing ion species information
+%   A: atomic number
+%   nn: density of neutral impurities.
+%   nZ: density of impurities with mean ionization level Z.
+%   Iz: ionization energy of different impurities in eV.
+%   In: ionization energy of neutral iSpp
+%   Z: mean ionization level of impurities.
 
 kB = 1.38E-23; % Boltzmann constant
 Kc = 8.987E9; % Coulomb constant in N*m^2/C^2
@@ -30,23 +23,21 @@ qe = 1.602176E-19; % Electron charge
 me = 9.109382E-31; % Electron mass
 re = qe^2/(4*pi*ep0*me*c^2);
 
+numImpurities = numel(fieldnames(iSpp));
+
 % Unit conversion
 TeJ = Te*qe; % Converted to Joules
 
 EJ = E*qe; % Converted to Joules
 g = EJ/(me*c^2);
 
-iZ.Ar.InJ = iZ.Ar.In*qe; % Converted to Joules
-iZ.Ar.IzJ = iZ.Ar.Iz*qe; % Converted to Joules
-iZ.D.InJ = iZ.D.In*qe; % Converted to Joules
-
-ne = iZ.D.nz + sum(iZ.Ar.nz.*iZ.Ar.Z);
-
 lD = @(ne,Te) sqrt(ep0*(Te*qe)/(qe^2*ne));
 
-CLogee_f1 = @(ne,Te) 32.2 - 0.5*log(ne) + log(Te); % KORC's model
+CLog = @(ne,Te) 32.2 - 0.5*log(ne) + log(Te); % KORC's model
 
-CLogee_f2 = @(g,ne,Te) log( (g-1)*sqrt(g+1)*lD(ne,Te)/(2*g*re) ); % Mosher's model
+CLogee = @(fb) 20*(1 - fb/2);
+
+CLogee_f = @(g,ne,Te) log( (g-1)*sqrt(g+1)*lD(ne,Te)/(2*g*re) ); % Mosher's model
 
 CLogee_b = @(g,Iz) log( (g-1)*sqrt(g+1)*me*c^2./(Iz*qe) );
 
@@ -54,48 +45,72 @@ CLogeZ = @(g,Iz,ne,Te,Z) log( lD(ne,Te)*(Iz*qe)./(Z*re*me*c^2) );
 
 CLogeZ0 = @(g,Iz) log( (g^2 - 1)*me*c^2./(g*(Iz*qe)) );
 
-Zeff_simple = (iZ.D.nz + sum(iZ.Ar.nz.*iZ.Ar.Z.^2))/ne;
+% Models for E critical
 
-% A = iZ.D.nz*iZ.D.Z^2*CLogee_f1(ne,Te) + iZ.Ar.A^2*sum(iZ.Ar.nz.*CLogeZ0(g,iZ.Ar.Iz)) +...
-%     sum(iZ.Ar.nz.*iZ.Ar.Z.^2.*CLogeZ(g,iZ.Ar.Iz,ne,Te,iZ.Ar.Z));
-A = iZ.D.nz*iZ.D.Z^2*CLogee_f1(ne,Te) + sum(iZ.Ar.nz.*iZ.Ar.Z.^2)*CLogee_f1(ne,Te);
+ECH = @(ne,Te) qe^3*ne*CLog(ne,Te)/(4*pi*ep0^2*me*c^2);
 
-B = ne*CLogee_f1(ne,Te) + iZ.D.nn*CLogee_b(g,iZ.D.In) +...
-    iZ.Ar.nn*CLogee_b(g,iZ.Ar.In) + sum(iZ.Ar.nz.*CLogee_b(g,iZ.Ar.Iz));
+Ec4c = @(ne,fb) qe^3*ne*CLogee(fb)/(4*pi*ep0^2*me*c^2);
 
-Zeff = A/B;
+Ec4d = @(g,nef,Te,neb,Iz) qe^3*(nef*CLogee_f(g,nef,Te) + sum(neb.*CLogee_b(g,Iz)))/(4*pi*ep0^2*me*c^2);
 
-% Final output
 
-CLog.CLogee_f1 = CLogee_f1;
-CLog.CLogee_f2 = CLogee_f2;
-CLog.CLogee_b = CLogee_b;
-CLog.CLogeZ = CLogeZ;
-CLog.CLogeZ0 = CLogeZ0;
 
-CLog.description = struct;
-CLog.description.CLogee_f1 = 'Collisions with free electrons: KORC model.';
-CLog.description.CLogee_f12 = 'Collisions with free electrons: Mosher model.';
-CLog.description.CLogee_b = 'Collisions with bound electrons: Mosher model.';
-CLog.description.CLogeZ = 'Collisions with partially ionized impurities. The chosen Z must correspond to Iz.';
-CLog.description.CLogeZ = 'Collisions with nuclei of partially ionized impurities. Iz is the same as for CLogeZ.';
+% Models for Zeff
+
+% Zeff_simple = (iZ.D.nz + sum(iSpp.nz.*iSpp.Z.^2))/ne;
+
+nef = 0;
+neb = 0;
+neb_a = [];
+Iz_a = [];
+for ii=1:numImpurities
+    nef = nef + sum(iSpp.(['spp' num2str(ii)]).nz.*iSpp.(['spp' num2str(ii)]).Z);
+    neb = neb + iSpp.(['spp' num2str(ii)]).nn*iSpp.(['spp' num2str(ii)]).A + ...
+        sum(iSpp.(['spp' num2str(ii)]).nz.*(iSpp.(['spp' num2str(ii)]).A-iSpp.(['spp' num2str(ii)]).Z));
+    
+    if ~isempty(iSpp.(['spp' num2str(ii)]).Iz)
+        neb_a = [neb_a,iSpp.(['spp' num2str(ii)]).nn, iSpp.(['spp' num2str(ii)]).nz];
+        Iz_a = [Iz_a,iSpp.(['spp' num2str(ii)]).In, iSpp.(['spp' num2str(ii)]).Iz];
+    else
+        neb_a = [neb_a,iSpp.(['spp' num2str(ii)]).nn];
+        Iz_a = [Iz_a,iSpp.(['spp' num2str(ii)]).In];
+    end
+end
+fb = neb/(nef + neb);
+
+Ec1 = zeros(1,numel(g));
+Ec2 = zeros(1,numel(g));
+Ec3 = zeros(1,numel(g));
+for gg=1:numel(g)
+    Ec1(gg) = ECH(nef,Te);
+    Ec2(gg) = Ec4c(nef+neb,fb);
+    Ec3(gg) = Ec4d(g(gg),nef,Te,neb_a,Iz_a);
 end
 
 
-function iZ = loadStruct()
-iZ = struct;
+EAxis = E/1E6;
 
-iZ.Ar.A = 18; % Argon
-iZ.Ar.nn = 0.002611*1E13*1E6; % neutral density in m^-3
-iZ.Ar.In = 15.7596117; % Ionization energy of neutral Argon.
-iZ.Ar.nz = [0.284,1.17]*1E13*1E6; % density of partially ionized impurities.
-iZ.Ar.Z = [1,2]; % Average charge state.
-iZ.Ar.Iz = [27.62967,40.735]; % Ionization energy.
+figure
+subplot(2,1,1)
+plot(EAxis,Ec1,'k',EAxis,Ec2,'r',EAxis,Ec3,'b')
+legend({'$E_{CH}$','$E_{crit} (Parks)$','$E_{crit} (Mosher)$'},'Interpreter','latex')
+xlabel('Energy (MeV)','Interpreter','latex')
+ylabel('$E_{crit}$ (V/m)','Interpreter','latex')
 
-iZ.D.A = 1; % Deuterium
-iZ.D.nn = 0.04481*1E13*1E6; % neutral density in m^-3
-iZ.D.In = 15.46658; % Ionization energy of neutral Argon.
-iZ.D.nz = 3.764*1E13*1E6; % Ionized deuterium.
-iZ.D.Z = 1;
+
 end
 
+
+% iSpp.spp1.A = 18; % Argon
+% iSpp.spp1.nn = 0.002611*1E13*1E6; % neutral density in m^-3
+% iSpp.spp1.In = 15.7596117; % Ionization energy of neutral Argon.
+% iSpp.spp1.nz = [0.284,1.17]*1E13*1E6; % density of partially ionized impurities.
+% iSpp.spp1.Z = [1,2]; % Average charge state.
+% iSpp.spp1.Iz = [27.62967,40.735]; % Ionization energy.
+% 
+% iSpp.spp2.A = 1; % Deuterium
+% iSpp.spp2.nn = 0.04481*1E13*1E6; % neutral density in m^-3
+% iSpp.spp2.In = 15.46658; % Ionization energy of neutral Argon.
+% iSpp.spp2.nz = 3.764*1E13*1E6; % Ionized deuterium.
+% iSpp.spp2.Z = 1;
+% iSpp.spp2.Iz = [];
