@@ -81,10 +81,12 @@ fb = neb/(nef + neb);
 Ec1 = zeros(1,numel(g));
 Ec2 = zeros(1,numel(g));
 Ec3 = zeros(1,numel(g));
+Ec4 = zeros(1,numel(g));
 for gg=1:numel(g)
     Ec1(gg) = ECH(nef,Te);
     Ec2(gg) = Ec4c(nef+neb,fb);
     Ec3(gg) = Ec4d(g(gg),nef,Te,neb_a,Iz_a);
+    Ec4(gg) = ECH(nef+neb,Te);
 end
 
 
@@ -92,8 +94,8 @@ EAxis = E/1E6;
 
 figure
 subplot(2,1,1)
-plot(EAxis,Ec1,'k',EAxis,Ec2,'r',EAxis,Ec3,'b')
-legend({'$E_{CH}$','$E_{crit} (Parks)$','$E_{crit} (Mosher)$'},'Interpreter','latex')
+plot(EAxis,Ec1,'k',EAxis,Ec2,'r',EAxis,Ec3,'b',EAxis,Ec4,'c')
+legend({'$E_{CH}$','$E_{crit} (Parks)$','$E_{crit} (Mosher)$','$E_{CH}$ $(n_{ef} + n_{eb})$'},'Interpreter','latex')
 xlabel('Energy (MeV)','Interpreter','latex')
 ylabel('$E_{crit}$ (V/m)','Interpreter','latex')
 
