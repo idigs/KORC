@@ -48,21 +48,21 @@ CLogeZ0 = @(g,Iz) log( (g^2 - 1)*me*c^2./(g*(Iz*qe)) );
 
 % Models for E critical
 
-ECH = @(ne,Te) qe^3*ne*CLog(ne,Te)/(4*pi*ep0^2*me*c^2); % CH
+E_CH = @(ne,Te) qe^3*ne*CLog(ne,Te)/(4*pi*ep0^2*me*c^2); % CH
 
-Ec4c = @(ne,fb) qe^3*ne*CLogee(fb)/(4*pi*ep0^2*me*c^2); % Parks' model
+Ec_Parks = @(ne,fb) qe^3*ne*CLogee(fb)/(4*pi*ep0^2*me*c^2); % Parks' model
 
-Ec4d = @(g,nef,Te,neb,Iz) qe^3*(nef*CLogee_f(g,nef,Te) + sum(neb.*CLogee_b(g,Iz)))/(4*pi*ep0^2*me*c^2); % Mosher model
+Ec_Mosher = @(g,nef,Te,neb,Iz) qe^3*(nef*CLogee_f(g,nef,Te) + sum(neb.*CLogee_b(g,Iz)))/(4*pi*ep0^2*me*c^2); % Mosher model
 
 
 
 % Models for Zeff
 
-Zeff = @(ni,Zi,ne) sum(ni.*Zi.^2)/ne; % CH
+Zeff_CH = @(ni,Zi,ne) sum(ni.*Zi.^2)/ne; % CH
 
-Zeff6c = @();% Parks' model
+Zeff_Parks = @(ne,fb,Te,ni,Ai) CLog(ne,Te)*sum(ni.*Ai.^2)/(ne*CLogee(fb));% Parks' model
 
-Zeff6c = 0;% Parks' model
+Zeff_Mosher = @(g,nef,neb,Te,nz,Iz,Z,Ai) sum(nz.*(Z.^2.*CLogeZ(g,Iz,nef,Te,Z)))/(nef*CLogee_f(g,nef,Te) + sum(neb.*CLogee_b(g,Iz)));% Parks' model
 
 
 % Actual calculation of E critical and Zeff
@@ -73,22 +73,37 @@ neb_a = [];
 Iz_a = [];
 
 ni = [];
+nz = [];
+Z = [];
+A = [];
 Zi = [];
+nAi = [];
+Ai = [];
 for ii=1:numImpurities
     nef = nef + sum(iSpp.(['spp' num2str(ii)]).nz.*iSpp.(['spp' num2str(ii)]).Z);
     neb = neb + iSpp.(['spp' num2str(ii)]).nn*iSpp.(['spp' num2str(ii)]).A + ...
         sum(iSpp.(['spp' num2str(ii)]).nz.*(iSpp.(['spp' num2str(ii)]).A-iSpp.(['spp' num2str(ii)]).Z));
     
+%     if ~isempty(iSpp.(['spp' num2str(ii)]).Iz)
+%         neb_a = [neb_a,iSpp.(['spp' num2str(ii)]).nn, iSpp.(['spp' num2str(ii)]).nz];
+%         Iz_a = [Iz_a,iSpp.(['spp' num2str(ii)]).In, iSpp.(['spp' num2str(ii)]).Iz];
+%     else
+%         neb_a = [neb_a,iSpp.(['spp' num2str(ii)]).nn];
+%         Iz_a = [Iz_a,iSpp.(['spp' num2str(ii)]).In];
+%     end
+
     if ~isempty(iSpp.(['spp' num2str(ii)]).Iz)
-        neb_a = [neb_a,iSpp.(['spp' num2str(ii)]).nn, iSpp.(['spp' num2str(ii)]).nz];
-        Iz_a = [Iz_a,iSpp.(['spp' num2str(ii)]).In, iSpp.(['spp' num2str(ii)]).Iz];
-    else
-        neb_a = [neb_a,iSpp.(['spp' num2str(ii)]).nn];
-        Iz_a = [Iz_a,iSpp.(['spp' num2str(ii)]).In];
+        neb_a = [neb_a, iSpp.(['spp' num2str(ii)]).nz];
+        Iz_a = [Iz_a, iSpp.(['spp' num2str(ii)]).Iz];
+        nz = [nz,iSpp.(['spp' num2str(ii)]).nz];
+        Z = [Z,iSpp.(['spp' num2str(ii)]).Z];
+        A = [A, iSpp.(['spp' num2str(ii)]).A];
     end
-    
+
     ni = [ni,iSpp.(['spp' num2str(ii)]).nz];
     Zi = [Zi,iSpp.(['spp' num2str(ii)]).Z];
+    nAi = [nAi, sum(iSpp.(['spp' num2str(ii)]).nz)];
+    Ai = [Ai, iSpp.(['spp' num2str(ii)]).A];
 end
 fb = neb/(nef + neb);
 
@@ -99,6 +114,8 @@ Ec4 = zeros(1,numel(g));
 
 Zeff1 = zeros(1,numel(g));
 Zeff2 = zeros(1,numel(g));
+Zeff3 = zeros(1,numel(g));
+Zeff4 = zeros(1,numel(g));
 
 Coeff1 = zeros(1,numel(g));
 Coeff2 = zeros(1,numel(g));
@@ -106,16 +123,16 @@ Coeff3 = zeros(1,numel(g));
 Coeff4 = zeros(1,numel(g));
 
 for gg=1:numel(g)
-    Ec1(gg) = ECH(nef,Te);
-    Ec2(gg) = ECH(nef+neb,Te);
-    Ec3(gg) = Ec4c(nef+neb,fb);
-    Ec4(gg) = Ec4d(g(gg),nef,Te,neb_a,Iz_a);
+    Ec1(gg) = E_CH(nef,Te);
+    Ec2(gg) = E_CH(nef+neb,Te);
+    Ec3(gg) = Ec_Parks(nef+neb,fb);
+    Ec4(gg) = Ec_Mosher(g(gg),nef,Te,neb_a,Iz_a);
     
 
-    Zeff1(gg) = Zeff(ni,Zi,nef);
-    Zeff2(gg) = Zeff(ni,Zi,nef+neb);
-    Zeff3(gg) = 0;
-    Zeff4(gg) = 0;
+    Zeff1(gg) = Zeff_CH(ni,Zi,nef);
+    Zeff2(gg) = Zeff_CH(ni,Zi,nef+neb);
+    Zeff3(gg) = Zeff_Parks(nef+neb,fb,Te,nAi,Ai);
+    Zeff4(gg) = Zeff_Mosher(g(gg),nef,neb_a,Te,nz,Iz_a,Z,A);
     
     Coeff1(gg) = 2/( Ec1(gg)*(1 + Zeff1(gg)) );
     Coeff2(gg) = 2/( Ec2(gg)*(1 + Zeff2(gg)) );
