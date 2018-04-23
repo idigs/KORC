@@ -62,6 +62,8 @@ ST = loadData(ST);
 
 % pitchAnglePDFSlices(ST)
 
+% PAE_PDF(ST);
+
 % pitchAnglePDFSlicesVsTime(ST)
 
 spatialAndVelocityPDF(ST)
@@ -3900,8 +3902,8 @@ hatE = ST.params.pdf_params.E;
 Zeff = ST.params.pdf_params.Zeff;
 
 % Here p is normalized by mc and eta is in radians
-A = @(E,Z,p) 2*E*p.^2./((Z+1)*sqrt(p.^2 + 1)); 
-ft = @(E,Z,p,t) 0.5*A(E,Z,p).*exp(5*A(E,Z,p).*cos(t))./sinh(A(E,Z,p));
+A = @(E,Z,p) 5*2*E*p.^2./((Z+1)*sqrt(p.^2 + 1));
+ft = @(E,Z,p,t) 0.5*A(E,Z,p).*exp(A(E,Z,p).*cos(t))./sinh(A(E,Z,p));
 
 for ss=1:ST.params.simulation.num_species
     q = abs(ST.params.species.q(ss));
@@ -3935,11 +3937,11 @@ for ss=1:ST.params.simulation.num_species
         pmax = max([sqrt(ST.params.species.go(ss)^2 - 1); max(p)]);
         pmin = min([sqrt(ST.params.species.go(ss)^2 - 1); min(p)]);
     end
-
+    
     Emin = 8.0;
     Emax = 15.0;
-%     Emin = sqrt(pmin.^2 + 1)*m*c^2/(q*1E6);
-%     Emax = sqrt(pmax.^2 + 1)*m*c^2/(q*1E6);
+    %     Emin = sqrt(pmin.^2 + 1)*m*c^2/(q*1E6);
+    %     Emax = sqrt(pmax.^2 + 1)*m*c^2/(q*1E6);
     DE = (Emax-Emin)/slices;
     
     EAxis = linspace(Emin,Emax - DE,slices) + 0.5*DE;
@@ -3993,12 +3995,12 @@ for ss=1:ST.params.simulation.num_species
         
         mean_pitch = trapz(pitchAxis,pitchAxis.*f);
         mean_pitch_h = trapz(pitchAxish(1:N),pAh.*fh);
-                   
+        
         figure(fig)
         subplot(5,ceil(slices/5),sl)
         plot(pitchAxis,f,'r',pitchAxis,fl,'b-.',pitchAxis,fu,'b--',pAh,fh,'k')
         legend({'$f_o$,','$f_l$','$f_u$','$f_{\mbox{sim}}$'},'Interpreter','latex')
-%         semilogy(pitchAxis,f,'r',pitchAxis(1:N-1),fh,'b')
+        %         semilogy(pitchAxis,f,'r',pitchAxis(1:N-1),fh,'b')
         title(['$\mathcal{E}\in($' num2str(El) ',' num2str(Eu)...
             ') MeV $\langle \theta \rangle=$' num2str(mean_pitch)...
             '$^\circ$ $\langle \vartheta \rangle=$' num2str(mean_pitch_h) '$^\circ$'],...
@@ -4059,12 +4061,12 @@ for ss=1:ST.params.simulation.num_species
             Eu = EAxis(sl) + 0.5*DE;
             I = (E > El) & (E < Eu);
             
-            E_stats(1,ii,sl) = mean(E(I));
-            E_stats(2,ii,sl) = std(E(I));
+            E_stats(1,ii,sl) = mean(sin(eta(I)).*E(I));
+            E_stats(2,ii,sl) = std(sin(eta(I)).*E(I));
             E_error(ii,sl) = E_stats(2,ii,sl)/sqrt(sum(bool));
             
-            pa_stats(1,ii,sl) = mean(eta(I));
-            pa_stats(2,ii,sl) = std(eta(I));
+            pa_stats(1,ii,sl) = mean(sin(eta(I)).*eta(I));
+            pa_stats(2,ii,sl) = std(sin(eta(I)).*eta(I));
             pa_error(ii,sl) = pa_stats(2,ii,sl)/sqrt(sum(bool));
         end
     end
@@ -4113,6 +4115,47 @@ end
 
 end
 
+function PAE_PDF(ST)
+NE = 100;
+NP = 360;
+
+q = abs(ST.params.species.q(1));
+m = ST.params.species.m(1);
+c = ST.params.scales.v;
+
+Eo = m*c^2;
+E = linspace(1.0E6,20.0E6,NE)*q + Eo;
+EAxis = (E - Eo)/(q*1E6);
+g = E/(m*c^2);
+p = sqrt(g.^2 - 1);
+
+pitch = linspace(0,pi,NP);
+pitchAxis = pitch*180/pi;
+
+hatE = ST.params.pdf_params.E;
+Zeff = ST.params.pdf_params.Zeff;
+
+% Here p is normalized by mc and eta is in radians
+A = @(E,Z,p) 7*2*E*p.^2./((Z+1)*sqrt(p.^2 + 1));
+ft = @(E,Z,p,t) 0.5*A(E,Z,p).*exp(A(E,Z,p).*cos(t))./sinh(A(E,Z,p));
+
+mean_pitch = zeros(1,NE);
+
+for ii=1:NE
+    Psyn = Psp(ST,ST.params.pdf_params.Bo,ST.params.pdf_params.lambda,g(ii),pitch);
+    f = Psyn.*ft(hatE,Zeff,p(ii),pitch);
+    PT = trapz(pitch,f.*sin(pitch));
+    mean_pitch(ii) = trapz(pitch, pitch.*f.*sin(pitch)/PT);
+end
+
+mean_pitch = mean_pitch*180/pi;
+
+figure
+plot(EAxis,mean_pitch)
+
+
+end
+
 function spatialAndVelocityPDF(ST)
 load('C-struct.mat')
 num_fs = 7;
@@ -4121,12 +4164,12 @@ q = [1 1.5 2 3 4 5 6];
 N = 100; % Energy
 M = 100; % Pitch-angle
 
-slices = 7;
+Eslices = 7;
 Emin = 8.0;
 Emax = 15.0;
 
-DE = (Emax-Emin)/slices;
-EAxis = linspace(Emin,Emax - DE,slices) + 0.5*DE;
+DE = (Emax-Emin)/Eslices;
+EAxis = linspace(Emin,Emax - DE,Eslices) + 0.5*DE;
 
 % % Parameters
 
@@ -4134,12 +4177,8 @@ me = ST.params.scales.m;
 qe = ST.params.scales.q;
 c = ST.params.scales.v;
 
-t = linspace(0,2*pi,500);
-
-Ro = 1.67;
-Zo = 0.02;
-ro = [0.1 0.2 0.3 0.4 0.5 0.6];
-sf = 0.3;
+Ro = C.Ro;
+Zo = C.Zo;
 
 for ss=1:ST.params.simulation.num_species 
     try
@@ -4148,7 +4187,6 @@ for ss=1:ST.params.simulation.num_species
         pin = true(1,size(ST.data.(['sp' num2str(ss)]).g,1));
     end
     
-
     
     X = ST.data.(['sp' num2str(ss)]).X(:,pin,:);
     X = reshape(X,[3 size(X,2)*size(X,3)]);
@@ -4170,6 +4208,8 @@ for ss=1:ST.params.simulation.num_species
     
     npart = numel(pa);
     nparto = 0.9626*double(ST.params.species(ss).ppp*ST.params.simulation.nmpi)*size(ST.data.(['sp' num2str(ss)]).X,3);
+    nSnapshots = size(ST.data.(['sp' num2str(ss)]).X,3);
+    
     
     fig1 = figure;
     fig2 = figure;
@@ -4177,28 +4217,7 @@ for ss=1:ST.params.simulation.num_species
     for rr=1:num_fs
         E_in = [];
         pa_in = [];
-        
-%         Ze = ro(rr)*sin(t);
-%         Re = ro(rr)*cos(t) + sf*Ze;
-%         
-%         ra = 0.5*pi - atan2(1.0,1.0 + sf);
-%         
-%         Rb = Re*cos(ra) - Ze*sin(ra) + Ro;
-%         Zb = Re*sin(ra) + Ze*cos(ra) + Zo;
-%         
-%         rb = sqrt((Rb-Ro).^2 +(Zb-Zo).^2);
-%         ab = atan2(Zb-Zo,Rb-Ro);
-%         ab(ab<0) = ab(ab<0) + 2*pi;
-%         [~,I] = min(ab);
-%         ab = [ab(I:end) ab(1:I-1)];
-%         rb = [rb(I:end) rb(1:I-1)];
-%         
-%         rb = [rb(end), rb, rb(1)];
-%         ab = [ab(end)-2*pi, ab, 2*pi + ab(1)];
-        
-%         rp = interp1(ab,rb,a,'pchip'); 
-
-
+       
         if rr == 1
             rp = interp1(C.(['q_' num2str(rr)]).a,C.(['q_' num2str(rr)]).r,a,'pchip'); 
             for pp=1:npart
@@ -4271,12 +4290,14 @@ for ss=1:ST.params.simulation.num_species
     pa = zeros(2,num_fs);
     Upa = zeros(2,num_fs);
     
-    np_slices = zeros(slices,num_fs);
-    pa_slices = zeros(slices,num_fs);
-    Upa_slices = zeros(slices,num_fs);
+    np_slices = zeros(Eslices,num_fs);
+    pa_slices = zeros(Eslices,num_fs);
+    Upa_slices = zeros(Eslices,num_fs);
     
     E = zeros(2,num_fs);
     UE = zeros(2,num_fs);
+    
+    V = [C.Vp(1), C.Vp(2:end) - C.Vp(1:end-1)];
     
     for ii=1:num_fs
         figure(fig1)
@@ -4289,7 +4310,7 @@ for ss=1:ST.params.simulation.num_species
         E(1,ii) = mean(ax.Children.Data(:,2));
         UE(1,ii) = std(ax.Children.Data(:,2))/sqrt(np(1,ii));
         
-        for sl=1:slices
+        for sl=1:Eslices
             El = EAxis(sl) - 0.5*DE;
             Eu = EAxis(sl) + 0.5*DE;
             I = (ax.Children.Data(:,2) > El) & (ax.Children.Data(:,2) < Eu);
@@ -4298,6 +4319,8 @@ for ss=1:ST.params.simulation.num_species
             
             pa_slices(sl,ii) = mean(ax.Children.Data(I,1));
             Upa_slices(sl,ii) = std(ax.Children.Data(I,1))/sqrt(np_slices(sl,ii));
+            
+            np_slices(sl,ii) = (np_slices(sl,ii)/nSnapshots)./V(ii);
         end
         
         figure(fig2)
@@ -4310,14 +4333,14 @@ for ss=1:ST.params.simulation.num_species
         E(2,ii) = mean(ax.Children.Data(:,2));
         UE(2,ii) = std(ax.Children.Data(:,2))/sqrt(np(2,ii));
     end 
-    
-    np = 100*np/nparto;
-    np_slices = 100*np_slices/nparto;
+       
+    np(1,:) = (np(1,:)/nSnapshots)./V;
+    np(2,:) = 100*np(2,:)/nparto;
     
     fig3 = figure;
     subplot(2,3,1)
     plot(q,np(1,:),'o-')
-    for sl=1:slices
+    for sl=1:Eslices
         hold on;
         plot(q,np_slices(sl,:),'o-')
         hold off
@@ -4334,7 +4357,7 @@ for ss=1:ST.params.simulation.num_species
     
     subplot(2,3,3)
     errorbar(q,pa(1,:),Upa(1,:),'o-')
-    for sl=1:slices
+    for sl=1:Eslices
         hold on;
         errorbar(q,pa_slices(sl,:),Upa_slices(sl,:),'o-')
         hold off

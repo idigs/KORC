@@ -24,7 +24,11 @@ qe = 1.602176E-19; % Electron charge
 me = 9.109382E-31; % Electron mass
 re = qe^2/(4*pi*ep0*me*c^2);
 
-numImpurities = numel(fieldnames(iSpp));
+if isfield(iSpp,'H')
+    numImpurities = numel(fieldnames(iSpp)) - 1;
+else
+    numImpurities = numel(fieldnames(iSpp));
+end
 
 % Unit conversion
 TeJ = Te*qe; % Converted to Joules
@@ -46,6 +50,8 @@ CLogeZ = @(g,Iz,ne,Te,Z) log( lD(ne,Te)*(Iz*qe)./(Z*re*me*c^2) );
 
 CLogeZ0 = @(g,Iz) log( (g^2 - 1)*me*c^2./(g*(Iz*qe)) );
 
+CLogeH = @(g,ne,Te) log((g.^2-1)*lD(ne,Te)/(g*re));
+
 % Models for E critical
 
 E_CH = @(ne,Te) qe^3*ne*CLog(ne,Te)/(4*pi*ep0^2*me*c^2); % CH
@@ -62,7 +68,8 @@ Zeff_CH = @(ni,Zi,ne) sum(ni.*Zi.^2)/ne; % CH
 
 Zeff_Parks = @(ne,fb,Te,ni,Ai) CLog(ne,Te)*sum(ni.*Ai.^2)/(ne*CLogee(fb));% Parks' model
 
-Zeff_Mosher = @(g,nef,neb,Te,nz,Iz,Z,Ai) sum(nz.*(Z.^2.*CLogeZ(g,Iz,nef,Te,Z)))/(nef*CLogee_f(g,nef,Te) + sum(neb.*CLogee_b(g,Iz)));% Parks' model
+Zeff_Mosher = @(g,nef,neb,Te,nH,nz,Iz,Z,Ai) ( nH*CLogeH(g,nef,Te) + ...
+        sum(nz.*(Z.^2.*CLogeZ(g,Iz,nef,Te,Z) + Ai.^2.*CLogeZ0(g,Iz))) )/( nef*CLogee_f(g,nef,Te) + sum(neb.*CLogee_b(g,Iz)) );% Parks' model
 
 
 % Actual calculation of E critical and Zeff
@@ -72,6 +79,7 @@ neb = 0;
 neb_a = [];
 Iz_a = [];
 
+nH = 0;
 ni = [];
 nz = [];
 Z = [];
@@ -80,17 +88,13 @@ Zi = [];
 nAi = [];
 Ai = [];
 for ii=1:numImpurities
+    if isfield(iSpp,'H')
+        nH = iSpp.H.nz;
+    end
+    
     nef = nef + sum(iSpp.(['spp' num2str(ii)]).nz.*iSpp.(['spp' num2str(ii)]).Z);
     neb = neb + iSpp.(['spp' num2str(ii)]).nn*iSpp.(['spp' num2str(ii)]).A + ...
         sum(iSpp.(['spp' num2str(ii)]).nz.*(iSpp.(['spp' num2str(ii)]).A-iSpp.(['spp' num2str(ii)]).Z));
-    
-%     if ~isempty(iSpp.(['spp' num2str(ii)]).Iz)
-%         neb_a = [neb_a,iSpp.(['spp' num2str(ii)]).nn, iSpp.(['spp' num2str(ii)]).nz];
-%         Iz_a = [Iz_a,iSpp.(['spp' num2str(ii)]).In, iSpp.(['spp' num2str(ii)]).Iz];
-%     else
-%         neb_a = [neb_a,iSpp.(['spp' num2str(ii)]).nn];
-%         Iz_a = [Iz_a,iSpp.(['spp' num2str(ii)]).In];
-%     end
 
     if ~isempty(iSpp.(['spp' num2str(ii)]).Iz)
         neb_a = [neb_a, iSpp.(['spp' num2str(ii)]).nz];
@@ -99,12 +103,21 @@ for ii=1:numImpurities
         Z = [Z,iSpp.(['spp' num2str(ii)]).Z];
         A = [A, iSpp.(['spp' num2str(ii)]).A];
     end
-
+   
     ni = [ni,iSpp.(['spp' num2str(ii)]).nz];
     Zi = [Zi,iSpp.(['spp' num2str(ii)]).Z];
     nAi = [nAi, sum(iSpp.(['spp' num2str(ii)]).nz)];
     Ai = [Ai, iSpp.(['spp' num2str(ii)]).A];
 end
+
+if isfield(iSpp,'H')
+    nef = nef + nH;
+    ni = [ni,nH];
+    Zi = [Zi,1];
+    nAi = [nAi,nH];
+    Ai = [Ai,1];
+end
+
 fb = neb/(nef + neb);
 
 Ec1 = zeros(1,numel(g));
@@ -132,7 +145,7 @@ for gg=1:numel(g)
     Zeff1(gg) = Zeff_CH(ni,Zi,nef);
     Zeff2(gg) = Zeff_CH(ni,Zi,nef+neb);
     Zeff3(gg) = Zeff_Parks(nef+neb,fb,Te,nAi,Ai);
-    Zeff4(gg) = Zeff_Mosher(g(gg),nef,neb_a,Te,nz,Iz_a,Z,A);
+    Zeff4(gg) = Zeff_Mosher(g(gg),nef,neb_a,Te,nH,nz,Iz_a,Z,A);
     
     Coeff1(gg) = 2/( Ec1(gg)*(1 + Zeff1(gg)) );
     Coeff2(gg) = 2/( Ec2(gg)*(1 + Zeff2(gg)) );
@@ -146,23 +159,47 @@ end
 EAxis = E/1E6;
 
 figure
-subplot(3,1,1)
+subplot(3,2,1)
 plot(EAxis,Ec1,'k',EAxis,Ec2,'c',EAxis,Ec3,'r',EAxis,Ec4,'b')
-legend({'$E_{CH}$ ($n_{ef}$)','$E_{CH}$ $(n_{ef} + n_{eb})$','$E_{crit} (Parks)$','$E_{crit} (Mosher)$'},'Interpreter','latex')
+grid minor;xlim([min(EAxis) max(EAxis)]);
+legend({'CH ($n_{ef}$)','CH $(n_{ef} + n_{eb})$','Parks','Mosher'},'Interpreter','latex')
 xlabel('Kinetic energy (MeV)','Interpreter','latex')
-ylabel('$E_{crit}$ (V/m)','Interpreter','latex')
+ylabel('$E_{c}$ (V/m)','Interpreter','latex')
 
-subplot(3,1,2)
+subplot(3,2,3)
 plot(EAxis,Zeff1,'k',EAxis,Zeff2,'c',EAxis,Zeff3,'r',EAxis,Zeff4,'b')
-legend({'$Z_{eff}$ ($n_{ef}$)','$Z_{eff}$ $(n_{ef} + n_{eb})$','$Z$ (Parks)','$Z$ (Mosher)'},'Interpreter','latex')
+grid minor;xlim([min(EAxis) max(EAxis)]);
+legend({'CH ($n_{ef}$)','CH $(n_{ef} + n_{eb})$','Parks','Mosher'},'Interpreter','latex')
 xlabel('Kinetic energy (MeV)','Interpreter','latex')
 ylabel('$\langle Z \rangle$','Interpreter','latex')
 
-subplot(3,1,3)
+subplot(3,2,5)
 plot(EAxis,Coeff1,'k',EAxis,Coeff2,'c',EAxis,Coeff3,'r',EAxis,Coeff4,'b')
-legend({'Connor-Hastie ($n_{ef}$)','Connor-Hastie $(n_{ef} + n_{eb})$','Parks` model','Mosher`s model'},'Interpreter','latex')
+grid minor;xlim([min(EAxis) max(EAxis)]);
+legend({'CH ($n_{ef}$)','CH $(n_{ef} + n_{eb})$','Parks','Mosher'},'Interpreter','latex')
 xlabel('Kinetic energy (MeV)','Interpreter','latex')
 ylabel('$2/E_{c}(1+\langle Z \rangle)$','Interpreter','latex')
+
+subplot(3,2,2)
+plot(EAxis,Ec1./Ec1,'k',EAxis,Ec2./Ec1,'c',EAxis,Ec3./Ec1,'r',EAxis,Ec4./Ec1,'b')
+grid minor;xlim([min(EAxis) max(EAxis)]);
+legend({'CH ($n_{ef}$)','CH $(n_{ef} + n_{eb})$','Parks','Mosher'},'Interpreter','latex')
+xlabel('Kinetic energy (MeV)','Interpreter','latex')
+ylabel('$E_{c}/E_{CH}$ (V/m)','Interpreter','latex')
+
+subplot(3,2,4)
+plot(EAxis,Zeff1./Zeff1,'k',EAxis,Zeff2./Zeff1,'c',EAxis,Zeff3./Zeff1,'r',EAxis,Zeff4./Zeff1,'b')
+grid minor;xlim([min(EAxis) max(EAxis)]);
+legend({'CH ($n_{ef}$)','CH $(n_{ef} + n_{eb})$','Parks','Mosher'},'Interpreter','latex')
+xlabel('Kinetic energy (MeV)','Interpreter','latex')
+ylabel('$\langle Z \rangle/Z_{eff}$','Interpreter','latex')
+
+subplot(3,2,6)
+plot(EAxis,Coeff1./Coeff1,'k',EAxis,Coeff2./Coeff1,'c',EAxis,Coeff3./Coeff1,'r',EAxis,Coeff4./Coeff1,'b')
+grid minor;xlim([min(EAxis) max(EAxis)]);
+legend({'CH ($n_{ef}$)','CH $(n_{ef} + n_{eb})$','Parks','Mosher'},'Interpreter','latex')
+xlabel('Kinetic energy (MeV)','Interpreter','latex')
+ylabel('$E_{CH}(1+Z_{eff})/E_{c}(1+\langle Z \rangle)$','Interpreter','latex')
 end
 
 
