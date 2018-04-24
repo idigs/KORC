@@ -1,30 +1,31 @@
+!> Module containing the definition of KORC derived types and KORC variables, the building blocks of the code.
 module korc_types
 	implicit none
 
 ! * * * * * * * * * * * * * * * * * * * * !
 ! * * * Real and integer precisions * * * !
 ! * * * * * * * * * * * * * * * * * * * * !
-
-	INTEGER, PUBLIC, PARAMETER :: is = KIND(INT(1,1))
-	INTEGER, PUBLIC, PARAMETER :: ip = KIND(INT(1,8)) ! SELECTED_INT_KIND(10) !
-	INTEGER, PUBLIC, PARAMETER :: idef = KIND(1) !
-	INTEGER, PUBLIC, PARAMETER :: rdef = KIND(1.0) !
+	INTEGER, PUBLIC, PARAMETER :: is = KIND(INT(1,1)) !< Definition of 1 Byte (8 bits) Fortran KORC integer type.
+	INTEGER, PUBLIC, PARAMETER :: ip = KIND(INT(1,8)) !< Definition of 8 Bytes (64 bits) Fortran KORC integer type.
+	INTEGER, PUBLIC, PARAMETER :: idef = KIND(1) !< Definition of the default KORC integer type on the system where KORC is compiled.
+	INTEGER, PUBLIC, PARAMETER :: rdef = KIND(1.0) !< Definition of the default KORC real type on the system where KORC is compiled.
 #ifdef DOUBLE_PRECISION
-	INTEGER, PUBLIC, PARAMETER :: rp = KIND(0.d0) ! Double precision
+	INTEGER, PUBLIC, PARAMETER :: rp = KIND(0.d0) !< Definition of the KORC double precision real type.
 #elif SINGLE_PRECISION
-	INTEGER, PUBLIC, PARAMETER :: rp = KIND(1.0) ! Single precision
+	INTEGER, PUBLIC, PARAMETER :: rp = KIND(1.0) !< Definition of the KORC single precision real type.
 #endif
-	REAL(rp), PUBLIC, PARAMETER :: korc_zero = 1.0E-15
+	REAL(rp), PUBLIC, PARAMETER :: korc_zero = 1.0E-15 !< Definition of the zero in KORC.
 
 ! * * * * * * * * * * * * * * * * * * * * !
 ! * * * Real and integer precisions * * * !
 ! * * * * * * * * * * * * * * * * * * * * !
 
-	INTEGER, PUBLIC, PARAMETER :: MAX_STRING_LENGTH = 1000 ! This value can be changed, beware of string truncation
-	INTEGER, PUBLIC, PARAMETER :: default_unit_open = 101
-	INTEGER, PUBLIC, PARAMETER :: default_unit_write = 201
+	INTEGER, PUBLIC, PARAMETER :: MAX_STRING_LENGTH = 1000 !< Default length of a KORC_STRING variable.
+	INTEGER, PUBLIC, PARAMETER :: default_unit_open = 101 !< Default file unit for opening and reading from an external text file.
+	INTEGER, PUBLIC, PARAMETER :: default_unit_write = 201 !< Default file unit for opening and writing to external an external text file.
 
-TYPE, PUBLIC :: KORC_STRING
+
+TYPE, PUBLIC :: KORC_STRING !< @brief KORC string type of length MAX_STRING_LENGTH.
 	CHARACTER(MAX_STRING_LENGTH) :: str
 END TYPE KORC_STRING
 
@@ -33,48 +34,70 @@ END TYPE KORC_STRING
 ! * * * * * * * * * * * * * * * * * * * * !
 
 TYPE, PUBLIC :: V_FIELD_3D
-	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: R
-	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: PHI
-	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: Z
+!< @brief KORC 3-D vector field type
+!! @details This KORC type represents a 3-D vector field varible in cylindrical coordinates. For example, this could be the 3-D magnetic
+!! field, which can be written as @f$\vec{B}(R,\phi,Z) = B_R(R,\phi,Z) \hat{R} + B_\phi(R,\phi,Z) \hat{\phi} + B_Z(R,\phi,Z) \hat{Z}@f$.
+!! All the members (components) of the V_FIELD_3D type follow the following index convention: 
+!! (@f$R@f$ index,@f$\phi@f$ index,@f$Z@f$ index)
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: R !< @f$R @f$ component of the vector field variable.
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: PHI !< @f$\phi @f$ component of the vector field variable.
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: Z !< @f$Z @f$ component of the vector field variable.
 END TYPE V_FIELD_3D
 
 TYPE, PUBLIC :: V_FIELD_2D
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: R
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: PHI
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Z
+!< @brief KORC 2-D vector field type
+!! @details This KORC type represents a 2-D vector field varible in cylindrical coordinates. For example, this could be the magnetic
+!! field in an axisymmetric plasma, which can be written as @f$\vec{B}(R,Z) = B_R(R,Z) \hat{R} + B_\phi(R,Z) \hat{\phi} + B_Z(R,Z) 
+!! \hat{Z}@f$.
+!! All the members (components) of the V_FIELD_2D type follow the following index convention: 
+!! (@f$R@f$ index,@f$Z@f$ index).
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: R !< @f$R @f$ component of the vector field variable.
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: PHI !< @f$\phi @f$ component of the vector field variable.
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Z !< @f$Z @f$ component of the vector field variable.
 END TYPE V_FIELD_2D
 
 ! * * * * * * * * * * * * * * * * * * * * !
 ! * * * Basic korc array structures * * * !
 ! * * * * * * * * * * * * * * * * * * * * !
 
-TYPE, PRIVATE :: KORC_MPI
-    INTEGER :: nmpi ! Number of MPI processes
-	INTEGER :: rank ! Rank in WORLD COMMON communicator
-	INTEGER :: rank_topo ! Rank in mpi_topo communicator
-	INTEGER :: mpi_topo ! MPI communicator for certain topology
+TYPE, PRIVATE :: KORC_MPI!< @brief KORC derived type to keep relevant MPI parameters.
+    INTEGER :: nmpi !< Number of MPI processes.
+	INTEGER :: rank !< Rank in WORLD COMMON communicator.
+	INTEGER :: rank_topo !< Rank in mpi_topo communicator
+	INTEGER :: mpi_topo !< MPI communicator for a certain topology.
 END TYPE KORC_MPI
 
 
 TYPE, PUBLIC :: CHARCS_PARAMS
-	REAL(rp) :: time
+!< @brief KORC derived type containing characteristic scales used in the normalization of KORC variables. 
+!! @details These characteristic scales are problem-dependent quantities. They are calculated in korc_units.f90 using the input
+!! parameters of a given KORC simulation.
+
+	REAL(rp) :: time 
+	!< @brief Characteristic non-relativistic time scale given by @f$1/\omega_{ce}@f$, where @f$\omega_{ce}=e B_0/m_e@f$ is the 
+	!! larger electron cyclotron frequency in the simulation.
 	REAL(rp) :: time_r
-	REAL(rp) :: velocity
-	REAL(rp) :: length
-	REAL(rp) :: mass
-	REAL(rp) :: charge
-	REAL(rp) :: density
-	REAL(rp) :: Eo ! Characteristic electric field
-	REAL(rp) :: Bo ! Characteristic magnetic field
-	REAL(rp) :: energy
-	REAL(rp) :: pressure
-	REAL(rp) :: temperature
+	!< @brief Characteristic relativistic time scale given by @f$1/\omega_{ce}@f$, where @f$\omega_{ce}=e B_0/\gamma m_e@f$ is the
+	!! larger relativistic electron cyclotron frequency in the simulation.
+	REAL(rp) :: velocity !< Characteristic velocity. This is fixed to the speed of @f$c@f$.
+	REAL(rp) :: length !< Characteristic length scale calculated as @f$c@f$ times the relativistic time scale.
+	REAL(rp) :: mass !< Characteristic particle mass. This is equal to the electron mass @f$m_e@f$.
+	REAL(rp) :: charge !< Characteristic particle charge. This is equal to the electron charge @f$q_e@f$.
+	REAL(rp) :: density !< Characteristic particle density. This is equal to @f$1/l^3@f$, with @f$l@f$ the characteristic length.
+	REAL(rp) :: Eo !< Characteristic electric field @f$E_0@f$. Usually @f$E_0@f$ at the magnetic axis.
+	REAL(rp) :: Bo !< Characteristic magnetic field @f$B_0@f$ Usually @f$B_0@f$ at the magnetic axis.
+	REAL(rp) :: energy !< Characteristic energy. This is equal to @f$m_e c^2@f$.
+	REAL(rp) :: pressure !< Characteristic pressure. @todo This needs to be defined.
+	REAL(rp) :: temperature !< Characteristic plasma temperature (Joules). This is equal to @f$m_e c^2@f$.
 END TYPE CHARCS_PARAMS
 
 
 TYPE, PUBLIC :: KORC_PARAMS
-	CHARACTER(MAX_STRING_LENGTH) :: path_to_inputs
-	CHARACTER(MAX_STRING_LENGTH) :: path_to_outputs
+!< @brief Core KORC parameters.
+!! @details This KORC derived type contains the variables that control KORC's behavior.
+
+	CHARACTER(MAX_STRING_LENGTH) :: path_to_inputs !< Absolute path to KORC *.input file.
+	CHARACTER(MAX_STRING_LENGTH) :: path_to_outputs !< Absolute path to the outputs' folder.
 	INTEGER :: num_omp_threads
 	LOGICAL :: restart
 	REAL(rp) :: simulation_time ! Total aimed simulation time in seconds

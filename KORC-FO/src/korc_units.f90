@@ -35,7 +35,7 @@ subroutine compute_charcs_plasma_params(params,spp,F)
 
 	params%cpp%mass = spp(ind)%m
 	params%cpp%charge = ABS(spp(ind)%q)
-	params%cpp%length = params%cpp%velocity*params%cpp%time
+	params%cpp%length = params%cpp%velocity*params%cpp%time_r
 	params%cpp%energy = params%cpp%mass*params%cpp%velocity**2
 
 	params%cpp%density = 1.0_rp/params%cpp%length**3
