@@ -1,5 +1,4 @@
 !> @brief Main function of KORC.
-!! @author Leopoldo Carbajal
 !! @details The main function contains the calls to the main functions and subroutines. Also, it contains the variables that control
 !! the behavior of the core of KORC and all other external/optional modules.
 !! 
@@ -7,11 +6,9 @@
 !! @param[in,out] spp Contains the initial parameters of each species, which can be different electrons with different
 !! distribution functions.
 !! @param[in] F Contains the parameters of the analytical magnetic and electric fields, or in the case of using external fields it
-!! contains the data used in the interpolations. See korc_fields.90 for details.
+!! contains the data used in the interpolations. See korc_fields.f90 for details.
 !! @param[in] P Contains the parameters of the analytical plasma profiles, or in the case of using external fields it contains the 
-!! data used in the interpolations. See korc_profiles.90 for details.
-!! @warning This documentation is a living document. If you find an issue please report it immediatly through the "issues" section
-!! of the github repository.
+!! data used in the interpolations. See korc_profiles.f90 for details.
 program main
 	use korc_types
 	use korc_units

@@ -13,9 +13,9 @@ ifeq ($(UNAME), Darwin)
         FCDEFINEFLAGS =-DDOUBLE_PRECISION       -DHDF5_DOUBLE_PRESICION
         FCFLAGS =-cpp   -J$(MOD) -fopenmp    -O3
 
-        PSPLINE_INSTALL=../pspline_lib
+        PSPLINE_INSTALL=../pspline_lib # This path needs to be modified accordingly when using a local installation of PSPLINES.
 
-        HDF5_INSTALL =../HDF5
+        HDF5_INSTALL =../HDF5 # This path needs to be modified accordingly when using a local installation of HDF5.
 
         INCLUDES_HDF5   =-I$(HDF5_INSTALL)/include
         INCLUDES =-I$(PSPLINE_INSTALL)/mod
@@ -24,7 +24,7 @@ ifeq ($(UNAME), Darwin)
         LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib
         LIB     = -lm   -lz -ldl        -lpspline
         OMP_LIB_FLAGS = -lgomp
-endif #Darwin
+endif #ifeq ($(UNAME), Darwin)
 
 ifeq ($(UNAME), Linux)
 
@@ -33,37 +33,38 @@ ifdef NERSC_HOST
 
 ifdef PRG_ENV
 ifeq ($(PRG_ENV),GNU)
-        HDF5_INSTALL =../HDF5_GNU
-        FCFLAGS =-cpp   -J$(MOD)        -fopenmp        -O3  #-O3    -ffast-math     -funroll-loops
+        HDF5_INSTALL =../HDF5_GNU # This path needs to be modified accordingly when using a local installation of HDF5.
+        FCFLAGS =-cpp   -J$(MOD)        -fopenmp        -O3
         FCDEFINEFLAGS =-DGNU	-DDOUBLE_PRECISION       -DHDF5_DOUBLE_PRESICION
-endif #GNU
+endif #ifeq ($(PRG_ENV),GNU)
 ifeq ($(PRG_ENV),INTEL)
-#        PSPLINE_INSTALL=../pspline_lib_INTEL
-        HDF5_INSTALL =../HDF5_INTEL
-        FCFLAGS =-cpp   -module $(MOD)  -qopenmp        -O3   #-g     -dynamic        -debug inline-debug-info
+        HDF5_INSTALL =../HDF5_INTEL # This path needs to be modified accordingly when using a local installation of HDF5.
+        FCFLAGS =-cpp   -module $(MOD)  -qopenmp        -O3
         FCDEFINEFLAGS =-DINTEL  -DDOUBLE_PRECISION      -DHDF5_DOUBLE_PRESICION
-endif #INTEL
-endif #PRG_ENV
+endif #ifeq ($(PRG_ENV),INTEL)
+endif #ifdef PRG_ENV
 
 ifeq ($(NERSC_HOST),cori)
-        INCLUDES =$(PSPLINE)
-        LIB_FLAGS =$(PSPLINE)
+#       PSPLINE_INSTALL= # This path needs to be modified accordingly when using a local installation of PSPLINES.
+#       INCLUDES =-I$(PSPLINE_INSTALL)/mod # Uncomment when using a local installation of PSPLINES.
+#       LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib # Uncomment when using a local installation of PSPLINES.
+        INCLUDES =$(PSPLINE) # Uncomment when using the NERSC pspline module.
+        LIB_FLAGS =$(PSPLINE) # Uncomment when using the NERSC pspline module.
         LIB     = -lm   -lz -ldl        -lpspline
         OMP_LIB_FLAGS =
-endif #cori
+endif #ifeq ($(NERSC_HOST),cori)
 
 ifeq ($(NERSC_HOST),edison)
-#       PSPLINE_INSTALL=../pspline_lib_GNU
-#        INCLUDES =-I$(PSPLINE_INSTALL)/mod
-#        LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib
-#        LIB     = -lm   -lz -ldl        -lpspline
-        INCLUDES =$(PSPLINE)
-        LIB_FLAGS =$(PSPLINE)
+#       PSPLINE_INSTALL= # This path needs to be modified accordingly when using a local installation of PSPLINES.
+#       INCLUDES =-I$(PSPLINE_INSTALL)/mod # Uncomment when using a local installation of PSPLINES.
+#       LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib # Uncomment when using a local installation of PSPLINES.
+        INCLUDES =$(PSPLINE) # Uncomment when using the NERSC pspline module.
+        LIB_FLAGS =$(PSPLINE) # Uncomment when using the NERSC pspline module.
         LIB     = -lm   -lz -ldl -lpspline
         OMP_LIB_FLAGS =
-endif #edison
+endif #ifeq ($(NERSC_HOST),edison)
 
-else #NERSC_HOST
+else #ifdef NERSC_HOST
         FC = mpif90
 
         FCDEFINEFLAGS =-DGNU	-DDOUBLE_PRECISION       -DHDF5_DOUBLE_PRESICION -UH5_DEBUG_API
@@ -74,9 +75,9 @@ else #NERSC_HOST
 
         INCLUDES =-I$(PSPLINE_INSTALL)/mod
         LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib
-endif #NERSC_HOST
+endif #ifdef NERSC_HOST
 
-endif # Linux
+endif # ifeq ($(UNAME), Linux)
 
 EXTLIB=-L$(HDF5_INSTALL)/lib
 LIBSHDF5=$(EXTLIB)      $(HDF5_INSTALL)/lib/libhdf5hl_fortran.a $(HDF5_INSTALL)/lib/libhdf5_fortran.a   $(HDF5_INSTALL)/lib/libhdf5_hl.a        $(HDF5_INSTALL)/lib/libhdf5.a

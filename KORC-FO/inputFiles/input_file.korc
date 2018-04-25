@@ -2,7 +2,7 @@
 	restart = F !
 	simulation_time = 1.0E-7 ! Total aimed simulation time in seconds
 	snapshot_frequency = 1.0E-8 ! Time between snapshots in seconds
-	dt = 1.0E-2 ! Time step as fraction of non-relativistic gyro-period
+	dt = 1.0E-2 ! Time step as fraction of relativistic gyro-period
 	num_species = 2
 	minimum_particle_energy = 1.0E3 ! Minimum energy of simulated particles in eV
 	radiation = T

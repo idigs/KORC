@@ -5,14 +5,14 @@ module korc_types
 ! * * * * * * * * * * * * * * * * * * * * !
 ! * * * Real and integer precisions * * * !
 ! * * * * * * * * * * * * * * * * * * * * !
-	INTEGER, PUBLIC, PARAMETER :: is = KIND(INT(1,1)) !< Definition of 1 Byte (8 bits) Fortran KORC integer type.
-	INTEGER, PUBLIC, PARAMETER :: ip = KIND(INT(1,8)) !< Definition of 8 Bytes (64 bits) Fortran KORC integer type.
-	INTEGER, PUBLIC, PARAMETER :: idef = KIND(1) !< Definition of the default KORC integer type on the system where KORC is compiled.
-	INTEGER, PUBLIC, PARAMETER :: rdef = KIND(1.0) !< Definition of the default KORC real type on the system where KORC is compiled.
+	INTEGER, PUBLIC, PARAMETER 	:: is = KIND(INT(1,1)) !< Definition of 1 Byte (8 bits) Fortran KORC integer type.
+	INTEGER, PUBLIC, PARAMETER 	:: ip = KIND(INT(1,8)) !< Definition of 8 Bytes (64 bits) Fortran KORC integer type.
+	INTEGER, PUBLIC, PARAMETER 	:: idef = KIND(1) !< Definition of the default KORC integer type on the system where KORC is compiled.
+	INTEGER, PUBLIC, PARAMETER 	:: rdef = KIND(1.0) !< Definition of the default KORC real type on the system where KORC is compiled.
 #ifdef DOUBLE_PRECISION
-	INTEGER, PUBLIC, PARAMETER :: rp = KIND(0.d0) !< Definition of the KORC double precision real type.
+	INTEGER, PUBLIC, PARAMETER 	:: rp = KIND(0.d0) !< Definition of the KORC double precision real type.
 #elif SINGLE_PRECISION
-	INTEGER, PUBLIC, PARAMETER :: rp = KIND(1.0) !< Definition of the KORC single precision real type.
+	INTEGER, PUBLIC, PARAMETER 	:: rp = KIND(1.0) !< Definition of the KORC single precision real type.
 #endif
 	REAL(rp), PUBLIC, PARAMETER :: korc_zero = 1.0E-15 !< Definition of the zero in KORC.
 
@@ -20,9 +20,9 @@ module korc_types
 ! * * * Real and integer precisions * * * !
 ! * * * * * * * * * * * * * * * * * * * * !
 
-	INTEGER, PUBLIC, PARAMETER :: MAX_STRING_LENGTH = 1000 !< Default length of a KORC_STRING variable.
-	INTEGER, PUBLIC, PARAMETER :: default_unit_open = 101 !< Default file unit for opening and reading from an external text file.
-	INTEGER, PUBLIC, PARAMETER :: default_unit_write = 201 !< Default file unit for opening and writing to external an external text file.
+	INTEGER, PUBLIC, PARAMETER 	:: MAX_STRING_LENGTH = 1000 !< Default length of a KORC_STRING variable.
+	INTEGER, PUBLIC, PARAMETER 	:: default_unit_open = 101 !< Default file unit for opening and reading from an external text file.
+	INTEGER, PUBLIC, PARAMETER 	:: default_unit_write = 201 !< Default file unit for opening and writing to external an external text file.
 
 
 TYPE, PUBLIC :: KORC_STRING !< @brief KORC string type of length MAX_STRING_LENGTH.
@@ -94,96 +94,107 @@ END TYPE CHARCS_PARAMS
 
 TYPE, PUBLIC :: KORC_PARAMS
 !< @brief Core KORC parameters.
-!! @details This KORC derived type contains the variables that control KORC's behavior.
+!! @details This KORC derived type contains the variables that control KORC's core behavior.
 
-	CHARACTER(MAX_STRING_LENGTH) :: path_to_inputs !< Absolute path to KORC *.input file.
+	CHARACTER(MAX_STRING_LENGTH) :: path_to_inputs !< Absolute path to KORC's input file.
 	CHARACTER(MAX_STRING_LENGTH) :: path_to_outputs !< Absolute path to the outputs' folder.
-	INTEGER :: num_omp_threads
-	LOGICAL :: restart
-	REAL(rp) :: simulation_time ! Total aimed simulation time in seconds
-	REAL(rp) :: snapshot_frequency ! Time between snapshots in seconds
-	REAL(rp) :: dt
-	REAL(rp) :: time = 0.0_rp
-	INTEGER(ip) :: ito = 0_ip
-	INTEGER(ip) :: it = 0_ip
-	INTEGER(ip) :: t_steps
-	INTEGER(ip) :: output_cadence
-	INTEGER(ip) :: restart_output_cadence
-	INTEGER(ip) :: num_snapshots
-	INTEGER :: num_species
-	REAL(rp) :: minimum_particle_energy ! Minimum energy of simulated particles in eV
-	REAL(rp) :: minimum_particle_g ! Minimum energy of simulated particles in eV
-	LOGICAL :: radiation
-	LOGICAL :: collisions
-	CHARACTER(MAX_STRING_LENGTH) :: collisions_model
-	CHARACTER(MAX_STRING_LENGTH) :: plasma_model
-	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
-	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: outputs_list
-	INTEGER :: HDF5_error_handling
+	INTEGER 	:: num_omp_threads !< Number of open MP threads per MPI process used in the simulation.
+	LOGICAL 	:: restart !< Logical flag to indicate if the simulations restarts (restart=T) or not (restart=F).
+	REAL(rp) 	:: simulation_time !< Total simulation time.
+	REAL(rp) 	:: snapshot_frequency !< Time between snapshots in time of the simulation.
+	REAL(rp) 	:: dt !< Time step in the simulation as a fraction of the relativistic electron gyro-period @f$\tau_e = 2\pi\gamma m_e/eB_0@f$.
+	REAL(rp) 	:: time = 0.0_rp !< Current physical time in the simulation.
+	INTEGER(ip) :: ito = 0_ip !< Initial time iteration in the simulation, this is different from zero in case is a restarting simulation.
+	INTEGER(ip) :: it = 0_ip !< Current time iteration in the simulation, this is different from zero in case is a restarting simulation.
+	INTEGER(ip) :: t_steps !< Number of time steps needed for evolving the electrons up to "simulation_time".
+	INTEGER(ip) :: output_cadence !< Time iteration offset used to decide when the outputs are generated.
+	INTEGER(ip) :: restart_output_cadence !< Time iteration offset used to decide when the restart files are generated.
+	INTEGER(ip) :: num_snapshots !< Number of snapshots in time for generating the output files.
+	INTEGER 	:: num_species !< Number of different populations of simulated relativistic electrons in KORC.
+	REAL(rp) 	:: minimum_particle_energy !< Minimum allowed energy of simulated electrons. @todo To improve the criterium to decide when an electron will not be followed anymore in the simulation.
+	REAL(rp) 	:: minimum_particle_g !< Minimum allowed relativistic factor @f$\gamma@f$ of simulated electrons.
+	LOGICAL 	:: radiation !< Logical flag to indicate if synchrotron radiation losses are included (radiation=T) or not (radiation=F).
+	LOGICAL 	:: collisions !< Logical flag to indicate if collisionsare included (collisions=T) or not (collisions=F).
+	CHARACTER(MAX_STRING_LENGTH) :: collisions_model !< String with the name of the collisions model to be used in the simulation.
+	CHARACTER(MAX_STRING_LENGTH) :: plasma_model !< String with the name of the model for the fields and plasma profiles.
+	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename !< String with the name of the model for the fields and plasma profiles.
+	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: outputs_list !< List of electron variables to include in the outputs.
+	INTEGER 	:: HDF5_error_handling !< Flag to indicate whether we allow HDF5 to show warnings during runtime (HDF5_error_handling=1) or not (HDF5_error_handling=0)
 
-	TYPE(KORC_MPI) :: mpi_params
-	TYPE(CHARCS_PARAMS) :: cpp
+	TYPE(KORC_MPI) 		:: mpi_params !< An instance of the KORC_MPI derived type.
+	TYPE(CHARCS_PARAMS) :: cpp !< An instance of the CHARCS_PARAMS derived type.
 END TYPE KORC_PARAMS
 
 
 TYPE, PUBLIC :: PARTICLES
-    REAL(rp), DIMENSION(:,:), ALLOCATABLE :: X ! Position (Cartesian) dim(X) = (3,num_particles)
-    REAL(rp), DIMENSION(:,:), ALLOCATABLE :: V ! Velocity
-    REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Rgc ! Guiding-center position (Cartesian)
-    REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Y ! Position in alternative coordinate system, i.e. cylindrical or toroidal coordinates.
-    REAL(rp), DIMENSION(:,:), ALLOCATABLE :: E ! Auxiliar vector for fields interpolations
-    REAL(rp), DIMENSION(:,:), ALLOCATABLE :: B ! Auxiliar vector for fields interpolations
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: ne ! Auxiliar vector for density interpolations
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: Te ! Auxiliar vector for temperature interpolations
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zeff ! Auxiliar vector for temperature interpolations
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: g ! Gamma relativistic
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: eta ! Pitch angle
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: mu ! Instantaneous magnetic moment
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: Prad ! Radiated power (in Watts/electron)
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: Pin ! Input power (in Watts/electron)
-	INTEGER(is), DIMENSION(:), ALLOCATABLE :: flag
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: AUX
+!< @brief Derived type containing all the electrons' variables in the simulation.
+
+    REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: X !< Cartesian coordinates of the electrons' position. dim(X) = (3,SPECIES::ppp).
+    REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: V !< Cartesian components of the electrons' velocity. dim(V) = dim(X).
+    REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: Rgc !< Cartesian coordinates of the electrons' guiding-center position.
+    REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: Y !< Coordinates of the electrons' position in cylindrical or toroidal coordinates.
+    REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: E !< Cartesian components of the electric field felt by each electron. dim(E) = dim(X).
+    REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: B !< Cartesian components of the magnetic field felt by each electron. dim(B) = dim(X).
+	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: ne !< Electron density seen by each electron. dim(ne) = (1,SPECIES::ppp).
+	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: Te !< Electron temperature seen by each electron. dim(ne) = (1,SPECIES::ppp).
+	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: Zeff !< Zeff seen by each electron. dim(ne) = (1,SPECIES::ppp).
+	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: g !< Instantaneous relativistic @f$\gamma = 1/\sqrt{1 - v^2/c^2}@f$ factor of each electron in the simulation.
+	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: eta !< Instantaneous pitch angle of each electron in the simulation.
+	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: mu !< Magnetic moment of each electron in the simulation.
+	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: Prad !< Instantaneous radiated power by each electron in the simulation.
+	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: Pin !< Instantaneous input power of each electron due to the electric field acceleration.
+	INTEGER(is), DIMENSION(:), ALLOCATABLE 	:: flag !< Flag for each particle to decide whether it is being followed (flag=T) or not (flag=F).
+	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: AUX !< An auxiliary scalar variable for each electron.
 END TYPE PARTICLES
 
 
 TYPE, PUBLIC :: SPECIES
-	TYPE(PARTICLES) :: vars
-	LOGICAL :: runaway
-	CHARACTER(MAX_STRING_LENGTH) :: spatial_distribution
-	CHARACTER(MAX_STRING_LENGTH) :: energy_distribution
-	CHARACTER(MAX_STRING_LENGTH) :: pitch_distribution
-	REAL(rp) :: Eo
-	REAL(rp) :: go
-	REAL(rp) :: etao
-	REAL(rp), DIMENSION(2) :: Eo_lims
-	REAL(rp), DIMENSION(2) :: etao_lims
-	REAL(rp) :: wc
-	REAL(rp) :: wc_r
-	REAL(rp) :: q
-	REAL(rp) :: m
-	INTEGER :: ppp
+!< @brief Derived type containing the initial parameters of each electron ensemble followed in a KORC simulation.
 
-	! Parameters for initializing spatial distribution
-	REAL(rp) :: Ro
-	REAL(rp) :: PHIo
-	REAL(rp) :: Zo
-	REAL(rp) :: r_inner
-	REAL(rp) :: r_outter
-	REAL(rp) :: falloff_rate
-	REAL(rp) :: shear_factor
+	TYPE(PARTICLES) 				:: vars !< An instance of the PARTICLES derived type.
+	LOGICAL 						:: runaway !< Logical flag to decide whether a given electron is a runaway (runaway=T) or not (runaway=F).
+	CHARACTER(MAX_STRING_LENGTH) 	:: spatial_distribution !< String describing the type of initial spatial distribution for each electron species.
+	CHARACTER(MAX_STRING_LENGTH) 	:: energy_distribution !< String describing the type of initial energy distribution for each electron species.
+	CHARACTER(MAX_STRING_LENGTH) 	:: pitch_distribution !< String describing the type of initial pitch-angle distribution for each electron species.
+	REAL(rp) 						:: Eo !< Initial energy of each electron species in case of using an initial mono-energetic distribution.
+	REAL(rp) 						:: go !< Corresponding relativisitc factor of each electron species in case of using an initial mono-energetic distribution.
+	REAL(rp) 						:: etao !< Initial pitch-angle of each electron species in case of using an initial mono-pitch-angle distribution.
+	REAL(rp), DIMENSION(2) 			:: Eo_lims !< Minimum and maximum energy limits of a given initial non-mono-energetic distribution.
+	REAL(rp), DIMENSION(2) 			:: etao_lims !< Minimum and maximum pitch-angle limits of a given initial non-mono-pitch-angle distribution.
+	REAL(rp) 						:: wc !< The mean electron cyclotron frequency of each electron species.
+	REAL(rp) 						:: wc_r !< The mean relativistic electron cyclotron frequency of each electron species.
+	REAL(rp) 						:: q !< Charge of each species. @note This was left explicit to allow KORC to follow electrons and ions in the future.
+	REAL(rp) 						:: m !< Mass of each species. @note This was left explicit to allow KORC to follow electrons and ions in the future.
+	INTEGER 						:: ppp !< Number of computational particles used to simulate each electron species.
+
+
+	REAL(rp) :: Ro !< Radial position of the center of the electrons' initial spatial distribution.
+	REAL(rp) :: PHIo !< Azimuthal position of the electrons' initial spatial distribution, in case of using a disk at a certain poloidal section.
+	REAL(rp) :: Zo !< Height of the center of the electrons' initial spatial distribution.
+	REAL(rp) :: r_inner !< Minimum minor radius of the electrons' initial spatial distribution.
+	REAL(rp) :: r_outter !< Maximum minor radius of the electrons' initial spatial distribution.
+	REAL(rp) :: falloff_rate !< Exponential falloff or standard deviation of a non-uniform radial distribution of electrons.
+	REAL(rp) :: shear_factor !< Shear factor used to generate an initial spatial distribution with an elliptic poloidal cross section. @note See <em>Carbajal and del-Castillo-Negrete, Nuclear Fusion, submitted (2018)</em>.
 END TYPE SPECIES
 
 
 TYPE, PRIVATE :: A_FIELD
-	REAL(rp) :: Bo
-	REAL(rp) :: a
-	REAL(rp) :: Ro
-	REAL(rp) :: qa
-	REAL(rp) :: qo
-	REAL(rp) :: lambda
-	REAL(rp) :: Bpo
-	REAL(rp) :: Bp_sign
-	CHARACTER(MAX_STRING_LENGTH) :: current_direction
+!< @brief Derived type having all the parameters of the analytical magnetic field included in KORC.
+!! @details The analytical magnetic field is given by:
+!!
+!! @f$\vec{B}(r,\vartheta) = \frac{1}{1 + \eta \cos{\vartheta}} \left[ B_0 \hat{e}_\zeta  + B_\vartheta(r) \hat{e}_\vartheta \right]@f$,
+!!
+!! where @f$\eta = r/R_0@f$ is the aspect ratio, the constant @f$B_0@f$ denotes the magnitude of the toroidal magnetic field, and @f$B_\vartheta(r) = \eta B_0/q(r)@f$ is the poloidal magnetic field with safety factor @f$q(r) = q_0\left( 1 + \frac{r^2}{\lambda^2} \right)@f$. The constant @f$q_0@f$ is the safety factor at the magnetic axis and the constant @f$\lambda@f$ is obtained from the values of @f$q_0@f$ and @f$q(r)@f$ at the plasma edge @f$r=r_{edge}@f$. 
+
+	REAL(rp) :: Bo !< Magnitude of the toroidal magnetic field @f$B_0@f$.
+	REAL(rp) :: a !< Plasma edge @f$r_{edge}@f$ as measured from the magnetic axis.
+	REAL(rp) :: Ro !< Radial position of the magnetic axis @f$R_0@f$
+	REAL(rp) :: qa !< Safety factor at the plasma edge.
+	REAL(rp) :: qo !< Safety factor at the magnetic axis @f$q_0@f$.
+	REAL(rp) :: lambda !< @f$\lambda@f$ parameter of @f$\vec{B}(r,\vartheta)@f$.
+	REAL(rp) :: Bpo !< @deprecated Parameter not used anymore. @todo Delete parameter.
+	REAL(rp) :: Bp_sign !< Sign of @f$B_\vartheta(r)@f$. This depends on current_direction, Bp_sign=1 for current_direction='PARALLEL', and Bp_sign=-1 for current_direction='ANTI-PARALLEL'.
+	CHARACTER(MAX_STRING_LENGTH) :: current_direction !< Direction of plasma current: PARALLEL or ANTI-PARALLEL to the toroidal magnetic field.
 END TYPE A_FIELD
 
 
@@ -195,15 +206,15 @@ END TYPE MESH
 
 
 TYPE, PUBLIC :: FIELDS
-	TYPE(A_FIELD) :: AB
+	TYPE(A_FIELD) 	 :: AB
 	TYPE(V_FIELD_3D) :: E_3D
 	TYPE(V_FIELD_3D) :: B_3D
 	TYPE(V_FIELD_2D) :: E_2D
 	TYPE(V_FIELD_2D) :: B_2D
-	TYPE(MESH) :: X
-	INTEGER, DIMENSION(3) :: dims ! dims(NR, NPHI, NZ)
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: PSIp ! Poloidal flux
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: FLAG2D
+	TYPE(MESH) 		 :: X
+	INTEGER, DIMENSION(3) 					:: dims ! dims(NR, NPHI, NZ)
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: PSIp ! Poloidal flux
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: FLAG2D
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: FLAG3D
 
 	REAL(rp) :: Bo ! Characteristic magnetic field
@@ -228,11 +239,11 @@ END TYPE FIELDS
 
 
 TYPE, PUBLIC :: PROFILES
-	TYPE(MESH) :: X
-	REAL(rp) :: a ! plasma radius
+	TYPE(MESH) 	:: X
+	REAL(rp) 	:: a ! plasma radius
 
-	INTEGER, DIMENSION(3) :: dims ! dims(NR, NPHI, NZ)
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: FLAG2D
+	INTEGER, DIMENSION(3) 					:: dims ! dims(NR, NPHI, NZ)
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: FLAG2D
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: FLAG3D
 
 	REAL(rp) :: n_ne
@@ -244,25 +255,25 @@ TYPE, PUBLIC :: PROFILES
 	REAL(rp), DIMENSION(4) :: a_Zeff
 
 	! Zeff
-	CHARACTER(MAX_STRING_LENGTH) :: Zeff_profile
-	REAL(rp) :: Zeffo ! Effective atomic number
+	CHARACTER(MAX_STRING_LENGTH) 			:: Zeff_profile
+	REAL(rp) 								:: Zeffo ! Effective atomic number
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: Zeff_3D ! Zeff_3D(R,PHI,Z)
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Zeff_2D ! Zeff_2D(R,Z)
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: Zeff_2D ! Zeff_2D(R,Z)
 
 
 	! Density
-	CHARACTER(MAX_STRING_LENGTH) :: ne_profile
-	REAL(rp) :: neo ! Electron density at the magnetic axis
+	CHARACTER(MAX_STRING_LENGTH) 			:: ne_profile
+	REAL(rp) 								:: neo ! Electron density at the magnetic axis
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: ne_3D ! ne_3D(R,PHI,Z)
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: ne_2D ! ne_2D(R,Z)
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: ne_2D ! ne_2D(R,Z)
 	
 	!Temperature
-	CHARACTER(MAX_STRING_LENGTH) :: Te_profile
-	REAL(rp) :: Teo ! Electron temperature at the magnetic axis
+	CHARACTER(MAX_STRING_LENGTH) 			:: Te_profile
+	REAL(rp) 								:: Teo ! Electron temperature at the magnetic axis
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: Te_3D ! Te_3D(R,PHI,Z)
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Te_2D ! Te_2D(R,Z)
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: Te_2D ! Te_2D(R,Z)
 
 	CHARACTER(MAX_STRING_LENGTH) :: filename
-	LOGICAL :: axisymmetric
+	LOGICAL 					 :: axisymmetric
 END TYPE PROFILES
 end module korc_types
