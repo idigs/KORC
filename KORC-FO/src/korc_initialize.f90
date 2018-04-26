@@ -1,5 +1,4 @@
 module korc_initialize
-
     use korc_types
     use korc_constants
     use korc_hpc

@@ -327,14 +327,11 @@ subroutine initialize_fields(params,F)
 	REAL(rp) :: qa
 	REAL(rp) :: qo
     CHARACTER(MAX_STRING_LENGTH) :: current_direction
-    CHARACTER(MAX_STRING_LENGTH) :: electric_field_mode
 	REAL(rp) :: Eo
-    REAL(rp) :: pulse_maximum
-    REAL(rp) :: pulse_duration
 	LOGICAL :: Efield, Bfield, Bflux, axisymmetric_fields
 
 	NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
-			qa,qo,electric_field_mode,Eo,pulse_maximum,pulse_duration,current_direction
+			qa,qo,Eo,current_direction
 
 	NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux, axisymmetric_fields
 
@@ -365,9 +362,6 @@ subroutine initialize_fields(params,F)
 			F%Eo = Eo
 			F%Bo = F%AB%Bo
 
-		    F%electric_field_mode = TRIM(electric_field_mode)
-			F%to = pulse_maximum
-			F%sig = pulse_duration
 		CASE('EXTERNAL')
 			! Load the magnetic field from an external HDF5 file
 			open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')

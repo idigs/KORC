@@ -41,10 +41,7 @@
 /
 
 &analytical_fields_params
-	electric_field_mode = 'CONSTANT' ! Options are 'CONSTANT' and 'PULSE'
 	Eo = 0.0 ! In V/m
-	pulse_maximum = 3.0E-3 ! Time at which maximum is reached in s
-	pulse_duration = 6.7E-4 ! Duration of intense toroidal electric field
 	current_direction = 'ANTI-PARALLEL' ! 'PARALLEL' or 'ANTI-PARALLEL'
 	Bo = 2.0 ! In Teslas. ITER: 5.42 DIII-D: 2.19
 	minor_radius = 0.5 ! Minor radius in meters. ITER: 1.5 DIII-D: 0.5
@@ -64,15 +61,15 @@
 	axisymmetric = T
 	filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/D3D_Q.h5" !
 	radius_profile = 0.6
-	ne_profile = 'PARABOLIC' ! Options are 'FLAT' and 'PARABOLIC'
+	ne_profile = 'POLYNOMIAL' ! Options are 'FLAT' and 'POLYNOMIAL'
 	neo = 2.93E19 ! In m^-3
-	n_ne = 15.0 ! 
+	n_ne = 15.0 !
 	a_ne = 0.99713,0.047037,0.40023,-1.0466
-	Te_profile = 'PARABOLIC' ! Options are 'FLAT' and 'PARABOLIC'
+	Te_profile = 'POLYNOMIAL' ! Options are 'FLAT' and 'POLYNOMIAL'
 	Teo = 870.0 ! In eV
 	n_Te = 2.5 ! 
 	a_Te = 1.0046,-0.076652,-2.6429,1.7415
-	Zeff_profile = 'PARABOLIC' ! Options are 'FLAT' and 'PARABOLIC'
+	Zeff_profile = 'POLYNOMIAL' ! Options are 'FLAT' and 'POLYNOMIAL'
 	Zeffo = 1.45 ! In m^-3
 	n_Zeff = 3.0 ! 
 	a_Zeff = 1.0065,-0.12081,0.02834,-0.11796

@@ -2,13 +2,14 @@
 !! @details The main function contains the calls to the main functions and subroutines. Also, it contains the variables that control
 !! the behavior of the core of KORC and all other external/optional modules.
 !! 
-!! @param[in,out] params Contains the parameters that control the core of KORC: time steping, output list
-!! @param[in,out] spp Contains the initial parameters of each species, which can be different electrons with different
+!! @param params Contains the parameters that control the core of KORC: time steping, output list, etc.
+!! @param spp Contains the initial parameters of each species, which can be different electrons with different
 !! distribution functions.
-!! @param[in] F Contains the parameters of the analytical magnetic and electric fields, or in the case of using external fields it
+!! @param F Contains the parameters of the analytical magnetic and electric fields, or in the case of using external fields it
 !! contains the data used in the interpolations. See korc_fields.f90 for details.
-!! @param[in] P Contains the parameters of the analytical plasma profiles, or in the case of using external fields it contains the 
+!! @param P Contains the parameters of the analytical plasma profiles, or in the case of using external fields it contains the 
 !! data used in the interpolations. See korc_profiles.f90 for details.
+!! @param it Time iteration.
 program main
 	use korc_types
 	use korc_units
@@ -32,11 +33,10 @@ program main
 	TYPE(FIELDS) :: F
 	TYPE(PROFILES) :: P
 	INTEGER(ip) :: it ! Iterator(s)
-	REAL(rp) :: t1, t2 ! variables for timing the simulation
 
 	call initialize_communications(params)
 
-	t1 = MPI_WTIME()
+	call timing_KORC(params)
 
 	! * * * INITIALIZATION STAGE * * *
 	call initialize_HDF5()
@@ -96,11 +96,7 @@ program main
 	end if
 	! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !
 
-	t2 = MPI_WTIME()
-
-	call timing_KORC(params,t1,t2)
-
-	t1 = MPI_WTIME()
+	call timing_KORC(params)
 
 	! Initial half-time particle push
 	call advance_particles_position(params,F,spp,0.5_rp*params%dt)
@@ -122,9 +118,7 @@ program main
 		call save_restart_variables(params,spp,F)
 	end do
 	
-	t2 = MPI_WTIME()
-
-	call timing_KORC(params,t1,t2)
+	call timing_KORC(params)
 
 	! * * * FINALIZING SIMULATION * * * 
 	call finalize_HDF5()
@@ -138,6 +132,5 @@ program main
 
 	call finalize_communications(params)
 	! * * * FINALIZING SIMULATION * * * 
-	!...
 end program main
 

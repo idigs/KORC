@@ -93,10 +93,6 @@ subroutine normalize_variables(params,spp,F,P)
 		F%AB%Ro = F%AB%Ro/params%cpp%length
 		F%AB%lambda = F%AB%lambda/params%cpp%length
 		F%AB%Bpo = F%AB%Bpo/params%cpp%Bo
-
-        ! Electric field parameters
-        F%to = F%to/params%cpp%time
-        F%sig = F%sig/params%cpp%time
 	else if (params%plasma_model .EQ. 'EXTERNAL') then
 		if (ALLOCATED(F%B_3D%R)) F%B_3D%R = F%B_3D%R/params%cpp%Bo
 		if (ALLOCATED(F%B_3D%PHI)) F%B_3D%PHI = F%B_3D%PHI/params%cpp%Bo

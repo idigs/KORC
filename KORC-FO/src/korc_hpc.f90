@@ -1,9 +1,14 @@
+!> @brief KORC module containing subroutines to initilize, control, and to finalize parallel communications.
 module korc_hpc
     use korc_types
     use omp_lib
     use mpi
 
-    implicit none
+    IMPLICIT NONE
+
+	LOGICAL, PRIVATE :: timed_already = .FALSE. !< Flag to determine if a first call to WMPI_TIME() was made already.
+	REAL(rp), PRIVATE :: t1 !< Variable to be used in timing a parallel section of KORC.
+	REAL(rp), PRIVATE :: t2 !< Variable to be used in timing a parallel section of KORC.
 
 	PUBLIC :: korc_abort,&
 				initialize_mpi,&
@@ -11,10 +16,12 @@ module korc_hpc
 				initialize_communications,&
 				timing_KORC
 	PRIVATE :: initialization_sanity_check
-    contains
 
+    CONTAINS
+
+!> @brief Subroutine that terminates the simulation.
+!! @param mpierr MPI error status.
 subroutine korc_abort()
-	implicit none
 	INTEGER :: mpierr
 
 	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
@@ -22,18 +29,27 @@ subroutine korc_abort()
 	call MPI_ABORT(MPI_COMM_WORLD, -2000, mpierr)
 end subroutine korc_abort
 
-
+!> @brief Subroutine that initialize MPI communications.
+!! @details Through this subroutine the default MPI communicator MPI_COMM_WORLD is initialized. Also, a Cartesian 
+!! @param[in,out] params Core KORC simulation parameters.
+!! @param mpierr MPI error status. 
+!! @param NDIMS Number of dimensions of non-standard topology. NDIMS=1 for a 1-D MPI topology, NDIMS=2 for a 2-D MPI topology, and NDIMS=3 for a 3-D MPI topology.
+!! @param DIMS Dimension of the non-standard MPI topology params::mpi_params::mpi_topo. This is equal to the number of MPI processes in KORC.
+!! @param all_mpis_initialized Flag to determine if all the MPI processes were initialized correctly.
+!! @param mpi_process_initialized Flago to determine if a given MPI process was initialized correctly.
+!! @param REORDER Flag to determine if the new MPI topology params::mpi_params::mpi_topo needs to be re-ordered.
+!! @param PERIODS Array of logicals determining what dimensions of the new MPI topology params::mpi_params::mpi_topo are periodic (T) or not (F).
+!! @param ii
 subroutine initialize_mpi(params)
-	implicit none
-	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
-	INTEGER :: mpierr
-	INTEGER, PARAMETER :: NDIMS = 1
-	INTEGER, DIMENSION(:), ALLOCATABLE :: DIMS
-	LOGICAL :: all_mpis_initialized = .FALSE.
-	LOGICAL :: mpi_process_initialized = .FALSE.
-	LOGICAL, PARAMETER :: REORDER = .FALSE.
-	LOGICAL, DIMENSION(:), ALLOCATABLE :: PERIODS
-	INTEGER :: ii ! Iterator
+	TYPE(KORC_PARAMS), INTENT(INOUT) 	:: params
+	INTEGER 							:: mpierr
+	INTEGER, PARAMETER 					:: NDIMS = 1
+	INTEGER, DIMENSION(:), ALLOCATABLE 	:: DIMS
+	LOGICAL 							:: all_mpis_initialized = .FALSE.
+	LOGICAL 							:: mpi_process_initialized = .FALSE.
+	LOGICAL, PARAMETER 					:: REORDER = .FALSE.
+	LOGICAL, DIMENSION(:), ALLOCATABLE 	:: PERIODS !< Something here
+	INTEGER :: ii
 
 	call MPI_INIT(mpierr)
 
@@ -110,43 +126,51 @@ subroutine initialize_mpi(params)
 			call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
 		end if
 	end if
+!...
 end subroutine initialize_mpi
 
-
-subroutine timing_KORC(params,t1,t2)
-	implicit none
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	REAL(rp), INTENT(IN) :: t1, t2
-	REAL(rp) :: individual_runtime
+!> @brief Subroutine for timing the execution of any parallel section of KORC.
+!! @details This 
+!! @param[in] params Core KORC simulation parameters.
+subroutine timing_KORC(params)
+	TYPE(KORC_PARAMS), INTENT(IN) 		:: params
+	REAL(rp) 							:: individual_runtime
 	REAL(rp), DIMENSION(:), ALLOCATABLE :: runtime
-	INTEGER :: mpierr
-	
-	ALLOCATE(runtime(params%mpi_params%nmpi))	
+	INTEGER 							:: mpierr
 
-	individual_runtime = t2 - t1
+	if (timed_already) then
+		t2 = MPI_WTIME()
 
-	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+		ALLOCATE(runtime(params%mpi_params%nmpi))	
 
-!	write(6,'("MPI: ",I4," Total time: ",F30.16)') params%mpi_params%rank, t2 - t1
+		individual_runtime = t2 - t1
 
-	call MPI_GATHER(individual_runtime,1,MPI_DOUBLE_PRECISION,runtime,&
-			1,MPI_DOUBLE_PRECISION,0_idef, MPI_COMM_WORLD, mpierr)
+		call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
-	if (params%mpi_params%rank .EQ. 0_idef) then
-		write(6,'("The execution time is: ",F30.16)') SUM(runtime)/REAL(params%mpi_params%nmpi,rp)
+		call MPI_GATHER(individual_runtime,1,MPI_DOUBLE_PRECISION,runtime,&
+				1,MPI_DOUBLE_PRECISION,0_idef, MPI_COMM_WORLD, mpierr)
+
+		if (params%mpi_params%rank .EQ. 0_idef) then
+			write(6,'("Timing: ",F30.16," s")') SUM(runtime)/REAL(params%mpi_params%nmpi,rp)
+		end if
+
+		call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+
+		DEALLOCATE(runtime)
+		
+		timed_already = .FALSE.
 	end if
 
-	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+	t1 = MPI_WTIME()
 
-	DEALLOCATE(runtime)	
+	timed_already = .TRUE.
 end subroutine timing_KORC
 
 
 subroutine finalize_mpi(params)
-	implicit none
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	LOGICAL :: mpi_process_finalized = .FALSE.
-	INTEGER :: mpierr
+	TYPE(KORC_PARAMS), INTENT(IN) 	:: params
+	LOGICAL 						:: mpi_process_finalized = .FALSE.
+	INTEGER 						:: mpierr
 
 	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
@@ -167,9 +191,8 @@ end subroutine finalize_mpi
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
 subroutine initialize_communications(params)
-	implicit none
-	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
-	CHARACTER(MAX_STRING_LENGTH) :: string
+	TYPE(KORC_PARAMS), INTENT(INOUT) 	:: params
+	CHARACTER(MAX_STRING_LENGTH) 		:: string
 
 	call initialize_mpi(params)
 
@@ -199,10 +222,9 @@ end subroutine initialize_communications
 
 
 subroutine initialization_sanity_check(params)
-	implicit none
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	INTEGER :: ierr, mpierr
-	LOGICAL :: flag = .FALSE.
+	TYPE(KORC_PARAMS), INTENT(IN) 	:: params
+	INTEGER 						:: ierr, mpierr
+	LOGICAL 						:: flag = .FALSE.
 
 	call MPI_INITIALIZED(flag, ierr)
 
