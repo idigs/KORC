@@ -1,39 +1,51 @@
+!> @brief KORC module containing subroutines to read and write data in HDF5 files.
+!! @details This module contains interfaces to use the HDF5 library in a more friendly way. This module is intended to help developers to create new I/O subroutines without having to deal with the sometimes cumbersome details of the HDF5 API.
 module korc_HDF5
 	use korc_hpc
 	use korc_types
 	use korc_constants
 	use HDF5
 
-	implicit none
+	IMPLICIT NONE
 
-	INTEGER(HID_T), PRIVATE :: KORC_HDF5_REAL ! Real precision used in HDF5
+	INTEGER(HID_T), PRIVATE 	:: KORC_HDF5_REAL !< HDF5 real precision data type to be used in the simulation.
+	INTEGER(SIZE_T), PRIVATE 	:: rp_hdf5 !< Size of the HDF5 real precision data type used in the simulation.
 
-	INTEGER(SIZE_T), PRIVATE :: rp_hdf5 ! Size of real precision used in HDF5
 
+	!> @brief Fortran interface to subroutines loading a real or integer value from HDF5 files.
 	INTERFACE load_from_hdf5
 	  module procedure iload_from_hdf5, rload_from_hdf5
 	END INTERFACE
 
+	!> @brief Fortran interface to subroutines loading 2-D and 3-D arrays of real values from HDF5 files. 
 	INTERFACE load_array_from_hdf5
 	  module procedure rload_1d_array_from_hdf5, rload_3d_array_from_hdf5, rload_2d_array_from_hdf5
 	END INTERFACE
 
+	!> @brief Fortran interface to subroutines saving real or integer values to HDF5 files. 
 	INTERFACE save_to_hdf5
 	  module procedure i1save_to_hdf5,i2save_to_hdf5,i4save_to_hdf5,i8save_to_hdf5,rsave_to_hdf5
 	END INTERFACE
 
+	!> @brief Fortran interface to subroutines saving real and integer values to HDF5 files. 
 	INTERFACE save_1d_array_to_hdf5
 	  module procedure isave_1d_array_to_hdf5,rsave_1d_array_to_hdf5
 	END INTERFACE
 
+	!> @brief Fortran interface to subroutines saving 2-D arrays of real values to HDF5 files. 
+	!! @todo To code the corresponding subroutines for saving integer 2-D arrays.
 	INTERFACE save_2d_array_to_hdf5
 	  module procedure rsave_2d_array_to_hdf5
 	END INTERFACE
 
+	!> @brief Fortran interface to subroutines saving 3-D arrays of real values to HDF5 files.
+	!! @todo To include the corresponding subroutines for saving arrays of integers.
 	INTERFACE save_3d_array_to_hdf5
 	  module procedure rsave_3d_array_to_hdf5
 	END INTERFACE
 
+	!> @brief Fortran interface to subroutines saving 1-D, 2-D or 3-D arrays of real values to HDF5 files.
+	!! @todo To include the corresponding subroutines for saving arrays of integers.
 	INTERFACE save_array_to_hdf5
 	  module procedure isave_1d_array_to_hdf5,rsave_1d_array_to_hdf5,rsave_2d_array_to_hdf5,rsave_3d_array_to_hdf5
 	END INTERFACE
@@ -65,9 +77,10 @@ module korc_HDF5
 				save_restart_variables,&
 				load_particles_ic
 
-contains
+CONTAINS
 
-
+!> @brief Initialization of HDF5 library.
+!! @param h5error HDF5 error status.
 subroutine initialize_HDF5()
 	INTEGER :: h5error  ! Error flag
 	call h5open_f(h5error)
@@ -81,31 +94,42 @@ subroutine initialize_HDF5()
 	call h5tget_size_f(KORC_HDF5_REAL, rp_hdf5, h5error)
 end subroutine initialize_HDF5
 
-
+!> @brief Finalization of HDF5 library.
+!! @param h5error HDF5 error status.
 subroutine finalize_HDF5()
 	INTEGER :: h5error  ! Error flag
 	call h5close_f(h5error)
 end subroutine finalize_HDF5
 
-
-subroutine iload_from_hdf5(h5file_id,dset,rdatum,attr)
-	INTEGER(HID_T), INTENT(IN) :: h5file_id
-	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	INTEGER, INTENT(OUT) :: rdatum
-	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, INTENT(IN) :: attr
-	CHARACTER(4) :: aname = "Info"
-	INTEGER(HID_T) :: dset_id
-	INTEGER(HID_T) :: dspace_id
-	INTEGER(HID_T) :: aspace_id
-	INTEGER(HID_T) :: attr_id
-	INTEGER(HID_T) :: atype_id
-	INTEGER(HSIZE_T), DIMENSION(1) :: dims = (/1/)
-	INTEGER(HSIZE_T), DIMENSION(1) :: adims = (/1/)
-	INTEGER :: rank = 1
-	INTEGER :: arank = 1
-	INTEGER(SIZE_T) :: tmplen
-	INTEGER(SIZE_T) :: attrlen
-	INTEGER :: h5error
+!> @brief Subroutine to load an integer datum from an HDF5 file.
+!! @param[in] h5file_id HDF5 file identifier.
+!! @param[in] dset String containing the name of the datum.
+!! @param[out] idatum Integer datum read from HDF5 file.
+!! @param[out] attr Attribute of datum read from HDF5 file.
+!! @param aname Name of idatum attribute.
+!! @param dset_id HDF5 data set identifier.
+!! @param dspace_id HDF5 datum space identifier.
+!! @param aspace_id HDF5 datum's attribute space identifier.
+!! @param attr_id HDF5 datum's attribute identifier.
+!! @param atype_id Native HDF5 attribute type.
+!! @param dims Dimensions of data read from HDF5 file.
+!! @param adims Dimensions of data's attributes read from HDF5 file.
+!! @param h5error HDF5 error status.
+!! @todo Implement the reading of the attribute of idatum.
+subroutine iload_from_hdf5(h5file_id,dset,idatum,attr)
+	INTEGER(HID_T), INTENT(IN) 							:: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) 			:: dset
+	INTEGER, INTENT(OUT) 								:: idatum
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, INTENT(OUT) :: attr
+	CHARACTER(4) 										:: aname = "Info"
+	INTEGER(HID_T) 										:: dset_id
+	INTEGER(HID_T) 										:: dspace_id
+	INTEGER(HID_T) 										:: aspace_id
+	INTEGER(HID_T) 										:: attr_id
+	INTEGER(HID_T) 										:: atype_id
+	INTEGER(HSIZE_T), DIMENSION(1) 						:: dims = (/1/)
+	INTEGER(HSIZE_T), DIMENSION(1) 						:: adims = (/1/)
+	INTEGER 											:: h5error
 
 	! * * * Read datum from file * * *
 
@@ -114,7 +138,7 @@ subroutine iload_from_hdf5(h5file_id,dset,rdatum,attr)
 		write(6,'("KORC ERROR: Something went wrong in: iload_from_hdf5 --> h5dopen_f")')
 	end if
 
-	call h5dread_f(dset_id, H5T_NATIVE_INTEGER, rdatum, dims, h5error)
+	call h5dread_f(dset_id, H5T_NATIVE_INTEGER, idatum, dims, h5error)
 
 	if (h5error .EQ. -1) then
 		write(6,'("KORC ERROR: Something went wrong in: iload_from_hdf5 --> h5dread_f")')
@@ -134,26 +158,37 @@ subroutine iload_from_hdf5(h5file_id,dset,rdatum,attr)
 	! * * * Read datum from file * * *
 end subroutine iload_from_hdf5
 
-
+!> @brief Subroutine to load a real datum from an HDF5 file.
+!! @param[in] h5file_id HDF5 file identifier.
+!! @param[in] dset String containing the name of the datum.
+!! @param[out] rdatum Real datum read from HDF5 file and casted to KORC's real precision type.
+!! @param[out] attr Attribute of datum read from HDF5 file.
+!! @param raw_datum Datum read from HDF5 file.
+!! @param aname Name of rdatum attribute.
+!! @param dset_id HDF5 data set identifier.
+!! @param dspace_id HDF5 datum space identifier.
+!! @param aspace_id HDF5 datum's attribute space identifier.
+!! @param attr_id HDF5 datum's attribute identifier.
+!! @param atype_id Native HDF5 attribute type.
+!! @param dims Dimensions of data read from HDF5 file.
+!! @param adims Dimensions of data's attributes read from HDF5 file.
+!! @param h5error HDF5 error status.
+!! @todo Implement the reading of the attribute of rdatum.
 subroutine rload_from_hdf5(h5file_id,dset,rdatum,attr)
-	INTEGER(HID_T), INTENT(IN) :: h5file_id
-	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	REAL(rp), INTENT(OUT) :: rdatum
-	REAL :: raw_datum
-	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, INTENT(IN) :: attr
-	CHARACTER(4) :: aname = "Info"
-	INTEGER(HID_T) :: dset_id
-	INTEGER(HID_T) :: dspace_id
-	INTEGER(HID_T) :: aspace_id
-	INTEGER(HID_T) :: attr_id
-	INTEGER(HID_T) :: atype_id
-	INTEGER(HSIZE_T), DIMENSION(1) :: dims = (/1/)
-	INTEGER(HSIZE_T), DIMENSION(1) :: adims = (/1/)
-	INTEGER :: rank = 1
-	INTEGER :: arank = 1
-	INTEGER(SIZE_T) :: tmplen
-	INTEGER(SIZE_T) :: attrlen
-	INTEGER :: h5error
+	INTEGER(HID_T), INTENT(IN) 							:: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) 			:: dset
+	REAL(rp), INTENT(OUT) 								:: rdatum
+	REAL 												:: raw_datum
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, INTENT(OUT) :: attr
+	CHARACTER(4) 										:: aname = "Info"
+	INTEGER(HID_T) 										:: dset_id
+	INTEGER(HID_T) 										:: dspace_id
+	INTEGER(HID_T) 										:: aspace_id
+	INTEGER(HID_T) 										:: attr_id
+	INTEGER(HID_T) 										:: atype_id
+	INTEGER(HSIZE_T), DIMENSION(1) 						:: dims = (/1/)
+	INTEGER(HSIZE_T), DIMENSION(1) 						:: adims = (/1/)
+	INTEGER 											:: h5error
 
 	! * * * Read datum from file * * *
 
@@ -182,24 +217,38 @@ subroutine rload_from_hdf5(h5file_id,dset,rdatum,attr)
 	! * * * Read datum from file * * *
 end subroutine rload_from_hdf5
 
-
+!> @brief Subroutine to load a 1-D array of reals from an HDF5 file.
+!! @details The dimension of the 1-D array rdata is determined by the input-output array rdata.
+!! @param[in] h5file_id HDF5 file identifier.
+!! @param[in] dset String containing the name of the data.
+!! @param[out] rdata 1-D array of real values read from HDF5 file and casted to KORC's real precision type.
+!! @param[out] attr 1-D array of attributes of rdata.
+!! @param raw_data 1-D array read from HDF5 file.
+!! @param aname Name of rdata attribute.
+!! @param dset_id HDF5 data set identifier.
+!! @param dspace_id HDF5 datum space identifier.
+!! @param aspace_id HDF5 datum's attribute space identifier.
+!! @param attr_id HDF5 datum's attribute identifier.
+!! @param atype_id Native HDF5 attribute type.
+!! @param dims Dimensions of data read from HDF5 file.
+!! @param adims Dimensions of data's attributes read from HDF5 file.
+!! @param h5error HDF5 error status.
+!! @todo Implement the reading of the attributes of rdata.
 subroutine rload_1d_array_from_hdf5(h5file_id,dset,rdata,attr)
-	INTEGER(HID_T), INTENT(IN) :: h5file_id
-	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: rdata
-	REAL, DIMENSION(:), ALLOCATABLE :: raw_data
-	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: attr
-	CHARACTER(MAX_STRING_LENGTH) :: aname
-	INTEGER(HID_T) :: dset_id
-	INTEGER(HID_T) :: dspace_id
-	INTEGER(HID_T) :: aspace_id
-	INTEGER(HID_T) :: attr_id
-	INTEGER(HID_T) :: atype_id
-	INTEGER(HSIZE_T), DIMENSION(1) :: dims
-	INTEGER(HSIZE_T), DIMENSION(1) :: adims
-	INTEGER(SIZE_T) :: tmplen
-	INTEGER(SIZE_T) :: attrlen
-	INTEGER :: h5error
+	INTEGER(HID_T), INTENT(IN) 														:: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) 										:: dset
+	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) 								:: rdata
+	REAL, DIMENSION(:), ALLOCATABLE 												:: raw_data
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(OUT) 	:: attr
+	CHARACTER(MAX_STRING_LENGTH) 													:: aname
+	INTEGER(HID_T) 																	:: dset_id
+	INTEGER(HID_T) 																	:: dspace_id
+	INTEGER(HID_T) 																	:: aspace_id
+	INTEGER(HID_T) 																	:: attr_id
+	INTEGER(HID_T) 																	:: atype_id
+	INTEGER(HSIZE_T), DIMENSION(1) 													:: dims
+	INTEGER(HSIZE_T), DIMENSION(1) 													:: adims
+	INTEGER 																		:: h5error
 
 	dims = (/ shape(rdata) /)
 
@@ -232,24 +281,38 @@ subroutine rload_1d_array_from_hdf5(h5file_id,dset,rdata,attr)
 	! * * * Read data from file * * *
 end subroutine rload_1d_array_from_hdf5
 
-
+!> @brief Subroutine to load a 2-D array of reals from an HDF5 file.
+!! @details The dimensions of the 2-D array rdata is determined by the input-output array rdata.
+!! @param[in] h5file_id HDF5 file identifier.
+!! @param[in] dset String containing the name of the data.
+!! @param[out] rdata 2-D array of real values read from HDF5 file and casted to KORC's real precision type.
+!! @param[out] attr 2-D array of attributes of rdata.
+!! @param raw_data 2-D array read from HDF5 file.
+!! @param aname Name of rdata attribute.
+!! @param dset_id HDF5 data set identifier.
+!! @param dspace_id HDF5 datum space identifier.
+!! @param aspace_id HDF5 datum's attribute space identifier.
+!! @param attr_id HDF5 datum's attribute identifier.
+!! @param atype_id Native HDF5 attribute type.
+!! @param dims Dimensions of data read from HDF5 file.
+!! @param adims Dimensions of data's attributes read from HDF5 file.
+!! @param h5error HDF5 error status.
+!! @todo Implement the reading of the attributes of rdata.
 subroutine rload_2d_array_from_hdf5(h5file_id,dset,rdata,attr)
-	INTEGER(HID_T), INTENT(IN) :: h5file_id
-	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: rdata
-	REAL, DIMENSION(:,:), ALLOCATABLE :: raw_data
-	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: attr
-	CHARACTER(MAX_STRING_LENGTH) :: aname
-	INTEGER(HID_T) :: dset_id
-	INTEGER(HID_T) :: dspace_id
-	INTEGER(HID_T) :: aspace_id
-	INTEGER(HID_T) :: attr_id
-	INTEGER(HID_T) :: atype_id
-	INTEGER(HSIZE_T), DIMENSION(2) :: dims
-	INTEGER(HSIZE_T), DIMENSION(2) :: adims
-	INTEGER(SIZE_T) :: tmplen
-	INTEGER(SIZE_T) :: attrlen
-	INTEGER :: h5error
+	INTEGER(HID_T), INTENT(IN) 														:: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) 										:: dset
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) 							:: rdata
+	REAL, DIMENSION(:,:), ALLOCATABLE 												:: raw_data
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) 	:: attr
+	CHARACTER(MAX_STRING_LENGTH) 													:: aname
+	INTEGER(HID_T) 																	:: dset_id
+	INTEGER(HID_T) 																	:: dspace_id
+	INTEGER(HID_T) 																	:: aspace_id
+	INTEGER(HID_T) 																	:: attr_id
+	INTEGER(HID_T) 																	:: atype_id
+	INTEGER(HSIZE_T), DIMENSION(2) 													:: dims
+	INTEGER(HSIZE_T), DIMENSION(2) 													:: adims
+	INTEGER 																		:: h5error
 
 	dims = shape(rdata)
 
@@ -282,24 +345,38 @@ subroutine rload_2d_array_from_hdf5(h5file_id,dset,rdata,attr)
 	! * * * Read data from file * * *
 end subroutine rload_2d_array_from_hdf5
 
-
+!> @brief Subroutine to load a 3-D array of reals from an HDF5 file.
+!! @details The dimensions of the 3-D array rdata is determined by the input-output array rdata.
+!! @param[in] h5file_id HDF5 file identifier.
+!! @param[in] dset String containing the name of the data.
+!! @param[out] rdata 3-D array of real values read from HDF5 file and casted to KORC's real precision type.
+!! @param[out] attr 3-D array of attributes of rdata.
+!! @param raw_data 3-D array read from HDF5 file.
+!! @param aname Name of rdata attribute.
+!! @param dset_id HDF5 data set identifier.
+!! @param dspace_id HDF5 datum space identifier.
+!! @param aspace_id HDF5 datum's attribute space identifier.
+!! @param attr_id HDF5 datum's attribute identifier.
+!! @param atype_id Native HDF5 attribute type.
+!! @param dims Dimensions of data read from HDF5 file.
+!! @param adims Dimensions of data's attributes read from HDF5 file.
+!! @param h5error HDF5 error status.
+!! @todo Implement the reading of the attributes of rdata.
 subroutine rload_3d_array_from_hdf5(h5file_id,dset,rdata,attr)
-	INTEGER(HID_T), INTENT(IN) :: h5file_id
-	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE, INTENT(INOUT) :: rdata
-	REAL, DIMENSION(:,:,:), ALLOCATABLE :: raw_data
-	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: attr
-	CHARACTER(MAX_STRING_LENGTH) :: aname
-	INTEGER(HID_T) :: dset_id
-	INTEGER(HID_T) :: dspace_id
-	INTEGER(HID_T) :: aspace_id
-	INTEGER(HID_T) :: attr_id
-	INTEGER(HID_T) :: atype_id
-	INTEGER(HSIZE_T), DIMENSION(3) :: dims
-	INTEGER(HSIZE_T), DIMENSION(3) :: adims
-	INTEGER(SIZE_T) :: tmplen
-	INTEGER(SIZE_T) :: attrlen
-	INTEGER :: h5error
+	INTEGER(HID_T), INTENT(IN) 														:: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) 										:: dset
+	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE, INTENT(INOUT) 							:: rdata
+	REAL, DIMENSION(:,:,:), ALLOCATABLE 											:: raw_data
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) 	:: attr
+	CHARACTER(MAX_STRING_LENGTH) 													:: aname
+	INTEGER(HID_T) 																	:: dset_id
+	INTEGER(HID_T) 																	:: dspace_id
+	INTEGER(HID_T) 																	:: aspace_id
+	INTEGER(HID_T) 																	:: attr_id
+	INTEGER(HID_T) 																	:: atype_id
+	INTEGER(HSIZE_T), DIMENSION(3) 													:: dims
+	INTEGER(HSIZE_T), DIMENSION(3) 													:: adims
+	INTEGER 																		:: h5error
 
 	dims = shape(rdata)
 
@@ -332,30 +409,45 @@ subroutine rload_3d_array_from_hdf5(h5file_id,dset,rdata,attr)
 	! * * * Read data from file * * *
 end subroutine rload_3d_array_from_hdf5
 
-
-subroutine i1save_to_hdf5(h5file_id,dset,idata,attr)
-	INTEGER(HID_T), INTENT(IN) :: h5file_id
-	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	INTEGER(KIND=1), INTENT(IN) :: idata
-	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, INTENT(IN) :: attr
-	CHARACTER(4) :: aname = "Info"
-	INTEGER(HID_T) :: dset_id
-	INTEGER(HID_T) :: dspace_id
-	INTEGER(HID_T) :: aspace_id
-	INTEGER(HID_T) :: attr_id
-	INTEGER(HID_T) :: atype_id
-	INTEGER(HSIZE_T), DIMENSION(1) :: dims = (/1/)
-	INTEGER(HSIZE_T), DIMENSION(1) :: adims = (/1/)
-	INTEGER :: rank = 1
-	INTEGER :: arank = 1
-	INTEGER(SIZE_T) :: tmplen
-	INTEGER(SIZE_T) :: attrlen
-	INTEGER :: h5error
+!> @brief Subroutine to write a 1 byte (8 bits) integer to an HDF5 file.
+!! @param[in] h5file_id HDF5 file identifier.
+!! @param[in] dset String containing the name of the datum.
+!! @param[in] idatum Integer datum read from HDF5 file.
+!! @param[in] attr Attribute of datum read from HDF5 file.
+!! @param aname Name of idatum attribute.
+!! @param dset_id HDF5 data set identifier.
+!! @param dspace_id HDF5 datum space identifier.
+!! @param aspace_id HDF5 datum's attribute space identifier.
+!! @param attr_id HDF5 datum's attribute identifier.
+!! @param atype_id Native HDF5 attribute type.
+!! @param dims Dimensions of data read from HDF5 file.
+!! @param adims Dimensions of data's attributes read from HDF5 file.
+!! @param rank Number of dimensions of idatum's dataspace. 
+!! @param arank Number of dimensions of attr's dataspace.
+!! @param attrlen Lenght of idatum attribute's name.
+!! @param h5error HDF5 error status.
+subroutine i1save_to_hdf5(h5file_id,dset,idatum,attr)
+	INTEGER(HID_T), INTENT(IN) 							:: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) 			:: dset
+	INTEGER(KIND=1), INTENT(IN) 						:: idatum
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, INTENT(IN) 	:: attr
+	CHARACTER(4) 										:: aname = "Info"
+	INTEGER(HID_T) 										:: dset_id
+	INTEGER(HID_T) 										:: dspace_id
+	INTEGER(HID_T) 										:: aspace_id
+	INTEGER(HID_T) 										:: attr_id
+	INTEGER(HID_T) 										:: atype_id
+	INTEGER(HSIZE_T), DIMENSION(1) 						:: dims = (/1/)
+	INTEGER(HSIZE_T), DIMENSION(1) 						:: adims = (/1/)
+	INTEGER 											:: rank = 1
+	INTEGER 											:: arank = 1
+	INTEGER(SIZE_T) 									:: attrlen
+	INTEGER 											:: h5error
 
 	! * * * Write data to file * * *
 	call h5screate_simple_f(rank,dims,dspace_id,h5error)
 	call h5dcreate_f(h5file_id, TRIM(dset), H5T_NATIVE_INTEGER, dspace_id, dset_id, h5error)
-	call h5dwrite_f(dset_id, H5T_NATIVE_INTEGER, INT(idata,idef), dims, h5error)
+	call h5dwrite_f(dset_id, H5T_NATIVE_INTEGER, INT(idatum,idef), dims, h5error)
 
 	if (PRESENT(attr)) then
 		! * * * Write attribute of data to file * * *
@@ -376,30 +468,45 @@ subroutine i1save_to_hdf5(h5file_id,dset,idata,attr)
 	! * * * Write data to file * * *
 end subroutine i1save_to_hdf5
 
-
-subroutine i2save_to_hdf5(h5file_id,dset,idata,attr)
-	INTEGER(HID_T), INTENT(IN) :: h5file_id
-	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	INTEGER(KIND=2), INTENT(IN) :: idata
-	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, INTENT(IN) :: attr
-	CHARACTER(4) :: aname = "Info"
-	INTEGER(HID_T) :: dset_id
-	INTEGER(HID_T) :: dspace_id
-	INTEGER(HID_T) :: aspace_id
-	INTEGER(HID_T) :: attr_id
-	INTEGER(HID_T) :: atype_id
-	INTEGER(HSIZE_T), DIMENSION(1) :: dims = (/1/)
-	INTEGER(HSIZE_T), DIMENSION(1) :: adims = (/1/)
-	INTEGER :: rank = 1
-	INTEGER :: arank = 1
-	INTEGER(SIZE_T) :: tmplen
-	INTEGER(SIZE_T) :: attrlen
-	INTEGER :: h5error
+!> @brief Subroutine to write a 2 byte (16 bits) integer to an HDF5 file.
+!! @param[in] h5file_id HDF5 file identifier.
+!! @param[in] dset String containing the name of the datum.
+!! @param[in] idatum Integer datum read from HDF5 file.
+!! @param[in] attr Attribute of datum read from HDF5 file.
+!! @param aname Name of idatum attribute.
+!! @param dset_id HDF5 data set identifier.
+!! @param dspace_id HDF5 datum space identifier.
+!! @param aspace_id HDF5 datum's attribute space identifier.
+!! @param attr_id HDF5 datum's attribute identifier.
+!! @param atype_id Native HDF5 attribute type.
+!! @param dims Dimensions of data read from HDF5 file.
+!! @param adims Dimensions of data's attributes read from HDF5 file.
+!! @param rank Number of dimensions of idatum's dataspace. 
+!! @param arank Number of dimensions of attr's dataspace.
+!! @param attrlen Lenght of idatum attribute's name.
+!! @param h5error HDF5 error status.
+subroutine i2save_to_hdf5(h5file_id,dset,idatum,attr)
+	INTEGER(HID_T), INTENT(IN) 							:: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) 			:: dset
+	INTEGER(KIND=2), INTENT(IN) 						:: idatum
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, INTENT(IN) 	:: attr
+	CHARACTER(4) 										:: aname = "Info"
+	INTEGER(HID_T) 										:: dset_id
+	INTEGER(HID_T) 										:: dspace_id
+	INTEGER(HID_T) 										:: aspace_id
+	INTEGER(HID_T) 										:: attr_id
+	INTEGER(HID_T) 										:: atype_id
+	INTEGER(HSIZE_T), DIMENSION(1) 						:: dims = (/1/)
+	INTEGER(HSIZE_T), DIMENSION(1) 						:: adims = (/1/)
+	INTEGER 											:: rank = 1
+	INTEGER 											:: arank = 1
+	INTEGER(SIZE_T) 									:: attrlen
+	INTEGER 											:: h5error
 
 	! * * * Write data to file * * *
 	call h5screate_simple_f(rank,dims,dspace_id,h5error)
 	call h5dcreate_f(h5file_id, TRIM(dset), H5T_NATIVE_INTEGER, dspace_id, dset_id, h5error)
-	call h5dwrite_f(dset_id, H5T_NATIVE_INTEGER, INT(idata,idef), dims, h5error)
+	call h5dwrite_f(dset_id, H5T_NATIVE_INTEGER, INT(idatum,idef), dims, h5error)
 
 	if (PRESENT(attr)) then
 		! * * * Write attribute of data to file * * *
@@ -420,30 +527,45 @@ subroutine i2save_to_hdf5(h5file_id,dset,idata,attr)
 	! * * * Write data to file * * *
 end subroutine i2save_to_hdf5
 
-
-subroutine i4save_to_hdf5(h5file_id,dset,idata,attr)
-	INTEGER(HID_T), INTENT(IN) :: h5file_id
-	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	INTEGER(KIND=4), INTENT(IN) :: idata
-	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, INTENT(IN) :: attr
-	CHARACTER(4) :: aname = "Info"
-	INTEGER(HID_T) :: dset_id
-	INTEGER(HID_T) :: dspace_id
-	INTEGER(HID_T) :: aspace_id
-	INTEGER(HID_T) :: attr_id
-	INTEGER(HID_T) :: atype_id
-	INTEGER(HSIZE_T), DIMENSION(1) :: dims = (/1/)
-	INTEGER(HSIZE_T), DIMENSION(1) :: adims = (/1/)
-	INTEGER :: rank = 1
-	INTEGER :: arank = 1
-	INTEGER(SIZE_T) :: tmplen
-	INTEGER(SIZE_T) :: attrlen
-	INTEGER :: h5error
+!> @brief Subroutine to write a 4 byte (32 bits) integer to an HDF5 file.
+!! @param[in] h5file_id HDF5 file identifier.
+!! @param[in] dset String containing the name of the datum.
+!! @param[in] idatum Integer datum read from HDF5 file.
+!! @param[in] attr Attribute of datum read from HDF5 file.
+!! @param aname Name of idatum attribute.
+!! @param dset_id HDF5 data set identifier.
+!! @param dspace_id HDF5 datum space identifier.
+!! @param aspace_id HDF5 datum's attribute space identifier.
+!! @param attr_id HDF5 datum's attribute identifier.
+!! @param atype_id Native HDF5 attribute type.
+!! @param dims Dimensions of data read from HDF5 file.
+!! @param adims Dimensions of data's attributes read from HDF5 file.
+!! @param rank Number of dimensions of idatum's dataspace. 
+!! @param arank Number of dimensions of attr's dataspace.
+!! @param attrlen Lenght of idatum attribute's name.
+!! @param h5error HDF5 error status.
+subroutine i4save_to_hdf5(h5file_id,dset,idatum,attr)
+	INTEGER(HID_T), INTENT(IN) 							:: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) 			:: dset
+	INTEGER(KIND=4), INTENT(IN) 						:: idatum
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, INTENT(IN) 	:: attr
+	CHARACTER(4) 										:: aname = "Info"
+	INTEGER(HID_T) 										:: dset_id
+	INTEGER(HID_T) 										:: dspace_id
+	INTEGER(HID_T) 										:: aspace_id
+	INTEGER(HID_T) 										:: attr_id
+	INTEGER(HID_T) 										:: atype_id
+	INTEGER(HSIZE_T), DIMENSION(1) 						:: dims = (/1/)
+	INTEGER(HSIZE_T), DIMENSION(1) 						:: adims = (/1/)
+	INTEGER 											:: rank = 1
+	INTEGER 											:: arank = 1
+	INTEGER(SIZE_T) 									:: attrlen
+	INTEGER 											:: h5error
 
 	! * * * Write data to file * * *
 	call h5screate_simple_f(rank,dims,dspace_id,h5error)
 	call h5dcreate_f(h5file_id, TRIM(dset), H5T_NATIVE_INTEGER, dspace_id, dset_id, h5error)
-	call h5dwrite_f(dset_id, H5T_NATIVE_INTEGER, INT(idata,idef), dims, h5error)
+	call h5dwrite_f(dset_id, H5T_NATIVE_INTEGER, INT(idatum,idef), dims, h5error)
 
 	if (PRESENT(attr)) then
 		! * * * Write attribute of data to file * * *
@@ -464,30 +586,45 @@ subroutine i4save_to_hdf5(h5file_id,dset,idata,attr)
 	! * * * Write data to file * * *
 end subroutine i4save_to_hdf5
 
-
-subroutine i8save_to_hdf5(h5file_id,dset,idata,attr)
-	INTEGER(HID_T), INTENT(IN) :: h5file_id
-	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	INTEGER(KIND=8), INTENT(IN) :: idata
-	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, INTENT(IN) :: attr
-	CHARACTER(4) :: aname = "Info"
-	INTEGER(HID_T) :: dset_id
-	INTEGER(HID_T) :: dspace_id
-	INTEGER(HID_T) :: aspace_id
-	INTEGER(HID_T) :: attr_id
-	INTEGER(HID_T) :: atype_id
-	INTEGER(HSIZE_T), DIMENSION(1) :: dims = (/1/)
-	INTEGER(HSIZE_T), DIMENSION(1) :: adims = (/1/)
-	INTEGER :: rank = 1
-	INTEGER :: arank = 1
-	INTEGER(SIZE_T) :: tmplen
-	INTEGER(SIZE_T) :: attrlen
-	INTEGER :: h5error
+!> @brief Subroutine to write a 8 byte (64 bits) integer to an HDF5 file.
+!! @param[in] h5file_id HDF5 file identifier.
+!! @param[in] dset String containing the name of the datum.
+!! @param[in] idatum Integer datum read from HDF5 file.
+!! @param[in] attr Attribute of datum read from HDF5 file.
+!! @param aname Name of idatum attribute.
+!! @param dset_id HDF5 data set identifier.
+!! @param dspace_id HDF5 datum space identifier.
+!! @param aspace_id HDF5 datum's attribute space identifier.
+!! @param attr_id HDF5 datum's attribute identifier.
+!! @param atype_id Native HDF5 attribute type.
+!! @param dims Dimensions of data read from HDF5 file.
+!! @param adims Dimensions of data's attributes read from HDF5 file.
+!! @param rank Number of dimensions of idatum's dataspace. 
+!! @param arank Number of dimensions of attr's dataspace.
+!! @param attrlen Lenght of idatum attribute's name.
+!! @param h5error HDF5 error status.
+subroutine i8save_to_hdf5(h5file_id,dset,idatum,attr)
+	INTEGER(HID_T), INTENT(IN) 							:: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) 			:: dset
+	INTEGER(KIND=8), INTENT(IN) 						:: idatum
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, INTENT(IN) 	:: attr
+	CHARACTER(4) 										:: aname = "Info"
+	INTEGER(HID_T) 										:: dset_id
+	INTEGER(HID_T) 										:: dspace_id
+	INTEGER(HID_T) 										:: aspace_id
+	INTEGER(HID_T) 										:: attr_id
+	INTEGER(HID_T) 										:: atype_id
+	INTEGER(HSIZE_T), DIMENSION(1) 						:: dims = (/1/)
+	INTEGER(HSIZE_T), DIMENSION(1) 						:: adims = (/1/)
+	INTEGER 											:: rank = 1
+	INTEGER 											:: arank = 1
+	INTEGER(SIZE_T) 									:: attrlen
+	INTEGER 											:: h5error
 
 	! * * * Write data to file * * *
 	call h5screate_simple_f(rank,dims,dspace_id,h5error)
 	call h5dcreate_f(h5file_id, TRIM(dset), H5T_NATIVE_DOUBLE, dspace_id, dset_id, h5error)
-	call h5dwrite_f(dset_id, H5T_NATIVE_DOUBLE, REAL(idata,8), dims, h5error)
+	call h5dwrite_f(dset_id, H5T_NATIVE_DOUBLE, REAL(idatum,8), dims, h5error)
 
 
 	if (PRESENT(attr)) then
@@ -509,26 +646,45 @@ subroutine i8save_to_hdf5(h5file_id,dset,idata,attr)
 	! * * * Write data to file * * *
 end subroutine i8save_to_hdf5
 
-
+!> @brief Subroutine to write a 1-D array of integer values to an HDF5 file.
+!! @param[in] h5file_id HDF5 file identifier.
+!! @param[in] dset String containing the name of the data.
+!! @param[in] idata Data written to HDF5 file.
+!! @param[in] attr Attributes of data written to HDF5 file.
+!! @param aname Name of idata attributes.
+!! @param dset_id HDF5 data set identifier.
+!! @param dspace_id HDF5 data space identifier.
+!! @param aspace_id HDF5 data's attribute space identifier.
+!! @param attr_id HDF5 data's attribute identifier.
+!! @param atype_id Native HDF5 attribute type.
+!! @param dims Dimensions of data writen to HDF5 file.
+!! @param adims Dimensions of data's attributes written to HDF5 file.
+!! @param rank Number of dimensions of idata's dataspace. 
+!! @param arank Number of dimensions of attr's dataspace.
+!! @param attrlen Lenght of idata attribute's name.
+!! @param h5error HDF5 error status.
+!! @param rr Rank iterator.
+!! @param dd Dimension iterator.
+!! @bug When using a 1-D array of attributes, only the first attribute is saved.
 subroutine isave_1d_array_to_hdf5(h5file_id,dset,idata,attr)
-	INTEGER(HID_T), INTENT(IN) :: h5file_id
-	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	INTEGER, DIMENSION(:), INTENT(IN) :: idata
-	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: attr
-	CHARACTER(4) :: aname = "Info"
-	INTEGER(HID_T) :: dset_id
-	INTEGER(HID_T) :: dspace_id
-	INTEGER(HID_T) :: aspace_id
-	INTEGER(HID_T) :: attr_id
-	INTEGER(HID_T) :: atype_id
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: adims
-	INTEGER :: rank
-	INTEGER :: arank
-	INTEGER(SIZE_T) :: tmplen
-	INTEGER(SIZE_T) :: attrlen
-	INTEGER :: h5error
-	INTEGER :: rr,dd ! Iterators
+	INTEGER(HID_T), INTENT(IN) 														:: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) 										:: dset
+	INTEGER, DIMENSION(:), INTENT(IN) 												:: idata
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) 	:: attr
+	CHARACTER(4) 																	:: aname = "Info"
+	INTEGER(HID_T) 																	:: dset_id
+	INTEGER(HID_T) 																	:: dspace_id
+	INTEGER(HID_T) 																	:: aspace_id
+	INTEGER(HID_T) 																	:: attr_id
+	INTEGER(HID_T) 																	:: atype_id
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE 									:: dims
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE 									:: adims
+	INTEGER 																		:: rank
+	INTEGER 																		:: arank
+	INTEGER(SIZE_T) 																:: attrlen
+	INTEGER(SIZE_T) 																:: tmplen
+	INTEGER 																		:: h5error
+	INTEGER 																		:: rr,dd
 
 	rank = size(shape(idata))
 	ALLOCATE(dims(rank))
@@ -576,25 +732,40 @@ subroutine isave_1d_array_to_hdf5(h5file_id,dset,idata,attr)
 	DEALLOCATE(dims)
 end subroutine isave_1d_array_to_hdf5
 
-
-subroutine rsave_to_hdf5(h5file_id,dset,rdata,attr)
-	INTEGER(HID_T), INTENT(IN) :: h5file_id
-	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	REAL(rp), INTENT(IN) :: rdata
-	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, INTENT(IN) :: attr
-	CHARACTER(4) :: aname = "Info"
-	INTEGER(HID_T) :: dset_id
-	INTEGER(HID_T) :: dspace_id
-	INTEGER(HID_T) :: aspace_id
-	INTEGER(HID_T) :: attr_id
-	INTEGER(HID_T) :: atype_id
-	INTEGER(HSIZE_T), DIMENSION(1) :: dims = (/1/)
-	INTEGER(HSIZE_T), DIMENSION(1) :: adims = (/1/)
-	INTEGER :: rank = 1
-	INTEGER :: arank = 1
-	INTEGER(SIZE_T) :: tmplen
-	INTEGER(SIZE_T) :: attrlen
-	INTEGER :: h5error
+!> @brief Subroutine to write a real to an HDF5 file.
+!! @param[in] h5file_id HDF5 file identifier.
+!! @param[in] dset String containing the name of the datum.
+!! @param[in] rdatum Real datum written to HDF5 file.
+!! @param[in] attr Attribute of datum written to HDF5 file.
+!! @param aname Name of rdatum attribute.
+!! @param dset_id HDF5 data set identifier.
+!! @param dspace_id HDF5 datum space identifier.
+!! @param aspace_id HDF5 datum's attribute space identifier.
+!! @param attr_id HDF5 datum's attribute identifier.
+!! @param atype_id Native HDF5 attribute type.
+!! @param dims Dimensions of data written to HDF5 file.
+!! @param adims Dimensions of data's attributes read from HDF5 file.
+!! @param rank Number of dimensions of rdatum's dataspace. 
+!! @param arank Number of dimensions of attr's dataspace.
+!! @param attrlen Lenght of rdatum attribute's name.
+!! @param h5error HDF5 error status.
+subroutine rsave_to_hdf5(h5file_id,dset,rdatum,attr)
+	INTEGER(HID_T), INTENT(IN) 							:: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) 			:: dset
+	REAL(rp), INTENT(IN) 								:: rdatum
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, INTENT(IN) 	:: attr
+	CHARACTER(4) 										:: aname = "Info"
+	INTEGER(HID_T) 										:: dset_id
+	INTEGER(HID_T) 										:: dspace_id
+	INTEGER(HID_T) 										:: aspace_id
+	INTEGER(HID_T) 										:: attr_id
+	INTEGER(HID_T) 										:: atype_id
+	INTEGER(HSIZE_T), DIMENSION(1) 						:: dims = (/1/)
+	INTEGER(HSIZE_T), DIMENSION(1) 						:: adims = (/1/)
+	INTEGER 											:: rank = 1
+	INTEGER 											:: arank = 1
+	INTEGER(SIZE_T) 									:: attrlen
+	INTEGER 											:: h5error
 
 	! * * * Write data to file * * *
 
@@ -602,9 +773,9 @@ subroutine rsave_to_hdf5(h5file_id,dset,rdata,attr)
 	call h5dcreate_f(h5file_id, TRIM(dset), KORC_HDF5_REAL, dspace_id, dset_id, h5error)
 
 	if (rp .EQ. INT(rp_hdf5)) then
-		call h5dwrite_f(dset_id, KORC_HDF5_REAL, rdata, dims, h5error)
+		call h5dwrite_f(dset_id, KORC_HDF5_REAL, rdatum, dims, h5error)
 	else
-		call h5dwrite_f(dset_id, KORC_HDF5_REAL, REAL(rdata,4), dims, h5error)
+		call h5dwrite_f(dset_id, KORC_HDF5_REAL, REAL(rdatum,4), dims, h5error)
 	end if
 
 	if (PRESENT(attr)) then
@@ -626,26 +797,46 @@ subroutine rsave_to_hdf5(h5file_id,dset,rdata,attr)
 	! * * * Write data to file * * *
 end subroutine rsave_to_hdf5
 
-
+!> @brief Subroutine to write a 1-D array of real values to an HDF5 file.
+!! @param[in] h5file_id HDF5 file identifier.
+!! @param[in] dset String containing the name of the data.
+!! @param[in] rdata Data written to HDF5 file.
+!! @param[in] attr Attributes of data written to HDF5 file.
+!! @param aname Name of rdata attributes.
+!! @param dset_id HDF5 data set identifier.
+!! @param dspace_id HDF5 data space identifier.
+!! @param aspace_id HDF5 data's attribute space identifier.
+!! @param attr_id HDF5 data's attribute identifier.
+!! @param atype_id Native HDF5 attribute type.
+!! @param dims Dimensions of data writen to HDF5 file.
+!! @param adims Dimensions of data's attributes written to HDF5 file.
+!! @param rank Number of dimensions of rdata's dataspace. 
+!! @param arank Number of dimensions of attr's dataspace.
+!! @param tmplen Temporary length of rdata attribute's name.
+!! @param attrlen Lenght of rdata attribute's name.
+!! @param h5error HDF5 error status.
+!! @param rr Rank iterator.
+!! @param dd Dimension iterator.
+!! @bug When using a 1-D array of attributes, only the first attribute is saved.
 subroutine rsave_1d_array_to_hdf5(h5file_id,dset,rdata,attr)
-	INTEGER(HID_T), INTENT(IN) :: h5file_id
-	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	REAL(rp), DIMENSION(:), INTENT(IN) :: rdata
-	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: attr
-	CHARACTER(4) :: aname = "Info"
-	INTEGER(HID_T) :: dset_id
-	INTEGER(HID_T) :: dspace_id
-	INTEGER(HID_T) :: aspace_id
-	INTEGER(HID_T) :: attr_id
-	INTEGER(HID_T) :: atype_id
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: adims
-	INTEGER :: rank
-	INTEGER :: arank
-	INTEGER(SIZE_T) :: tmplen
-	INTEGER(SIZE_T) :: attrlen
-	INTEGER :: h5error
-	INTEGER :: rr,dd ! Iterators
+	INTEGER(HID_T), INTENT(IN) 														:: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) 										:: dset
+	REAL(rp), DIMENSION(:), INTENT(IN) 												:: rdata
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) 	:: attr
+	CHARACTER(4) 																	:: aname = "Info"
+	INTEGER(HID_T) 																	:: dset_id
+	INTEGER(HID_T) 																	:: dspace_id
+	INTEGER(HID_T) 																	:: aspace_id
+	INTEGER(HID_T) 																	:: attr_id
+	INTEGER(HID_T) 																	:: atype_id
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE 									:: dims
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE 									:: adims
+	INTEGER 																		:: rank
+	INTEGER 																		:: arank
+	INTEGER(SIZE_T) 																:: tmplen
+	INTEGER(SIZE_T) 																:: attrlen
+	INTEGER 																		:: h5error
+	INTEGER 																		:: rr,dd
 
 	rank = size(shape(rdata))
 	ALLOCATE(dims(rank))
@@ -699,26 +890,44 @@ subroutine rsave_1d_array_to_hdf5(h5file_id,dset,rdata,attr)
 	DEALLOCATE(dims)
 end subroutine rsave_1d_array_to_hdf5
 
-
+!> @brief Subroutine to write a 2-D array of real values to an HDF5 file.
+!! @param[in] h5file_id HDF5 file identifier.
+!! @param[in] dset String containing the name of the data.
+!! @param[in] rdata Data written to HDF5 file.
+!! @param[in] attr Attributes of data written to HDF5 file.
+!! @param aname Name of rdata attributes.
+!! @param dset_id HDF5 data set identifier.
+!! @param dspace_id HDF5 data space identifier.
+!! @param aspace_id HDF5 data's attribute space identifier.
+!! @param attr_id HDF5 data's attribute identifier.
+!! @param atype_id Native HDF5 attribute type.
+!! @param dims Dimensions of data writen to HDF5 file.
+!! @param adims Dimensions of data's attributes written to HDF5 file.
+!! @param rank Number of dimensions of rdata's dataspace. 
+!! @param arank Number of dimensions of attr's dataspace.
+!! @param attrlen Lenght of rdata attribute's name.
+!! @param h5error HDF5 error status.
+!! @param rr Rank iterator.
+!! @param dd Dimension iterator.
+!! @todo Implement the writting of attributes to HDF5 file.
 subroutine rsave_2d_array_to_hdf5(h5file_id,dset,rdata,attr)
-	INTEGER(HID_T), INTENT(IN) :: h5file_id
-	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	REAL(rp), DIMENSION(:,:), INTENT(IN) :: rdata
-	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: attr
-	CHARACTER(4) :: aname = "Info"
-	INTEGER(HID_T) :: dset_id
-	INTEGER(HID_T) :: dspace_id
-	INTEGER(HID_T) :: aspace_id
-	INTEGER(HID_T) :: attr_id
-	INTEGER(HID_T) :: atype_id
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: adims
-	INTEGER :: rank
-	INTEGER :: arank
-	INTEGER(SIZE_T) :: tmplen
-	INTEGER(SIZE_T) :: attrlen
-	INTEGER :: h5error
-	INTEGER :: rr,dd ! Iterators
+	INTEGER(HID_T), INTENT(IN) 														:: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) 										:: dset
+	REAL(rp), DIMENSION(:,:), INTENT(IN) 											:: rdata
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) 	:: attr
+	CHARACTER(4) 																	:: aname = "Info"
+	INTEGER(HID_T) 																	:: dset_id
+	INTEGER(HID_T) 																	:: dspace_id
+	INTEGER(HID_T) 																	:: aspace_id
+	INTEGER(HID_T) 																	:: attr_id
+	INTEGER(HID_T) 																	:: atype_id
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE 									:: dims
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE 									:: adims
+	INTEGER 																		:: rank
+	INTEGER 																		:: arank
+	INTEGER(SIZE_T) 																:: attrlen
+	INTEGER 																		:: h5error
+	INTEGER 																		:: rr,dd
 
 	rank = size(shape(rdata))
 	ALLOCATE(dims(rank))
@@ -746,26 +955,44 @@ subroutine rsave_2d_array_to_hdf5(h5file_id,dset,rdata,attr)
 	DEALLOCATE(dims)
 end subroutine rsave_2d_array_to_hdf5
 
-
+!> @brief Subroutine to write a 3-D array of real values to an HDF5 file.
+!! @param[in] h5file_id HDF5 file identifier.
+!! @param[in] dset String containing the name of the data.
+!! @param[in] rdata Data written to HDF5 file.
+!! @param[in] attr Attributes of data written to HDF5 file.
+!! @param aname Name of rdata attributes.
+!! @param dset_id HDF5 data set identifier.
+!! @param dspace_id HDF5 data space identifier.
+!! @param aspace_id HDF5 data's attribute space identifier.
+!! @param attr_id HDF5 data's attribute identifier.
+!! @param atype_id Native HDF5 attribute type.
+!! @param dims Dimensions of data writen to HDF5 file.
+!! @param adims Dimensions of data's attributes written to HDF5 file.
+!! @param rank Number of dimensions of rdata's dataspace. 
+!! @param arank Number of dimensions of attr's dataspace.
+!! @param attrlen Lenght of rdata attribute's name.
+!! @param h5error HDF5 error status.
+!! @param rr Rank iterator.
+!! @param dd Dimension iterator.
+!! @todo Implement the writting of attributes to HDF5 file.
 subroutine rsave_3d_array_to_hdf5(h5file_id,dset,rdata,attr)
-	INTEGER(HID_T), INTENT(IN) :: h5file_id
-	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	REAL(rp), DIMENSION(:,:,:), INTENT(IN) :: rdata
-	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) :: attr
-	CHARACTER(4) :: aname = "Info"
-	INTEGER(HID_T) :: dset_id
-	INTEGER(HID_T) :: dspace_id
-	INTEGER(HID_T) :: aspace_id
-	INTEGER(HID_T) :: attr_id
-	INTEGER(HID_T) :: atype_id
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: adims
-	INTEGER :: rank
-	INTEGER :: arank
-	INTEGER(SIZE_T) :: tmplen
-	INTEGER(SIZE_T) :: attrlen
-	INTEGER :: h5error
-	INTEGER :: rr,dd ! Iterators
+	INTEGER(HID_T), INTENT(IN) 														:: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) 										:: dset
+	REAL(rp), DIMENSION(:,:,:), INTENT(IN) 											:: rdata
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) 	:: attr
+	CHARACTER(4) 																	:: aname = "Info"
+	INTEGER(HID_T) 																	:: dset_id
+	INTEGER(HID_T) 																	:: dspace_id
+	INTEGER(HID_T) 																	:: aspace_id
+	INTEGER(HID_T) 																	:: attr_id
+	INTEGER(HID_T) 																	:: atype_id
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE 									:: dims
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE 									:: adims
+	INTEGER 																		:: rank
+	INTEGER 																		:: arank
+	INTEGER(SIZE_T) 																:: attrlen
+	INTEGER 																		:: h5error
+	INTEGER 																		:: rr,dd
 
 	rank = size(shape(rdata))
 	ALLOCATE(dims(rank))
@@ -793,18 +1020,28 @@ subroutine rsave_3d_array_to_hdf5(h5file_id,dset,rdata,attr)
 	DEALLOCATE(dims)
 end subroutine rsave_3d_array_to_hdf5
 
-
+!> @brief Subroutine to write an array of strings to an HDF5 file.
+!! @param[in] h5file_id HDF5 file identifier.
+!! @param[in] dset String containing the name of the array of strings.
+!! @param[in] string_array Array of characters containing the strings to be written to HDF5 file.
+!! @param dset_id HDF5 data set identifier.
+!! @param dspace_id HDF5 data space identifier.
+!! @param dims Number of strings to be written to file.
+!! @param data_dims Dimensions of data written to HDF5 file. This is equal to (Maximum length of KORC string)x(Number of strings).
+!! @param str_len Size of strings to be written to file without blank spaces.
+!! @param string_type Native HDF5 string type.
+!! @param h5error HDF5 error status.
 subroutine save_string_parameter(h5file_id,dset,string_array)
-	INTEGER(HID_T), INTENT(IN) :: h5file_id
-	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) :: dset
-	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), INTENT(IN) :: string_array
-	INTEGER(HID_T) :: dset_id
-	INTEGER(HID_T) :: dspace_id
-	INTEGER(HSIZE_T), DIMENSION(1) :: dims
-	INTEGER(HSIZE_T), DIMENSION(2) :: data_dims
-	INTEGER(SIZE_T), DIMENSION(:), ALLOCATABLE :: str_len
-	INTEGER(HID_T) :: string_type
-	INTEGER :: h5error
+	INTEGER(HID_T), INTENT(IN) 								:: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) 				:: dset
+	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), INTENT(IN) 	:: string_array
+	INTEGER(HID_T) 											:: dset_id
+	INTEGER(HID_T) 											:: dspace_id
+	INTEGER(HSIZE_T), DIMENSION(1) 							:: dims
+	INTEGER(HSIZE_T), DIMENSION(2) 							:: data_dims
+	INTEGER(SIZE_T), DIMENSION(:), ALLOCATABLE 				:: str_len
+	INTEGER(HID_T) 											:: string_type
+	INTEGER 												:: h5error
 	
 	ALLOCATE(str_len(SIZE(string_array)))
 
@@ -827,25 +1064,43 @@ subroutine save_string_parameter(h5file_id,dset,string_array)
 	DEALLOCATE(str_len)
 end subroutine save_string_parameter
 
-
+!> @brief Subroutine to save to a HDF5 file all the relevant simulation parameters.
+!! @details This subroutine saves to the HDF5 file "<a>simulation_parameters.h5</a>" all the relevant simulation parameters of KORC, most of them being part of the input file, but also including some derived quantities from the input parameters. This file is intended to facilitate the post-processing of KORC data using any software that supports the HDF5 software.
+!! @param[in] params Core KORC simulation parameters.
+!! @param[in] spp An instance of KORC's derived type SPECIES containing all the information of different electron species. See korc_types.f90.
+!! @param[in] F An instance of KORC's derived type FIELDS containing all the information about the fields used in the simulation. See korc_types.f90 and korc_fields.f90.
+!! @param[in] P An instance of KORC's derived type PROFILES containing all the information about the plasma profiles used in the simulation. See korc_types.f90 and korc_profiles.f90.
+!! @param filename String containing the name of the HDF5 file.
+!! @param gname String containing the group name of a set of KORC parameters.
+!! @param dset Name of data set to be saved to file.
+!! @param h5file_id HDF5 file identifier.
+!! @param group_id HDF5 group identifier.
+!! @param dims Dimensions of data saved to HDF5 file.
+!! @param rdata 1-D array of real data to be saved to HDF5 file.
+!! @param idata 1-D array of integer data to be saved to HDF5 file.
+!! @param attr_array An 1-D array with attributes of 1-D real or integer arrays that are passed to KORC interfaces of HDF5 I/O subroutines.
+!! @param attr A single attributes of real or integer data that is passed to KORC interfaces of HDF5 I/O subroutines.
+!! @param h5error HDF5 error status.
+!! @param tmp_str Temporary string used to manipulate various strings.
+!! @param units Temporary variable used to add physical units to KORC parameters.
 subroutine save_simulation_parameters(params,spp,F,P)
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
-	TYPE(FIELDS), INTENT(IN) :: F
-	TYPE(PROFILES), INTENT(IN) :: P
-	CHARACTER(MAX_STRING_LENGTH) :: filename
-	CHARACTER(MAX_STRING_LENGTH) :: gname
-	CHARACTER(MAX_STRING_LENGTH) :: dset
-	INTEGER(HID_T) :: h5file_id
-	INTEGER(HID_T) :: group_id
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: rdata
-	INTEGER, DIMENSION(:), ALLOCATABLE :: idata
+	TYPE(KORC_PARAMS), INTENT(IN) 							:: params
+	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) 	:: spp
+	TYPE(FIELDS), INTENT(IN) 								:: F
+	TYPE(PROFILES), INTENT(IN) 								:: P
+	CHARACTER(MAX_STRING_LENGTH) 							:: filename
+	CHARACTER(MAX_STRING_LENGTH) 							:: gname
+	CHARACTER(MAX_STRING_LENGTH) 							:: dset
+	INTEGER(HID_T) 											:: h5file_id
+	INTEGER(HID_T) 											:: group_id
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE 			:: dims
+	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: rdata
+	INTEGER, DIMENSION(:), ALLOCATABLE 						:: idata
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: attr_array
-	CHARACTER(MAX_STRING_LENGTH) :: attr
-	INTEGER :: h5error
-	CHARACTER(19) :: tmp_str
-	REAL(rp) :: units
+	CHARACTER(MAX_STRING_LENGTH) 							:: attr
+	INTEGER 												:: h5error
+	CHARACTER(19) 											:: tmp_str
+	REAL(rp) 												:: units
 
 	! * * * Error handling * * * !
 	call h5eset_auto_f(params%HDF5_error_handling, h5error) ! Turn off: 0_idef. Turn on: 1_idef
@@ -1258,28 +1513,45 @@ subroutine save_simulation_parameters(params,spp,F,P)
 	end if
 end subroutine save_simulation_parameters
 
-
-subroutine save_simulation_outputs(params,spp,F)
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
-	TYPE(FIELDS), INTENT(IN) :: F
-	CHARACTER(MAX_STRING_LENGTH) :: filename
-	CHARACTER(MAX_STRING_LENGTH) :: gname
-	CHARACTER(MAX_STRING_LENGTH) :: subgname
-	CHARACTER(MAX_STRING_LENGTH) :: dset
-	INTEGER(HID_T) :: h5file_id
-	INTEGER(HID_T) :: group_id
-	INTEGER(HID_T) :: subgroup_id
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: rdata
-	INTEGER, DIMENSION(:), ALLOCATABLE :: idata
+!> @brief Subroutine that saves the electrons' variables specified in params::outputs_list to HDF5 files.
+!! @param[in] params Core KORC simulation parameters.
+!! @param[in] spp An instance of KORC's derived type SPECIES containing all the information of different electron species. See korc_types.f90.
+!! @param filename String containing the name of the HDF5 file.
+!! @param gname String containing the group name of a set of KORC parameters.
+!! @param dset Name of data set to be saved to file.
+!! @param h5file_id HDF5 file identifier.
+!! @param group_id HDF5 group identifier.
+!! @param dims Dimensions of data saved to HDF5 file.
+!! @param rdata 1-D array of real data to be saved to HDF5 file.
+!! @param idata 1-D array of integer data to be saved to HDF5 file.
+!! @param attr_array An 1-D array with attributes of 1-D real or integer arrays that are passed to KORC interfaces of HDF5 I/O subroutines.
+!! @param attr A single attributes of real or integer data that is passed to KORC interfaces of HDF5 I/O subroutines.
+!! @param h5error HDF5 error status.
+!! @param tmp_str Temporary string used to manipulate various strings.
+!! @param units Temporary variable used to add physical units to electrons' variables.
+!! @param ss Electron species iterator.
+!! @param jj Iterator for reading all the entried of params::outputs_list.
+!! @param object_exists Flag determining if a certain dataset is already present in the HDF5 output files.
+subroutine save_simulation_outputs(params,spp)
+	TYPE(KORC_PARAMS), INTENT(IN) 							:: params
+	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) 	:: spp
+	CHARACTER(MAX_STRING_LENGTH) 							:: filename
+	CHARACTER(MAX_STRING_LENGTH) 							:: gname
+	CHARACTER(MAX_STRING_LENGTH) 							:: subgname
+	CHARACTER(MAX_STRING_LENGTH) 							:: dset
+	INTEGER(HID_T) 											:: h5file_id
+	INTEGER(HID_T) 											:: group_id
+	INTEGER(HID_T) 											:: subgroup_id
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE 			:: dims
+	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: rdata
+	INTEGER, DIMENSION(:), ALLOCATABLE 						:: idata
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: attr_array
-	CHARACTER(MAX_STRING_LENGTH) :: attr
-	INTEGER :: h5error
-	CHARACTER(19) :: tmp_str
-	REAL(rp) :: units
-    INTEGER :: ss,jj
-	LOGICAL :: object_exists
+	CHARACTER(MAX_STRING_LENGTH) 							:: attr
+	INTEGER 												:: h5error
+	CHARACTER(19) 											:: tmp_str
+	REAL(rp) 												:: units
+    INTEGER 												:: ss,jj
+	LOGICAL 												:: object_exists
 
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'("Saving snapshot: ",I15)') params%it/params%output_cadence
@@ -1379,35 +1651,59 @@ subroutine save_simulation_outputs(params,spp,F)
 	end if
 end subroutine save_simulation_outputs
 
-
-subroutine save_restart_variables(params,spp,F)
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: spp
-	TYPE(FIELDS), INTENT(IN) :: F
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: send_buffer_rp, receive_buffer_rp
-    INTEGER(is), DIMENSION(:), ALLOCATABLE :: send_buffer_is, receive_buffer_is
-    REAL(rp), DIMENSION(:,:), ALLOCATABLE :: X
-    REAL(rp), DIMENSION(:,:), ALLOCATABLE :: V
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: g
-	INTEGER(is), DIMENSION(:), ALLOCATABLE :: flag
-	CHARACTER(MAX_STRING_LENGTH) :: filename
-	CHARACTER(MAX_STRING_LENGTH) :: gname
-	CHARACTER(MAX_STRING_LENGTH) :: subgname
-	CHARACTER(MAX_STRING_LENGTH) :: dset
-	INTEGER(HID_T) :: h5file_id
-	INTEGER(HID_T) :: group_id
-	INTEGER(HID_T) :: subgroup_id
-	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE :: dims
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: rdata
-	INTEGER, DIMENSION(:), ALLOCATABLE :: idata
+!> @brief Subroutine that saves all the variables that KORC needs for restarting a simulation. These variables are saved to "restart_file.h5".
+!! @param[in] params Core KORC simulation parameters.
+!! @param[in] spp An instance of KORC's derived type SPECIES containing all the information of different electron species. See korc_types.f90.
+!! @param send_buffer_rp Temporary buffer to be used by MPI to gather different electrons' variables.
+!! @param receive_buffer_rp Temporary buffer to be used by MPI to gather different electrons' variables.
+!! @param send_buffer_is Temporary buffer to be used by MPI to gather different electrons' variables.
+!! @param receive_buffer_is Temporary buffer to be used by MPI to gather different electrons' variables.
+!! @param filename String containing the name of the HDF5 file.
+!! @param gname String containing the group name of a set of KORC parameters.
+!! @param dset Name of data set to be saved to file.
+!! @param h5file_id HDF5 file identifier.
+!! @param group_id HDF5 group identifier.
+!! @param subgroup_id HDF5 subgroup identifier.
+!! @param dims Dimensions of data saved to HDF5 file.
+!! @param rdata 1-D array of real data to be saved to HDF5 file.
+!! @param idata 1-D array of integer data to be saved to HDF5 file.
+!! @param attr_array An 1-D array with attributes of 1-D real or integer arrays that are passed to KORC interfaces of HDF5 I/O subroutines.
+!! @param attr A single attributes of real or integer data that is passed to KORC interfaces of HDF5 I/O subroutines.
+!! @param h5error HDF5 error status.
+!! @param tmp_str Temporary string used to manipulate various strings.
+!! @param units Temporary variable used to add physical units to restart variables.
+!! @param ss Electron species iterator.
+!! @param jj Iterator for reading all the entried of params::outputs_list.
+!! @param mpierr MPI error status.
+!! @param numel_send Variable used by MPI to count the amount of data sent by each MPI procces.
+!! @param numel_receive Variable used by MPI to count the amount of data received by the main MPI procces.
+subroutine save_restart_variables(params,spp)
+	TYPE(KORC_PARAMS), INTENT(IN) 							:: params
+	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) 	:: spp
+    REAL(rp), DIMENSION(:), ALLOCATABLE 					:: send_buffer_rp, receive_buffer_rp
+    INTEGER(is), DIMENSION(:), ALLOCATABLE 					:: send_buffer_is, receive_buffer_is
+    REAL(rp), DIMENSION(:,:), ALLOCATABLE 					:: X
+    REAL(rp), DIMENSION(:,:), ALLOCATABLE 					:: V
+    REAL(rp), DIMENSION(:), ALLOCATABLE 					:: g
+	INTEGER(is), DIMENSION(:), ALLOCATABLE 					:: flag
+	CHARACTER(MAX_STRING_LENGTH) 							:: filename
+	CHARACTER(MAX_STRING_LENGTH) 							:: gname
+	CHARACTER(MAX_STRING_LENGTH) 							:: subgname
+	CHARACTER(MAX_STRING_LENGTH) 							:: dset
+	INTEGER(HID_T) 											:: h5file_id
+	INTEGER(HID_T) 											:: group_id
+	INTEGER(HID_T) 											:: subgroup_id
+	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE 			:: dims
+	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: rdata
+	INTEGER, DIMENSION(:), ALLOCATABLE 						:: idata
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: attr_array
-	CHARACTER(MAX_STRING_LENGTH) :: attr
-	INTEGER :: h5error
-	CHARACTER(19) :: tmp_str
-	REAL(rp) :: units
-    INTEGER :: ss,jj
-	INTEGER :: mpierr
-	INTEGER :: numel_send, numel_receive
+	CHARACTER(MAX_STRING_LENGTH) 							:: attr
+	INTEGER 												:: h5error
+	CHARACTER(19) 											:: tmp_str
+	REAL(rp) 												:: units
+    INTEGER 												:: ss,jj
+	INTEGER 												:: mpierr
+	INTEGER 												:: numel_send, numel_receive
 
 
 	if ( MODULO(params%it,params%restart_output_cadence) .EQ. 0_ip ) then
@@ -1552,17 +1848,26 @@ end subroutine save_restart_variables
 ! * * * * * * * * * * * * * * * * * * * * * * * * * !
 ! * * * SUBROUTINES FOR RESTARTING SIMULATION * * * !
 ! * * * * * * * * * * * * * * * * * * * * * * * * * !
-
+!> @brief Subroutine that loads KORC parameters that control the time stepping in main.f90.
+!! @param[in,out] params Core KORC simulation parameters.
+!! @param filename String containing the name of the HDF5 file.
+!! @param dset Name of data set to be read from file.
+!! @param h5file_id HDF5 file identifier.
+!! @param real_number A temporary real number.
+!! @param tmp_str Temporary string used to manipulate various strings.
+!! @param h5error HDF5 error status.
+!! @param mpierr MPI error status.
+!! @param ss Electron species iterator.
 subroutine load_time_stepping_params(params)
-	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
-	CHARACTER(MAX_STRING_LENGTH) :: filename
-	CHARACTER(MAX_STRING_LENGTH) :: dset
-	INTEGER(HID_T) :: h5file_id
-	REAL(KIND=8) :: real_number
-	CHARACTER(19) :: tmp_str
-	INTEGER :: h5error
-	INTEGER :: mpierr
-	INTEGER :: ss
+	TYPE(KORC_PARAMS), INTENT(INOUT) 	:: params
+	CHARACTER(MAX_STRING_LENGTH) 		:: filename
+	CHARACTER(MAX_STRING_LENGTH) 		:: dset
+	INTEGER(HID_T) 						:: h5file_id
+	REAL(KIND=8) 						:: real_number
+	CHARACTER(19) 						:: tmp_str
+	INTEGER 							:: h5error
+	INTEGER 							:: mpierr
+	INTEGER 							:: ss
 
 	if (params%mpi_params%rank.EQ.0_idef) then
 		filename = TRIM(params%path_to_outputs) // "restart_file.h5"
@@ -1620,23 +1925,38 @@ subroutine load_time_stepping_params(params)
 	CALL MPI_BCAST(params%num_snapshots,1,MPI_INTEGER8,0,MPI_COMM_WORLD,mpierr)
 end subroutine load_time_stepping_params
 
-
+!> @brief Subroutine that loads all the electrons' data from "restart_file.h5" to restart a simulation.
+!! @param[in] params Core KORC simulation parameters.
+!! @param[in,out] spp An instance of KORC's derived type SPECIES containing all the information of different electron species. See korc_types.f90.
+!! @param X_send_buffer Temporary buffer used by MPI for scattering the electrons' position to different MPI processes.
+!! @param X_receive_buffer Temporary buffer used by MPI for scattering the electrons' position among MPI processes.
+!! @param V_send_buffer Temporary buffer used by MPI for scattering the electrons' velocity among MPI processes.
+!! @param V_receive_buffer Temporary buffer used by MPI for scattering the electrons' velocity among MPI processes.
+!! @param AUX_send_buffer Temporary buffer used by MPI to scatter various electrons' variables among MPI processes.
+!! @param AUX_receive_buffer Temporary buffer used by MPI to scatter various electrons' variables among MPI processes.
+!! @param filename String containing the name of the HDF5 file.
+!! @param dset Name of data set to be saved to file.
+!! @param h5file_id HDF5 file identifier.
+!! @param tmp_str Temporary string used to manipulate various strings.
+!! @param h5error HDF5 error status.
+!! @param ss Electron species iterator.
+!! @param mpierr MPI error status.
 subroutine load_particles_ic(params,spp)
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(KORC_PARAMS), INTENT(IN) 							:: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: X_send_buffer
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: X_receive_buffer
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: V_send_buffer
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: V_receive_buffer
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: AUX_send_buffer
-    REAL(rp), DIMENSION(:), ALLOCATABLE :: AUX_receive_buffer
-	CHARACTER(MAX_STRING_LENGTH) :: filename
-	CHARACTER(MAX_STRING_LENGTH) :: dset
-	INTEGER(HID_T) :: h5file_id
-	CHARACTER(19) :: tmp_str
-	INTEGER :: h5error
-	INTEGER :: mpierr
-	INTEGER :: ss
+    REAL(rp), DIMENSION(:), ALLOCATABLE 					:: X_send_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE 					:: X_receive_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE 					:: V_send_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE 					:: V_receive_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE 					:: AUX_send_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE 					:: AUX_receive_buffer
+	CHARACTER(MAX_STRING_LENGTH) 							:: filename
+	CHARACTER(MAX_STRING_LENGTH) 							:: dset
+	INTEGER(HID_T) 											:: h5file_id
+	CHARACTER(19) 											:: tmp_str
+	INTEGER 												:: h5error
+	INTEGER 												:: mpierr
+	INTEGER 												:: ss
 
 	do ss=1_idef,params%num_species
 		ALLOCATE(X_send_buffer(3*spp(ss)%ppp*params%mpi_params%nmpi))

@@ -88,7 +88,7 @@ program main
 		call advance_particles_velocity(params,F,P,spp,0.0_rp,.TRUE.)
 
 		! Save initial condition
-		call save_simulation_outputs(params,spp,F)
+		call save_simulation_outputs(params,spp)
 
 		call synthetic_camera(params,spp) ! Synthetic camera!
 
@@ -108,14 +108,14 @@ program main
             call advance_particles_velocity(params,F,P,spp,params%dt,.TRUE.)
 		    call advance_particles_position(params,F,spp,params%dt)
 
-			call save_simulation_outputs(params,spp,F)
+			call save_simulation_outputs(params,spp)
 			call synthetic_camera(params,spp) ! Synthetic camera
 			call binning_diagnostic(params,spp) ! Binning diagnostic
         else
             call advance_particles_velocity(params,F,P,spp,params%dt,.FALSE.)
 		    call advance_particles_position(params,F,spp,params%dt)
         end if
-		call save_restart_variables(params,spp,F)
+		call save_restart_variables(params,spp)
 	end do
 	
 	call timing_KORC(params)

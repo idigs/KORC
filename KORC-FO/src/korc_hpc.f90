@@ -15,14 +15,13 @@ module korc_hpc
 				finalize_mpi,&
 				initialize_communications,&
 				timing_KORC
-	PRIVATE :: initialization_sanity_check
 
     CONTAINS
 
 !> @brief Subroutine that terminates the simulation.
 !! @param mpierr MPI error status.
 subroutine korc_abort()
-	INTEGER :: mpierr
+	INTEGER :: mpierr !< MPI error status
 
 	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
@@ -39,7 +38,7 @@ end subroutine korc_abort
 !! @param mpi_process_initialized Flago to determine if a given MPI process was initialized correctly.
 !! @param REORDER Flag to determine if the new MPI topology params::mpi_params::mpi_topo needs to be re-ordered.
 !! @param PERIODS Array of logicals determining what dimensions of the new MPI topology params::mpi_params::mpi_topo are periodic (T) or not (F).
-!! @param ii
+!! @param ii Variable to iterate over different MPI processes.
 subroutine initialize_mpi(params)
 	TYPE(KORC_PARAMS), INTENT(INOUT) 	:: params
 	INTEGER 							:: mpierr
@@ -130,8 +129,10 @@ subroutine initialize_mpi(params)
 end subroutine initialize_mpi
 
 !> @brief Subroutine for timing the execution of any parallel section of KORC.
-!! @details This 
 !! @param[in] params Core KORC simulation parameters.
+!! @param individual_runtime Execution time of each MPI process.
+!! @param runtime Execution time of KORC defined as the average of the execution times of all MPI processes.
+!! @param mpierr MPI error status. 
 subroutine timing_KORC(params)
 	TYPE(KORC_PARAMS), INTENT(IN) 		:: params
 	REAL(rp) 							:: individual_runtime
@@ -166,7 +167,11 @@ subroutine timing_KORC(params)
 	timed_already = .TRUE.
 end subroutine timing_KORC
 
-
+!> @brief Subroutine for finalizing MPI communications.
+!! @details This subroutine finalizes all the MPI communications and looks for errors durignt this procces.
+!! @param[in] params Core KORC simulation parameters.
+!! @param mpi_process_finalized Flag indicating whether an individual MPI process was finalized correctly.
+!! @param mpierr MPI error status. 
 subroutine finalize_mpi(params)
 	TYPE(KORC_PARAMS), INTENT(IN) 	:: params
 	LOGICAL 						:: mpi_process_finalized = .FALSE.
@@ -190,6 +195,11 @@ end subroutine finalize_mpi
 ! ** SUBROUTINES FOR INITIALIZING COMMUNICATIONS  ** !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
+!> @brief Subroutine for initializing MPI and open MP communications.
+!! @details This subroutine initializes MPI and open MP communications and looks for errors durignt this procces. The system environment variables, which are modified by the user at the moment of running/submitting a KORC simulation, are used to determine the open MP configuration. Some open MP parameters are displayed on the screen/output file.
+!! @param[in] params Core KORC simulation parameters.
+!! @param mpi_process_finalized Flag indicating whether an individual MPI process was finalized correctly.
+!! @param mpierr MPI error status. 
 subroutine initialize_communications(params)
 	TYPE(KORC_PARAMS), INTENT(INOUT) 	:: params
 	CHARACTER(MAX_STRING_LENGTH) 		:: string
@@ -216,24 +226,6 @@ subroutine initialize_communications(params)
 #endif
 		write(6,'("* * * * * * * * * * * *  * * * * * * *",/)')
 	end if
-
-!	call initialization_sanity_check(params) 
 end subroutine initialize_communications
-
-
-subroutine initialization_sanity_check(params)
-	TYPE(KORC_PARAMS), INTENT(IN) 	:: params
-	INTEGER 						:: ierr, mpierr
-	LOGICAL 						:: flag = .FALSE.
-
-	call MPI_INITIALIZED(flag, ierr)
-
-!$OMP PARALLEL SHARED(params) FIRSTPRIVATE(ierr,flag)
-	!$OMP CRITICAL
-	write(6,'("MPI: ",I4," OMP/of: ",I3," / ",I3," Procs: ",I3," Init: ",l1)') &
-	params%mpi_params%rank,OMP_GET_THREAD_NUM(),OMP_GET_NUM_THREADS(),OMP_GET_NUM_PROCS(),flag
-	!$OMP END CRITICAL
-!$OMP END PARALLEL
-end subroutine initialization_sanity_check
 
 end module korc_hpc
