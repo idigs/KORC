@@ -43,6 +43,7 @@ subroutine deallocate_variables(params,F,spp)
 		DEALLOCATE(spp(ii)%vars%Prad)
 		DEALLOCATE(spp(ii)%vars%flag)
 		DEALLOCATE(spp(ii)%vars%AUX)
+		DEALLOCATE(spp(ii)%vars%wt)
 	end do
 
 	DEALLOCATE(spp)

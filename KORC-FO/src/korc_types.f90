@@ -1,4 +1,4 @@
-!> Module containing the definition of KORC derived types and KORC variables, the building blocks of the code.
+!> @brief Module containing the definition of KORC derived types and KORC variables, the building blocks of the code.
 module korc_types
 	implicit none
 
@@ -147,6 +147,7 @@ TYPE, PUBLIC :: PARTICLES
 	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: Pin !< Instantaneous input power of each electron due to the electric field acceleration.
 	INTEGER(is), DIMENSION(:), ALLOCATABLE 	:: flag !< Flag for each particle to decide whether it is being followed (flag=T) or not (flag=F).
 	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: AUX !< An auxiliary scalar variable for each electron.
+	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: wt !< Weight of each electron. This is used when sampling weighted PDFs and in the synthetic camera diagnostic.
 END TYPE PARTICLES
 
 

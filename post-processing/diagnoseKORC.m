@@ -1,6 +1,6 @@
 function ST = diagnoseKORC(path,visible,range)
 % ST = diagnoseKORC('../KORC-FO/outputFiles/','on',[0,100])
-close all
+% close all
 
 ST = struct;
 ST.path = path;
@@ -50,7 +50,7 @@ ST = loadData(ST);
 
 % calculateTemperatureComponents(ST);
 
-% SE_phaseSpaceAnalisys(ST);
+SE_phaseSpaceAnalisys(ST);
 
 % plotEnergyPitchanglePDF(ST);
 
@@ -66,7 +66,7 @@ ST = loadData(ST);
 
 % pitchAnglePDFSlicesVsTime(ST)
 
-spatialAndVelocityPDF(ST)
+% spatialAndVelocityPDF(ST)
 
 % save('energy_limit','ST')
 end
@@ -3009,7 +3009,7 @@ end
 Psyn = c*q^2*Psyn./(sqrt(3)*ep*g^2*l.^3);
 end
 
-function fRE = experimentalfRE(ST,p,eta)
+function f = efRE(ST,p,eta)
 q = abs(ST.params.species.q(1));
 m = ST.params.species.m(1);
 c = ST.params.scales.v;
@@ -3022,14 +3022,37 @@ xo = (m*c^2/q)/1E6;
 
 fG = @(x,k,t) x.^(k-1).*exp(-x/t)/(gamma(k)*t.^k);
 
-fE = @(x,k,t,xo) fG(x,k,t/xo)/xo;
-f = @(x) fG(x,10,0.75/xo)/xo;
+Emin = ST.params.pdf_params.min_energy/1E6;
+Emax = ST.params.pdf_params.max_energy/1E6;
+x = linspace(Emin,Emax,1E3);
+fo = trapz(x,fG(x,k,t/xo));
+
+fE = @(x,k,t,xo) fG(x,k,t/xo)/fo;
+
 A = @(E,Z,p) 2*E*p.^2./((Z+1)*sqrt(p.^2 + 1));
 ft = @(E,Z,p,t) 0.5*A(E,Z,p).*exp(A(E,Z,p).*cos(t))./sinh(A(E,Z,p));
 
 Eo = sqrt(p^2 + 1);
 
-fRE = fE(Eo,k,t,xo)*ft(E,Z,p,eta);
+% f = fE(Eo,k,t,xo)*ft(E,Z,p,eta);
+f = fE(Eo,k,t,xo);
+f = ft(E,Z,p,eta);
+end
+
+function integratefRE(ST,np,neta)
+eta = linspace(0,pi,neta);
+pmin = ST.params.pdf_params.min_p;
+pmax = ST.params.pdf_params.max_p;
+p = linspace(pmin,pmax,np);
+E = sqrt(p.^2 + 1);
+
+I = zeros(size(p));
+for ii=1:numel(I)
+    I(ii) = trapz(eta,efRE(ST,p(ii),eta).*sin(eta));
+end
+
+
+
 end
 
 function regionsOfSE(ST,chiAxis,pAxis,fnum)
@@ -3041,6 +3064,8 @@ numLevels = 10;
 q = abs(ST.params.species.q(1));
 m = ST.params.species.m(1);
 c = ST.params.scales.v;
+
+integratefRE(ST,1E3,1E3);
 
 try
     l = ST.params.synthetic_camera_params.lambda;
@@ -3071,7 +3096,7 @@ if (strcmp(ST.params.species.energy_distribution,'AVALANCHE'))
 elseif (strcmp(ST.params.species.energy_distribution,'EXPERIMENTAL-GAMMA'))
     for pp=1:Np
         for cc=1:Nchi
-            fRE(pp,cc) = experimentalfRE(ST,pAxis(pp),eta(chiAxis(cc)));
+            fRE(pp,cc) = efRE(ST,pAxis(pp),eta(chiAxis(cc)));
         end
     end
 end

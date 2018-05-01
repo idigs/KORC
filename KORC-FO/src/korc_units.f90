@@ -1,20 +1,37 @@
+!> @brief Module with subroutines that calculate the characteristic scales in the simulation used in the normalization and nondimensionalization of the simulation variables.
 module korc_units
     use korc_types
     use korc_constants
 
-    implicit none
+    IMPLICIT NONE
 
 	PUBLIC :: compute_charcs_plasma_params,&
 				normalize_variables
 
-    contains
+    CONTAINS
 
+!> @brief Subroutine that calculates characteristic scales of the current KORC simulation.
+!! @details Normalization and non-dimensionalization of the variables and equations of motion allows us to solve them more accurately by reducing truncation erros when performing operations that combine small and large numbers. 
+!!
+!! For normalizing and obtaining the non-dimensional form of the variables and equations solved in KORC we use characteristic scales calculated with the input data of each KORC simulation.
+!! <table>
+!! <caption id="multi_row">Characteristic scales in KORC</caption>
+!! <tr><th>Characteristic scale		<th>Symbol	<th>Value			<th>Description
+!! <tr><td rowspan="1">Velocity <td>@f$v_{ch}@f$	<td>@f$c@f$	<td> Speed of light
+!! <tr><td rowspan="1">Magnetic field <td>@f$B_{ch}@f$	<td>@f$B_0@f$	<td> Magnetic field at the magnetic axis
+!! <tr><td rowspan="1">Electric field <td>@f$E_{ch}@f$	<td>@f$E_0@f$	<td> Electric field at the magnetic axis
+!! <tr><td rowspan="1">Time <td>@f$t_{ch}@f$	<td>@f$\Omega_e = eB_0/m_e@f$ 	<td>
+!! <tr><td rowspan="1">Dummy <td>	<td>Dummy	<td>Dummy
+!! </table>
+!! @param[in,out] params Core KORC simulation parameters.
+!! @param[in,out] spp An instance of KORC's derived type SPECIES containing all the information of different electron species. See korc_types.f90.
+!! @param[in] F An instance of KORC's derived type FIELDS containing all the information about the fields used in the simulation. See korc_types.f90 and korc_fields.f90.
+!! @param ii Index of the spp array containing the mass, electric charge and corresponding cyclotron frequency used to derived some characteristic scales.
 subroutine compute_charcs_plasma_params(params,spp,F)
-    implicit none
-	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
+	TYPE(KORC_PARAMS), INTENT(INOUT) 						:: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
-	TYPE(FIELDS), INTENT(IN) :: F
-	INTEGER :: ind
+	TYPE(FIELDS), INTENT(IN) 								:: F
+	INTEGER 												:: ii
 
 	params%cpp%velocity = C_C
 	params%cpp%Bo = ABS(F%Bo)
@@ -27,14 +44,14 @@ subroutine compute_charcs_plasma_params(params,spp,F)
 	spp(:)%wc_r =  ABS(spp(:)%q)*params%cpp%Bo/( spp(:)%go*spp(:)%m )
 
 
-	ind = MAXLOC(spp(:)%wc,1) ! Index to maximum cyclotron frequency
-	params%cpp%time = 1.0_rp/spp(ind)%wc
+	ii = MAXLOC(spp(:)%wc,1) ! Index to maximum cyclotron frequency
+	params%cpp%time = 1.0_rp/spp(ii)%wc
 
-	ind = MAXLOC(spp(:)%wc_r,1) ! Index to maximum relativistic cyclotron frequency
-	params%cpp%time_r = 1.0_rp/spp(ind)%wc_r
+	ii = MAXLOC(spp(:)%wc_r,1) ! Index to maximum relativistic cyclotron frequency
+	params%cpp%time_r = 1.0_rp/spp(ii)%wc_r
 
-	params%cpp%mass = spp(ind)%m
-	params%cpp%charge = ABS(spp(ind)%q)
+	params%cpp%mass = spp(ii)%m
+	params%cpp%charge = ABS(spp(ii)%q)
 	params%cpp%length = params%cpp%velocity*params%cpp%time_r
 	params%cpp%energy = params%cpp%mass*params%cpp%velocity**2
 
@@ -43,14 +60,18 @@ subroutine compute_charcs_plasma_params(params,spp,F)
 	params%cpp%temperature = params%cpp%energy
 end subroutine compute_charcs_plasma_params
 
-
+!> @brief Some brief description... 
+!! @param[in,out] params Core KORC simulation parameters.
+!! @param[in,out] spp An instance of KORC's derived type SPECIES containing all the information of different electron species. See korc_types.f90.
+!! @param[in,out] F An instance of KORC's derived type FIELDS containing all the information about the fields used in the simulation. See korc_types.f90 and korc_fields.f90.
+!! @param[in,out] P An instance of KORC's derived type PROFILES containing all the information about the plasma profiles used in the simulation. See korc_types.f90 and korc_profiles.f90.
+!! @param ii Interator of spp array.
 subroutine normalize_variables(params,spp,F,P)
-    implicit none
-	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
+	TYPE(KORC_PARAMS), INTENT(INOUT) 						:: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
-	TYPE(FIELDS), INTENT(INOUT) :: F
-	TYPE(PROFILES), INTENT(INOUT) :: P
-	INTEGER :: ii ! Iterator(s)
+	TYPE(FIELDS), INTENT(INOUT) 							:: F
+	TYPE(PROFILES), INTENT(INOUT) 							:: P
+	INTEGER 												:: ii ! Iterator(s)
 
 !	Normalize params variables
 	params%dt = params%dt/params%cpp%time

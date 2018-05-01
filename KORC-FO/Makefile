@@ -33,12 +33,12 @@ ifdef NERSC_HOST
 
 ifdef PRG_ENV
 ifeq ($(PRG_ENV),GNU)
-        HDF5_INSTALL =../HDF5_GNU # This path needs to be modified accordingly when using a local installation of HDF5.
+        HDF5_INSTALL =../HDF5_GNU# This path needs to be modified accordingly when using a local installation of HDF5.
         FCFLAGS =-cpp   -J$(MOD)        -fopenmp        -O3
         FCDEFINEFLAGS =-DGNU	-DDOUBLE_PRECISION       -DHDF5_DOUBLE_PRESICION
 endif #ifeq ($(PRG_ENV),GNU)
 ifeq ($(PRG_ENV),INTEL)
-        HDF5_INSTALL =../HDF5_INTEL # This path needs to be modified accordingly when using a local installation of HDF5.
+        HDF5_INSTALL =../HDF5_INTEL# This path needs to be modified accordingly when using a local installation of HDF5.
         FCFLAGS =-cpp   -module $(MOD)  -qopenmp        -O3
         FCDEFINEFLAGS =-DINTEL  -DDOUBLE_PRECISION      -DHDF5_DOUBLE_PRESICION
 endif #ifeq ($(PRG_ENV),INTEL)
@@ -48,8 +48,8 @@ ifeq ($(NERSC_HOST),cori)
 #       PSPLINE_INSTALL= # This path needs to be modified accordingly when using a local installation of PSPLINES.
 #       INCLUDES =-I$(PSPLINE_INSTALL)/mod # Uncomment when using a local installation of PSPLINES.
 #       LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib # Uncomment when using a local installation of PSPLINES.
-        INCLUDES =$(PSPLINE) # Uncomment when using the NERSC pspline module.
-        LIB_FLAGS =$(PSPLINE) # Uncomment when using the NERSC pspline module.
+        INCLUDES =$(PSPLINE)# Uncomment when using the NERSC pspline module.
+        LIB_FLAGS =$(PSPLINE)# Uncomment when using the NERSC pspline module.
         LIB     = -lm   -lz -ldl        -lpspline
         OMP_LIB_FLAGS =
 endif #ifeq ($(NERSC_HOST),cori)
@@ -58,8 +58,8 @@ ifeq ($(NERSC_HOST),edison)
 #       PSPLINE_INSTALL= # This path needs to be modified accordingly when using a local installation of PSPLINES.
 #       INCLUDES =-I$(PSPLINE_INSTALL)/mod # Uncomment when using a local installation of PSPLINES.
 #       LIB_FLAGS =-L$(PSPLINE_INSTALL)/lib # Uncomment when using a local installation of PSPLINES.
-        INCLUDES =$(PSPLINE) # Uncomment when using the NERSC pspline module.
-        LIB_FLAGS =$(PSPLINE) # Uncomment when using the NERSC pspline module.
+        INCLUDES =$(PSPLINE)# Uncomment when using the NERSC pspline module.
+        LIB_FLAGS =$(PSPLINE)# Uncomment when using the NERSC pspline module.
         LIB     = -lm   -lz -ldl -lpspline
         OMP_LIB_FLAGS =
 endif #ifeq ($(NERSC_HOST),edison)

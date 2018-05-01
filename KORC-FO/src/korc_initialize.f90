@@ -1,3 +1,4 @@
+!> @brief Module with subroutines to load simulation parameters and to define the time step in the simulation.
 module korc_initialize
     use korc_types
     use korc_constants
@@ -14,7 +15,7 @@ module korc_initialize
 	use korc_simple_equilibrium_pdf ! external module
 
 
-    implicit none
+    IMPLICIT NONE
 	
 
 	PRIVATE :: set_paths,&
@@ -292,6 +293,7 @@ subroutine initialize_particles(params,F,spp)
 		ALLOCATE( spp(ii)%vars%Pin(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%flag(spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%AUX(spp(ii)%ppp) )
+		ALLOCATE( spp(ii)%vars%wt(spp(ii)%ppp) )
 
 		spp(ii)%vars%X = 0.0_rp
 		spp(ii)%vars%V(3,spp(ii)%ppp) = 0.0_rp
@@ -309,6 +311,7 @@ subroutine initialize_particles(params,F,spp)
 		spp(ii)%vars%Pin = 0.0_rp
 		spp(ii)%vars%flag = 1_is
 		spp(ii)%vars%AUX = 0.0_rp
+		spp(ii)%vars%wt = 0.0_rp
 
 		SELECT CASE (TRIM(spp(ii)%energy_distribution))
 			CASE ('MONOENERGETIC')

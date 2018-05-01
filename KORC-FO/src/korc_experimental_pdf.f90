@@ -19,6 +19,7 @@ MODULE korc_experimental_pdf
 		REAL(rp) :: max_p ! Maximum momentum of sampled PDF
 		REAL(rp) :: k ! Shape factor of Gamma distribution
 		REAL(rp) :: t ! Scale factor of Gamma distribution
+		REAL(rp) :: fGo ! Normalization factor of Gamma distribution
 
 		REAL(rp) :: Bo
 		REAL(rp) :: lambda
@@ -65,12 +66,14 @@ MODULE korc_experimental_pdf
 				deg2rad,&
 				rad2deg,&
 				fRE,&
+				fRExPR,&
 				random_norm,&
 				fGamma,&
 				PR,&
 				P_integral,&
 				IntK,&
-				nintegral_besselk,&
+				IntBesselK,&
+				IntGamma,&
 				fRE_H,&
 				fRE_pitch
 
@@ -426,6 +429,9 @@ SUBROUTINE initialize_params(params)
 
 	pdf_params%max_p = SQRT((pdf_params%max_energy/(C_ME*C_C**2))**2 - 1.0_rp) ! In units of mc
 	pdf_params%min_p = SQRT((pdf_params%min_energy/(C_ME*C_C**2))**2 - 1.0_rp) ! In units of mc
+
+	pdf_params%fGo = &
+	IntGamma(SQRT(pdf_params%min_p**2.0_rp + 1.0_rp),SQRT(pdf_params%max_p**2.0_rp + 1.0_rp),pdf_params%k,pdf_params%t/xo)
 END SUBROUTINE initialize_params
 
 
@@ -459,15 +465,31 @@ FUNCTION fRE(eta,p)
 	REAL(rp), INTENT(IN) :: eta ! pitch angle in degrees
 	REAL(rp), INTENT(IN) :: p ! momentum in units of mc
 	REAL(rp) :: fRE
+	REAL(rp) :: fE
+	REAL(rp) :: feta
 	REAL(rp) :: A
 	REAL(rp) :: Eo
 
 	Eo = SQRT(p**2.0_rp + 1.0_rp)
 
 	A = (2.0_rp*pdf_params%E/(pdf_params%Zeff + 1.0_rp))*(p**2/SQRT(p**2.0_rp + 1.0_rp))
-	fRE = 0.5_rp*A*EXP(A*COS(deg2rad(eta)))*fGamma(Eo,pdf_params%k,pdf_params%t/xo)/SINH(A)
-!	fRE = fRE*PR(eta,p,pdf_params%Bo,pdf_params%lambda)
+	feta = 0.5_rp*A*EXP(A*COS(deg2rad(eta)))/SINH(A)
+
+	fE = fGamma(Eo,pdf_params%k,pdf_params%t/xo)/pdf_params%fGo
+
+	fRE = fE*feta
 END FUNCTION fRE
+
+
+FUNCTION fRExPR(eta,p)
+	REAL(rp), INTENT(IN) :: eta ! pitch angle in degrees
+	REAL(rp), INTENT(IN) :: p ! momentum in units of mc
+	REAL(rp) :: fRExPR
+	REAL(rp) :: A
+	REAL(rp) :: Eo
+
+	fRExPR = fRE(eta,p)*PR(eta,p,pdf_params%Bo,pdf_params%lambda)
+END FUNCTION fRExPR
 
 
 FUNCTION random_norm(mean,sigma)
@@ -484,7 +506,6 @@ END FUNCTION random_norm
 
 
 FUNCTION IntK(v,x)
-	IMPLICIT NONE
 	REAL(rp) :: IntK
 	REAL(rp), INTENT(IN) :: v
 	REAL(rp), INTENT(IN) :: x
@@ -495,7 +516,6 @@ END FUNCTION IntK
 
 
 FUNCTION besselk(v,x)
-	IMPLICIT NONE
 	REAL(rp) :: besselk
 	REAL(rp), INTENT(IN) :: x
 	REAL(rp), INTENT(IN) :: v
@@ -506,43 +526,88 @@ FUNCTION besselk(v,x)
 END FUNCTION besselk
 
 
-FUNCTION nintegral_besselk(a,b)
-	IMPLICIT NONE
+!> @brief Extended trapezoidal rule for integrating the Gamma PDF. See Sec. 4.2 of Numerical Recipies in Fortran 77.
+FUNCTION IntGamma(a,b,k,t)
 	REAL(rp), INTENT(IN) :: a
 	REAL(rp), INTENT(IN) :: b
-	REAL(rp) :: nintegral_besselk
-	REAL(rp) :: Iold, Inew, rerr
+	REAL(rp), INTENT(IN) :: k ! shape factor
+	REAL(rp), INTENT(IN) :: t ! scale factor
+	REAL(rp) :: IntGamma
+	REAL(rp) :: Iold
+	REAL(rp) :: Inew
+	REAL(rp) :: rerr
+	REAL(rp) :: sum_f
+	REAL(rp) :: h,z
+	INTEGER :: ii,jj,npoints
+	LOGICAL :: flag
+
+	h = b - a
+	sum_f = 0.5*(fGamma(a,k,t) + fGamma(b,k,t))
+
+	Iold = 0.0_rp
+	Inew = sum_f*h
+
+	ii = 1_idef
+	flag = .TRUE.
+	do while (flag)
+		Iold = Inew
+
+		ii = ii + 1_idef
+		npoints = 2_idef**(ii-2_idef)
+		h = 0.5_rp*(b-a)/REAL(npoints,rp)
+		sum_f = 0.0_rp
+		do jj=1_idef,npoints
+			z = a + h + 2.0_rp*(REAL(jj,rp) - 1.0_rp)*h
+			sum_f = sum_f + fGamma(z,k,t)
+		end do
+
+		Inew = 0.5_rp*Iold + sum_f*h
+		rerr = ABS((Inew - Iold)/Iold)
+		flag = .NOT.(rerr.LT.Tol)
+	end do
+	IntGamma = Inew
+END FUNCTION IntGamma
+
+!> @brief Extended trapezoidal rule for integrating the modified Bessel function of second kind. See Sec. 4.2 of Numerical Recipies in Fortran 77.
+FUNCTION IntBesselK(a,b)
+	REAL(rp), INTENT(IN) :: a
+	REAL(rp), INTENT(IN) :: b
+	REAL(rp) :: IntBesselK
+	REAL(rp) :: Iold
+	REAL(rp) :: Inew
+	REAL(rp) :: rerr
+	REAL(rp) :: sum_f
 	REAL(rp) :: v,h,z
 	INTEGER :: ii,jj,npoints
 	LOGICAL :: flag
 	
 	v = 5.0_rp/3.0_rp
-
 	h = b - a
-	nintegral_besselk = 0.5*(besselk(v,a) + besselk(v,b))
-	
+	sum_f = 0.5*(besselk(v,a) + besselk(v,b))
+
+	Iold = 0.0_rp
+	Inew = sum_f*h	
+
 	ii = 1_idef
 	flag = .TRUE.
 	do while (flag)
-		Iold = nintegral_besselk*h
+		Iold = Inew
 
 		ii = ii + 1_idef
 		npoints = 2_idef**(ii-2_idef)
 		h = 0.5_rp*(b-a)/REAL(npoints,rp)
-
+		sum_f = 0.0_rp
 		do jj=1_idef,npoints
 			z = a + h + 2.0_rp*(REAL(jj,rp) - 1.0_rp)*h
-			nintegral_besselk = nintegral_besselk + besselk(v,z)
+			sum_f = sum_f + besselk(v,z)
 		end do
 
-		Inew = nintegral_besselk*h
-
+		Inew = 0.5_rp*Iold + sum_f*h
 		rerr = ABS((Inew - Iold)/Iold)
-
 		flag = .NOT.(rerr.LT.Tol)
 	end do
-	nintegral_besselk = Inew
-END FUNCTION nintegral_besselk
+	IntBesselK = Inew
+END FUNCTION IntBesselK
 
 
 SUBROUTINE P_integral(z,P)
@@ -554,10 +619,10 @@ SUBROUTINE P_integral(z,P)
 
 	IF (z .LT. 0.5_rp) THEN
 		a = (2.16_rp/2.0_rp**(2.0_rp/3.0_rp))*z**(1.0_rp/3.0_rp)
-		P = nintegral_besselk(z,a) + IntK(5.0_rp/3.0_rp,a)
+		P = IntBesselK(z,a) + IntK(5.0_rp/3.0_rp,a)
 	ELSE IF ((z .GE. 0.5_rp).AND.(z .LT. 2.5_rp)) THEN
 		a = 0.72_rp*(z + 1.0_rp)
-		P = nintegral_besselk(z,a) + IntK(5.0_rp/3.0_rp,a)
+		P = IntBesselK(z,a) + IntK(5.0_rp/3.0_rp,a)
 	ELSE
 		P = IntK(5.0_rp/3.0_rp,z)
 	END IF
@@ -799,29 +864,29 @@ SUBROUTINE save_params(params)
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
 		dset = TRIM(gname) // "/max_pitch_angle"
-		attr = "Maximum pitch angle in avalanche PDF (degrees)"
+		attr = "Maximum pitch angle in PDF (degrees)"
 		call save_to_hdf5(h5file_id,dset,pdf_params%max_pitch_angle,attr)
 
 		dset = TRIM(gname) // "/min_pitch_angle"
-		attr = "Minimum pitch angle in avalanche PDF (degrees)"
+		attr = "Minimum pitch angle in PDF (degrees)"
 		call save_to_hdf5(h5file_id,dset,pdf_params%min_pitch_angle,attr)
 
 		dset = TRIM(gname) // "/min_energy"
-		attr = "Minimum energy in avalanche PDF (eV)"
+		attr = "Minimum energy in PDF (eV)"
 		units = 1.0_rp/C_E
 		call save_to_hdf5(h5file_id,dset,units*pdf_params%min_energy,attr)
 
 		dset = TRIM(gname) // "/max_energy"
-		attr = "Maximum energy in avalanche PDF (eV)"
+		attr = "Maximum energy in PDF (eV)"
 		units = 1.0_rp/C_E
 		call save_to_hdf5(h5file_id,dset,units*pdf_params%max_energy,attr)
 
 		dset = TRIM(gname) // "/max_p"
-		attr = "Maximum momentum in avalanche PDF (me*c^2)"
+		attr = "Maximum momentum in PDF (me*c)"
 		call save_to_hdf5(h5file_id,dset,pdf_params%max_p,attr)
 
 		dset = TRIM(gname) // "/min_p"
-		attr = "Maximum momentum in avalanche PDF (me*c^2)"
+		attr = "Maximum momentum in PDF (me*c)"
 		call save_to_hdf5(h5file_id,dset,pdf_params%min_p,attr)
 
 		dset = TRIM(gname) // "/Zeff"
@@ -839,6 +904,10 @@ SUBROUTINE save_params(params)
 		dset = TRIM(gname) // "/t"
 		attr = "Scale factor"
 		call save_to_hdf5(h5file_id,dset,pdf_params%t,attr)
+
+		dset = TRIM(gname) // "/fGo"
+		attr = "Normalization of Gamma function"
+		call save_to_hdf5(h5file_id,dset,pdf_params%fGo,attr)
 
 		dset = TRIM(gname) // "/lambda"
 		attr = "Wavelength used when PDF is weighted with the distribution of synchrotron radiation."

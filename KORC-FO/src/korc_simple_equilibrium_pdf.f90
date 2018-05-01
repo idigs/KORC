@@ -35,7 +35,7 @@ MODULE korc_simple_equilibrium_pdf
 				PR,&
 				P_integral,&
 				IntK,&
-				nintegral_besselk
+				IntBesselK
 
 	CONTAINS
 
@@ -143,44 +143,45 @@ FUNCTION besselk(v,x)
 END FUNCTION besselk
 
 
-FUNCTION nintegral_besselk(a,b)
-	IMPLICIT NONE
+FUNCTION IntBesselK(a,b)
 	REAL(rp), INTENT(IN) :: a
 	REAL(rp), INTENT(IN) :: b
-	REAL(rp) :: nintegral_besselk
-	REAL(rp) :: Iold, Inew, rerr
+	REAL(rp) :: IntBesselK
+	REAL(rp) :: Iold
+	REAL(rp) :: Inew
+	REAL(rp) :: rerr
+	REAL(rp) :: sum_f
 	REAL(rp) :: v,h,z
 	INTEGER :: ii,jj,npoints
 	LOGICAL :: flag
 	
 	v = 5.0_rp/3.0_rp
-
 	h = b - a
-	nintegral_besselk = 0.5*(besselk(v,a) + besselk(v,b))
-	
+	sum_f = 0.5*(besselk(v,a) + besselk(v,b))
+
+	Iold = 0.0_rp
+	Inew = sum_f*h	
+
 	ii = 1_idef
 	flag = .TRUE.
 	do while (flag)
-		Iold = nintegral_besselk*h
+		Iold = Inew
 
 		ii = ii + 1_idef
 		npoints = 2_idef**(ii-2_idef)
 		h = 0.5_rp*(b-a)/REAL(npoints,rp)
-
+		sum_f = 0.0_rp
 		do jj=1_idef,npoints
 			z = a + h + 2.0_rp*(REAL(jj,rp) - 1.0_rp)*h
-			nintegral_besselk = nintegral_besselk + besselk(v,z)
+			sum_f = sum_f + besselk(v,z)
 		end do
 
-		Inew = nintegral_besselk*h
-
+		Inew = 0.5_rp*Iold + sum_f*h
 		rerr = ABS((Inew - Iold)/Iold)
-
 		flag = .NOT.(rerr.LT.Tol)
 	end do
-	nintegral_besselk = Inew
-END FUNCTION nintegral_besselk
-
+	IntBesselK = Inew
+END FUNCTION IntBesselK
 
 SUBROUTINE P_integral(z,P)
 	REAL(rp), INTENT(OUT) :: P
@@ -191,10 +192,10 @@ SUBROUTINE P_integral(z,P)
 
 	IF (z .LT. 0.5_rp) THEN
 		a = (2.16_rp/2.0_rp**(2.0_rp/3.0_rp))*z**(1.0_rp/3.0_rp)
-		P = nintegral_besselk(z,a) + IntK(5.0_rp/3.0_rp,a)
+		P = IntBesselK(z,a) + IntK(5.0_rp/3.0_rp,a)
 	ELSE IF ((z .GE. 0.5_rp).AND.(z .LT. 2.5_rp)) THEN
 		a = 0.72_rp*(z + 1.0_rp)
-		P = nintegral_besselk(z,a) + IntK(5.0_rp/3.0_rp,a)
+		P = IntBesselK(z,a) + IntK(5.0_rp/3.0_rp,a)
 	ELSE
 		P = IntK(5.0_rp/3.0_rp,z)
 	END IF
