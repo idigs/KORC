@@ -1,6 +1,6 @@
 function ST = diagnoseKORC(path,visible,range)
 % ST = diagnoseKORC('../KORC-FO/outputFiles/','on',[0,100])
-% close all
+close all
 
 ST = struct;
 ST.path = path;
@@ -50,11 +50,11 @@ ST = loadData(ST);
 
 % calculateTemperatureComponents(ST);
 
-SE_phaseSpaceAnalisys(ST);
+% SE_phaseSpaceAnalisys(ST);
 
 % plotEnergyPitchanglePDF(ST);
 
-% figuresAPS2017(ST);
+figuresAPS2017(ST);
 
 % NIMROD_figure(ST);
 
@@ -67,6 +67,8 @@ SE_phaseSpaceAnalisys(ST);
 % pitchAnglePDFSlicesVsTime(ST)
 
 % spatialAndVelocityPDF(ST)
+
+% subPhaseSpaceAnalysis(ST);
 
 % save('energy_limit','ST')
 end
@@ -3022,8 +3024,8 @@ xo = (m*c^2/q)/1E6;
 
 fG = @(x,k,t) x.^(k-1).*exp(-x/t)/(gamma(k)*t.^k);
 
-Emin = ST.params.pdf_params.min_energy/1E6;
-Emax = ST.params.pdf_params.max_energy/1E6;
+Emin = sqrt(ST.params.pdf_params.min_p^2 + 1);
+Emax = sqrt(ST.params.pdf_params.max_p^2 + 1);
 x = linspace(Emin,Emax,1E3);
 fo = trapz(x,fG(x,k,t/xo));
 
@@ -3032,27 +3034,206 @@ fE = @(x,k,t,xo) fG(x,k,t/xo)/fo;
 A = @(E,Z,p) 2*E*p.^2./((Z+1)*sqrt(p.^2 + 1));
 ft = @(E,Z,p,t) 0.5*A(E,Z,p).*exp(A(E,Z,p).*cos(t))./sinh(A(E,Z,p));
 
-Eo = sqrt(p^2 + 1);
+Eo = sqrt(p.^2 + 1);
 
-% f = fE(Eo,k,t,xo)*ft(E,Z,p,eta);
-f = fE(Eo,k,t,xo);
-f = ft(E,Z,p,eta);
+f = fE(Eo,k,t,xo).*ft(E,Z,p,eta);
 end
 
-function integratefRE(ST,np,neta)
-eta = linspace(0,pi,neta);
+function [I,STDI] = MonteCarloIntegral(ST,nsamples,p_lims,eta_lims)
+pmin = min(p_lims);
+pmax = max(p_lims);
+Emax = sqrt(pmax^2 + 1);
+Emin = sqrt(pmin^2 + 1);
+etamin = min(eta_lims);
+etamax = max(eta_lims);
+
+A = (Emax-Emin)*(etamax-etamin);
+
+P = rand(2,nsamples);
+P(1,:) = pmin + (pmax - pmin)*P(1,:); % momentum
+P(2,:) = etamin + (etamax - etamin)*P(2,:); % pitch angle
+P(3,:) = sqrt(P(1,:).^2 + 1); % gamma factor
+
+l = ST.params.pdf_params.lambda;
+
+f = zeros(1,nsamples);
+
+for ii=1:nsamples
+    f(ii) = ...
+        efRE(ST,P(1,ii),P(2,ii))*sin(P(2,ii))*singleParticleSpectrum(ST,l,P(3,ii),P(2,ii));
+end
+
+f1 = mean(f);
+f2 = sum(f.^2)/nsamples;
+
+I = A*f1;
+STDI = A*sqrt((f2 - f1^2)/nsamples);
+end
+
+function subPhaseSpaceAnalysis(ST)
+Np = 150;
+Neta = 200;
+minLevel = -3;
+numLevels = 10;
+
+g = @(p) sqrt(p.^2 + 1);
+
+q = abs(ST.params.species.q(1));
+m = ST.params.species.m(1);
+c = ST.params.scales.v;
+l = ST.params.pdf_params.lambda;
+
 pmin = ST.params.pdf_params.min_p;
 pmax = ST.params.pdf_params.max_p;
-p = linspace(pmin,pmax,np);
-E = sqrt(p.^2 + 1);
+Emax = sqrt(pmax^2 + 1);
+Emin = sqrt(pmin^2 + 1);
+etamin = 0;
+etamax = pi;
 
-I = zeros(size(p));
-for ii=1:numel(I)
-    I(ii) = trapz(eta,efRE(ST,p(ii),eta).*sin(eta));
+pAxis = linspace(pmin,pmax,Np);
+etaAxis = linspace(etamin,etamax,Neta);
+
+E = (g(pAxis)*m*c^2/q)/1E6; % MeV
+
+fRE = zeros(Np,Neta);
+Psyn_sp = zeros(Np,Neta);
+ddPsyndpchi = zeros(Np,Neta);
+ddPsyndpchi = zeros(Np,Neta);
+
+if (strcmp(ST.params.species.energy_distribution,'AVALANCHE'))
+    Ebar = ST.params.pdf_params.Epar/ST.params.pdf_params.Ec;
+    Zeff = ST.params.pdf_params.Zeff;
+    Ehat = (Ebar - 1)/(1 + Zeff);
+    Cz = sqrt(3*(Zeff + 5)/pi)*ST.params.pdf_params.Clog;
+    f = @(p,x) (Ehat/Cz)*p.*exp( -p.*(x/Cz + 0.5*Ehat*(1 - x.^2)./x) )./x;
+    
+    for pp=1:Np
+        for ee=1:Neta
+            fRE(pp,ee) = f(pAxis(pp),etaAxis(ee));
+        end
+    end
+elseif (strcmp(ST.params.species.energy_distribution,'EXPERIMENTAL-GAMMA'))
+    for pp=1:Np
+        for ee=1:Neta
+            fRE(pp,ee) = efRE(ST,pAxis(pp),etaAxis(ee));
+        end
+    end
 end
 
+for ll=1:numel(l)
+    for pp=1:Np
+        for ee=1:Neta
+            Psyn_sp(pp,ee) = singleParticleSpectrum(ST,l,g(pAxis(pp)),etaAxis(ee));
+            ddPsyndpchi(pp,ee) = fRE(pp,ee)*Psyn_sp(pp,ee);
+        end
+    end
+end
+
+[maxval,ieta] = max(ddPsyndpchi,[],2);
+[~,ip] = max(maxval);
+xo = etaAxis(ieta(ip));
+yo = pAxis(ip);
+
+% % Sub-rectangles analysis
+AA = ddPsyndpchi;
+AA = log10(AA/max(max(AA)));
+
+th = figure('Visible','off');
+[C,~] = contour(etaAxis,pAxis,AA,[minLevel minLevel]);
+
+ID = C(1,:)<0;
+C(:,ID) = [];
+x1 = xo - min(C(1,:));
+x2 = max(C(1,:)) - xo;
+y1 = max(C(2,:)) - yo;
+y2 = yo - min(C(2,:));
+xratio = x1/x2;
+yratio = y1/y2;
+
+[PT,STDPT] = MonteCarloIntegral(ST,5E4,[pmin pmax],[etamin etamax]);
+scales = [1.0,0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1];
+P = zeros(1,numel(scales));
+STDP = zeros(1,numel(scales));
+boundaryBox = zeros(2,5,numel(scales));
+for ii=1:numel(scales)
+    etamin = xo - x1*scales(ii);
+    etamax = xo + x2*scales(ii);
+    pmin = yo - y2*scales(ii);
+    pmax = yo + y1;
+    
+    boundaryBox(1,:,ii) = [etamin etamax etamax etamin etamin];
+    boundaryBox(2,:,ii) = [pmin pmin pmax pmax pmin];
+   
+    [P(ii),STDP(ii)] = MonteCarloIntegral(ST,5E4,[pmin pmax],[etamin etamax]);
+end
+
+boundaryBox(1,:,:) = rad2deg(boundaryBox(1,:,:));
+boundaryBox(2,:,:) = (sqrt(boundaryBox(2,:,:).^2 + 1)*m*c^2/q)/1E6;
+
+xAxis = rad2deg(etaAxis);
+yAxis = E;
+lAxis = l/1E-9;
 
 
+% % Figures
+h = figure;
+
+A = fRE;
+A = log10(A/max(max(A)));
+cmax = max(max(A));
+cmin = minLevel;
+x = linspace(0,4,numLevels);
+levels = cmin + (cmax-cmin)*tanh(x);
+
+figure(h)
+subplot(1,3,1)
+contourf(xAxis,yAxis,A,levels,'LineStyle','none')
+xlim([0 90]); colormap(jet(1024)); colorbar; caxis([cmin cmax])
+xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
+ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
+
+AA = ddPsyndpchi;
+AA = log10(AA/max(max(AA)));
+cmax = max(max(AA));
+cmin = minLevel;%min(min(A(isfinite(A))));
+x = linspace(0,4,numLevels);
+levels = cmin + (cmax-cmin)*tanh(x);
+
+figure(h)
+subplot(1,3,2)
+contourf(xAxis,yAxis,AA,levels,'LineStyle','none')
+xlim([0 90]); colormap(jet(1024)); colorbar; caxis([cmin cmax])
+title(['$\lambda=$ ' num2str(lAxis) ' nm'],'Interpreter','latex')
+xlabel('$\theta$ ($^\circ$)','Interpreter','latex')
+ylabel('$\mathcal{E}$ (MeV)','Interpreter','latex')
+
+
+etao = rad2deg(etaAxis(ieta(ip)));
+Eo = E(ip);
+
+figure(h)
+subplot(1,3,2)
+hold on;plot(etao,Eo,'ko','MarkerFaceColor',[1,0,1],'MarkerSize',8)
+for ii=1:numel(scales)
+    for jj=1:2
+        figure(h)
+        subplot(1,3,jj)
+        hold on
+        if P(ii)/PT < 0.9
+            plot(squeeze(boundaryBox(1,:,ii)),squeeze(boundaryBox(2,:,ii)),'--','LineWidth',2)
+        else
+            plot(squeeze(boundaryBox(1,:,ii)),squeeze(boundaryBox(2,:,ii)),'k-','LineWidth',2)
+        end
+        hold off
+    end
+end
+
+figure(h)
+subplot(1,3,3)
+plot(100*scales,100*P/PT)
+grid minor
+xlabel('Scale','Interpreter','latex')
+ylabel('$P_R/\mathcal{P}_R$','Interpreter','latex')
 end
 
 function regionsOfSE(ST,chiAxis,pAxis,fnum)
@@ -3064,8 +3245,6 @@ numLevels = 10;
 q = abs(ST.params.species.q(1));
 m = ST.params.species.m(1);
 c = ST.params.scales.v;
-
-integratefRE(ST,1E3,1E3);
 
 try
     l = ST.params.synthetic_camera_params.lambda;
@@ -3169,12 +3348,14 @@ end
 
 A = fRE;
 % A = A/max(max(A));
-A(A~=0) = log10(A(A~=0)/max(max(A)));
+% A(A~=0) = log10(A(A~=0)/max(max(A)));
+A = log10(A/max(max(A)));
 % A(~isfinite(A)) = 0;
 
 AA = fnum;
 % AA = AA/max(max(AA));
-AA(AA~=0) = log10(AA(AA~=0)/max(max(AA)));
+% AA(AA~=0) = log10(AA(AA~=0)/max(max(AA)));
+AA = log10(AA/max(max(AA)));
 % AA(~isfinite(AA)) = 0;
 
 cmax = max(max(A));
@@ -3227,7 +3408,7 @@ end
 
 function SE_phaseSpaceAnalisys(ST)
 nbins_p = 75;
-nbins_chi = 75;
+nbins_chi = 100;
 
 for ss=1:ST.params.simulation.num_species
     q = abs(ST.params.species.q(ss));

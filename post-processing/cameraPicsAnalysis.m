@@ -1,6 +1,6 @@
 function ST = cameraPicsAnalysis(path,lambdas,visible,range)
 % ST = syntheticCameraFortran('/media/l8c/FantomHD/SimulationOutputs/Avalanche/Z1/',[400E-9,900E-9],'on',[99,100])
-% close all
+close all
 
 ST = struct;
 ST.path = path;
@@ -17,9 +17,9 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-% plotCameraSnapshots(ST);
+plotCameraSnapshots(ST);
 
-% picsAnalysis(ST);
+picsAnalysis(ST);
 
 svdAnalysis(ST);
 
