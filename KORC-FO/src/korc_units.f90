@@ -16,13 +16,26 @@ module korc_units
 !! For normalizing and obtaining the non-dimensional form of the variables and equations solved in KORC we use characteristic scales calculated with the input data of each KORC simulation.
 !! <table>
 !! <caption id="multi_row">Characteristic scales in KORC</caption>
-!! <tr><th>Characteristic scale		<th>Symbol	<th>Value			<th>Description
-!! <tr><td rowspan="1">Velocity <td>@f$v_{ch}@f$	<td>@f$c@f$	<td> Speed of light
-!! <tr><td rowspan="1">Magnetic field <td>@f$B_{ch}@f$	<td>@f$B_0@f$	<td> Magnetic field at the magnetic axis
-!! <tr><td rowspan="1">Electric field <td>@f$E_{ch}@f$	<td>@f$E_0@f$	<td> Electric field at the magnetic axis
-!! <tr><td rowspan="1">Time <td>@f$t_{ch}@f$	<td>@f$\Omega_e = eB_0/m_e@f$ 	<td>
-!! <tr><td rowspan="1">Dummy <td>	<td>Dummy	<td>Dummy
+!! <tr><th>Characteristic scale		<th>Symbol				<th>Value			<th>Description
+!! <tr><td rowspan="1">Velocity 	<td>@f$v_{ch}@f$		<td>@f$c@f$			<td> Speed of light
+!! <tr><td rowspan="1">Magnetic field <td>@f$B_{ch}@f$		<td>@f$B_0@f$		<td> Magnetic field at the magnetic axis
+!! <tr><td rowspan="1">Electric field <td>@f$E_{ch}@f$		<td>@f$cB_0@f$		<td> Electric field at the magnetic axis
+!! <tr><td rowspan="1">Time 		<td>@f$t_{ch}@f$		<td>@f$\Omega_e^{-1} = m_e/eB_0@f$ 	<td> Inverse of electron cyclotron frequency
+!! <tr><td rowspan="1">Relativistic time <td>@f$t_{r,ch}@f$	<td>@f$\Omega_e^{-1} = \gamma m_e/eB_0@f$ 	<td> Inverse of relativistic electron cyclotron frequency
+!! <tr><td rowspan="1">Mass 		<td>@f$m_{ch}@f$		<td>@f$m_e@f$			<td> Electron mass
+!! <tr><td rowspan="1">Charge 		<td>@f$q_{ch}@f$		<td>@f$e@f$			<td> Absolute value of electron charge
+!! <tr><td rowspan="1">Length 		<td>@f$l_{ch}@f$		<td>@f$v_{ch}t_{ch}@f$		<td>
+!! <tr><td rowspan="1">Energy 		<td>@f$\mathcal{E}_{ch}@f$		<td>@f$m_{ch}v_{ch}^2@f$		<td>
+!! <tr><td rowspan="1">Temperature 		<td>@f$T_{ch}@f$		<td>@f$m_{ch}v_{ch}^2@f$		<td> Temperature given in eV.
+!! <tr><td rowspan="1">Density 		<td>@f$n_{ch}@f$		<td>@f$l_{ch}^{-3}@f$		<td>
+!! <tr><td rowspan="1">Pressure 		<td>@f$P_{ch}@f$		<td>--		<td>--
 !! </table>
+!! With these characteristic scales we can write the dimensionless form of all the equations. For example, the Lorentz force for a charged particle @f$q@f$, mass @f$m@f$, and momentum @f$\vec{p}=\gamma m \vec{v}@f$ can be written as:
+!!
+!! @f$\frac{d \vec{p}'}{dt'} = q'\left[ \vec{E}' + \frac{\vec{p}'}{\gamma m'}\times \vec{B}' \right]@f$,
+!!
+!! where @f$\vec{p}' = \vec{p}/m_{ch}v_{ch}@f$, @f$t' = t/t_{ch}@f$, @f$q' = q/q_{ch}@f$, @f$m' = m/m_{ch}@f$, @f$\vec{E}' = \vec{E}/E_{ch}@f$, and @f$\vec{B}'=\vec{B}/B_{ch}@f$.
+!! @todo Characteristic pressure needs to be defined.
 !! @param[in,out] params Core KORC simulation parameters.
 !! @param[in,out] spp An instance of KORC's derived type SPECIES containing all the information of different electron species. See korc_types.f90.
 !! @param[in] F An instance of KORC's derived type FIELDS containing all the information about the fields used in the simulation. See korc_types.f90 and korc_fields.f90.
@@ -50,8 +63,8 @@ subroutine compute_charcs_plasma_params(params,spp,F)
 	ii = MAXLOC(spp(:)%wc_r,1) ! Index to maximum relativistic cyclotron frequency
 	params%cpp%time_r = 1.0_rp/spp(ii)%wc_r
 
-	params%cpp%mass = spp(ii)%m
-	params%cpp%charge = ABS(spp(ii)%q)
+	params%cpp%mass = C_ME
+	params%cpp%charge = C_E
 	params%cpp%length = params%cpp%velocity*params%cpp%time
 	params%cpp%energy = params%cpp%mass*params%cpp%velocity**2
 
@@ -71,7 +84,7 @@ subroutine normalize_variables(params,spp,F,P)
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
 	TYPE(FIELDS), INTENT(INOUT) 							:: F
 	TYPE(PROFILES), INTENT(INOUT) 							:: P
-	INTEGER 												:: ii ! Iterator(s)
+	INTEGER 												:: ii
 
 !	Normalize params variables
 	params%dt = params%dt/params%cpp%time

@@ -9,12 +9,6 @@ module korc_initialize
 	use korc_spatial_distribution
 	use korc_velocity_distribution
 
-	use korc_avalanche ! external module
-	use korc_experimental_pdf ! external module
-	use korc_energy_pdfs ! external module
-	use korc_simple_equilibrium_pdf ! external module
-
-
     IMPLICIT NONE
 	
 
@@ -24,19 +18,26 @@ module korc_initialize
 				initialize_particles,&
 				define_time_step
 
-    contains
+    CONTAINS
 
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 ! ** SUBROUTINES FOR INITIALIZING KORC PARAMETERS ** !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
-
+!> @brief Subroutine that sets the input/output paths.
+!! @param[in,out] params Core KORC simulation parameters.
+!! @param argn Number of command line inputs. The default value is two: the input files path and the outputs path.
 subroutine set_paths(params)
-	INTEGER :: argn
-	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
+	TYPE(KORC_PARAMS), INTENT(INOUT) 	:: params
+	INTEGER 							:: argn
 
 	argn = command_argument_count()
-	call get_command_argument(1,params%path_to_inputs)
-	call get_command_argument(2,params%path_to_outputs)
+
+	if (argn .EQ. 2_idef) then
+		call get_command_argument(1,params%path_to_inputs)
+		call get_command_argument(2,params%path_to_outputs)
+	else
+		call korc_abort()
+	end if
 
 	if (params%mpi_params%rank .EQ. 0) then
 		write(6,'(/,"* * * * * PATHS * * * * *")')
@@ -46,25 +47,48 @@ subroutine set_paths(params)
 	end if
 end subroutine set_paths
 
-
+!> @brief Subroutine that loads the simulation parameters from the file specified in params\%path_to_inputs
+!! @param[in,out] params Core KORC simulation parameters.
+!! @param restart Flag to indicate if the simulations restarts (restart=T) or not (restart=F).
+!! @param simulation_time Total simulation time in seconds.
+!! @param snapshot_frequency Time between snapshots in time of the simulation.
+!! @param dt Time step in the simulation as a fraction of the relativistic electron gyro-period @f$\tau_e = 2\pi\gamma m_e/eB_0@f$
+!! @param minimum_particle_energy Minimum allowed relativistic factor @f$\gamma@f$ of simulated electrons.
+!! @param radiation Flag to indicate if synchrotron radiation losses are included (radiation=T) or not (radiation=F).
+!! @param collisions Flag to indicate if collisionsare included (collisions=T) or not (collisions=F).
+!! @param collisions_model String with the name of the collisions model to be used in the simulation.
+!! @param plasma_model String with the name of the model for the fields and plasma profiles.
+!! @param magnetic_field_filename String with the name of the model for the fields and plasma profiles.
+!! @param outputs_list List of electron variables to include in the outputs.
+!! @param num_species Number of different populations of simulated relativistic electrons in KORC.
+!! @param imax Auxiliary variable used to parse the output_list
+!! @param imin Auxiliary variable used to parse the output_list
+!! @param ii Iterator used to parse the output_list
+!! @param jj Iterator used to parse the output_list
+!! @param num_outputs Auxiliary variable used to parse the output_list
+!! @param indices Auxiliary variable used to parse the output_list
+!! @param HDF5_error_handling
 subroutine load_korc_params(params)
-	TYPE (KORC_PARAMS), INTENT(INOUT) :: params
-	LOGICAL :: restart
-	REAL(rp) :: simulation_time
-	REAL(rp) :: snapshot_frequency
-	REAL(rp) :: dt
-	REAL(rp) :: minimum_particle_energy
-	LOGICAL :: radiation
-	LOGICAL :: collisions
-	CHARACTER(MAX_STRING_LENGTH) :: collisions_model
-	CHARACTER(MAX_STRING_LENGTH) :: plasma_model
-	CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
-	CHARACTER(MAX_STRING_LENGTH) :: outputs_list
-	INTEGER :: num_species
-	INTEGER :: num_impurity_species
-	INTEGER :: imax,imin,ii,jj,num_outputs
-	INTEGER, DIMENSION(2) :: indices
-	LOGICAL :: HDF5_error_handling
+	TYPE (KORC_PARAMS), INTENT(INOUT) 	:: params
+	LOGICAL 							:: restart
+	REAL(rp) 							:: simulation_time
+	REAL(rp) 							:: snapshot_frequency
+	REAL(rp) 							:: dt
+	REAL(rp) 							:: minimum_particle_energy
+	LOGICAL 							:: radiation
+	LOGICAL 							:: collisions
+	CHARACTER(MAX_STRING_LENGTH) 		:: collisions_model
+	CHARACTER(MAX_STRING_LENGTH) 		:: plasma_model
+	CHARACTER(MAX_STRING_LENGTH) 		:: magnetic_field_filename
+	CHARACTER(MAX_STRING_LENGTH) 		:: outputs_list
+	INTEGER 							:: num_species
+	INTEGER 							:: imax
+	INTEGER 							:: imin
+	INTEGER 							:: ii
+	INTEGER 							:: jj
+	INTEGER 							:: num_outputs
+	INTEGER, DIMENSION(2) 				:: indices
+	LOGICAL 							:: HDF5_error_handling
 
 	NAMELIST /input_parameters/ restart,plasma_model,magnetic_field_filename,simulation_time,&
 								snapshot_frequency,dt,num_species,radiation,collisions,collisions_model,outputs_list,&
@@ -148,9 +172,12 @@ subroutine load_korc_params(params)
 end subroutine load_korc_params
 
 
+!> @brief Interface for calling initialization subroutines
+!! @param[in,out] params Core KORC simulation parameters.
+!! @param mpierr MPI error status.
 subroutine initialize_korc_parameters(params)
-	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
-	INTEGER :: mpierr
+	TYPE(KORC_PARAMS), INTENT(INOUT) 	:: params
+	INTEGER 							:: mpierr
 
 	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
@@ -164,6 +191,8 @@ subroutine initialize_korc_parameters(params)
 end subroutine initialize_korc_parameters
 
 
+!> @brief Subroutine that defines or loads from restart file the time stepping parameters.
+!! @param[in,out] params Core KORC simulation parameters.
 subroutine define_time_step(params)
 	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
 
@@ -206,29 +235,54 @@ end subroutine define_time_step
 ! * * * SUBROUTINES FOR INITIALIZING PARTICLES * * * !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
+!> @brief Subroutine that loads the information of the initial condition of the different particle species. This subroutine calls the subroutine that generates the initial energy and pitch angle distribution functions.
+!! @param[in,out] params Core KORC simulation parameters.
+!! @param[in] F An instance of KORC's derived type FIELDS containing all the information about the fields used in the simulation. See korc_types.f90 and korc_fields.f90.
+!! @param[out] spp An instance of KORC's derived type SPECIES containing all the information of different electron species. See korc_types.f90.
+!! @param ppp Number of computational particles used to simulate each electron species.
+!! @param q Charge of each species.
+!! @param m Mass of each species.
+!! @param Eo Initial energy of each electron species in case of using an initial mono-energetic distribution.
+!! @param etao Initial pitch-angle of each electron species in case of using an initial mono-pitch-angle distribution.
+!! @param Eo_lims Minimum and maximum energy limits of a given initial non-mono-energetic distribution.
+!! @param etao_lims Minimum and maximum pitch-angle limits of a given initial non-mono-pitch-angle distribution.
+!! @param runaway Flag to decide whether a given electron is a runaway (runaway=T) or not (runaway=F).
+!! @param spatial_distribution String describing the type of initial spatial distribution for each electron species.
+!! @param energy_distribution String describing the type of initial energy distribution for each electron species.
+!! @param pitch_distribution String describing the type of initial pitch-angle distribution for each electron species.
+!! @param Ro Radial position of the center of the electrons' initial spatial distribution.
+!! @param PHIo Azimuthal position of the electrons' initial spatial distribution, in case of using a disk at a certain poloidal section.
+!! @param Zo Height of the center of the electrons' initial spatial distribution.
+!! @param r_inner Minimum minor radius of the electrons' initial spatial distribution.
+!! @param r_outter Maximum minor radius of the electrons' initial spatial distribution.
+!! @param falloff_rate Exponential falloff or standard deviation of a non-uniform radial distribution of electrons.
+!! @param shear_factor Shear factor used to generate an initial spatial distribution with an elliptic poloidal cross section. See <em>Carbajal and del-Castillo-Negrete, Nuclear Fusion, submitted (2018)</em>.
+!! @param ii Iterator of spp structure.
+!! @param mpierr MPI error status.
 subroutine initialize_particles(params,F,spp) 
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(FIELDS), INTENT(IN) :: F
-	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(OUT) :: spp
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: ppp
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: q
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: m
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: Eo
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: etao
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: Eo_lims
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: etao_lims
-	LOGICAL, DIMENSION(:), ALLOCATABLE :: runaway
+	TYPE(KORC_PARAMS), INTENT(IN) 							:: params
+	TYPE(FIELDS), INTENT(IN) 								:: F
+	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(OUT) 	:: spp
+	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: ppp
+	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: q
+	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: m
+	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: Eo
+	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: etao
+	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: Eo_lims
+	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: etao_lims
+	LOGICAL, DIMENSION(:), ALLOCATABLE 						:: runaway
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: spatial_distribution	
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: energy_distribution
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: pitch_distribution
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: Ro
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: PHIo
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: Zo
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: r_inner
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: r_outter
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: falloff_rate
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: shear_factor
-	INTEGER :: ii,jj, mpierr ! Iterator
+	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: Ro
+	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: PHIo
+	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: Zo
+	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: r_inner
+	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: r_outter
+	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: falloff_rate
+	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: shear_factor
+	INTEGER 												:: ii
+	INTEGER 												:: mpierr
 
 	NAMELIST /plasma_species/ ppp,q,m,Eo,etao,Eo_lims,etao_lims,runaway,spatial_distribution,&
 								energy_distribution,pitch_distribution,Ro,PHIo,Zo,r_inner,r_outter,falloff_rate,shear_factor
@@ -275,8 +329,14 @@ subroutine initialize_particles(params,F,spp)
 		spp(ii)%r_outter = r_outter(ii)
 		spp(ii)%falloff_rate = falloff_rate(ii)
 		spp(ii)%shear_factor = shear_factor(ii)
-		
 
+		! * * These values can change in initial_energy_pitch_dist * * !
+		spp(ii)%Eo = Eo(ii)*C_E 
+		spp(ii)%Eo_lims = Eo_lims((ii-1_idef)*2_idef + 1_idef:2_idef*ii)*C_E
+		spp(ii)%etao = etao(ii)
+		spp(ii)%etao_lims = etao_lims((ii-1_idef)*2_idef + 1_idef:2_idef*ii)
+		! * * These values can change in initial_energy_pitch_dist * * !
+		
 		ALLOCATE( spp(ii)%vars%X(3,spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%V(3,spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%Rgc(3,spp(ii)%ppp) )
@@ -296,7 +356,7 @@ subroutine initialize_particles(params,F,spp)
 		ALLOCATE( spp(ii)%vars%wt(spp(ii)%ppp) )
 
 		spp(ii)%vars%X = 0.0_rp
-		spp(ii)%vars%V(3,spp(ii)%ppp) = 0.0_rp
+		spp(ii)%vars%V = 0.0_rp
 		spp(ii)%vars%Rgc = 0.0_rp
 		spp(ii)%vars%Y = 0.0_rp
 		spp(ii)%vars%E = 0.0_rp
@@ -312,107 +372,9 @@ subroutine initialize_particles(params,F,spp)
 		spp(ii)%vars%flag = 1_is
 		spp(ii)%vars%AUX = 0.0_rp
 		spp(ii)%vars%wt = 0.0_rp
-
-		SELECT CASE (TRIM(spp(ii)%energy_distribution))
-			CASE ('MONOENERGETIC')
-				spp(ii)%Eo = Eo(ii)*C_E
-				spp(ii)%go = (spp(ii)%Eo + spp(ii)%m*C_C**2)/(spp(ii)%m*C_C**2)
-
-				spp(ii)%vars%g = spp(ii)%go ! Monoenergetic
-				spp(ii)%Eo_lims = (/spp(ii)%Eo , spp(ii)%Eo /)
-			CASE ('THERMAL')
-				call thermal_distribution(params,spp(ii))
-
-				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
-									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
-			CASE ('AVALANCHE')
-				call get_avalanche_distribution(params,spp(ii)%vars%g,spp(ii)%vars%eta,spp(ii)%go,spp(ii)%etao)
-
-				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
-				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
-									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
-			CASE ('HOLLMANN')
-				call get_Hollmann_distribution(params,spp(ii)%vars%g,spp(ii)%vars%eta,spp(ii)%go,spp(ii)%etao)
-
-				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
-				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
-									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
-			CASE ('EXPERIMENTAL-GAMMA')
-				call get_experimentalG_distribution(params,spp(ii)%vars%g,spp(ii)%vars%eta,spp(ii)%go,spp(ii)%etao)
-
-				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
-				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
-									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
-			CASE ('GAMMA')
-				call get_gamma_distribution(params,spp(ii)%vars%g,spp(ii)%go)
-
-				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
-				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
-									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
-			CASE ('UNIFORM')
-				spp(ii)%Eo_lims = Eo_lims((ii-1_idef)*2_idef + 1_idef:2_idef*ii)*C_E
-				spp(ii)%Eo = spp(ii)%Eo_lims(1)
-				spp(ii)%go = (spp(ii)%Eo + spp(ii)%m*C_C**2)/(spp(ii)%m*C_C**2)
-
-				call generate_2D_hammersley_sequence(params%mpi_params%rank,params%mpi_params%nmpi,spp(ii)%vars%g,spp(ii)%vars%eta)
-
-				spp(ii)%vars%g = (spp(ii)%Eo_lims(2) - spp(ii)%Eo_lims(1))*spp(ii)%vars%g/(spp(ii)%m*C_C**2) + &
-									(spp(ii)%Eo_lims(1) + spp(ii)%m*C_C**2)/(spp(ii)%m*C_C**2)
-			CASE DEFAULT
-				! Something to be done
-		END SELECT
-
-		call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-
-		SELECT CASE (TRIM(spp(ii)%pitch_distribution))
-			CASE ('MONOPITCH')
-				spp(ii)%etao = etao(ii)
-
-				spp(ii)%vars%eta = spp(ii)%etao ! Mono-pitch-angle
-				spp(ii)%etao_lims = (/spp(ii)%etao , spp(ii)%etao/)
-			CASE ('THERMAL')
-				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
-			CASE ('AVALANCHE')
-				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
-			CASE ('HOLLMANN')
-				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
-			CASE ('EXPERIMENTAL-GAMMA')
-				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
-			CASE ('UNIFORM')
-				spp(ii)%etao_lims = etao_lims((ii-1_idef)*2_idef + 1_idef:2_idef*ii)
-				spp(ii)%etao = spp(ii)%etao_lims(1)
-
-				spp(ii)%vars%eta = (spp(ii)%etao_lims(2) - spp(ii)%etao_lims(1))*spp(ii)%vars%eta + spp(ii)%etao_lims(1)
-			CASE ('SIMPLE-EQUILIBRIUM')
-				call get_equilibrium_distribution(params,spp(ii)%vars%eta,spp(ii)%go,spp(ii)%etao)
-
-				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
-			CASE DEFAULT
-				! Something to be done
-		END SELECT
-
-		if (params%mpi_params%rank .EQ. 0) then
-			write(6,'(/,"* * * * * SPECIES: ",I2," * * * * * * * * * * *")') ii
-			write(6,'("Energy distribution is: ",A20)') TRIM(spp(ii)%energy_distribution)
-			write(6,'("Pitch-angle distribution is: ",A20)') TRIM(spp(ii)%pitch_distribution)
-			write(6,'("* * * * * * * * * * * * * * * * * * * * * *",/)')
-		end if
-
-		call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-	
-		! Initialize to zero
-		spp(ii)%vars%X = 0.0_rp
-		spp(ii)%vars%V = 0.0_rp
-		spp(ii)%vars%Rgc = 0.0_rp
-		spp(ii)%vars%Y = 0.0_rp
-		spp(ii)%vars%E = 0.0_rp
-		spp(ii)%vars%B = 0.0_rp
-		spp(ii)%vars%mu = 0.0_rp
-		spp(ii)%vars%Prad = 0.0_rp
-		spp(ii)%vars%Pin = 0.0_rp
-		spp(ii)%vars%flag = 1_is
-		spp(ii)%vars%AUX = 0.0_rp
 	end do
+
+	call initial_energy_pitch_dist(params,spp)
 
 	DEALLOCATE(ppp)
 	DEALLOCATE(q)
@@ -433,21 +395,14 @@ subroutine initialize_particles(params,F,spp)
 	DEALLOCATE(falloff_rate)
 end subroutine initialize_particles
 
-
+!> @brief Subroutine with calls to subroutines to load particles' information if it is a restarting simulation, or to initialize the spatial and velocity distribution of each species if it is a new simulation.
+!! @param[in] params Core KORC simulation parameters.
+!! @param[in] F An instance of KORC's derived type FIELDS containing all the information about the fields used in the simulation. See korc_types.f90 and korc_fields.f90.
+!! @param[in,out] spp An instance of KORC's derived type SPECIES containing all the information of different electron species. See korc_types.f90.
 subroutine set_up_particles_ic(params,F,spp) 
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(FIELDS), INTENT(IN) :: F
+	TYPE(KORC_PARAMS), INTENT(IN) 							:: params
+	TYPE(FIELDS), INTENT(IN) 								:: F
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: Vo
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: V1
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: V2
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: V3
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: b1, b2, b3
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: theta ! temporary vars
-	REAL(rp), DIMENSION(3) :: x = (/1.0_rp,0.0_rp,0.0_rp/)
-	REAL(rp), DIMENSION(3) :: y = (/0.0_rp,1.0_rp,0.0_rp/)
-	REAL(rp), DIMENSION(3) :: z = (/0.0_rp,0.0_rp,1.0_rp/)
-	INTEGER :: ii,jj ! Iterator
 
 	if (params%restart) then
 		call load_particles_ic(params,spp)

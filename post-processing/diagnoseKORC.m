@@ -50,18 +50,18 @@ ST = loadData(ST);
 
 % calculateTemperatureComponents(ST);
 
-% SE_phaseSpaceAnalisys(ST);
+SE_phaseSpaceAnalisys(ST);
 
 % plotEnergyPitchanglePDF(ST);
 
-figuresAPS2017(ST);
+% figuresAPS2017(ST);
 
 % NIMROD_figure(ST);
 
 % ST.M = movieEnergyPitchAngle(ST);
 
 % pitchAnglePDFSlices(ST)
-
+% 
 % PAE_PDF(ST);
 
 % pitchAnglePDFSlicesVsTime(ST)
@@ -3073,7 +3073,7 @@ end
 function subPhaseSpaceAnalysis(ST)
 Np = 150;
 Neta = 200;
-minLevel = -3;
+minLevel = -5;
 numLevels = 10;
 
 g = @(p) sqrt(p.^2 + 1);
@@ -3159,6 +3159,7 @@ for ii=1:numel(scales)
     etamin = xo - x1*scales(ii);
     etamax = xo + x2*scales(ii);
     pmin = yo - y2*scales(ii);
+%     pmax = yo + y1*scales(ii);
     pmax = yo + y1;
     
     boundaryBox(1,:,ii) = [etamin etamax etamax etamin etamin];
@@ -4108,7 +4109,7 @@ hatE = ST.params.pdf_params.E;
 Zeff = ST.params.pdf_params.Zeff;
 
 % Here p is normalized by mc and eta is in radians
-A = @(E,Z,p) 5*2*E*p.^2./((Z+1)*sqrt(p.^2 + 1));
+A = @(E,Z,p) 2*E*p.^2./((Z+1)*sqrt(p.^2 + 1));
 ft = @(E,Z,p,t) 0.5*A(E,Z,p).*exp(A(E,Z,p).*cos(t))./sinh(A(E,Z,p));
 
 for ss=1:ST.params.simulation.num_species
@@ -4342,7 +4343,7 @@ hatE = ST.params.pdf_params.E;
 Zeff = ST.params.pdf_params.Zeff;
 
 % Here p is normalized by mc and eta is in radians
-A = @(E,Z,p) 7*2*E*p.^2./((Z+1)*sqrt(p.^2 + 1));
+A = @(E,Z,p) 2*E*p.^2./((Z+1)*sqrt(p.^2 + 1));
 ft = @(E,Z,p,t) 0.5*A(E,Z,p).*exp(A(E,Z,p).*cos(t))./sinh(A(E,Z,p));
 
 mean_pitch = zeros(1,NE);

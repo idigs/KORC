@@ -17,9 +17,9 @@ ST.time = ...
 
 ST.data = loadData(ST);
 
-plotCameraSnapshots(ST);
+% plotCameraSnapshots(ST);
 
-picsAnalysis(ST);
+% picsAnalysis(ST);
 
 svdAnalysis(ST);
 
@@ -677,6 +677,7 @@ for ss=1:ST.params.simulation.num_species
     [~,Ic(4)] = min(abs(yAxisc - axisPic(4)));
     
     A = Af(I(3):I(4),I(1):I(2));
+    A = A/norm(A,'fro');
     xAxisA = xAxis(I(1):I(2));yAxisA = yAxis(I(3):I(4));
     NX = numel(xAxisA);
     NY = numel(yAxisA);
@@ -689,22 +690,69 @@ for ss=1:ST.params.simulation.num_species
     Bq = interp2(X,Y,B,Xq,Yq,'linear',0);
     Bq = Bq/norm(Bq,'fro');
     
+    [UA,SA,VA] = svd(A);
+    [UBq,SBq,VBq] = svd(Bq);
+    
     % SVD analysis starts here
     rankA = rank(A);
     rankBq = rank(Bq);
+    figuv = figure;
     for ll=1:numel(rankCamera)
         rankAnalysis = min([rankA rankBq rankCamera(ll)]);
         rankAxis = 1:1:rankAnalysis;
         
-        [UA,SA,VA] = svd(A);
-        [UBq,SBq,VBq] = svd(Bq);
+        fx = VA(:,ll)/trapz(xAxisA,VA(:,ll));
+        fy = UA(:,ll)/trapz(yAxisA,UA(:,ll));
+        
+        cfx = VBq(:,ll)/trapz(xAxisA,VBq(:,ll));
+        cfy = UBq(:,ll)/trapz(yAxisA,UBq(:,ll));
+        
+        mx = trapz(xAxisA,xAxisA.*fx);
+        sx = sqrt(trapz(xAxisA,(xAxisA - mx).^2.*fx));
+        my = trapz(yAxisA,yAxisA.*fy);
+        sy = sqrt(trapz(yAxisA,(yAxisA - my).^2.*fy));
+        
+        cmx = trapz(xAxisA,xAxisA.*cfx);
+        csx = sqrt(trapz(xAxisA,(xAxisA - cmx).^2.*cfx));
+        cmy = trapz(yAxisA,yAxisA.*cfy);
+        csy = sqrt(trapz(yAxisA,(yAxisA - cmy).^2.*cfy));
+        
+        figure(figuv)
+        if trapz(VA(:,ll)) < 0
+            subplot(numel(rankCamera)+1,2,2*(ll-1)+1)
+            plot(xAxisA,-VA(:,ll),'LineWidth',1)
+            subplot(numel(rankCamera)+1,2,2*(ll-1)+2)
+            plot(yAxisA,-UA(:,ll),'LineWidth',1)
+        else
+            subplot(numel(rankCamera)+1,2,2*(ll-1)+1)
+            plot(xAxisA,VA(:,ll),'LineWidth',1)
+            subplot(numel(rankCamera)+1,2,2*(ll-1)+2)
+            plot(yAxisA,UA(:,ll),'LineWidth',1)
+        end
+        subplot(numel(rankCamera)+1,2,2*(ll-1)+1)
+        box on; grid minor;
+        ylabel(['$v^{(' num2str(rankCamera(ll)) ')}(R)$'],'FontSize',12,'Interpreter','latex')
+        xlabel('$R$ (m)','FontSize',12,'Interpreter','latex')
+        subplot(numel(rankCamera)+1,2,2*(ll-1)+2)
+        box on; grid minor;
+        ylabel(['$u^{(' num2str(rankCamera(ll)) ')}(Z)$'],'FontSize',12,'Interpreter','latex')
+        xlabel('$Z$ (m)','FontSize',12,'Interpreter','latex')
+        
+        figure(figuv)
+        subplot(numel(rankCamera)+1,2,2*numel(rankCamera)+1)
+        hold on;plot(rankCamera(ll),cmx-mx,'ks',rankCamera(ll),cmy-my,'rx');hold off
+        box on;xlim([0 numel(rankCamera)+1]);
+        subplot(numel(rankCamera)+1,2,2*numel(rankCamera)+2)
+        hold on;plot(rankCamera(ll),csx-sx,'ks',rankCamera(ll),csy-sy,'rx');hold off
+        box on;xlim([0 numel(rankCamera)+1]);
+        
         
         diagSA = diag(SA);
         diagSBq = diag(SBq);
         
         % Here A and Bq are re-calculated
         Q = UA(:,1:rankAnalysis)*SA(1:rankAnalysis,1:rankAnalysis)*VA(:,1:rankAnalysis)';
-        Q = Q/norm(Q,'fro');
+%         Q = Q/norm(Q,'fro');
         
         QBq = UBq(:,1:rankAnalysis)*SBq(1:rankAnalysis,1:rankAnalysis)*VBq(:,1:rankAnalysis)';
         RBq = Bq - QBq;
@@ -828,6 +876,7 @@ for ss=1:ST.params.simulation.num_species
         
         saveas(fig,[ST.path 'svdAnalysis_k' num2str(rankAnalysis) '_' num2str(ss)],'fig')
     end
+    saveas(figuv,[ST.path 'axis_projections_' num2str(ss)],'fig')
 end
 
 end

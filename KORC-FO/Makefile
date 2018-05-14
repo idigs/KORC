@@ -102,9 +102,9 @@ korc_profiles.o   \
 korc_avalanche.o        \
 korc_experimental_pdf.o	\
 korc_energy_pdfs.o	\
+korc_simple_equilibrium_pdf.o	\
 korc_spatial_distribution.o \
 korc_velocity_distribution.o \
-korc_simple_equilibrium_pdf.o	\
 korc_initialize.o       \
 korc_finalize.o \
 korc_units.o    \

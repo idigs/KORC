@@ -21,13 +21,13 @@ time = fastcam.time(movieBins)/1E3-in.tShift/1E3;
 % time3 = 2.5;
 
 % Shot 165826
-% time1 = 0.15;
-% time2 = 2.0;
-% time3 = 2.3;
+time1 = 0.15;
+time2 = 2.0;
+time3 = 2.3;
 
-time1 = 1.25;
-time2 = 1.5;
-time3 = 1.7;
+% time1 = 1.25;
+% time2 = 1.5;
+% time3 = 1.7;
 
 it1 = find(time>time1,1);
 it2 = find(time>time2,1);

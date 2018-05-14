@@ -7,10 +7,16 @@ MODULE korc_velocity_distribution
     use korc_rnd_numbers
 	use korc_hammersley_generator
 
+	use korc_avalanche ! external module
+	use korc_experimental_pdf ! external module
+	use korc_energy_pdfs ! external module
+	use korc_simple_equilibrium_pdf ! external module
+
 	IMPLICIT NONE
 
 	PUBLIC :: initial_velocity_distribution,&
-				thermal_distribution
+				thermal_distribution,&
+				initial_energy_pitch_dist
 	PRIVATE :: fth_3V,&
 				fth_1V,&
 				random_norm,&
@@ -132,6 +138,97 @@ subroutine thermal_distribution(params,spp)
 	spp%go = spp%Eo/(spp%m*C_C**2)
 	spp%etao = 90.0_rp
 end subroutine thermal_distribution
+
+
+subroutine initial_energy_pitch_dist(params,spp)
+TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
+	INTEGER :: ii, mpierr ! Iterator
+
+	do ii=1_idef,params%num_species
+		SELECT CASE (TRIM(spp(ii)%energy_distribution))
+			CASE ('MONOENERGETIC')
+				spp(ii)%go = (spp(ii)%Eo + spp(ii)%m*C_C**2)/(spp(ii)%m*C_C**2)
+
+				spp(ii)%vars%g = spp(ii)%go ! Monoenergetic
+				spp(ii)%Eo_lims = (/spp(ii)%Eo, spp(ii)%Eo /)
+			CASE ('THERMAL')
+				call thermal_distribution(params,spp(ii))
+
+				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2, &
+									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
+			CASE ('AVALANCHE')
+				call get_avalanche_distribution(params,spp(ii)%vars%g,spp(ii)%vars%eta,spp(ii)%go,spp(ii)%etao)
+
+				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
+				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2, &
+									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
+			CASE ('HOLLMANN')
+				call get_Hollmann_distribution(params,spp(ii)%vars%g,spp(ii)%vars%eta,spp(ii)%go,spp(ii)%etao)
+
+				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
+				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2, &
+									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
+			CASE ('EXPERIMENTAL-GAMMA')
+				call get_experimentalG_distribution(params,spp(ii)%vars%g,spp(ii)%vars%eta,spp(ii)%go,spp(ii)%etao)
+
+				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
+				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2, &
+									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
+			CASE ('GAMMA')
+				call get_gamma_distribution(params,spp(ii)%vars%g,spp(ii)%go)
+
+				spp(ii)%Eo = spp(ii)%m*C_C**2*spp(ii)%go - spp(ii)%m*C_C**2
+				spp(ii)%Eo_lims = (/spp(ii)%m*C_C**2*MINVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 , &
+									spp(ii)%m*C_C**2*MAXVAL(spp(ii)%vars%g) - spp(ii)%m*C_C**2 /)
+			CASE ('UNIFORM')
+				spp(ii)%Eo = spp(ii)%Eo_lims(1)
+				spp(ii)%go = (spp(ii)%Eo + spp(ii)%m*C_C**2)/(spp(ii)%m*C_C**2)
+
+				call generate_2D_hammersley_sequence(params%mpi_params%rank,params%mpi_params%nmpi,spp(ii)%vars%g,spp(ii)%vars%eta)
+
+				spp(ii)%vars%g = (spp(ii)%Eo_lims(2) - spp(ii)%Eo_lims(1))*spp(ii)%vars%g/(spp(ii)%m*C_C**2) + &
+									(spp(ii)%Eo_lims(1) + spp(ii)%m*C_C**2)/(spp(ii)%m*C_C**2)
+			CASE DEFAULT
+				! Something to be done
+		END SELECT
+
+		call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+
+		SELECT CASE (TRIM(spp(ii)%pitch_distribution))
+			CASE ('MONOPITCH')
+				spp(ii)%vars%eta = spp(ii)%etao ! Mono-pitch-angle
+				spp(ii)%etao_lims = (/spp(ii)%etao , spp(ii)%etao/)
+			CASE ('THERMAL')
+				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
+			CASE ('AVALANCHE')
+				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
+			CASE ('HOLLMANN')
+				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
+			CASE ('EXPERIMENTAL-GAMMA')
+				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
+			CASE ('UNIFORM')
+				spp(ii)%etao = spp(ii)%etao_lims(1)
+
+				spp(ii)%vars%eta = (spp(ii)%etao_lims(2) - spp(ii)%etao_lims(1))*spp(ii)%vars%eta + spp(ii)%etao_lims(1)
+			CASE ('SIMPLE-EQUILIBRIUM')
+				call get_equilibrium_distribution(params,spp(ii)%vars%eta,spp(ii)%go,spp(ii)%etao)
+
+				spp(ii)%etao_lims = (/MINVAL(spp(ii)%vars%eta), MAXVAL(spp(ii)%vars%eta)/)
+			CASE DEFAULT
+				! Something to be done
+		END SELECT
+
+		if (params%mpi_params%rank .EQ. 0) then
+			write(6,'(/,"* * * * * SPECIES: ",I2," * * * * * * * * * * *")') ii
+			write(6,'("Energy distribution is: ",A20)') TRIM(spp(ii)%energy_distribution)
+			write(6,'("Pitch-angle distribution is: ",A20)') TRIM(spp(ii)%pitch_distribution)
+			write(6,'("* * * * * * * * * * * * * * * * * * * * * *",/)')
+		end if
+
+		call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+	end do
+end subroutine initial_energy_pitch_dist
 
 
 subroutine gyro_distribution(params,F,spp)
