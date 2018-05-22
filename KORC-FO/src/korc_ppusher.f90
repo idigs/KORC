@@ -77,6 +77,11 @@ subroutine advance_particles_velocity(params,F,P,spp,dt,bool)
 	REAL(rp), DIMENSION(3) :: Frad, Fcoll
 	REAL(rp), DIMENSION(3) :: vec, b_unit ! diagnostics and temporary variables
 	INTEGER :: ii, pp ! Iterators
+    LOGICAL :: ss_collisions    ! Whether we're using single-species collisions
+    
+    
+	! Determine whether we are using a single-species collision model
+	ss_collisions = (TRIM(params%collisions_model) .EQ. 'SINGLE_SPECIES')
 
 	do ii = 1_idef,params%num_species
 
@@ -86,7 +91,7 @@ subroutine advance_particles_velocity(params,F,P,spp,dt,bool)
 
 	    a = spp(ii)%q*dt/spp(ii)%m
 
-!$OMP PARALLEL DO SHARED(params,ii,spp) FIRSTPRIVATE(a,dt,bool)&
+!$OMP PARALLEL DO SHARED(params,ii,spp,ss_collisions) FIRSTPRIVATE(a,dt,bool)&
 !$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gp,sigma,us,g,t,s,Frad,Fcoll,U_RC,U_os,tmp,b_unit,B,vpar,v,vperp,vec,Prad)
 		do pp=1_idef,spp(ii)%ppp
 			if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
@@ -123,7 +128,7 @@ subroutine advance_particles_velocity(params,F,P,spp,dt,bool)
 				U = U_L + U_RC - U
 
 				! ! ! Stochastic differential equations for including collisions
-				if (params%collisions .AND. (TRIM(params%collisions_model) .EQ. 'SINGLE_SPECIES')) then		
+				if (params%collisions .AND. ss_collisions) then
 					call include_CoulombCollisions(params,U,spp(ii)%vars%ne(pp),spp(ii)%vars%Te(pp),spp(ii)%vars%Zeff(pp))
 				end if
 				! ! ! Stochastic differential equations for including collisions

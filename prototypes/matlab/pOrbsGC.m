@@ -44,7 +44,7 @@ function ST = pOrbsGC(pathToBField,fileType,ND,res,timeStepParams,tracerParams,x
 %
 % EXAMPLES:
 % USING ANALYTICAL MAGNETIC FIELD
-% ST = pOrbsGC('','','2D',[],[1E4,2.5E-2,100,500],[-1,1],[1.15,0,0],[15E6,10],false);
+% ST = pOrbsGC('','','2D',[],[1E4,2.5E-2,100,500],[-1,1],[1.5,0.0,0.3],[15E6,10],false);
 % USING TABULATED FIELDS OF THE ANALYTICAL MAGNETIC FIELD
 % ST = pOrbs('fields/CHEBYSHEV.dat','VMEC','2D',[60,60],[1E3,1.16E-2,10],[2,7.2938E3],[6,0,-1],[-0.03,80]);
 % USING XPAND FILES OF ITER FIELDS
@@ -66,7 +66,6 @@ function ST = pOrbsGC(pathToBField,fileType,ND,res,timeStepParams,tracerParams,x
 % ST = pOrbs(name,'SIESTA','3D',[100,79,149],[5E1,1E-2,20,1E-3],[-1,1],[1.5,0,-0.5],[40E6,10]);
 % USING RAW FILES
 % ST = pOrbs('jfit_165365_1400.mat','RAW','2D',[],[1E5,1E-2,10],[-1,1],[1.82,0,-0.4928],[0.99,70]);
-
 % name = 'xpand_iter3D_sc4_bet015_I87_hi_acc';
 % ST = pOrbs(name,'XPANDER','3D',[150,100,150],[1E4,1E-2,10,1E-3],[-1,1],[6.5,0,0],[1E6,5],true);
 narginchk(8,9);
@@ -105,7 +104,7 @@ ST.params.me = 9.109382E-31; % Electron mass
 % Electric and magneticfield
 ST.E = [0,0,0];
 if ST.analytical
-    [ST.B,~] = analyticalB([1,1,1],true);
+    ST.B = analyticalB([1,1,1],true,true);
     ST.Bo = ST.B.Bo;
 else
     ST.B = loadMagneticField(ST,false);
@@ -178,6 +177,8 @@ ST.cOp = initializeCollisionOperators(ST);
 
 ST.PP = particlePusherLeapfrog(ST,false,false);
 
+% ST.GC = particlePusherGC(ST,false,false);
+
 % Particle pusher using matlab ODEs solvers
 % ST.PP = particlePusherMatlab(ST); % (Un)comment this line as required
 % Particle pusher using matlab ODEs solvers
@@ -229,7 +230,7 @@ function [b1,b2,b3] = unitVectors(ST,Xo)
 % field.
 
 if ST.analytical
-    [B,~] = analyticalB(Xo,false);
+    B = analyticalB(Xo,false,true);
     b = B/sqrt(sum(B.^2));
 else
     B = interpMagField(ST,Xo);
@@ -796,7 +797,7 @@ end
 
 end
 
-function [B,vxDBDt] = analyticalB(X,opt,V)
+function B = analyticalB_(X,opt)
 % Analytical magnetic field
 % X is a vector X(1)=x, X(2)=y, X(3)=z.
 % V is the particle's velocity in cartesian components V(1) = Vx, V(2) =
@@ -805,14 +806,8 @@ function [B,vxDBDt] = analyticalB(X,opt,V)
 narginchk(1,3);
 
 % Parameters of the analytical magnetic field
-% ITER
-% Bo = 5.3;
-% Ro = 6.2; % Major radius in meters.
-% a = 2.0;% Minor radius in meters.
-% qa = 3.0; % Safety factor at the separatrix (r=a)
-% qo = 2; % Safety factor at the magnetic axis.
-
 % DIII-D
+jpb = 1;
 Bo = 2.19;
 Ro = 1.5; % Major radius in meters.
 a = 0.5;% Minor radius in meters.
@@ -832,6 +827,17 @@ if opt == true
     B.qo = qo;
     B.lamb = lamb;
     B.Bpo = Bpo;
+    B.jpb = jpb;
+    if (Bo > 0)
+        disp('The toroidal magnetic field rotates clockwise')
+    else
+        disp('The toroidal magnetic field rotates counterclockwise')
+    end
+    if (jpb > 0)
+        disp('The plasma current is parallel to the toroidal magnetic field')
+    else
+        disp('The plasma current is anti-parallel to the toroidal magnetic field')
+    end
     disp(['q-factor at magnetic axis: ' num2str(qo)])
 else
     % Toroidal coordinates
@@ -847,24 +853,12 @@ else
     end
     % Toroidal coordinates
     
-    % Poloidal magnetic field
-    % Minus sign = TEXTOR
-    % Plus sign = default
-    % Bp = poloidal magnetic field
-    % Bt = toroidal magnetic field
-    
     q = qo*(1 + (r/lamb)^2);
-%     q = qo;
     eta = r/Ro;
     R = Ro*(1 + eta*cos(theta));
-    Btheta = eta*Bo/(q*(1 + eta*cos(theta)));
+    Btheta = jpb*eta*Bo/(q*(1 + eta*cos(theta)));
     Bzeta = Bo/( 1 + eta*cos(theta) );
-    
-    % only toroidal magnetic field
-%     Bp = Bo/(1 + eta*cos(theta));
-%     Bt = 0;
-    
-    
+        
     Bx = Bzeta*cos(zeta) - Btheta*sin(theta)*sin(zeta);
     By = -Bzeta*sin(zeta) - Btheta*sin(theta)*cos(zeta);
     Bz = Btheta*cos(theta);
@@ -872,53 +866,81 @@ else
     B = [Bx,By,Bz];
 end
 
-if (nargin == 3)
-    drdx = cos(theta)*sin(zeta);
-    drdy = cos(theta)*cos(zeta);
-    drdz = sin(theta);
-    
-    dthetadx = -sin(theta)*sin(zeta)/r;
-    dthetady = -sin(theta)*cos(zeta)/r;
-    dthetadz = cos(theta)/r;
-    
-    dzetadx = cos(zeta)/R;
-    dzetady = -sin(zeta)/R;
-    dzetadz = 0;
-    
-    Cr = V(1)*drdx + V(2)*drdy + V(3)*drdz;
-    Ctheta = V(1)*dthetadx + V(2)*dthetady + V(3)*dthetadz;
-    Czeta = V(1)*dzetadx + V(2)*dzetady + V(3)*dzetadz;
-    
-    dBzetadr = -Bo*Ro*cos(theta)/R^2;
-    dBzetadtheta = sin(theta)*eta*Bo*(Ro/R)^2;
-    
-    dqdr = 2*qo*r/lamb^2;
-    
-    dBthetadr = Bo/(q*R) - r*Bo*cos(theta)/(q*R^2) - r*Bo*dqdr/(q^2*R);
-    dBthetadtheta = eta^2*Bo*sin(theta)/(q*R^2);
-    
-    dBdr = [-sin(theta)*sin(zeta)*dBthetadr + cos(zeta)*dBzetadr,...
-        -sin(theta)*cos(zeta)*dBthetadr - sin(zeta)*dBzetadr,...
-        cos(theta)*dBthetadr];
-    
-    dBdtheta = [-cos(theta)*sin(zeta)*Btheta - sin(theta)*sin(zeta)*dBthetadtheta + cos(zeta)*dBzetadtheta,...
-        -cos(theta)*cos(zeta)*Btheta - sin(theta)*cos(zeta)*dBthetadtheta - sin(zeta)*dBzetadtheta,...
-        sin(theta)*Btheta + cos(theta)*dBthetadtheta];
-    
-    dBdzeta = [-cos(zeta)*sin(theta)*Btheta - sin(zeta)*Bzeta,...
-        sin(theta)*sin(zeta)*Btheta - cos(zeta)*Bzeta,...
-        0];
-    
-    DBDt = Cr*dBdr + Ctheta*dBdtheta + Czeta*dBdzeta;
-    
-    vxDBDt = cross(V,DBDt);
+end
+
+function B = analyticalB(X,init,coordsys)
+% Analytical magnetic field
+% X is a vector X(1)=x, X(2)=y, X(3)=z.
+% coordsys = true (Cartesian), coordsys = false (Cylindrical)
+
+narginchk(2,3);
+
+% Parameters of the analytical magnetic field
+% DIII-D
+jpb = 1;
+Ro = 1.5; % Major radius in meters.
+Zo = 0;
+Bo = 2.19;
+a = 0.5;% Minor radius in meters.
+qa = 5.0; % Safety factor at the separatrix (r=a)
+qo = 1.0; % Safety factor at the magnetic axis.
+
+lamb = a/sqrt(qa/qo - 1);
+Bpo = lamb*Bo/(qo*Ro);
+% Parameters of the analytical magnetic field
+
+if init == true
+    B = struct;
+    B.Bo = Bo;
+    B.a = a;% 0.6;% Minor radius in meters.
+    B.Ro = Ro; % Major radius in meters.
+    B.qa = qa; % Safety factor at the separatrix (r=a)
+    B.qo = qo;
+    B.lamb = lamb;
+    B.Bpo = Bpo;
+    B.jpb = jpb;
+    if (Bo > 0)
+        disp('The toroidal magnetic field rotates clockwise')
+    else
+        disp('The toroidal magnetic field rotates counterclockwise')
+    end
+    if (jpb > 0)
+        disp('The plasma current is parallel to the toroidal magnetic field')
+    else
+        disp('The plasma current is anti-parallel to the toroidal magnetic field')
+    end
+    disp(['q-factor at magnetic axis: ' num2str(qo)])
 else
-    vxDBDt = [0,0,0];
+%     Cylindrical coordinates
+    if coordsys
+        R = sqrt(X(1)^2 + X(2)^2);
+        phi = atan2(X(2),X(1));
+        if (phi < 0)
+            phi = phi + 2*pi;
+        end
+        Z = X(3);
+    else
+        R = X(1);
+        phi = X(2);
+        Z = X(3);
+    end
+%     Cylindrical coordinates
+    
+    q = (qo/lamb^2)*(lamb^2 + (R-Ro)^2 + (Z-Zo)^2);
+    BR = -jpb*Bo*(Z-Zo)/(q*R);
+    Bphi = -Ro*Bo/R;
+    BZ = jpb*Bo*(R-Ro)/(q*R);
+    
+    Bx = BR*cos(phi) - Bphi*sin(phi);
+    By = BR*sin(phi) + Bphi*cos(phi);
+    Bz = BZ;
+    
+    B = [Bx,By,Bz];
 end
 
 end
 
-function [E,DEDt] = analyticalE(B,X,V)
+function E = analyticalE_(B,X)
 % Analytical magnetic field
 % X is a vector X(1)=x, X(2)=y, X(3)=z.
 % V is the particle's velocity in cartesian components V(1) = Vx, V(2) =
@@ -954,38 +976,45 @@ Ey = -Ezeta*sin(zeta);
 Ez = 0;
 
 E = [Ex,Ey,Ez];
-
-if (nargin == 3)
-    drdx = cos(theta)*sin(zeta);
-    drdy = cos(theta)*cos(zeta);
-    drdz = sin(theta);
-    
-    dthetadx = -sin(theta)*sin(zeta)/r;
-    dthetady = -sin(theta)*cos(zeta)/r;
-    dthetadz = cos(theta)/r;
-    
-    dzetadx = cos(zeta)/R;
-    dzetady = -sin(zeta)/R;
-    dzetadz = 0;
-    
-    Cr = V(1)*drdx + V(2)*drdy + V(3)*drdz;
-    Ctheta = V(1)*dthetadx + V(2)*dthetady + V(3)*dthetadz;
-    Czeta = V(1)*dzetadx + V(2)*dzetady + V(3)*dzetadz;
-    
-    dEzetadr = -Eo*Ro*cos(theta)/R^2;
-    dEzetadtheta = sin(theta)*eta*Eo*(Ro/R)^2;
-    
-    dEdr = [cos(zeta)*dEzetadr,-sin(zeta)*dEzetadr,0];
-    
-    dEdtheta = [cos(zeta)*dEzetadtheta,-sin(zeta)*dEzetadtheta,0];
-    
-    dEdzeta = [-sin(zeta)*Ezeta,-cos(zeta)*Ezeta,0];
-    
-    DEDt = Cr*dEdr + Ctheta*dEdtheta + Czeta*dEdzeta;
-else
-    DEDt = [0,0,0];
 end
 
+function E = analyticalE(B,X,coordsys)
+% Analytical magnetic field
+% X is a vector X(1)=x, X(2)=y, X(3)=z.
+% V is the particle's velocity in cartesian components V(1) = Vx, V(2) =
+% Vy, V(3) = Vz.
+
+narginchk(2,3);
+
+% Parameters of the analytical magnetic field
+Eo = 0.0; % in V/m
+Ro = B.Ro; % Major radius in meters.
+% Parameters of the analytical magnetic field
+
+% Cylindrical coordinates
+if coordsys
+    R = sqrt(X(1)^2 + X(2)^2);
+    phi = atan2(X(2),X(1));
+    if (phi < 0)
+        phi = phi + 2*pi;
+    end
+    Z = X(3);
+else
+    R = X(1);
+    phi = X(2);
+    Z = X(3);
+end
+% Cylindrical coordinates
+
+ER = 0;
+Ephi = -Ro*Eo/R;
+EZ = 0;
+
+Ex = ER*cos(phi) - Ephi*sin(phi);
+Ey = ER*sin(phi) + Ephi*cos(phi);
+Ez = EZ;
+
+E = [Ex,Ey,Ez];
 end
 
 % Monte-Calor collision operators
@@ -1011,7 +1040,7 @@ cOp.Ec = cOp.ne*ST.params.qe^3*cOp.Clog/(4*pi*ST.params.ep^2*ST.params.me*ST.par
 disp(['Relativistic collisional time: ' num2str(cOp.Tau) ' s'])
 disp(['Thermal collisional time: ' num2str(cOp.Tauc) ' s'])
 
-[Ef,~] = analyticalE(ST.B,[ST.B.Ro,0,0]);
+Ef = analyticalE(ST.B,[ST.B.Ro,0,0],true);
 cOp.Vc = cOp.VTe*sqrt(0.5*cOp.Ec/sqrt(Ef*Ef'));
 
 g = linspace(1,1.03,200);
@@ -1261,17 +1290,13 @@ v(1,:) = ST.params.vo/ST.norm.v;
 q = ST.params.q/ST.norm.q;
 m = ST.params.m/ST.norm.m;
 if ST.analytical
-    [B,vxDBDt] = analyticalB(X(1,:)*ST.norm.l,false,v(1,:)*ST.norm.v);
+    B = analyticalB(X(1,:)*ST.norm.l,false,true);
     B = B/ST.norm.B;
-    vxDBDt = vxDBDt*ST.norm.t/(ST.norm.B*ST.norm.v);
-    [E,DEDt] = analyticalE(ST.B,X(1,:)*ST.norm.l,v(1,:)*ST.norm.v);
+    E = analyticalE(ST.B,X(1,:)*ST.norm.l,true);
     E = E/ST.norm.E;
-    DEDt = DEDt*ST.norm.t/ST.norm.E;
 else
     B = interpMagField(ST,X(1,:)*ST.norm.l)/ST.norm.B;
     E = [0,0,0];
-    DEDt = [0,0,0];
-    vxDBDt = [0,0,0];
 end
 % dt = ST.params.dt*ST.norm.wc;
 dt = ST.params.dt/ST.norm.t;
@@ -1314,7 +1339,7 @@ curv = k(1);
 if rad
     Psyn(1) = -(2/3)*( Kc*q^2*gamma^4*vmag^4*curv^2 );
     
-    F1 = ( q^2*gamma/(6*pi*ep*m) )*(DEDt + vxDBDt);
+    F1 = 0;
     F2 = ( q^3/(6*pi*ep*m^2) )*( (E*v(1,:)')*E + cross(E,B) +...
         cross(B,cross(B,v(1,:))) );
     vec = E + cross(v(1,:),B);
@@ -1346,14 +1371,12 @@ for ii=2:ST.params.numSnapshots
     for jj=1:ST.params.cadence
         
         if ST.analytical
-            [B,vxDBDt] = analyticalB(XX*ST.norm.l,false,V*ST.norm.v);
-            B = B/ST.Bo;
-            vxDBDt = vxDBDt*ST.norm.t/(ST.Bo*ST.norm.v);
-            [E,DEDt] = analyticalE(ST.B,XX*ST.norm.l,V*ST.norm.v);
-            E = E/(ST.Bo*ST.norm.v);
-            DEDt = DEDt*ST.norm.t/(ST.Bo*ST.norm.v);
+            B = analyticalB(XX*ST.norm.l,false,true);
+            B = B/ST.norm.B;
+            E = analyticalE(ST.B,XX*ST.norm.l,true);
+            E = E/ST.norm.E;
         else
-            B = interpMagField(ST,XX*ST.norm.l)/ST.Bo;
+            B = interpMagField(ST,XX*ST.norm.l)/ST.norm.B;
         end
         
         U_R = U;
@@ -1388,7 +1411,7 @@ for ii=2:ST.params.numSnapshots
             gamma_eff = sqrt(1 + U_eff*U_eff');
             V_eff = U_eff/gamma_eff;
             
-            F1 = ( q^2*gamma_eff/(6*pi*ep*m) )*(DEDt + vxDBDt);
+            F1 = 0;
             F2 = ( q^3/(6*pi*ep*m^2) )*( (E*V_eff')*E + cross(E,B) +...
                 cross(B,cross(B,V_eff)) );
             vec = E + cross(V_eff,B);
@@ -1686,6 +1709,92 @@ end
 if ST.opt
     disp('Particle pusher: done!')
 end
+end
+
+% Guiding-center
+
+function GC = particlePusherGC(ST,coll,rad)
+% Relativistic particle pusher for the guiding-center
+GC = struct;
+
+GC.method = 'RK-Matlab';
+
+X = zeros(ST.params.numIt,3); % (it,ii), ii=R,phi,Z
+g = zeros(1,ST.params.numIt);
+ppar = zeros(1,ST.params.numIt);
+pper = zeros(1,ST.params.numIt);
+
+% Normalization
+Xo = ST.params.Xo/ST.norm.l;
+X(1,1) = sqrt(Xo(1)^2 + Xo(2)^2);
+X(1,2) = atan2(Xo(2),Xo(1));
+if (X(1,2) < 0)
+    X(1,2) = X(1,2) + 2*pi;
+end
+X(1,3) = Xo(3);
+
+v(1,:) = ST.params.vo/ST.norm.v;
+q = ST.params.q/ST.norm.q;
+m = ST.params.m/ST.norm.m;
+
+B = analyticalB(X(1,:)*ST.norm.l,false,false)/ST.norm.B;
+
+
+u(1,:) = v(1,:)/sqrt(1 - sum(v(1,:).^2));
+v(1,:) = u(1,:)/sqrt(1 + sum(u(1,:).^2));
+
+options = odeset('RelTol',1E-6,'AbsTol',1E-10);%,'Stats','on','OutputFcn',@odeplot)
+% options = odeset('RelTol',1E-3,'AbsTol',1E-6);%,'Stats','on','OutputFcn',@odeplot)
+
+tspan = ST.time*ST.norm.wc;
+y0 = [X(1,:),u(1,:)];
+
+if ST.analytical
+    [~,y] = ode45(@(t,y) LorentzForce(t,y,q,m,ST.norm.l,ST.Bo,E),tspan,y0,options);  % NONSTIFF PROBLEM
+else
+    [~,y] = ode45(@(t,y) LorentzForceITER(t,y,q,m,ST.norm.l,ST.Bo,E,ST),tspan,y0,options);  % NONSTIFF PROBLEM
+end
+% [t,y] = ode15s(@(t,y) LorentzForce(t,y,q,m,ST.norm.l,ST.Bo,E),tspan,y0,options); % STIFF PROBLEM
+% [t,y] = ode23t(@(t,y) LorentzForce(t,y,q,m,ST.norm.l,ST.Bo,E),tspan,y0,options);
+% [t,y] = ode23tb(@(t,y) LorentzForce(t,y,q,m,ST.norm.l,ST.Bo,E),tspan,y0,options);
+% [t,y] = ode23s(@(t,y) LorentzForce(t,y,q,m,ST.norm.l,ST.Bo,E),tspan,y0,options);
+
+X = y(:,1:3);
+u = y(:,4:6);
+v(:,1) = u(:,1)./sqrt(1 + sum(u.^2,2));
+v(:,2) = u(:,2)./sqrt(1 + sum(u.^2,2));
+v(:,3) = u(:,3)./sqrt(1 + sum(u.^2,2));
+
+X = X*ST.norm.l;
+
+GC.X = X;
+GC.v = v;
+
+GC.EK = 1./sqrt(1-sum(GC.v.^2,2));
+GC.ERR = 100*(GC.EK(1) - GC.EK)./GC.EK(1);
+
+if ST.opt
+    figure
+    plot3(GC.X(ST.params.inds,1),GC.X(ST.params.inds,2),GC.X(ST.params.inds,3))
+    axis equal
+    xlabel('X','Interpreter','latex','FontSize',16)
+    ylabel('Y','Interpreter','latex','FontSize',16)
+    zlabel('Z','Interpreter','latex','FontSize',16)
+    title(GC.method,'Interpreter','latex','FontSize',16)
+    
+    
+    time = ST.time/(2*pi/ST.params.wc);
+    
+    figure
+    plot(time, GC.ERR)
+    box on
+    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
+    ylabel('Energy conservation [\%]','Interpreter','latex','FontSize',16)
+    title(GC.method,'Interpreter','latex','FontSize',16)
+end
+
+GC.v = GC.v*ST.norm.v;
+
 end
 
 % MATLAB PARTICLE PUSHER
