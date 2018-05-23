@@ -175,9 +175,9 @@ ST.time = ST.time;%/(2*pi/ST.params.wc);
 
 ST.cOp = initializeCollisionOperators(ST);
 
-ST.PP = particlePusherLeapfrog(ST,false,false);
+% ST.PP = particlePusherLeapfrog(ST,false,false);
 
-% ST.GC = particlePusherGC(ST,false,false);
+ST.GC = particlePusherGC(ST,false,false);
 
 % Particle pusher using matlab ODEs solvers
 % ST.PP = particlePusherMatlab(ST); % (Un)comment this line as required
@@ -868,12 +868,12 @@ end
 
 end
 
-function B = analyticalB(X,init,coordsys)
+function [B,Bstar,E,Estar] = analyticalB(X,init,coordsys,q,mu,ppar,G)
 % Analytical magnetic field
 % X is a vector X(1)=x, X(2)=y, X(3)=z.
 % coordsys = true (Cartesian), coordsys = false (Cylindrical)
 
-narginchk(2,3);
+narginchk(3,7);
 
 % Parameters of the analytical magnetic field
 % DIII-D
@@ -884,6 +884,9 @@ Bo = 2.19;
 a = 0.5;% Minor radius in meters.
 qa = 5.0; % Safety factor at the separatrix (r=a)
 qo = 1.0; % Safety factor at the magnetic axis.
+
+% Parameters of the analytical electric field
+Eo = 0.0;
 
 lamb = a/sqrt(qa/qo - 1);
 Bpo = lamb*Bo/(qo*Ro);
@@ -926,16 +929,78 @@ else
     end
 %     Cylindrical coordinates
     
-    q = (qo/lamb^2)*(lamb^2 + (R-Ro)^2 + (Z-Zo)^2);
-    BR = -jpb*Bo*(Z-Zo)/(q*R);
+    % Magnetic field
+    qprof = (qo/lamb^2)*(lamb^2 + (R-Ro)^2 + (Z-Zo)^2);
+    BR = -jpb*Bo*(Z-Zo)/(qprof*R);
     Bphi = -Ro*Bo/R;
-    BZ = jpb*Bo*(R-Ro)/(q*R);
+    BZ = jpb*Bo*(R-Ro)/(qprof*R);
+    
+    Bmag = sqrt(BR^2 + Bphi^2 + BZ^2);
+    
+    HR = BR;
+    Hphi = Bphi;
+    HZ = BZ;
     
     Bx = BR*cos(phi) - Bphi*sin(phi);
     By = BR*sin(phi) + Bphi*cos(phi);
     Bz = BZ;
     
     B = [Bx,By,Bz];
+    % Magnetic field
+    
+    % Electric field
+    ER = 0;
+    Ephi = -Ro*Eo/R;
+    EZ = 0;
+    
+    DR = ER;
+    Dphi = Ephi;
+    DZ = EZ;
+
+    Ex = ER*cos(phi) - Ephi*sin(phi);
+    Ey = ER*sin(phi) + Ephi*cos(phi);
+    Ez = EZ;
+    
+    E = [Ex,Ey,Ez];
+    % Electric field
+    
+    if (nargout > 1)
+        aux = R*(qprof*lamb)^2;
+        dBRdR = jpb*Bo*(Z-Zo)*( 1/(qprof*R^2) + 2*qo*(R-Ro)/aux );
+        dBphidR = Ro*Bo/R^2;
+        dBZdR = jpb*Bo*( Ro/(qprof*R^2) - 2*qo*(R-Ro)^2/aux );
+        
+        dBdR = (BR*dBRdR + Bphi*dBphidR + BZ*dBZdR)/Bmag;
+        
+        dBRdZ = -2*jpb*Bo*qo*(R-Ro)*(Z-Zo)/aux;
+        dBphidZ = 0;
+        dBZdZ = -jpb*Bo*( 1/(qprof*R) - 2*qo*(Z-Zo)^2/aux );
+        
+        dBdZ = (BR*dBRdZ + Bphi*dBphidZ + BZ*dBZdZ)/Bmag;
+        
+        rotbR = Bphi*dBdZ/Bmag^2;
+        rotbphi = (dBRdZ - dBZdR)/Bmag - (BR*dBdZ - BZ*dBdR)/Bmag^2;
+        rotbZ = -Bphi*dBdR/Bmag^2;
+        
+        gradBR = dBdR;
+        gradBphi = 0;
+        gradBZ = dBdZ;
+        
+        HR = HR + ppar*rotbR/q;
+        Hphi = Hphi + ppar*rotbphi/q;
+        HZ = HZ + ppar*rotbZ/q;
+        
+        Bstarx = HR*cos(phi) - Hphi*sin(phi);
+        Bstary = HR*sin(phi) + Hphi*cos(phi);
+        Bstarz = HZ;
+        
+        Bstar = [Bstarx,Bstary,Bstarz];
+        
+        DR = DR - 2*mu*gradBR/(q*G);
+        Dphi = Dphi - 2*mu*gradBphi/(q*G);
+        DZ = DZ - 2*mu*gradBZ/(q*G);
+        
+    end
 end
 
 end
@@ -978,7 +1043,7 @@ Ez = 0;
 E = [Ex,Ey,Ez];
 end
 
-function E = analyticalE(B,X,coordsys)
+function [E,Estar] = analyticalE(B,X,coordsys)
 % Analytical magnetic field
 % X is a vector X(1)=x, X(2)=y, X(3)=z.
 % V is the particle's velocity in cartesian components V(1) = Vx, V(2) =
@@ -1717,12 +1782,11 @@ function GC = particlePusherGC(ST,coll,rad)
 % Relativistic particle pusher for the guiding-center
 GC = struct;
 
-GC.method = 'RK-Matlab';
-
-X = zeros(ST.params.numIt,3); % (it,ii), ii=R,phi,Z
-g = zeros(1,ST.params.numIt);
-ppar = zeros(1,ST.params.numIt);
-pper = zeros(1,ST.params.numIt);
+X = zeros(ST.params.numSnapshots,3); % (it,[R,phi,Z])
+G = zeros(1,ST.params.numSnapshots);
+p = zeros(1,ST.params.numSnapshots);
+ppar = zeros(1,ST.params.numSnapshots);
+pper = zeros(1,ST.params.numSnapshots);
 
 % Normalization
 Xo = ST.params.Xo/ST.norm.l;
@@ -1733,11 +1797,24 @@ if (X(1,2) < 0)
 end
 X(1,3) = Xo(3);
 
-v(1,:) = ST.params.vo/ST.norm.v;
+G(1) = 1/sqrt(1-ST.params.vo*ST.params.vo'/ST.params.c^2);
+p(1) = ST.params.m*ST.params.c*sqrt(G(1)^2 - 1);
+ppar(1) = p(1)*cos(deg2rad(ST.params.vo_params(2)));
+pper(1) = sqrt(p(1)^2 - ppar(1)^2);
+
+B = analyticalB(X(1,:)*ST.norm.l,false,false);
+
+mu = 0.5*pper(1)^2/(ST.params.m*sqrt((B*B')));
+
+p = p/ST.norm.p;
+ppar = ppar/ST.norm.p;
+pper = pper/ST.norm.p;
 q = ST.params.q/ST.norm.q;
 m = ST.params.m/ST.norm.m;
+mu = mu/ST.norm.mu;
 
-B = analyticalB(X(1,:)*ST.norm.l,false,false)/ST.norm.B;
+[B,Bstar,E,Estar] = analyticalB(X(1,:)*ST.norm.l,false,false,...
+                        mu*ST.norm.mu,q*ST.norm.q,ppar(1)*ST.norm.p,G(1));
 
 
 u(1,:) = v(1,:)/sqrt(1 - sum(v(1,:).^2));
@@ -1794,6 +1871,10 @@ if ST.opt
 end
 
 GC.v = GC.v*ST.norm.v;
+
+end
+
+function dRdt = eqnsMotionGC(t,y,q,m,G,B,b,E)
 
 end
 
@@ -1888,7 +1969,7 @@ function dydt = LorentzForce(t,y,q,m,l,Bo,E)
 % y(4) = ux;
 % y(5) = uy;
 % y(6) = uz;
-B = analyticalB(y(1:3)*l)/Bo;
+[B,~] = analyticalB(y(1:3)*l)/Bo;
 
 dydt = zeros(6,1);
 
