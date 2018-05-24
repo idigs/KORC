@@ -102,14 +102,11 @@ ST.params.qe = 1.602176E-19; % Electron charge
 ST.params.me = 9.109382E-31; % Electron mass
 
 % Electric and magneticfield
-ST.E = [0,0,0];
-if ST.analytical
-    ST.B = analyticalB([1,1,1],true,true);
-    ST.Bo = ST.B.Bo;
-else
-    ST.B = loadMagneticField(ST,false);
-    ST.Bo = ST.B.Bo;
-end
+ST.F = struct;
+ST.F.init = true;
+ST.F.norm = false;
+ST.F = analyticalFields(ST,[1,1,1],true);
+ST.Bo = ST.F.Bo;
 
 % Particle's parameters and nitial position and velocity of tracer, in SI units
 ST.params.q = tracerParams(1)*ST.params.qe; %alpha-particle
@@ -175,6 +172,11 @@ ST.time = ST.time;%/(2*pi/ST.params.wc);
 
 ST.cOp = initializeCollisionOperators(ST);
 
+% Normalization of fields
+ST.F.norm = true;
+ST.F = analyticalFields(ST,[ST.F.Ro,0,0],false);
+% Normalization of fields
+
 % ST.PP = particlePusherLeapfrog(ST,false,false);
 
 ST.GC = particlePusherGC(ST,false,false);
@@ -229,13 +231,8 @@ function [b1,b2,b3] = unitVectors(ST,Xo)
 % initial condition of an electron drifting parallel to the local magnetic
 % field.
 
-if ST.analytical
-    B = analyticalB(Xo,false,true);
-    b = B/sqrt(sum(B.^2));
-else
-    B = interpMagField(ST,Xo);
-    b = B/sqrt(sum(B.^2));
-end
+F = analyticalFields(ST,Xo,true);
+b = F.B/sqrt(F.B*F.B');
 
 b1 = b;
 
@@ -246,662 +243,56 @@ b3 = cross(b1,b2);
 b3 = b3/sqrt(b3*b3');
 end
 
-function B = loadMagneticField(ST,flag)
-% All quantities in SI units
-if flag
-    name = 'SIESTA_3E-3';
-    load(name);
-else
-    B = struct;
-    B.fileType = ST.fileType;
-    data = load(ST.pathToBField);
-    
-    switch ST.fileType
-        case 'RAW' % This option changes quite frequently
-            
-            B.R = data(:,1);
-            B.Z = data(:,3);
-            
-            %         B.Ro = [B.R(1), B.Z(1)]; % This defines the position
-            
-            B.BR = data(:,4);
-            B.Bphi = - data(:,5); % minus sign
-            B.BZ = data(:,6);
-            
-            B.B = sqrt(B.BR.^2 + B.BZ.^2 + B.Bphi.^2);
-            
-        case 'SIESTA'
-            if strcmp(ST.ND,'2D')
-                NR = ST.res(1);
-                Nphi = ST.res(2);
-                NZ = ST.res(3);
-                
-                R = data(:,1);
-                Z = data(:,2);
-                
-                B.Ro = [R(1), Z(1)]; % This defines the position
-                
-                R = reshape(R,NR,Nphi,NZ);
-                Z = reshape(Z,NR,Nphi,NZ);
-                
-                BR = data(:,4);
-                BZ = data(:,5);
-                Bphi = data(:,6);
-                
-                BR = reshape(BR,NR,Nphi,NZ);
-                Bphi = reshape(Bphi,NR,Nphi,NZ);
-                BZ = reshape(BZ,NR,Nphi,NZ);
-                
-                B.NR = NR;
-                B.NZ = NZ;
-                
-                B.R = squeeze(R(:,1,:));
-                B.Z = squeeze(Z(:,1,:));
-                
-                B.BR = squeeze(BR(:,1,:));
-                B.Bphi = squeeze(Bphi(:,1,:));
-                B.BZ = squeeze(BZ(:,1,:));
-                
-                B.B = sqrt(BR.^2 + BZ.^2 + Bphi.^2);
-                
-                B.Bo = mean(mean(mean(B.B)));
-                
-            elseif strcmp(ST.ND,'3D')
-                B.NR = ST.res(1);
-                B.Nphi = ST.res(2);
-                B.NZ = ST.res(3);
-                
-                R = data(:,1);
-                Z = data(:,2);
-                %             phi = data(:,3);
-                phi = ((0:1:B.Nphi-1) + 0.5)*(2*pi/B.Nphi);
-                
-                B.Ro = [R(1), Z(1)]; % This defines the position
-                
-                R = reshape(R,B.NR,B.Nphi,B.NZ);
-                %             phi = reshape(phi,B.NR,B.Nphi,B.NZ);
-                Z = reshape(Z,B.NR,B.Nphi,B.NZ);
-                
-                BR = data(:,4);
-                BZ = data(:,5);
-                Bphi = data(:,6);
-                
-                BR = reshape(BR,B.NR,B.Nphi,B.NZ);
-                Bphi = reshape(Bphi,B.NR,B.Nphi,B.NZ);
-                BZ = reshape(BZ,B.NR,B.Nphi,B.NZ);
-                
-                B.R = zeros(B.NR,B.NZ,B.Nphi);
-                B.phi = zeros(B.NR,B.NZ,B.Nphi);
-                B.Z = zeros(B.NR,B.NZ,B.Nphi);
-                B.BR = zeros(B.NR,B.NZ,B.Nphi);
-                B.Bphi = zeros(B.NR,B.NZ,B.Nphi);
-                B.BZ = zeros(B.NR,B.NZ,B.Nphi);
-                
-                for iphi=1:B.Nphi
-                    B.R(:,:,iphi) = squeeze(R(:,iphi,:));
-                    %                 B.phi(:,:,iphi) = squeeze(phi(:,iphi,:));
-                    B.phi(:,:,iphi) = phi(iphi);
-                    B.Z(:,:,iphi) = squeeze(Z(:,iphi,:));
-                    
-                    B.BR(:,:,iphi) = squeeze(BR(:,iphi,:));
-                    B.Bphi(:,:,iphi) = squeeze(Bphi(:,iphi,:));
-                    B.BZ(:,:,iphi) = squeeze(BZ(:,iphi,:));
-                end
-                
-                B.B = sqrt(B.BR.^2 + B.BZ.^2 + B.Bphi.^2);
-                
-                B.Bo = mean(mean(mean(B.B)));
-            else
-                error('Please use 2D or 3D fields');
-            end
-            
-        case 'VMEC'
-            
-            if strcmp(ST.ND,'2D')
-                B.NR = ST.res(1);
-                B.NZ = ST.res(2);
-                
-                B.R = data(:,1);
-                B.R = reshape(B.R,B.NR,B.NZ);
-                B.Z = data(:,3);
-                B.Z = reshape(B.Z,B.NR,B.NZ);
-                
-                B.BR = data(:,5);
-                B.BR = reshape(B.BR,B.NR,B.NZ);
-                B.Bphi = - data(:,6); % minus sign
-                B.Bphi = reshape(B.Bphi,B.NR,B.NZ);
-                B.BZ = data(:,7);
-                B.BZ = reshape(B.BZ,B.NR,B.NZ);
-                
-            elseif strcmp(ST.ND,'3D')
-                error('Not ready for using 3D fields of VMEC!')
-            else
-                error('Please use 2D or 3D fields');
-            end
-            
-        case 'XPANDER'
-            
-            if strcmp(ST.ND,'2D')
-                B.NR = ST.res(1);
-                B.NZ = ST.res(2);
-                
-                B.R = data(:,1);
-                B.R = reshape(B.R,B.NR,B.NZ);
-                B.Z = data(:,3);
-                B.Z = reshape(B.Z,B.NR,B.NZ);
-                
-                B.BR = data(:,4);
-                B.BR = reshape(B.BR,B.NR,B.NZ);
-                B.Bphi = data(:,5);
-                B.Bphi = reshape(B.Bphi,B.NR,B.NZ);
-                B.BZ = data(:,6);
-                B.BZ = reshape(B.BZ,B.NR,B.NZ);
-                
-                B.P = data(:,7);
-                B.P = reshape(B.P,B.NR,B.NZ);
-            elseif strcmp(ST.ND,'3D')
-                B.NR = ST.res(1);
-                B.Nphi = ST.res(2);
-                B.NZ = ST.res(3);
-                
-                B.R = zeros(B.NR,B.NZ,B.Nphi);
-                B.Z = zeros(B.NR,B.NZ,B.Nphi);
-                B.phi = zeros(B.NR,B.NZ,B.Nphi);
-                
-                phi = ((0:1:B.Nphi-1) + 0.5)*(2*pi/B.Nphi);
-                
-                B.B = zeros(B.NR,B.NZ,B.Nphi); % magnitude
-                B.BR = zeros(B.NR,B.NZ,B.Nphi);
-                B.Bphi = zeros(B.NR,B.NZ,B.Nphi);
-                B.BZ = zeros(B.NR,B.NZ,B.Nphi);
-                B.P = zeros(B.NR,B.NZ,B.Nphi);
-                
-                for iphi = 1:B.Nphi;
-                    for iz=1:B.NZ
-                        indi = (iphi-1)*B.NR*B.NZ + (iz-1)*B.NR + 1;
-                        indf = (iphi-1)*B.NR*B.NZ + iz*B.NR;
-                        B.R(:,iz,iphi) = data(indi:indf,1);
-                        B.Z(:,iz,iphi) = data(indi:indf,3);
-                        
-                        B.BR(:,iz,iphi) = data(indi:indf,4);
-                        B.Bphi(:,iz,iphi) = - data(indi:indf,5);
-                        B.BZ(:,iz,iphi) = data(indi:indf,6);
-                        
-                        B.P(:,iz,iphi) = data(indi:indf,7);
-                    end
-                    B.B(:,:,iphi) = sqrt(B.BR(:,:,iphi).^2 + B.BZ(:,:,iphi).^2 + B.Bphi(:,:,iphi).^2);
-                    B.phi(:,:,iphi) = phi(iphi);
-                end
-            else
-                error('Please use 2D or 3D fields');
-            end
-            
-        otherwise
-            error('Unknown file format!')
-    end
-    
-    B.B = sqrt(B.BR.^2 + B.BZ.^2 + B.Bphi.^2);
-    
-    % Here the question what should be the characteristic magnetic field
-    % used in the normalization and calculation of the time step.
-    %     B.Bo = max(max(max(B.B)));
-    B.Bo = mean(mean(mean(B.B)));
-    
-    if ST.opt
-        plotLoadedMagneticField(B)
-    end
-    
-    % B.SI = calculateChebyshevInterpolant(ST,B);
-    
-    B.SI = calculatescatteredInterpolant(ST,B);
-    
-%     B.R = [];
-%     B.Z = [];
-%     B.phi = [];
-%     
-%     B.B = [];
-%     B.BR = [];
-%     B.Bphi = [];
-%     B.BZ = [];
-%     B.P = [];
-    
-end
-
-end
-
-function plotLoadedMagneticField(B)
-
-switch B.fileType
-    case 'RAW'
-        S = 2*ones(numel(B.BR),1);
-        
-        figure
-        subplot(1,4,1)      
-        C = B.BR/max(abs(B.BR));
-        scatter3(B.R,B.Z,B.BR,S,C)
-        view([0,90])
-        axis equal
-        box on
-        title('$B^R$ [T]','Interpreter','latex','FontSize',16)
-        xlabel('R [m]','Interpreter','latex','FontSize',16)
-        ylabel('Z [m]','Interpreter','latex','FontSize',16)
-        
-        subplot(1,4,2)
-        C = B.Bphi/max(abs(B.Bphi));
-        scatter3(B.R,B.Z,B.Bphi,S,C)
-        view([0,90])
-        axis equal
-        box on
-        title('$B^\phi$ [T]','Interpreter','latex','FontSize',16)
-        xlabel('R [m]','Interpreter','latex','FontSize',16)
-        ylabel('Z [m]','Interpreter','latex','FontSize',16)
-        
-        subplot(1,4,3)
-        C = B.BZ/max(abs(B.BZ));
-        scatter3(B.R,B.Z,B.BZ,S,C)
-        view([0,90])
-        axis equal
-        box on
-        title('$B^Z$ [T]','Interpreter','latex','FontSize',16)
-        xlabel('R [m]','Interpreter','latex','FontSize',16)
-        ylabel('Z [m]','Interpreter','latex','FontSize',16)
-        
-        subplot(1,4,4)
-        C = B.B/max(abs(B.B));
-        scatter3(B.R,B.Z,B.B,S,C)
-        view([0,90])
-        axis equal
-        box on
-        title('$B$ [T]','Interpreter','latex','FontSize',16)
-        xlabel('R [m]','Interpreter','latex','FontSize',16)
-        ylabel('Z [m]','Interpreter','latex','FontSize',16)
-        
-        colormap(jet)
-%     case 'SIESTA'
-%         figure
-%         subplot(2,2,1)
-%         surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.BR(:,1,:)),'LineStyle','none')
-%         view([0,90])
-%         axis equal
-%         box on
-%         colorbar
-%         title('$B^R$ [T]','Interpreter','latex','FontSize',16)
-%         xlabel('R [m]','Interpreter','latex','FontSize',16)
-%         ylabel('Z [m]','Interpreter','latex','FontSize',16)
-%         
-%         subplot(2,2,2)
-%         surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.BZ(:,1,:)),'LineStyle','none')
-%         view([0,90])
-%         axis equal
-%         box on
-%         colorbar
-%         title('$B^Z$ [T]','Interpreter','latex','FontSize',16)
-%         xlabel('R [m]','Interpreter','latex','FontSize',16)
-%         ylabel('Z [m]','Interpreter','latex','FontSize',16)
-%         
-%         subplot(2,2,3)
-%         surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.Bphi(:,1,:)),'LineStyle','none')
-%         view([0,90])
-%         axis equal
-%         box on
-%         colorbar
-%         title('$B^\phi$ [T]','Interpreter','latex','FontSize',16)
-%         xlabel('R [m]','Interpreter','latex','FontSize',16)
-%         ylabel('Z [m]','Interpreter','latex','FontSize',16)
-%         
-%         try
-%             subplot(2,2,4)
-%             surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.P(:,1,:)),'LineStyle','none')
-%             view([0,90])
-%             axis equal
-%             box on
-%             colorbar
-%             title('$P(R,Z)$','Interpreter','latex','FontSize',16)
-%             xlabel('R [m]','Interpreter','latex','FontSize',16)
-%             ylabel('Z [m]','Interpreter','latex','FontSize',16)
-%         catch
-%             subplot(2,2,4)
-%             surfc(squeeze(B.R(:,1,:)),squeeze(B.Z(:,1,:)),squeeze(B.B(:,1,:)),'LineStyle','none')
-%             view([0,90])
-%             axis equal
-%             box on
-%             colorbar
-%             title('$B(R,Z)$','Interpreter','latex','FontSize',16)
-%             xlabel('R [m]','Interpreter','latex','FontSize',16)
-%             ylabel('Z [m]','Interpreter','latex','FontSize',16)
-%         end
-%         
-%         colormap(jet)
-    otherwise
-        figure
-        subplot(2,2,1)
-        surfc(B.R(:,:,1),B.Z(:,:,1),B.BR(:,:,1),'LineStyle','none')
-        view([0,90])
-        axis equal
-        box on
-        colorbar
-        title('$B^R$ [T]','Interpreter','latex','FontSize',16)
-        xlabel('R [m]','Interpreter','latex','FontSize',16)
-        ylabel('Z [m]','Interpreter','latex','FontSize',16)
-        
-        subplot(2,2,2)
-        surfc(B.R(:,:,1),B.Z(:,:,1),B.BZ(:,:,1),'LineStyle','none')
-        view([0,90])
-        axis equal
-        box on
-        colorbar
-        title('$B^Z$ [T]','Interpreter','latex','FontSize',16)
-        xlabel('R [m]','Interpreter','latex','FontSize',16)
-        ylabel('Z [m]','Interpreter','latex','FontSize',16)
-        
-        subplot(2,2,3)
-        surfc(B.R(:,:,1),B.Z(:,:,1),B.Bphi(:,:,1),'LineStyle','none')
-        view([0,90])
-        axis equal
-        box on
-        colorbar
-        title('$B^\phi$ [T]','Interpreter','latex','FontSize',16)
-        xlabel('R [m]','Interpreter','latex','FontSize',16)
-        ylabel('Z [m]','Interpreter','latex','FontSize',16)
-        
-        try
-            subplot(2,2,4)
-            surfc(B.R(:,:,1),B.Z(:,:,1),B.P(:,:,1),'LineStyle','none')
-            view([0,90])
-            axis equal
-            box on
-            colorbar
-            title('$P(R,Z)$','Interpreter','latex','FontSize',16)
-            xlabel('R [m]','Interpreter','latex','FontSize',16)
-            ylabel('Z [m]','Interpreter','latex','FontSize',16)
-        catch
-            subplot(2,2,4)
-            surfc(B.R(:,:,1),B.Z(:,:,1),B.B(:,:,1),'LineStyle','none')
-            view([0,90])
-            axis equal
-            box on
-            colorbar
-            title('$B(R,Z)$','Interpreter','latex','FontSize',16)
-            xlabel('R [m]','Interpreter','latex','FontSize',16)
-            ylabel('Z [m]','Interpreter','latex','FontSize',16)
-        end
-        
-        colormap(jet)
-end
-
-end
-
-% INTERPOLANTS
-
-function SI = calculateChebyshevInterpolant(ST,B)
-% Cylindrical coordinates
-% R = radius, phi = azimuthal angle, Z = z coordinate
-% calculate interpolant of the field B
-if ST.opt
-    disp('Calculating chebfun2 interpolant...')
-end
-SI = struct;
-
-if strcmp(ST.ND,'2D')   
-    if mean(diff(B.R(:,1))) ~= 0 % non-uniform grid
-        
-        Rmin = min(min(B.R));
-        Rmax = max(max(B.R));
-        Zmin = min(min(B.Z));
-        Zmax = max(max(B.Z));
-        
-        %     SI.BR = chebfun2(B.BR,[Rmin Rmax Zmin Zmax]);
-        SI.BR = chebfun2(B.BR,[Zmin Zmax Rmin Rmax]);
-        
-        SI.BZ = chebfun2(B.BZ,[Zmin Zmax Rmin Rmax]);
-        
-        SI.Bphi = chebfun2(B.Bphi,[Zmin Zmax Rmin Rmax]);
-        
-        if ST.opt
-            figure
-            subplot(1,3,1)
-            plot(SI.BR)
-            subplot(1,3,2)
-            plot(SI.Bphi)
-            subplot(1,3,3)
-            plot(SI.BZ)
-            colormap(jet)
-        end
-        
-        if ST.opt
-            disp('chebfun2 interpolant: done!')
-        end
-    elseif mean(diff(B.R(:,1))) == 0 % uniform grid
-        SI = calculatescatteredInterpolant(ST,B);
-    end
-elseif strcmp(ST.ND,'3D')
-    SI = calculatescatteredInterpolant(ST,B);
-else
-    error('Please, use 2D or 3D.');
-end
-
-end
-
-function SI = calculatescatteredInterpolant(ST,B)
-% Cylindrical coordinates
-% R = radius, phi = azimuthal angle, Z = z coordinate
-% calculate interpolant of the field B
-if ST.opt
-    disp('*** Uniform grid for the magnetic field detected! ***')
-    disp('Switching to scattered interpolant...')
-end
-SI = struct;
-
-
-if strcmp(ST.ND,'2D')
-    R = reshape(B.R,[numel(B.R) 1]);
-    Z = reshape(B.Z,[numel(B.Z) 1]);
-    
-    DATA = reshape(B.BR,[numel(B.BR) 1]);
-    SI.BR = scatteredInterpolant(R,Z,DATA);
-    clear DATA
-    
-    DATA = reshape(B.BZ,[numel(B.BZ) 1]);
-    SI.BZ = scatteredInterpolant(R,Z,DATA);
-    clear DATA
-    
-    DATA = reshape(B.Bphi,[numel(B.Bphi) 1]);
-    SI.Bphi = scatteredInterpolant(R,Z,DATA);
-    clear DATA
-    
-elseif strcmp(ST.ND,'3D')
-
-    R = cat(3,B.R(:,:,end),B.R,B.R(:,:,1));
-    Z = cat(3,B.Z(:,:,end),B.Z,B.Z(:,:,1));
-    phi = cat(3,B.phi(:,:,end)-2*pi,B.phi,2*pi+B.phi(:,:,1));
-    
-    R = reshape(R,[numel(R) 1]);
-    Z = reshape(Z,[numel(Z) 1]);
-    phi = reshape(phi,[numel(phi) 1]);
-
-    DATA = cat(3,B.BR(:,:,end),B.BR,B.BR(:,:,1));
-    DATA = reshape(DATA,[numel(DATA) 1]);
-    SI.BR = scatteredInterpolant(R,Z,phi,DATA);
-%     SI.BR = scatteredInterpolant(R,Z,phi,DATA,'nearest','nearest');
-    clear DATA
-    
-    DATA = cat(3,B.BZ(:,:,end),B.BZ,B.BZ(:,:,1));
-    DATA = reshape(DATA,[numel(DATA) 1]);
-    SI.BZ = scatteredInterpolant(R,Z,phi,DATA);
-%     SI.BZ = scatteredInterpolant(R,Z,phi,DATA,'nearest','nearest');
-    clear DATA
-    
-    DATA = cat(3,B.Bphi(:,:,end),B.Bphi,B.Bphi(:,:,1));
-    DATA = reshape(DATA,[numel(DATA) 1]);
-    SI.Bphi = scatteredInterpolant(R,Z,phi,DATA);
-%     SI.Bphi = scatteredInterpolant(R,Z,phi,DATA,'nearest','nearest');
-    clear DATA
-    
-else
-    error('Use 2D or 3D');
-end
-
-if ST.opt
-    disp('Scattered interpolant: done!')
-end
-end
-
-% MODELS FOR MAGNETIC FIELD
-
-function BF = interpMagField(ST,X)
-% Cylindrical coordinates
-% R = radius, phi = azimuthal angle, Z = z coordinate
-if strcmp(ST.ND,'2D')
-    R = sqrt(X(1)^2 + X(2)^2);
-    Z = X(3);
-    phi = atan2(X(2),X(1));
-    if phi < 0
-        phi = phi + 2*pi;
-    end
-    
-    if isa(ST.B.SI.BR,'scatteredInterpolant')
-        BR = ST.B.SI.BR(R,Z);
-        Bphi = ST.B.SI.Bphi(R,Z);
-        BZ = ST.B.SI.BZ(R,Z);
-    else
-        BR = ST.B.SI.BR(Z,R);
-        Bphi = ST.B.SI.Bphi(Z,R);
-        BZ = ST.B.SI.BZ(Z,R);
-    end
-    
-    Bx = BR*cos(phi) - Bphi*sin(phi);
-    By = BR*sin(phi) + Bphi*cos(phi);
-    Bz = BZ;
-    BF = [Bx,By,Bz];
-    
-elseif strcmp(ST.ND,'3D')
-    R = sqrt(X(1)^2 + X(2)^2);
-    Z = X(3);
-    phi = atan2(X(2),X(1));
-    if phi < 0
-        phi = phi + 2*pi;
-    end
-    
-    BR = ST.B.SI.BR(R,Z,phi);
-    Bphi = ST.B.SI.Bphi(R,Z,phi);
-    BZ = ST.B.SI.BZ(R,Z,phi);
-    
-    Bx = BR*cos(phi) - Bphi*sin(phi);
-    By = BR*sin(phi) + Bphi*cos(phi);
-    Bz = BZ;
-    BF = [Bx,By,Bz];
-    
-else
-    error('Use 2D or 3D');
-end
-
-end
-
-function B = analyticalB_(X,opt)
-% Analytical magnetic field
-% X is a vector X(1)=x, X(2)=y, X(3)=z.
-% V is the particle's velocity in cartesian components V(1) = Vx, V(2) =
-% Vy, V(3) = Vz.
-
-narginchk(1,3);
-
-% Parameters of the analytical magnetic field
-% DIII-D
-jpb = 1;
-Bo = 2.19;
-Ro = 1.5; % Major radius in meters.
-a = 0.5;% Minor radius in meters.
-qa = 5.0; % Safety factor at the separatrix (r=a)
-qo = 1.0; % Safety factor at the magnetic axis.
-
-lamb = a/sqrt(qa/qo - 1);
-Bpo = lamb*Bo/(qo*Ro);
-% Parameters of the analytical magnetic field
-
-if opt == true
-    B = struct;
-    B.Bo = Bo;
-    B.a = a;% 0.6;% Minor radius in meters.
-    B.Ro = Ro; % Major radius in meters.
-    B.qa = qa; % Safety factor at the separatrix (r=a)
-    B.qo = qo;
-    B.lamb = lamb;
-    B.Bpo = Bpo;
-    B.jpb = jpb;
-    if (Bo > 0)
-        disp('The toroidal magnetic field rotates clockwise')
-    else
-        disp('The toroidal magnetic field rotates counterclockwise')
-    end
-    if (jpb > 0)
-        disp('The plasma current is parallel to the toroidal magnetic field')
-    else
-        disp('The plasma current is anti-parallel to the toroidal magnetic field')
-    end
-    disp(['q-factor at magnetic axis: ' num2str(qo)])
-else
-    % Toroidal coordinates
-    % r = radius, theta = poloidal angle, zeta = toroidal angle
-    r = sqrt( (sqrt(X(1)^2 + X(2)^2) - Ro)^2 + X(3)^2 );
-    theta = atan2(X(3),sqrt(X(1)^2 + X(2)^2) - Ro);
-    if theta < 0
-        theta = theta + 2*pi;
-    end
-    zeta = atan2(X(1),X(2));
-    if zeta < 0
-        zeta = zeta + 2*pi;
-    end
-    % Toroidal coordinates
-    
-    q = qo*(1 + (r/lamb)^2);
-    eta = r/Ro;
-    R = Ro*(1 + eta*cos(theta));
-    Btheta = jpb*eta*Bo/(q*(1 + eta*cos(theta)));
-    Bzeta = Bo/( 1 + eta*cos(theta) );
-        
-    Bx = Bzeta*cos(zeta) - Btheta*sin(theta)*sin(zeta);
-    By = -Bzeta*sin(zeta) - Btheta*sin(theta)*cos(zeta);
-    Bz = Btheta*cos(theta);
-    
-    B = [Bx,By,Bz];
-end
-
-end
-
-function [B,Bstar,E,Estar] = analyticalB(X,init,coordsys,q,mu,ppar,G)
+function F = analyticalFields(ST,X,coords,q,mu,ppar)
 % Analytical magnetic field
 % X is a vector X(1)=x, X(2)=y, X(3)=z.
 % coordsys = true (Cartesian), coordsys = false (Cylindrical)
 
-narginchk(3,7);
+narginchk(2,6);
 
-% Parameters of the analytical magnetic field
-% DIII-D
-jpb = 1;
-Ro = 1.5; % Major radius in meters.
-Zo = 0;
-Bo = 2.19;
-a = 0.5;% Minor radius in meters.
-qa = 5.0; % Safety factor at the separatrix (r=a)
-qo = 1.0; % Safety factor at the magnetic axis.
+if coords
+    R = sqrt(X(1)^2 + X(2)^2);
+    phi = atan2(X(2),X(1));
+    if (phi < 0); phi = phi + 2*pi; end
+    Z = X(3);
+else
+    R = X(1);
+    phi = X(2);
+    Z = X(3);
+end
 
-% Parameters of the analytical electric field
-Eo = 0.0;
-
-lamb = a/sqrt(qa/qo - 1);
-Bpo = lamb*Bo/(qo*Ro);
-% Parameters of the analytical magnetic field
-
-if init == true
-    B = struct;
-    B.Bo = Bo;
-    B.a = a;% 0.6;% Minor radius in meters.
-    B.Ro = Ro; % Major radius in meters.
-    B.qa = qa; % Safety factor at the separatrix (r=a)
-    B.qo = qo;
-    B.lamb = lamb;
-    B.Bpo = Bpo;
-    B.jpb = jpb;
+if ST.F.init == true
+    % Parameters of the analytical magnetic field
+    % DIII-D
+    jpb = 1;
+    Ro = 1.5; % Major radius in meters.
+    Zo = 0;
+    Bo = 2.19;
+    a = 0.5;% Minor radius in meters.
+    qa = 5.0; % Safety factor at the separatrix (r=a)
+    qo = 1.0; % Safety factor at the magnetic axis.
+    lamb = a/sqrt(qa/qo - 1);
+    Bpo = lamb*Bo/(qo*Ro);
+    
+    % Parameters of the analytical electric field
+    Eo = 0.0;
+    % Parameters of the analytical magnetic field
+  
+    F = ST.F;
+    F.Bo = Bo;
+    F.a = a;% 0.6;% Minor radius in meters.
+    F.Ro = Ro; % Major radius in meters.
+    F.Zo = Zo;
+    F.qa = qa; % Safety factor at the separatrix (r=a)
+    F.qo = qo;
+    F.lamb = lamb;
+    F.Bpo = Bpo;
+    F.jpb = jpb;
+    
+    F.Eo = Eo;
+    
+    F.init = false;
+    
     if (Bo > 0)
         disp('The toroidal magnetic field rotates clockwise')
     else
@@ -913,68 +304,76 @@ if init == true
         disp('The plasma current is anti-parallel to the toroidal magnetic field')
     end
     disp(['q-factor at magnetic axis: ' num2str(qo)])
+elseif ST.F.norm == true
+    F = ST.F;
+    
+    F.Bo = F.Bo/ST.norm.B;
+    F.a = F.a/ST.norm.l;
+    F.Ro = F.Ro/ST.norm.l;
+    F.Zo = F.Zo/ST.norm.l;
+    F.lamb = F.lamb/ST.norm.l;
+    F.Bpo = F.Bpo/ST.norm.B;
+    
+    F.Eo = F.Eo/ST.norm.E;
+    
+    F.norm = false;
 else
-%     Cylindrical coordinates
-    if coordsys
-        R = sqrt(X(1)^2 + X(2)^2);
-        phi = atan2(X(2),X(1));
-        if (phi < 0)
-            phi = phi + 2*pi;
-        end
-        Z = X(3);
-    else
-        R = X(1);
-        phi = X(2);
-        Z = X(3);
-    end
-%     Cylindrical coordinates
+    F = ST.F;
     
     % Magnetic field
-    qprof = (qo/lamb^2)*(lamb^2 + (R-Ro)^2 + (Z-Zo)^2);
-    BR = -jpb*Bo*(Z-Zo)/(qprof*R);
-    Bphi = -Ro*Bo/R;
-    BZ = jpb*Bo*(R-Ro)/(qprof*R);
+    qprof = (ST.F.qo/ST.F.lamb^2)*(ST.F.lamb^2 + (R-ST.F.Ro)^2 + (Z-ST.F.Zo)^2);
+    BR = -ST.F.jpb*ST.F.Bo*(Z-ST.F.Zo)/(qprof*R);
+    Bphi = -ST.F.Ro*ST.F.Bo/R;
+    BZ = ST.F.jpb*ST.F.Bo*(R-ST.F.Ro)/(qprof*R);
     
     Bmag = sqrt(BR^2 + Bphi^2 + BZ^2);
     
     HR = BR;
     Hphi = Bphi;
     HZ = BZ;
-    
-    Bx = BR*cos(phi) - Bphi*sin(phi);
-    By = BR*sin(phi) + Bphi*cos(phi);
-    Bz = BZ;
-    
-    B = [Bx,By,Bz];
     % Magnetic field
     
     % Electric field
     ER = 0;
-    Ephi = -Ro*Eo/R;
+    Ephi = -ST.F.Ro*ST.F.Eo/R;
     EZ = 0;
     
     DR = ER;
     Dphi = Ephi;
     DZ = EZ;
-
-    Ex = ER*cos(phi) - Ephi*sin(phi);
-    Ey = ER*sin(phi) + Ephi*cos(phi);
-    Ez = EZ;
-    
-    E = [Ex,Ey,Ez];
     % Electric field
     
-    if (nargout > 1)
-        aux = R*(qprof*lamb)^2;
-        dBRdR = jpb*Bo*(Z-Zo)*( 1/(qprof*R^2) + 2*qo*(R-Ro)/aux );
-        dBphidR = Ro*Bo/R^2;
-        dBZdR = jpb*Bo*( Ro/(qprof*R^2) - 2*qo*(R-Ro)^2/aux );
+    
+    if coords
+        Bx = BR*cos(phi) - Bphi*sin(phi);
+        By = BR*sin(phi) + Bphi*cos(phi);
+        Bz = BZ;
+        
+        F.B = [Bx,By,Bz];
+        
+        Ex = ER*cos(phi) - Ephi*sin(phi);
+        Ey = ER*sin(phi) + Ephi*cos(phi);
+        Ez = EZ;
+        
+        F.E = [Ex,Ey,Ez];
+    else
+        F.B = [BR,Bphi,BZ];
+        F.E = [ER,Ephi,EZ];
+    end
+    
+    if (nargin > 3)
+        G = sqrt( 1 + 2*mu*sqrt(F.B*F.B') + ppar^2 ); % This definition of G is only valid when ST.norm.v = c and ST.norm.m = ST.params.m !!
+        
+        aux = R*(qprof*ST.F.lamb)^2;
+        dBRdR = ST.F.jpb*ST.F.Bo*(Z-ST.F.Zo)*( 1/(qprof*R^2) + 2*ST.F.qo*(R-ST.F.Ro)/aux );
+        dBphidR = ST.F.Ro*ST.F.Bo/R^2;
+        dBZdR = ST.F.jpb*ST.F.Bo*( ST.F.Ro/(qprof*R^2) - 2*ST.F.qo*(R-ST.F.Ro)^2/aux );
         
         dBdR = (BR*dBRdR + Bphi*dBphidR + BZ*dBZdR)/Bmag;
         
-        dBRdZ = -2*jpb*Bo*qo*(R-Ro)*(Z-Zo)/aux;
+        dBRdZ = -2*ST.F.jpb*ST.F.Bo*ST.F.qo*(R-ST.F.Ro)*(Z-ST.F.Zo)/aux;
         dBphidZ = 0;
-        dBZdZ = -jpb*Bo*( 1/(qprof*R) - 2*qo*(Z-Zo)^2/aux );
+        dBZdZ = -ST.F.jpb*ST.F.Bo*( 1/(qprof*R) - 2*ST.F.qo*(Z-ST.F.Zo)^2/aux );
         
         dBdZ = (BR*dBRdZ + Bphi*dBphidZ + BZ*dBZdZ)/Bmag;
         
@@ -990,96 +389,16 @@ else
         Hphi = Hphi + ppar*rotbphi/q;
         HZ = HZ + ppar*rotbZ/q;
         
-        Bstarx = HR*cos(phi) - Hphi*sin(phi);
-        Bstary = HR*sin(phi) + Hphi*cos(phi);
-        Bstarz = HZ;
-        
-        Bstar = [Bstarx,Bstary,Bstarz];
+        F.Bstar = [HR,Hphi,HZ];
         
         DR = DR - 2*mu*gradBR/(q*G);
         Dphi = Dphi - 2*mu*gradBphi/(q*G);
         DZ = DZ - 2*mu*gradBZ/(q*G);
         
+        F.Estar = [DR,Dphi,DZ];
     end
 end
 
-end
-
-function E = analyticalE_(B,X)
-% Analytical magnetic field
-% X is a vector X(1)=x, X(2)=y, X(3)=z.
-% V is the particle's velocity in cartesian components V(1) = Vx, V(2) =
-% Vy, V(3) = Vz.
-
-narginchk(2,3);
-
-% Parameters of the analytical magnetic field
-Eo = 0.0; % in V/m
-Ro = B.Ro; % Major radius in meters.
-% Parameters of the analytical magnetic field
-
-% Toroidal coordinates
-% r = radius, theta = poloidal angle, zeta = toroidal angle
-r = sqrt( (sqrt(X(1)^2 + X(2)^2) - Ro)^2 + X(3)^2 );
-theta = atan2(X(3),sqrt(X(1)^2 + X(2)^2) - Ro);
-if theta < 0
-    theta = theta + 2*pi;
-end
-zeta = atan2(X(1),X(2));
-if zeta < 0
-    zeta = zeta + 2*pi;
-end
-% Toroidal coordinates
-
-% Poloidal magnetic field
-eta = r/Ro;
-R = Ro*(1 + eta*cos(theta));
-Ezeta = Eo*Ro/R;
-
-Ex = Ezeta*cos(zeta);
-Ey = -Ezeta*sin(zeta);
-Ez = 0;
-
-E = [Ex,Ey,Ez];
-end
-
-function [E,Estar] = analyticalE(B,X,coordsys)
-% Analytical magnetic field
-% X is a vector X(1)=x, X(2)=y, X(3)=z.
-% V is the particle's velocity in cartesian components V(1) = Vx, V(2) =
-% Vy, V(3) = Vz.
-
-narginchk(2,3);
-
-% Parameters of the analytical magnetic field
-Eo = 0.0; % in V/m
-Ro = B.Ro; % Major radius in meters.
-% Parameters of the analytical magnetic field
-
-% Cylindrical coordinates
-if coordsys
-    R = sqrt(X(1)^2 + X(2)^2);
-    phi = atan2(X(2),X(1));
-    if (phi < 0)
-        phi = phi + 2*pi;
-    end
-    Z = X(3);
-else
-    R = X(1);
-    phi = X(2);
-    Z = X(3);
-end
-% Cylindrical coordinates
-
-ER = 0;
-Ephi = -Ro*Eo/R;
-EZ = 0;
-
-Ex = ER*cos(phi) - Ephi*sin(phi);
-Ey = ER*sin(phi) + Ephi*cos(phi);
-Ez = EZ;
-
-E = [Ex,Ey,Ez];
 end
 
 % Monte-Calor collision operators
@@ -1105,7 +424,8 @@ cOp.Ec = cOp.ne*ST.params.qe^3*cOp.Clog/(4*pi*ST.params.ep^2*ST.params.me*ST.par
 disp(['Relativistic collisional time: ' num2str(cOp.Tau) ' s'])
 disp(['Thermal collisional time: ' num2str(cOp.Tauc) ' s'])
 
-Ef = analyticalE(ST.B,[ST.B.Ro,0,0],true);
+F = analyticalFields(ST,[ST.F.Ro,0,0],true);
+Ef = F.E;
 cOp.Vc = cOp.VTe*sqrt(0.5*cOp.Ec/sqrt(Ef*Ef'));
 
 g = linspace(1,1.03,200);
@@ -1354,15 +674,10 @@ X(1,:) = ST.params.Xo/ST.norm.l;
 v(1,:) = ST.params.vo/ST.norm.v;
 q = ST.params.q/ST.norm.q;
 m = ST.params.m/ST.norm.m;
-if ST.analytical
-    B = analyticalB(X(1,:)*ST.norm.l,false,true);
-    B = B/ST.norm.B;
-    E = analyticalE(ST.B,X(1,:)*ST.norm.l,true);
-    E = E/ST.norm.E;
-else
-    B = interpMagField(ST,X(1,:)*ST.norm.l)/ST.norm.B;
-    E = [0,0,0];
-end
+
+F = analyticalFields(ST,X(1,:),true);
+B = F.B;
+E = F.E;
 % dt = ST.params.dt*ST.norm.wc;
 dt = ST.params.dt/ST.norm.t;
 ep = ST.params.ep*(ST.norm.m^2*ST.norm.v^3/(ST.norm.q^3*ST.Bo));
@@ -1435,14 +750,9 @@ dummyWcoll = 0;
 for ii=2:ST.params.numSnapshots
     for jj=1:ST.params.cadence
         
-        if ST.analytical
-            B = analyticalB(XX*ST.norm.l,false,true);
-            B = B/ST.norm.B;
-            E = analyticalE(ST.B,XX*ST.norm.l,true);
-            E = E/ST.norm.E;
-        else
-            B = interpMagField(ST,XX*ST.norm.l)/ST.norm.B;
-        end
+        F = analyticalFields(ST,XX,true);
+        B = F.B;
+        E = F.E;
         
         U_R = U;
         U_L = U;
@@ -1782,6 +1092,9 @@ function GC = particlePusherGC(ST,coll,rad)
 % Relativistic particle pusher for the guiding-center
 GC = struct;
 
+q = ST.params.q;
+m = ST.params.m;
+
 X = zeros(ST.params.numSnapshots,3); % (it,[R,phi,Z])
 G = zeros(1,ST.params.numSnapshots);
 p = zeros(1,ST.params.numSnapshots);
@@ -1789,7 +1102,7 @@ ppar = zeros(1,ST.params.numSnapshots);
 pper = zeros(1,ST.params.numSnapshots);
 
 % Normalization
-Xo = ST.params.Xo/ST.norm.l;
+Xo = ST.params.Xo;
 X(1,1) = sqrt(Xo(1)^2 + Xo(2)^2);
 X(1,2) = atan2(Xo(2),Xo(1));
 if (X(1,2) < 0)
@@ -1801,80 +1114,83 @@ G(1) = 1/sqrt(1-ST.params.vo*ST.params.vo'/ST.params.c^2);
 p(1) = ST.params.m*ST.params.c*sqrt(G(1)^2 - 1);
 ppar(1) = p(1)*cos(deg2rad(ST.params.vo_params(2)));
 pper(1) = sqrt(p(1)^2 - ppar(1)^2);
+v = sqrt(ST.params.vo*ST.params.vo');
+vpar = v*cos(deg2rad(ST.params.vo_params(2)));
+vper = v*sin(deg2rad(ST.params.vo_params(2)));
 
-B = analyticalB(X(1,:)*ST.norm.l,false,false);
-
-mu = 0.5*pper(1)^2/(ST.params.m*sqrt((B*B')));
-
+% % % Normalization
+X(1,1) = X(1,1)/ST.norm.l;
+X(1,3) = X(1,3)/ST.norm.l;
 p = p/ST.norm.p;
 ppar = ppar/ST.norm.p;
 pper = pper/ST.norm.p;
-q = ST.params.q/ST.norm.q;
-m = ST.params.m/ST.norm.m;
-mu = mu/ST.norm.mu;
+vpar = vpar/ST.norm.v;
+vper = vper/ST.norm.v;
+q = q/ST.norm.q;
+m = m/ST.norm.m;
+% % % Normalization
 
-[B,Bstar,E,Estar] = analyticalB(X(1,:)*ST.norm.l,false,false,...
-                        mu*ST.norm.mu,q*ST.norm.q,ppar(1)*ST.norm.p,G(1));
+F = analyticalFields(ST,X(1,:),false);
+B = F.B;
+E = F.E;
+
+mu = pper(1)^2/(2*m*sqrt((B*B')));
+
+F = analyticalFields(ST,X(1,:),false,q,mu,ppar(1));
+B = F.B;
+E = F.E;
+Bstar = F.Bstar;
+Estar = F.Estar;
+b = B/sqrt(B*B');
+Bspar = dot(b,Bstar);
 
 
-u(1,:) = v(1,:)/sqrt(1 - sum(v(1,:).^2));
-v(1,:) = u(1,:)/sqrt(1 + sum(u(1,:).^2));
+% options = odeset('RelTol',1E-6,'AbsTol',1E-10);%,'Stats','on','OutputFcn',@odeplot)
+options = odeset('RelTol',1E-3,'AbsTol',1E-6,'Stats','on','OutputFcn',@odeplot)
 
-options = odeset('RelTol',1E-6,'AbsTol',1E-10);%,'Stats','on','OutputFcn',@odeplot)
-% options = odeset('RelTol',1E-3,'AbsTol',1E-6);%,'Stats','on','OutputFcn',@odeplot)
+tspan = ST.time/ST.norm.t;
+y0 = [X(1,:),ppar(1)];
 
-tspan = ST.time*ST.norm.wc;
-y0 = [X(1,:),u(1,:)];
-
-if ST.analytical
-    [~,y] = ode45(@(t,y) LorentzForce(t,y,q,m,ST.norm.l,ST.Bo,E),tspan,y0,options);  % NONSTIFF PROBLEM
-else
-    [~,y] = ode45(@(t,y) LorentzForceITER(t,y,q,m,ST.norm.l,ST.Bo,E,ST),tspan,y0,options);  % NONSTIFF PROBLEM
-end
+[~,y] = ode45(@(t,y) eqnsMotionGC(t,y,q,m,mu,ST),tspan,y0,options);  % NONSTIFF PROBLEM
 % [t,y] = ode15s(@(t,y) LorentzForce(t,y,q,m,ST.norm.l,ST.Bo,E),tspan,y0,options); % STIFF PROBLEM
 % [t,y] = ode23t(@(t,y) LorentzForce(t,y,q,m,ST.norm.l,ST.Bo,E),tspan,y0,options);
 % [t,y] = ode23tb(@(t,y) LorentzForce(t,y,q,m,ST.norm.l,ST.Bo,E),tspan,y0,options);
 % [t,y] = ode23s(@(t,y) LorentzForce(t,y,q,m,ST.norm.l,ST.Bo,E),tspan,y0,options);
 
-X = y(:,1:3);
-u = y(:,4:6);
-v(:,1) = u(:,1)./sqrt(1 + sum(u.^2,2));
-v(:,2) = u(:,2)./sqrt(1 + sum(u.^2,2));
-v(:,3) = u(:,3)./sqrt(1 + sum(u.^2,2));
+R = y(:,1)*ST.norm.l;
+phi = mod(y(:,2),2*pi);
+Z = y(:,3)*ST.norm.l;
 
-X = X*ST.norm.l;
+X(:,1) = R.*cos(phi);
+X(:,2) = R.*sin(phi);
+X(:,3) = Z;
 
-GC.X = X;
-GC.v = v;
-
-GC.EK = 1./sqrt(1-sum(GC.v.^2,2));
-GC.ERR = 100*(GC.EK(1) - GC.EK)./GC.EK(1);
-
-if ST.opt
-    figure
-    plot3(GC.X(ST.params.inds,1),GC.X(ST.params.inds,2),GC.X(ST.params.inds,3))
-    axis equal
-    xlabel('X','Interpreter','latex','FontSize',16)
-    ylabel('Y','Interpreter','latex','FontSize',16)
-    zlabel('Z','Interpreter','latex','FontSize',16)
-    title(GC.method,'Interpreter','latex','FontSize',16)
-    
-    
-    time = ST.time/(2*pi/ST.params.wc);
-    
-    figure
-    plot(time, GC.ERR)
-    box on
-    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-    ylabel('Energy conservation [\%]','Interpreter','latex','FontSize',16)
-    title(GC.method,'Interpreter','latex','FontSize',16)
-end
-
-GC.v = GC.v*ST.norm.v;
+figure;
+plot3(X(:,1),X(:,2),X(:,3),'b',X(1,1),X(1,2),X(1,3),'ko','MarkerFaceColor',[0,0,0])
+axis equal
+box on
+legend({'Full orbit','$\vec{x}_0$','Guiding center'},'Interpreter','latex')
+xlabel('X','Interpreter','latex','FontSize',16)
+ylabel('Y','Interpreter','latex','FontSize',16)
+zlabel('Z','Interpreter','latex','FontSize',16)
 
 end
 
-function dRdt = eqnsMotionGC(t,y,q,m,G,B,b,E)
+function dydt = eqnsMotionGC(t,y,q,m,mu,ST)
+F = analyticalFields(ST,y(1:3),false,q,mu,y(4));
+B = F.B;
+b = B/sqrt(B*B');
+Bs = F.Bstar;
+Es = F.Estar;
+Bspar = dot(b,Bs);
+G = sqrt( 1 + 2*mu*sqrt(B*B') + y(4)^2 ); % This definition of G is only valid when ST.norm.v = c and ST.norm.m = ST.params.m !!
+
+dydt = zeros(4,1);
+
+dydt(1) = y(4)*Bs(1)/(m*G*Bspar) + (Es(2)*b(3) - Es(3)*b(2))/Bspar;
+dydt(2) = y(4)*Bs(2)/(m*G*Bspar) + (Es(3)*b(1) - Es(1)*b(3))/Bspar;
+dydt(3) = y(4)*Bs(3)/(m*G*Bspar) + (Es(1)*b(2) - Es(2)*b(1))/Bspar;
+dydt(4) = q*dot(Es,Bs)/Bspar;
 
 end
 
@@ -1898,7 +1214,7 @@ v(1,:) = ST.params.vo/ST.norm.v;
 q = ST.params.q/ST.norm.q;
 m = ST.params.m/ST.norm.m;
 if ST.analytical
-    B = analyticalB(X(1,:)*ST.norm.l)/ST.Bo;
+    B = analyticalFields(X(1,:)*ST.norm.l)/ST.Bo;
 else
     B = interpMagField(ST,X(1,:)*ST.norm.l)/ST.Bo;
 end
@@ -1969,7 +1285,7 @@ function dydt = LorentzForce(t,y,q,m,l,Bo,E)
 % y(4) = ux;
 % y(5) = uy;
 % y(6) = uz;
-[B,~] = analyticalB(y(1:3)*l)/Bo;
+[B,~] = analyticalFields(y(1:3)*l)/Bo;
 
 dydt = zeros(6,1);
 
@@ -2077,10 +1393,10 @@ end
 
 function I = invariants(ST)
 
-Ro = ST.B.Ro;
-Bo = ST.B.Bo;
-lambda = ST.B.lamb;
-qo = ST.B.qo;
+Ro = ST.F.Ro*ST.norm.l;
+Bo = ST.F.Bo*ST.norm.B;
+lambda = ST.F.lamb*ST.norm.l;
+qo = ST.F.qo;
 
 m = ST.params.m;
 q = ST.params.q;
