@@ -68,6 +68,7 @@ function ST = pOrbsGC(pathToBField,fileType,ND,res,timeStepParams,tracerParams,x
 % ST = pOrbs('jfit_165365_1400.mat','RAW','2D',[],[1E5,1E-2,10],[-1,1],[1.82,0,-0.4928],[0.99,70]);
 % name = 'xpand_iter3D_sc4_bet015_I87_hi_acc';
 % ST = pOrbs(name,'XPANDER','3D',[150,100,150],[1E4,1E-2,10,1E-3],[-1,1],[6.5,0,0],[1E6,5],true);
+
 narginchk(8,9);
 
 close all
@@ -177,7 +178,7 @@ ST.F.norm = true;
 ST.F = analyticalFields(ST,[ST.F.Ro,0,0],false);
 % Normalization of fields
 
-% ST.PP = particlePusherLeapfrog(ST,false,false);
+ST.PP = particlePusherLeapfrog(ST,false,false);
 
 ST.GC = particlePusherGC(ST,false,false);
 
@@ -1070,9 +1071,9 @@ end
 
     figure;
     plot3(PP.X(:,1),PP.X(:,2),PP.X(:,3),'b',PP.X(1,1),PP.X(1,2),PP.X(1,3),'ko','MarkerFaceColor',[0,0,0])
-    hold on
-    plot3(PP.R(:,1),PP.R(:,2),PP.R(:,3),'r')
-    hold off
+%     hold on
+%     plot3(PP.R(:,1),PP.R(:,2),PP.R(:,3),'r')
+%     hold off
     axis equal
     box on
     legend({'Full orbit','$\vec{x}_0$','Guiding center'},'Interpreter','latex')
@@ -1095,48 +1096,41 @@ GC = struct;
 q = ST.params.q;
 m = ST.params.m;
 
-X = zeros(ST.params.numSnapshots,3); % (it,[R,phi,Z])
-G = zeros(1,ST.params.numSnapshots);
-p = zeros(1,ST.params.numSnapshots);
-ppar = zeros(1,ST.params.numSnapshots);
-pper = zeros(1,ST.params.numSnapshots);
-
-% Normalization
-Xo = ST.params.Xo;
-X(1,1) = sqrt(Xo(1)^2 + Xo(2)^2);
-X(1,2) = atan2(Xo(2),Xo(1));
-if (X(1,2) < 0)
-    X(1,2) = X(1,2) + 2*pi;
+Xo = zeros(1,3); %(R,phi,Z)
+Xo(1) = sqrt(ST.params.Xo(1)^2 + ST.params.Xo(2)^2);
+Xo(2) = atan2(ST.params.Xo(2),ST.params.Xo(1));
+if (Xo(2) < 0)
+    Xo(2) = Xo(2) + 2*pi;
 end
-X(1,3) = Xo(3);
+Xo(3) = ST.params.Xo(3);
 
-G(1) = 1/sqrt(1-ST.params.vo*ST.params.vo'/ST.params.c^2);
-p(1) = ST.params.m*ST.params.c*sqrt(G(1)^2 - 1);
-ppar(1) = p(1)*cos(deg2rad(ST.params.vo_params(2)));
-pper(1) = sqrt(p(1)^2 - ppar(1)^2);
-v = sqrt(ST.params.vo*ST.params.vo');
-vpar = v*cos(deg2rad(ST.params.vo_params(2)));
-vper = v*sin(deg2rad(ST.params.vo_params(2)));
+Go = 1/sqrt(1-ST.params.vo*ST.params.vo'/ST.params.c^2);
+po = ST.params.m*ST.params.c*sqrt(Go^2 - 1);
+pparo = po*cos(deg2rad(ST.params.vo_params(2)));
+ppero = sqrt(po^2 - pparo^2);
+vo = sqrt(ST.params.vo*ST.params.vo');
+vparo = vo*cos(deg2rad(ST.params.vo_params(2)));
+vpero = vo*sin(deg2rad(ST.params.vo_params(2)));
 
 % % % Normalization
-X(1,1) = X(1,1)/ST.norm.l;
-X(1,3) = X(1,3)/ST.norm.l;
-p = p/ST.norm.p;
-ppar = ppar/ST.norm.p;
-pper = pper/ST.norm.p;
-vpar = vpar/ST.norm.v;
-vper = vper/ST.norm.v;
+Xo(1) = Xo(1)/ST.norm.l;
+Xo(3) = Xo(3)/ST.norm.l;
+po = po/ST.norm.p;
+pparo = pparo/ST.norm.p;
+ppero = ppero/ST.norm.p;
+vparo = vparo/ST.norm.v;
+vpero = vpero/ST.norm.v;
 q = q/ST.norm.q;
 m = m/ST.norm.m;
 % % % Normalization
 
-F = analyticalFields(ST,X(1,:),false);
+F = analyticalFields(ST,Xo,false);
 B = F.B;
 E = F.E;
 
-mu = pper(1)^2/(2*m*sqrt((B*B')));
+mu = ppero^2/(2*m*sqrt((B*B')));
 
-F = analyticalFields(ST,X(1,:),false,q,mu,ppar(1));
+F = analyticalFields(ST,Xo,false,q,mu,pparo);
 B = F.B;
 E = F.E;
 Bstar = F.Bstar;
@@ -1144,32 +1138,34 @@ Estar = F.Estar;
 b = B/sqrt(B*B');
 Bspar = dot(b,Bstar);
 
+options = odeset('RelTol',1E-6,'AbsTol',1E-10,'Stats','on')%,'OutputFcn',@odeplot)
+% options = odeset('RelTol',1E-3,'AbsTol',1E-6,'Stats','on')%,'OutputFcn',@odeplot)
 
-% options = odeset('RelTol',1E-6,'AbsTol',1E-10);%,'Stats','on','OutputFcn',@odeplot)
-options = odeset('RelTol',1E-3,'AbsTol',1E-6,'Stats','on','OutputFcn',@odeplot)
-
-tspan = ST.time/ST.norm.t;
-y0 = [X(1,:),ppar(1)];
+DT = 2*pi/ST.params.wc;
+% DT = 2*DT;
+tfinal = ST.params.dt*ST.params.numIt;
+numIt = floor(tfinal/DT);
+tspan = linspace(0,tfinal,numIt)/ST.norm.t;
+y0 = [Xo,pparo];
 
 [~,y] = ode45(@(t,y) eqnsMotionGC(t,y,q,m,mu,ST),tspan,y0,options);  % NONSTIFF PROBLEM
-% [t,y] = ode15s(@(t,y) LorentzForce(t,y,q,m,ST.norm.l,ST.Bo,E),tspan,y0,options); % STIFF PROBLEM
-% [t,y] = ode23t(@(t,y) LorentzForce(t,y,q,m,ST.norm.l,ST.Bo,E),tspan,y0,options);
-% [t,y] = ode23tb(@(t,y) LorentzForce(t,y,q,m,ST.norm.l,ST.Bo,E),tspan,y0,options);
-% [t,y] = ode23s(@(t,y) LorentzForce(t,y,q,m,ST.norm.l,ST.Bo,E),tspan,y0,options);
 
 R = y(:,1)*ST.norm.l;
-phi = mod(y(:,2),2*pi);
+phi = y(:,2);%mod(y(:,2),2*pi);
 Z = y(:,3)*ST.norm.l;
+
+X = zeros(numel(R),3);
 
 X(:,1) = R.*cos(phi);
 X(:,2) = R.*sin(phi);
 X(:,3) = Z;
 
 figure;
-plot3(X(:,1),X(:,2),X(:,3),'b',X(1,1),X(1,2),X(1,3),'ko','MarkerFaceColor',[0,0,0])
+plot3(X(:,1),X(:,2),X(:,3),'Color',[0.47,0.67,0.19])
+hold on;plot3(X(1,1),X(1,2),X(1,3),'ko','MarkerFaceColor',[0,0,0]);hold off
 axis equal
 box on
-legend({'Full orbit','$\vec{x}_0$','Guiding center'},'Interpreter','latex')
+legend({'Guiding center','$\vec{x}_0$'},'Interpreter','latex')
 xlabel('X','Interpreter','latex','FontSize',16)
 ylabel('Y','Interpreter','latex','FontSize',16)
 zlabel('Z','Interpreter','latex','FontSize',16)
@@ -1180,171 +1176,20 @@ function dydt = eqnsMotionGC(t,y,q,m,mu,ST)
 F = analyticalFields(ST,y(1:3),false,q,mu,y(4));
 B = F.B;
 b = B/sqrt(B*B');
-Bs = F.Bstar;
-Es = F.Estar;
+% Bs = F.Bstar;
+% Es = F.Estar;
+Bs = F.B;
+Es = F.E;
 Bspar = dot(b,Bs);
 G = sqrt( 1 + 2*mu*sqrt(B*B') + y(4)^2 ); % This definition of G is only valid when ST.norm.v = c and ST.norm.m = ST.params.m !!
 
 dydt = zeros(4,1);
 
 dydt(1) = y(4)*Bs(1)/(m*G*Bspar) + (Es(2)*b(3) - Es(3)*b(2))/Bspar;
-dydt(2) = y(4)*Bs(2)/(m*G*Bspar) + (Es(3)*b(1) - Es(1)*b(3))/Bspar;
+dydt(2) = (y(4)*Bs(2)/(m*G*Bspar) + (Es(3)*b(1) - Es(1)*b(3))/Bspar)/y(1);
 dydt(3) = y(4)*Bs(3)/(m*G*Bspar) + (Es(1)*b(2) - Es(2)*b(1))/Bspar;
 dydt(4) = q*dot(Es,Bs)/Bspar;
 
-end
-
-% MATLAB PARTICLE PUSHER
-
-function PP = particlePusherMatlab(ST)
-% Function to advance in time the particle's trajectory using Matlab
-% solvers for ODEs.
-
-PP = struct;
-
-PP.method = 'RK-Matlab';
-
-X = zeros(ST.params.numIt,3); % (it,ii), ii=X,y,z
-v = zeros(ST.params.numIt,3);
-u = zeros(ST.params.numIt,3);
-
-% Normalization
-X(1,:) = ST.params.Xo/ST.norm.l;
-v(1,:) = ST.params.vo/ST.norm.v;
-q = ST.params.q/ST.norm.q;
-m = ST.params.m/ST.norm.m;
-if ST.analytical
-    B = analyticalFields(X(1,:)*ST.norm.l)/ST.Bo;
-else
-    B = interpMagField(ST,X(1,:)*ST.norm.l)/ST.Bo;
-end
-E = ST.E/(ST.Bo*ST.norm.v);
-
-u(1,:) = v(1,:)/sqrt(1 - sum(v(1,:).^2));
-v(1,:) = u(1,:)/sqrt(1 + sum(u(1,:).^2));
-
-options = odeset('RelTol',1E-6,'AbsTol',1E-10);%,'Stats','on','OutputFcn',@odeplot)
-% options = odeset('RelTol',1E-3,'AbsTol',1E-6);%,'Stats','on','OutputFcn',@odeplot)
-
-tspan = ST.time*ST.norm.wc;
-y0 = [X(1,:),u(1,:)];
-
-if ST.analytical
-    [~,y] = ode45(@(t,y) LorentzForce(t,y,q,m,ST.norm.l,ST.Bo,E),tspan,y0,options);  % NONSTIFF PROBLEM
-else
-    [~,y] = ode45(@(t,y) LorentzForceITER(t,y,q,m,ST.norm.l,ST.Bo,E,ST),tspan,y0,options);  % NONSTIFF PROBLEM
-end
-% [t,y] = ode15s(@(t,y) LorentzForce(t,y,q,m,ST.norm.l,ST.Bo,E),tspan,y0,options); % STIFF PROBLEM
-% [t,y] = ode23t(@(t,y) LorentzForce(t,y,q,m,ST.norm.l,ST.Bo,E),tspan,y0,options);
-% [t,y] = ode23tb(@(t,y) LorentzForce(t,y,q,m,ST.norm.l,ST.Bo,E),tspan,y0,options);
-% [t,y] = ode23s(@(t,y) LorentzForce(t,y,q,m,ST.norm.l,ST.Bo,E),tspan,y0,options);
-
-X = y(:,1:3);
-u = y(:,4:6);
-v(:,1) = u(:,1)./sqrt(1 + sum(u.^2,2));
-v(:,2) = u(:,2)./sqrt(1 + sum(u.^2,2));
-v(:,3) = u(:,3)./sqrt(1 + sum(u.^2,2));
-
-X = X*ST.norm.l;
-
-PP.X = X;
-PP.v = v;
-
-PP.EK = 1./sqrt(1-sum(PP.v.^2,2));
-PP.ERR = 100*(PP.EK(1) - PP.EK)./PP.EK(1);
-
-if ST.opt
-    figure
-    plot3(PP.X(ST.params.inds,1),PP.X(ST.params.inds,2),PP.X(ST.params.inds,3))
-    axis equal
-    xlabel('X','Interpreter','latex','FontSize',16)
-    ylabel('Y','Interpreter','latex','FontSize',16)
-    zlabel('Z','Interpreter','latex','FontSize',16)
-    title(PP.method,'Interpreter','latex','FontSize',16)
-    
-    
-    time = ST.time/(2*pi/ST.params.wc);
-    
-    figure
-    plot(time, PP.ERR)
-    box on
-    xlabel('Time $t$ [$\tau_e$]','Interpreter','latex','FontSize',16)
-    ylabel('Energy conservation [\%]','Interpreter','latex','FontSize',16)
-    title(PP.method,'Interpreter','latex','FontSize',16)
-end
-
-PP.v = PP.v*ST.norm.v;
-
-end
-
-function dydt = LorentzForce(t,y,q,m,l,Bo,E)
-% Lorentz Force
-% y(1) = x;
-% y(2) = y;
-% y(3) = z;
-% y(4) = ux;
-% y(5) = uy;
-% y(6) = uz;
-[B,~] = analyticalFields(y(1:3)*l)/Bo;
-
-dydt = zeros(6,1);
-
-gamma = sqrt( 1 + y(4)^2 + y(5)^2 + y(6)^2);
-
-dydt(1) = y(4)/gamma; % x component of dx/dt = v
-dydt(2) = y(5)/gamma; % y component of dx/dt = v
-dydt(3) = y(6)/gamma; % y component of dx/dt = v
-
-dydt(4) = (q/m)*(E(1) + (y(5)*B(3) - y(6)*B(2))/gamma );
-dydt(5) = (q/m)*(E(2) + (y(6)*B(1) - y(4)*B(3))/gamma );
-dydt(6) = (q/m)*(E(3) + (y(4)*B(2) - y(5)*B(1))/gamma );
-
-end
-
-function dydt = LorentzForceITER(t,y,q,m,l,Bo,E,ST)
-% Lorentz Force
-% y(1) = x;
-% y(2) = y;
-% y(3) = z;
-% y(4) = ux;
-% y(5) = uy;
-% y(6) = uz;
-B = interpMagFieldITER(ST,y(1:3)*l)/Bo;
-
-dydt = zeros(6,1);
-
-gamma = sqrt( 1 + y(4)^2 + y(5)^2 + y(6)^2);
-
-dydt(1) = y(4)/gamma; % x component of dx/dt = v
-dydt(2) = y(5)/gamma; % y component of dx/dt = v
-dydt(3) = y(6)/gamma; % y component of dx/dt = v
-
-dydt(4) = (q/m)*(E(1) + (y(5)*B(3) - y(6)*B(2))/gamma );
-dydt(5) = (q/m)*(E(2) + (y(6)*B(1) - y(4)*B(3))/gamma );
-dydt(6) = (q/m)*(E(3) + (y(4)*B(2) - y(5)*B(1))/gamma );
-
-end
-
-function BF = interpMagFieldITER(ST,X)
-% Cylindrical coordinates
-% R = radius, phi = azimuthal angle, Z = z coordinate
-R = sqrt(X(1)^2 + X(2)^2);
-Z = X(3);
-phi = atan2(X(2),X(1));
-if phi < 0
-    phi = phi + 2*pi;
-end
-
-%     disp(['(R,phi,Z) = (' num2str(R) ',' num2str(phi) ',' num2str(Z) ')'])
-
-BR = ST.B.SI.BR(R,Z);
-Bphi = ST.B.SI.Bphi(R,Z);
-BZ = ST.B.SI.BZ(R,Z);
-
-Bx = BR*cos(phi) - Bphi*sin(phi);
-By = BR*sin(phi) + Bphi*cos(phi);
-Bz = BZ;
-BF = [Bx,By,Bz];
 end
 
 % POST-PROCESSING
