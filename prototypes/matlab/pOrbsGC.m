@@ -120,6 +120,7 @@ ST.params.vo_params = vo; % vo_params = [velocity magnitude, pitch angle]
 [ST.params.vo, ~, ~] = initializeVelocity(ST);
 
 ST.params.wc = sqrt(1 - sum(ST.params.vo.^2)/ST.params.c^2)*abs(ST.params.q)*ST.Bo/ST.params.m;
+ST.params.Tc = 2*pi/ST.params.wc;
 
 ST.coll.nimpurities = 1;
 ST.coll.Te = 1.0*ST.params.qe; % Background electron temperature in Joules
@@ -190,7 +191,7 @@ ST.GC = particlePusherGC(ST,false,false);
 %     PoincarePlots(ST);
 % end
 
-ST.PP.invariant = invariants(ST);
+% ST.PP.invariant = invariants(ST);
 
 munlock
 
@@ -265,7 +266,7 @@ end
 if ST.F.init == true
     % Parameters of the analytical magnetic field
     % DIII-D
-    jpb = 1;
+    jpb = -1;
     Ro = 1.5; % Major radius in meters.
     Zo = 0;
     Bo = 2.19;
@@ -328,20 +329,12 @@ else
     BZ = ST.F.jpb*ST.F.Bo*(R-ST.F.Ro)/(qprof*R);
     
     Bmag = sqrt(BR^2 + Bphi^2 + BZ^2);
-    
-    HR = BR;
-    Hphi = Bphi;
-    HZ = BZ;
     % Magnetic field
     
     % Electric field
     ER = 0;
     Ephi = -ST.F.Ro*ST.F.Eo/R;
     EZ = 0;
-    
-    DR = ER;
-    Dphi = Ephi;
-    DZ = EZ;
     % Electric field
     
     
@@ -365,16 +358,18 @@ else
     if (nargin > 3)
         G = sqrt( 1 + 2*mu*sqrt(F.B*F.B') + ppar^2 ); % This definition of G is only valid when ST.norm.v = c and ST.norm.m = ST.params.m !!
         
-        aux = R*(qprof*ST.F.lamb)^2;
-        dBRdR = ST.F.jpb*ST.F.Bo*(Z-ST.F.Zo)*( 1/(qprof*R^2) + 2*ST.F.qo*(R-ST.F.Ro)/aux );
-        dBphidR = ST.F.Ro*ST.F.Bo/R^2;
-        dBZdR = ST.F.jpb*ST.F.Bo*( ST.F.Ro/(qprof*R^2) - 2*ST.F.qo*(R-ST.F.Ro)^2/aux );
+        dqprofdR = 2*ST.F.qo*(R-ST.F.Ro)/ST.F.lamb^2;
+        dqprofdZ = 2*ST.F.qo*(Z-ST.F.Zo)/ST.F.lamb^2;
+        
+        dBRdR = ST.F.jpb*ST.F.Bo*(Z-ST.F.Zo)*(R*dqprofdR + qprof)/(qprof*R)^2;
+        dBphidR = ST.F.Bo*ST.F.Ro/R^2;
+        dBZdR = ST.F.jpb*ST.F.Bo*(qprof*R - (R-ST.F.Ro)*(R*dqprofdR + qprof))/(qprof*R)^2;
         
         dBdR = (BR*dBRdR + Bphi*dBphidR + BZ*dBZdR)/Bmag;
-        
-        dBRdZ = -2*ST.F.jpb*ST.F.Bo*ST.F.qo*(R-ST.F.Ro)*(Z-ST.F.Zo)/aux;
+
+        dBRdZ = -ST.F.jpb*ST.F.Bo*(qprof - (Z-ST.F.Zo)*dqprofdZ)/(R*qprof^2);
         dBphidZ = 0;
-        dBZdZ = -ST.F.jpb*ST.F.Bo*( 1/(qprof*R) - 2*ST.F.qo*(Z-ST.F.Zo)^2/aux );
+        dBZdZ = -ST.F.jpb*ST.F.Bo*(R-ST.F.Ro)*dqprofdZ/(R*qprof^2);
         
         dBdZ = (BR*dBRdZ + Bphi*dBphidZ + BZ*dBZdZ)/Bmag;
         
@@ -386,15 +381,15 @@ else
         gradBphi = 0;
         gradBZ = dBdZ;
         
-        HR = HR + ppar*rotbR/q;
-        Hphi = Hphi + ppar*rotbphi/q;
-        HZ = HZ + ppar*rotbZ/q;
+        HR = BR + ppar*rotbR/q;
+        Hphi = Bphi + ppar*rotbphi/q;
+        HZ = BZ + ppar*rotbZ/q;
         
         F.Bstar = [HR,Hphi,HZ];
         
-        DR = DR - 2*mu*gradBR/(q*G);
-        Dphi = Dphi - 2*mu*gradBphi/(q*G);
-        DZ = DZ - 2*mu*gradBZ/(q*G);
+        DR = ER - 2*mu*gradBR/(q*G);
+        Dphi = Ephi - 2*mu*gradBphi/(q*G);
+        DZ = EZ - 2*mu*gradBZ/(q*G);
         
         F.Estar = [DR,Dphi,DZ];
     end
@@ -1070,6 +1065,7 @@ if ST.opt
 end
 
     figure;
+    subplot(2,2,[1,2])
     plot3(PP.X(:,1),PP.X(:,2),PP.X(:,3),'b',PP.X(1,1),PP.X(1,2),PP.X(1,3),'ko','MarkerFaceColor',[0,0,0])
 %     hold on
 %     plot3(PP.R(:,1),PP.R(:,2),PP.R(:,3),'r')
@@ -1081,6 +1077,15 @@ end
     ylabel('Y','Interpreter','latex','FontSize',16)
     zlabel('Z','Interpreter','latex','FontSize',16)
     title(PP.method,'Interpreter','latex','FontSize',16)
+    subplot(2,2,3)
+    
+    subplot(2,2,4)
+    R = sqrt(PP.X(:,1).^2 + PP.X(:,2).^2);
+    Z = PP.X(:,3);
+    plot(R,Z,'b.','MarkerSize',2)
+    axis equal;
+    xlabel('R','Interpreter','latex','FontSize',16)
+    ylabel('Z','Interpreter','latex','FontSize',16)
 
 if ST.opt
     disp('Particle pusher: done!')
@@ -1161,6 +1166,7 @@ X(:,2) = R.*sin(phi);
 X(:,3) = Z;
 
 figure;
+subplot(2,2,[1 2])
 plot3(X(:,1),X(:,2),X(:,3),'Color',[0.47,0.67,0.19])
 hold on;plot3(X(1,1),X(1,2),X(1,3),'ko','MarkerFaceColor',[0,0,0]);hold off
 axis equal
@@ -1169,17 +1175,23 @@ legend({'Guiding center','$\vec{x}_0$'},'Interpreter','latex')
 xlabel('X','Interpreter','latex','FontSize',16)
 ylabel('Y','Interpreter','latex','FontSize',16)
 zlabel('Z','Interpreter','latex','FontSize',16)
+subplot(2,2,3)
 
+subplot(2,2,4)
+plot(R,Z,'.','MarkerSize',2,'Color',[0.47,0.67,0.19])
+axis equal;
+xlabel('R','Interpreter','latex','FontSize',16)
+ylabel('Z','Interpreter','latex','FontSize',16)
 end
 
 function dydt = eqnsMotionGC(t,y,q,m,mu,ST)
 F = analyticalFields(ST,y(1:3),false,q,mu,y(4));
 B = F.B;
 b = B/sqrt(B*B');
-% Bs = F.Bstar;
-% Es = F.Estar;
-Bs = F.B;
-Es = F.E;
+Bs = F.Bstar;
+Es = F.Estar;
+% Bs = F.B;
+% Es = F.E;
 Bspar = dot(b,Bs);
 G = sqrt( 1 + 2*mu*sqrt(B*B') + y(4)^2 ); % This definition of G is only valid when ST.norm.v = c and ST.norm.m = ST.params.m !!
 
