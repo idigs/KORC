@@ -13,9 +13,9 @@ ifeq ($(UNAME), Darwin)
         FCDEFINEFLAGS =-DDOUBLE_PRECISION       -DHDF5_DOUBLE_PRESICION
         FCFLAGS =-cpp   -J$(MOD) -fopenmp    -O3
 
-        PSPLINE_INSTALL=../pspline_lib # This path needs to be modified accordingly when using a local installation of PSPLINES.
+        PSPLINE_INSTALL=../pspline_lib# This path needs to be modified accordingly when using a local installation of PSPLINES.
 
-        HDF5_INSTALL =../HDF5 # This path needs to be modified accordingly when using a local installation of HDF5.
+        HDF5_INSTALL =../HDF5# This path needs to be modified accordingly when using a local installation of HDF5.
 
         INCLUDES_HDF5   =-I$(HDF5_INSTALL)/include
         INCLUDES =-I$(PSPLINE_INSTALL)/mod

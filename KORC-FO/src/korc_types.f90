@@ -38,7 +38,7 @@ TYPE, PUBLIC :: V_FIELD_3D
 !< @brief KORC 3-D vector field type
 !! @details This KORC type represents a 3-D vector field varible in cylindrical coordinates. For example, this could be the 3-D magnetic
 !! field, which can be written as @f$\vec{B}(R,\phi,Z) = B_R(R,\phi,Z) \hat{R} + B_\phi(R,\phi,Z) \hat{\phi} + B_Z(R,\phi,Z) \hat{Z}@f$.
-!! All the members (components) of the V_FIELD_3D type follow the following index convention: 
+!! All the members (components) of the V_FIELD_3D type follow the following index convention:
 !! (@f$R@f$ index,@f$\phi@f$ index,@f$Z@f$ index)
 
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: R !< @f$R @f$ component of the vector field variable.
@@ -49,9 +49,9 @@ END TYPE V_FIELD_3D
 TYPE, PUBLIC :: V_FIELD_2D
 !< @brief KORC 2-D vector field type
 !! @details This KORC type represents a 2-D vector field varible in cylindrical coordinates. For example, this could be the magnetic
-!! field in an axisymmetric plasma, which can be written as @f$\vec{B}(R,Z) = B_R(R,Z) \hat{R} + B_\phi(R,Z) \hat{\phi} + B_Z(R,Z) 
+!! field in an axisymmetric plasma, which can be written as @f$\vec{B}(R,Z) = B_R(R,Z) \hat{R} + B_\phi(R,Z) \hat{\phi} + B_Z(R,Z)
 !! \hat{Z}@f$.
-!! All the members (components) of the V_FIELD_2D type follow the following index convention: 
+!! All the members (components) of the V_FIELD_2D type follow the following index convention:
 !! (@f$R@f$ index,@f$Z@f$ index).
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: R !< @f$R @f$ component of the vector field variable.
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: PHI !< @f$\phi @f$ component of the vector field variable.
@@ -71,12 +71,12 @@ END TYPE KORC_MPI
 
 
 TYPE, PUBLIC :: CHARCS_PARAMS
-!< @brief KORC derived type containing characteristic scales used in the normalization of KORC variables. 
+!< @brief KORC derived type containing characteristic scales used in the normalization of KORC variables.
 !! @details These characteristic scales are problem-dependent quantities. They are calculated in korc_units.f90 using the input
 !! parameters of a given KORC simulation.
 
-	REAL(rp) :: time 
-	!< @brief Characteristic non-relativistic time scale given by @f$1/\omega_{ce}@f$, where @f$\omega_{ce}=e B_0/m_e@f$ is the 
+	REAL(rp) :: time
+	!< @brief Characteristic non-relativistic time scale given by @f$1/\omega_{ce}@f$, where @f$\omega_{ce}=e B_0/m_e@f$ is the
 	!! larger electron cyclotron frequency in the simulation.
 	REAL(rp) :: time_r
 	!< @brief Characteristic relativistic time scale given by @f$1/\omega_{ce}@f$, where @f$\omega_{ce}=e B_0/\gamma m_e@f$ is the
@@ -187,7 +187,7 @@ TYPE, PRIVATE :: A_FIELD
 !!
 !! @f$\vec{B}(r,\vartheta) = \frac{1}{1 + \eta \cos{\vartheta}} \left[ B_0 \hat{e}_\zeta  + B_\vartheta(r) \hat{e}_\vartheta \right]@f$,
 !!
-!! where @f$\eta = r/R_0@f$ is the aspect ratio, the constant @f$B_0@f$ denotes the magnitude of the toroidal magnetic field, and @f$B_\vartheta(r) = \eta B_0/q(r)@f$ is the poloidal magnetic field with safety factor @f$q(r) = q_0\left( 1 + \frac{r^2}{\lambda^2} \right)@f$. The constant @f$q_0@f$ is the safety factor at the magnetic axis and the constant @f$\lambda@f$ is obtained from the values of @f$q_0@f$ and @f$q(r)@f$ at the plasma edge @f$r=r_{edge}@f$. 
+!! where @f$\eta = r/R_0@f$ is the aspect ratio, the constant @f$B_0@f$ denotes the magnitude of the toroidal magnetic field, and @f$B_\vartheta(r) = \eta B_0/q(r)@f$ is the poloidal magnetic field with safety factor @f$q(r) = q_0\left( 1 + \frac{r^2}{\lambda^2} \right)@f$. The constant @f$q_0@f$ is the safety factor at the magnetic axis and the constant @f$\lambda@f$ is obtained from the values of @f$q_0@f$ and @f$q(r)@f$ at the plasma edge @f$r=r_{edge}@f$.
 
 	REAL(rp) :: Bo !< Magnitude of the toroidal magnetic field @f$B_0@f$.
 	REAL(rp) :: a !< Plasma edge @f$r_{edge}@f$ as measured from the magnetic axis.
@@ -280,7 +280,7 @@ TYPE, PUBLIC :: PROFILES
 	REAL(rp) 								:: neo !< Electron density at the magnetic axis
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: ne_3D !< 3-D array for keeping the pre-computed data of the electron density profile.
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: ne_2D !< 2-D array for keeping the pre-computed data of the electron density profile.
-	
+
 	!Temperature
 	CHARACTER(MAX_STRING_LENGTH) 			:: Te_profile !< String containing the type of electron temperature profile to be used in the simulation.
 	REAL(rp) 								:: Teo !< Electron temperature at the magnetic axis

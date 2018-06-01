@@ -1,3 +1,5 @@
+!> @brief Module containing types used in the modules of the Numerical Recipes book software.
+!! @details For details we refer the user to "FORTRAN Numerical Recipes: Numerical recipes in FORTRAN 90".
 MODULE nrtype
 	INTEGER, PARAMETER :: I4B = SELECTED_INT_KIND(9)
 	INTEGER, PARAMETER :: I2B = SELECTED_INT_KIND(4)
@@ -33,6 +35,9 @@ MODULE nrtype
 
 END MODULE nrtype
 
+
+!> @brief Module containing interfaces used in the modules of the Numerical Recipes book software.
+!! @details For details we refer the user to "FORTRAN Numerical Recipes: Numerical recipes in FORTRAN 90".
 MODULE nrutil
 	USE nrtype
 	IMPLICIT NONE
@@ -1188,7 +1193,8 @@ CONTAINS
 !BL
 END MODULE nrutil
 
-
+!> @brief Module containing interfaces used in the modules of the Numerical Recipes book software.
+!! @details For details we refer the user to "FORTRAN Numerical Recipes: Numerical recipes in FORTRAN 90".
 MODULE nr
 	INTERFACE
 		SUBROUTINE airy(x,ai,bi,aip,bip)
@@ -4400,12 +4406,17 @@ MODULE nr
   integer, private :: private_dummy
 END MODULE nr
 
-
+!> @brief Module with calls to subroutines for calculating various special functions.
+!! @details All the subroutines in this module were taken from the free software available as part of the book Numerical Recipes.
+!! For details we refer the user to "FORTRAN Numerical Recipes: Numerical recipes in FORTRAN 90".
 MODULE special_functions
     IMPLICIT NONE
-    
+
+	PUBLIC :: bessik
+
     CONTAINS
 
+!> @brief Subroutine taken from "Numerical Recipes" that calculates the modified Bessel function of
 SUBROUTINE bessik(x,xnu,ri,rk,rip,rkp)
 	USE nrtype; USE nrutil, ONLY : assert,nrerror
 	USE nr, ONLY : beschb

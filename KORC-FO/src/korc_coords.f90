@@ -1,22 +1,33 @@
+!> @brief Module containing subroutines to calculate the position of the simulated particles in toroidal and cylindrical coordinates.
 module korc_coords
-
     use korc_types
     use korc_constants
 
-    implicit none
+    IMPLICIT NONE
 
     PUBLIC :: cart_to_cyl,&
-				cart_to_tor,&
 				cart_to_tor_check_if_confined
 
-    contains
+    CONTAINS
 
+!> @brief Subroutine that converts the position of simulated particles from Cartesian @f$(x,y,z)@f$ to cylindrical @f$(R,\phi,Z)@f$ coordinates.
+!! @details Here, the coordinate transformation is:
+!!
+!! @f$R = \sqrt{x^2 + y^2}@f$,\n
+!! @f$\phi = \arctan{\left( \frac{y}{x} \right)}@f$,\n
+!! @f$Z = z@f$,\n
+!!
+!! @param[in] X Particles' position in Cartesian coordinates. X(1,:) = @f$x@f$, X(2,:) = @f$y@f$, X(3,:) = @f$z@f$
+!! @param[in,out] Xcyl Particles' position in cylindrical coordinates. Xcyl(1,:) = @f$R@f$, Xcyl(2,:) = @f$\phi@f$, Xcyl(3,:) = @f$Z@f$
+!! @param pp Iterator.
+!! @param ss Iterator.
 subroutine cart_to_cyl(X,Xcyl)
     implicit none
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: X ! X(1,:) = x, X(2,:) = y, X(3,:) = z
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: Xcyl ! Xcyl(1,:) = R, Xcyl(2,:) = phi, Xcyl(3,:) = Z
-	INTEGER :: pp, ss ! Iterators
-	
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN)      :: X
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT)   :: Xcyl
+	INTEGER                                                :: pp
+    INTEGER                                                :: ss
+
 	ss = SIZE(X,2)
 
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(X,Xcyl)
@@ -30,38 +41,34 @@ subroutine cart_to_cyl(X,Xcyl)
 end subroutine cart_to_cyl
 
 
-subroutine cart_to_tor(X,Ro,Xtor,flag)
-    implicit none
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: X ! X(1,:) = x, X(2,:) = y, X(3,:) = z
-	REAL(rp), INTENT(IN) :: Ro
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: Xtor ! Xtor(1,:) = r, Xtor(2,:) = theta, Xtor(3,:) = zeta
-	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(IN) :: flag
-	INTEGER :: pp, ss ! Iterators
-
-	ss = SIZE(X,2)
-
-!$OMP PARALLEL DO FIRSTPRIVATE(ss,Ro) PRIVATE(pp) SHARED(X,Xtor,flag)
-	do pp=1_idef,ss
-        if ( flag(pp) .EQ. 1_is ) then
-		    Xtor(1,pp) = SQRT( (SQRT(X(1,pp)**2 + X(2,pp)**2) - Ro)**2 + X(3,pp)**2 )
-		    Xtor(2,pp) = ATAN2(X(3,pp), SQRT(X(1,pp)**2 + X(2,pp)**2) - Ro)
-		    Xtor(2,pp) = MODULO(Xtor(2,pp),2.0_rp*C_PI)
-		    Xtor(3,pp) = ATAN2(X(1,pp),X(2,pp))
-		    Xtor(3,pp) = MODULO(Xtor(3,pp),2.0_rp*C_PI)
-        end if
-	end do
-!$OMP END PARALLEL DO
-end subroutine cart_to_tor
-
-
+!> @brief Subroutine that converts the position of simulated particles from Cartesian @f$(x,y,z)@f$ to toroidal @f$(r,\theta, \zeta)@f$ coordinates.
+!! @details In addition to performing the coordinate transformation, this subroutine checks whether a given particle is within the plasma or not.
+!! A particle is not longer considered to be within the plasma if its minor radius @f$r > r_{edge}@f$, where @f$r_{edge}@f$ is the radial distance to the
+!! plasma edge as measured from the magnetic axis. For more details see the analytical model of the magnetic field in korc_types.f90 and korc_fields.f90.
+!!
+!! The coordinate transformation is given by:
+!!
+!! @f$r = \sqrt{ \left[\sqrt{x^2 + y^2}-R_0\right]^2 + z^2 }@f$,\n
+!! @f$\theta = \arctan{\left( \frac{z}{\sqrt{x^2 + y^2}-Ro} \right)}@f$,\n
+!! @f$\zeta = \arctan{\left( \frac{x}{y} \right)}@f$,\n
+!!
+!! where @f$R_0@f$ is the radial position of the magnetic axis.
+!! @param[in] X Particles' position in Cartesian coordinates. X(1,:) = @f$x@f$, X(2,:) = @f$y@f$, X(3,:) = @f$z@f$
+!! @param[in] F An instance of the KORC derived type FIELDS.
+!! @param[in,out] Xtor Particles' position in cylindrical coordinates. Xtor(1,:) = @f$r@f$, Xtor(2,:) = @f$\theta@f$, Xtor(3,:) = @f$\zeta@f$
+!! @param Ro Radial position of the magnetic axis.
+!! @param a Distance to plasma edge as measured from the magnetic axis.
+!! @param pp Iterator.
+!! @param ss Iterator.
 subroutine cart_to_tor_check_if_confined(X,F,Xtor,flag)
-    implicit none
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: X ! X(1,:) = x, X(2,:) = y, X(3,:) = z
-	TYPE(FIELDS), INTENT(IN) :: F
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: Xtor ! Xtor(1,:) = r, Xtor(2,:) = theta, Xtor(3,:) = zeta
-	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
-	REAL(rp) :: a, Ro
-	INTEGER :: pp, ss ! Iterators
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN)      :: X
+	TYPE(FIELDS), INTENT(IN)                               :: F
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT)   :: Xtor
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)  :: flag
+	REAL(rp)                                               :: a
+    REAL(rp)                                               :: Ro
+	INTEGER                                                :: pp
+    INTEGER                                                :: ss
 
 	ss = SIZE(X,2)
 	a = F%AB%a

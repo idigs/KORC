@@ -1,3 +1,5 @@
+!> @brief Module containing functions and subroutines for performing interpolations using the PSPLINE library.
+!! @details For a detailed documentation of the PSPLINE library we refer the user to "https://w3.pppl.gov/ntcc/PSPLINE/".
 module korc_interp
     use korc_types
     use korc_coords
@@ -6,7 +8,7 @@ module korc_interp
     use EZspline_obj	! psplines module
     use EZspline		! psplines module
 
-    implicit none
+    IMPLICIT NONE
 
 #ifdef DOUBLE_PRECISION
 	TYPE, PRIVATE :: KORC_3D_FIELDS_INTERPOLANT
@@ -106,7 +108,7 @@ module korc_interp
 		REAL(rp) :: DR
 		REAL(rp) :: DPHI
 		REAL(rp) :: DZ
-	END TYPE 
+	END TYPE
 
 	TYPE(KORC_2D_FIELDS_INTERPOLANT), PRIVATE :: bfield_2d
 	TYPE(KORC_3D_FIELDS_INTERPOLANT), PRIVATE :: bfield_3d
@@ -139,7 +141,7 @@ subroutine initialize_fields_interpolant(params,F)
 	TYPE(FIELDS), INTENT(IN) :: F
 
 	if (params%plasma_model .EQ. 'EXTERNAL') then
-		
+
 		if (params%mpi_params%rank .EQ. 0) then
 			write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * *")')
 			write(6,'("* * * * INITIALIZING FIELDS INTERPOLANT * * * *")')
@@ -172,7 +174,7 @@ subroutine initialize_fields_interpolant(params,F)
 			! Initializing R component
 			call EZspline_init(bfield_2d%R,bfield_2d%NR,bfield_2d%NZ,bfield_2d%BCSR,bfield_2d%BCSZ,ezerr)
 		  	call EZspline_error(ezerr)
-			
+
 			bfield_2d%R%x1 = F%X%R
 			bfield_2d%R%x2 = F%X%Z
 
@@ -182,7 +184,7 @@ subroutine initialize_fields_interpolant(params,F)
 			! Initializing PHI component
 			call EZspline_init(bfield_2d%PHI,bfield_2d%NR,bfield_2d%NZ,bfield_2d%BCSR,bfield_2d%BCSZ,ezerr)
 		  	call EZspline_error(ezerr)
-			
+
 			bfield_2d%PHI%x1 = F%X%R
 			bfield_2d%PHI%x2 = F%X%Z
 
@@ -192,7 +194,7 @@ subroutine initialize_fields_interpolant(params,F)
 			! Initializing Z component
 			call EZspline_init(bfield_2d%Z,bfield_2d%NR,bfield_2d%NZ,bfield_2d%BCSR,bfield_2d%BCSZ,ezerr)
 		  	call EZspline_error(ezerr)
-			
+
 			bfield_2d%Z%x1 = F%X%R
 			bfield_2d%Z%x2 = F%X%Z
 
@@ -265,7 +267,7 @@ subroutine initialize_fields_interpolant(params,F)
 				! Initializing R component
 				call EZspline_init(efield_2d%R,efield_2d%NR,efield_2d%NZ,efield_2d%BCSR,efield_2d%BCSZ,ezerr)
 			  	call EZspline_error(ezerr)
-			
+
 				efield_2d%R%x1 = F%X%R
 				efield_2d%R%x2 = F%X%Z
 
@@ -275,7 +277,7 @@ subroutine initialize_fields_interpolant(params,F)
 				! Initializing PHI component
 				call EZspline_init(efield_2d%PHI,efield_2d%NR,efield_2d%NZ,efield_2d%BCSR,efield_2d%BCSZ,ezerr)
 			  	call EZspline_error(ezerr)
-			
+
 				efield_2d%PHI%x1 = F%X%R
 				efield_2d%PHI%x2 = F%X%Z
 
@@ -285,7 +287,7 @@ subroutine initialize_fields_interpolant(params,F)
 				! Initializing Z component
 				call EZspline_init(efield_2d%Z,efield_2d%NR,efield_2d%NZ,efield_2d%BCSR,efield_2d%BCSZ,ezerr)
 			  	call EZspline_error(ezerr)
-			
+
 				efield_2d%Z%x1 = F%X%R
 				efield_2d%Z%x2 = F%X%Z
 
@@ -370,7 +372,7 @@ subroutine check_if_in_fields_domain(Y,flag)
 			IR = INT(FLOOR((Y(1,pp)  - fields_domain%Ro + 0.5_rp*fields_domain%DR)/fields_domain%DR) + 1.0_rp,idef)
 			IPHI = INT(FLOOR((Y(2,pp)  + 0.5_rp*fields_domain%DPHI)/fields_domain%DPHI) + 1.0_rp,idef)
 			IZ = INT(FLOOR((Y(3,pp)  + ABS(fields_domain%Zo) + 0.5_rp*fields_domain%DZ)/fields_domain%DZ) + 1.0_rp,idef)
-	
+
 			if ((fields_domain%FLAG3D(IR,IPHI,IZ).NE.1_is).OR.((IR.GT.bfield_3d%NR).OR.(IZ.GT.bfield_3d%NZ))) then
 				flag(pp) = 0_is
 			end if
@@ -378,7 +380,7 @@ subroutine check_if_in_fields_domain(Y,flag)
 #ifdef GNU
 !$OMP END PARALLEL DO
 #endif
-	else 
+	else
 #ifdef GNU
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,IR,IZ) SHARED(Y,flag,fields_domain,bfield_2d)
 #endif
@@ -403,7 +405,7 @@ subroutine initialize_profiles_interpolant(params,P)
 
 	if (params%collisions) then
 		if (params%plasma_model .EQ. 'EXTERNAL') then
-		
+
 			if (params%mpi_params%rank .EQ. 0) then
 				write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * * *")')
 				write(6,'("* * * * INITIALIZING PROFILES INTERPOLANT * * * *")')
@@ -417,7 +419,7 @@ subroutine initialize_profiles_interpolant(params,P)
 	!			call EZspline_init(profiles_2d%ne,profiles_2d%NR,profiles_2d%NZ,profiles_2d%BCSR,profiles_2d%BCSZ,ezerr)
 				call EZlinear_Init(profiles_2d%ne,profiles_2d%NR,profiles_2d%NZ,ezerr)
 			  	call EZspline_error(ezerr)
-			
+
 				profiles_2d%ne%x1 = P%X%R
 				profiles_2d%ne%x2 = P%X%Z
 
@@ -428,7 +430,7 @@ subroutine initialize_profiles_interpolant(params,P)
 	!			call EZspline_init(profiles_2d%Te,profiles_2d%NR,profiles_2d%NZ,profiles_2d%BCSR,profiles_2d%BCSZ,ezerr)
 				call EZlinear_Init(profiles_2d%Te,profiles_2d%NR,profiles_2d%NZ,ezerr)
 			  	call EZspline_error(ezerr)
-			
+
 				profiles_2d%Te%x1 = P%X%R
 				profiles_2d%Te%x2 = P%X%Z
 
@@ -439,7 +441,7 @@ subroutine initialize_profiles_interpolant(params,P)
 	!			call EZspline_init(profiles_2d%Zeff,profiles_2d%NR,profiles_2d%NZ,profiles_2d%BCSR,profiles_2d%BCSZ,ezerr)
 				call EZlinear_Init(profiles_2d%Zeff,profiles_2d%NR,profiles_2d%NZ,ezerr)
 			  	call EZspline_error(ezerr)
-			
+
 				profiles_2d%Zeff%x1 = P%X%R
 				profiles_2d%Zeff%x2 = P%X%Z
 
@@ -540,7 +542,7 @@ subroutine check_if_in_profiles_domain(Y,flag)
 			IR = INT(FLOOR((Y(1,pp)  - profiles_domain%Ro + 0.5_rp*profiles_domain%DR)/profiles_domain%DR) + 1.0_rp,idef)
 			IPHI = INT(FLOOR((Y(2,pp)  + 0.5_rp*profiles_domain%DPHI)/profiles_domain%DPHI) + 1.0_rp,idef)
 			IZ = INT(FLOOR((Y(3,pp)  + ABS(profiles_domain%Zo) + 0.5_rp*profiles_domain%DZ)/profiles_domain%DZ) + 1.0_rp,idef)
-	
+
 			if ((profiles_domain%FLAG3D(IR,IPHI,IZ).NE.1_is).OR.((IR.GT.profiles_3d%NR).OR.(IZ.GT.profiles_3d%NZ))) then
 				flag(pp) = 0_is
 			end if
@@ -548,7 +550,7 @@ subroutine check_if_in_profiles_domain(Y,flag)
 #ifdef GNU
 !$OMP END PARALLEL DO
 #endif
-	else 
+	else
 #ifdef GNU
 !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,IR,IZ) SHARED(Y,flag,profiles_domain,profiles_2d)
 #endif
@@ -650,7 +652,7 @@ end subroutine interp_3D_bfields
 subroutine calculate_magnetic_field(Y,F,B,flag)
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = R, Y(2,:) = PHI, Y(3,:) = Z
 	TYPE(FIELDS), INTENT(IN) :: F
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz	
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz
 	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
 	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: A ! A(1,:) = FR, A(2,:) = FPHI, A(3,:) = FZ
 	INTEGER :: pp, ss
@@ -788,16 +790,16 @@ subroutine interp_fields(prtcls,F)
 
 	if (ALLOCATED(F%B_2D%R)) then
 		call interp_2D_bfields(prtcls%Y,prtcls%B,prtcls%flag)
-	end if	
-	
+	end if
+
 	if (ALLOCATED(F%B_3D%R)) then
 		call interp_3D_bfields(prtcls%Y,prtcls%B,prtcls%flag)
 	end if
 
 	if (ALLOCATED(F%E_2D%R)) then
 		call interp_2D_efields(prtcls%Y,prtcls%E,prtcls%flag)
-	end if	
-	
+	end if
+
 	if (ALLOCATED(F%E_3D%R)) then
 		call interp_3D_efields(prtcls%Y,prtcls%E,prtcls%flag)
 	end if
