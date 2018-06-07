@@ -1,5 +1,5 @@
+!> @brief Module with subroutines for advancing the particles' position and velocity in the simulations.
 module korc_ppusher
-
     use korc_types
     use korc_constants
     use korc_fields
@@ -8,9 +8,9 @@ module korc_ppusher
 	use korc_collisions
     use korc_hpc
 
-    implicit none
+    IMPLICIT NONE
 
-	REAL(rp), PRIVATE :: E0 ! Dimensionless vacuum permittivity
+	REAL(rp), PRIVATE :: E0 !< Dimensionless vacuum permittivity @f$\epsilon_0 \times (m_{ch}^2 v_{ch}^3/q_{ch}^3 B_{ch})@f$, see korc_units.f90.
 
     PRIVATE :: cross,&
 				radiation_force,&
@@ -22,18 +22,26 @@ module korc_ppusher
     contains
 
 
+!> @brief This subroutine initializes all the variables needed for advancing the particles' position and velocity.
+!! @details This subroutine is specially useful when we need to define or initialize values of parameters used to calculate derived quantities.
+!! The intent of this subroutine is to work as a constructor of the module.
+!! @param[in] params Core KORC simulation parameters.
 subroutine initialize_particle_pusher(params)
-	implicit none
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	TYPE(KORC_PARAMS), INTENT(IN)  :: params
 
 	E0 = C_E0*(params%cpp%mass**2*params%cpp%velocity**3)/(params%cpp%charge**3*params%cpp%Bo)
 end subroutine initialize_particle_pusher
 
 
+!> @brief Function that calculates and returns the cross product @f$\vec{a}\times \vec{b}@f$. These vectors are in Cartesian coordinates.
+!! @note Notice that all the variables in this subroutine have been normalized using the characteristic scales in korc_units.f90.
+!! @param[in] a Vector @f$\vec{a}@f$.
+!! @param[in] b Vector @f$\vec{b}@f$.
+!! @param cross Value of @f$\vec{a}\times \vec{b}@f$
 function cross(a,b)
 	REAL(rp), DIMENSION(3), INTENT(IN) :: a
 	REAL(rp), DIMENSION(3), INTENT(IN) :: b
-	REAL(rp), DIMENSION(3) :: cross
+	REAL(rp), DIMENSION(3)             :: cross
 
 	cross(1) = a(2)*b(3) - a(3)*b(2)
 	cross(2) = a(3)*b(1) - a(1)*b(3)
@@ -41,14 +49,42 @@ function cross(a,b)
 end function cross
 
 
+!> @brief Subroutine that calculates the synchrotron radiation reaction force.
+!! @details This subroutine calculates the synchrotron radiation reaction force [Carbajal et al. PoP <b>24</b>, 042512 (2017)] using the derivation of Landau-Lifshiftz of the
+!! Lorentz-Abraham-Dirac radiation reaction force:\n
+!! @f$\vec{F}_R(\vec{x},\vec{v}) = \frac{q^3}{6\pi\epsilon_0 m c^3}\left[ \vec{F}_1 + \vec{F}_2 + \vec{F}_3\right]@f$,\n\n
+!! @f$\vec{F}_1 = \gamma \left( \frac{D \vec{E}}{Dt} + \vec{v}\times \frac{D \vec{B}}{Dt} \right)@f$,\n
+!! @f$\vec{F}_2 = \frac{q}{m}\left( \frac{(\vec{E}\cdot\vec{v})}{c^2}\vec{E} + (\vec{E} + \vec{v}\times \vec{B})\times \vec{B} \right)@f$,\n
+!! @f$\vec{F}_3 = -\frac{q\gamma^2}{mc^2} \left( (\vec{E} + \vec{v}\times \vec{B})^2 -  \frac{(\vec{E}\cdot\vec{v})^2}{c^2} \right)\vec{v}@f$,\n\n
+!! where @f$\gamma = 1/\sqrt{1 - v^2/c^2}@f$ is the relativistic factor, @f$D/Dt = \partial/\partial t + \vec{v}\cdot\nabla@f$, @f$q@f$ and @f$m@f$ are the charge and mass of the particle,
+!! and @f$\epsilon_0@f$ is the vacuum permittivity. For relativistic electrons we have @f$F_1 \ll F_2@f$ and @f$F_1 \ll F_3@f$, therefore @f$\vec{F}_1@f$ is not calculated here.
+!!
+!! @note Notice that all the variables in this subroutine have been normalized using the characteristic scales in korc_units.f90.
+!! @param[in] spp An instance of the derived type SPECIES containing all the parameters and simulation variables of the different species in the simulation.
+!! @param[in] U @f$\vec{u} = \gamma \vec{v}@f$, where @f$\vec{v}@f$ is the particle's velocity.
+!! @param[in] E Electric field @f$\vec{E}@f$ seen by each particle. This is given in Cartesian coordinates.
+!! @param[in] B Magnetic field @f$\vec{B}@f$ seen by each particle. This is given in Cartesian coordinates.
+!! @param[out] Frad The calculated synchrotron radiation reaction force @f$\vec{F}_R@f$.
+!! @param F1 The component @f$\vec{F}_1@f$ of @f$\vec{F}_R@f$.
+!! @param F2 The component @f$\vec{F}_2@f$ of @f$\vec{F}_R@f$.
+!! @param F3 The component @f$\vec{F}_3@f$ of @f$\vec{F}_R@f$.
+!! @param V The particle's velocity @f$\vec{v}@f$.
+!! @param vec An auxiliary 3-D vector.
+!! @param g The relativistic @f$\gamma@f$ factor of the particle.
 subroutine radiation_force(spp,U,E,B,Frad)
-    implicit none
-	TYPE(SPECIES), INTENT(IN) :: spp
-	REAL(rp), DIMENSION(3), INTENT(IN) :: U, E, B
-	REAL(rp), DIMENSION(3), INTENT(OUT) :: Frad
-	REAL(rp), DIMENSION(3) :: F1, F2, F3, V, vec
-	REAL(rp) :: g, tmp
-	
+	TYPE(SPECIES), INTENT(IN)              :: spp
+	REAL(rp), DIMENSION(3), INTENT(IN)     :: U
+    REAL(rp), DIMENSION(3), INTENT(IN)     :: E
+    REAL(rp), DIMENSION(3), INTENT(IN)     :: B
+	REAL(rp), DIMENSION(3), INTENT(OUT)    :: Frad
+	REAL(rp), DIMENSION(3)                 :: F1
+    REAL(rp), DIMENSION(3)                 :: F2
+    REAL(rp), DIMENSION(3)                 :: F3
+    REAL(rp), DIMENSION(3)                 :: V
+    REAL(rp), DIMENSION(3)                 :: vec
+	REAL(rp)                               :: g
+    REAL(rp)                               :: tmp
+
 	g = SQRT(1.0_rp + DOT_PRODUCT(U,U))
 	V = U/g
 
@@ -62,24 +98,98 @@ subroutine radiation_force(spp,U,E,B,Frad)
 end subroutine radiation_force
 
 
+!> @brief Subroutine for advancing the particles' velocity.
+!! @details We are using the modified relativistic leapfrog method of J.-L. Vay, PoP <b>15</b>, 056701 (2008) for advancing the particles'
+!! position and velocity. For including the synchrotron radiation reaction force we used the scheme in Tamburini et al., New J. Phys. <b>12</b>, 123005 (2010).
+!! A comprehensive description of this can be found in Carbajal et al., PoP <b>24</b>, 042512 (2017).
+!! The discretized equations of motion to advance the change in the position and momentum due to the Lorentz force are:\n\n
+!! @f$\frac{\vec{x}^{i+1/2} - \vec{x}^{i-1/2}}{\Delta t}  = \vec{v}^i@f$\n
+!! @f$\frac{\vec{p}^{i+1}_L - \vec{p}^{i}}{\Delta t} = q \left(  \vec{E}^{i+1/2} + \frac{\vec{v}^i + \vec{v}^{i+1}_L}{2} \times \vec{B}^{i+1/2} \right)@f$\n\n
+!! where @f$\Delta t@f$ is the time step, @f$q@f$ denotes the charge,  @f$\vec{p}^j = m \gamma^j \vec{v}^j@f$, and @f$\gamma^j = 1/\sqrt{1 + v^{j2}/c^2}@f$.
+!! Here @f$i@f$ and @f$i+1@f$ indicate integer time leves, while @f$i-1/2@f$ and @f$i+1/2@f$ indicate half-time steps.
+!! The evolution of the relativistic @f$\gamma@f$ factor is given by @f$\gamma^{i+1} = \sqrt{1 + \left(p_L^{i+1}/mc \right)^2} = \sqrt{1 + \vec{p}_L^{i+1}\cdot \vec{p}'/m^2c^2}@f$, which can be combined with the above equations to produce:\n\n
+!! @f$\vec{p}^{i+1}_L = s\left[ \vec{p}' + (\vec{p}'\cdot\vec{t})\vec{t} + \vec{p}'\times \vec{t} \right]@f$\n
+!! @f$\gamma^{i+1} = \sqrt{\frac{\sigma + \sqrt{\sigma^2 + 4(\tau^2 + p^{*2})}}{2}}@f$\n\n
+!! where we have defined @f$\vec{p}' = \vec{p}^i + q\Delta t \left( \vec{E}^{i+1/2} + \frac{\vec{v}^i}{2} \times \vec{B}^{i+1/2} \right)@f$,
+!! @f$\vec{\tau} = (q\Delta t/2)\vec{B}^{i+1/2}@f$, @f$\vec{t} = {\vec \tau}/\gamma^{i+1}@f$, @f$p^{*} = \vec{p}'\cdot \vec{\tau}/mc@f$, @f$\sigma = \gamma'^2 - \tau^2@f$, @f$\gamma' = \sqrt{1 + p'^2/m^2c^2}@f$, and @f$s = 1/(1+t^2)@f$.
+!! The discretized equation of motion to advance the change in the momentum due to the radiation reaction force force is\n\n
+!! @f$\frac{\vec{p}^{i+1}_R - \vec{p}^{i}}{\Delta t} = \vec{F}_R(\vec{x}^{i+1/2},\vec{p}^{i+1/2})@f$,\n\n
+!! where @f$\vec{p}^{i+1/2} = (\vec{p}^{i+1}_L + \vec{p}^i)/2@f$. Finally, using  @f$\vec{p}^{i+1}_L@f$ and @f$\vec{p}^{i+1}_R@f$, the momentum at time level @f$i+1@f$ is given by\n
+!! @f$\vec{p}^{i+1}  = \vec{p}^{i+1}_L + \vec{p}^{i+1}_R - \vec{p}^i.@f$\n\n
+!! Collisions are included by solving the stochastic differential equation in a Cartesian coordinate system where @f$\vec{p}@f$ is parallel to @f$\hat{e}_z@f$:\n\n
+!! @f$\vec{p} = \vec{A}dt + \hat{\sigma}\cdot d\vec{W}@f$,\n\n
+!! where @f$\vec{A} = p \nu_s\hat{b}@f$, @f$\hat{b}=\vec{B}/B@f$ with @f$\vec{B}@f$ the magnetic field, and @f$\nu_s@f$ the collision frequency that corresponds to the drag force due to collisions.
+!! @f$\hat{\sigma}@f$ is a diagonal 3x3 matrix with elements @f$\hat{\sigma}_{11} = p\sqrt{\nu_{\parallel}}@f$, and @f$\hat{\sigma}_{22} = \hat{\sigma}_{33} = p\sqrt{\nu_{D}}@f$, with @f$\nu_\parallel@f$ and @f$\nu_D@f$
+!! the collisional frequencies producing diffusive transport along and across the direction of @f$\vec{p}@f$, respectively.
+!! @note Notice that all the variables in this subroutine have been normalized using the characteristic scales in korc_units.f90.
+!!
+!! @param[in] params Core KORC simulation parameters.
+!! @param[in] F An instance of the KORC derived type FIELDS.
+!! @param[in] P An instance of the KORC derived type PROFILES.
+!! @param[in,out] spp An instance of the derived type SPECIES containing all the parameters and simulation variables of the different species in the simulation.
+!! @param[in] bool Logical variable used to indicate if we calculate or not quantities listed in the outputs list.
+!! @param[in] dt Time step used in the leapfrog step (@f$\Delta t@f$).
+!! @param Prad Total radiated power of each particle.
+!! @param B Magnitude of the magnetic field seen by each particle .
+!! @param v Speed of each particle.
+!! @param vpar Parallel velocity @f$v_\parallel = \vec{v}\cdot \hat{b}@f$.
+!! @param vperp Perpendicular velocity @f$v_\parallel = |\vec{v} - (\vec{v}\cdot \hat{b})\hat{b}|@f$.
+!! @param tmp Temporary variable used for various computations.
+!! @param a This variable is used to simplify notation in the code, and is given by @f$a=q\Delta t/m@f$,
+!! @param gp This variable is @f$\gamma' = \sqrt{1 + p'^2/m^2c^2}@f$ in the above equations.
+!! @param sigma This variable is @f$\sigma = \gamma'^2 - \tau^2@f$ in the above equations.
+!! @param us This variable is @f$u^{*} = p^{*}/m@f$ where @f$ p^{*} = \vec{p}'\cdot \vec{\tau}/mc@f$.
+!! @param g Relativistic factor @f$\gamma@f$.
+!! @param s This variable is @f$s = 1/(1+t^2)@f$ in the equations above.
+!! @param U_L This variable is @f$\vec{u}_L = \vec{p}_L/m@f$ where @f$\vec{p}^{i+1}_L = s\left[ \vec{p}' + (\vec{p}'\cdot\vec{t})\vec{t} + \vec{p}'\times \vec{t} \right]@f$.
+!! @param U_hs Is @f$\vec{u}=\vec{p}/m@f$ at half-time step (@f$i+1/2@f$) in the absence of radiation losses or collisions. @f$\vec{u}^{i+1/2} = \vec{u}^i + \frac{q\Delta t}{2m}\left( \vec{E}^{i+1/2} + \vec{v}^i\times \vec{B}^{i+1/2} \right)@f$.
+!! @param tau This variable is @f$\vec{\tau} = (q\Delta t/2)\vec{B}^{i+1/2}@f$.
+!! @param up This variable is @f$\vec{u}'= \vec{p}'/m@f$, where @f$\vec{p}' = \vec{p}^i + q\Delta t \left( \vec{E}^{i+1/2} + \frac{\vec{v}^i}{2} \times \vec{B}^{i+1/2} \right)@f$.
+!! @param t This variable is @f$\vec{t} = {\vec \tau}/\gamma^{i+1}@f$.
+!! @param U This variable is @f$\vec{u}^{i+1}= \vec{p}^{i+1}/m@f$.
+!! @param U_RC This variable is @f$\vec{u}^{i+1}_R= \vec{p}^{i+1}_R/m@f$
+!! @param U_os This variable is @f$\vec{u}^{i+1/2}= \vec{p}^{i+1/2}/m@f$ when radiation losses are included. Here, @f$\vec{p}^{i+1/2} = (\vec{p}^{i+1}_L + \vec{p}^i)/2@f$.
+!! @param Frad Synchrotron radiation reaction force of each particle.
+!! @param vec Auxiliary vector used in various computations.
+!! @param b_unit Unitary vector pointing along the local magnetic field @f$\hat{b}@f$.
+!! @param ii Species iterator.
+!! @param pp Particles iterator.
+!! @param ss_collisions Logical variable that indicates if collisions are included in the simulation.
 subroutine advance_particles_velocity(params,F,P,spp,dt,bool)
-    implicit none
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(FIELDS), INTENT(IN) :: F
-	TYPE(PROFILES), INTENT(IN) :: P
-	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
-    LOGICAL, INTENT(IN) :: bool
-	REAL(rp), INTENT(IN) :: dt
-	REAL(rp) :: Prad, B, v, vpar, vperp, tmp ! diagnostics and temporary variables
-	REAL(rp) :: a, gp, sigma, us, g, s ! variables of leapfrog of Vay, J.-L. PoP (2008)
-	REAL(rp), DIMENSION(3) :: U_L, U_hs, tau, up, t
-	REAL(rp), DIMENSION(3) :: U, U_RC, U_os
-	REAL(rp), DIMENSION(3) :: Frad, Fcoll
-	REAL(rp), DIMENSION(3) :: vec, b_unit ! diagnostics and temporary variables
-	INTEGER :: ii, pp ! Iterators
-    LOGICAL :: ss_collisions    ! Whether we're using single-species collisions
-    
-    
+	TYPE(KORC_PARAMS), INTENT(IN)                              :: params
+	TYPE(FIELDS), INTENT(IN)                                   :: F
+	TYPE(PROFILES), INTENT(IN)                                 :: P
+	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)    :: spp
+    LOGICAL, INTENT(IN)                                        :: bool
+	REAL(rp), INTENT(IN)                                       :: dt
+	REAL(rp)                                                   :: Prad
+    REAL(rp)                                                   :: B
+    REAL(rp)                                                   :: v
+    REAL(rp)                                                   :: vpar
+    REAL(rp)                                                   :: vperp
+    REAL(rp)                                                   :: tmp
+	REAL(rp)                                                   :: a
+    REAL(rp)                                                   :: gp
+    REAL(rp)                                                   :: sigma
+    REAL(rp)                                                   :: us
+    REAL(rp)                                                   :: g
+    REAL(rp)                                                   :: s
+	REAL(rp), DIMENSION(3)                                     :: U_L
+    REAL(rp), DIMENSION(3)                                     :: U_hs
+    REAL(rp), DIMENSION(3)                                     :: tau
+    REAL(rp), DIMENSION(3)                                     :: up
+    REAL(rp), DIMENSION(3)                                     :: t
+	REAL(rp), DIMENSION(3)                                     :: U
+    REAL(rp), DIMENSION(3)                                     :: U_RC
+    REAL(rp), DIMENSION(3)                                     :: U_os
+	REAL(rp), DIMENSION(3)                                     :: Frad
+	REAL(rp), DIMENSION(3)                                     :: vec
+    REAL(rp), DIMENSION(3)                                     :: b_unit
+	INTEGER                                                    :: ii
+    INTEGER                                                    :: pp
+    LOGICAL                                                    :: ss_collisions
+
+
 	! Determine whether we are using a single-species collision model
 	ss_collisions = (TRIM(params%collisions_model) .EQ. 'SINGLE_SPECIES')
 
@@ -92,7 +202,7 @@ subroutine advance_particles_velocity(params,F,P,spp,dt,bool)
 	    a = spp(ii)%q*dt/spp(ii)%m
 
 !$OMP PARALLEL DO SHARED(params,ii,spp,ss_collisions) FIRSTPRIVATE(a,dt,bool)&
-!$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gp,sigma,us,g,t,s,Frad,Fcoll,U_RC,U_os,tmp,b_unit,B,vpar,v,vperp,vec,Prad)
+!$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gp,sigma,us,g,t,s,Frad,U_RC,U_os,tmp,b_unit,B,vpar,v,vperp,vec,Prad)
 		do pp=1_idef,spp(ii)%ppp
 			if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
 				U = spp(ii)%vars%g(pp)*spp(ii)%vars%V(:,pp)
@@ -104,7 +214,7 @@ subroutine advance_particles_velocity(params,F,P,spp,dt,bool)
 				U_RC = U
 
 				! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
-				U_hs = U_L + 0.5_rp*a*( spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)) )		        
+				U_hs = U_L + 0.5_rp*a*( spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)) )
 				tau = 0.5_rp*dt*spp(ii)%q*spp(ii)%vars%B(:,pp)/spp(ii)%m
 				up = U_hs + 0.5_rp*a*spp(ii)%vars%E(:,pp)
 				gp = SQRT( 1.0_rp + DOT_PRODUCT(up,up) )
@@ -142,7 +252,7 @@ subroutine advance_particles_velocity(params,F,P,spp,dt,bool)
 				if (g.LT.params%minimum_particle_g) then
 					spp(ii)%vars%flag(pp) = 0_is
 				end if
-		    
+
                 if (bool) then
 				    !! Parallel unit vector
 				    b_unit = spp(ii)%vars%B(:,pp)/B
@@ -190,13 +300,23 @@ subroutine advance_particles_velocity(params,F,P,spp,dt,bool)
 end subroutine advance_particles_velocity
 
 
+!> @brief Subrotuine to advance particles' position.
+!! @details This subroutine advances the particles position using the information of the updated velocity.\n
+!! @f$\frac{\vec{x}^{i+1/2} - \vec{x}^{i-1/2}}{\Delta t}  = \vec{v}^i@f$\n
+!! @note Notice that all the variables in this subroutine have been normalized using the characteristic scales in korc_units.f90.
+!! @param[in] params Core KORC simulation parameters.
+!! @param[in] F An instance of the KORC derived type FIELDS.
+!! @param[in,out] spp An instance of the derived type SPECIES containing all the parameters and simulation variables of the different species in the simulation.
+!! @param[in] dt Time step used in the leapfrog step (@f$\Delta t@f$).
+!! @param ii Species iterator.
+!! @param pp Particles iterator.
 subroutine advance_particles_position(params,F,spp,dt)
-    implicit none
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(FIELDS), INTENT(IN) :: F
-	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
-	REAL(rp), INTENT(IN) :: dt
-	INTEGER :: ii, pp ! Iterators
+	TYPE(KORC_PARAMS), INTENT(IN)                              :: params
+	TYPE(FIELDS), INTENT(IN)                                   :: F
+	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)    :: spp
+	REAL(rp), INTENT(IN)                                       :: dt
+	INTEGER                                                    :: ii
+    INTEGER                                                    :: pp
 
 	if (params%plasma_model .NE. 'UNIFORM') then
 		do ii=1_idef,params%num_species

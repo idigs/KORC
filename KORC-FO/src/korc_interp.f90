@@ -5,140 +5,190 @@ module korc_interp
     use korc_coords
     use korc_rnd_numbers
 	use korc_hpc
+
     use EZspline_obj	! psplines module
     use EZspline		! psplines module
 
     IMPLICIT NONE
 
+
 #ifdef DOUBLE_PRECISION
-	TYPE, PRIVATE :: KORC_3D_FIELDS_INTERPOLANT
-		TYPE(EZspline3_r8) :: R		! 3D EZspline object
-		TYPE(EZspline3_r8) :: PHI	! 3D EZspline object
-		TYPE(EZspline3_r8) :: Z		! 3D EZspline object
 
-		INTEGER :: NR, NPHI, NZ
-		INTEGER, DIMENSION(2) :: BCSR = (/ 0, 0 /)
-		INTEGER, DIMENSION(2) :: BCSPHI = (/ -1, -1 /)
-		INTEGER, DIMENSION(2) :: BCSZ = (/ 0, 0 /)
-	END TYPE
 
-	TYPE, PRIVATE :: KORC_2D_FIELDS_INTERPOLANT
-		TYPE(EZspline2_r8) :: A		! 2D EZspline object
-		TYPE(EZspline2_r8) :: R		! 2D EZspline object
-		TYPE(EZspline2_r8) :: PHI	! 2D EZspline object
-		TYPE(EZspline2_r8) :: Z		! 2D EZspline object
+!> @brief Derived type containing 3-D PSPLINE interpolants for cylindrical components of vector fields @f$\vec{F}(R,\phi,Z) = F_R\hat{e}_R + F_\phi\hat{e}_phi + F_Z\hat{e}_Z@f$.
+!! Real precision of 8 bytes.
+TYPE, PRIVATE :: KORC_3D_FIELDS_INTERPOLANT
+	TYPE(EZspline3_r8)    :: R		!< Interpolant of @f$F_R(R,\phi,Z)@f$.
+	TYPE(EZspline3_r8)    :: PHI	!< Interpolant of @f$F_\phi(R,\phi,Z)@f$.
+	TYPE(EZspline3_r8)    :: Z		!< Interpolant of @f$F_Z(R,\phi,Z)@f$.
 
-		INTEGER, PRIVATE :: NR, NZ
-		INTEGER, DIMENSION(2) :: BCSR = (/ 0, 0 /)
-		INTEGER, DIMENSION(2) :: BCSZ = (/ 0, 0 /)
-	END TYPE
+	INTEGER               :: NR !< Size of mesh containing the field data along the @f$R@f$-axis.
+    INTEGER               :: NPHI !< Size of mesh containing the field data along the @f$\phi@f$-axis.
+    INTEGER               :: NZ !< Size of mesh containing the field data along the @f$Z@f$-axis.
+	INTEGER, DIMENSION(2) :: BCSR = (/ 0, 0 /) !< Not-a-knot boundary condition for the interpolants at both ends of the @f$R@f$ direction.
+	INTEGER, DIMENSION(2) :: BCSPHI = (/ -1, -1 /) !< Periodic boundary condition for the interpolants at both ends of the @f$\phi@f$ direction.
+	INTEGER, DIMENSION(2) :: BCSZ = (/ 0, 0 /) !< Not-a-knot boundary condition for the interpolants at both ends of the @f$Z@f$ direction.
+END TYPE
 
-	TYPE, PRIVATE :: KORC_3D_PROFILES_INTERPOLANT
-		TYPE(EZspline3_r8) :: ne	! 3D EZspline object
-		TYPE(EZspline3_r8) :: Te	! 3D EZspline object
-		TYPE(EZspline3_r8) :: Zeff	! 3D EZspline object
 
-		INTEGER :: NR, NPHI, NZ
-		INTEGER, DIMENSION(2) :: BCSR = (/ 0, 0 /)
-		INTEGER, DIMENSION(2) :: BCSPHI = (/ -1, -1 /)
-		INTEGER, DIMENSION(2) :: BCSZ = (/ 0, 0 /)
-	END TYPE
+!> @brief Derived type containing 2-D PSPLINE interpolants for cylindrical components of vector fields @f$\vec{F}(R,Z) = F_R\hat{e}_R + F_\phi\hat{e}_phi+ F_Z\hat{e}_Z@f$.
+!! Real precision of 8 bytes.
+TYPE, PRIVATE :: KORC_2D_FIELDS_INTERPOLANT
+	TYPE(EZspline2_r8)    :: A		!< Interpolant of a scalar field @f$A(R,Z)@f$.
+	TYPE(EZspline2_r8)    :: R		!< Interpolant of @f$F_R(R,Z)@f$.
+	TYPE(EZspline2_r8)    :: PHI	!< Interpolant of @f$F_\phi(R,Z)@f$.
+	TYPE(EZspline2_r8)    :: Z		!< Interpolant of @f$F_Z(R,Z)@f$.
 
-	TYPE, PRIVATE :: KORC_2D_PROFILES_INTERPOLANT
-		TYPE(EZspline2_r8) :: ne	! 2D EZspline object
-		TYPE(EZspline2_r8) :: Te	! 2D EZspline object
-		TYPE(EZspline2_r8) :: Zeff	! 2D EZspline object
+	INTEGER               :: NR !< Size of mesh containing the field data along the @f$R@f$-axis.
+    INTEGER               :: NZ !< Size of mesh containing the field data along the @f$Z@f$-axis.
+	INTEGER, DIMENSION(2) :: BCSR = (/ 0, 0 /) !< Not-a-knot boundary condition for the interpolants at both ends of the @f$R@f$ direction.
+	INTEGER, DIMENSION(2) :: BCSZ = (/ 0, 0 /) !< Not-a-knot boundary condition for the interpolants at both ends of the @f$Z@f$ direction.
+END TYPE
 
-		INTEGER, PRIVATE :: NR, NZ
-		INTEGER, DIMENSION(2) :: BCSR = (/ 0, 0 /)
-		INTEGER, DIMENSION(2) :: BCSZ = (/ 0, 0 /)
-	END TYPE
+
+!> @brief Derived type containing 3-D PSPLINE interpolants for cylindrical components of the density @f$n_e(R,\phi,Z)@f$, temperature @f$T_e(R,\phi,Z)@f$, and effective charge number @f$Z_{eff}(R,\phi,Z)@f$ profiles.
+!! Real precision of 8 bytes.
+TYPE, PRIVATE :: KORC_3D_PROFILES_INTERPOLANT
+	TYPE(EZspline3_r8)    :: ne    !< Interpolant of background electron density @f$n_e(R,\phi,Z)@f$.
+	TYPE(EZspline3_r8)    :: Te    !< Interpolant of background electron temperature @f$T_e(R,\phi,Z)@f$.
+	TYPE(EZspline3_r8)    :: Zeff  !< Interpolant of effective charge number @f$Z_{eff}(R,\phi,Z)@f$.
+
+    INTEGER               :: NR !< Size of mesh containing the field data along the @f$R@f$-axis.
+    INTEGER               :: NPHI !< Size of mesh containing the field data along the @f$\phi@f$-axis.
+    INTEGER               :: NZ !< Size of mesh containing the field data along the @f$Z@f$-axis.
+	INTEGER, DIMENSION(2) :: BCSR = (/ 0, 0 /) !< Not-a-knot boundary condition for the interpolants at both ends of the @f$R@f$ direction.
+	INTEGER, DIMENSION(2) :: BCSPHI = (/ -1, -1 /) !< Periodic boundary condition for the interpolants at both ends of the @f$\phi@f$ direction.
+	INTEGER, DIMENSION(2) :: BCSZ = (/ 0, 0 /) !< Not-a-knot boundary condition for the interpolants at both ends of the @f$Z@f$ direction.
+END TYPE
+
+
+!> @brief Derived type containing 2-D PSPLINE interpolants for cylindrical components of the density @f$n_e(R,Z)@f$, temperature @f$T_e(R,Z)@f$, and effective charge number @f$Z_{eff}(R,Z)@f$ profiles.
+!! Real precision of 8 bytes.
+TYPE, PRIVATE :: KORC_2D_PROFILES_INTERPOLANT
+	TYPE(EZspline2_r8)    :: ne	   !< Interpolant of background electron density @f$n_e(R,Z)@f$.
+	TYPE(EZspline2_r8)    :: Te	   !< Interpolant of background electron temperature @f$T_e(R,Z)@f$.
+	TYPE(EZspline2_r8)    :: Zeff  !< Interpolant of effective charge number @f$Z_{eff}(R,Z)@f$.
+
+    INTEGER               :: NR !< Size of mesh containing the field data along the @f$R@f$-axis.
+    INTEGER               :: NZ !< Size of mesh containing the field data along the @f$Z@f$-axis.
+	INTEGER, DIMENSION(2) :: BCSR = (/ 0, 0 /) !< Not-a-knot boundary condition for the interpolants at both ends of the @f$R@f$ direction.
+	INTEGER, DIMENSION(2) :: BCSZ = (/ 0, 0 /) !< Not-a-knot boundary condition for the interpolants at both ends of the @f$Z@f$ direction.
+END TYPE
+
 #elif SINGLE_PRECISION
-	TYPE, PRIVATE :: KORC_3D_FIELDS_INTERPOLANT
-		TYPE(EZspline3_r4) :: R		! 3D EZspline object
-		TYPE(EZspline3_r4) :: PHI	! 3D EZspline object
-		TYPE(EZspline3_r4) :: Z		! 3D EZspline object
 
-		INTEGER, PRIVATE :: NR, NPHI, NZ
-		INTEGER, DIMENSION(2) :: BCSR = (/ 0, 0 /)
-		INTEGER, DIMENSION(2) :: BCSPHI = (/ -1, -1 /)
-		INTEGER, DIMENSION(2) :: BCSZ = (/ 0, 0 /)
-	END TYPE
 
-	TYPE, PRIVATE :: KORC_2D_FIELDS_INTERPOLANT
-		TYPE(EZspline2_r4) :: A		! 2D EZspline object
-		TYPE(EZspline2_r4) :: R		! 2D EZspline object
-		TYPE(EZspline2_r4) :: PHI	! 2D EZspline object
-		TYPE(EZspline2_r4) :: Z		! 2D EZspline object
+!> @brief Derived type containing 3-D PSPLINE interpolants for cylindrical components of vector fields @f$\vec{F}(R,\phi,Z) = F_R\hat{e}_R + F_\phi\hat{e}_phi + F_Z\hat{e}_Z@f$.
+!! Real precision of 4 bytes.
+TYPE, PRIVATE :: KORC_3D_FIELDS_INTERPOLANT
+	TYPE(EZspline3_r4)    :: R     !< Interpolant of @f$F_R(R,\phi,Z)@f$.
+	TYPE(EZspline3_r4)    :: PHI   !< Interpolant of @f$F_\phi(R,\phi,Z)@f$.
+	TYPE(EZspline3_r4)    :: Z     !< Interpolant of @f$F_Z(R,\phi,Z)@f$.
 
-		INTEGER, PRIVATE :: NR, NZ
-		INTEGER, DIMENSION(2) :: BCSR = (/ 0, 0 /)
-		INTEGER, DIMENSION(2) :: BCSZ = (/ 0, 0 /)
-	END TYPE
+    INTEGER               :: NR !< Size of mesh containing the field data along the @f$R@f$-axis.
+    INTEGER               :: NPHI !< Size of mesh containing the field data along the @f$\phi@f$-axis.
+    INTEGER               :: NZ !< Size of mesh containing the field data along the @f$Z@f$-axis.
+	INTEGER, DIMENSION(2) :: BCSR = (/ 0, 0 /) !< Not-a-knot boundary condition for the interpolants at both ends of the @f$R@f$ direction.
+	INTEGER, DIMENSION(2) :: BCSPHI = (/ -1, -1 /) !< Periodic boundary condition for the interpolants at both ends of the @f$\phi@f$ direction.
+	INTEGER, DIMENSION(2) :: BCSZ = (/ 0, 0 /) !< Not-a-knot boundary condition for the interpolants at both ends of the @f$Z@f$ direction.
+END TYPE
 
-	TYPE, PRIVATE :: KORC_3D_PROFILES_INTERPOLANT
-		TYPE(EZspline3_r4) :: ne	! 3D EZspline object
-		TYPE(EZspline3_r4) :: Te	! 3D EZspline object
-		TYPE(EZspline3_r4) :: Zeff	! 3D EZspline object
 
-		INTEGER :: NR, NPHI, NZ
-		INTEGER, DIMENSION(2) :: BCSR = (/ 0, 0 /)
-		INTEGER, DIMENSION(2) :: BCSPHI = (/ -1, -1 /)
-		INTEGER, DIMENSION(2) :: BCSZ = (/ 0, 0 /)
-	END TYPE
+!> @brief Derived type containing 2-D PSPLINE interpolants for cylindrical components of vector fields @f$\vec{F}(R,Z) = F_R\hat{e}_R + F_\phi\hat{e}_phi+ F_Z\hat{e}_Z@f$.
+!! Real precision of 4 bytes.
+TYPE, PRIVATE :: KORC_2D_FIELDS_INTERPOLANT
+	TYPE(EZspline2_r4)    :: A		!< Interpolant of a scalar field @f$A(R,Z)@f$.
+	TYPE(EZspline2_r4)    :: R		!< Interpolant of @f$F_R(R,Z)@f$.
+	TYPE(EZspline2_r4)    :: PHI	!< Interpolant of @f$F_\phi(R,Z)@f$.
+	TYPE(EZspline2_r4)    :: Z		!< Interpolant of @f$F_Z(R,Z)@f$.
 
-	TYPE, PRIVATE :: KORC_2D_PROFILES_INTERPOLANT
-		TYPE(EZspline2_r4) :: ne	! 2D EZspline object
-		TYPE(EZspline2_r4) :: Te	! 2D EZspline object
-		TYPE(EZspline2_r4) :: Zeff	! 2D EZspline object
+    INTEGER               :: NR !< Size of mesh containing the field data along the @f$R@f$-axis.
+    INTEGER               :: NZ !< Size of mesh containing the field data along the @f$Z@f$-axis.
+    INTEGER, DIMENSION(2) :: BCSR = (/ 0, 0 /) !< Not-a-knot boundary condition for the interpolants at both ends of the @f$R@f$ direction.
+    INTEGER, DIMENSION(2) :: BCSZ = (/ 0, 0 /) !< Not-a-knot boundary condition for the interpolants at both ends of the @f$Z@f$ direction.
+END TYPE
 
-		INTEGER, PRIVATE :: NR, NZ
-		INTEGER, DIMENSION(2) :: BCSR = (/ 0, 0 /)
-		INTEGER, DIMENSION(2) :: BCSZ = (/ 0, 0 /)
-	END TYPE
+
+!> @brief Derived type containing 3-D PSPLINE interpolants for cylindrical components of the density @f$n_e(R,\phi,Z)@f$, temperature @f$T_e(R,\phi,Z)@f$, and effective charge number @f$Z_{eff}(R,\phi,Z)@f$ profiles.
+!! Real precision of 4 bytes.
+TYPE, PRIVATE :: KORC_3D_PROFILES_INTERPOLANT
+	TYPE(EZspline3_r4)    :: ne	   !< Interpolant of background electron density @f$n_e(R,\phi,Z)@f$.
+	TYPE(EZspline3_r4)    :: Te	   !< Interpolant of background electron temperature @f$T_e(R,\phi,Z)@f$.
+	TYPE(EZspline3_r4)    :: Zeff  !< Interpolant of effective charge number @f$Z_{eff}(R,\phi,Z)@f$.
+
+    INTEGER               :: NR !< Size of mesh containing the field data along the @f$R@f$-axis.
+    INTEGER               :: NPHI !< Size of mesh containing the field data along the @f$\phi@f$-axis.
+    INTEGER               :: NZ !< Size of mesh containing the field data along the @f$Z@f$-axis.
+	INTEGER, DIMENSION(2) :: BCSR = (/ 0, 0 /) !< Not-a-knot boundary condition for the interpolants at both ends of the @f$R@f$ direction.
+	INTEGER, DIMENSION(2) :: BCSPHI = (/ -1, -1 /) !< Periodic boundary condition for the interpolants at both ends of the @f$\phi@f$ direction.
+	INTEGER, DIMENSION(2) :: BCSZ = (/ 0, 0 /) !< Not-a-knot boundary condition for the interpolants at both ends of the @f$Z@f$ direction.
+END TYPE
+
+
+!> @brief Derived type containing 2-D PSPLINE interpolants for cylindrical components of the density @f$n_e(R,Z)@f$, temperature @f$T_e(R,Z)@f$, and effective charge number @f$Z_{eff}(R,Z)@f$ profiles.
+!! Real precision of 8 bytes.
+TYPE, PRIVATE :: KORC_2D_PROFILES_INTERPOLANT
+	TYPE(EZspline2_r4)    :: ne	   !< Interpolant of background electron density @f$n_e(R,Z)@f$.
+	TYPE(EZspline2_r4)    :: Te	   !< Interpolant of background electron temperature @f$T_e(R,Z)@f$.
+	TYPE(EZspline2_r4)    :: Zeff  !< Interpolant of effective charge number @f$Z_{eff}(R,Z)@f$.
+
+    INTEGER               :: NR !< Size of mesh containing the field data along the @f$R@f$-axis.
+    INTEGER               :: NZ !< Size of mesh containing the field data along the @f$Z@f$-axis.
+	INTEGER, DIMENSION(2) :: BCSR = (/ 0, 0 /) !< Not-a-knot boundary condition for the interpolants at both ends of the @f$R@f$ direction.
+	INTEGER, DIMENSION(2) :: BCSZ = (/ 0, 0 /) !< Not-a-knot boundary condition for the interpolants at both ends of the @f$Z@f$ direction.
+END TYPE
 #endif
 
-	TYPE, PRIVATE :: KORC_INTERPOLANT_DOMAIN
-		INTEGER(KIND=1), DIMENSION(:,:), ALLOCATABLE :: FLAG2D
-		INTEGER(KIND=1), DIMENSION(:,:,:), ALLOCATABLE :: FLAG3D
 
-		REAL(rp) :: Ro
-		REAL(rp) :: Zo
+!> @brief Derived type containing 2-D and 3-D arrays with the information of the spatial domain where the fields and profiles are known.
+!! This info is used for detecting when a particle is lost, and therefore not followed anymore.
+TYPE, PRIVATE :: KORC_INTERPOLANT_DOMAIN
+	INTEGER(KIND=1), DIMENSION(:,:), ALLOCATABLE      :: FLAG2D !< 2-D array with info of the spatial domain where the axisymmetric fields and plasma profiles are known.
+	INTEGER(KIND=1), DIMENSION(:,:,:), ALLOCATABLE    :: FLAG3D !< 3-D array with info of the spatial domain where the 3-D fields and plasma profiles are known.
 
-		REAL(rp) :: DR
-		REAL(rp) :: DPHI
-		REAL(rp) :: DZ
-	END TYPE
+	REAL(rp)                                          :: Ro !< Smaller radial position of the fields and profiles domain.
+	REAL(rp)                                          :: Zo !< Smaller vertical position of the fields and profiles domain.
 
-	TYPE(KORC_2D_FIELDS_INTERPOLANT), PRIVATE :: bfield_2d
-	TYPE(KORC_3D_FIELDS_INTERPOLANT), PRIVATE :: bfield_3d
-	TYPE(KORC_2D_FIELDS_INTERPOLANT), PRIVATE :: efield_2d
-	TYPE(KORC_3D_FIELDS_INTERPOLANT), PRIVATE :: efield_3d
-	TYPE(KORC_INTERPOLANT_DOMAIN), PRIVATE :: fields_domain
-	TYPE(KORC_2D_PROFILES_INTERPOLANT), PRIVATE :: profiles_2d
-	TYPE(KORC_3D_PROFILES_INTERPOLANT), PRIVATE :: profiles_3d
-	TYPE(KORC_INTERPOLANT_DOMAIN), PRIVATE :: profiles_domain
-	INTEGER :: ezerr
-
-    PUBLIC :: interp_fields,&
-				initialize_fields_interpolant,&
-				initialize_profiles_interpolant,&
-				finalize_interpolants
-	PRIVATE :: interp_3D_bfields,&
-				interp_2D_bfields,&
-				interp_3D_efields,&
-				interp_2D_efields,&
-				interp_2D_profiles,&
-				interp_3D_profiles,&
-				check_if_in_fields_domain,&
-				check_if_in_profiles_domain
-
-    contains
+	REAL(rp)                                          :: DR    !< Separation between grid points along the radial direction.
+	REAL(rp)                                          :: DPHI  !< Separation between grid points along the azimuthal direction.
+	REAL(rp)                                          :: DZ    !< Separation between grid points along the vertical direction.
+END TYPE
 
 
+TYPE(KORC_2D_FIELDS_INTERPOLANT), PRIVATE      :: bfield_2d !< An instance of KORC_2D_FIELDS_INTERPOLANT for interpolating the magnetic field.
+TYPE(KORC_3D_FIELDS_INTERPOLANT), PRIVATE      :: bfield_3d !< An instance of KORC_3D_FIELDS_INTERPOLANT for interpolating the magnetic field.
+TYPE(KORC_2D_FIELDS_INTERPOLANT), PRIVATE      :: efield_2d !< An instance of KORC_2D_FIELDS_INTERPOLANT for interpolating the electric field.
+TYPE(KORC_3D_FIELDS_INTERPOLANT), PRIVATE      :: efield_3d !< An instance of KORC_3D_FIELDS_INTERPOLANT for interpolating the electric field.
+TYPE(KORC_INTERPOLANT_DOMAIN), PRIVATE         :: fields_domain !< An instance of KORC_INTERPOLANT_DOMAIN used for interpolating fields.
+TYPE(KORC_2D_PROFILES_INTERPOLANT), PRIVATE    :: profiles_2d !< An instance of KORC_2D_PROFILES_INTERPOLANT for interpolating plasma profiles.
+TYPE(KORC_3D_PROFILES_INTERPOLANT), PRIVATE    :: profiles_3d !< An instance of KORC_3D_PROFILES_INTERPOLANT for interpolating plasma profiles.
+TYPE(KORC_INTERPOLANT_DOMAIN), PRIVATE         :: profiles_domain !< An instance of KORC_INTERPOLANT_DOMAIN used for interpolating plasma profiles.
+INTEGER                                        :: ezerr !< Error status during PSPLINE interpolations.
+
+
+PUBLIC :: interp_fields,&
+		initialize_fields_interpolant,&
+		initialize_profiles_interpolant,&
+		finalize_interpolants
+PRIVATE :: interp_3D_bfields,&
+			interp_2D_bfields,&
+			interp_3D_efields,&
+			interp_2D_efields,&
+			interp_2D_profiles,&
+			interp_3D_profiles,&
+			check_if_in_fields_domain,&
+			check_if_in_profiles_domain
+
+CONTAINS
+
+
+!> @brief Subroutine that initializes fields interpolants.
+!! @details This subroutine initializes either 2-D or 3-D PSPLINE interpolants using the data of fields in the KORC-dervied-type variable F.
+!! @param[in] params Core KORC simulation parameters.
+!! @param[in] F An instance of KORC's derived type FIELDS containing all the information about the fields used in the simulation. See korc_types.f90 and korc_fields.f90.
 subroutine initialize_fields_interpolant(params,F)
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	TYPE(FIELDS), INTENT(IN) :: F
+	TYPE(KORC_PARAMS), INTENT(IN)  :: params
+	TYPE(FIELDS), INTENT(IN)       :: F
 
 	if (params%plasma_model .EQ. 'EXTERNAL') then
 
@@ -356,11 +406,24 @@ subroutine initialize_fields_interpolant(params,F)
 end subroutine initialize_fields_interpolant
 
 
+!> @brief Subrotuine that checks if particles in the simulation are within the spatial domain where interpolants and fields are known.
+!! @details External fields and interpolants can have different spatial domains where they are defined. Therefore, it is necessary to check if a given
+!! particle has left these spatial domains to stop following it, otherwise this will cause an error in the simulation.
+!! @param[in] Y Particles' position in cylindrical coordinates, Y(1,:) = @f$R@f$, Y(2,:) = @f$\phi@f$, and Y(3,:) = @f$Z@f$.
+!! @param[in,ou] flag Flag that determines whether particles are followed in the simulation (flag=1), or not (flag=0).
+!! @param IR Variable used to localize the grid cell in the @f$(R,\phi,Z)@f$ or @f$(R,Z)@f$ grid containing the fields data that corresponds to the radial position of the particles.
+!! @param IPHI Variable used to localize the grid cell in the @f$(R,\phi,Z)@f$ or @f$(R,Z)@f$ grid containing the fields data that corresponds to the azimuthal position of the particles.
+!! @param IZ Variable used to localize the grid cell in the @f$(R,\phi,Z)@f$ or @f$(R,Z)@f$ grid containing the fields data that corresponds to the vertical position of the particles.
+!! @param pp Particle iterator.
+!! @param ss Species iterator.
 subroutine check_if_in_fields_domain(Y,flag)
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
-	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
-	INTEGER :: IR,IPHI,IZ
-	INTEGER(ip) :: pp,ss
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN)      :: Y
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)  :: flag
+	INTEGER                                                :: IR
+    INTEGER                                                :: IPHI
+    INTEGER                                                :: IZ
+    INTEGER(ip)                                            :: pp
+    INTEGER(ip)                                            :: ss
 
 	ss = SIZE(Y,2)
 
@@ -399,6 +462,10 @@ subroutine check_if_in_fields_domain(Y,flag)
 end subroutine check_if_in_fields_domain
 
 
+!> @brief Subroutine that initializes plasma profiles interpolants.
+!! @details This subroutine initializes either 2-D or 3-D PSPLINE interpolants using the data of plasma profiles in the KORC-dervied-type variable P.
+!! @param[in] params Core KORC simulation parameters.
+!! @param[in] P An instance of KORC's derived type PROFILES containing all the information about the plasma profiles used in the simulation. See korc_types.f90 and korc_profiles.f90.
 subroutine initialize_profiles_interpolant(params,P)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(PROFILES), INTENT(INOUT) :: P
@@ -526,11 +593,24 @@ subroutine initialize_profiles_interpolant(params,P)
 end subroutine initialize_profiles_interpolant
 
 
+!> @brief Subrotuine that checks if particles in the simulation are within the spatial domain where interpolants and plasma profiles are known.
+!! @details External plasma profiles and interpolants can have different spatial domains where they are defined. Therefore, it is necessary to check if a given
+!! particle has left these spatial domains to stop following it, otherwise this will cause an error in the simulation.
+!! @param[in] Y Particles' position in cylindrical coordinates, Y(1,:) = @f$R@f$, Y(2,:) = @f$\phi@f$, and Y(3,:) = @f$Z@f$.
+!! @param[in,ou] flag Flag that determines whether particles are followed in the simulation (flag=1), or not (flag=0).
+!! @param IR Variable used to localize the grid cell in the @f$(R,\phi,Z)@f$ or @f$(R,Z)@f$ grid containing the fields data that corresponds to the radial position of the particles.
+!! @param IPHI Variable used to localize the grid cell in the @f$(R,\phi,Z)@f$ or @f$(R,Z)@f$ grid containing the fields data that corresponds to the azimuthal position of the particles.
+!! @param IZ Variable used to localize the grid cell in the @f$(R,\phi,Z)@f$ or @f$(R,Z)@f$ grid containing the fields data that corresponds to the vertical position of the particles.
+!! @param pp Particle iterator.
+!! @param ss Species iterator.
 subroutine check_if_in_profiles_domain(Y,flag)
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = r, Y(2,:) = theta, Y(3,:) = zeta
-	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
-	INTEGER :: IR,IPHI,IZ
-	INTEGER(ip) :: pp,ss
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN)      :: Y
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)  :: flag
+	INTEGER                                                :: IR
+    INTEGER                                                :: IPHI
+    INTEGER                                                :: IZ
+	INTEGER(ip)                                            :: pp
+    INTEGER(ip)                                            :: ss
 
 	ss = SIZE(Y,2)
 
@@ -569,12 +649,20 @@ subroutine check_if_in_profiles_domain(Y,flag)
 end subroutine check_if_in_profiles_domain
 
 
+!> @brief Subroutine for interpolating the pre-computed, axisymmetric magnetic field to the particles' position.
+!! @param[in] Y Particles' position in cylindrical coordinates, Y(1,:) = @f$R@f$, Y(2,:) = @f$\phi@f$, and Y(3,:) = @f$Z@f$.
+!! @param[in,out] B Cartesian components of interpolated magnetic field components. B(1,:)=@f$B_x@f$, B(2,:)=@f$B_y@f$, and B(3,:)=@f$B_z@f$.
+!! @param F Cylindrical components of interpolated magnetic field components. F(1,:)=@f$B_R@f$, F(2,:)=@f$B_\phi@f$, and F(3,:)=@f$B_Z@f$.
+!! @param flag Flag that indicates whether particles are followed in the simulation (flag=1), or not (flag=0).
+!! @param pp Particle iterator.
+!! @param ss Species iterator.
 subroutine interp_2D_bfields(Y,B,flag)
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = R, Y(2,:) = PHI, Y(3,:) = Z
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: F ! F(1,:) = FR, F(2,:) = FPHI, F(3,:) = FZ
-	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
-	INTEGER :: pp, ss
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN)      :: Y
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT)   :: B
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE                  :: F
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)  :: flag
+	INTEGER                                                :: pp
+    INTEGER                                                :: ss
 
 	ss = size(Y,2)
 
@@ -609,12 +697,20 @@ subroutine interp_2D_bfields(Y,B,flag)
 end subroutine interp_2D_bfields
 
 
+!> @brief Subroutine for interpolating the pre-computed, 3-D magnetic field to the particles' position.
+!! @param[in] Y Particles' position in cylindrical coordinates, Y(1,:) = @f$R@f$, Y(2,:) = @f$\phi@f$, and Y(3,:) = @f$Z@f$.
+!! @param[in,out] B Cartesian components of interpolated magnetic field components. B(1,:)=@f$B_x@f$, B(2,:)=@f$B_y@f$, and B(3,:)=@f$B_z@f$.
+!! @param F Cylindrical components of interpolated magnetic field components. F(1,:)=@f$B_R@f$, F(2,:)=@f$B_\phi@f$, and F(3,:)=@f$B_Z@f$.
+!! @param flag Flag that indicates whether particles are followed in the simulation (flag=1), or not (flag=0).
+!! @param pp Particle iterator.
+!! @param ss Species iterator.
 subroutine interp_3D_bfields(Y,B,flag)
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = R, Y(2,:) = PHI, Y(3,:) = Z
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: F ! F(1,:) = FR, F(2,:) = FPHI, F(3,:) = FZ
-	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
-	INTEGER :: pp, ss
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN)      :: Y
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT)   :: B
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE                  :: F
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)  :: flag
+	INTEGER                                                :: pp
+    INTEGER                                                :: ss
 
 	ss = size(Y,2)
 
@@ -649,13 +745,29 @@ subroutine interp_3D_bfields(Y,B,flag)
 end subroutine interp_3D_bfields
 
 
+!> @brief Subroutine that calculates the axisymmetric magnetic field to the particles' position using the poloidal magnetic flux.
+!! @details When the poloidal magnetic flux @f$\Psi(R,Z)@f$ is used in a KORC simulation, the magnetic field components are calculated as it follows:\n\n
+!! @f$B_R = \frac{1}{R}\frac{\partial \Psi}{\partial Z}@f$,\n
+!! @f$B_\phi = \frac{RoBo}{R}@f$,\n
+!! @f$B_Z = -\frac{1}{R}\frac{\partial \Psi}{\partial R}@f$,\n\n
+!! where @f$Ro@f$ and @f$Bo@f$ are the radial position of the magnetic axis and the magnetic field as measured at the magnetic axis, respectively.
+!! First, the derivatives of the poloidal magnetic flux are calculated at the particles' position using the PSPLINE interpolant of the poloidal magnetic flux.
+!! Then, we calculate the cylindrical components of the magnetic field, and finally we calculate its Cartesian components that will be used in the particle pusher.
+!! @param[in] Y Particles' position in cylindrical coordinates, Y(1,:) = @f$R@f$, Y(2,:) = @f$\phi@f$, and Y(3,:) = @f$Z@f$.
+!! @param[in] F An instance of KORC's derived type FIELDS containing all the information about the fields used in the simulation. See korc_types.f90 and korc_fields.f90.
+!! @param[in,out] B Cartesian components of interpolated magnetic field components. B(1,:)=@f$B_x@f$, B(2,:)=@f$B_y@f$, and B(3,:)=@f$B_x@f$.
+!! @param flag Flag that indicates whether particles are followed in the simulation (flag=1), or not (flag=0).
+!! @param A Variable containing the partial derivatives of the poloidal magnetic flux @f$\Psi(R,Z)@f$ and the cylindrical components of the magnetic field (its value changes through the subroutine).
+!! @param pp Particle iterator.
+!! @param ss Species iterator.
 subroutine calculate_magnetic_field(Y,F,B,flag)
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = R, Y(2,:) = PHI, Y(3,:) = Z
-	TYPE(FIELDS), INTENT(IN) :: F
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: B ! B(1,:) = Bx, B(2,:) = By, B(3,:) = Bz
-	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: A ! A(1,:) = FR, A(2,:) = FPHI, A(3,:) = FZ
-	INTEGER :: pp, ss
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN)      :: Y
+	TYPE(FIELDS), INTENT(IN)                               :: F
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT)   :: B
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)  :: flag
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE                  :: A
+	INTEGER                                                :: pp
+    INTEGER                                                :: ss
 
 	ss = size(Y,2)
 
@@ -695,12 +807,20 @@ subroutine calculate_magnetic_field(Y,F,B,flag)
 end subroutine calculate_magnetic_field
 
 
+!> @brief Subroutine for interpolating the pre-computed, axisymmetric electric field to the particles' position.
+!! @param[in] Y Particles' position in cylindrical coordinates, Y(1,:) = @f$R@f$, Y(2,:) = @f$\phi@f$, and Y(3,:) = @f$Z@f$.
+!! @param[in,out] E Cartesian components of interpolated electric field components. E(1,:)=@f$E_x@f$, E(2,:)=@f$E_y@f$, and E(3,:)=@f$E_z@f$.
+!! @param F Cylindrical components of interpolated magnetic field components. F(1,:)=@f$E_R@f$, F(2,:)=@f$E_\phi@f$, and F(3,:)=@f$E_Z@f$.
+!! @param flag Flag that indicates whether particles are followed in the simulation (flag=1), or not (flag=0).
+!! @param pp Particle iterator.
+!! @param ss Species iterator.
 subroutine interp_2D_efields(Y,E,flag)
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = R, Y(2,:) = PHI, Y(3,:) = Z
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: E ! E(1,:) = Ex, E(2,:) = Ey, E(3,:) = Ez
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: F ! F(1,:) = FR, F(2,:) = FPHI, F(3,:) = FZ
-	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
-	INTEGER :: pp, ss
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN)      :: Y
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT)   :: E
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE                  :: F
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)  :: flag
+	INTEGER                                                :: pp
+    INTEGER                                                :: ss
 
 	ss = size(Y,2)
 
@@ -735,12 +855,20 @@ subroutine interp_2D_efields(Y,E,flag)
 end subroutine interp_2D_efields
 
 
+!> @brief Subroutine for interpolating the pre-computed 3-D electric field to the particles' position.
+!! @param[in] Y Particles' position in cylindrical coordinates, Y(1,:) = @f$R@f$, Y(2,:) = @f$\phi@f$, and Y(3,:) = @f$Z@f$.
+!! @param[in,out] E Cartesian components of interpolated electric field components. E(1,:)=@f$E_x@f$, E(2,:)=@f$E_y@f$, and E(3,:)=@f$E_z@f$.
+!! @param F Cylindrical components of interpolated magnetic field components. F(1,:)=@f$E_R@f$, F(2,:)=@f$E_\phi@f$, and F(3,:)=@f$E_Z@f$.
+!! @param flag Flag that indicates whether particles are followed in the simulation (flag=1), or not (flag=0).
+!! @param pp Particle iterator.
+!! @param ss Species iterator.
 subroutine interp_3D_efields(Y,E,flag)
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = R, Y(2,:) = PHI, Y(3,:) = Z
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT) :: E ! E(1,:) = Ex, E(2,:) = Ey, E(3,:) = Ez
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE :: F ! F(1,:) = FR, F(2,:) = FPHI, F(3,:) = FZ
-	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
-	INTEGER :: pp, ss
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN)      :: Y
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT)   :: E
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE                  :: F
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)  :: flag
+	INTEGER                                                :: pp
+    INTEGER                                                :: ss
 
 	ss = size(Y,2)
 
@@ -775,10 +903,12 @@ subroutine interp_3D_efields(Y,E,flag)
 end subroutine interp_3D_efields
 
 
+!> @brief Subroutine that works as an interface for calling the appropriate subroutines for interpolating or calculating the electric and magnetic fields.
+!! @param[in,out] prtcls An instance of PARTICLES containing the variables of a given species.
+!! @param[in] F An instance of KORC's derived type FIELDS containing all the information about the fields used in the simulation. See korc_types.f90 and korc_fields.f90.
 subroutine interp_fields(prtcls,F)
 	TYPE(PARTICLES), INTENT(INOUT) :: prtcls
-	TYPE(FIELDS), INTENT(IN) :: F
-	INTEGER :: ii, pp, ss ! Iterators
+	TYPE(FIELDS), INTENT(IN)       :: F
 
 	call cart_to_cyl(prtcls%X, prtcls%Y)
 
@@ -806,13 +936,22 @@ subroutine interp_fields(prtcls,F)
 end subroutine interp_fields
 
 
+!> @brief Subroutine for interpolating the pre-computed, axisymmetric plasma profiles to the particles' position.
+!! @param[in] Y Particles' position in cylindrical coordinates, Y(1,:) = @f$R@f$, Y(2,:) = @f$\phi@f$, and Y(3,:) = @f$Z@f$.
+!! @param[in,out] ne Interpolated background electron density @f$n_e(R,Z)@f$.
+!! @param[in,out] Te Interpolated background electron temperature @f$T_e(R,Z)@f$.
+!! @param[in,out] Zeff Interpolated effective charge number @f$Z_{eff}(R,Z)@f$.
+!! @param flag Flag that indicates whether particles are followed in the simulation (flag=1), or not (flag=0).
+!! @param pp Particle iterator.
+!! @param ss Species iterator.
 subroutine interp_2D_profiles(Y,ne,Te,Zeff,flag)
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = R, Y(2,:) = PHI, Y(3,:) = Z
-	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: ne
-	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: Te
-	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: Zeff
-	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
-	INTEGER :: pp, ss
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN)      :: Y
+	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)     :: ne
+	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)     :: Te
+	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)     :: Zeff
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)  :: flag
+	INTEGER                                                :: pp
+    INTEGER                                                :: ss
 
 	ss = size(Y,2)
 
@@ -841,13 +980,22 @@ subroutine interp_2D_profiles(Y,ne,Te,Zeff,flag)
 end subroutine interp_2D_profiles
 
 
+!> @brief Subroutine for interpolating the pre-computed, 3-D plasma profiles to the particles' position.
+!! @param[in] Y Particles' position in cylindrical coordinates, Y(1,:) = @f$R@f$, Y(2,:) = @f$\phi@f$, and Y(3,:) = @f$Z@f$.
+!! @param[in,out] ne Interpolated background electron density @f$n_e(R,\phi,Z)@f$.
+!! @param[in,out] Te Interpolated background electron temperature @f$T_e(R,\phi,Z)@f$.
+!! @param[in,out] Zeff Interpolated effective charge number @f$Z_{eff}(R,\phi,Z)@f$.
+!! @param flag Flag that indicates whether particles are followed in the simulation (flag=1), or not (flag=0).
+!! @param pp Particle iterator.
+!! @param ss Species iterator.
 subroutine interp_3D_profiles(Y,ne,Te,Zeff,flag)
-	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN) :: Y ! Y(1,:) = R, Y(2,:) = PHI, Y(3,:) = Z
-	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: ne
-	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: Te
-	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: Zeff
-	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: flag
-	INTEGER :: pp, ss
+	REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN)      :: Y
+	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)     :: ne
+	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)     :: Te
+	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)     :: Zeff
+	INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)  :: flag
+	INTEGER                                                :: pp
+    INTEGER                                                :: ss
 
 	ss = size(Y,2)
 
@@ -876,10 +1024,12 @@ subroutine interp_3D_profiles(Y,ne,Te,Zeff,flag)
 end subroutine interp_3D_profiles
 
 
+!> @brief Subroutine that calls the appropriate subroutines for interpolating the 2-D or 3-D plasma profiles to the particles' position.
+!! @param[in,out] prtcls An instance of PARTICLES containing the variables of a given species.
+!! @param[in] P An instance of KORC's derived type PROFILES containing all the information about the plasma profiles used in the simulation. See korc_types.f90 and korc_profiles.f90.
 subroutine interp_profiles(prtcls,P)
 	TYPE(PARTICLES), INTENT(INOUT) :: prtcls
-	TYPE(PROFILES), INTENT(IN) :: P
-	INTEGER :: ii, pp, ss ! Iterators
+	TYPE(PROFILES), INTENT(IN)     :: P
 
 !	call cart_to_cyl(prtcls%X, prtcls%Y) ! This was done before when interpolating fields
 
@@ -896,6 +1046,8 @@ subroutine interp_profiles(prtcls,P)
 end subroutine interp_profiles
 
 
+!> @brief Subroutine that frees memory allocated for PSPLINE interpolants.
+!! @param[in] params Core KORC simulation parameters.
 subroutine finalize_interpolants(params)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 
@@ -905,7 +1057,7 @@ subroutine finalize_interpolants(params)
 		end if
 
 		if (EZspline_allocated(bfield_3d%R)) call Ezspline_free(bfield_3d%R, ezerr)
-		if (EZspline_allocated(bfield_3d%PHI))call Ezspline_free(bfield_3d%PHI, ezerr)
+		if (EZspline_allocated(bfield_3d%PHI)) call Ezspline_free(bfield_3d%PHI, ezerr)
 		if (EZspline_allocated(bfield_3d%Z)) call Ezspline_free(bfield_3d%Z, ezerr)
 		if (EZspline_allocated(bfield_2d%A)) call Ezspline_free(bfield_2d%A, ezerr)
 		if (EZspline_allocated(bfield_2d%R)) call Ezspline_free(bfield_2d%R, ezerr)

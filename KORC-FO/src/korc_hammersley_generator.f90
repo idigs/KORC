@@ -1,10 +1,14 @@
+!> @brief Module containing subroutines for generating 1-D and 2-D Hammersley quasi-Monte Carlo sequences.
+!! @details The algorithm and code for generating the 1-D Hammersley sequence was developed by John Burkardt at the Florida State University.
+!! Visit "https://people.sc.fsu.edu/~jburkardt/f_src/hammersley/hammersley.html" for more information.
+!! The algorithm and code for generating the 2-D Hammersley sequence was developed by L. Carbajal at the Oak Ridge National Lab.
 MODULE korc_hammersley_generator
 	use korc_types
 
 	IMPLICIT NONE
 
 	PUBLIC :: hammersley,&
-				dummy_subroutine
+				generate_2D_hammersley_sequence
 	PRIVATE :: hammersley_inverse,&
 				 hammersley_sequence,&
 				 r8mat_print,&
@@ -15,30 +19,27 @@ MODULE korc_hammersley_generator
 	CONTAINS
 
 
-subroutine dummy_subroutine()
-	implicit none
-	INTEGER(4) :: I, M, N
-	REAL(8), DIMENSION(2) :: R
-	INTEGER :: ii 
-
-	N = INT(1000,4)
-	
-	do ii=1_idef,1000_idef
-		call hammersley(INT(ii,4),INT(2_idef,4),N,R)
-		write(6,'(2F25.15)') R
-	end do
-
-end subroutine dummy_subroutine
-
-
+!> @brief Subroutine for generating a 2-D Hammersley sequence.
+!! @details This subroutine uses the algorithm for generating a 1-D Hammersley sequence.
+!! Each MPI process in KORC generates a (different) subset of pairs (X,Y) of a 2-D Hammersley sequence. The total number of pairs (X,Y)
+!! is NMPIS*N, where NMPIS is the number of MPI processes in the simulation and N is the number of particles followed by each MPI process.
+!! Each subset of pairs (X,Y) has N elements.
+!! @param[in,out] X 1-D array with elements of a 2-D Hammersley sequence.
+!! @param[in,out] Y 1-D array with elements of a 2-D Hammersley sequence.
+!! @param[in] ID MPI rank of MPI process.
+!! @param[in] NMPIS Total number of MPI processes in the simulation.
+!! @param N Number of particles per MPI process.
+!! @param offset An offset to indicate the subroutine what subset of the 2-D Harmmersley sequence will be generated.
+!! @param ii Particle iterator.
 subroutine generate_2D_hammersley_sequence(ID,NMPIS,X,Y)
-	implicit none
-	REAL(rp), DIMENSION(:), INTENT(INOUT) :: X, Y
-	INTEGER, INTENT(IN) :: ID, NMPIS
-	INTEGER (4) :: offset
-	INTEGER(4) :: N
-	REAL(8), DIMENSION(2) :: R
-	INTEGER(4) :: ii 
+	REAL(rp), DIMENSION(:), INTENT(INOUT) 	:: X
+	REAL(rp), DIMENSION(:), INTENT(INOUT) 	:: Y
+	INTEGER, INTENT(IN) 					:: ID
+	INTEGER, INTENT(IN) 					:: NMPIS
+	INTEGER(4) 								:: N
+	INTEGER(4) 								:: offset
+	REAL(8), DIMENSION(2) 					:: R
+	INTEGER(4) 								:: ii
 
 	N = INT(SIZE(X),4)
 	offset = (INT(ID+1_idef,4) - 1_4)*N
@@ -51,10 +52,10 @@ subroutine generate_2D_hammersley_sequence(ID,NMPIS,X,Y)
 		X(ii) = REAL(R(1),rp)
 		Y(ii) = REAL(R(2),rp)
 	end do
-
 end subroutine generate_2D_hammersley_sequence
 
 
+!> @brief For more info please visit "https://people.sc.fsu.edu/~jburkardt/f_src/hammersley/hammersley.html".
 subroutine hammersley ( i, m, n, r )
 !*****************************************************************************80
 !
@@ -128,6 +129,9 @@ subroutine hammersley ( i, m, n, r )
 
   return
 end
+
+
+!> @brief For more info please visit "https://people.sc.fsu.edu/~jburkardt/f_src/hammersley/hammersley.html".
 subroutine hammersley_inverse ( r, m, n, i )
 
 !*****************************************************************************80
@@ -212,13 +216,13 @@ subroutine hammersley_inverse ( r, m, n, i )
     i = nint ( real ( n, kind = 8 ) * r(1) )
 
   end if
- 
+
   return
 end
 
 
+!> @brief For more info please visit "https://people.sc.fsu.edu/~jburkardt/f_src/hammersley/hammersley.html".
 function prime ( n )
-
 !*****************************************************************************80
 !
 !! PRIME returns any of the first PRIME_MAX prime numbers.
@@ -488,8 +492,8 @@ function prime ( n )
 end
 
 
+!> @brief For more info please visit "https://people.sc.fsu.edu/~jburkardt/f_src/hammersley/hammersley.html".
 subroutine hammersley_sequence ( i1, i2, m, n, r )
-
 !*****************************************************************************80
 !
 !! HAMMERSLEY_SEQUENCE computes elements I1 through I2 of a Hammersley sequence.
@@ -515,7 +519,7 @@ subroutine hammersley_sequence ( i1, i2, m, n, r )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) I1, I2, the indices of the first and last 
+!    Input, integer ( kind = 4 ) I1, I2, the indices of the first and last
 !    elements of the sequence.  0 <= I1, I2.
 !
 !    Input, integer ( kind = 4 ) M, the spatial dimension.
@@ -523,7 +527,7 @@ subroutine hammersley_sequence ( i1, i2, m, n, r )
 !    Input, integer ( kind = 4 ) N, the "base" for the first component.
 !    1 <= N.
 !
-!    Output, real ( kind = 8 ) R(M,abs(I1-I2)+1), the elements of the sequence 
+!    Output, real ( kind = 8 ) R(M,abs(I1-I2)+1), the elements of the sequence
 !    with indices I1 through I2.
 !
   implicit none
@@ -583,8 +587,8 @@ subroutine hammersley_sequence ( i1, i2, m, n, r )
 end
 
 
+!> @brief For more info please visit "https://people.sc.fsu.edu/~jburkardt/f_src/hammersley/hammersley.html".
 subroutine r8mat_print ( m, n, a, title )
-
 !*****************************************************************************80
 !
 !! R8MAT_PRINT prints an R8MAT.
@@ -627,8 +631,10 @@ subroutine r8mat_print ( m, n, a, title )
 
   return
 end
-subroutine r8mat_print_some ( m, n, a, ilo, jlo, ihi, jhi, title )
 
+
+!> @brief For more info please visit "https://people.sc.fsu.edu/~jburkardt/f_src/hammersley/hammersley.html".
+subroutine r8mat_print_some ( m, n, a, ilo, jlo, ihi, jhi, title )
 !*****************************************************************************80
 !
 !! R8MAT_PRINT_SOME prints some of an R8MAT.
@@ -736,8 +742,10 @@ subroutine r8mat_print_some ( m, n, a, ilo, jlo, ihi, jhi, title )
 
   return
 end
-subroutine timestamp ( )
 
+
+!> @brief For more info please visit "https://people.sc.fsu.edu/~jburkardt/f_src/hammersley/hammersley.html".
+subroutine timestamp ( )
 !*****************************************************************************80
 !
 !! TIMESTAMP prints the current YMDHMS date as a time stamp.
@@ -814,5 +822,4 @@ subroutine timestamp ( )
 
   return
 end
-
 END MODULE korc_hammersley_generator

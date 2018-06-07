@@ -48,11 +48,11 @@ module korc_fields
 !! @paramp[in,out] B Magnetic field components in Cartesian coordinates; B(1,:) = @f$B_x@f$, B(2,:) = @f$B_y@f$, B(3,:) = @f$B_z@f$
 !! @param[in,out] E Electric field components in Cartesian coordinates; E(1,:) = @f$E_x@f$, E(2,:) = @f$E_y@f$, E(3,:) = @f$E_z@f$
 !! @param[in] flag Flag for each particle to decide whether it is being followed (flag=T) or not (flag=F).
-!! @param Ezeta Toroidal electric field.
-!! @param Bzeta Toroidal magnetic field.
-!! @param Bp Poloidal magnetic field.
-!! @param eta Aspect ratio.
-!! @param q Safety profile.
+!! @param Ezeta Toroidal electric field @f$E_\zeta@f$.
+!! @param Bzeta Toroidal magnetic field @f$B_\zeta@f$.
+!! @param Bp Poloidal magnetic field @f$B_\theta(r)@f$.
+!! @param eta Aspect ratio @f$\eta@f$.
+!! @param q Safety profile @f$q(r)@f$.
 !! @param pp Particle iterator.
 !! @param ss Particle species iterator.
 subroutine analytical_fields(F,Y,E,B,flag)

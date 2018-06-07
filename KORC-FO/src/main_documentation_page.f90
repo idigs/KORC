@@ -4,11 +4,11 @@
 !!
 !! @section s1 Introduction
 !! The Kinetic Orbit Runaway electrons Code (KORC) is a full-orbit particle tracer that evolves relativistic electrons in both analytical and grid-based pre-computed electric and magnetic fields. KORC includes the effects of: the acceleration of the electrons due to the electric field, synchrotron radiation energy losses, and collisions with the background plasma containing high-Z impurities.
-!! 
-!! For details about the equations of motion of the relativistic electrons followed by KORC we refer the user to <em>Carbajal et al. Phys. Plasmas 24, 042512 (2017)</em> and <em>Carbajal and del-Castillo-Negrete, Nuclear Fusion, submitted (2018)</em>. Also, for details about the KORC's synchrotron radiation synthetic diagnostic we refer the user to <em>Carbajal and del-Castillo-Negrete, Plasma Phys. Controll. Fusion 59, 124001 (2017)</em>.
 !!
-!! KORC is a modular Fortran 95 code that uses a hybrid MPI + open MP parallelization paradigm to exploit multi-core nodes systems, such as Cori and Edison NERSC systems (<a href="https://www.nersc.gov">www.nersc.gov</a>). 
-!! 
+!! For details about the equations of motion of the relativistic electrons followed by KORC we refer the user to <em>Carbajal et al. Phys. Plasmas <b>24</b>, 042512 (2017)</em> and <em>Carbajal and del-Castillo-Negrete, Nuclear Fusion, submitted (2018)</em>. Also, for details about the KORC's synchrotron radiation synthetic diagnostic we refer the user to <em>Carbajal and del-Castillo-Negrete, Plasma Phys. Controll. Fusion <b>59</b>, 124001 (2017)</em>.
+!!
+!! KORC is a modular Fortran 95 code that uses a hybrid MPI + open MP parallelization paradigm to exploit multi-core nodes systems, such as Cori and Edison NERSC systems (<a href="https://www.nersc.gov">www.nersc.gov</a>).
+!!
 !!
 !! @section s2 Installation
 !! @warning KORC has been installed and tested in systems with OS 10.6 and higher, Ubuntu 14.04, and SuSe 12. Though we have paid special attention to portability when developing KORC, there is no guarantee that KORC can be compiled, ran, and is accurate in other systems not listed above. As a rule of thumb, we recommend to perform any convenient benchmark tests when compiling and running KORC in a new system, this to make sure that the external libraries and compilers do not modify the simulation results.
@@ -41,7 +41,7 @@
 !! <li><em>cd</em> to the KORC-FO folder.
 !! <li>In the terminal type: <em>"./compile.sh GNU"</em> if you are using GNU compilers, or <em>"./compile.sh INTEL"</em> if you are using INTEL compilers.
 !! </ol>
-!! 
+!!
 !! @section s3 Running KORC
 !! If you are running KORC in a system that uses a resource manager such as TORQUE or SLURM, you will need to request the number of nodes and cores per node that you will need, this along with any other resources such as wall time, memory per node, etc. Decide the number of MPI processes (nmpi) and the number of open MP threads per MPI process (nomp) that you will use in your simulation.
 !! Then, on the terminal or in your batch file type the following:
@@ -52,5 +52,3 @@
 !!
 !! @section s4 Generating the KORC's input file.
 !! KORC uses...
-
-
