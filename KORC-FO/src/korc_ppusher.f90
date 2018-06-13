@@ -25,6 +25,7 @@ module korc_ppusher
 !> @brief This subroutine initializes all the variables needed for advancing the particles' position and velocity.
 !! @details This subroutine is specially useful when we need to define or initialize values of parameters used to calculate derived quantities.
 !! The intent of this subroutine is to work as a constructor of the module.
+!!
 !! @param[in] params Core KORC simulation parameters.
 subroutine initialize_particle_pusher(params)
 	TYPE(KORC_PARAMS), INTENT(IN)  :: params
@@ -33,11 +34,12 @@ subroutine initialize_particle_pusher(params)
 end subroutine initialize_particle_pusher
 
 
-!> @brief Function that calculates and returns the cross product @f$\vec{a}\times \vec{b}@f$. These vectors are in Cartesian coordinates.
+!> @brief Function that calculates and returns the cross product @f$\mathbf{a}\times \mathbf{b}@f$. These vectors are in Cartesian coordinates.
 !! @note Notice that all the variables in this subroutine have been normalized using the characteristic scales in korc_units.f90.
-!! @param[in] a Vector @f$\vec{a}@f$.
-!! @param[in] b Vector @f$\vec{b}@f$.
-!! @param cross Value of @f$\vec{a}\times \vec{b}@f$
+!!
+!! @param[in] a Vector @f$\mathbf{a}@f$.
+!! @param[in] b Vector @f$\mathbf{b}@f$.
+!! @param cross Value of @f$\mathbf{a}\times \mathbf{b}@f$
 function cross(a,b)
 	REAL(rp), DIMENSION(3), INTENT(IN) :: a
 	REAL(rp), DIMENSION(3), INTENT(IN) :: b
@@ -52,23 +54,27 @@ end function cross
 !> @brief Subroutine that calculates the synchrotron radiation reaction force.
 !! @details This subroutine calculates the synchrotron radiation reaction force [Carbajal et al. PoP <b>24</b>, 042512 (2017)] using the derivation of Landau-Lifshiftz of the
 !! Lorentz-Abraham-Dirac radiation reaction force:\n
-!! @f$\vec{F}_R(\vec{x},\vec{v}) = \frac{q^3}{6\pi\epsilon_0 m c^3}\left[ \vec{F}_1 + \vec{F}_2 + \vec{F}_3\right]@f$,\n\n
-!! @f$\vec{F}_1 = \gamma \left( \frac{D \vec{E}}{Dt} + \vec{v}\times \frac{D \vec{B}}{Dt} \right)@f$,\n
-!! @f$\vec{F}_2 = \frac{q}{m}\left( \frac{(\vec{E}\cdot\vec{v})}{c^2}\vec{E} + (\vec{E} + \vec{v}\times \vec{B})\times \vec{B} \right)@f$,\n
-!! @f$\vec{F}_3 = -\frac{q\gamma^2}{mc^2} \left( (\vec{E} + \vec{v}\times \vec{B})^2 -  \frac{(\vec{E}\cdot\vec{v})^2}{c^2} \right)\vec{v}@f$,\n\n
-!! where @f$\gamma = 1/\sqrt{1 - v^2/c^2}@f$ is the relativistic factor, @f$D/Dt = \partial/\partial t + \vec{v}\cdot\nabla@f$, @f$q@f$ and @f$m@f$ are the charge and mass of the particle,
-!! and @f$\epsilon_0@f$ is the vacuum permittivity. For relativistic electrons we have @f$F_1 \ll F_2@f$ and @f$F_1 \ll F_3@f$, therefore @f$\vec{F}_1@f$ is not calculated here.
+!! @f$\mathbf{F}_R(\mathbf{x},\mathbf{v}) = \frac{q^3}{6\pi\epsilon_0 m c^3}\left[ \mathbf{F}_1 + \mathbf{F}_2 + \mathbf{F}_3\right]@f$,
+!!
+!!
+!! @f$\mathbf{F}_1 = \gamma \left( \frac{D \mathbf{E}}{Dt} + \mathbf{v}\times \frac{D \mathbf{B}}{Dt} \right)@f$,\n
+!! @f$\mathbf{F}_2 = \frac{q}{m}\left( \frac{(\mathbf{E}\cdot\mathbf{v})}{c^2}\mathbf{E} + (\mathbf{E} + \mathbf{v}\times \mathbf{B})\times \mathbf{B} \right)@f$,\n
+!! @f$\mathbf{F}_3 = -\frac{q\gamma^2}{mc^2} \left( (\mathbf{E} + \mathbf{v}\times \mathbf{B})^2 -  \frac{(\mathbf{E}\cdot\mathbf{v})^2}{c^2} \right)\mathbf{v}@f$,
+!!
+!!
+!! where @f$\gamma = 1/\sqrt{1 - v^2/c^2}@f$ is the relativistic factor, @f$D/Dt = \partial/\partial t + \mathbf{v}\cdot\nabla@f$, @f$q@f$ and @f$m@f$ are the charge and mass of the particle,
+!! and @f$\epsilon_0@f$ is the vacuum permittivity. For relativistic electrons we have @f$F_1 \ll F_2@f$ and @f$F_1 \ll F_3@f$, therefore @f$\mathbf{F}_1@f$ is not calculated here.
 !!
 !! @note Notice that all the variables in this subroutine have been normalized using the characteristic scales in korc_units.f90.
 !! @param[in] spp An instance of the derived type SPECIES containing all the parameters and simulation variables of the different species in the simulation.
-!! @param[in] U @f$\vec{u} = \gamma \vec{v}@f$, where @f$\vec{v}@f$ is the particle's velocity.
-!! @param[in] E Electric field @f$\vec{E}@f$ seen by each particle. This is given in Cartesian coordinates.
-!! @param[in] B Magnetic field @f$\vec{B}@f$ seen by each particle. This is given in Cartesian coordinates.
-!! @param[out] Frad The calculated synchrotron radiation reaction force @f$\vec{F}_R@f$.
-!! @param F1 The component @f$\vec{F}_1@f$ of @f$\vec{F}_R@f$.
-!! @param F2 The component @f$\vec{F}_2@f$ of @f$\vec{F}_R@f$.
-!! @param F3 The component @f$\vec{F}_3@f$ of @f$\vec{F}_R@f$.
-!! @param V The particle's velocity @f$\vec{v}@f$.
+!! @param[in] U @f$\mathbf{u} = \gamma \mathbf{v}@f$, where @f$\mathbf{v}@f$ is the particle's velocity.
+!! @param[in] E Electric field @f$\mathbf{E}@f$ seen by each particle. This is given in Cartesian coordinates.
+!! @param[in] B Magnetic field @f$\mathbf{B}@f$ seen by each particle. This is given in Cartesian coordinates.
+!! @param[out] Frad The calculated synchrotron radiation reaction force @f$\mathbf{F}_R@f$.
+!! @param F1 The component @f$\mathbf{F}_1@f$ of @f$\mathbf{F}_R@f$.
+!! @param F2 The component @f$\mathbf{F}_2@f$ of @f$\mathbf{F}_R@f$.
+!! @param F3 The component @f$\mathbf{F}_3@f$ of @f$\mathbf{F}_R@f$.
+!! @param V The particle's velocity @f$\mathbf{v}@f$.
 !! @param vec An auxiliary 3-D vector.
 !! @param g The relativistic @f$\gamma@f$ factor of the particle.
 subroutine radiation_force(spp,U,E,B,Frad)
@@ -102,25 +108,39 @@ end subroutine radiation_force
 !! @details We are using the modified relativistic leapfrog method of J.-L. Vay, PoP <b>15</b>, 056701 (2008) for advancing the particles'
 !! position and velocity. For including the synchrotron radiation reaction force we used the scheme in Tamburini et al., New J. Phys. <b>12</b>, 123005 (2010).
 !! A comprehensive description of this can be found in Carbajal et al., PoP <b>24</b>, 042512 (2017).
-!! The discretized equations of motion to advance the change in the position and momentum due to the Lorentz force are:\n\n
-!! @f$\frac{\vec{x}^{i+1/2} - \vec{x}^{i-1/2}}{\Delta t}  = \vec{v}^i@f$\n
-!! @f$\frac{\vec{p}^{i+1}_L - \vec{p}^{i}}{\Delta t} = q \left(  \vec{E}^{i+1/2} + \frac{\vec{v}^i + \vec{v}^{i+1}_L}{2} \times \vec{B}^{i+1/2} \right)@f$\n\n
-!! where @f$\Delta t@f$ is the time step, @f$q@f$ denotes the charge,  @f$\vec{p}^j = m \gamma^j \vec{v}^j@f$, and @f$\gamma^j = 1/\sqrt{1 + v^{j2}/c^2}@f$.
+!! The discretized equations of motion to advance the change in the position and momentum due to the Lorentz force are:
+!!
+!!
+!! @f$\frac{\mathbf{x}^{i+1/2} - \mathbf{x}^{i-1/2}}{\Delta t}  = \mathbf{v}^i@f$\n
+!! @f$\frac{\mathbf{p}^{i+1}_L - \mathbf{p}^{i}}{\Delta t} = q \left(  \mathbf{E}^{i+1/2} + \frac{\mathbf{v}^i + \mathbf{v}^{i+1}_L}{2} \times \mathbf{B}^{i+1/2} \right)@f$
+!!
+!!
+!! where @f$\Delta t@f$ is the time step, @f$q@f$ denotes the charge,  @f$\mathbf{p}^j = m \gamma^j \mathbf{v}^j@f$, and @f$\gamma^j = 1/\sqrt{1 + v^{j2}/c^2}@f$.
 !! Here @f$i@f$ and @f$i+1@f$ indicate integer time leves, while @f$i-1/2@f$ and @f$i+1/2@f$ indicate half-time steps.
-!! The evolution of the relativistic @f$\gamma@f$ factor is given by @f$\gamma^{i+1} = \sqrt{1 + \left(p_L^{i+1}/mc \right)^2} = \sqrt{1 + \vec{p}_L^{i+1}\cdot \vec{p}'/m^2c^2}@f$, which can be combined with the above equations to produce:\n\n
-!! @f$\vec{p}^{i+1}_L = s\left[ \vec{p}' + (\vec{p}'\cdot\vec{t})\vec{t} + \vec{p}'\times \vec{t} \right]@f$\n
-!! @f$\gamma^{i+1} = \sqrt{\frac{\sigma + \sqrt{\sigma^2 + 4(\tau^2 + p^{*2})}}{2}}@f$\n\n
-!! where we have defined @f$\vec{p}' = \vec{p}^i + q\Delta t \left( \vec{E}^{i+1/2} + \frac{\vec{v}^i}{2} \times \vec{B}^{i+1/2} \right)@f$,
-!! @f$\vec{\tau} = (q\Delta t/2)\vec{B}^{i+1/2}@f$, @f$\vec{t} = {\vec \tau}/\gamma^{i+1}@f$, @f$p^{*} = \vec{p}'\cdot \vec{\tau}/mc@f$, @f$\sigma = \gamma'^2 - \tau^2@f$, @f$\gamma' = \sqrt{1 + p'^2/m^2c^2}@f$, and @f$s = 1/(1+t^2)@f$.
-!! The discretized equation of motion to advance the change in the momentum due to the radiation reaction force force is\n\n
-!! @f$\frac{\vec{p}^{i+1}_R - \vec{p}^{i}}{\Delta t} = \vec{F}_R(\vec{x}^{i+1/2},\vec{p}^{i+1/2})@f$,\n\n
-!! where @f$\vec{p}^{i+1/2} = (\vec{p}^{i+1}_L + \vec{p}^i)/2@f$. Finally, using  @f$\vec{p}^{i+1}_L@f$ and @f$\vec{p}^{i+1}_R@f$, the momentum at time level @f$i+1@f$ is given by\n
-!! @f$\vec{p}^{i+1}  = \vec{p}^{i+1}_L + \vec{p}^{i+1}_R - \vec{p}^i.@f$\n\n
-!! Collisions are included by solving the stochastic differential equation in a Cartesian coordinate system where @f$\vec{p}@f$ is parallel to @f$\hat{e}_z@f$:\n\n
-!! @f$\vec{p} = \vec{A}dt + \hat{\sigma}\cdot d\vec{W}@f$,\n\n
-!! where @f$\vec{A} = p \nu_s\hat{b}@f$, @f$\hat{b}=\vec{B}/B@f$ with @f$\vec{B}@f$ the magnetic field, and @f$\nu_s@f$ the collision frequency that corresponds to the drag force due to collisions.
+!! The evolution of the relativistic @f$\gamma@f$ factor is given by @f$\gamma^{i+1} = \sqrt{1 + \left(p_L^{i+1}/mc \right)^2} = \sqrt{1 + \mathbf{p}_L^{i+1}\cdot \mathbf{p}'/m^2c^2}@f$, which can be combined with the above equations to produce:
+!!
+!!
+!! @f$\mathbf{p}^{i+1}_L = s\left[ \mathbf{p}' + (\mathbf{p}'\cdot\mathbf{t})\mathbf{t} + \mathbf{p}'\times \mathbf{t} \right]@f$\n
+!! @f$\gamma^{i+1} = \sqrt{\frac{\sigma + \sqrt{\sigma^2 + 4(\tau^2 + p^{*2})}}{2}}@f$
+!!
+!!
+!! where we have defined @f$\mathbf{p}' = \mathbf{p}^i + q\Delta t \left( \mathbf{E}^{i+1/2} + \frac{\mathbf{v}^i}{2} \times \mathbf{B}^{i+1/2} \right)@f$,
+!! @f$\mathbf{\tau} = (q\Delta t/2)\mathbf{B}^{i+1/2}@f$, @f$\mathbf{t} = {\mathbf \tau}/\gamma^{i+1}@f$, @f$p^{*} = \mathbf{p}'\cdot \mathbf{\tau}/mc@f$, @f$\sigma = \gamma'^2 - \tau^2@f$, @f$\gamma' = \sqrt{1 + p'^2/m^2c^2}@f$, and @f$s = 1/(1+t^2)@f$.
+!! The discretized equation of motion to advance the change in the momentum due to the radiation reaction force force is
+!!
+!!
+!! @f$\frac{\mathbf{p}^{i+1}_R - \mathbf{p}^{i}}{\Delta t} = \mathbf{F}_R(\mathbf{x}^{i+1/2},\mathbf{p}^{i+1/2})@f$,
+!!
+!!
+!! where @f$\mathbf{p}^{i+1/2} = (\mathbf{p}^{i+1}_L + \mathbf{p}^i)/2@f$. Finally, using  @f$\mathbf{p}^{i+1}_L@f$ and @f$\mathbf{p}^{i+1}_R@f$, the momentum at time level @f$i+1@f$ is given by\n
+!! @f$\mathbf{p}^{i+1}  = \mathbf{p}^{i+1}_L + \mathbf{p}^{i+1}_R - \mathbf{p}^i.@f$mu
+!! Collisions are included by solving the stochastic differential equation in a Cartesian coordinate system where @f$\mathbf{p}@f$ is parallel to @f$\hat{e}_z@f$:mu
+!! @f$\mathbf{p} = \mathbf{A}dt + \hat{\sigma}\cdot d\mathbf{W}@f$,
+!!
+!!
+!! where @f$\mathbf{A} = p \nu_s\hat{b}@f$, @f$\hat{b}=\mathbf{B}/B@f$ with @f$\mathbf{B}@f$ the magnetic field, and @f$\nu_s@f$ the collision frequency that corresponds to the drag force due to collisions.
 !! @f$\hat{\sigma}@f$ is a diagonal 3x3 matrix with elements @f$\hat{\sigma}_{11} = p\sqrt{\nu_{\parallel}}@f$, and @f$\hat{\sigma}_{22} = \hat{\sigma}_{33} = p\sqrt{\nu_{D}}@f$, with @f$\nu_\parallel@f$ and @f$\nu_D@f$
-!! the collisional frequencies producing diffusive transport along and across the direction of @f$\vec{p}@f$, respectively.
+!! the collisional frequencies producing diffusive transport along and across the direction of @f$\mathbf{p}@f$, respectively.
 !! @note Notice that all the variables in this subroutine have been normalized using the characteristic scales in korc_units.f90.
 !!
 !! @param[in] params Core KORC simulation parameters.
@@ -132,23 +152,23 @@ end subroutine radiation_force
 !! @param Prad Total radiated power of each particle.
 !! @param B Magnitude of the magnetic field seen by each particle .
 !! @param v Speed of each particle.
-!! @param vpar Parallel velocity @f$v_\parallel = \vec{v}\cdot \hat{b}@f$.
-!! @param vperp Perpendicular velocity @f$v_\parallel = |\vec{v} - (\vec{v}\cdot \hat{b})\hat{b}|@f$.
+!! @param vpar Parallel velocity @f$v_\parallel = \mathbf{v}\cdot \hat{b}@f$.
+!! @param vperp Perpendicular velocity @f$v_\parallel = |\mathbf{v} - (\mathbf{v}\cdot \hat{b})\hat{b}|@f$.
 !! @param tmp Temporary variable used for various computations.
 !! @param a This variable is used to simplify notation in the code, and is given by @f$a=q\Delta t/m@f$,
 !! @param gp This variable is @f$\gamma' = \sqrt{1 + p'^2/m^2c^2}@f$ in the above equations.
 !! @param sigma This variable is @f$\sigma = \gamma'^2 - \tau^2@f$ in the above equations.
-!! @param us This variable is @f$u^{*} = p^{*}/m@f$ where @f$ p^{*} = \vec{p}'\cdot \vec{\tau}/mc@f$.
+!! @param us This variable is @f$u^{*} = p^{*}/m@f$ where @f$ p^{*} = \mathbf{p}'\cdot \mathbf{\tau}/mc@f$.
 !! @param g Relativistic factor @f$\gamma@f$.
 !! @param s This variable is @f$s = 1/(1+t^2)@f$ in the equations above.
-!! @param U_L This variable is @f$\vec{u}_L = \vec{p}_L/m@f$ where @f$\vec{p}^{i+1}_L = s\left[ \vec{p}' + (\vec{p}'\cdot\vec{t})\vec{t} + \vec{p}'\times \vec{t} \right]@f$.
-!! @param U_hs Is @f$\vec{u}=\vec{p}/m@f$ at half-time step (@f$i+1/2@f$) in the absence of radiation losses or collisions. @f$\vec{u}^{i+1/2} = \vec{u}^i + \frac{q\Delta t}{2m}\left( \vec{E}^{i+1/2} + \vec{v}^i\times \vec{B}^{i+1/2} \right)@f$.
-!! @param tau This variable is @f$\vec{\tau} = (q\Delta t/2)\vec{B}^{i+1/2}@f$.
-!! @param up This variable is @f$\vec{u}'= \vec{p}'/m@f$, where @f$\vec{p}' = \vec{p}^i + q\Delta t \left( \vec{E}^{i+1/2} + \frac{\vec{v}^i}{2} \times \vec{B}^{i+1/2} \right)@f$.
-!! @param t This variable is @f$\vec{t} = {\vec \tau}/\gamma^{i+1}@f$.
-!! @param U This variable is @f$\vec{u}^{i+1}= \vec{p}^{i+1}/m@f$.
-!! @param U_RC This variable is @f$\vec{u}^{i+1}_R= \vec{p}^{i+1}_R/m@f$
-!! @param U_os This variable is @f$\vec{u}^{i+1/2}= \vec{p}^{i+1/2}/m@f$ when radiation losses are included. Here, @f$\vec{p}^{i+1/2} = (\vec{p}^{i+1}_L + \vec{p}^i)/2@f$.
+!! @param U_L This variable is @f$\mathbf{u}_L = \mathbf{p}_L/m@f$ where @f$\mathbf{p}^{i+1}_L = s\left[ \mathbf{p}' + (\mathbf{p}'\cdot\mathbf{t})\mathbf{t} + \mathbf{p}'\times \mathbf{t} \right]@f$.
+!! @param U_hs Is @f$\mathbf{u}=\mathbf{p}/m@f$ at half-time step (@f$i+1/2@f$) in the absence of radiation losses or collisions. @f$\mathbf{u}^{i+1/2} = \mathbf{u}^i + \frac{q\Delta t}{2m}\left( \mathbf{E}^{i+1/2} + \mathbf{v}^i\times \mathbf{B}^{i+1/2} \right)@f$.
+!! @param tau This variable is @f$\mathbf{\tau} = (q\Delta t/2)\mathbf{B}^{i+1/2}@f$.
+!! @param up This variable is @f$\mathbf{u}'= \mathbf{p}'/m@f$, where @f$\mathbf{p}' = \mathbf{p}^i + q\Delta t \left( \mathbf{E}^{i+1/2} + \frac{\mathbf{v}^i}{2} \times \mathbf{B}^{i+1/2} \right)@f$.
+!! @param t This variable is @f$\mathbf{t} = {\mathbf \tau}/\gamma^{i+1}@f$.
+!! @param U This variable is @f$\mathbf{u}^{i+1}= \mathbf{p}^{i+1}/m@f$.
+!! @param U_RC This variable is @f$\mathbf{u}^{i+1}_R= \mathbf{p}^{i+1}_R/m@f$
+!! @param U_os This variable is @f$\mathbf{u}^{i+1/2}= \mathbf{p}^{i+1/2}/m@f$ when radiation losses are included. Here, @f$\mathbf{p}^{i+1/2} = (\mathbf{p}^{i+1}_L + \mathbf{p}^i)/2@f$.
 !! @param Frad Synchrotron radiation reaction force of each particle.
 !! @param vec Auxiliary vector used in various computations.
 !! @param b_unit Unitary vector pointing along the local magnetic field @f$\hat{b}@f$.
@@ -302,7 +322,8 @@ end subroutine advance_particles_velocity
 
 !> @brief Subrotuine to advance particles' position.
 !! @details This subroutine advances the particles position using the information of the updated velocity.\n
-!! @f$\frac{\vec{x}^{i+1/2} - \vec{x}^{i-1/2}}{\Delta t}  = \vec{v}^i@f$\n
+!! @f$\frac{\mathbf{x}^{i+1/2} - \mathbf{x}^{i-1/2}}{\Delta t}  = \mathbf{v}^i@f$\n
+!!
 !! @note Notice that all the variables in this subroutine have been normalized using the characteristic scales in korc_units.f90.
 !! @param[in] params Core KORC simulation parameters.
 !! @param[in] F An instance of the KORC derived type FIELDS.

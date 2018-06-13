@@ -12,15 +12,17 @@ module korc_finalize
 	CONTAINS
 
 !> @brief Interface to function that finalizes MPI communications. See korc_hpc.f90.
+!!
 !! @param[in] params Core KORC simulation parameters.
 subroutine finalize_communications(params)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	
+
 	call finalize_mpi(params)
 end subroutine finalize_communications
 
 
 !> @brief Subroutine to free allocatable simulation variables.
+!!
 !! @param[in,out] params Core KORC simulation parameters.
 !! @param[in,out] F An instance of KORC's derived type FIELDS containing all the information about the fields used in the simulation. See korc_types.f90 and
 !! korc_fields.f90.

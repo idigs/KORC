@@ -17,22 +17,22 @@ module korc_HDF5
 	  module procedure iload_from_hdf5, rload_from_hdf5
 	END INTERFACE
 
-	!> @brief Fortran interface to subroutines loading 2-D and 3-D arrays of real values from HDF5 files. 
+	!> @brief Fortran interface to subroutines loading 2-D and 3-D arrays of real values from HDF5 files.
 	INTERFACE load_array_from_hdf5
 	  module procedure rload_1d_array_from_hdf5, rload_3d_array_from_hdf5, rload_2d_array_from_hdf5
 	END INTERFACE
 
-	!> @brief Fortran interface to subroutines saving real or integer values to HDF5 files. 
+	!> @brief Fortran interface to subroutines saving real or integer values to HDF5 files.
 	INTERFACE save_to_hdf5
 	  module procedure i1save_to_hdf5,i2save_to_hdf5,i4save_to_hdf5,i8save_to_hdf5,rsave_to_hdf5
 	END INTERFACE
 
-	!> @brief Fortran interface to subroutines saving real and integer values to HDF5 files. 
+	!> @brief Fortran interface to subroutines saving real and integer values to HDF5 files.
 	INTERFACE save_1d_array_to_hdf5
 	  module procedure isave_1d_array_to_hdf5,rsave_1d_array_to_hdf5
 	END INTERFACE
 
-	!> @brief Fortran interface to subroutines saving 2-D arrays of real values to HDF5 files. 
+	!> @brief Fortran interface to subroutines saving 2-D arrays of real values to HDF5 files.
 	!! @todo To code the corresponding subroutines for saving integer 2-D arrays.
 	INTERFACE save_2d_array_to_hdf5
 	  module procedure rsave_2d_array_to_hdf5
@@ -63,7 +63,7 @@ module korc_HDF5
 				i2save_to_hdf5,&
 				i4save_to_hdf5,&
 				i8save_to_hdf5
-				
+
 	PUBLIC :: initialize_HDF5,&
 				finalize_HDF5,&
 				save_simulation_parameters,&
@@ -80,11 +80,12 @@ module korc_HDF5
 CONTAINS
 
 !> @brief Initialization of HDF5 library.
+!!
 !! @param h5error HDF5 error status.
 subroutine initialize_HDF5()
 	INTEGER :: h5error  ! Error flag
 	call h5open_f(h5error)
-	
+
 #ifdef HDF5_DOUBLE_PRESICION
 	call h5tcopy_f(H5T_NATIVE_DOUBLE, KORC_HDF5_REAL, h5error)
 #elif HDF5_SINGLE_PRESICION
@@ -95,6 +96,7 @@ subroutine initialize_HDF5()
 end subroutine initialize_HDF5
 
 !> @brief Finalization of HDF5 library.
+!!
 !! @param h5error HDF5 error status.
 subroutine finalize_HDF5()
 	INTEGER :: h5error  ! Error flag
@@ -102,6 +104,8 @@ subroutine finalize_HDF5()
 end subroutine finalize_HDF5
 
 !> @brief Subroutine to load an integer datum from an HDF5 file.
+!!
+!! @todo Implement the reading of the attribute of idatum.
 !! @param[in] h5file_id HDF5 file identifier.
 !! @param[in] dset String containing the name of the datum.
 !! @param[out] idatum Integer datum read from HDF5 file.
@@ -115,7 +119,6 @@ end subroutine finalize_HDF5
 !! @param dims Dimensions of data read from HDF5 file.
 !! @param adims Dimensions of data's attributes read from HDF5 file.
 !! @param h5error HDF5 error status.
-!! @todo Implement the reading of the attribute of idatum.
 subroutine iload_from_hdf5(h5file_id,dset,idatum,attr)
 	INTEGER(HID_T), INTENT(IN) 							:: h5file_id
 	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) 			:: dset
@@ -159,6 +162,7 @@ subroutine iload_from_hdf5(h5file_id,dset,idatum,attr)
 end subroutine iload_from_hdf5
 
 !> @brief Subroutine to load a real datum from an HDF5 file.
+!!
 !! @param[in] h5file_id HDF5 file identifier.
 !! @param[in] dset String containing the name of the datum.
 !! @param[out] rdatum Real datum read from HDF5 file and casted to KORC's real precision type.
@@ -219,6 +223,7 @@ end subroutine rload_from_hdf5
 
 !> @brief Subroutine to load a 1-D array of reals from an HDF5 file.
 !! @details The dimension of the 1-D array rdata is determined by the input-output array rdata.
+!!
 !! @param[in] h5file_id HDF5 file identifier.
 !! @param[in] dset String containing the name of the data.
 !! @param[out] rdata 1-D array of real values read from HDF5 file and casted to KORC's real precision type.
@@ -283,6 +288,7 @@ end subroutine rload_1d_array_from_hdf5
 
 !> @brief Subroutine to load a 2-D array of reals from an HDF5 file.
 !! @details The dimensions of the 2-D array rdata is determined by the input-output array rdata.
+!!
 !! @param[in] h5file_id HDF5 file identifier.
 !! @param[in] dset String containing the name of the data.
 !! @param[out] rdata 2-D array of real values read from HDF5 file and casted to KORC's real precision type.
@@ -347,6 +353,7 @@ end subroutine rload_2d_array_from_hdf5
 
 !> @brief Subroutine to load a 3-D array of reals from an HDF5 file.
 !! @details The dimensions of the 3-D array rdata is determined by the input-output array rdata.
+!!
 !! @param[in] h5file_id HDF5 file identifier.
 !! @param[in] dset String containing the name of the data.
 !! @param[out] rdata 3-D array of real values read from HDF5 file and casted to KORC's real precision type.
@@ -410,6 +417,7 @@ subroutine rload_3d_array_from_hdf5(h5file_id,dset,rdata,attr)
 end subroutine rload_3d_array_from_hdf5
 
 !> @brief Subroutine to write a 1 byte (8 bits) integer to an HDF5 file.
+!!
 !! @param[in] h5file_id HDF5 file identifier.
 !! @param[in] dset String containing the name of the datum.
 !! @param[in] idatum Integer datum read from HDF5 file.
@@ -422,7 +430,7 @@ end subroutine rload_3d_array_from_hdf5
 !! @param atype_id Native HDF5 attribute type.
 !! @param dims Dimensions of data read from HDF5 file.
 !! @param adims Dimensions of data's attributes read from HDF5 file.
-!! @param rank Number of dimensions of idatum's dataspace. 
+!! @param rank Number of dimensions of idatum's dataspace.
 !! @param arank Number of dimensions of attr's dataspace.
 !! @param attrlen Lenght of idatum attribute's name.
 !! @param h5error HDF5 error status.
@@ -469,6 +477,7 @@ subroutine i1save_to_hdf5(h5file_id,dset,idatum,attr)
 end subroutine i1save_to_hdf5
 
 !> @brief Subroutine to write a 2 byte (16 bits) integer to an HDF5 file.
+!!
 !! @param[in] h5file_id HDF5 file identifier.
 !! @param[in] dset String containing the name of the datum.
 !! @param[in] idatum Integer datum read from HDF5 file.
@@ -481,7 +490,7 @@ end subroutine i1save_to_hdf5
 !! @param atype_id Native HDF5 attribute type.
 !! @param dims Dimensions of data read from HDF5 file.
 !! @param adims Dimensions of data's attributes read from HDF5 file.
-!! @param rank Number of dimensions of idatum's dataspace. 
+!! @param rank Number of dimensions of idatum's dataspace.
 !! @param arank Number of dimensions of attr's dataspace.
 !! @param attrlen Lenght of idatum attribute's name.
 !! @param h5error HDF5 error status.
@@ -528,6 +537,7 @@ subroutine i2save_to_hdf5(h5file_id,dset,idatum,attr)
 end subroutine i2save_to_hdf5
 
 !> @brief Subroutine to write a 4 byte (32 bits) integer to an HDF5 file.
+!!
 !! @param[in] h5file_id HDF5 file identifier.
 !! @param[in] dset String containing the name of the datum.
 !! @param[in] idatum Integer datum read from HDF5 file.
@@ -540,7 +550,7 @@ end subroutine i2save_to_hdf5
 !! @param atype_id Native HDF5 attribute type.
 !! @param dims Dimensions of data read from HDF5 file.
 !! @param adims Dimensions of data's attributes read from HDF5 file.
-!! @param rank Number of dimensions of idatum's dataspace. 
+!! @param rank Number of dimensions of idatum's dataspace.
 !! @param arank Number of dimensions of attr's dataspace.
 !! @param attrlen Lenght of idatum attribute's name.
 !! @param h5error HDF5 error status.
@@ -587,6 +597,7 @@ subroutine i4save_to_hdf5(h5file_id,dset,idatum,attr)
 end subroutine i4save_to_hdf5
 
 !> @brief Subroutine to write a 8 byte (64 bits) integer to an HDF5 file.
+!!
 !! @param[in] h5file_id HDF5 file identifier.
 !! @param[in] dset String containing the name of the datum.
 !! @param[in] idatum Integer datum read from HDF5 file.
@@ -599,7 +610,7 @@ end subroutine i4save_to_hdf5
 !! @param atype_id Native HDF5 attribute type.
 !! @param dims Dimensions of data read from HDF5 file.
 !! @param adims Dimensions of data's attributes read from HDF5 file.
-!! @param rank Number of dimensions of idatum's dataspace. 
+!! @param rank Number of dimensions of idatum's dataspace.
 !! @param arank Number of dimensions of attr's dataspace.
 !! @param attrlen Lenght of idatum attribute's name.
 !! @param h5error HDF5 error status.
@@ -647,6 +658,7 @@ subroutine i8save_to_hdf5(h5file_id,dset,idatum,attr)
 end subroutine i8save_to_hdf5
 
 !> @brief Subroutine to write a 1-D array of integer values to an HDF5 file.
+!!
 !! @param[in] h5file_id HDF5 file identifier.
 !! @param[in] dset String containing the name of the data.
 !! @param[in] idata Data written to HDF5 file.
@@ -659,7 +671,7 @@ end subroutine i8save_to_hdf5
 !! @param atype_id Native HDF5 attribute type.
 !! @param dims Dimensions of data writen to HDF5 file.
 !! @param adims Dimensions of data's attributes written to HDF5 file.
-!! @param rank Number of dimensions of idata's dataspace. 
+!! @param rank Number of dimensions of idata's dataspace.
 !! @param arank Number of dimensions of attr's dataspace.
 !! @param attrlen Lenght of idata attribute's name.
 !! @param h5error HDF5 error status.
@@ -733,6 +745,7 @@ subroutine isave_1d_array_to_hdf5(h5file_id,dset,idata,attr)
 end subroutine isave_1d_array_to_hdf5
 
 !> @brief Subroutine to write a real to an HDF5 file.
+!!
 !! @param[in] h5file_id HDF5 file identifier.
 !! @param[in] dset String containing the name of the datum.
 !! @param[in] rdatum Real datum written to HDF5 file.
@@ -745,7 +758,7 @@ end subroutine isave_1d_array_to_hdf5
 !! @param atype_id Native HDF5 attribute type.
 !! @param dims Dimensions of data written to HDF5 file.
 !! @param adims Dimensions of data's attributes read from HDF5 file.
-!! @param rank Number of dimensions of rdatum's dataspace. 
+!! @param rank Number of dimensions of rdatum's dataspace.
 !! @param arank Number of dimensions of attr's dataspace.
 !! @param attrlen Lenght of rdatum attribute's name.
 !! @param h5error HDF5 error status.
@@ -798,6 +811,8 @@ subroutine rsave_to_hdf5(h5file_id,dset,rdatum,attr)
 end subroutine rsave_to_hdf5
 
 !> @brief Subroutine to write a 1-D array of real values to an HDF5 file.
+!!
+!! @bug When using a 1-D array of attributes, only the first attribute is saved.
 !! @param[in] h5file_id HDF5 file identifier.
 !! @param[in] dset String containing the name of the data.
 !! @param[in] rdata Data written to HDF5 file.
@@ -810,14 +825,13 @@ end subroutine rsave_to_hdf5
 !! @param atype_id Native HDF5 attribute type.
 !! @param dims Dimensions of data writen to HDF5 file.
 !! @param adims Dimensions of data's attributes written to HDF5 file.
-!! @param rank Number of dimensions of rdata's dataspace. 
+!! @param rank Number of dimensions of rdata's dataspace.
 !! @param arank Number of dimensions of attr's dataspace.
 !! @param tmplen Temporary length of rdata attribute's name.
 !! @param attrlen Lenght of rdata attribute's name.
 !! @param h5error HDF5 error status.
 !! @param rr Rank iterator.
 !! @param dd Dimension iterator.
-!! @bug When using a 1-D array of attributes, only the first attribute is saved.
 subroutine rsave_1d_array_to_hdf5(h5file_id,dset,rdata,attr)
 	INTEGER(HID_T), INTENT(IN) 														:: h5file_id
 	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) 										:: dset
@@ -891,6 +905,7 @@ subroutine rsave_1d_array_to_hdf5(h5file_id,dset,rdata,attr)
 end subroutine rsave_1d_array_to_hdf5
 
 !> @brief Subroutine to write a 2-D array of real values to an HDF5 file.
+!!
 !! @param[in] h5file_id HDF5 file identifier.
 !! @param[in] dset String containing the name of the data.
 !! @param[in] rdata Data written to HDF5 file.
@@ -903,7 +918,7 @@ end subroutine rsave_1d_array_to_hdf5
 !! @param atype_id Native HDF5 attribute type.
 !! @param dims Dimensions of data writen to HDF5 file.
 !! @param adims Dimensions of data's attributes written to HDF5 file.
-!! @param rank Number of dimensions of rdata's dataspace. 
+!! @param rank Number of dimensions of rdata's dataspace.
 !! @param arank Number of dimensions of attr's dataspace.
 !! @param attrlen Lenght of rdata attribute's name.
 !! @param h5error HDF5 error status.
@@ -956,6 +971,7 @@ subroutine rsave_2d_array_to_hdf5(h5file_id,dset,rdata,attr)
 end subroutine rsave_2d_array_to_hdf5
 
 !> @brief Subroutine to write a 3-D array of real values to an HDF5 file.
+!!
 !! @param[in] h5file_id HDF5 file identifier.
 !! @param[in] dset String containing the name of the data.
 !! @param[in] rdata Data written to HDF5 file.
@@ -968,7 +984,7 @@ end subroutine rsave_2d_array_to_hdf5
 !! @param atype_id Native HDF5 attribute type.
 !! @param dims Dimensions of data writen to HDF5 file.
 !! @param adims Dimensions of data's attributes written to HDF5 file.
-!! @param rank Number of dimensions of rdata's dataspace. 
+!! @param rank Number of dimensions of rdata's dataspace.
 !! @param arank Number of dimensions of attr's dataspace.
 !! @param attrlen Lenght of rdata attribute's name.
 !! @param h5error HDF5 error status.
@@ -1021,6 +1037,7 @@ subroutine rsave_3d_array_to_hdf5(h5file_id,dset,rdata,attr)
 end subroutine rsave_3d_array_to_hdf5
 
 !> @brief Subroutine to write an array of strings to an HDF5 file.
+!!
 !! @param[in] h5file_id HDF5 file identifier.
 !! @param[in] dset String containing the name of the array of strings.
 !! @param[in] string_array Array of characters containing the strings to be written to HDF5 file.
@@ -1042,7 +1059,7 @@ subroutine save_string_parameter(h5file_id,dset,string_array)
 	INTEGER(SIZE_T), DIMENSION(:), ALLOCATABLE 				:: str_len
 	INTEGER(HID_T) 											:: string_type
 	INTEGER 												:: h5error
-	
+
 	ALLOCATE(str_len(SIZE(string_array)))
 
 	dims = (/SIZE(string_array)/)
@@ -1066,6 +1083,7 @@ end subroutine save_string_parameter
 
 !> @brief Subroutine to save to a HDF5 file all the relevant simulation parameters.
 !! @details This subroutine saves to the HDF5 file "<a>simulation_parameters.h5</a>" all the relevant simulation parameters of KORC, most of them being part of the input file, but also including some derived quantities from the input parameters. This file is intended to facilitate the post-processing of KORC data using any software that supports the HDF5 software.
+!!
 !! @param[in] params Core KORC simulation parameters.
 !! @param[in] spp An instance of KORC's derived type SPECIES containing all the information of different electron species. See korc_types.f90.
 !! @param[in] F An instance of KORC's derived type FIELDS containing all the information about the fields used in the simulation. See korc_types.f90 and korc_fields.f90.
@@ -1123,7 +1141,7 @@ subroutine save_simulation_parameters(params,spp,F,P)
 		gname = "simulation"
 		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
-		ALLOCATE(attr_array(1))		
+		ALLOCATE(attr_array(1))
 		ALLOCATE(idata(1))
 
 		dset = TRIM(gname) // "/plasma_model"
@@ -1342,7 +1360,7 @@ subroutine save_simulation_parameters(params,spp,F,P)
 				ALLOCATE(attr_array(1))
 				dset = TRIM(gname) // "/dims"
 				attr_array(1) = "Mesh dimension of the profiles (NR,NPHI,NZ)"
-				call save_1d_array_to_hdf5(h5file_id,dset,P%dims,attr_array)		
+				call save_1d_array_to_hdf5(h5file_id,dset,P%dims,attr_array)
 
 				dset = TRIM(gname) // "/R"
 				attr_array(1) = "Grid nodes of profiles along the radial position"
@@ -1411,7 +1429,7 @@ subroutine save_simulation_parameters(params,spp,F,P)
 			ALLOCATE(attr_array(1))
 			dset = TRIM(gname) // "/dims"
 			attr_array(1) = "Mesh dimension of the magnetic field (NR,NPHI,NZ)"
-			call save_1d_array_to_hdf5(h5file_id,dset,F%dims,attr_array)		
+			call save_1d_array_to_hdf5(h5file_id,dset,F%dims,attr_array)
 
 			dset = TRIM(gname) // "/R"
 			attr_array(1) = "Radial position of the magnetic field grid nodes"
@@ -1514,6 +1532,7 @@ subroutine save_simulation_parameters(params,spp,F,P)
 end subroutine save_simulation_parameters
 
 !> @brief Subroutine that saves the electrons' variables specified in params::outputs_list to HDF5 files.
+!!
 !! @param[in] params Core KORC simulation parameters.
 !! @param[in] spp An instance of KORC's derived type SPECIES containing all the information of different electron species. See korc_types.f90.
 !! @param filename String containing the name of the HDF5 file.
@@ -1569,7 +1588,7 @@ subroutine save_simulation_outputs(params,spp)
 
 		if (.NOT.object_exists) then ! Check if group does exist.
 			call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
-	
+
 			dset = TRIM(gname) // "/time"
 			attr = "Simulation time in secs"
 			call save_to_hdf5(h5file_id,dset,REAL(params%it,rp)*params%dt*params%cpp%time,attr)
@@ -1637,9 +1656,9 @@ subroutine save_simulation_outputs(params,spp)
 							dset = "Zeff"
 							call save_1d_array_to_hdf5(subgroup_id, dset, spp(ss)%vars%Zeff)
 						CASE DEFAULT
-				
+
 					END SELECT
-				end do 
+				end do
 
 				call h5gclose_f(subgroup_id, h5error)
 			end do
@@ -1652,6 +1671,7 @@ subroutine save_simulation_outputs(params,spp)
 end subroutine save_simulation_outputs
 
 !> @brief Subroutine that saves all the variables that KORC needs for restarting a simulation. These variables are saved to "restart_file.h5".
+!!
 !! @param[in] params Core KORC simulation parameters.
 !! @param[in] spp An instance of KORC's derived type SPECIES containing all the information of different electron species. See korc_types.f90.
 !! @param send_buffer_rp Temporary buffer to be used by MPI to gather different electrons' variables.
@@ -1714,7 +1734,7 @@ subroutine save_restart_variables(params,spp)
 			dset = "it"
 			attr = "Iteration"
 			call save_to_hdf5(h5file_id,dset,params%it,attr)
-		
+
 			dset = "time"
 			attr = "Current simulation time in secs"
 			call save_to_hdf5(h5file_id,dset,REAL(params%it,rp)*params%dt*params%cpp%time,attr)
@@ -1848,7 +1868,9 @@ end subroutine save_restart_variables
 ! * * * * * * * * * * * * * * * * * * * * * * * * * !
 ! * * * SUBROUTINES FOR RESTARTING SIMULATION * * * !
 ! * * * * * * * * * * * * * * * * * * * * * * * * * !
+
 !> @brief Subroutine that loads KORC parameters that control the time stepping in main.f90.
+!!
 !! @param[in,out] params Core KORC simulation parameters.
 !! @param filename String containing the name of the HDF5 file.
 !! @param dset Name of data set to be read from file.
@@ -1926,6 +1948,7 @@ subroutine load_time_stepping_params(params)
 end subroutine load_time_stepping_params
 
 !> @brief Subroutine that loads all the electrons' data from "restart_file.h5" to restart a simulation.
+!!
 !! @param[in] params Core KORC simulation parameters.
 !! @param[in,out] spp An instance of KORC's derived type SPECIES containing all the information of different electron species. See korc_types.f90.
 !! @param X_send_buffer Temporary buffer used by MPI for scattering the electrons' position to different MPI processes.

@@ -24,6 +24,7 @@ MODULE korc_hammersley_generator
 !! Each MPI process in KORC generates a (different) subset of pairs (X,Y) of a 2-D Hammersley sequence. The total number of pairs (X,Y)
 !! is NMPIS*N, where NMPIS is the number of MPI processes in the simulation and N is the number of particles followed by each MPI process.
 !! Each subset of pairs (X,Y) has N elements.
+!!
 !! @param[in,out] X 1-D array with elements of a 2-D Hammersley sequence.
 !! @param[in,out] Y 1-D array with elements of a 2-D Hammersley sequence.
 !! @param[in] ID MPI rank of MPI process.

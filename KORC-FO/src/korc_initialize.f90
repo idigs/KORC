@@ -10,7 +10,7 @@ module korc_initialize
 	use korc_velocity_distribution
 
     IMPLICIT NONE
-	
+
 
 	PRIVATE :: set_paths,&
 				load_korc_params
@@ -23,7 +23,9 @@ module korc_initialize
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 ! ** SUBROUTINES FOR INITIALIZING KORC PARAMETERS ** !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
+
 !> @brief Subroutine that sets the input/output paths.
+!!
 !! @param[in,out] params Core KORC simulation parameters.
 !! @param argn Number of command line inputs. The default value is two: the input files path and the outputs path.
 subroutine set_paths(params)
@@ -48,6 +50,7 @@ subroutine set_paths(params)
 end subroutine set_paths
 
 !> @brief Subroutine that loads the simulation parameters from the file specified in params\%path_to_inputs
+!!
 !! @param[in,out] params Core KORC simulation parameters.
 !! @param restart Flag to indicate if the simulations restarts (restart=T) or not (restart=F).
 !! @param simulation_time Total simulation time in seconds.
@@ -93,7 +96,7 @@ subroutine load_korc_params(params)
 	NAMELIST /input_parameters/ restart,plasma_model,magnetic_field_filename,simulation_time,&
 								snapshot_frequency,dt,num_species,radiation,collisions,collisions_model,outputs_list,&
 								minimum_particle_energy,HDF5_error_handling
-	
+
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=input_parameters)
 	close(default_unit_open)
@@ -108,7 +111,7 @@ subroutine load_korc_params(params)
 	params%plasma_model = TRIM(plasma_model)
 	params%magnetic_field_filename = TRIM(magnetic_field_filename)
 	params%minimum_particle_energy = minimum_particle_energy*C_E
-	params%minimum_particle_g = 1.0_rp + params%minimum_particle_energy/(C_ME*C_C**2) ! Minimum value of relativistic gamma factor	
+	params%minimum_particle_g = 1.0_rp + params%minimum_particle_energy/(C_ME*C_C**2) ! Minimum value of relativistic gamma factor
 	params%radiation = radiation
 	params%collisions = collisions
 	params%collisions_model = TRIM(collisions_model)
@@ -168,11 +171,12 @@ subroutine load_korc_params(params)
 			write(6,'("Collisions model: ",A50)') TRIM(params%collisions_model)
 		end if
 		write(6,'("* * * * * * * * * * * * * * * * * * * * *",/)')
-	end if	
+	end if
 end subroutine load_korc_params
 
 
 !> @brief Interface for calling initialization subroutines
+!!
 !! @param[in,out] params Core KORC simulation parameters.
 !! @param mpierr MPI error status.
 subroutine initialize_korc_parameters(params)
@@ -192,6 +196,7 @@ end subroutine initialize_korc_parameters
 
 
 !> @brief Subroutine that defines or loads from restart file the time stepping parameters.
+!!
 !! @param[in,out] params Core KORC simulation parameters.
 subroutine define_time_step(params)
 	TYPE(KORC_PARAMS), INTENT(INOUT) :: params
@@ -235,7 +240,9 @@ end subroutine define_time_step
 ! * * * SUBROUTINES FOR INITIALIZING PARTICLES * * * !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
-!> @brief Subroutine that loads the information of the initial condition of the different particle species. This subroutine calls the subroutine that generates the initial energy and pitch angle distribution functions.
+!> @brief Subroutine that loads the information of the initial condition of the different particle species. This subroutine calls
+!! the subroutine that generates the initial energy and pitch angle distribution functions.
+!!
 !! @param[in,out] params Core KORC simulation parameters.
 !! @param[in] F An instance of KORC's derived type FIELDS containing all the information about the fields used in the simulation. See korc_types.f90 and korc_fields.f90.
 !! @param[out] spp An instance of KORC's derived type SPECIES containing all the information of different electron species. See korc_types.f90.
@@ -256,10 +263,11 @@ end subroutine define_time_step
 !! @param r_inner Minimum minor radius of the electrons' initial spatial distribution.
 !! @param r_outter Maximum minor radius of the electrons' initial spatial distribution.
 !! @param falloff_rate Exponential falloff or standard deviation of a non-uniform radial distribution of electrons.
-!! @param shear_factor Shear factor used to generate an initial spatial distribution with an elliptic poloidal cross section. See <em>Carbajal and del-Castillo-Negrete, Nuclear Fusion, submitted (2018)</em>.
+!! @param shear_factor Shear factor used to generate an initial spatial distribution with an elliptic poloidal cross section.
+!! See <em>Carbajal and del-Castillo-Negrete, Nuclear Fusion, submitted (2018)</em>.
 !! @param ii Iterator of spp structure.
 !! @param mpierr MPI error status.
-subroutine initialize_particles(params,F,spp) 
+subroutine initialize_particles(params,F,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) 							:: params
 	TYPE(FIELDS), INTENT(IN) 								:: F
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(OUT) 	:: spp
@@ -271,7 +279,7 @@ subroutine initialize_particles(params,F,spp)
 	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: Eo_lims
 	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: etao_lims
 	LOGICAL, DIMENSION(:), ALLOCATABLE 						:: runaway
-	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: spatial_distribution	
+	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: spatial_distribution
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: energy_distribution
 	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: pitch_distribution
 	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: Ro
@@ -315,7 +323,7 @@ subroutine initialize_particles(params,F,spp)
 
 	do ii=1_idef,params%num_species
 		spp(ii)%runaway = runaway(ii)
-		spp(ii)%spatial_distribution = TRIM(spatial_distribution(ii))		
+		spp(ii)%spatial_distribution = TRIM(spatial_distribution(ii))
 		spp(ii)%energy_distribution = TRIM(energy_distribution(ii))
 		spp(ii)%pitch_distribution = TRIM(pitch_distribution(ii))
 		spp(ii)%q = q(ii)*C_E
@@ -331,12 +339,12 @@ subroutine initialize_particles(params,F,spp)
 		spp(ii)%shear_factor = shear_factor(ii)
 
 		! * * These values can change in initial_energy_pitch_dist * * !
-		spp(ii)%Eo = Eo(ii)*C_E 
+		spp(ii)%Eo = Eo(ii)*C_E
 		spp(ii)%Eo_lims = Eo_lims((ii-1_idef)*2_idef + 1_idef:2_idef*ii)*C_E
 		spp(ii)%etao = etao(ii)
 		spp(ii)%etao_lims = etao_lims((ii-1_idef)*2_idef + 1_idef:2_idef*ii)
 		! * * These values can change in initial_energy_pitch_dist * * !
-		
+
 		ALLOCATE( spp(ii)%vars%X(3,spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%V(3,spp(ii)%ppp) )
 		ALLOCATE( spp(ii)%vars%Rgc(3,spp(ii)%ppp) )
@@ -395,11 +403,13 @@ subroutine initialize_particles(params,F,spp)
 	DEALLOCATE(falloff_rate)
 end subroutine initialize_particles
 
-!> @brief Subroutine with calls to subroutines to load particles' information if it is a restarting simulation, or to initialize the spatial and velocity distribution of each species if it is a new simulation.
+!> @brief Subroutine with calls to subroutines to load particles' information if it is a restarting simulation, or to initialize the
+!! spatial and velocity distribution of each species if it is a new simulation.
+!!
 !! @param[in] params Core KORC simulation parameters.
 !! @param[in] F An instance of KORC's derived type FIELDS containing all the information about the fields used in the simulation. See korc_types.f90 and korc_fields.f90.
 !! @param[in,out] spp An instance of KORC's derived type SPECIES containing all the information of different electron species. See korc_types.f90.
-subroutine set_up_particles_ic(params,F,spp) 
+subroutine set_up_particles_ic(params,F,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) 							:: params
 	TYPE(FIELDS), INTENT(IN) 								:: F
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
@@ -409,7 +419,7 @@ subroutine set_up_particles_ic(params,F,spp)
 	else
 		call intitial_spatial_distribution(params,spp)
 
-		call initial_velocity_distribution(params,F,spp)
+		call initial_gyro_distribution(params,F,spp)
 	end if
 end subroutine set_up_particles_ic
 

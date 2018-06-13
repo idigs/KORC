@@ -11,7 +11,7 @@ module korc_units
     CONTAINS
 
 !> @brief Subroutine that calculates characteristic scales of the current KORC simulation.
-!! @details Normalization and non-dimensionalization of the variables and equations of motion allows us to solve them more accurately by reducing truncation erros when performing operations that combine small and large numbers. 
+!! @details Normalization and non-dimensionalization of the variables and equations of motion allows us to solve them more accurately by reducing truncation erros when performing operations that combine small and large numbers.
 !!
 !! For normalizing and obtaining the non-dimensional form of the variables and equations solved in KORC we use characteristic scales calculated with the input data of each KORC simulation.
 !! <table>
@@ -32,12 +32,13 @@ module korc_units
 !! <tr><td rowspan="1">Magnetic moment 		<td>@f$\mu_{ch}@f$		<td>@f$m_{ch}v_{ch}^2/B_{ch}@f$		<td>--
 !! <tr><td rowspan="1">Pressure 		<td>@f$P_{ch}@f$		<td>--		<td>--
 !! </table>
-!! With these characteristic scales we can write the dimensionless form of all the equations. For example, the Lorentz force for a charged particle @f$q@f$, mass @f$m@f$, and momentum @f$\vec{p}=\gamma m \vec{v}@f$ can be written as:
+!! With these characteristic scales we can write the dimensionless form of all the equations. For example, the Lorentz force for a charged particle @f$q@f$, mass @f$m@f$, and momentum @f$\mathbf{p}=\gamma m \mathbf{v}@f$ can be written as:
 !!
-!! @f$\frac{d \vec{p}'}{dt'} = q'\left[ \vec{E}' + \frac{\vec{p}'}{\gamma m'}\times \vec{B}' \right]@f$,
+!! @f$\frac{d \mathbf{p}'}{dt'} = q'\left[ \mathbf{E}' + \frac{\mathbf{p}'}{\gamma m'}\times \mathbf{B}' \right]@f$,
 !!
-!! where @f$\vec{p}' = \vec{p}/p_{ch}@f$, @f$t' = t/t_{ch}@f$, @f$q' = q/q_{ch}@f$, @f$m' = m/m_{ch}@f$, @f$\vec{E}' = \vec{E}/E_{ch}@f$, and @f$\vec{B}'=\vec{B}/B_{ch}@f$.
+!! where @f$\mathbf{p}' = \mathbf{p}/p_{ch}@f$, @f$t' = t/t_{ch}@f$, @f$q' = q/q_{ch}@f$, @f$m' = m/m_{ch}@f$, @f$\mathbf{E}' = \mathbf{E}/E_{ch}@f$, and @f$\mathbf{B}'=\mathbf{B}/B_{ch}@f$.
 !! @todo Characteristic pressure needs to be defined.
+!!
 !! @param[in,out] params Core KORC simulation parameters.
 !! @param[in,out] spp An instance of KORC's derived type SPECIES containing all the information of different electron species. See korc_types.f90.
 !! @param[in] F An instance of KORC's derived type FIELDS containing all the information about the fields used in the simulation. See korc_types.f90 and korc_fields.f90.
@@ -75,11 +76,15 @@ subroutine compute_charcs_plasma_params(params,spp,F)
 	params%cpp%temperature = params%cpp%energy
 end subroutine compute_charcs_plasma_params
 
-!> @brief Some brief description... 
+!> @brief Subroutine that normalizes the simulation variables with the previously computed characteristic scales.
+!!
 !! @param[in,out] params Core KORC simulation parameters.
-!! @param[in,out] spp An instance of KORC's derived type SPECIES containing all the information of different electron species. See korc_types.f90.
-!! @param[in,out] F An instance of KORC's derived type FIELDS containing all the information about the fields used in the simulation. See korc_types.f90 and korc_fields.f90.
-!! @param[in,out] P An instance of KORC's derived type PROFILES containing all the information about the plasma profiles used in the simulation. See korc_types.f90 and korc_profiles.f90.
+!! @param[in,out] spp An instance of KORC's derived type SPECIES containing all the information of different electron species.
+!! See korc_types.f90.
+!! @param[in,out] F An instance of KORC's derived type FIELDS containing all the information about the fields used in the simulation.
+!! See korc_types.f90 and korc_fields.f90.
+!! @param[in,out] P An instance of KORC's derived type PROFILES containing all the information about the plasma profiles used in
+!! the simulation. See korc_types.f90 and korc_profiles.f90.
 !! @param ii Interator of spp array.
 subroutine normalize_variables(params,spp,F,P)
 	TYPE(KORC_PARAMS), INTENT(INOUT) 						:: params
@@ -164,7 +169,7 @@ subroutine normalize_variables(params,spp,F,P)
 		end if
 	else if (params%plasma_model .EQ. 'UNIFORM') then
 		F%Eo = F%Eo/params%cpp%Eo
-	end if	
+	end if
 end subroutine normalize_variables
 
 end module korc_units

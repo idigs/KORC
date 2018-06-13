@@ -1,4 +1,5 @@
-!> @brief Module that contain subroutines for calculating analytical plasma profiles and calls to subroutines for interpolating external plasma profiles to the particles positions.
+!> @brief Module that contain subroutines for calculating analytical plasma profiles and calls to subroutines for interpolating
+!! external plasma profiles to the particles positions.
 module korc_profiles
     use korc_types
 	use korc_hpc
@@ -20,14 +21,30 @@ module korc_profiles
 
 
 !> @brief Subroutine that initializes the parameters of analytical or pre-computed plasma profiles for being used in the simulation.
-!! @details KORC can run using either analytical and pre-computed plasma profiles. Pre-computed plasma profiles, as in the case of pre-computed electric or magnetic fields, are interpolated to electrons' position in korc_profiles.f90.\n\n
-!! There are two types of analytical plasma profiles that can be used in KORC: 3rd degree polynomial radial plasma profiles,\n\n
-!! @f$f(r) = a_3r^3 + a_2r^2 +a_1r + a_0@f$,\n\n
-!! and radial plasma profiles with a @f$\tanh(r)@f$ dependency:\n\n
-!! @f$f(r) = f_0\left[1 - \tanh^n\left(\frac{2r}{a}\right)\right]@f$,\n\n
-!! where @f$r@f$ is the radial coordinate in toroidal coordinates, @f$f_0@f$ is a given plasma parameter at the magnetic axis, and @f$a@f$ is the plasma radius as measured from the magnetic axis to the last closed flux surface. Notice that the larger @f$n@f$ is, the more uniform the radial profiles are.\n\n
+!! @details KORC can run using either analytical and pre-computed plasma profiles. Pre-computed plasma profiles, as in the case of
+!! pre-computed electric or magnetic fields, are interpolated to electrons' position in korc_profiles.f90.
+!!
+!!
+!! There are two types of analytical plasma profiles that can be used in KORC: 3rd degree polynomial radial plasma profiles,
+!!
+!!
+!! @f$f(r) = a_3r^3 + a_2r^2 +a_1r + a_0@f$,
+!!
+!!
+!! and radial plasma profiles with a @f$\tanh(r)@f$ dependency:
+!!
+!!
+!! @f$f(r) = f_0\left[1 - \tanh^n\left(\frac{2r}{a}\right)\right]@f$,
+!!
+!!
+!! where @f$r@f$ is the radial coordinate in toroidal coordinates, @f$f_0@f$ is a given plasma parameter at the magnetic axis,
+!! and @f$a@f$ is the plasma radius as measured from the magnetic axis to the last closed flux surface. Notice that the larger
+!! @f$n@f$ is, the more uniform the radial profiles are.
+!!
+!!
 !! @param[in] params Core KORC simulation parameters.
-!! @param[out] P An instance of KORC's derived type PROFILES containing all the information about the plasma profiles used in the simulation. See korc_types.f90 and korc_profiles.f90.
+!! @param[out] P An instance of KORC's derived type PROFILES containing all the information about the plasma profiles used in the
+!! simulation. See korc_types.f90 and korc_profiles.f90.
 !! @param ne_profile String containing the type of electron density profile to be used in the simulation.
 !! @param Te_profile String containing the type of electron temperature profile to be used in the simulation.
 !! @param Zeff_profile String containing the type of @f$Z_{eff}@f$ profile to be used in the simulation.
@@ -39,9 +56,12 @@ module korc_profiles
 !! @param n_ne Exponent @f$n@f$ used in @f$\tanh^n(r)@f$ of the electron density profile.
 !! @param n_Te Exponent @f$n@f$ used in @f$\tanh^n(r)@f$ of the electron temperature profile.
 !! @param n_Zeff Exponent @f$n@f$ used in @f$\tanh^n(r)@f$ of the @f$Z_{eff}@f$ profile.
-!! @param a_ne Coefficients of the polynomial electron density profile. See detailed description above, a_ne=(@f$a_{0}@f$,@f$a_{2}@f$,@f$a_{3}@f$,@f$a_{4}@f$).
-!! @param a_Te Coefficients of the polynomial electron temperature profile. See detailed description above, a_ne=(@f$a_{0}@f$,@f$a_{2}@f$,@f$a_{3}@f$,@f$a_{4}@f$).
-!! @param a_Zeff Coefficients of the @f$Z_{eff}@f$ profile. See detailed description above, a_ne=(@f$a_{0}@f$,@f$a_{2}@f$,@f$a_{3}@f$,@f$a_{4}@f$).
+!! @param a_ne Coefficients of the polynomial electron density profile. See detailed description above,
+!! a_ne=(@f$a_{0}@f$,@f$a_{2}@f$,@f$a_{3}@f$,@f$a_{4}@f$).
+!! @param a_Te Coefficients of the polynomial electron temperature profile. See detailed description above,
+!! a_ne=(@f$a_{0}@f$,@f$a_{2}@f$,@f$a_{3}@f$,@f$a_{4}@f$).
+!! @param a_Zeff Coefficients of the @f$Z_{eff}@f$ profile. See detailed description above,
+!! a_ne=(@f$a_{0}@f$,@f$a_{2}@f$,@f$a_{3}@f$,@f$a_{4}@f$).
 !! @param axisymmetric Flag to indicate if the plasma profiles are axisymmetric.
 subroutine initialize_profiles(params,P)
 	TYPE(KORC_PARAMS), INTENT(IN)   :: params
@@ -133,6 +153,7 @@ end subroutine initialize_profiles
 !> @brief Subroutine that returns the value of uniform plasma parameters.
 !! @details This subroutie is used only when the simulation is ran for a 'UNIFORM' plasma. As a convention, in a uniform plasma we set
 !! @f$n_e = n_{e,0}@f$, @f$T_e = T_{e,0}@f$, and @f$Z_{eff} = Z_{eff,0}@f$.
+!!
 !! @param[in] P An instance of KORC's derived type PROFILES containing all the information about the plasma profiles used in the simulation. See korc_types.f90 and korc_profiles.f90.
 !! @param[in,out] vars An instance of PARTICLES containing the variables of a given species.
 subroutine uniform_profiles(vars,P)
@@ -146,6 +167,7 @@ end subroutine uniform_profiles
 
 
 !> @brief Subroutine that calculates the analytical plasma profiles at the particles' position.
+!!
 !! @param[in] P An instance of KORC's derived type PROFILES containing all the information about the plasma profiles used in the simulation. See korc_types.f90 and korc_profiles.f90.
 !! @param[in] Y Particles' position in toroidal coordinates; Y(1,:) = @f$r@f$, Y(2,:) = @f$\theta@f$, Y(3,:) = @f$\zeta@f$.
 !! @param[in,out] ne Backgroun electron density seen by simulated particles.
@@ -221,9 +243,11 @@ end subroutine get_analytical_profiles
 
 
 !> @brief Subrotuine that calls the appropriate subroutine for calculating or interpolating the plasma profiles at the particles' position.
+!!
 !! @param[in] params Core KORC simulation parameters.
 !! @param[in,out] vars An instance of PARTICLES containing the variables of a given species.
-!! @param[in] P An instance of KORC's derived type PROFILES containing all the information about the plasma profiles used in the simulation. See korc_types.f90 and korc_profiles.f90.
+!! @param[in] P An instance of KORC's derived type PROFILES containing all the information about the plasma profiles used in the
+!! simulation. See korc_types.f90 and korc_profiles.f90.
 subroutine get_profiles(params,vars,P)
 	TYPE(KORC_PARAMS), INTENT(IN)  :: params
 	TYPE(PARTICLES), INTENT(INOUT) :: vars
@@ -249,8 +273,10 @@ end subroutine get_profiles
 
 
 !> @brief Subroutine that loads pre-computed plasma profiles' data from an input HDF5 file.
+!!
 !! @param[in] params Core KORC simulation parameters.
-!! @param[out] P An instance of KORC's derived type PROFILES containing all the information about the plasma profiles used in the simulation. See korc_types.f90 and korc_profiles.f90.
+!! @param[out] P An instance of KORC's derived type PROFILES containing all the information about the plasma profiles used in the
+!! simulation. See korc_types.f90 and korc_profiles.f90.
 !! @param filename String containing the name of the input HDF5 file.
 !! @param gname String containing the group name of a parameter in the HDF5 file.
 !! @param subgname String containing the subgroup name of a parameter in the HDF5 file.
@@ -350,7 +376,9 @@ end subroutine load_profiles_data_from_hdf5
 
 
 !> @brief Subroutine that allocates the mesh information and 2-D arrays for keeping the data of pre-computed plasma profiles.
-!! @param[out] P An instance of KORC's derived type PROFILES containing all the information about the plasma profiles used in the simulation. See korc_types.f90 and korc_profiles.f90.
+!!
+!! @param[out] P An instance of KORC's derived type PROFILES containing all the information about the plasma profiles used in the
+!! simulation. See korc_types.f90 and korc_profiles.f90.
 subroutine ALLOCATE_2D_PROFILES_ARRAYS(P)
 	TYPE(PROFILES), INTENT(INOUT) :: P
 
@@ -364,7 +392,9 @@ end subroutine ALLOCATE_2D_PROFILES_ARRAYS
 
 
 !> @brief Subroutine that allocates the mesh information and 3-D arrays for keeping the data of pre-computed plasma profiles.
-!! @param[out] P An instance of KORC's derived type PROFILES containing all the information about the plasma profiles used in the simulation. See korc_types.f90 and korc_profiles.f90.
+!!
+!! @param[out] P An instance of KORC's derived type PROFILES containing all the information about the plasma profiles used in the
+!!simulation. See korc_types.f90 and korc_profiles.f90.
 subroutine ALLOCATE_3D_PROFILES_ARRAYS(P)
 	TYPE(PROFILES), INTENT(INOUT) :: P
 

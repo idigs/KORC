@@ -19,6 +19,7 @@ module korc_hpc
     CONTAINS
 
 !> @brief Subroutine that terminates the simulation.
+!!
 !! @param mpierr MPI error status.
 subroutine korc_abort()
 	INTEGER :: mpierr !< MPI error status
@@ -29,9 +30,10 @@ subroutine korc_abort()
 end subroutine korc_abort
 
 !> @brief Subroutine that initialize MPI communications.
-!! @details Through this subroutine the default MPI communicator MPI_COMM_WORLD is initialized. Also, a Cartesian 
+!! @details Through this subroutine the default MPI communicator MPI_COMM_WORLD is initialized. Also, a Cartesian
+!!
 !! @param[in,out] params Core KORC simulation parameters.
-!! @param mpierr MPI error status. 
+!! @param mpierr MPI error status.
 !! @param NDIMS Number of dimensions of non-standard topology. NDIMS=1 for a 1-D MPI topology, NDIMS=2 for a 2-D MPI topology, and NDIMS=3 for a 3-D MPI topology.
 !! @param DIMS Dimension of the non-standard MPI topology params::mpi_params::mpi_topo. This is equal to the number of MPI processes in KORC.
 !! @param all_mpis_initialized Flag to determine if all the MPI processes were initialized correctly.
@@ -78,7 +80,7 @@ subroutine initialize_mpi(params)
 		write(6,'(/," ERROR: Obtaining MPI rank. Aborting... ")')
 		write(6,'(/,"* * * * * * * * * ** * * * * * * * * * * *")')
 		call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
-	end if	
+	end if
 
 
 	! * * * Here a Cartesian topology for MPI is created * * * !
@@ -129,10 +131,11 @@ subroutine initialize_mpi(params)
 end subroutine initialize_mpi
 
 !> @brief Subroutine for timing the execution of any parallel section of KORC.
+!!
 !! @param[in] params Core KORC simulation parameters.
 !! @param individual_runtime Execution time of each MPI process.
 !! @param runtime Execution time of KORC defined as the average of the execution times of all MPI processes.
-!! @param mpierr MPI error status. 
+!! @param mpierr MPI error status.
 subroutine timing_KORC(params)
 	TYPE(KORC_PARAMS), INTENT(IN) 		:: params
 	REAL(rp) 							:: individual_runtime
@@ -142,7 +145,7 @@ subroutine timing_KORC(params)
 	if (timed_already) then
 		t2 = MPI_WTIME()
 
-		ALLOCATE(runtime(params%mpi_params%nmpi))	
+		ALLOCATE(runtime(params%mpi_params%nmpi))
 
 		individual_runtime = t2 - t1
 
@@ -158,7 +161,7 @@ subroutine timing_KORC(params)
 		call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
 		DEALLOCATE(runtime)
-		
+
 		timed_already = .FALSE.
 	end if
 
@@ -169,9 +172,10 @@ end subroutine timing_KORC
 
 !> @brief Subroutine for finalizing MPI communications.
 !! @details This subroutine finalizes all the MPI communications and looks for errors durignt this procces.
+!!
 !! @param[in] params Core KORC simulation parameters.
 !! @param mpi_process_finalized Flag indicating whether an individual MPI process was finalized correctly.
-!! @param mpierr MPI error status. 
+!! @param mpierr MPI error status.
 subroutine finalize_mpi(params)
 	TYPE(KORC_PARAMS), INTENT(IN) 	:: params
 	LOGICAL 						:: mpi_process_finalized = .FALSE.
@@ -196,10 +200,13 @@ end subroutine finalize_mpi
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
 !> @brief Subroutine for initializing MPI and open MP communications.
-!! @details This subroutine initializes MPI and open MP communications and looks for errors durignt this procces. The system environment variables, which are modified by the user at the moment of running/submitting a KORC simulation, are used to determine the open MP configuration. Some open MP parameters are displayed on the screen/output file.
+!! @details This subroutine initializes MPI and open MP communications and looks for errors durignt this procces. The system environment
+!! variables, which are modified by the user at the moment of running/submitting a KORC simulation, are used to determine the
+!! open MP configuration. Some open MP parameters are displayed on the screen/output file.
+!!
 !! @param[in] params Core KORC simulation parameters.
 !! @param mpi_process_finalized Flag indicating whether an individual MPI process was finalized correctly.
-!! @param mpierr MPI error status. 
+!! @param mpierr MPI error status.
 subroutine initialize_communications(params)
 	TYPE(KORC_PARAMS), INTENT(INOUT) 	:: params
 	CHARACTER(MAX_STRING_LENGTH) 		:: string

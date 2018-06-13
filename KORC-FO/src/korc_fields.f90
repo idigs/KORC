@@ -31,7 +31,7 @@ module korc_fields
 !> @brief Subroutine that calculates and returns the electric and magnetic field for each particle in the simulation.
 !! @details The analytical magnetic field is given by:
 !!
-!! @f$\vec{B}(r,\vartheta) = \frac{1}{1 + \eta \cos{\vartheta}} \left[ B_0 \hat{e}_\zeta  + B_\vartheta(r) \hat{e}_\vartheta \right]@f$,
+!! @f$\mathbf{B}(r,\vartheta) = \frac{1}{1 + \eta \cos{\vartheta}} \left[ B_0 \hat{e}_\zeta  + B_\vartheta(r) \hat{e}_\vartheta \right]@f$,
 !!
 !! where @f$\eta = r/R_0@f$ is the aspect ratio, the constant @f$B_0@f$ denotes the magnitude of the toroidal magnetic field,
 !! and @f$B_\vartheta(r) = \eta B_0/q(r)@f$ is the poloidal magnetic field with safety factor @f$q(r) = q_0\left( 1 + \frac{r^2}{\lambda^2} \right)@f$.
@@ -39,7 +39,7 @@ module korc_fields
 !! and @f$q(r)@f$ at the plasma edge @f$r=r_{edge}@f$.
 !! On the other hand, the analytical electric fields is given by:
 !!
-!! @f$\vec{E}(r,\vartheta) = \frac{1}{1 + \eta \cos{\vartheta}} E_0 \hat{e}_\zeta@f$,
+!! @f$\mathbf{E}(r,\vartheta) = \frac{1}{1 + \eta \cos{\vartheta}} E_0 \hat{e}_\zeta@f$,
 !!
 !! where @f$E_0@f$ is the electric field as measured at the mangetic axis.
 !!
@@ -99,7 +99,8 @@ end subroutine analytical_fields
 
 !> @brief Subroutine that returns the value of a uniform magnetic field.
 !! @details This subroutie is used only when the simulation is ran for a 'UNIFORM' plasma. As a convention, in a uniform plasma we set
-!! @f$\vec{B} = B_0 \hat{x}@f$.
+!! @f$\mathbf{B} = B_0 \hat{x}@f$.
+!!
 !! @param[in] F An instance of the KORC derived type FIELDS.
 !! @param[in,out] B Magnetic field components in Cartesian coordinates; B(1,:) = @f$B_x@f$, B(2,:) = @f$B_y@f$, B(3,:) = @f$B_z@f$
 subroutine uniform_magnetic_field(F,B)
@@ -113,7 +114,8 @@ end subroutine uniform_magnetic_field
 
 !> @brief Subroutine that returns the value of a uniform electric field.
 !! @details This subroutie is used only when the simulation is ran for a 'UNIFORM' plasma. As a convention, in a uniform plasma we set
-!! @f$\vec{E} = E_0 \hat{x}@f$.
+!! @f$\mathbf{E} = E_0 \hat{x}@f$.
+!!
 !! @param[in] F An instance of the KORC derived type FIELDS.
 !! @param[in,out] E Electric field components in Cartesian coordinates; E(1,:) = @f$E_x@f$, E(2,:) = @f$E_y@f$, E(3,:) = @f$E_z@f$
 subroutine uniform_electric_field(F,E)
@@ -126,6 +128,7 @@ end subroutine uniform_electric_field
 
 
 !> @brief Subrotuine that calculates and returns the electric field using the same analytical model of the 'analytical_fields' subroutine.
+!!
 !! @param[in] F An instance of the KORC derived type FIELDS.
 !! @param[in] Y Cylindrical coordinates of each particle in the simulation; Y(1,:) = @f$R@f$, Y(2,:) = @f$\phi@f$, Y(3,:) = @f$Z@f$.
 !! @param[in,out] E Electric field components in Cartesian coordinates; E(1,:) = @f$E_x@f$, E(2,:) = @f$E_y@f$, E(3,:) = @f$E_z@f$
@@ -160,6 +163,7 @@ end subroutine analytical_electric_field_cyl
 
 
 !> @brief Subroutine that calculates the mean electric or magnetic field in case external fields are being used.
+!!
 !! @param[in] F An instance of the KORC derived type FIELDS.
 !! @param[out] Fo Mean electric or magnetic field.
 !! @param[in] op_field String that specifies what mean field will be calculated. Its value can be 'B' or 'E'.
@@ -188,6 +192,7 @@ end subroutine mean_F_field
 
 
 !> @brief Interface for calculating the analytical electric and magnetic fields for each particle in the simulation.
+!!
 !! @param[in,out] vars An instance of the KORC derived type PARTICLES.
 !! @param[in] F An instance of the KORC derived type FIELDS.
 subroutine get_analytical_fields(vars,F)
@@ -201,6 +206,7 @@ end subroutine get_analytical_fields
 
 
 !> @brief Interface for calculating the uniform electric and magnetic fields for each particle in the simulation.
+!!
 !! @param[in,out] vars An instance of the KORC derived type PARTICLES.
 !! @param[in] F An instance of the KORC derived type FIELDS.
 subroutine uniform_fields(vars,F)
@@ -213,10 +219,11 @@ subroutine uniform_fields(vars,F)
 end subroutine uniform_fields
 
 
-!> @brief Function that calculates the cross product of the two vectors @f$\vec{a}@f$ and @f$\vec{b}@f$.
-!! @param cross Cross product @f$\vec{a}\times \vec{b}@f$
-!! @param[in] a Vector @f$\vec{a}@f$.
-!! @param[in] b Vector @f$\vec{b}@f$.
+!> @brief Function that calculates the cross product of the two vectors @f$\mathbf{a}@f$ and @f$\mathbf{b}@f$.
+!!
+!! @param cross Cross product @f$\mathbf{a}\times \mathbf{b}@f$
+!! @param[in] a Vector @f$\mathbf{a}@f$.
+!! @param[in] b Vector @f$\mathbf{b}@f$.
 function cross(a,b)
     REAL(rp), DIMENSION(3)             :: cross
 	REAL(rp), DIMENSION(3), INTENT(IN) :: a
@@ -228,11 +235,12 @@ function cross(a,b)
 end function cross
 
 
-!> @brief Subrotuine that calculates an orthonormal basis using information of the (local) magnetic field at position @f$\vec{X}_0@f$.
+!> @brief Subrotuine that calculates an orthonormal basis using information of the (local) magnetic field at position @f$\mathbf{X}_0@f$.
+!!
 !! @param[in] params Core KORC simulation parameters.
 !! @param[in] Xo Array with the position of the simulated particles.
 !! @param[in] F An instance of the KORC derived type FIELDS.
-!! @param[in,out] b1 Basis vector pointing along the local magnetic field, that is, along @f$\vec{b} = \vec{B}/B@f$.
+!! @param[in,out] b1 Basis vector pointing along the local magnetic field, that is, along @f$\mathbf{b} = \mathbf{B}/B@f$.
 !! @param[in,out] b2 Basis vector perpendicular to b1
 !! @param[in,out] b3 Basis vector perpendicular to b1 and b2.
 !! @param[in,out] flag Flag for each particle to decide whether it is being followed (flag=T) or not (flag=F).
@@ -291,6 +299,7 @@ end subroutine unitVectors
 
 
 !> @brief Inferface with calls to subroutines for calculating the electric and magnetic field for each particle in the simulation.
+!!
 !! @param[in] params Core KORC simulation parameters.
 !! @param[in,out] vars An instance of the KORC derived type PARTICLES.
 !! @param[in] F An instance of the KORC derived type FIELDS.
@@ -321,6 +330,7 @@ end subroutine get_fields
 !> @brief Subroutine that initializes the analytical or externally calculated electric and magnetic fields.
 !! @details In this subroutine we load the parameters of the electric and magnetic fields from the namelists 'analytical_fields_params' and
 !! 'externalPlasmaModel' in the input file.
+!!
 !! @param[in] params Core KORC simulation parameters.
 !! @param[out] F An instance of the KORC derived type FIELDS.
 !! @param Bo Magnetic field at magnetic axis for an 'ANALITICAL' magnetic field, or the magnitude of the magnetic field for a 'UNFIROM' plasma.
@@ -434,6 +444,7 @@ end subroutine initialize_fields
 !> @brief Subroutine that loads the size of the arrays having the electric and magnetic field data.
 !! @details All the information of externally calculated fields must be given in a rectangular, equally spaced mesh in the @f$(R,\phi,Z)@f$ space of cylindrical coordinates.
 !! If the fields are axisymmetric, then the fields must be in a rectangular mesh on the @f$RZ@f$-plane.
+!!
 !! @param[in] params Core KORC simulation parameters.
 !! @param[in,out] F An instance of the KORC derived type FIELDS.
 !! @param filename String containing the name of the HDF5 file.
@@ -500,6 +511,7 @@ end subroutine load_dim_data_from_hdf5
 
 
 !> @brief Subroutine that queries the HDF5 file what data are present in the HDF5 input file (sanity check).
+!!
 !! @param[in] params Core KORC simulation parameters.
 !! @param Bfield Logical variable that specifies if the magnetic field is present in the HDF5 file.
 !! @param Efield Logical variable that specifies if the electric field is present in the HDF5 file.
@@ -550,6 +562,7 @@ end subroutine which_fields_in_file
 
 
 !> @brief Subroutine that loads the fields data from the HDF5 input file.
+!!
 !! @param[in] params Core KORC simulation parameters.
 !! @param[in,out] F An instance of the KORC derived type FIELDS. In this variable we keep the loaded data.
 !! @param filename String containing the name of the HDF5 file.
@@ -670,6 +683,7 @@ end subroutine load_field_data_from_hdf5
 
 
 !> @brief Subroutine that allocates the variables keeping the axisymmetric fields data.
+!!
 !! @param[in,out] F An instance of the KORC derived type FIELDS. In this variable we keep the loaded data.
 !! @param[in] bfield Logical variable that specifies if the variables that keep the magnetic field data is allocated (bfield=T) or not (bfield=F).
 !! @param[in] bflux Logical variable that specifies if the variables that keep the poloidal magnetic flux data is allocated (bflux=T) or not (bflux=F).
@@ -700,6 +714,7 @@ end subroutine ALLOCATE_2D_FIELDS_ARRAYS
 
 
 !> @brief Subroutine that allocates the variables keeping the 3-D fields data.
+!!
 !! @param[in,out] F An instance of the KORC derived type FIELDS. In this variable we keep the loaded data.
 !! @param[in] bfield Logical variable that specifies if the variables that keep the magnetic field data is allocated (bfield=T) or not (bfield=F).
 !! @param[in] efield Logical variable that specifies if the variables that keep the electric field data is allocated (efield=T) or not (efield=F).
@@ -725,6 +740,7 @@ end subroutine ALLOCATE_3D_FIELDS_ARRAYS
 
 
 !> @brief Subroutine that allocates the cylindrical components of an axisymmetric field.
+!!
 !! @param[in,out] F Vector field to be allocated.
 !! @param[in] dims Dimension of the mesh containing the field data.
 subroutine ALLOCATE_V_FIELD_2D(F,dims)
@@ -738,6 +754,7 @@ end subroutine ALLOCATE_V_FIELD_2D
 
 
 !> @brief Subroutine that allocates the cylindrical components of a 3-D field.
+!!
 !! @param[in,out] F Vector field to be allocated.
 !! @param[in] dims Dimension of the mesh containing the field data.
 subroutine ALLOCATE_V_FIELD_3D(F,dims)
@@ -750,6 +767,7 @@ subroutine ALLOCATE_V_FIELD_3D(F,dims)
 end subroutine ALLOCATE_V_FIELD_3D
 
 !> @brief Subroutine that deallocates all the variables of the electric and magnetic fields.
+!!
 !! @param[in,out] F An instance of the KORC derived type FIELDS.
 subroutine DEALLOCATE_FIELDS_ARRAYS(F)
 	TYPE(FIELDS), INTENT(INOUT) :: F

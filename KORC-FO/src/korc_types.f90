@@ -37,9 +37,9 @@ END TYPE KORC_STRING
 TYPE, PUBLIC :: V_FIELD_3D
 !< @brief KORC 3-D vector field type
 !! @details This KORC type represents a 3-D vector field varible in cylindrical coordinates. For example, this could be the 3-D magnetic
-!! field, which can be written as @f$\vec{B}(R,\phi,Z) = B_R(R,\phi,Z) \hat{R} + B_\phi(R,\phi,Z) \hat{\phi} + B_Z(R,\phi,Z) \hat{Z}@f$.
+!! field, which can be written as @f$\mathbf{B}(R,\phi,Z) = B_R(R,\phi,Z) \hat{R} + B_\phi(R,\phi,Z) \hat{\phi} + B_Z(R,\phi,Z) \hat{Z}@f$.
 !! All the members (components) of the V_FIELD_3D type follow the following index convention:
-!! (@f$R@f$ index,@f$\phi@f$ index,@f$Z@f$ index)
+!! (@f\mathbf$ index,@f$\phi@f$ index,@f$Z@f$ index)
 
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: R !< @f$R @f$ component of the vector field variable.
 	REAL(rp), DIMENSION(:,:,:), ALLOCATABLE :: PHI !< @f$\phi @f$ component of the vector field variable.
@@ -49,7 +49,7 @@ END TYPE V_FIELD_3D
 TYPE, PUBLIC :: V_FIELD_2D
 !< @brief KORC 2-D vector field type
 !! @details This KORC type represents a 2-D vector field varible in cylindrical coordinates. For example, this could be the magnetic
-!! field in an axisymmetric plasma, which can be written as @f$\vec{B}(R,Z) = B_R(R,Z) \hat{R} + B_\phi(R,Z) \hat{\phi} + B_Z(R,Z)
+!! field in an axisymmetric plasma, which can be written as @f$\mathbf{B}(R,Z) = B_R(R,Z) \hat{R} + B_\phi(R,Z) \hat{\phi} + B_Z(R,Z)
 !! \hat{Z}@f$.
 !! All the members (components) of the V_FIELD_2D type follow the following index convention:
 !! (@f$R@f$ index,@f$Z@f$ index).
@@ -185,7 +185,7 @@ TYPE, PRIVATE :: A_FIELD
 !< @brief Derived type having all the parameters of the analytical magnetic field included in KORC.
 !! @details The analytical magnetic field is given by:
 !!
-!! @f$\vec{B}(r,\vartheta) = \frac{1}{1 + \eta \cos{\vartheta}} \left[ B_0 \hat{e}_\zeta  + B_\vartheta(r) \hat{e}_\vartheta \right]@f$,
+!! @f$\mathbf{B}(r,\vartheta) = \frac{1}{1 + \eta \cos{\vartheta}} \left[ B_0 \hat{e}_\zeta  + B_\vartheta(r) \hat{e}_\vartheta \right]@f$,
 !!
 !! where @f$\eta = r/R_0@f$ is the aspect ratio, the constant @f$B_0@f$ denotes the magnitude of the toroidal magnetic field, and @f$B_\vartheta(r) = \eta B_0/q(r)@f$ is the poloidal magnetic field with safety factor @f$q(r) = q_0\left( 1 + \frac{r^2}{\lambda^2} \right)@f$. The constant @f$q_0@f$ is the safety factor at the magnetic axis and the constant @f$\lambda@f$ is obtained from the values of @f$q_0@f$ and @f$q(r)@f$ at the plasma edge @f$r=r_{edge}@f$.
 

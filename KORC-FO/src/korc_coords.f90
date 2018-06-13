@@ -15,7 +15,7 @@ module korc_coords
 !!
 !! @f$R = \sqrt{x^2 + y^2}@f$,\n
 !! @f$\phi = \arctan{\left( \frac{y}{x} \right)}@f$,\n
-!! @f$Z = z@f$,\n
+!! @f$Z = z@f$.
 !!
 !! @param[in] X Particles' position in Cartesian coordinates. X(1,:) = @f$x@f$, X(2,:) = @f$y@f$, X(3,:) = @f$z@f$
 !! @param[in,out] Xcyl Particles' position in cylindrical coordinates. Xcyl(1,:) = @f$R@f$, Xcyl(2,:) = @f$\phi@f$, Xcyl(3,:) = @f$Z@f$
@@ -53,6 +53,7 @@ end subroutine cart_to_cyl
 !! @f$\zeta = \arctan{\left( \frac{x}{y} \right)}@f$,\n
 !!
 !! where @f$R_0@f$ is the radial position of the magnetic axis.
+!!
 !! @param[in] X Particles' position in Cartesian coordinates. X(1,:) = @f$x@f$, X(2,:) = @f$y@f$, X(3,:) = @f$z@f$
 !! @param[in] F An instance of the KORC derived type FIELDS.
 !! @param[in,out] Xtor Particles' position in cylindrical coordinates. Xtor(1,:) = @f$r@f$, Xtor(2,:) = @f$\theta@f$, Xtor(3,:) = @f$\zeta@f$
