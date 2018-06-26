@@ -153,7 +153,7 @@ end subroutine torus
 !! @f$a' = \left[ - \frac{2r_0^2}{\alpha \sqrt{\alpha^2 + 4} - (2+\alpha^2)}  \right]^{1/2}@f$\n
 !! @f$b' = \left[ \frac{2r_0^2}{\alpha \sqrt{\alpha^2 + 4} + (2+\alpha^2)}  \right]^{1/2}@f$.
 !!
-!! Finally, we rotate the ellipse cross section anticlockwise by @f$\Theta = \cot^{-1}(\alpha/2)/2@f$, so the major semi-axis is
+!! Finally, we rotate the ellipse cross section anticlockwise along @f$(R_0',Z_0')@f$ by @f$\Theta = \cot^{-1}(\alpha/2)/2@f$, so the major semi-axis is
 !! parallel to the @f$Z@f$-axis.
 !!
 !! @param[in] params Core KORC simulation parameters.
@@ -252,7 +252,7 @@ END FUNCTION fzero
 !!
 !!
 !! @f$f(r) = \left\{ \begin{array}{ll} \frac{k_0^2}{4\pi^2 R_0}\frac{\exp{\left( -k_0 r \right)}}{1 - \exp{\left( -k_0r_0\right)}\left[ 1 + k_0 r_0 \right]} &\
-!! r_{min}<r<r_{max} \\ 0 & r>r_{max} \end{array} \right. @f$.
+!! r<r_0 \\ 0 & r>r_0 \end{array} \right. @f$.
 !!
 !!
 !! The radial position of the particles @f$r@f$ is obtained using the Inverse Trasnform Sampling method, finding @f$r@f$ numerically
@@ -274,6 +274,7 @@ END FUNCTION fzero
 !! @param r Radial position of the particles @f$r@f$.
 !! @param theta Uniform deviates in the range @f$[0,2\pi]@f$ representing the uniform poloidal angle @f$\theta@f$ distribution of the particles.
 !! @param zeta Uniform deviates in the range @f$[0,2\pi]@f$ representing the uniform toroidal angle @f$\zeta@f$ distribution of the particles.
+!! @param pp Particle iterator.
 subroutine exponential_torus(params,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) 		:: params
 	TYPE(SPECIES), INTENT(INOUT) 		:: spp
@@ -353,6 +354,31 @@ subroutine exponential_torus(params,spp)
 end subroutine exponential_torus
 
 
+!> @brief Subroutine that generates an exponentially decaying radial distribution in an elliptic torus as the initial spatial
+!! condition of a given particle species in the simulation.
+!! @details As a first step, we generate an exponentially decaying radial distribution in a circular cross-section torus as in
+!! \ref korc_spatial_distribution.exponential_torus. Then we transform this spatial distribution to a one in an torus with an
+!! elliptic cross section, this following the same approach as in \ref korc_spatial_distribution.elliptic_torus.
+!!
+!! @param[in] params Core KORC simulation parameters.
+!! @param[in,out] spp An instance of the derived type SPECIES containing all the parameters and simulation variables of the different
+!! species in the simulation.
+!! @param fl Variable used in the Newton-Raphson method for finding the radial position of each particle.
+!! @param fr Variable used in the Newton-Raphson method for finding the radial position of each particle.
+!! @param fm Variable used in the Newton-Raphson method for finding the radial position of each particle.
+!! @param rl Variable used in the Newton-Raphson method for finding the radial position of each particle.
+!! @param rr Variable used in the Newton-Raphson method for finding the radial position of each particle.
+!! @param rm Variable used in the Newton-Raphson method for finding the radial position of each particle.
+!! @param relerr Tolerance used to determine when to stop iterating the Newton-Raphson method for finding @f$r@f$.
+!! @param rotation_angle This is the angle @f$\Theta@f$ in \ref korc_spatial_distribution.elliptic_torus.
+!! @param r Radial position of the particles @f$r@f$.
+!! @param theta Uniform deviates in the range @f$[0,2\pi]@f$ representing the uniform poloidal angle @f$\theta@f$ distribution of the particles.
+!! @param zeta Uniform deviates in the range @f$[0,2\pi]@f$ representing the uniform toroidal angle @f$\zeta@f$ distribution of the particles.
+!! @param X Auxiliary vector used in the coordinate transformations.
+!! @param Y Auxiliary vector used in the coordinate transformations.
+!! @param X1 Auxiliary vector used in the coordinate transformations.
+!! @param Y1 Auxiliary vector used in the coordinate transformations.
+!! @param pp Particle iterator.
 subroutine exponential_elliptic_torus(params,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) 			:: params
 	TYPE(SPECIES), INTENT(INOUT) 			:: spp
@@ -364,14 +390,13 @@ subroutine exponential_elliptic_torus(params,spp)
 	REAL(rp) 								:: rm
 	REAL(rp) 								:: relerr
 	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: rotation_angle
+	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: r
 	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: theta
 	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: zeta
-	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: r ! temporary vars
 	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: X
 	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: Y
 	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: X1
 	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: Y1
-	LOGICAL 								:: is_nan
 	INTEGER 								:: pp
 
 	ALLOCATE(X1(spp%ppp))
@@ -456,13 +481,32 @@ subroutine exponential_elliptic_torus(params,spp)
 end subroutine exponential_elliptic_torus
 
 
+!> @brief Subroutine that generates a Gaussian radial distribution in an elliptic torus as the initial spatial
+!! condition of a given particle species in the simulation.
+!! @details As a first step, we generate an Gaussian radial distribution in a circular cross-section torus as in
+!! \ref korc_spatial_distribution.gaussian_torus. Then we transform this spatial distribution to a one in an torus with an
+!! elliptic cross section, this following the same approach as in \ref korc_spatial_distribution.elliptic_torus.
+!!
+!! @param[in] params Core KORC simulation parameters.
+!! @param[in,out] spp An instance of the derived type SPECIES containing all the parameters and simulation variables of the different
+!! species in the simulation.
+!! @param rotation_angle This is the angle @f$\Theta@f$ in \ref korc_spatial_distribution.elliptic_torus.
+!! @param r Radial position of the particles @f$r@f$.
+!! @param theta Uniform deviates in the range @f$[0,2\pi]@f$ representing the uniform poloidal angle @f$\theta@f$ distribution of the particles.
+!! @param zeta Uniform deviates in the range @f$[0,2\pi]@f$ representing the uniform toroidal angle @f$\zeta@f$ distribution of the particles.
+!! @param X Auxiliary vector used in the coordinate transformations.
+!! @param Y Auxiliary vector used in the coordinate transformations.
+!! @param X1 Auxiliary vector used in the coordinate transformations.
+!! @param Y1 Auxiliary vector used in the coordinate transformations.
+!! @param sigma Standard deviation @f$\sigma@f$ of the radial distribution function.
+!! @param pp Particle iterator.
 subroutine gaussian_elliptic_torus(params,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) 			:: params
 	TYPE(SPECIES), INTENT(INOUT) 			:: spp
 	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: rotation_angle
+	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: r
 	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: theta
 	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: zeta
-	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: r ! temporary vars
 	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: X
 	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: Y
 	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: X1
@@ -526,6 +570,36 @@ subroutine gaussian_elliptic_torus(params,spp)
 end subroutine gaussian_elliptic_torus
 
 
+!> @brief Subroutine that generates a Gaussian radial distribution of particles in a circular cross-section torus of
+!! major and minor radi @f$R_0@f$ and @f$r_0@f$, respectively.
+!! @details We generate this exponentially decaying radial distribution @f$f(r)@f$ following the same approach as in
+!! \ref korc_spatial_distribution.disk, but this time, the radial distribution is given by:
+!!
+!!
+!! @f$f(r) = \left\{ \begin{array}{ll} \frac{1}{4\pi^2 \sigma^2 R_0}\frac{\exp{\left( -\frac{r^2}{2\sigma^2} \right)}}{1 - \exp{\left( -\frac{r_0^2}{2\sigma^2} \right)}} &\
+!! r<r_0 \\ 0 & r>r_0 \end{array} \right. @f$.
+!!
+!!
+!! The radial position of the particles @f$r@f$ is obtained using the Inverse Trasnform Sampling method, finding @f$r@f$ numerically
+!! through the Newton-Raphson method. First, we calculate the particles' radial distribution in a disk centered at @f$(R,Z) = (0,0)@f$.
+!! Then, we transfor to a new set of coordinates where the disk is centered at @f$(R,Z) = (R_0,Z_0)@f$. Finally, we generate the
+!! toroidal distribution by givin each particle a toroidal angle @f$\zeta@f$ which follows a uniform distribution in the interval
+!! @f$[0,2\pi]@f$.
+!!
+!! @param[in] params Core KORC simulation parameters.
+!! @param[in,out] spp An instance of the derived type SPECIES containing all the parameters and simulation variables of the different
+!! species in the simulation.
+!! @param fl Variable used in the Newton-Raphson method for finding the radial position of each particle.
+!! @param fr Variable used in the Newton-Raphson method for finding the radial position of each particle.
+!! @param fm Variable used in the Newton-Raphson method for finding the radial position of each particle.
+!! @param rl Variable used in the Newton-Raphson method for finding the radial position of each particle.
+!! @param rr Variable used in the Newton-Raphson method for finding the radial position of each particle.
+!! @param rm Variable used in the Newton-Raphson method for finding the radial position of each particle.
+!! @param relerr Tolerance used to determine when to stop iterating the Newton-Raphson method for finding @f$r@f$.
+!! @param r Radial position of the particles @f$r@f$.
+!! @param theta Uniform deviates in the range @f$[0,2\pi]@f$ representing the uniform poloidal angle @f$\theta@f$ distribution of the particles.
+!! @param zeta Uniform deviates in the range @f$[0,2\pi]@f$ representing the uniform toroidal angle @f$\zeta@f$ distribution of the particles.
+!! @param pp Particle iterator.
 subroutine gaussian_torus(params,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) 			:: params
 	TYPE(SPECIES), INTENT(INOUT) 			:: spp
@@ -568,6 +642,13 @@ subroutine gaussian_torus(params,spp)
 end subroutine gaussian_torus
 
 
+!> @brif Subroutine that contains calls to the different subroutines for initializing the simulated particles with various
+!! spatial distribution functions.
+!!
+!! @param[in] params Core KORC simulation parameters.
+!! @param[in,out] spp An instance of the derived type SPECIES containing all the parameters and simulation variables of the different
+!! species in the simulation.
+!! @param ss Species iterator.
 subroutine intitial_spatial_distribution(params,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) 								:: params
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) 	:: spp
