@@ -27,6 +27,10 @@ MODULE korc_experimental_pdf
 
 	TYPE, PRIVATE :: HOLLMANN_PARAMS
 	    CHARACTER(MAX_STRING_LENGTH) :: filename
+		REAL(rp) :: E
+		REAL(rp) :: Zeff
+		REAL(rp) :: max_pitch_angle
+		REAL(rp) :: min_pitch_angle
 		REAL(rp) :: min_sampling_energy ! Minimum energy of sampled PDF in MeV
 		REAL(rp) :: max_sampling_energy ! Maximum energy of sampled PDF in MeV
 		REAL(rp) :: min_sampling_g ! Minimum energy of sampled PDF in MeV
@@ -41,11 +45,12 @@ MODULE korc_experimental_pdf
 
 		INTEGER :: N
 
-		REAL(rp), DIMENSION(:), ALLOCATABLE :: E
+		REAL(rp), DIMENSION(:), ALLOCATABLE :: E_axis
 		REAL(rp), DIMENSION(:), ALLOCATABLE :: g
 		REAL(rp), DIMENSION(:), ALLOCATABLE :: fRE_E
 		REAL(rp), DIMENSION(:), ALLOCATABLE :: fRE_pitch
 
+		CHARACTER(MAX_STRING_LENGTH) :: current_direction
 		REAL(rp) :: Bo
 		REAL(rp) :: lambda
 	END TYPE HOLLMANN_PARAMS
@@ -94,310 +99,6 @@ SUBROUTINE get_experimentalG_distribution(params,g,eta,go,etao)
 END SUBROUTINE get_experimentalG_distribution
 
 
-SUBROUTINE get_Hollmann_distribution(params,g,eta,go,etao)
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: g
-	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: eta
-	REAL(rp), INTENT(OUT) :: go
-	REAL(rp), INTENT(OUT) :: etao
-
-	call initialize_Hollmann_params(params)
-
-	call sample_Hollmann_distribution(params,g,eta,go,etao)
-END SUBROUTINE get_Hollmann_distribution
-
-
-SUBROUTINE initialize_Hollmann_params(params)
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-    CHARACTER(MAX_STRING_LENGTH) :: filename
-	REAL(rp) :: max_energy
-	REAL(rp) :: min_energy
-	REAL(rp) :: Bo
-	REAL(rp) :: lambda
-
-	NAMELIST /HollmannPDF/ max_energy,min_energy,filename,Bo,lambda
-
-	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-	read(default_unit_open,nml=HollmannPDF)
-	close(default_unit_open)
-
-	h_params%filename = TRIM(filename)
-
-	h_params%min_sampling_energy = min_energy*C_E ! In Joules
-	h_params%min_sampling_g = 1.0_rp + h_params%min_sampling_energy/(C_ME*C_C**2)
-	
-	h_params%max_sampling_energy = max_energy*C_E ! In Joules.
-	h_params%max_sampling_g = 1.0_rp + h_params%max_sampling_energy/(C_ME*C_C**2)
-
-	call load_data_from_hdf5()
-
-	ALLOCATE(h_params%g(h_params%N))
-
-	h_params%g = 1.0_rp + h_params%E/(C_ME*C_C**2)
-
-	h_params%max_g = MAXVAL(h_params%g)
-	h_params%min_g = MINVAL(h_params%g)
-
-	h_params%Bo = Bo
-	h_params%lambda = lambda
-END SUBROUTINE initialize_Hollmann_params
-
-
-SUBROUTINE load_data_from_hdf5()
-	CHARACTER(MAX_STRING_LENGTH) :: filename
-	CHARACTER(MAX_STRING_LENGTH) :: gname
-	CHARACTER(MAX_STRING_LENGTH) :: subgname
-	CHARACTER(MAX_STRING_LENGTH) :: dset
-	INTEGER(HID_T) :: h5file_id
-	INTEGER(HID_T) :: group_id
-	INTEGER(HID_T) :: subgroup_id
-	REAL(rp) :: rdatum
-	INTEGER :: h5error
-
-	filename = TRIM(h_params%filename)
-	call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
-	if (h5error .EQ. -1) then
-		write(6,'("KORC ERROR: Something went wrong in: load_data_from_hdf5 (korc_experimental) --> h5fopen_f")')
-	end if
-
-	dset = "/N"
-	call load_from_hdf5(h5file_id,dset,rdatum)
-	h_params%N = INT(rdatum)
-
-	ALLOCATE(h_params%E(h_params%N))
-	ALLOCATE(h_params%fRE_E(h_params%N))
-	ALLOCATE(h_params%fRE_pitch(h_params%N))
-
-	dset = "/E"
-	call load_array_from_hdf5(h5file_id,dset,h_params%E)
-	h_params%E = h_params%E*C_E
-
-	dset = "/fRE_E"
-	call load_array_from_hdf5(h5file_id,dset,h_params%fRE_E)
-
-	dset = "/fRE_pitch"
-	call load_array_from_hdf5(h5file_id,dset,h_params%fRE_pitch)
-
-	call h5fclose_f(h5file_id, h5error)
-	if (h5error .EQ. -1) then
-		write(6,'("KORC ERROR: Something went wrong in: load_data_from_hdf5 (korc_experimental) --> h5fclose_f")')
-	end if
-END SUBROUTINE load_data_from_hdf5
-
-
-FUNCTION fRE_H(eta,g)
-	REAL(rp), INTENT(IN) :: eta ! pitch angle in degrees
-	REAL(rp), INTENT(IN) :: g ! Relativistic gamma factor
-	REAL(rp) :: fRE_H
-	REAL(rp) :: D
-	REAL(rp) :: g0,g1,f0,f1,m
-	INTEGER :: index
-
-	index = MINLOC(ABS(h_params%g - g),1)
-	D = h_params%g(index) - g
-	
-	if (D.GT.0) then
-		f0 = h_params%fRE_E(index-1)
-		g0 = h_params%g(index-1)
-
-		f1 = h_params%fRE_E(index)
-		g1 = h_params%g(index)
-	else
-		f0 = h_params%fRE_E(index)
-		g0 = h_params%g(index)
-
-		f1 = h_params%fRE_E(index+1)
-		g1 = h_params%g(index+1)
-	end if
-
-	m = (f1-f0)/(g1-g0)	
-
-	fRE_H = f0 + m*(g - g0)
-!	fRE_H = fRE_H*PR(eta,SQRT(g**2 - 1.0_rp),h_params%Bo,h_params%lambda)
-END FUNCTION fRE_H
-
-
-FUNCTION fRE_pitch(g)
-	REAL(rp), INTENT(IN) :: g ! Relativistic gamma factor
-	REAL(rp) :: fRE_pitch
-	REAL(rp) :: D
-	REAL(rp) :: g0,g1,f0,f1,m
-	INTEGER :: index
-
-	index = MINLOC(ABS(h_params%g - g),1)
-	D = h_params%g(index) - g
-	
-	if (D.GT.0) then
-		f0 = h_params%fRE_pitch(index-1)
-		g0 = h_params%g(index-1)
-
-		f1 = h_params%fRE_pitch(index)
-		g1 = h_params%g(index)
-	else
-		f0 = h_params%fRE_pitch(index)
-		g0 = h_params%g(index)
-
-		f1 = h_params%fRE_pitch(index+1)
-		g1 = h_params%g(index+1)
-	end if
-
-	m = (f1-f0)/(g1-g0)	
-
-	fRE_pitch = f0 + m*(g - g0)
-	fRE_pitch = 180.0_rp - fRE_pitch
-END FUNCTION fRE_pitch
-
-
-SUBROUTINE sample_Hollmann_distribution(params,g,eta,go,etao)
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: g
-	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: eta
-	REAL(rp), INTENT(OUT) :: go
-	REAL(rp), INTENT(OUT) :: etao
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: p
-	REAL(rp) :: g_buffer,g_test,eta_buffer,eta_test
-	REAL(rp) :: ratio, rand_unif
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: g_samples
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: eta_samples
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: g_tmp,eta_tmp
-	REAL(rp) :: minmax,min_g, max_g
-	REAL(rp) :: dg
-	LOGICAL :: lp
-	INTEGER :: index_i,index_f
-	INTEGER :: num_accepted
-	INTEGER :: ii,jj,ppp,nsamples
-	INTEGER :: mpierr
-
-	ppp = SIZE(g)
-	nsamples = ppp*params%mpi_params%nmpi
-
-	index_i = MINLOC(ABS(h_params%g - h_params%min_sampling_g),1)
-	index_f = MINLOC(ABS(h_params%g - h_params%max_sampling_g),1)
-
-!	dg = MINVAL(h_params%g(index_i+1:index_f) - h_params%g(index_i:index_f-1))
-	dg = (h_params%max_sampling_g - h_params%min_sampling_g)/100.0_rp
-
-	do jj=1_idef,INT(minmax_buffer_size,idef)
-		minmax = h_params%min_sampling_g - REAL(jj,rp)*dg
-		if (minmax.GT.h_params%min_g) then
-			min_g = minmax
-		end if
-
-		minmax = h_params%max_sampling_g + REAL(jj,rp)*dg
-		if (minmax.LT.h_params%max_g) then
-			max_g = minmax
-		end if
-	end do
-
-!WRITE(6,*) dg,min_g,max_g,h_params%min_g,h_params%max_g
-
-	if (params%mpi_params%rank.EQ.0_idef) then
-		ALLOCATE(g_samples(nsamples))! Number of samples to distribute among all MPI processes
-		ALLOCATE(eta_samples(nsamples))! Number of samples to distribute among all MPI processes
-		ALLOCATE(g_tmp(nsamples))! Number of samples to distribute among all MPI processes
-		ALLOCATE(eta_tmp(nsamples))! Number of samples to distribute among all MPI processes
-
-
-		!* * * Transient * * *!
-		call RANDOM_SEED()
-		call RANDOM_NUMBER(rand_unif)
-		g_buffer = h_params%min_sampling_g + (h_params%max_sampling_g - h_params%min_sampling_g)*rand_unif
-		eta_buffer = fRE_pitch(g_buffer)
-
-		ii=2_idef
-		do while (ii .LE. 1000_idef)
-			g_test = g_buffer + random_norm(0.0_rp,dg)
-			do while ((g_test.LT.h_params%min_sampling_g).OR.(g_test.GT.h_params%max_sampling_g))
-				g_test = g_buffer + random_norm(0.0_rp,dg)
-			end do
-			eta_test = fRE_pitch(g_test)
-
-			ratio = fRE_H(eta_test,g_test)/fRE_H(eta_buffer,g_buffer)
-
-			if (ratio .GE. 1.0_rp) then
-				g_buffer = g_test
-				ii = ii + 1_idef
-			else 
-				call RANDOM_NUMBER(rand_unif)
-				if (rand_unif .LT. ratio) then
-					g_buffer = g_test
-					eta_buffer = fRE_pitch(g_buffer)
-					ii = ii + 1_idef
-				end if
-			end if
-		end do	
-		!* * * Transient * * *!
-
-		call RANDOM_SEED()
-		call RANDOM_NUMBER(rand_unif)
-		g_tmp(1) = g_buffer
-		eta_tmp(ii-1) = fRE_pitch(g_tmp(1))
-
-		num_accepted = 0_idef
-		do while(num_accepted.LT.nsamples)
-			ii=2_idef
-			do while (ii .LE. nsamples)
-				g_test = g_tmp(ii-1) + random_norm(0.0_rp,dg)
-				do while ((g_test.LT.min_g).OR.(g_test.GT.max_g))
-					g_test = g_tmp(ii-1) + random_norm(0.0_rp,dg)
-				end do
-				eta_test = fRE_pitch(g_test)
-
-				ratio = fRE_H(eta_test,g_test)/fRE_H(eta_tmp(ii-1),g_tmp(ii-1))
-
-				if (ratio .GE. 1.0_rp) then
-					g_tmp(ii) = g_test
-					eta_tmp(ii) = fRE_pitch(g_tmp(ii))
-					ii = ii + 1_idef
-				else 
-					call RANDOM_NUMBER(rand_unif)
-					if (rand_unif .LT. ratio) then
-						g_tmp(ii) = g_test
-						eta_tmp(ii) = fRE_pitch(g_tmp(ii))
-						ii = ii + 1_idef
-					end if
-				end if
-			end do	
-	
-			eta_tmp = ABS(eta_tmp)
-
-			ii = 1_idef
-			do while ( (ii.LT.nsamples).AND.(num_accepted.LT.nsamples) )
-				lp = (g_tmp(ii).LE.h_params%max_sampling_g).AND.(g_tmp(ii).GE.h_params%min_sampling_g)
-				if (lp) then
-					num_accepted = num_accepted + 1_idef
-					g_samples(num_accepted) = g_tmp(ii)
-					eta_samples(num_accepted) = eta_tmp(ii)
-				end if
-				ii = ii + 1_idef
-			end do
-		end do
-
-!		g_samples = 10**g_samples
-
-		go = SUM(g_samples)/nsamples
-		etao = SUM(eta_samples)/nsamples
-	end if
-
-	CALL MPI_SCATTER(g_samples,ppp,MPI_REAL8,g,ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
-
-	CALL MPI_SCATTER(eta_samples,ppp,MPI_REAL8,eta,ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
-
-	CALL MPI_BCAST(go,1,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
-	
-	CALL MPI_BCAST(etao,1,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
-
-	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
-
-	if (params%mpi_params%rank.EQ.0_idef) then
-		DEALLOCATE(g_samples)
-		DEALLOCATE(eta_samples)
-		DEALLOCATE(g_tmp)
-		DEALLOCATE(eta_tmp)
-	end if
-END SUBROUTINE sample_Hollmann_distribution
-
-
 SUBROUTINE initialize_params(params)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp) :: max_pitch_angle
@@ -418,7 +119,7 @@ SUBROUTINE initialize_params(params)
 
 	pdf_params%max_pitch_angle = max_pitch_angle
 	pdf_params%min_pitch_angle = min_pitch_angle
-	pdf_params%min_energy = min_energy*C_E ! In Joules	
+	pdf_params%min_energy = min_energy*C_E ! In Joules
 	pdf_params%max_energy = max_energy*C_E ! In Joules
 	pdf_params%Zeff = Zeff
 	pdf_params%E = E
@@ -438,7 +139,7 @@ END SUBROUTINE initialize_params
 FUNCTION deg2rad(x)
 	REAL(rp), INTENT(IN) :: x
 	REAL(rp) :: deg2rad
-	
+
 	deg2rad = C_PI*x/180.0_rp
 END FUNCTION
 
@@ -446,7 +147,7 @@ END FUNCTION
 FUNCTION rad2deg(x)
 	REAL(rp), INTENT(IN) :: x
 	REAL(rp) :: rad2deg
-	
+
 	rad2deg = 180.0_rp*x/C_PI
 END FUNCTION
 
@@ -462,13 +163,13 @@ END FUNCTION fGamma
 
 
 FUNCTION fRE(eta,p)
-	REAL(rp), INTENT(IN) :: eta ! pitch angle in degrees
-	REAL(rp), INTENT(IN) :: p ! momentum in units of mc
-	REAL(rp) :: fRE
-	REAL(rp) :: fE
-	REAL(rp) :: feta
-	REAL(rp) :: A
-	REAL(rp) :: Eo
+	REAL(rp), INTENT(IN) 	:: eta ! pitch angle in degrees
+	REAL(rp), INTENT(IN) 	:: p ! momentum in units of mc
+	REAL(rp) 				:: fRE
+	REAL(rp) 				:: fE
+	REAL(rp) 				:: feta
+	REAL(rp) 				:: A
+	REAL(rp) 				:: Eo
 
 	Eo = SQRT(p**2.0_rp + 1.0_rp)
 
@@ -580,13 +281,13 @@ FUNCTION IntBesselK(a,b)
 	REAL(rp) :: v,h,z
 	INTEGER :: ii,jj,npoints
 	LOGICAL :: flag
-	
+
 	v = 5.0_rp/3.0_rp
 	h = b - a
 	sum_f = 0.5*(besselk(v,a) + besselk(v,b))
 
 	Iold = 0.0_rp
-	Inew = sum_f*h	
+	Inew = sum_f*h
 
 	ii = 1_idef
 	flag = .TRUE.
@@ -658,28 +359,39 @@ END FUNCTION PR
 
 
 SUBROUTINE sample_distribution(params,g,eta,go,etao)
-	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: g
-	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: eta
-	REAL(rp), INTENT(OUT) :: go
-	REAL(rp), INTENT(OUT) :: etao
-	REAL(rp) :: go_root
-	REAL(rp) :: etao_root
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: p
-	REAL(rp) :: p_buffer, p_test
-	REAL(rp) :: eta_buffer, eta_test
-	REAL(rp) :: ratio, rand_unif
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: p_samples
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: eta_samples
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: p_tmp
-	REAL(rp), DIMENSION(:), ALLOCATABLE :: eta_tmp
-	REAL(rp) :: minmax,min_p, max_p, min_pitch_angle, max_pitch_angle
-	REAL(rp) :: deta
-	REAL(rp) :: dp
-	LOGICAL :: lp,leta
-	INTEGER :: num_accepted
-	INTEGER :: ii,jj,ppp,nsamples
-	INTEGER :: mpierr
+	TYPE(KORC_PARAMS), INTENT(IN) 						:: params
+	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) 	:: g
+	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) 	:: eta
+	REAL(rp), INTENT(OUT) 								:: go
+	REAL(rp), INTENT(OUT) 								:: etao
+	REAL(rp) 											:: go_root
+	REAL(rp) 											:: etao_root
+	REAL(rp), DIMENSION(:), ALLOCATABLE 				:: p
+	REAL(rp) 											:: p_buffer
+	REAL(rp) 											:: p_test
+	REAL(rp) 											:: eta_buffer
+	REAL(rp) 											:: eta_test
+	REAL(rp) 											:: ratio
+	REAL(rp) 											:: rand_unif
+	REAL(rp), DIMENSION(:), ALLOCATABLE 				:: p_samples
+	REAL(rp), DIMENSION(:), ALLOCATABLE 				:: eta_samples
+	REAL(rp), DIMENSION(:), ALLOCATABLE 				:: p_tmp
+	REAL(rp), DIMENSION(:), ALLOCATABLE 				:: eta_tmp
+	REAL(rp) 											:: minmax
+	REAL(rp) 											:: min_p
+	REAL(rp) 											:: max_p
+	REAL(rp) 											:: min_pitch_angle
+	REAL(rp) 											:: max_pitch_angle
+	REAL(rp) 											:: deta
+	REAL(rp) 											:: dp
+	LOGICAL 											:: lp
+	LOGICAL 											:: leta
+	INTEGER 											:: num_accepted
+	INTEGER 											:: ii
+	INTEGER 											:: jj
+	INTEGER 											:: ppp
+	INTEGER 											:: nsamples
+	INTEGER 											:: mpierr
 
 	ppp = SIZE(g)
 	nsamples = ppp*params%mpi_params%nmpi
@@ -705,7 +417,7 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 			end if
 		end do
 	else
-		min_pitch_angle = pdf_params%min_pitch_angle
+		min_pitch_angle = 0.0_rp
 	end if
 
 	do jj=1_idef,INT(minmax_buffer_size,idef)
@@ -717,9 +429,6 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 			EXIT
 		end if
 	end do
-
-!	write(6,*) pdf_params%min_p,pdf_params%max_p,pdf_params%min_pitch_angle,pdf_params%max_pitch_angle
-!	write(6,*) min_p,max_p,min_pitch_angle,max_pitch_angle
 
 	if (params%mpi_params%rank.EQ.0_idef) then
 		ALLOCATE(p_samples(nsamples))! Number of samples to distribute among all MPI processes
@@ -755,7 +464,7 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 				p_buffer = p_test
 				eta_buffer = eta_test
 				ii = ii + 1_idef
-			else 
+			else
 				call RANDOM_NUMBER(rand_unif)
 				if (rand_unif .LT. ratio) then
 					p_buffer = p_test
@@ -763,13 +472,10 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 					ii = ii + 1_idef
 				end if
 			end if
-		end do	
+		end do
 		!* * * Transient * * *!
 
-
 		eta_tmp(1) = eta_buffer
-		call RANDOM_SEED()
-		call RANDOM_NUMBER(rand_unif)
 		p_tmp(1) = p_buffer
 
 		num_accepted = 0_idef
@@ -792,7 +498,7 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 					p_tmp(ii) = p_test
 					eta_tmp(ii) = eta_test
 					ii = ii + 1_idef
-				else 
+				else
 					call RANDOM_NUMBER(rand_unif)
 					if (rand_unif .LT. ratio) then
 						p_tmp(ii) = p_test
@@ -800,8 +506,8 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 						ii = ii + 1_idef
 					end if
 				end if
-			end do	
-	
+			end do
+
 			eta_tmp = ABS(eta_tmp)
 
 			ii = 1_idef
@@ -826,7 +532,7 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 	CALL MPI_SCATTER(eta_samples,ppp,MPI_REAL8,eta,ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
 
 	CALL MPI_BCAST(go,1,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
-	
+
 	CALL MPI_BCAST(etao,1,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
 
 	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
@@ -842,6 +548,388 @@ SUBROUTINE sample_distribution(params,g,eta,go,etao)
 	end if
 
 END SUBROUTINE sample_distribution
+
+
+SUBROUTINE get_Hollmann_distribution(params,g,eta,go,etao)
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: g
+	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: eta
+	REAL(rp), INTENT(OUT) :: go
+	REAL(rp), INTENT(OUT) :: etao
+
+	call initialize_Hollmann_params(params)
+
+	call save_Hollmann_params(params)
+
+	call sample_Hollmann_distribution(params,g,eta,go,etao)
+END SUBROUTINE get_Hollmann_distribution
+
+
+SUBROUTINE initialize_Hollmann_params(params)
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+    CHARACTER(MAX_STRING_LENGTH) :: filename
+	CHARACTER(MAX_STRING_LENGTH) :: current_direction
+	REAL(rp) :: E
+	REAL(rp) :: Zeff
+	REAL(rp) :: max_pitch_angle
+	REAL(rp) :: min_pitch_angle
+	REAL(rp) :: max_energy
+	REAL(rp) :: min_energy
+	REAL(rp) :: Bo
+	REAL(rp) :: lambda
+
+	NAMELIST /HollmannPDF/ E,Zeff,max_pitch_angle,min_pitch_angle,max_energy,min_energy,filename,Bo,lambda,current_direction
+
+
+	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
+	read(default_unit_open,nml=HollmannPDF)
+	close(default_unit_open)
+
+	h_params%filename = TRIM(filename)
+
+	h_params%E = E
+	h_params%Zeff = Zeff
+	h_params%max_pitch_angle = max_pitch_angle
+	h_params%min_pitch_angle = min_pitch_angle
+	h_params%min_sampling_energy = min_energy*C_E ! In Joules
+	h_params%min_sampling_g = 1.0_rp + h_params%min_sampling_energy/(C_ME*C_C**2)
+	h_params%max_sampling_energy = max_energy*C_E ! In Joules.
+	h_params%max_sampling_g = 1.0_rp + h_params%max_sampling_energy/(C_ME*C_C**2)
+
+	call load_data_from_hdf5()
+
+	ALLOCATE(h_params%g(h_params%N))
+
+	h_params%g = 1.0_rp + h_params%E_axis/(C_ME*C_C**2)
+	h_params%max_g = MAXVAL(h_params%g)
+	h_params%min_g = MINVAL(h_params%g)
+
+	h_params%current_direction = TRIM(current_direction)
+
+	h_params%Bo = Bo
+	h_params%lambda = lambda
+END SUBROUTINE initialize_Hollmann_params
+
+
+SUBROUTINE load_data_from_hdf5()
+	CHARACTER(MAX_STRING_LENGTH) :: filename
+	CHARACTER(MAX_STRING_LENGTH) :: gname
+	CHARACTER(MAX_STRING_LENGTH) :: subgname
+	CHARACTER(MAX_STRING_LENGTH) :: dset
+	INTEGER(HID_T) :: h5file_id
+	INTEGER(HID_T) :: group_id
+	INTEGER(HID_T) :: subgroup_id
+	REAL(rp) :: rdatum
+	INTEGER :: h5error
+
+	filename = TRIM(h_params%filename)
+	call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
+	if (h5error .EQ. -1) then
+		write(6,'("KORC ERROR: Something went wrong in: load_data_from_hdf5 (korc_experimental) --> h5fopen_f")')
+	end if
+
+	dset = "/N"
+	call load_from_hdf5(h5file_id,dset,rdatum)
+	h_params%N = INT(rdatum)
+
+	ALLOCATE(h_params%E_axis(h_params%N))
+	ALLOCATE(h_params%fRE_E(h_params%N))
+	ALLOCATE(h_params%fRE_pitch(h_params%N))
+
+	dset = "/E"
+	call load_array_from_hdf5(h5file_id,dset,h_params%E_axis)
+	h_params%E_axis = h_params%E_axis*C_E
+
+	dset = "/fRE_E"
+	call load_array_from_hdf5(h5file_id,dset,h_params%fRE_E)
+
+	dset = "/fRE_pitch"
+	call load_array_from_hdf5(h5file_id,dset,h_params%fRE_pitch)
+
+	call h5fclose_f(h5file_id, h5error)
+	if (h5error .EQ. -1) then
+		write(6,'("KORC ERROR: Something went wrong in: load_data_from_hdf5 (korc_experimental) --> h5fclose_f")')
+	end if
+END SUBROUTINE load_data_from_hdf5
+
+
+FUNCTION fRE_H(eta,g)
+	REAL(rp), INTENT(IN) 	:: eta ! pitch angle in degrees
+	REAL(rp), INTENT(IN) 	:: g ! Relativistic gamma factor
+	REAL(rp) 				:: fRE_H
+	REAL(rp) 				:: D
+	REAL(rp) 				:: g0
+	REAL(rp) 				:: g1
+	REAL(rp) 				:: f0
+	REAL(rp) 				:: f1
+	REAL(rp) 				:: m
+	REAL(rp) 				:: feta
+	REAL(rp) 				:: A
+	INTEGER 				:: index
+
+	index = MINLOC(ABS(h_params%g - g),1)
+	D = h_params%g(index) - g
+
+	if (D.GT.0) then
+		f0 = h_params%fRE_E(index-1)
+		g0 = h_params%g(index-1)
+
+		f1 = h_params%fRE_E(index)
+		g1 = h_params%g(index)
+	else
+		f0 = h_params%fRE_E(index)
+		g0 = h_params%g(index)
+
+		f1 = h_params%fRE_E(index+1)
+		g1 = h_params%g(index+1)
+	end if
+
+	m = (f1-f0)/(g1-g0)
+
+	fRE_H = f0 + m*(g - g0)
+
+	A = (2.0_rp*h_params%E/(h_params%Zeff + 1.0_rp))*(g**2 - 1.0_rp)/g
+	feta = 0.5_rp*A*EXP(A*COS(deg2rad(eta)))/SINH(A)
+
+	fRE_H = fRE_H*feta
+END FUNCTION fRE_H
+
+
+FUNCTION fRE_HxPR(eta,g)
+	REAL(rp), INTENT(IN) :: eta ! pitch angle in degrees
+	REAL(rp), INTENT(IN) :: g ! gamma factor
+	REAL(rp) :: fRE_HxPR
+
+	fRE_HxPR = fRE_H(eta,g)*PR(eta,SQRT(g**2 - 1.0_rp),h_params%Bo,h_params%lambda)
+END FUNCTION fRE_HxPR
+
+
+FUNCTION fRE_pitch(g)
+	REAL(rp), INTENT(IN) :: g ! Relativistic gamma factor
+	REAL(rp) :: fRE_pitch
+	REAL(rp) :: D
+	REAL(rp) :: g0,g1,f0,f1,m
+	INTEGER :: index
+
+	index = MINLOC(ABS(h_params%g - g),1)
+	D = h_params%g(index) - g
+
+	if (D.GT.0) then
+		f0 = h_params%fRE_pitch(index-1)
+		g0 = h_params%g(index-1)
+
+		f1 = h_params%fRE_pitch(index)
+		g1 = h_params%g(index)
+	else
+		f0 = h_params%fRE_pitch(index)
+		g0 = h_params%g(index)
+
+		f1 = h_params%fRE_pitch(index+1)
+		g1 = h_params%g(index+1)
+	end if
+
+	m = (f1-f0)/(g1-g0)
+
+	fRE_pitch = f0 + m*(g - g0)
+	fRE_pitch = 180.0_rp - fRE_pitch
+END FUNCTION fRE_pitch
+
+
+SUBROUTINE sample_Hollmann_distribution(params,g,eta,go,etao)
+	TYPE(KORC_PARAMS), INTENT(IN) 						:: params
+	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) 	:: g
+	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) 	:: eta
+	REAL(rp), INTENT(OUT) 								:: go
+	REAL(rp), INTENT(OUT) 								:: etao
+	REAL(rp), DIMENSION(:), ALLOCATABLE 				:: p
+	REAL(rp) 											:: g_buffer
+	REAL(rp) 											:: g_test
+	REAL(rp) 											:: eta_buffer
+	REAL(rp) 											:: eta_test
+	REAL(rp) 											:: ratio
+	REAL(rp) 											:: rand_unif
+	REAL(rp), DIMENSION(:), ALLOCATABLE 				:: g_samples
+	REAL(rp), DIMENSION(:), ALLOCATABLE 				:: eta_samples
+	REAL(rp), DIMENSION(:), ALLOCATABLE 				:: g_tmp
+	REAL(rp), DIMENSION(:), ALLOCATABLE 				:: eta_tmp
+	REAL(rp) 											:: minmax
+	REAL(rp) 											:: min_g
+	REAL(rp) 											:: max_g
+	REAL(rp) 											:: min_pitch_angle
+	REAL(rp) 											:: max_pitch_angle
+	REAL(rp) 											:: dg
+	REAL(rp) 											:: deta
+	LOGICAL 											:: lp
+	INTEGER 											:: index_i
+	INTEGER 											:: index_f
+	INTEGER 											:: num_accepted
+	INTEGER 											:: ii
+	INTEGER 											:: jj
+	INTEGER 											:: ppp
+	INTEGER 											:: nsamples
+	INTEGER 											:: mpierr
+
+	ppp = SIZE(g)
+	nsamples = ppp*params%mpi_params%nmpi
+
+	index_i = MINLOC(ABS(h_params%g - h_params%min_sampling_g),1)
+	index_f = MINLOC(ABS(h_params%g - h_params%max_sampling_g),1)
+
+	deta = (h_params%max_pitch_angle - h_params%min_pitch_angle)/100.0_rp
+	dg = (h_params%max_sampling_g - h_params%min_sampling_g)/100.0_rp
+
+	do jj=1_idef,INT(minmax_buffer_size,idef)
+		minmax = h_params%min_sampling_g - REAL(jj,rp)*dg
+		if (minmax.GT.h_params%min_g) then
+			min_g = minmax
+		end if
+
+		minmax = h_params%max_sampling_g + REAL(jj,rp)*dg
+		if (minmax.LT.h_params%max_g) then
+			max_g = minmax
+		end if
+	end do
+
+	if (h_params%min_pitch_angle.GE.korc_zero) then
+		do jj=1_idef,INT(minmax_buffer_size,idef)
+			minmax = h_params%min_pitch_angle -  REAL(jj,rp)*deta
+			if (minmax.GT.0.0_rp) then
+				min_pitch_angle = minmax
+			end if
+		end do
+	else
+		min_pitch_angle = 0.0_rp
+	end if
+
+	do jj=1_idef,INT(minmax_buffer_size,idef)
+		minmax = h_params%max_pitch_angle + REAL(jj,rp)*deta
+		if (minmax.LE.90.0_rp) then
+			max_pitch_angle = minmax
+		else
+			max_pitch_angle = h_params%max_pitch_angle
+			EXIT
+		end if
+	end do
+
+	if (params%mpi_params%rank.EQ.0_idef) then
+		ALLOCATE(g_samples(nsamples))! Number of samples to distribute among all MPI processes
+		ALLOCATE(eta_samples(nsamples))! Number of samples to distribute among all MPI processes
+		ALLOCATE(g_tmp(nsamples))! Number of samples to distribute among all MPI processes
+		ALLOCATE(eta_tmp(nsamples))! Number of samples to distribute among all MPI processes
+
+
+		!* * * Transient * * *!
+		call RANDOM_SEED()
+
+		call RANDOM_NUMBER(rand_unif)
+		eta_buffer = h_params%min_pitch_angle + (h_params%max_pitch_angle - h_params%min_pitch_angle)*rand_unif
+
+		call RANDOM_NUMBER(rand_unif)
+		g_buffer = h_params%min_sampling_g + (h_params%max_sampling_g - h_params%min_sampling_g)*rand_unif
+
+		ii=2_idef
+		do while (ii .LE. 1000_idef)
+			eta_test = eta_buffer + random_norm(0.0_rp,deta)
+			do while ((ABS(eta_test) .GT. h_params%max_pitch_angle).OR.(ABS(eta_test) .LT. h_params%min_pitch_angle))
+				eta_test = eta_buffer + random_norm(0.0_rp,deta)
+			end do
+
+			g_test = g_buffer + random_norm(0.0_rp,dg)
+			do while ((g_test.LT.h_params%min_sampling_g).OR.(g_test.GT.h_params%max_sampling_g))
+				g_test = g_buffer + random_norm(0.0_rp,dg)
+			end do
+
+			ratio = fRE_H(eta_test,g_test)/fRE_H(eta_buffer,g_buffer)
+			!ratio = fRE_HxPR(eta_test,g_test)/fRE_HxPR(eta_buffer,g_buffer)
+
+			if (ratio .GE. 1.0_rp) then
+				g_buffer = g_test
+				eta_buffer = eta_test
+				ii = ii + 1_idef
+			else
+				call RANDOM_NUMBER(rand_unif)
+				if (rand_unif .LT. ratio) then
+					g_buffer = g_test
+					eta_buffer = eta_test
+					ii = ii + 1_idef
+				end if
+			end if
+		end do
+		!* * * Transient * * *!
+
+		eta_tmp(1) = eta_buffer
+		g_tmp(1) = g_buffer
+
+		num_accepted = 0_idef
+		do while(num_accepted.LT.nsamples)
+			ii=2_idef
+			do while (ii .LE. nsamples)
+				eta_test = eta_tmp(ii-1) + random_norm(0.0_rp,deta)
+				do while ((ABS(eta_test) .GT. max_pitch_angle).OR.(ABS(eta_test) .LT. min_pitch_angle))
+					eta_test = eta_tmp(ii-1) + random_norm(0.0_rp,deta)
+				end do
+
+				g_test = g_tmp(ii-1) + random_norm(0.0_rp,dg)
+				do while ((g_test.LT.min_g).OR.(g_test.GT.max_g))
+					g_test = g_tmp(ii-1) + random_norm(0.0_rp,dg)
+				end do
+
+				ratio = fRE_H(eta_test,g_test)/fRE_H(eta_tmp(ii-1),g_tmp(ii-1))
+				!ratio = fRE_HxPR(eta_test,g_test)/fRE_HxPR(eta_tmp(ii-1),g_tmp(ii-1))
+
+				if (ratio .GE. 1.0_rp) then
+					g_tmp(ii) = g_test
+					eta_tmp(ii) = eta_test
+					ii = ii + 1_idef
+				else
+					call RANDOM_NUMBER(rand_unif)
+					if (rand_unif .LT. ratio) then
+						g_tmp(ii) = g_test
+						eta_tmp(ii) = eta_test
+						ii = ii + 1_idef
+					end if
+				end if
+			end do
+
+			eta_tmp = ABS(eta_tmp)
+
+			ii = 1_idef
+			do while ( (ii.LT.nsamples).AND.(num_accepted.LT.nsamples) )
+				lp = (g_tmp(ii).LE.h_params%max_sampling_g).AND.(g_tmp(ii).GE.h_params%min_sampling_g)
+				if (lp) then
+					num_accepted = num_accepted + 1_idef
+					g_samples(num_accepted) = g_tmp(ii)
+					eta_samples(num_accepted) = eta_tmp(ii)
+				end if
+				ii = ii + 1_idef
+			end do
+		end do
+
+		if (TRIM(h_params%current_direction) .EQ. 'ANTICLOCKWISE') then
+			eta_samples = 180.0_rp - eta_samples
+		end if
+
+		go = SUM(g_samples)/nsamples
+		etao = SUM(eta_samples)/nsamples
+	end if
+
+	CALL MPI_SCATTER(g_samples,ppp,MPI_REAL8,g,ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+
+	CALL MPI_SCATTER(eta_samples,ppp,MPI_REAL8,eta,ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+
+	CALL MPI_BCAST(go,1,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+
+	CALL MPI_BCAST(etao,1,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+
+	call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+
+	if (params%mpi_params%rank.EQ.0_idef) then
+		DEALLOCATE(g_samples)
+		DEALLOCATE(eta_samples)
+		DEALLOCATE(g_tmp)
+		DEALLOCATE(eta_tmp)
+	end if
+END SUBROUTINE sample_Hollmann_distribution
 
 
 SUBROUTINE save_params(params)
@@ -922,5 +1010,74 @@ SUBROUTINE save_params(params)
 		call h5fclose_f(h5file_id, h5error)
 	end if
 END SUBROUTINE save_params
+
+
+SUBROUTINE save_Hollmann_params(params)
+	TYPE(KORC_PARAMS), INTENT(IN) :: params
+	CHARACTER(MAX_STRING_LENGTH) :: filename
+	CHARACTER(MAX_STRING_LENGTH) :: gname
+	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: attr_array
+	CHARACTER(MAX_STRING_LENGTH) :: dset
+	CHARACTER(MAX_STRING_LENGTH) :: attr
+	INTEGER(HID_T) :: h5file_id
+	INTEGER(HID_T) :: group_id
+	INTEGER :: h5error
+	REAL(rp) :: units
+
+	if (params%mpi_params%rank .EQ. 0) then
+		filename = TRIM(params%path_to_outputs) // "experimental_distribution_parameters.h5"
+		call h5fcreate_f(TRIM(filename), H5F_ACC_TRUNC_F, h5file_id, h5error)
+
+		gname = "pdf_params"
+		call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
+
+		dset = TRIM(gname) // "/max_pitch_angle"
+		attr = "Maximum pitch angle in PDF (degrees)"
+		call save_to_hdf5(h5file_id,dset,h_params%max_pitch_angle,attr)
+
+		dset = TRIM(gname) // "/min_pitch_angle"
+		attr = "Minimum pitch angle in PDF (degrees)"
+		call save_to_hdf5(h5file_id,dset,h_params%min_pitch_angle,attr)
+
+		dset = TRIM(gname) // "/min_energy"
+		attr = "Minimum energy in PDF (eV)"
+		units = 1.0_rp/C_E
+		call save_to_hdf5(h5file_id,dset,units*h_params%min_energy,attr)
+
+		dset = TRIM(gname) // "/max_energy"
+		attr = "Maximum energy in PDF (eV)"
+		units = 1.0_rp/C_E
+		call save_to_hdf5(h5file_id,dset,units*h_params%max_energy,attr)
+
+		dset = TRIM(gname) // "/max_g"
+		attr = "Maximum momentum in PDF (me*c)"
+		call save_to_hdf5(h5file_id,dset,h_params%max_g,attr)
+
+		dset = TRIM(gname) // "/min_g"
+		attr = "Maximum momentum in PDF (me*c)"
+		call save_to_hdf5(h5file_id,dset,h_params%min_g,attr)
+
+		dset = TRIM(gname) // "/Zeff"
+		attr = "Effective atomic number of ions."
+		call save_to_hdf5(h5file_id,dset,h_params%Zeff,attr)
+
+		dset = TRIM(gname) // "/E"
+		attr = "Parallel electric field in (Ec)"
+		call save_to_hdf5(h5file_id,dset,h_params%E,attr)
+
+		dset = TRIM(gname) // "/lambda"
+		attr = "Wavelength used when PDF is weighted with the distribution of synchrotron radiation."
+		call save_to_hdf5(h5file_id,dset,h_params%lambda,attr)
+
+		dset = TRIM(gname) // "/Bo"
+		attr = "Magnetic field used when PDF is weighted with the distribution of synchrotron radiation."
+		call save_to_hdf5(h5file_id,dset,h_params%Bo,attr)
+
+		call h5gclose_f(group_id, h5error)
+
+		call h5fclose_f(h5file_id, h5error)
+	end if
+END SUBROUTINE save_Hollmann_params
+
 
 END MODULE korc_experimental_pdf

@@ -50,9 +50,9 @@ ST = loadData(ST);
 
 % calculateTemperatureComponents(ST);
 
-SE_phaseSpaceAnalisys(ST);
+% SE_phaseSpaceAnalisys(ST);
 
-% plotEnergyPitchanglePDF(ST);
+plotEnergyPitchanglePDF(ST);
 
 % figuresAPS2017(ST);
 
@@ -69,6 +69,8 @@ SE_phaseSpaceAnalisys(ST);
 % spatialAndVelocityPDF(ST)
 
 % subPhaseSpaceAnalysis(ST);
+
+plotEnergyPDF(ST);
 
 % save('energy_limit','ST')
 end
@@ -3083,8 +3085,13 @@ m = ST.params.species.m(1);
 c = ST.params.scales.v;
 l = ST.params.pdf_params.lambda;
 
-pmin = ST.params.pdf_params.min_p;
-pmax = ST.params.pdf_params.max_p;
+try
+    pmin = ST.params.pdf_params.min_p;
+    pmax = ST.params.pdf_params.max_p;
+catch
+    pmin = sqrt(ST.params.pdf_params.min_g^2 - 1);
+    pmax = sqrt(ST.params.pdf_params.max_g^2 - 1);
+end
 Emax = sqrt(pmax^2 + 1);
 Emin = sqrt(pmin^2 + 1);
 etamin = 0;
@@ -3441,13 +3448,21 @@ for ss=1:ST.params.simulation.num_species
         pmin = min([ST.params.pdf_params.min_p min(p)]);
     end
     
+    if (strcmp(ST.params.species.energy_distribution(ss),'HOLLMANN'))
+        pmin = sqrt(ST.params.pdf_params.min_g^2 - 1);
+        pmax = sqrt(ST.params.pdf_params.max_g^2 - 1);
+    end
+
+    
+    
     Emin = sqrt(pmin.^2 + 1)*m*c^2/(q*1E6);
     Emax = sqrt(pmax.^2 + 1)*m*c^2/(q*1E6);
     Dp = (pmax-pmin)/nbins_p;
     pAxis = pmin + (0:1:nbins_p-1)*Dp + 0.5*Dp;
     EAxis = sqrt(pAxis.^2 + 1)*m*c^2/(q*1E6);
     
-    if (strcmp(ST.params.species.energy_distribution(ss),'AVALANCHE') || strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL-GAMMA'))
+    if (strcmp(ST.params.species.energy_distribution(ss),'AVALANCHE') || strcmp(ST.params.species.energy_distribution(ss),'EXPERIMENTAL-GAMMA')...
+            || strcmp(ST.params.species.energy_distribution(ss),'HOLLMANN'))
         pitchmax = max([ST.params.pdf_params.max_pitch_angle max(eta)]);
         pitchmin = min([ST.params.pdf_params.min_pitch_angle min(eta)]);
     end
@@ -3474,7 +3489,6 @@ for ss=1:ST.params.simulation.num_species
     %     xAxis = cos(deg2rad(pitchAxis));
     %     yAxis = pAxis;
     
-
     regionsOfSE(ST,chiAxis,pAxis,fRE);
     
     figure
@@ -4596,4 +4610,41 @@ end
 
 end
 
+function plotEnergyPDF(ST)
+N = 100; % Energy bins
 
+me = ST.params.scales.m;
+qe = ST.params.scales.q;
+c = ST.params.scales.v;
+
+for ss=1:ST.params.simulation.num_species 
+    try
+        pin = logical(all(ST.data.(['sp' num2str(ss)]).flag,2));
+    catch
+        pin = true(1,size(ST.data.(['sp' num2str(ss)]).g,1));
+    end
+    
+    Eo = ST.data.(['sp' num2str(ss)]).g(pin,1)*me*c^2/(qe*1E6);
+%     Eo = (ST.data.(['sp' num2str(ss)]).g(pin,1)-1)*me*c^2/(qe*1E6);
+    pao = ST.data.(['sp' num2str(ss)]).eta(pin,1);
+    
+    Ef = ST.data.(['sp' num2str(ss)]).g(pin,end)*me*c^2/(qe*1E6);
+%     Ef = (ST.data.(['sp' num2str(ss)]).g(pin,end)-1)*me*c^2/(qe*1E6);
+    paf = ST.data.(['sp' num2str(ss)]).eta(pin,end);
+    
+    
+    fig = figure;
+    
+    figure(fig)
+    subplot(2,1,1)
+    histogram(Eo,'Normalization','probability')
+    xlabel('Energy (MeV)','Interpreter','latex')
+    ylabel('$f_{RE}(\mathcal{E})$','Interpreter','latex')
+    
+    figure(fig)
+    subplot(2,1,2)
+    histogram(Ef,'Normalization','probability')
+    xlabel('Energy (MeV)','Interpreter','latex')
+    ylabel('$f_{RE}(\mathcal{E})$','Interpreter','latex')
+end
+end

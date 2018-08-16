@@ -2,7 +2,7 @@
 close all
 clear all
 
-path = '/media/l8c/FantomHD/DIII-D/Data/D3D_Eric/';
+path = '/Volumes/LeopoJD/DIII-D/Data/D3D_Eric/';
 
 myfile = sprintf([path 'ORNL_RE_data_2017.mat']);
 load(myfile)
@@ -49,70 +49,98 @@ load([path 'wall.mat']);
 nr = numel(rg);
 nz = numel(zg);
 
-fig = figure;
+% fig = figure;
+% 
+% FLAG = zeros(nr,nz);
+% for rr=1:nr
+%     for zz=1:nz
+%         a = atan2(zg(zz),rg(rr)-Ro);
+%         if (a<0); a=a+2*pi; end;
+%         r = sqrt( (rg(rr)-Ro).^2 + zg(zz).^2 );
+%         
+%         [~,ia] = min(abs(a-angle));
+%         
+%         if ( (ia>1) && (ia~=numel(angle)) )
+%             d = a - angle(ia);
+%             dp = a - angle(ia+1);
+%             dm = a - angle(ia-1);
+%         elseif (ia == numel(angle))
+%             d = sign(a - angle(ia));
+%             dp = sign(d);
+%             dm = -sign(d);
+%         elseif (ia == 1)
+%             d = sign(a - angle(ia));
+%             if (sign(d) ~= 0)
+%                 dp = -sign(d);
+%                 dm = sign(d);
+%             else
+%                 dp = 1;
+%             end
+%         end
+%         
+%         if ( sign(d) == sign(dp) )
+%             m = (radius(ia) - radius(ia-1))/(angle(ia) - angle(ia-1));
+%             y = m*(a - angle(ia-1)) + radius(ia-1);
+%         else
+%             m = (radius(ia+1) - radius(ia))/(angle(ia+1) - angle(ia));
+%             y = m*(a - angle(ia)) + radius(ia);
+%         end
+%         
+%         if (r > y)
+%             FLAG(rr,zz) = 0;
+%             figure(fig)
+%             hold on;plot(rg(rr),zg(zz),'r.');hold off
+%         else
+%             FLAG(rr,zz) = 1;
+%             figure(fig)
+%             hold on;plot(rg(rr),zg(zz),'k.');hold off
+%         end
+%     end
+% end
 
-FLAG = zeros(nr,nz);
-for rr=1:nr
-    for zz=1:nz
-        a = atan2(zg(zz),rg(rr)-Ro);
-        if (a<0); a=a+2*pi; end;
-        r = sqrt( (rg(rr)-Ro).^2 + zg(zz).^2 );
-        
-        [~,ia] = min(abs(a-angle));
-        
-        if ( (ia>1) && (ia~=numel(angle)) )
-            d = a - angle(ia);
-            dp = a - angle(ia+1);
-            dm = a - angle(ia-1);
-        elseif (ia == numel(angle))
-            d = sign(a - angle(ia));
-            dp = sign(d);
-            dm = -sign(d);
-        elseif (ia == 1)
-            d = sign(a - angle(ia));
-            if (sign(d) ~= 0)
-                dp = -sign(d);
-                dm = sign(d);
-            else
-                dp = 1;
-            end
-        end
-        
-        if ( sign(d) == sign(dp) )
-            m = (radius(ia) - radius(ia-1))/(angle(ia) - angle(ia-1));
-            y = m*(a - angle(ia-1)) + radius(ia-1);
-        else
-            m = (radius(ia+1) - radius(ia))/(angle(ia+1) - angle(ia));
-            y = m*(a - angle(ia)) + radius(ia);
-        end
-        
-        if (r > y)
-            FLAG(rr,zz) = 0;
-            figure(fig)
-            hold on;plot(rg(rr),zg(zz),'r.');hold off
-        else
-            FLAG(rr,zz) = 1;
-            figure(fig)
-            hold on;plot(rg(rr),zg(zz),'k.');hold off
-        end
-    end
-end
 
-
-figure
+fig1 = figure;
 ne = nDIIV + nArIIV + 2*nArIIIV;
 Zeff = (nDIIV + nArIIV + 4*nArIIIV)./ne;
 
+ep = 8.854E-12;% Electric permitivity
+c = 2.9979E8; % Speed of light
+me = 9.109382E-31; % Electron mass
+qe = 1.602176E-19; % Electron charge
+
 To = 2.0;
 Te = -rhoV + To;
+Clog = 32.2 - 1.15*log10(ne*1E19) + 2.3*log10(Te);
+ECH = qe^3*(ne*1E19).*Clog/(4*pi*ep^2*me*c^2);
+Ebar = (Vloop/(2*pi*R0))./ECH;
+C = 2*Ebar./(Zeff + 1);
 
-yyaxis left
-plot(rhoV,ne)
-ylabel('$n_e$','interpreter','latex')
-yyaxis right
+figure(fig1)
+
+subplot(5,1,1)
+plot(rhoV,ne*1E19)
+xlabel('$\rho/a$','interpreter','latex')
+ylabel('$n_e$ (m$^{-3}$)','interpreter','latex')
+
+subplot(5,1,2)
 plot(rhoV,Zeff)
 xlabel('$\rho/a$','interpreter','latex')
 ylabel('$Z_{eff}$','interpreter','latex')
+
+subplot(5,1,3)
+plot(rhoV,Te)
+xlabel('$\rho/a$','interpreter','latex')
+ylabel('$T_e$ (eV)','interpreter','latex')
+
+subplot(5,1,4)
+plot(rhoV,Ebar)
+xlabel('$\rho/a$','interpreter','latex')
+ylabel('$\bar{E}$','interpreter','latex')
+
+subplot(5,1,5)
+plot(rhoV,C)
+xlabel('$\rho/a$','interpreter','latex')
+ylabel('$\mathcal{C}$','interpreter','latex')
 
 % **** plot density data *****
 densfigure = figure;
@@ -207,8 +235,10 @@ hold on
 plot(limdatax(2,:),limdatax(1,:),'c')
 iit1jfit = max(find(tVjfitms<=tplotV(1)));
 rhoMuse = squeeze(rhoMjfit(iit1jfit,:,:));
+psiMuse = squeeze(psiMjfit(iit1jfit,:,:));
 ctr = contour(rg,zg,rhoMuse,[0.95 0.95],'g'); % contour used for separatrix
-contour(rg,zg,rhoMuse,7,'b'); % contour used for separatrix
+% contour(rg,zg,rhoMuse,7,'b'); % contour used for separatrix
+contour(rg,zg,psiMuse,7,'b'); % contour used for separatrix
 myString = ['IR cam, t = ' num2str(tplotV(1),'%0.5g')];
 title(myString)
 axis equal
@@ -227,50 +257,53 @@ ctr(:,1:2) = [];
 Ro = rg(II);
 Zo = zg(I(II));
 
-rspx = sqrt( (ctr(1,:)-Ro).^2 + (ctr(2,:)-Zo).^2 );
-aspx = atan2(ctr(2,:)-Zo,ctr(1,:)-Ro);
-aspx(aspx<0) = aspx(aspx<0) + 2*pi;
-aspx = flip(aspx);
-rspx = flip(rspx);
-[~,I] = min(aspx);
-aspx = [aspx(I:end) aspx(1:I-1) 2*pi];
-rspx = [rspx(I:end) rspx(1:I-1) rspx(I)];
+% rspx = sqrt( (ctr(1,:)-Ro).^2 + (ctr(2,:)-Zo).^2 );
+% aspx = atan2(ctr(2,:)-Zo,ctr(1,:)-Ro);
+% aspx(aspx<0) = aspx(aspx<0) + 2*pi;
+% aspx = flip(aspx);
+% rspx = flip(rspx);
+% [~,I] = min(aspx);
+% aspx = [aspx(I:end) aspx(1:I-1) 2*pi];
+% rspx = [rspx(I:end) rspx(1:I-1) rspx(I)];
+% 
+% figure(fig)
+% hold on;
+% plot(ctr(1,:),ctr(2,:),'g','LineWidth',2);
+% plot(limdatax(2,:),limdatax(1,:),'g','LineWidth',2)
+% hold off
+% 
+% FLUX = -psiMuse';
+% 
+% ZEFF = zeros(nr,nz);
+% NE = zeros(nr,nz);
+% TE = zeros(nr,nz);
+% for rr=1:nr
+%     for zz=1:nz
+%         a = atan2(zg(zz)-Zo,rg(rr)-Ro);
+%         if (a<0); a=a+2*pi; end;
+%         r = sqrt( (rg(rr)-Ro).^2 + (zg(zz)-Zo).^2 );
+%         
+%         rspx_i = interp1(aspx,rspx,a,'pchip');
+%         
+%         if (r < rspx_i)
+%             ZEFF(rr,zz) = interp1(rhoV,Zeff,r/rspx_i,'pchip');
+%             NE(rr,zz) = interp1(rhoV,ne,r/rspx_i,'pchip');
+%             TE(rr,zz) = interp1(rhoV,Te,r/rspx_i,'pchip');
+%             figure(fig)
+%             hold on;plot(rg(rr),zg(zz),'ms');hold off
+%         else
+%             ZEFF(rr,zz) = Zeff(end);
+%             NE(rr,zz) = ne(end);
+%             TE(rr,zz) = Te(end);
+%             figure(fig)
+%             hold on;plot(rg(rr),zg(zz),'mx');hold off
+%         end        
+%     end
+% end
+% 
+% fields2hdf(rg,[],zg,[],[],[],[],[],[],FLUX,FLAG,NE,TE,ZEFF,['JFIT_D3D_157576_t' num2str(tplotV(1)) '.h5'],-B0,Vloop/(2*pi*Ro),Ro,Zo)
 
-figure(fig)
-hold on;
-plot(ctr(1,:),ctr(2,:),'g','LineWidth',2);
-plot(limdatax(2,:),limdatax(1,:),'g','LineWidth',2)
-hold off
 
-
-ZEFF = zeros(nr,nz);
-NE = zeros(nr,nz);
-TE = zeros(nr,nz);
-for rr=1:nr
-    for zz=1:nz
-        a = atan2(zg(zz)-Zo,rg(rr)-Ro);
-        if (a<0); a=a+2*pi; end;
-        r = sqrt( (rg(rr)-Ro).^2 + (zg(zz)-Zo).^2 );
-        
-        rspx_i = interp1(aspx,rspx,a,'pchip');
-        
-        if (r < rspx_i)
-            ZEFF(rr,zz) = interp1(rhoV,Zeff,r/rspx_i,'pchip');
-            NE(rr,zz) = interp1(rhoV,ne,r/rspx_i,'pchip');
-            TE(rr,zz) = interp1(rhoV,Te,r/rspx_i,'pchip');
-            figure(fig)
-            hold on;plot(rg(rr),zg(zz),'ms');hold off
-        else
-            ZEFF(rr,zz) = Zeff(end);
-            NE(rr,zz) = ne(end);
-            TE(rr,zz) = Te(end);
-            figure(fig)
-            hold on;plot(rg(rr),zg(zz),'mx');hold off
-        end        
-    end
-end
-
- 
 fIR1 = BIRrA(2,:,:);
 fIR1 = squeeze(fIR1);
 fIR1 = flipud(fIR1);
@@ -284,6 +317,7 @@ hold on
 plot(limdatax(2,:),limdatax(1,:),'c')
 iit1jfit = max(find(tVjfitms<=tplotV(2)));
 rhoMuse = squeeze(rhoMjfit(iit1jfit,:,:));
+psiMuse = squeeze(psiMjfit(iit1jfit,:,:));
 ctr = contour(rg,zg,rhoMuse,[0.95 0.95],'g'); % contour used for separatrix
 contour(rg,zg,rhoMuse,7,'b'); % contour used for separatrix
 myString = ['IR cam, t = ' num2str(tplotV(2),'%0.5g')];
@@ -293,12 +327,62 @@ colormap('jet')%colormap('hot')
 xlabel('R [m]')
 ylabel('Z [m]')
  
-ctr(:,1) = [];
 [V,I] = min(abs(rhoMuse));
 [~,II] = min(V);
+figure(IRcamfigure)
 hold on
 plot(rg(II),zg(I(II)),'g+','LineWidth',2)
 hold off
+
+ctr(:,1:2) = [];
+Ro = rg(II);
+Zo = zg(I(II));
+
+% rspx = sqrt( (ctr(1,:)-Ro).^2 + (ctr(2,:)-Zo).^2 );
+% aspx = atan2(ctr(2,:)-Zo,ctr(1,:)-Ro);
+% aspx(aspx<0) = aspx(aspx<0) + 2*pi;
+% aspx = flip(aspx);
+% rspx = flip(rspx);
+% [~,I] = min(aspx);
+% aspx = [aspx(I:end) aspx(1:I-1) 2*pi];
+% rspx = [rspx(I:end) rspx(1:I-1) rspx(I)];
+% 
+% fig2 = figure;
+% hold on;
+% plot(ctr(1,:),ctr(2,:),'g','LineWidth',2);
+% plot(limdatax(2,:),limdatax(1,:),'g','LineWidth',2)
+% hold off
+% 
+% FLUX = -psiMuse';
+% 
+% ZEFF = zeros(nr,nz);
+% NE = zeros(nr,nz);
+% TE = zeros(nr,nz);
+% for rr=1:nr
+%     for zz=1:nz
+%         a = atan2(zg(zz)-Zo,rg(rr)-Ro);
+%         if (a<0); a=a+2*pi; end
+%         r = sqrt( (rg(rr)-Ro).^2 + (zg(zz)-Zo).^2 );
+%         
+%         rspx_i = interp1(aspx,rspx,a,'pchip');
+%         
+%         if (r < rspx_i)
+%             ZEFF(rr,zz) = interp1(rhoV,Zeff,r/rspx_i,'pchip');
+%             NE(rr,zz) = interp1(rhoV,ne,r/rspx_i,'pchip');
+%             TE(rr,zz) = interp1(rhoV,Te,r/rspx_i,'pchip');
+%             figure(fig2)
+%             hold on;plot(rg(rr),zg(zz),'ms');hold off
+%         else
+%             ZEFF(rr,zz) = Zeff(end);
+%             NE(rr,zz) = ne(end);
+%             TE(rr,zz) = Te(end);
+%             figure(fig2)
+%             hold on;plot(rg(rr),zg(zz),'mx');hold off
+%         end        
+%     end
+% end
+% 
+% fields2hdf(rg,[],zg,[],[],[],[],[],[],FLUX,FLAG,NE,TE,ZEFF,['JFIT_D3D_157576_t' num2str(tplotV(2)) '.h5'],-B0,Vloop/(2*pi*Ro),Ro,Zo)
 
 fIR1 = BIRrA(3,:,:);
 fIR1 = squeeze(fIR1);
@@ -313,6 +397,7 @@ hold on
 plot(limdatax(2,:),limdatax(1,:),'c')
 iit1jfit = max(find(tVjfitms<=tplotV(3)));
 rhoMuse = squeeze(rhoMjfit(iit1jfit,:,:));
+psiMuse = squeeze(psiMjfit(iit1jfit,:,:));
 ctr = contour(rg,zg,rhoMuse,[0.95 0.95],'g'); % contour used for separatrix
 contour(rg,zg,rhoMuse,7,'b'); % contour used for separatrix
 myString = ['IR cam, t = ' num2str(tplotV(3),'%0.5g')];
@@ -322,12 +407,62 @@ colormap('jet')%colormap('hot')
 xlabel('R [m]')
 ylabel('Z [m]')
  
-ctr(:,1) = [];
 [V,I] = min(abs(rhoMuse));
 [~,II] = min(V);
+figure(IRcamfigure)
 hold on
 plot(rg(II),zg(I(II)),'g+','LineWidth',2)
 hold off
+
+ctr(:,1:2) = [];
+Ro = rg(II);
+Zo = zg(I(II));
+
+% rspx = sqrt( (ctr(1,:)-Ro).^2 + (ctr(2,:)-Zo).^2 );
+% aspx = atan2(ctr(2,:)-Zo,ctr(1,:)-Ro);
+% aspx(aspx<0) = aspx(aspx<0) + 2*pi;
+% aspx = flip(aspx);
+% rspx = flip(rspx);
+% [~,I] = min(aspx);
+% aspx = [aspx(I:end) aspx(1:I-1) 2*pi];
+% rspx = [rspx(I:end) rspx(1:I-1) rspx(I)];
+% 
+% fig3 = figure;
+% hold on;
+% plot(ctr(1,:),ctr(2,:),'g','LineWidth',2);
+% plot(limdatax(2,:),limdatax(1,:),'g','LineWidth',2)
+% hold off
+% 
+% FLUX = -psiMuse';
+% 
+% ZEFF = zeros(nr,nz);
+% NE = zeros(nr,nz);
+% TE = zeros(nr,nz);
+% for rr=1:nr
+%     for zz=1:nz
+%         a = atan2(zg(zz)-Zo,rg(rr)-Ro);
+%         if (a<0); a=a+2*pi; end;
+%         r = sqrt( (rg(rr)-Ro).^2 + (zg(zz)-Zo).^2 );
+%         
+%         rspx_i = interp1(aspx,rspx,a,'pchip');
+%         
+%         if (r < rspx_i)
+%             ZEFF(rr,zz) = interp1(rhoV,Zeff,r/rspx_i,'pchip');
+%             NE(rr,zz) = interp1(rhoV,ne,r/rspx_i,'pchip');
+%             TE(rr,zz) = interp1(rhoV,Te,r/rspx_i,'pchip');
+%             figure(fig3)
+%             hold on;plot(rg(rr),zg(zz),'ms');hold off
+%         else
+%             ZEFF(rr,zz) = Zeff(end);
+%             NE(rr,zz) = ne(end);
+%             TE(rr,zz) = Te(end);
+%             figure(fig3)
+%             hold on;plot(rg(rr),zg(zz),'mx');hold off
+%         end        
+%     end
+% end
+% 
+% fields2hdf(rg,[],zg,[],[],[],[],[],[],FLUX,FLAG,NE,TE,ZEFF,['JFIT_D3D_157576_t' num2str(tplotV(3)) '.h5'],-B0,Vloop/(2*pi*Ro),Ro,Zo)
  
 fIR1 = BIRrA(4,:,:);
 fIR1 = squeeze(fIR1);
@@ -351,13 +486,63 @@ axis equal
 colormap('jet')%colormap('hot')
 xlabel('R [m]')
 ylabel('Z [m]')
- 
-ctr(:,1) = [];
+
 [V,I] = min(abs(rhoMuse));
 [~,II] = min(V);
+figure(IRcamfigure)
 hold on
 plot(rg(II),zg(I(II)),'g+','LineWidth',2)
 hold off
+
+ctr(:,1:2) = [];
+Ro = rg(II);
+Zo = zg(I(II));
+
+% rspx = sqrt( (ctr(1,:)-Ro).^2 + (ctr(2,:)-Zo).^2 );
+% aspx = atan2(ctr(2,:)-Zo,ctr(1,:)-Ro);
+% aspx(aspx<0) = aspx(aspx<0) + 2*pi;
+% aspx = flip(aspx);
+% rspx = flip(rspx);
+% [~,I] = min(aspx);
+% aspx = [aspx(I:end) aspx(1:I-1) 2*pi];
+% rspx = [rspx(I:end) rspx(1:I-1) rspx(I)];
+% 
+% fig4 = figure;
+% hold on;
+% plot(ctr(1,:),ctr(2,:),'g','LineWidth',2);
+% plot(limdatax(2,:),limdatax(1,:),'g','LineWidth',2)
+% hold off
+% 
+% FLUX = -psiMuse';
+% 
+% ZEFF = zeros(nr,nz);
+% NE = zeros(nr,nz);
+% TE = zeros(nr,nz);
+% for rr=1:nr
+%     for zz=1:nz
+%         a = atan2(zg(zz)-Zo,rg(rr)-Ro);
+%         if (a<0); a=a+2*pi; end
+%         r = sqrt( (rg(rr)-Ro).^2 + (zg(zz)-Zo).^2 );
+%         
+%         rspx_i = interp1(aspx,rspx,a,'pchip');
+%         
+%         if (r < rspx_i)
+%             ZEFF(rr,zz) = interp1(rhoV,Zeff,r/rspx_i,'pchip');
+%             NE(rr,zz) = interp1(rhoV,ne,r/rspx_i,'pchip');
+%             TE(rr,zz) = interp1(rhoV,Te,r/rspx_i,'pchip');
+%             figure(fig4)
+%             hold on;plot(rg(rr),zg(zz),'ms');hold off
+%         else
+%             ZEFF(rr,zz) = Zeff(end);
+%             NE(rr,zz) = ne(end);
+%             TE(rr,zz) = Te(end);
+%             figure(fig4)
+%             hold on;plot(rg(rr),zg(zz),'mx');hold off
+%         end        
+%     end
+% end
+% 
+% fields2hdf(rg,[],zg,[],[],[],[],[],[],FLUX,FLAG,NE,TE,ZEFF,['JFIT_D3D_157576_t' num2str(tplotV(4)) '.h5'],-B0,Vloop/(2*pi*Ro),Ro,Zo)
  
 % *** plot VIS synchrotron image ****
 myA = flipud(BvisA);
@@ -373,6 +558,7 @@ image(RvisV,ZvisV,pAuse)  % show camera image
 hold on
 iit1jfit = max(find(tVjfitms<=tplotV(1)));
 rhoMuse = squeeze(rhoMjfit(iit1jfit,:,:));
+psiMuse = squeeze(psiMjfit(iit1jfit,:,:));
 contour(rg,zg,rhoMuse,[0.95 0.95],'g') % contour used for separatrix for centered synch image
 myString = ['VIS cam, t = ' num2str(tvisimg,'%0.5g')];
 title(myString)

@@ -42,7 +42,7 @@ MODULE korc_simple_equilibrium_pdf
 SUBROUTINE get_equilibrium_distribution(params,eta,go,etao)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: eta
-	REAL(rp), INTENT(OUT) :: go
+	REAL(rp), INTENT(IN) :: go
 	REAL(rp), INTENT(OUT) :: etao
 
 	call initialize_params(params,go)
@@ -55,7 +55,7 @@ END SUBROUTINE get_equilibrium_distribution
 
 SUBROUTINE initialize_params(params,go)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
-	REAL(rp), INTENT(IN) :: go 
+	REAL(rp), INTENT(IN) :: go
 	REAL(rp) :: max_pitch_angle
 	REAL(rp) :: min_pitch_angle
 	REAL(rp) :: Zeff
@@ -74,7 +74,7 @@ SUBROUTINE initialize_params(params,go)
 	pdf_params%E = E
 	pdf_params%Bo = Bo
 	pdf_params%lambda = lambda
-	
+
 	pdf_params%po = sqrt(go**2 - 1.0_rp)
 END SUBROUTINE initialize_params
 
@@ -82,7 +82,7 @@ END SUBROUTINE initialize_params
 FUNCTION deg2rad(x)
 	REAL(rp), INTENT(IN) :: x
 	REAL(rp) :: deg2rad
-	
+
 	deg2rad = C_PI*x/180.0_rp
 END FUNCTION
 
@@ -90,7 +90,7 @@ END FUNCTION
 FUNCTION rad2deg(x)
 	REAL(rp), INTENT(IN) :: x
 	REAL(rp) :: rad2deg
-	
+
 	rad2deg = 180.0_rp*x/C_PI
 END FUNCTION
 
@@ -103,7 +103,7 @@ FUNCTION fRE(eta,p)
 
 	A = (2.0_rp*pdf_params%E/(pdf_params%Zeff + 1.0_rp))*(p**2/SQRT(p**2.0_rp + 1.0_rp))
 	fRE = 0.5_rp*A*EXP(A*COS(deg2rad(eta)))/SINH(A)
-	fRE = fRE*PR(eta,p,pdf_params%Bo,pdf_params%lambda)
+!	fRE = fRE*PR(eta,p,pdf_params%Bo,pdf_params%lambda)
 END FUNCTION fRE
 
 
@@ -154,13 +154,13 @@ FUNCTION IntBesselK(a,b)
 	REAL(rp) :: v,h,z
 	INTEGER :: ii,jj,npoints
 	LOGICAL :: flag
-	
+
 	v = 5.0_rp/3.0_rp
 	h = b - a
 	sum_f = 0.5*(besselk(v,a) + besselk(v,b))
 
 	Iold = 0.0_rp
-	Inew = sum_f*h	
+	Inew = sum_f*h
 
 	ii = 1_idef
 	flag = .TRUE.
@@ -293,14 +293,14 @@ SUBROUTINE sample_distribution(params,eta,etao)
 			if (ratio .GE. 1.0_rp) then
 				eta_buffer = eta_test
 				ii = ii + 1_idef
-			else 
+			else
 				call RANDOM_NUMBER(rand_unif)
 				if (rand_unif .LT. ratio) then
 					eta_buffer = eta_test
 					ii = ii + 1_idef
 				end if
 			end if
-		end do	
+		end do
 		!* * * Transient * * *!
 
 
@@ -323,15 +323,15 @@ SUBROUTINE sample_distribution(params,eta,etao)
 				if (ratio .GE. 1.0_rp) then
 					eta_tmp(ii) = eta_test
 					ii = ii + 1_idef
-				else 
+				else
 					call RANDOM_NUMBER(rand_unif)
 					if (rand_unif .LT. ratio) then
 						eta_tmp(ii) = eta_test
 						ii = ii + 1_idef
 					end if
 				end if
-			end do	
-	
+			end do
+
 			eta_tmp = ABS(eta_tmp)
 
 			ii = 1_idef

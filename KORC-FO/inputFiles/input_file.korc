@@ -16,7 +16,7 @@
 										! 'UNIFORM' A uniform magnetic field used to advance only electrons' velocity.
 	magnetic_field_filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/D3D_Q.h5" ! DIII-D_sh165826.h5" !
 	outputs_list = '{X,V,g,eta,flag,ne,Te,Zeff}' ! List of outputs '{X,V,E,B,g,mu,eta,Prad,Pin,flag}'
-	HDF5_error_handling = T ! 
+	HDF5_error_handling = T !
 /
 
 &plasma_species
@@ -67,11 +67,11 @@
 	a_ne = 0.99713,0.047037,0.40023,-1.0466
 	Te_profile = 'POLYNOMIAL' ! Options are 'FLAT' and 'POLYNOMIAL'
 	Teo = 870.0 ! In eV
-	n_Te = 2.5 ! 
+	n_Te = 2.5 !
 	a_Te = 1.0046,-0.076652,-2.6429,1.7415
 	Zeff_profile = 'POLYNOMIAL' ! Options are 'FLAT' and 'POLYNOMIAL'
 	Zeffo = 1.45 ! In m^-3
-	n_Zeff = 3.0 ! 
+	n_Zeff = 3.0 !
 	a_Zeff = 1.0065,-0.12081,0.02834,-0.11796
 /
 
@@ -118,10 +118,14 @@
 /
 
 &HollmannPDF
-	filename = "/home/l8c/Documents/KORC/KORC-FO/inputFiles/Hollmann_PDFs_hi-res.h5" !
-	min_energy = 1.0E6 ! In eV
-	max_energy = 10.0E6 ! In eV
-	Bo = 2.0 ! Characteristic magnetic field
+	filename = "/Users/Leopo/Documents/KORC/KORC-FO/inputFiles/Hollmann_PDF_HR.h5" !
+	E = 4.5 ! Parallel electric field in units of Ec
+	Zeff = 4.0 ! Effective atomic number
+	max_pitch_angle = 60.0 ! In degrees
+	min_pitch_angle = 0.0 ! In degrees
+	min_energy = 15.0E6 ! In eV
+	max_energy = 70.0E6 ! In eV
+	Bo = 2.1 ! Characteristic magnetic field
 	lambda = 890.0E-9 ! Characteristic wavelength
 /
 
@@ -155,7 +159,7 @@
  	Nlambda = 25 ! Number of discrete wavelengths
 	photon_count = F
 	integrated_opt = T ! T or F
-	toroidal_sections = F ! 
+	toroidal_sections = F !
 	ntor_sections = 12 !
 /
 
