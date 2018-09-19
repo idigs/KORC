@@ -589,8 +589,17 @@ SUBROUTINE initialize_Hollmann_params(params)
 
 	h_params%E = E
 	h_params%Zeff = Zeff
-	h_params%max_pitch_angle = max_pitch_angle
-	h_params%min_pitch_angle = min_pitch_angle
+!	h_params%max_pitch_angle = max_pitch_angle                                  ! MRC
+!	h_params%min_pitch_angle = min_pitch_angle                                  ! MRC
+
+    if (TRIM(current_direction) .EQ. 'ANTICLOCKWISE') then                      ! MRC
+        h_params%max_pitch_angle = 180.0_rp - min_pitch_angle                   ! MRC
+        h_params%min_pitch_angle = 180.0_rp - max_pitch_angle                   ! MRC
+    else                                                                        ! MRC
+        h_params%max_pitch_angle = max_pitch_angle                              ! MRC
+        h_params%min_pitch_angle = min_pitch_angle                              ! MRC
+    end if                                                                      ! MRC
+
 	h_params%min_sampling_energy = min_energy*C_E ! In Joules
 	h_params%min_sampling_g = 1.0_rp + h_params%min_sampling_energy/(C_ME*C_C**2)
 	h_params%max_sampling_energy = max_energy*C_E ! In Joules.
@@ -689,7 +698,8 @@ FUNCTION fRE_H(eta,g)
 	fRE_H = f0 + m*(g - g0)
 
 	A = (2.0_rp*h_params%E/(h_params%Zeff + 1.0_rp))*(g**2 - 1.0_rp)/g
-	feta = 0.5_rp*A*EXP(A*COS(deg2rad(eta)))/SINH(A)
+    feta = A*EXP(-A*(1.0_rp - COS(deg2rad(eta))))/(1.0_rp - EXP(-2.0_rp*A))     ! MRC
+!	feta = 0.5_rp*A*EXP(A*COS(deg2rad(eta)))/SINH(A)                            ! MRC
 
 	fRE_H = fRE_H*feta
 END FUNCTION fRE_H
