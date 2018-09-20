@@ -1,13 +1,11 @@
 #  Append all source files to variable korc_sources. As new files are added,
 #  this must be updated.
-
 set (korc_sources "")
 list (APPEND korc_sources
     korc_collisions.f90
     korc_fields.f90
     korc_interp.f90
     korc_spatial_distribution.f90
-    main.f90
     korc_constants.f90
     korc_finalize.f90
     korc_ppusher.f90
@@ -30,8 +28,13 @@ list (APPEND korc_sources
     korc_initialize.f90
     korc_simple_equilibrium_pdf.f90
     korc_velocity_distribution.f90
+    korc_c_random.cpp
+    korc_random.f90
+    main.f90
 )
 
 add_executable (xkorc ${korc_sources})
+set_property(TARGET xkorc PROPERTY LINKER_LANGUAGE Fortran)
+
 target_link_libraries (xkorc ${MPI_Fortran_LIBRARIES})
 target_link_libraries (xkorc ${HDF5_LIBRARIES})

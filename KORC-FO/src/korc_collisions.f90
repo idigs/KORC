@@ -2,6 +2,9 @@ module korc_collisions
 	use korc_types
 	use korc_constants
 	use korc_HDF5
+#ifdef PARALLEL_RANDOM
+    use random
+#endif
 
 	IMPLICIT NONE
 
@@ -599,13 +602,20 @@ end subroutine unitVectors
 
 
 subroutine check_collisions_params(spp)
+#ifdef PARALLEL_RANDOM
+    USE omp_lib
+#endif
 	TYPE(SPECIES), INTENT(IN) :: spp
 	INTEGER aux
 
 	aux = cparams_ss%rnd_num_count + 2_idef*INT(spp%ppp,idef)
 
 	if (aux.GE.cparams_ss%rnd_dim) then
+#ifdef PARALLEL_RANDOM
+        cparams_ss%rnd_num = get_random()
+#else
 		call RANDOM_NUMBER(cparams_ss%rnd_num)
+#endif
 		cparams_ss%rnd_num_count = 1_idef
 	end if
 end subroutine check_collisions_params
@@ -660,7 +670,11 @@ subroutine include_CoulombCollisions(params,U,ne,Te,Zeff)
 !		call RANDOM_NUMBER(rnd2)
 !		dW = SQRT(dt)*SQRT(-2.0_rp*LOG(1.0_rp-rnd1))*COS(2.0_rp*C_PI*rnd2)
 
+#ifdef PARALLEL_RANDOM
+        rnd1 = get_random()
+#else
 		call RANDOM_NUMBER(rnd1)
+#endif
 		dW = SQRT(dt)*SQRT(3.0_rp)*(-1.0_rp + 2.0_rp*rnd1);
 
 		CAL = CA_SD(v,ne,Te)

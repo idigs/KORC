@@ -109,6 +109,9 @@ end subroutine rand_real
 
 
 subroutine init_random_seed()
+#ifdef PARALLEL_RANDOM
+    use random
+#endif
 	INTEGER, allocatable       :: seed(:)
 	INTEGER(8), DIMENSION(8)   :: dt
 	INTEGER(8)                 :: i
@@ -147,7 +150,11 @@ subroutine init_random_seed()
 		seed(i) = lcg(t)
 		end do
 	end if
+#ifdef PARALLEL_RANDOM
+    call initialize_random(seed(1))
+#else
 	call random_seed(put=seed)
+#endif
 	contains
 
 	! This simple PRNG might not be good enough for real work, but is
