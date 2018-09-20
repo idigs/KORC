@@ -47,7 +47,8 @@ then
 
     cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE                             \
           -DEZSpline_INCLUDE_PATH=/Users/m4c/repo/trunk/build/modules/stell \
-          -DEZSpline_LINK_FLAGS="-L/Users/m4c/repo/trunk/build/lib -lstell"
+          -DEZSpline_LINK_FLAGS="-L/Users/m4c/repo/trunk/build/lib -lstell" \
+          -DCMAKE_Fortran_FLAGS=-DHDF5_DOUBLE_PRESICION
 
 elif [ $MACHINE_ID == "edison01" ] || \
      [ $MACHINE_ID == "edison02" ] || \
