@@ -26,6 +26,7 @@ include_directories (${MPI_Fortran_INCLUDE_PATH})
 
 #  Configure HDF5
 find_package (HDF5 REQUIRED COMPONENTS Fortran)
+include_directories (${HDF5_INCLUDE_DIRS})
 
 #  Configure EZspline
 include_directories (${EZSpline_INCLUDE_PATH})

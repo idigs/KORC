@@ -38,3 +38,4 @@ set_property(TARGET xkorc PROPERTY LINKER_LANGUAGE Fortran)
 
 target_link_libraries (xkorc ${MPI_Fortran_LIBRARIES})
 target_link_libraries (xkorc ${HDF5_LIBRARIES})
+target_link_libraries (xkorc ${EZSpline_LIBRARIES})

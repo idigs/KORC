@@ -3,7 +3,7 @@
 !! build-in Fortran random generators (at least better than those of Fortran 77). For more details we refer the user to Numerical Recipes in Fortran 90.
 module korc_rnd_numbers
 
-#ifdef INTEL
+#ifdef __INTEL_COMPILER
     use ifport
 #endif
     use korc_types
