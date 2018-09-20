@@ -35,3 +35,4 @@ list (APPEND korc_sources
 add_executable (xkorc ${korc_sources})
 target_link_libraries (xkorc ${MPI_Fortran_LIBRARIES})
 target_link_libraries (xkorc ${HDF5_LIBRARIES})
+target_link_libraries (xkorc ${EZSpline_LIBRARIES})
