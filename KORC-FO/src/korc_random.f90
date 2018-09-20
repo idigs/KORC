@@ -56,7 +56,9 @@ SUBROUTINE initialize_random(seed)
     INTEGER             :: thread_number
 
     num_threads = OMP_GET_MAX_THREADS()
-    ALLOCATE(states%state(0:num_threads - 1))
+    IF (.NOT. ALLOCATED(states%state)) THEN
+        ALLOCATE(states%state(0:num_threads - 1))
+    END IF
 
 !$OMP PARALLEL
     thread_number = OMP_GET_THREAD_NUM()
