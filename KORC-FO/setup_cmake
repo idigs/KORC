@@ -83,9 +83,9 @@ then
           -DEZSpline_INCLUDE_PATH=/global/homes/m/markcian/knl_trunk/build/modules/stell \
           -DEZSpline_LINK_FLAGS="-L/global/homes/m/markcian/knl_trunk/build/lib -lstell" \
           -DEZSpline_LIBRARIES=/global/homes/m/markcian/knl_trunk/build/lib/libstell.a   \
-          -DCMAKE_Fortran_FLAGS=-axMIC-AVX512,AVX                                        \
+          -DCMAKE_Fortran_FLAGS="-axMIC-AVX512,AVX -DHDF5_DOUBLE_PRESICION"              \
           -DCMAKE_C_FLAGS=-axMIC-AVX512,AVX                                              \
-          -DCMAKE_CXX_FLAGS=-axMIC-AVX512,AVX
+          -DCMAKE_CXX_FLAGS="-std=c++11 -axMIC-AVX512,AVX"
 
 else
 # MACHINE_ID is new and unknown. Inform the user how to add support for this new machine.
