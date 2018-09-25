@@ -23,6 +23,8 @@ MODULE korc_experimental_pdf
 
 		REAL(rp) :: Bo
 		REAL(rp) :: lambda
+
+        REAL(rp) :: A_fact ! Multiplication factor for A in distributon.
 	END TYPE PARAMS
 
 	TYPE, PRIVATE :: HOLLMANN_PARAMS
@@ -53,6 +55,8 @@ MODULE korc_experimental_pdf
 		CHARACTER(MAX_STRING_LENGTH) :: current_direction
 		REAL(rp) :: Bo
 		REAL(rp) :: lambda
+
+        REAL(rp) :: A_fact ! Multiplication factor for A in distributon.
 	END TYPE HOLLMANN_PARAMS
 
 	TYPE(PARAMS), PRIVATE :: pdf_params
@@ -111,7 +115,10 @@ SUBROUTINE initialize_params(params)
 	REAL(rp) :: t
 	REAL(rp) :: Bo
 	REAL(rp) :: lambda
-	NAMELIST /ExperimentalPDF/ max_pitch_angle,min_pitch_angle,max_energy,min_energy,Zeff,E,k,t,Bo,lambda
+    REAL(rp) :: A_fact
+
+	NAMELIST /ExperimentalPDF/ max_pitch_angle,min_pitch_angle,max_energy,min_energy,Zeff,E,k,t,Bo,lambda, &
+                               A_fact
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=ExperimentalPDF)
@@ -133,6 +140,8 @@ SUBROUTINE initialize_params(params)
 
 	pdf_params%fGo = &
 	IntGamma(SQRT(pdf_params%min_p**2.0_rp + 1.0_rp),SQRT(pdf_params%max_p**2.0_rp + 1.0_rp),pdf_params%k,pdf_params%t/xo)
+
+    pdf_params%A_fact = A_fact
 END SUBROUTINE initialize_params
 
 
@@ -174,6 +183,7 @@ FUNCTION fRE(eta,p)
 	Eo = SQRT(p**2.0_rp + 1.0_rp)
 
 	A = (2.0_rp*pdf_params%E/(pdf_params%Zeff + 1.0_rp))*(p**2/SQRT(p**2.0_rp + 1.0_rp))
+    A = A*pdf_params%A_fact
 	feta = 0.5_rp*A*EXP(A*COS(deg2rad(eta)))/SINH(A)
 
 	fE = fGamma(Eo,pdf_params%k,pdf_params%t/xo)/pdf_params%fGo
@@ -577,8 +587,10 @@ SUBROUTINE initialize_Hollmann_params(params)
 	REAL(rp) :: min_energy
 	REAL(rp) :: Bo
 	REAL(rp) :: lambda
+    REAL(rp) :: A_fact
 
-	NAMELIST /HollmannPDF/ E,Zeff,max_pitch_angle,min_pitch_angle,max_energy,min_energy,filename,Bo,lambda,current_direction
+	NAMELIST /HollmannPDF/ E,Zeff,max_pitch_angle,min_pitch_angle,max_energy,min_energy,filename,Bo,lambda,current_direction, &
+                           A_fact
 
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
@@ -617,6 +629,8 @@ SUBROUTINE initialize_Hollmann_params(params)
 
 	h_params%Bo = Bo
 	h_params%lambda = lambda
+
+    h_params%A_fact = A_fact
 END SUBROUTINE initialize_Hollmann_params
 
 
@@ -698,6 +712,7 @@ FUNCTION fRE_H(eta,g)
 	fRE_H = f0 + m*(g - g0)
 
 	A = (2.0_rp*h_params%E/(h_params%Zeff + 1.0_rp))*(g**2 - 1.0_rp)/g
+    A = A*h_params%A_fact
     feta = A*EXP(-A*(1.0_rp - COS(deg2rad(eta))))/(1.0_rp - EXP(-2.0_rp*A))     ! MRC
 !	feta = 0.5_rp*A*EXP(A*COS(deg2rad(eta)))/SINH(A)                            ! MRC
 
