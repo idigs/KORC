@@ -601,16 +601,8 @@ SUBROUTINE initialize_Hollmann_params(params)
 
 	h_params%E = E
 	h_params%Zeff = Zeff
-!	h_params%max_pitch_angle = max_pitch_angle                                  ! MRC
-!	h_params%min_pitch_angle = min_pitch_angle                                  ! MRC
-
-    if (TRIM(current_direction) .EQ. 'ANTICLOCKWISE') then                      ! MRC
-        h_params%max_pitch_angle = 180.0_rp - min_pitch_angle                   ! MRC
-        h_params%min_pitch_angle = 180.0_rp - max_pitch_angle                   ! MRC
-    else                                                                        ! MRC
-        h_params%max_pitch_angle = max_pitch_angle                              ! MRC
-        h_params%min_pitch_angle = min_pitch_angle                              ! MRC
-    end if                                                                      ! MRC
+	h_params%max_pitch_angle = max_pitch_angle
+	h_params%min_pitch_angle = min_pitch_angle
 
 	h_params%min_sampling_energy = min_energy*C_E ! In Joules
 	h_params%min_sampling_g = 1.0_rp + h_params%min_sampling_energy/(C_ME*C_C**2)
@@ -930,9 +922,9 @@ SUBROUTINE sample_Hollmann_distribution(params,g,eta,go,etao)
 			end do
 		end do
 
-		if (TRIM(h_params%current_direction) .EQ. 'ANTICLOCKWISE') then
-			eta_samples = 180.0_rp - eta_samples
-		end if
+!		if (TRIM(h_params%current_direction) .EQ. 'ANTICLOCKWISE') then
+!			eta_samples = 180.0_rp - eta_samples
+!		end if
 
 		go = SUM(g_samples)/nsamples
 		etao = SUM(eta_samples)/nsamples
