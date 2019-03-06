@@ -34,8 +34,8 @@
 	falloff_rate = 0.0, 0.14 !
 	energy_distribution = 'MONOENERGETIC','MONOENERGETIC'   ! Options are: 'MONOENERGETIC', 'THERMAL', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'
 	pitch_distribution = 'MONOPITCH','MONOPITCH'	! Options are: 'MONOPITCH', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'.
-	Eo = 10.0E6,10.0E6 ! Initial energy in eV
-	etao = 5.0,10.0  ! Initial pitch angle
+	Eo = 15.0E6,10.0E6 ! Initial energy in eV
+	etao = 30.0,10.0  ! Initial pitch angle
 	Eo_lims = 1.0E6,50.0E6,1.0E6,50.0E6 ! Lower and upper limit of simulated energy range, in eV.
 	etao_lims = 0.0,20.0,0.0,20.0 ! Lower and upper limit of simulated pitch-angle range, in degrees.
 /
@@ -146,7 +146,7 @@
 /
 
 &SyntheticCamera
-	camera_on = F ! T or F
+	camera_on = T ! T or F
 	start_at = 0.0E-6 ! Seconds
  	Riw = 1.0 ! Radial position of inner wall
  	num_pixels = 75, 75 ! Number of pixels (X,Y)
@@ -154,8 +154,8 @@
  	focal_length = 0.5
 	position = 2.4, 0.0 ! Position of camera (R,Z)
 	incline = 55.0 ! In degrees
- 	lambda_min = 400.0E-9 ! Minimum wavelength in meters
- 	lambda_max = 900.0E-9 ! Maximum wavelength in meters
+ 	lambda_min = 890.0E-9 ! Minimum wavelength in meters
+ 	lambda_max = 891.0E-9 ! Maximum wavelength in meters
  	Nlambda = 25 ! Number of discrete wavelengths
 	photon_count = F
 	integrated_opt = T ! T or F

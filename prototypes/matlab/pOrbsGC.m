@@ -71,7 +71,7 @@ function ST = pOrbsGC(pathToBField,fileType,ND,res,timeStepParams,tracerParams,x
 
 narginchk(8,9);
 
-close all
+% close all
 
 ST = struct;
 % Script parameters
@@ -266,7 +266,7 @@ end
 if ST.F.init == true
     % Parameters of the analytical magnetic field
     % DIII-D
-    jpb = -1;
+    jpb = 1;
     Ro = 1.5; % Major radius in meters.
     Zo = 0;
     Bo = 2.19;
