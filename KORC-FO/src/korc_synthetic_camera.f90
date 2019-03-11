@@ -257,7 +257,6 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 		cam%lambda_max = lambda_max ! In meters
 		cam%Nlambda = Nlambda
 		cam%Dlambda = (cam%lambda_max - cam%lambda_min)/REAL(cam%Nlambda,rp)
-		ALLOCATE(cam%lambda(cam%Nlambda))
 		cam%photon_count = photon_count
 		cam%integrated_opt = integrated_opt
 		cam%toroidal_sections = toroidal_sections
@@ -269,6 +268,7 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 
 		cam%r = (/COS(0.5_rp*C_PI - cam%incline),-SIN(0.5_rp*C_PI - cam%incline),0.0_rp/)
 
+		ALLOCATE(cam%lambda(cam%Nlambda))
 		do ii=1_idef,cam%Nlambda
 			cam%lambda(ii) = cam%lambda_min + REAL(ii-1_idef,rp)*cam%Dlambda
 		end do
@@ -1311,10 +1311,17 @@ SUBROUTINE integrated_SE_3D(params,spp)
 						Psyn_lambda_pixel(ii,jj,itor,ss) = Psyn_lambda_pixel(ii,jj,itor,ss) + SUM(P_lambda(:,itor))
 						Psyn_angular_pixel(ii,jj,itor,ss) = Psyn_angular_pixel(ii,jj,itor,ss) + SUM(P_angular(:,itor))
 					else
-						Psyn_lambda_pixel(ii,jj,itor,ss) = Psyn_lambda_pixel(ii,jj,itor,ss) + &
-													trapz(cam%lambda,P_lambda(:,itor))
-						Psyn_angular_pixel(ii,jj,itor,ss) = Psyn_angular_pixel(ii,jj,itor,ss) + &
-													trapz(cam%lambda,P_angular(:,itor))
+						if (cam%Nlambda.GT.1_idef) then
+							Psyn_lambda_pixel(ii,jj,itor,ss) = Psyn_lambda_pixel(ii,jj,itor,ss) + &
+														trapz(cam%lambda,P_lambda(:,itor))
+							Psyn_angular_pixel(ii,jj,itor,ss) = Psyn_angular_pixel(ii,jj,itor,ss) + &
+														trapz(cam%lambda,P_angular(:,itor))
+						else
+							Psyn_lambda_pixel(ii,jj,itor,ss) = Psyn_lambda_pixel(ii,jj,itor,ss) + &
+														P_lambda(1_idef,itor)
+							Psyn_angular_pixel(ii,jj,itor,ss) = Psyn_angular_pixel(ii,jj,itor,ss) + &
+														P_angular(1_idef,itor)
+						end if
 					end if
 				end if ! check if bool == TRUE
 
