@@ -689,7 +689,8 @@ FUNCTION fRE_H(eta,g)
 	fRE_H = f0 + m*(g - g0)
 
 	A = (2.0_rp*h_params%E/(h_params%Zeff + 1.0_rp))*(g**2 - 1.0_rp)/g
-	feta = 0.5_rp*A*EXP(A*COS(deg2rad(eta)))/SINH(A)
+	! feta = 0.5_rp*A*EXP(A*COS(deg2rad(eta)))/SINH(A)
+	feta = A*EXP(-A*(1.0_rp - COS(deg2rad(eta))))/(1.0_rp - EXP(-2.0_rp*A)) ! MRC
 
 	fRE_H = fRE_H*feta
 END FUNCTION fRE_H
