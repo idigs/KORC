@@ -1261,7 +1261,7 @@ SUBROUTINE integrated_SE_3D(params,spp)
 					r = SQRT(DOT_PRODUCT(n,n))
 					n = n/r
 
-					dSA = DOT_PRODUCT(n,XC/SQRT(DOT_PRODUCT(XC,XC)))*cam%pixel_area/r**2
+					! dSA = DOT_PRODUCT(n,XC/SQRT(DOT_PRODUCT(XC,XC)))*cam%pixel_area/r**2
 
 					beta = ACOS(DOT_PRODUCT(n,binorm))
 					if (beta.GT.0.5_rp*C_PI) psi = beta - 0.5_rp*C_PI
@@ -1298,8 +1298,11 @@ SUBROUTINE integrated_SE_3D(params,spp)
 						end if
 					end do ! Nlambda
 
-					P_lambda(:,itor) = dSA*P_lambda(:,itor)/(2.0_rp*C_PI*(1.0_rp - COS(1.0_rp/g)))
-					P_angular(:,itor) = dSA*P_angular(:,itor)
+					! P_lambda(:,itor) = dSA*P_lambda(:,itor)/(2.0_rp*C_PI*(1.0_rp - COS(1.0_rp/g)))
+					! P_angular(:,itor) = dSA*P_angular(:,itor)
+
+					P_lambda(:,itor) = P_lambda(:,itor)/(2.0_rp*C_PI*(1.0_rp - COS(1.0_rp/g)))
+					P_angular(:,itor) = P_angular(:,itor)
 
 					P_l_pixel(:,itor,ss) = P_l_pixel(:,itor,ss) + P_lambda(:,itor)
 					P_a_pixel(:,itor,ss) = P_a_pixel(:,itor,ss) + P_angular(:,itor)
