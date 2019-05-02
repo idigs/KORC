@@ -156,13 +156,11 @@ end subroutine radiation_force
 !! @param vperp Perpendicular velocity @f$v_\parallel = |\mathbf{v} - (\mathbf{v}\cdot \hat{b})\hat{b}|@f$.
 !! @param tmp Temporary variable used for various computations.
 !! @param a This variable is used to simplify notation in the code, and is given by @f$a=q\Delta t/m@f$,
-!! @param gp This variable is @f$\gamma' = \sqrt{1 + p'^2/m^2c^2}@f$ in the above equations.
 !! @param sigma This variable is @f$\sigma = \gamma'^2 - \tau^2@f$ in the above equations.
 !! @param us This variable is @f$u^{*} = p^{*}/m@f$ where @f$ p^{*} = \mathbf{p}'\cdot \mathbf{\tau}/mc@f$.
 !! @param g Relativistic factor @f$\gamma@f$.
 !! @param s This variable is @f$s = 1/(1+t^2)@f$ in the equations above.
 !! @param U_L This variable is @f$\mathbf{u}_L = \mathbf{p}_L/m@f$ where @f$\mathbf{p}^{i+1}_L = s\left[ \mathbf{p}' + (\mathbf{p}'\cdot\mathbf{t})\mathbf{t} + \mathbf{p}'\times \mathbf{t} \right]@f$.
-!! @param U_hs Is @f$\mathbf{u}=\mathbf{p}/m@f$ at half-time step (@f$i+1/2@f$) in the absence of radiation losses or collisions. @f$\mathbf{u}^{i+1/2} = \mathbf{u}^i + \frac{q\Delta t}{2m}\left( \mathbf{E}^{i+1/2} + \mathbf{v}^i\times \mathbf{B}^{i+1/2} \right)@f$.
 !! @param tau This variable is @f$\mathbf{\tau} = (q\Delta t/2)\mathbf{B}^{i+1/2}@f$.
 !! @param up This variable is @f$\mathbf{u}'= \mathbf{p}'/m@f$, where @f$\mathbf{p}' = \mathbf{p}^i + q\Delta t \left( \mathbf{E}^{i+1/2} + \frac{\mathbf{v}^i}{2} \times \mathbf{B}^{i+1/2} \right)@f$.
 !! @param t This variable is @f$\mathbf{t} = {\mathbf \tau}/\gamma^{i+1}@f$.
@@ -188,135 +186,132 @@ subroutine advance_particles_velocity(params,F,P,spp,dt,bool)
     REAL(rp)                                                   :: vpar
     REAL(rp)                                                   :: vperp
     REAL(rp)                                                   :: tmp
-	REAL(rp)                                                   :: a
-    REAL(rp)                                                   :: gp
+    REAL(rp)                                                   :: a
     REAL(rp)                                                   :: sigma
     REAL(rp)                                                   :: us
     REAL(rp)                                                   :: g
     REAL(rp)                                                   :: s
-	REAL(rp), DIMENSION(3)                                     :: U_L
-    REAL(rp), DIMENSION(3)                                     :: U_hs
+    REAL(rp), DIMENSION(3)                                     :: U_L
     REAL(rp), DIMENSION(3)                                     :: tau
     REAL(rp), DIMENSION(3)                                     :: up
     REAL(rp), DIMENSION(3)                                     :: t
 	REAL(rp), DIMENSION(3)                                     :: U
     REAL(rp), DIMENSION(3)                                     :: U_RC
     REAL(rp), DIMENSION(3)                                     :: U_os
-	REAL(rp), DIMENSION(3)                                     :: Frad
-	REAL(rp), DIMENSION(3)                                     :: vec
+    REAL(rp), DIMENSION(3)                                     :: Frad
+    REAL(rp), DIMENSION(3)                                     :: vec
     REAL(rp), DIMENSION(3)                                     :: b_unit
-	INTEGER                                                    :: ii
+    INTEGER                                                    :: ii
     INTEGER                                                    :: pp
     LOGICAL                                                    :: ss_collisions
 
 
 	! Determine whether we are using a single-species collision model
-	ss_collisions = (TRIM(params%collisions_model) .EQ. 'SINGLE_SPECIES')
+    ss_collisions = (TRIM(params%collisions_model) .EQ. 'SINGLE_SPECIES')
 
-	do ii = 1_idef,params%num_species
+    do ii = 1_idef,params%num_species
 
-		call get_fields(params,spp(ii)%vars,F)
+        call get_fields(params,spp(ii)%vars,F)
 
-		call get_profiles(params,spp(ii)%vars,P)
+        call get_profiles(params,spp(ii)%vars,P)
 
-	    a = spp(ii)%q*dt/spp(ii)%m
+        a = spp(ii)%q*dt/spp(ii)%m
 
 !$OMP PARALLEL DO SHARED(params,ii,spp,ss_collisions) FIRSTPRIVATE(a,dt,bool)&
-!$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gp,sigma,us,g,t,s,Frad,U_RC,U_os,tmp,b_unit,B,vpar,v,vperp,vec,Prad)
-		do pp=1_idef,spp(ii)%ppp
-			if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
-				U = spp(ii)%vars%g(pp)*spp(ii)%vars%V(:,pp)
+!$OMP& PRIVATE(pp,U,U_L,tau,up,sigma,us,g,t,s,Frad,U_RC,U_os,tmp,b_unit,B,vpar,v,vperp,vec,Prad)
+!$OMP& SCHEDULE(STATIC)
+        do pp=1_idef,spp(ii)%ppp
+            if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
+                U = spp(ii)%vars%g(pp)*spp(ii)%vars%V(:,pp)
 
-				!! Magnitude of magnetic field
-				B = SQRT( DOT_PRODUCT(spp(ii)%vars%B(:,pp),spp(ii)%vars%B(:,pp)) )
+                !! Magnitude of magnetic field
+                B = SQRT( DOT_PRODUCT(spp(ii)%vars%B(:,pp),spp(ii)%vars%B(:,pp)) )
 
-				U_L = U
-				U_RC = U
+                U_L = U
+                U_RC = U
 
-				! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
-				U_hs = U_L + 0.5_rp*a*( spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)) )
-				tau = 0.5_rp*dt*spp(ii)%q*spp(ii)%vars%B(:,pp)/spp(ii)%m
-				up = U_hs + 0.5_rp*a*spp(ii)%vars%E(:,pp)
-				gp = SQRT( 1.0_rp + DOT_PRODUCT(up,up) )
-				sigma = gp**2 - DOT_PRODUCT(tau,tau)
-				us = DOT_PRODUCT(up,tau) ! variable 'u^*' in Vay, J.-L. PoP (2008)
-				g = SQRT( 0.5_rp*(sigma + SQRT(sigma**2 + 4.0_rp*(DOT_PRODUCT(tau,tau) + us**2))) )
-				t = tau/g
-				s = 1.0_rp/(1.0_rp + DOT_PRODUCT(t,t)) ! variable 's' in Vay, J.-L. PoP (2008)
-		        U_L = s*(up + DOT_PRODUCT(up,t)*t + cross(up,t))
-				! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
+                ! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
+                up = U_L + a*(spp(ii)%vars%E(:,pp) + 0.5_rp*cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)))
+                tau = 0.5_rp*dt*spp(ii)%q*spp(ii)%vars%B(:,pp)/spp(ii)%m
+                sigma = 1.0_rp + DOT_PRODUCT(up,up) - DOT_PRODUCT(tau,tau)
+                us = DOT_PRODUCT(up,tau) ! variable 'u^*' in Vay, J.-L. PoP (2008)
+                g = SQRT( 0.5_rp*(sigma + SQRT(sigma**2 + 4.0_rp*(DOT_PRODUCT(tau,tau) + us**2))) )
+                t = tau/g
+                s = 1.0_rp/(1.0_rp + DOT_PRODUCT(t,t)) ! variable 's' in Vay, J.-L. PoP (2008)
+                U_L = s*(up + DOT_PRODUCT(up,t)*t + cross(up,t))
+                ! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
 
-				! ! ! Splitting operator for including radiation
-				U_os = 0.5_rp*(U_L + U)
+                ! ! ! Splitting operator for including radiation
+                U_os = 0.5_rp*(U_L + U)
 
-				if (params%radiation) then
-					call radiation_force(spp(ii),U_os,spp(ii)%vars%E(:,pp),spp(ii)%vars%B(:,pp),Frad)
-					U_RC = U_RC + a*Frad/spp(ii)%q
-				end if
-				! ! ! Splitting operator for including radiation
+                if (params%radiation) then
+                    call radiation_force(spp(ii),U_os,spp(ii)%vars%E(:,pp),spp(ii)%vars%B(:,pp),Frad)
+                    U_RC = U_RC + a*Frad/spp(ii)%q
+                end if
+                ! ! ! Splitting operator for including radiation
 
-				U = U_L + U_RC - U
+                U = U_L + U_RC - U
 
-				! ! ! Stochastic differential equations for including collisions
-				if (params%collisions .AND. ss_collisions) then
-					call include_CoulombCollisions(params,U,spp(ii)%vars%ne(pp),spp(ii)%vars%Te(pp),spp(ii)%vars%Zeff(pp))
-				end if
-				! ! ! Stochastic differential equations for including collisions
+                ! ! ! Stochastic differential equations for including collisions
+                if (params%collisions .AND. ss_collisions) then
+                    call include_CoulombCollisions(params,U,spp(ii)%vars%ne(pp),spp(ii)%vars%Te(pp),spp(ii)%vars%Zeff(pp))
+                end if
+                ! ! ! Stochastic differential equations for including collisions
 
-				if (params%radiation .OR. params%collisions) then
-					g = SQRT( 1.0_rp + DOT_PRODUCT(U,U) )
-				end if
-		        spp(ii)%vars%V(:,pp) = U/g
-				spp(ii)%vars%g(pp) = g
+                if (params%radiation .OR. params%collisions) then
+                    g = SQRT( 1.0_rp + DOT_PRODUCT(U,U) )
+                end if
+                spp(ii)%vars%V(:,pp) = U/g
+                spp(ii)%vars%g(pp) = g
 
-				if (g.LT.params%minimum_particle_g) then
-					spp(ii)%vars%flag(pp) = 0_is
-				end if
+                if (g.LT.params%minimum_particle_g) then
+                    spp(ii)%vars%flag(pp) = 0_is
+                end if
 
                 if (bool) then
-				    !! Parallel unit vector
-				    b_unit = spp(ii)%vars%B(:,pp)/B
+                    !! Parallel unit vector
+                    b_unit = spp(ii)%vars%B(:,pp)/B
 
-					v = SQRT(DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)))
-					if (v.GT.korc_zero) then
-						!! Parallel and perpendicular components of velocity
-						vpar = DOT_PRODUCT(spp(ii)%vars%V(:,pp), b_unit)
-						vperp =  DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)) - vpar**2
-						if ( vperp .GE. korc_zero ) then
-							vperp = SQRT( vperp )
-						else
-							vperp = 0.0_rp
-						end if
+                    v = SQRT(DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)))
+                    if (v.GT.korc_zero) then
+                        !! Parallel and perpendicular components of velocity
+                        vpar = DOT_PRODUCT(spp(ii)%vars%V(:,pp), b_unit)
+                        vperp =  DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)) - vpar**2
+                        if ( vperp .GE. korc_zero ) then
+                            vperp = SQRT( vperp )
+                        else
+                            vperp = 0.0_rp
+                        end if
 
-						!! Pitch angle
-				        spp(ii)%vars%eta(pp) = 180.0_rp*MODULO(ATAN2(vperp,vpar), 2.0_rp*C_PI)/C_PI
+                        !! Pitch angle
+                        spp(ii)%vars%eta(pp) = 180.0_rp*MODULO(ATAN2(vperp,vpar), 2.0_rp*C_PI)/C_PI
 
-						!! Magnetic moment
-						spp(ii)%vars%mu(pp) = 0.5_rp*spp(ii)%m*g**2*vperp**2/B
-						! See Northrop's book (The adiabatic motion of charged particles)
+                        !! Magnetic moment
+                        spp(ii)%vars%mu(pp) = 0.5_rp*spp(ii)%m*g**2*vperp**2/B
+                        ! See Northrop's book (The adiabatic motion of charged particles)
 
-						!! Radiated power
-						tmp = spp(ii)%q**4/(6.0_rp*C_PI*E0*spp(ii)%m**2)
-						vec = spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp))
+                        !! Radiated power
+                        tmp = spp(ii)%q**4/(6.0_rp*C_PI*E0*spp(ii)%m**2)
+                        vec = spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp))
 
-						spp(ii)%vars%Prad(pp) = tmp*( DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%E(:,pp)) + &
-						DOT_PRODUCT(cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)),spp(ii)%vars%E(:,pp)) +&
-						spp(ii)%vars%g(pp)**2*(DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%V(:,pp))**2 - DOT_PRODUCT(vec,vec)) )
+                        spp(ii)%vars%Prad(pp) = tmp*( DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%E(:,pp)) + &
+                        DOT_PRODUCT(cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)),spp(ii)%vars%E(:,pp)) +&
+                        spp(ii)%vars%g(pp)**2*(DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%V(:,pp))**2 - DOT_PRODUCT(vec,vec)) )
 
-						!! Input power due to electric field
-		                spp(ii)%vars%Pin(pp) = spp(ii)%q*DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%V(:,pp))
-					else
-				        spp(ii)%vars%eta(pp) = 0.0_rp
-						spp(ii)%vars%mu(pp) = 0.0_rp
-						spp(ii)%vars%Prad(pp) = 0.0_rp
-		                spp(ii)%vars%Pin(pp) = 0.0_rp
-					end if
+                        !! Input power due to electric field
+                        spp(ii)%vars%Pin(pp) = spp(ii)%q*DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%V(:,pp))
+                    else
+                        spp(ii)%vars%eta(pp) = 0.0_rp
+                        spp(ii)%vars%mu(pp) = 0.0_rp
+                        spp(ii)%vars%Prad(pp) = 0.0_rp
+                        spp(ii)%vars%Pin(pp) = 0.0_rp
+                    end if
                 end if
-			end if
-		end do
+            end if
+        end do
 !$OMP END PARALLEL DO
 
-	end do
+    end do
 end subroutine advance_particles_velocity
 
 
@@ -330,28 +325,26 @@ end subroutine advance_particles_velocity
 !! @param[in,out] spp An instance of the derived type SPECIES containing all the parameters and simulation variables of the different species in the simulation.
 !! @param[in] dt Time step used in the leapfrog step (@f$\Delta t@f$).
 !! @param ii Species iterator.
-!! @param pp Particles iterator.
 subroutine advance_particles_position(params,F,spp,dt)
-	TYPE(KORC_PARAMS), INTENT(IN)                              :: params
-	TYPE(FIELDS), INTENT(IN)                                   :: F
-	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)    :: spp
-	REAL(rp), INTENT(IN)                                       :: dt
-	INTEGER                                                    :: ii
-    INTEGER                                                    :: pp
+    TYPE(KORC_PARAMS), INTENT(IN)                              :: params
+    TYPE(FIELDS), INTENT(IN)                                   :: F
+    TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)    :: spp
+    REAL(rp), INTENT(IN)                                       :: dt
+    INTEGER                                                    :: ii
 
-	if (params%plasma_model .NE. 'UNIFORM') then
-		do ii=1_idef,params%num_species
-!$OMP PARALLEL DO FIRSTPRIVATE(dt) PRIVATE(pp) SHARED(ii,spp,params)
-		do pp=1_idef,spp(ii)%ppp
-		    if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
-				spp(ii)%vars%X(:,pp) = spp(ii)%vars%X(:,pp) + dt*spp(ii)%vars%V(:,pp)
-		    end if
-		end do
-!$OMP END PARALLEL DO
+    if (params%plasma_model .NE. 'UNIFORM') then
+        do ii=1_idef,params%num_species
+!$OMP PARALLEL WORKSHARE
+            WHERE (spp(ii)%vars%flag .EQ. 1_is)
+                spp(ii)%vars%X(1,:) = spp(ii)%vars%X(1,:) + dt*spp(ii)%vars%V(1,:)
+                spp(ii)%vars%X(2,:) = spp(ii)%vars%X(2,:) + dt*spp(ii)%vars%V(2,:)
+                spp(ii)%vars%X(3,:) = spp(ii)%vars%X(3,:) + dt*spp(ii)%vars%V(3,:)
+            END WHERE
+!$OMP END PARALLEL WORKSHARE
 
-!		spp(ii)%vars%X = MERGE(spp(ii)%vars%X + dt*spp(ii)%vars%V,spp(ii)%vars%X,SPREAD(spp(ii)%vars%flag,1,3).EQ.1_idef)
-		end do
-	end if
+!	    spp(ii)%vars%X = MERGE(spp(ii)%vars%X + dt*spp(ii)%vars%V,spp(ii)%vars%X,SPREAD(spp(ii)%vars%flag,1,3).EQ.1_idef)
+        end do
+    end if
 end subroutine advance_particles_position
 
 end module korc_ppusher
