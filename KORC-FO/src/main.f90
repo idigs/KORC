@@ -46,8 +46,14 @@ program main
 	call initialize_fields(params,F)
 
 	call initialize_profiles(params,P)
-	
-	call initialize_particles(params,F,spp) ! Initialize particles
+
+    call initialize_particles(params,spp) ! Initialize particles
+
+#ifdef M3D_C1
+    if (TRIM(params%plasma_model) .eq. 'M3D_C1') then
+        call initialize_m3d_c1(params, F, P, spp)
+    endif
+#endif
 
 	call initialize_collision_params(params)
 
