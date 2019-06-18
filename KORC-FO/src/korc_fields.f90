@@ -406,7 +406,6 @@ subroutine initialize_fields(params,F)
 
 			call which_fields_in_file(params,F%Bfield_in_file,F%Efield_in_file,F%Bflux_in_file)
 
-
 			if (F%Bflux.AND..NOT.F%Bflux_in_file) then
 				write(6,'("ERROR: Magnetic flux to be used but no data in file!")')
 				call KORC_ABORT()

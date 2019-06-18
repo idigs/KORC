@@ -81,6 +81,8 @@ subroutine initialize_profiles(params,P)
 	REAL(rp), DIMENSION(4)          :: a_Te
 	REAL(rp), DIMENSION(4)          :: a_Zeff
     LOGICAL                         :: axisymmetric
+    INTEGER (C_INT)                 :: handle
+    INTEGER (C_INT)                 :: status
 
 	NAMELIST /plasmaProfiles/ radius_profile,ne_profile,neo,n_ne,a_ne,&
 											Te_profile,Teo,n_Te,a_Te,&

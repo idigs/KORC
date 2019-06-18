@@ -267,9 +267,8 @@ end subroutine define_time_step
 !! See <em>Carbajal and del-Castillo-Negrete, Nuclear Fusion, submitted (2018)</em>.
 !! @param ii Iterator of spp structure.
 !! @param mpierr MPI error status.
-subroutine initialize_particles(params,F,spp)
+subroutine initialize_particles(params,spp)
 	TYPE(KORC_PARAMS), INTENT(IN) 							:: params
-	TYPE(FIELDS), INTENT(IN) 								:: F
 	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(OUT) 	:: spp
 	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: ppp
 	REAL(rp), DIMENSION(:), ALLOCATABLE 					:: q

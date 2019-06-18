@@ -9,6 +9,10 @@ module korc_interp
     use EZspline_obj	! psplines module
     use EZspline		! psplines module
 
+#ifdef M3D_C1
+    use korc_m3d_c1
+#endif
+
     IMPLICIT NONE
 
 
@@ -909,6 +913,16 @@ subroutine interp_fields(prtcls,F)
 
 	call check_if_in_fields_domain(prtcls%Y, prtcls%flag)
 
+#ifdef M3D_C1
+    if (F%M3D_C1_B .ne. 0) then
+        call get_m3d_c1_magnetic_fields(prtcls, F)
+    end if
+
+    if (F%M3D_C1_E .ne. 0) then
+        call get_m3d_c1_electric_fields(prtcls, F)
+    end if
+#endif
+
 	if (ALLOCATED(F%PSIp)) then
 		call calculate_magnetic_field(prtcls%Y,F,prtcls%B,prtcls%flag)
 	end if
@@ -1030,6 +1044,12 @@ subroutine interp_profiles(prtcls,P)
 		call interp_2D_profiles(prtcls%Y,prtcls%ne,prtcls%Te,prtcls%Zeff,prtcls%flag)
 	else if (ALLOCATED(P%ne_3D)) then
 		call interp_3D_profiles(prtcls%Y,prtcls%ne,prtcls%Te,prtcls%Zeff,prtcls%flag)
+#ifdef M3D_C1
+    else if (P%M3D_C1_ne   .NE. 0 .or.                                         &
+             P%M3D_C1_te   .NE. 0 .or.                                         &
+             P%M3D_C1_zeff .NE. 0) then
+        call get_m3d_c1_profile(prtcls, P)
+#endif
 	else
 		write(6,'("Error: NO PROFILES ALLOCATED")')
 		call KORC_ABORT()
@@ -1075,4 +1095,166 @@ subroutine finalize_interpolants(params)
 		end if
 	end if
 end subroutine finalize_interpolants
+
+#ifdef M3D_C1
+!!  @note FIXME Add documentation
+subroutine get_m3d_c1_magnetic_fields(prtcls, F)
+    TYPE(PARTICLES), INTENT(INOUT) :: prtcls
+    TYPE(FIELDS), INTENT(IN)       :: F
+    INTEGER (C_INT)                :: status
+    INTEGER                        :: pp
+
+    if (prtcls%cart) then
+!$OMP PARALLEL DO PRIVATE(pp, status) SHARED(prtcls, F)
+        do pp = 1, SIZE(prtcls%hint)
+            if (prtcls%flag(pp) .EQ. 1_is) then
+                status = fio_eval_field(F%M3D_C1_B,                            &
+                                        prtcls%X(1,pp), prtcls%B(1,pp),        &
+                                        prtcls%hint(pp))
+
+                if (status .eq. FIO_NO_DATA) then
+                    prtcls%B(:,pp) = 0
+                else if (status .ne. FIO_SUCCESS) then
+                    prtcls%flag(pp) = 0_is
+                end if
+            end if
+        end do
+!$OMP END PARALLEL DO
+    else
+!$OMP PARALLEL DO PRIVATE(pp, status) SHARED(prtcls, F)
+        do pp = 1, SIZE(prtcls%hint)
+            if (prtcls%flag(pp) .EQ. 1_is) then
+                status = fio_eval_field(F%M3D_C1_B,                            &
+                                        prtcls%Y(1,pp), prtcls%B(1,pp),        &
+                                        prtcls%hint(pp))
+
+                if (status .eq. FIO_NO_DATA) then
+                    prtcls%B(:,pp) = 0
+                else if (status .ne. FIO_SUCCESS) then
+                    prtcls%flag(pp) = 0_is
+                end if
+            end if
+        end do
+!$OMP END PARALLEL DO
+    end if
+end subroutine
+
+!!  @note FIXME Add documentation
+subroutine get_m3d_c1_electric_fields(prtcls, F)
+    TYPE(PARTICLES), INTENT(INOUT) :: prtcls
+    TYPE(FIELDS), INTENT(IN)       :: F
+    INTEGER (C_INT)                :: status
+    INTEGER                        :: pp
+
+    if (prtcls%cart) then
+!$OMP PARALLEL DO PRIVATE(pp, status) SHARED(prtcls, F)
+        do pp = 1, SIZE(prtcls%hint)
+            if (prtcls%flag(pp) .EQ. 1_is) then
+                status = fio_eval_field(F%M3D_C1_E,                            &
+                                        prtcls%X(1,pp), prtcls%E(1,pp),        &
+                                        prtcls%hint(pp))
+
+                if (status .eq. FIO_NO_DATA) then
+                    prtcls%E(:,pp) = 0
+                else if (status .ne. FIO_SUCCESS) then
+                    prtcls%flag(pp) = 0_is
+                end if
+            end if
+        end do
+!$OMP END PARALLEL DO
+    else
+!$OMP PARALLEL DO PRIVATE(pp, status) SHARED(prtcls, F)
+        do pp = 1, SIZE(prtcls%hint)
+            if (prtcls%flag(pp) .EQ. 1_is) then
+                status = fio_eval_field(F%M3D_C1_E,                            &
+                                        prtcls%Y(1,pp), prtcls%E(1,pp),        &
+                                        prtcls%hint(pp))
+
+                if (status .eq. FIO_NO_DATA) then
+                    prtcls%E(:,pp) = 0
+                else if (status .ne. FIO_SUCCESS) then
+                    prtcls%flag(pp) = 0_is
+                end if
+            end if
+        end do
+!$OMP END PARALLEL DO
+    end if
+end subroutine
+
+subroutine get_m3d_c1_profile(prtcls, P)
+    TYPE(PARTICLES), INTENT(INOUT) :: prtcls
+    TYPE(PROFILES), INTENT(IN)     :: P
+    INTEGER (C_INT)                :: status
+    INTEGER                        :: pp
+
+    if (prtcls%cart) then
+!$OMP PARALLEL DO PRIVATE(pp, status) SHARED(prtcls, P)
+        do pp = 1, SIZE(prtcls%hint)
+            if (prtcls%flag(pp) .EQ. 1_is) then
+                status = fio_eval_field(P%M3D_C1_ne,                           &
+                                        prtcls%X(1,pp), prtcls%ne(pp),         &
+                                        prtcls%hint(pp))
+
+                if (status .eq. FIO_NO_DATA) then
+                    prtcls%ne(pp) = 0
+                else if (status .ne. FIO_SUCCESS) then
+                    prtcls%flag(pp) = 0_is
+                    CYCLE
+                end if
+
+                status = fio_eval_field(P%M3D_C1_te,                           &
+                                        prtcls%X(1,pp), prtcls%te(pp),         &
+                                        prtcls%hint(pp))
+
+                if (status .eq. FIO_NO_DATA) then
+                    prtcls%te(pp) = 0
+                end if
+
+                status = fio_eval_field(P%M3D_C1_zeff,                         &
+                                        prtcls%X(1,pp), prtcls%Zeff(pp),       &
+                                        prtcls%hint(pp))
+
+                if (status .eq. FIO_NO_DATA) then
+                    prtcls%Zeff(pp) = 1
+                end if
+            end if
+        end do
+!$OMP END PARALLEL DO
+    else
+!$OMP PARALLEL DO PRIVATE(pp, status) SHARED(prtcls, P)
+        do pp = 1, SIZE(prtcls%hint)
+            if (prtcls%flag(pp) .EQ. 1_is) then
+                status = fio_eval_field(P%M3D_C1_ne,                           &
+                                        prtcls%Y(1,pp), prtcls%ne(pp),         &
+                                        prtcls%hint(pp))
+
+                if (status .eq. FIO_NO_DATA) then
+                    prtcls%ne(pp) = 0
+                else if (status .ne. FIO_SUCCESS) then
+                    prtcls%flag(pp) = 0_is
+                    CYCLE
+                end if
+
+                status = fio_eval_field(P%M3D_C1_te,                           &
+                                        prtcls%Y(1,pp), prtcls%te(pp),         &
+                                        prtcls%hint(pp))
+
+                if (status .eq. FIO_NO_DATA) then
+                    prtcls%te(pp) = 0
+                end if
+
+                status = fio_eval_field(P%M3D_C1_zeff,                         &
+                                        prtcls%Y(1,pp), prtcls%Zeff(pp),       &
+                                        prtcls%hint(pp))
+
+                if (status .eq. FIO_NO_DATA) then
+                    prtcls%Zeff(pp) = 1
+                end if
+            end if
+        end do
+!$OMP END PARALLEL DO
+    end if
+end subroutine
+#endif
+
 end module korc_interp

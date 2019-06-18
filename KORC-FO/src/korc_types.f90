@@ -1,5 +1,8 @@
 !> @brief Module containing the definition of KORC derived types and KORC variables, the building blocks of the code.
 module korc_types
+#ifdef M3D_C1
+    USE, INTRINSIC :: iso_c_binding
+#endif
 	implicit none
 
 ! * * * * * * * * * * * * * * * * * * * * !
@@ -131,23 +134,27 @@ END TYPE KORC_PARAMS
 TYPE, PUBLIC :: PARTICLES
 !< @brief Derived type containing all the electrons' variables in the simulation.
 
-    REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: X !< Cartesian coordinates of the electrons' position. dim(X) = (3,SPECIES::ppp).
-    REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: V !< Cartesian components of the electrons' velocity. dim(V) = dim(X).
-    REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: Rgc !< Cartesian coordinates of the electrons' guiding-center position.
-    REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: Y !< Coordinates of the electrons' position in cylindrical or toroidal coordinates.
-    REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: E !< Cartesian components of the electric field felt by each electron. dim(E) = dim(X).
-    REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: B !< Cartesian components of the magnetic field felt by each electron. dim(B) = dim(X).
-	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: ne !< Electron density seen by each electron. dim(ne) = (1,SPECIES::ppp).
-	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: Te !< Electron temperature seen by each electron. dim(ne) = (1,SPECIES::ppp).
-	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: Zeff !< Zeff seen by each electron. dim(ne) = (1,SPECIES::ppp).
-	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: g !< Instantaneous relativistic @f$\gamma = 1/\sqrt{1 - v^2/c^2}@f$ factor of each electron in the simulation.
-	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: eta !< Instantaneous pitch angle of each electron in the simulation.
-	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: mu !< Magnetic moment of each electron in the simulation.
-	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: Prad !< Instantaneous radiated power by each electron in the simulation.
-	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: Pin !< Instantaneous input power of each electron due to the electric field acceleration.
-	INTEGER(is), DIMENSION(:), ALLOCATABLE 	:: flag !< Flag for each particle to decide whether it is being followed (flag=T) or not (flag=F).
-	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: AUX !< An auxiliary scalar variable for each electron.
-	REAL(rp), DIMENSION(:), ALLOCATABLE 	:: wt !< Weight of each electron. This is used when sampling weighted PDFs and in the synthetic camera diagnostic.
+    REAL(rp), DIMENSION(:,:), ALLOCATABLE  :: X !< Cartesian coordinates of the electrons' position. dim(X) = (3,SPECIES::ppp).
+    REAL(rp), DIMENSION(:,:), ALLOCATABLE  :: V !< Cartesian components of the electrons' velocity. dim(V) = dim(X).
+    REAL(rp), DIMENSION(:,:), ALLOCATABLE  :: Rgc !< Cartesian coordinates of the electrons' guiding-center position.
+    REAL(rp), DIMENSION(:,:), ALLOCATABLE  :: Y !< Coordinates of the electrons' position in cylindrical or toroidal coordinates.
+    REAL(rp), DIMENSION(:,:), ALLOCATABLE  :: E !< Cartesian components of the electric field felt by each electron. dim(E) = dim(X).
+    REAL(rp), DIMENSION(:,:), ALLOCATABLE  :: B !< Cartesian components of the magnetic field felt by each electron. dim(B) = dim(X).
+	REAL(rp), DIMENSION(:), ALLOCATABLE    :: ne !< Electron density seen by each electron. dim(ne) = (1,SPECIES::ppp).
+	REAL(rp), DIMENSION(:), ALLOCATABLE    :: Te !< Electron temperature seen by each electron. dim(ne) = (1,SPECIES::ppp).
+	REAL(rp), DIMENSION(:), ALLOCATABLE    :: Zeff !< Zeff seen by each electron. dim(ne) = (1,SPECIES::ppp).
+	REAL(rp), DIMENSION(:), ALLOCATABLE    :: g !< Instantaneous relativistic @f$\gamma = 1/\sqrt{1 - v^2/c^2}@f$ factor of each electron in the simulation.
+	REAL(rp), DIMENSION(:), ALLOCATABLE    :: eta !< Instantaneous pitch angle of each electron in the simulation.
+	REAL(rp), DIMENSION(:), ALLOCATABLE    :: mu !< Magnetic moment of each electron in the simulation.
+	REAL(rp), DIMENSION(:), ALLOCATABLE    :: Prad !< Instantaneous radiated power by each electron in the simulation.
+	REAL(rp), DIMENSION(:), ALLOCATABLE    :: Pin !< Instantaneous input power of each electron due to the electric field acceleration.
+	INTEGER(is), DIMENSION(:), ALLOCATABLE :: flag !< Flag for each particle to decide whether it is being followed (flag=T) or not (flag=F).
+	REAL(rp), DIMENSION(:), ALLOCATABLE    :: AUX !< An auxiliary scalar variable for each electron.
+	REAL(rp), DIMENSION(:), ALLOCATABLE    :: wt !< Weight of each electron. This is used when sampling weighted PDFs and in the synthetic camera diagnostic.
+#ifdef M3D_C1
+    TYPE(C_PTR), DIMENSION(:), ALLOCATABLE :: hint !< Hint for M3D_C1 interpolation.
+    LOGICAL                                :: cart
+#endif
 END TYPE PARTICLES
 
 
@@ -210,6 +217,10 @@ END TYPE MESH
 
 TYPE, PUBLIC :: FIELDS
 !< @brief Derived type with all the variables and data of analytical and pre-computed electric and magnetic fields.
+#ifdef M3D_C1
+    INTEGER                                 :: M3D_C1_B !< An M3D-C1 magnetic field.
+    INTEGER                                 :: M3D_C1_E !< An M3D-C1 Electric field.
+#endif
 
 	TYPE(A_FIELD) 	 						:: AB !< An instance of the KORC derived data type A_FIELD.
 	TYPE(V_FIELD_3D) 						:: E_3D !< KORC 3-D vector field of the pre-computed electric field.
@@ -289,6 +300,12 @@ TYPE, PUBLIC :: PROFILES
 
 	CHARACTER(MAX_STRING_LENGTH) 			:: filename !< Full path to the HDF5 file containing the pre-computed plasma profiles.
 	LOGICAL 					 			:: axisymmetric !< Flag to indicate if the plasma profiles are axisymmetric.
+
+#ifdef M3D_C1
+    INTEGER                                 :: M3D_C1_ne
+    INTEGER                                 :: M3D_C1_te
+    INTEGER                                 :: M3D_C1_zeff
+#endif
 END TYPE PROFILES
 
 end module korc_types

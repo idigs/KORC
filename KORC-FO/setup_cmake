@@ -45,10 +45,13 @@ if [ $MACHINE_ID == "mbp103254"     ] || \
 then
     #  Config for Mark Cianciosa's ORNL machine.
 
-    cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE                             \
-          -DEZSpline_INCLUDE_PATH=/Users/m4c/repo/trunk/build/modules/stell \
-          -DEZSpline_LINK_FLAGS="-L/Users/m4c/repo/trunk/build/lib -lstell" \
-          -DCMAKE_Fortran_FLAGS=-DHDF5_DOUBLE_PRESICION
+    cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE                                                   \
+          -DEZSpline_INCLUDE_PATH=/Users/m4c/repo/trunk/build/modules/stell                       \
+          -DEZSpline_LINK_FLAGS="-L/Users/m4c/repo/trunk/build/lib -lstell"                       \
+          -DCMAKE_Fortran_FLAGS=-DHDF5_DOUBLE_PRESICION                                           \
+          -DUSE_M3D_C1=ON                                                                         \
+          -DM3D_C1_INCLUDE_PATH=/Users/m4c/Research/KORC/fusion-io/build/include                  \
+          -DM3D_C1_LINK_FLAGS="-L/Users/m4c/Research/KORC/fusion-io/build/lib -lfusionio -lm3dc1" \
 
 elif [ $MACHINE_ID == "edison01" ] || \
      [ $MACHINE_ID == "edison02" ] || \
