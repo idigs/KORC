@@ -1,6 +1,9 @@
-cmake_minimum_required (VERSION 2.8.8)
+cmake_minimum_required (VERSION 3.14)
 
 project (korc_proj C CXX Fortran)
+
+#cmake_policy (VERSION 3.10)
+#cmake_policy(SET CMP0074 NEW)
 
 #  Set directories to build all binary files.
 set (EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/build/bin)

@@ -592,6 +592,7 @@ SUBROUTINE initialize_Hollmann_params(params)
 	NAMELIST /HollmannPDF/ E,Zeff,max_pitch_angle,min_pitch_angle,max_energy,min_energy,filename,Bo,lambda,current_direction, &
                            A_fact
 
+    A_fact = 1.0
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=HollmannPDF)
@@ -641,6 +642,7 @@ SUBROUTINE load_data_from_hdf5()
 	call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
 	if (h5error .EQ. -1) then
 		write(6,'("KORC ERROR: Something went wrong in: load_data_from_hdf5 (korc_experimental) --> h5fopen_f")')
+            WRITE (*,*)  filename
 	end if
 
 	dset = "/N"

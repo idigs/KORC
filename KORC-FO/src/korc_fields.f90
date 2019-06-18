@@ -473,9 +473,10 @@ subroutine load_dim_data_from_hdf5(params,F)
 	REAL(rp)                                       :: rdatum
 
 	filename = TRIM(params%magnetic_field_filename)
-	call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
+	call h5fopen_f(TRIM(filename), H5F_ACC_RDONLY_F, h5file_id, h5error)
 	if (h5error .EQ. -1) then
 		write(6,'("KORC ERROR: Something went wrong in: load_dim_data_from_hdf5 --> h5fopen_f")')
+            WRITE (*,*) TRIM(filename), h5error
 	end if
 
 	if (F%Bflux.OR.F%axisymmetric_fields) then
