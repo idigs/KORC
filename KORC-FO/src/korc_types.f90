@@ -128,6 +128,8 @@ TYPE, PUBLIC :: KORC_PARAMS
 
 	TYPE(KORC_MPI) 					:: mpi_params !< An instance of the KORC_MPI derived type.
 	TYPE(CHARCS_PARAMS) 			:: cpp !< An instance of the CHARCS_PARAMS derived type.
+
+    INTEGER                         :: time_slice !< M3D-C1 time slice to use.
 END TYPE KORC_PARAMS
 
 

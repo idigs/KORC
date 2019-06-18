@@ -72,30 +72,33 @@ end subroutine set_paths
 !! @param indices Auxiliary variable used to parse the output_list
 !! @param HDF5_error_handling
 subroutine load_korc_params(params)
-	TYPE (KORC_PARAMS), INTENT(INOUT) 	:: params
-	LOGICAL 							:: restart
-	REAL(rp) 							:: simulation_time
-	REAL(rp) 							:: snapshot_frequency
-	REAL(rp) 							:: dt
-	REAL(rp) 							:: minimum_particle_energy
-	LOGICAL 							:: radiation
-	LOGICAL 							:: collisions
-	CHARACTER(MAX_STRING_LENGTH) 		:: collisions_model
-	CHARACTER(MAX_STRING_LENGTH) 		:: plasma_model
-	CHARACTER(MAX_STRING_LENGTH) 		:: magnetic_field_filename
-	CHARACTER(MAX_STRING_LENGTH) 		:: outputs_list
-	INTEGER 							:: num_species
-	INTEGER 							:: imax
-	INTEGER 							:: imin
-	INTEGER 							:: ii
-	INTEGER 							:: jj
-	INTEGER 							:: num_outputs
-	INTEGER, DIMENSION(2) 				:: indices
-	LOGICAL 							:: HDF5_error_handling
+	TYPE (KORC_PARAMS), INTENT(INOUT) :: params
+	LOGICAL                           :: restart
+	REAL(rp)                          :: simulation_time
+	REAL(rp)                          :: snapshot_frequency
+	REAL(rp)                          :: dt
+	REAL(rp)                          :: minimum_particle_energy
+	LOGICAL                           :: radiation
+	LOGICAL                           :: collisions
+	CHARACTER(MAX_STRING_LENGTH)      :: collisions_model
+	CHARACTER(MAX_STRING_LENGTH)      :: plasma_model
+	CHARACTER(MAX_STRING_LENGTH)      :: magnetic_field_filename
+	CHARACTER(MAX_STRING_LENGTH)      :: outputs_list
+	INTEGER                           :: num_species
+	INTEGER                           :: imax
+	INTEGER                           :: imin
+	INTEGER                           :: ii
+	INTEGER                           :: jj
+	INTEGER                           :: num_outputs
+	INTEGER, DIMENSION(2)             :: indices
+	LOGICAL                           :: HDF5_error_handling
+    INTEGER                           :: time_slice
 
 	NAMELIST /input_parameters/ restart,plasma_model,magnetic_field_filename,simulation_time,&
 								snapshot_frequency,dt,num_species,radiation,collisions,collisions_model,outputs_list,&
 								minimum_particle_energy,HDF5_error_handling
+
+    time_slice = 0
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=input_parameters)
@@ -110,6 +113,7 @@ subroutine load_korc_params(params)
 	params%num_species = num_species
 	params%plasma_model = TRIM(plasma_model)
 	params%magnetic_field_filename = TRIM(magnetic_field_filename)
+    params%time_slice = time_slice
 	params%minimum_particle_energy = minimum_particle_energy*C_E
 	params%minimum_particle_g = 1.0_rp + params%minimum_particle_energy/(C_ME*C_C**2) ! Minimum value of relativistic gamma factor
 	params%radiation = radiation
