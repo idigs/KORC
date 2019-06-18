@@ -96,7 +96,7 @@ subroutine load_korc_params(params)
 
 	NAMELIST /input_parameters/ restart,plasma_model,magnetic_field_filename,simulation_time,&
 								snapshot_frequency,dt,num_species,radiation,collisions,collisions_model,outputs_list,&
-								minimum_particle_energy,HDF5_error_handling
+								minimum_particle_energy,HDF5_error_handling,time_slice
 
     time_slice = 0
 
