@@ -130,6 +130,10 @@ TYPE, PUBLIC :: KORC_PARAMS
 	TYPE(CHARCS_PARAMS) 			:: cpp !< An instance of the CHARCS_PARAMS derived type.
 
     INTEGER                         :: time_slice !< M3D-C1 time slice to use.
+    REAL(rp)                        :: rmax !< Maximum r for M3D-C1 fields.
+    REAL(rp)                        :: rmin !< Minimum r for M3D-C1 fields.
+    REAL(rp)                        :: zmax !< Maximum z for M3D-C1 fields.
+    REAL(rp)                        :: zmin !< Minimum z for M3D-C1 fields.
 END TYPE KORC_PARAMS
 
 

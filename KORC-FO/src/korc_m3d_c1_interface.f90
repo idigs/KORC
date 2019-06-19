@@ -229,7 +229,8 @@
       INTEGER                                    :: isrc
 
       status = fio_open_source(FIO_M3DC1_SOURCE,                               &
-                               TRIM(params%magnetic_field_filename), isrc)
+                               TRIM(params%magnetic_field_filename)            &
+     &                         // C_NULL_CHAR, isrc)
 
       status = fio_get_options(isrc)
       status = fio_set_int_option(FIO_TIMESLICE, params%time_slice)
@@ -240,6 +241,10 @@
       status = fio_set_int_option(FIO_SPECIES, FIO_ELECTRON);
       status = fio_get_field(isrc, FIO_DENSITY, P%M3D_C1_ne);
       status = fio_get_field(isrc, FIO_TEMPERATURE, P%M3D_C1_te);
+
+!  Hardcode Bo to one for now until a better method of determining the a
+!  characteristic magnetic field value.
+      F%Bo = 1.0
 
       do ii=1_idef,params%num_species
         ALLOCATE(spp(ii)%vars%hint(spp(ii)%ppp))

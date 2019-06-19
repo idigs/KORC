@@ -89,7 +89,7 @@ program main
 	call save_simulation_parameters(params,spp,F,P)
 
 	call save_collision_params(params)
-		
+
 	if (.NOT.params%restart) then
 		call advance_particles_velocity(params,F,P,spp,0.0_rp,.TRUE.)
 
