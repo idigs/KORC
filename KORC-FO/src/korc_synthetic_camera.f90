@@ -354,12 +354,16 @@ SUBROUTINE initialize_synthetic_camera(params,F)
 		ALLOCATE(pplane%nodes_Z(pplane%grid_dims(2)))
 
 		! * * * * * * * ALL IN METERS * * * * * * * 
-
 		IF (TRIM(params%plasma_model) .EQ. 'ANALYTICAL') THEN
 			pplane%Rmin = F%Ro - F%AB%a
 			pplane%Rmax = F%Ro + F%AB%a
 			pplane%Zmin = -F%AB%a
 			pplane%Zmax = F%AB%a
+        ELSE IF (TRIM(params%plasma_model) .EQ. 'M3D_C1') THEN
+            pplane%Rmin = params%rmin
+            pplane%Rmax = params%rmax
+            pplane%Zmin = params%zmin
+            pplane%Zmax = params%zmax
 		ELSE
 			pplane%Rmin = MINVAL(F%X%R)
 			pplane%Rmax = MAXVAL(F%X%R)

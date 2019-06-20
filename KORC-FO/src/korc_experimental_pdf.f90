@@ -120,6 +120,8 @@ SUBROUTINE initialize_params(params)
 	NAMELIST /ExperimentalPDF/ max_pitch_angle,min_pitch_angle,max_energy,min_energy,Zeff,E,k,t,Bo,lambda, &
                                A_fact
 
+    A_fact = 1.0
+
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
 	read(default_unit_open,nml=ExperimentalPDF)
 	close(default_unit_open)

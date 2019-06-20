@@ -650,9 +650,9 @@ end subroutine gaussian_torus
 !! species in the simulation.
 !! @param ss Species iterator.
 subroutine intitial_spatial_distribution(params,spp)
-	TYPE(KORC_PARAMS), INTENT(IN) 								:: params
-	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) 	:: spp
-	INTEGER 													:: ss
+	TYPE(KORC_PARAMS), INTENT(IN)              :: params
+	TYPE(SPECIES), DIMENSION(:), INTENT(INOUT) :: spp
+	INTEGER                                    :: ss
 
 	do ss=1_idef,params%num_species
 		SELECT CASE (TRIM(spp(ss)%spatial_distribution))

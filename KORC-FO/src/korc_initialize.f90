@@ -72,6 +72,8 @@ end subroutine set_paths
 !! @param indices Auxiliary variable used to parse the output_list
 !! @param HDF5_error_handling
 subroutine load_korc_params(params)
+    USE ISO_C_BINDING, Only: C_NULL_CHAR
+
 	TYPE (KORC_PARAMS), INTENT(INOUT) :: params
 	LOGICAL                           :: restart
 	REAL(rp)                          :: simulation_time
@@ -93,11 +95,16 @@ subroutine load_korc_params(params)
 	INTEGER, DIMENSION(2)             :: indices
 	LOGICAL                           :: HDF5_error_handling
     INTEGER                           :: time_slice
+    REAL(rp)                          :: rmax
+    REAL(rp)                          :: rmin
+    REAL(rp)                          :: zmax
+    REAL(rp)                          :: zmin
 
-	NAMELIST /input_parameters/ restart,plasma_model,magnetic_field_filename,simulation_time,&
+	NAMELIST /input_parameters/ restart,plasma_model,magnetic_field_filename,simulation_time,                        &
 								snapshot_frequency,dt,num_species,radiation,collisions,collisions_model,outputs_list,&
-								minimum_particle_energy,HDF5_error_handling,time_slice
+								minimum_particle_energy,HDF5_error_handling,time_slice,rmax,rmin,zmax,zmin
 
+    magnetic_field_filename = C_NULL_CHAR
     time_slice = 0
 
 	open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
@@ -114,6 +121,10 @@ subroutine load_korc_params(params)
 	params%plasma_model = TRIM(plasma_model)
 	params%magnetic_field_filename = TRIM(magnetic_field_filename)
     params%time_slice = time_slice
+    params%rmax = rmax
+    params%rmin = rmin
+    params%zmax = zmax
+    params%zmin = zmin
 	params%minimum_particle_energy = minimum_particle_energy*C_E
 	params%minimum_particle_g = 1.0_rp + params%minimum_particle_energy/(C_ME*C_C**2) ! Minimum value of relativistic gamma factor
 	params%radiation = radiation
