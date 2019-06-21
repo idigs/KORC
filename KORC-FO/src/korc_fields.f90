@@ -359,10 +359,13 @@ subroutine initialize_fields(params,F)
     LOGICAL                        :: Bflux
     LOGICAL                        :: axisymmetric_fields
 
-	NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
-			qa,qo,Eo,current_direction
+	NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,          &
+			                            qa,qo,Eo,current_direction
 
 	NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux, axisymmetric_fields
+
+    F%M3D_C1_B = 0
+    F%M3D_C1_E = 0
 
 	SELECT CASE (TRIM(params%plasma_model))
 		CASE('ANALYTICAL')

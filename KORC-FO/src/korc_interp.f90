@@ -478,6 +478,10 @@ subroutine initialize_profiles_interpolant(params,P)
 	TYPE(KORC_PARAMS), INTENT(IN) :: params
 	TYPE(PROFILES), INTENT(INOUT) :: P
 
+    P%M3D_C1_ne = 0
+    P%M3D_C1_te = 0
+    P%M3D_C1_zeff = 0
+
 	if (params%collisions) then
 		if (params%plasma_model .EQ. 'EXTERNAL') then
 
