@@ -125,8 +125,11 @@ subroutine normalize_variables(params,spp,F,P)
 	F%Zo = F%Zo/params%cpp%length
 
 	P%a = P%a/params%cpp%length
-	P%neo = P%neo/params%cpp%density
-	P%Teo = P%Teo/params%cpp%temperature
+
+    if (params%collisions) then
+	    P%neo = P%neo/params%cpp%density
+	    P%Teo = P%Teo/params%cpp%temperature
+    end if
 
 	if (params%plasma_model .EQ. 'ANALYTICAL') then
 		F%AB%Bo = F%AB%Bo/params%cpp%Bo

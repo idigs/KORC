@@ -679,14 +679,14 @@ end subroutine i8save_to_hdf5
 !! @param dd Dimension iterator.
 !! @bug When using a 1-D array of attributes, only the first attribute is saved.
 subroutine isave_1d_array_to_hdf5(h5file_id,dset,idata,attr)
-	INTEGER(HID_T), INTENT(IN) 														:: h5file_id
-	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) 										:: dset
-	INTEGER, DIMENSION(:), INTENT(IN) 												:: idata
-	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), ALLOCATABLE, INTENT(IN) 	:: attr
-	CHARACTER(4) 																	:: aname = "Info"
-	INTEGER(HID_T) 																	:: dset_id
-	INTEGER(HID_T) 																	:: dspace_id
-	INTEGER(HID_T) 																	:: aspace_id
+	INTEGER(HID_T), INTENT(IN) 										 :: h5file_id
+	CHARACTER(MAX_STRING_LENGTH), INTENT(IN) 						 :: dset
+	INTEGER, DIMENSION(:), INTENT(IN) 								 :: idata
+	CHARACTER(MAX_STRING_LENGTH), OPTIONAL, DIMENSION(:), INTENT(IN) :: attr
+	CHARACTER(4) 													 :: aname = "Info"
+	INTEGER(HID_T) 													 :: dset_id
+	INTEGER(HID_T) 													 :: dspace_id
+	INTEGER(HID_T) 													 :: aspace_id
 	INTEGER(HID_T) 																	:: attr_id
 	INTEGER(HID_T) 																	:: atype_id
 	INTEGER(HSIZE_T), DIMENSION(:), ALLOCATABLE 									:: dims
@@ -737,8 +737,8 @@ subroutine isave_1d_array_to_hdf5(h5file_id,dset,idata,attr)
 		DEALLOCATE(adims)
 	end if
 
+    call h5dclose_f(dset_id, h5error)
 	call h5sclose_f(dspace_id, h5error)
-	call h5dclose_f(dset_id, h5error)
 	! * * * Write data to file * * *
 
 	DEALLOCATE(dims)
@@ -1632,6 +1632,7 @@ subroutine save_simulation_outputs(params,spp)
 							call save_1d_array_to_hdf5(subgroup_id, dset, units*spp(ss)%vars%Pin)
 						CASE('flag')
 							dset = "flag"
+                            WRITE (*,*) SUM(INT(spp(ss)%vars%flag,idef))
 							call save_1d_array_to_hdf5(subgroup_id,dset, INT(spp(ss)%vars%flag,idef))
 						CASE('B')
 							dset = "B"

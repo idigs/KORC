@@ -196,7 +196,7 @@
 
          INTEGER (C_INT), VALUE, INTENT(in) :: isrc
          INTEGER (C_INT), VALUE, INTENT(IN) :: type
-         INTEGER (C_INT), INTENT(OUT)       :: handle
+         INTEGER (C_INT), INTENT(INOUT)     :: handle
          END FUNCTION
       END INTERFACE
 
@@ -246,12 +246,14 @@
 !  characteristic magnetic field value.
       F%Bo = 1.0
 
-      do ii=1_idef,params%num_species
+      do ii = 1, params%num_species
         ALLOCATE(spp(ii)%vars%hint(spp(ii)%ppp))
 
         do pp = 1, spp(ii)%ppp
            status = fio_allocate_search_hint(isrc, spp(ii)%vars%hint(pp))
         end do
+
+        spp(ii)%vars%cart = .false.
       end do
 
       END SUBROUTINE

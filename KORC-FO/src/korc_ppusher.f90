@@ -5,19 +5,19 @@ module korc_ppusher
     use korc_fields
     use korc_profiles
     use korc_interp
-	use korc_collisions
+    use korc_collisions
     use korc_hpc
 
     IMPLICIT NONE
 
-	REAL(rp), PRIVATE :: E0 !< Dimensionless vacuum permittivity @f$\epsilon_0 \times (m_{ch}^2 v_{ch}^3/q_{ch}^3 B_{ch})@f$, see korc_units.f90.
+    REAL(rp), PRIVATE :: E0 !< Dimensionless vacuum permittivity @f$\epsilon_0 \times (m_{ch}^2 v_{ch}^3/q_{ch}^3 B_{ch})@f$, see korc_units.f90.
 
     PRIVATE :: cross,&
-				radiation_force,&
-				collision_force
+               radiation_force,&
+               collision_force
     PUBLIC :: initialize_particle_pusher,&
-				advance_particles_position,&
-				advance_particles_velocity
+                advance_particles_position,&
+                advance_particles_velocity
 
     contains
 
@@ -28,9 +28,9 @@ module korc_ppusher
 !!
 !! @param[in] params Core KORC simulation parameters.
 subroutine initialize_particle_pusher(params)
-	TYPE(KORC_PARAMS), INTENT(IN)  :: params
+    TYPE(KORC_PARAMS), INTENT(IN)  :: params
 
-	E0 = C_E0*(params%cpp%mass**2*params%cpp%velocity**3)/(params%cpp%charge**3*params%cpp%Bo)
+    E0 = C_E0*(params%cpp%mass**2*params%cpp%velocity**3)/(params%cpp%charge**3*params%cpp%Bo)
 end subroutine initialize_particle_pusher
 
 
@@ -41,13 +41,13 @@ end subroutine initialize_particle_pusher
 !! @param[in] b Vector @f$\mathbf{b}@f$.
 !! @param cross Value of @f$\mathbf{a}\times \mathbf{b}@f$
 function cross(a,b)
-	REAL(rp), DIMENSION(3), INTENT(IN) :: a
-	REAL(rp), DIMENSION(3), INTENT(IN) :: b
-	REAL(rp), DIMENSION(3)             :: cross
+    REAL(rp), DIMENSION(3), INTENT(IN) :: a
+    REAL(rp), DIMENSION(3), INTENT(IN) :: b
+    REAL(rp), DIMENSION(3)             :: cross
 
-	cross(1) = a(2)*b(3) - a(3)*b(2)
-	cross(2) = a(3)*b(1) - a(1)*b(3)
-	cross(3) = a(1)*b(2) - a(2)*b(1)
+    cross(1) = a(2)*b(3) - a(3)*b(2)
+    cross(2) = a(3)*b(1) - a(1)*b(3)
+    cross(3) = a(1)*b(2) - a(2)*b(1)
 end function cross
 
 
@@ -78,29 +78,29 @@ end function cross
 !! @param vec An auxiliary 3-D vector.
 !! @param g The relativistic @f$\gamma@f$ factor of the particle.
 subroutine radiation_force(spp,U,E,B,Frad)
-	TYPE(SPECIES), INTENT(IN)              :: spp
-	REAL(rp), DIMENSION(3), INTENT(IN)     :: U
-    REAL(rp), DIMENSION(3), INTENT(IN)     :: E
-    REAL(rp), DIMENSION(3), INTENT(IN)     :: B
-	REAL(rp), DIMENSION(3), INTENT(OUT)    :: Frad
-	REAL(rp), DIMENSION(3)                 :: F1
-    REAL(rp), DIMENSION(3)                 :: F2
-    REAL(rp), DIMENSION(3)                 :: F3
-    REAL(rp), DIMENSION(3)                 :: V
-    REAL(rp), DIMENSION(3)                 :: vec
-	REAL(rp)                               :: g
-    REAL(rp)                               :: tmp
+    TYPE(SPECIES), INTENT(IN)           :: spp
+    REAL(rp), DIMENSION(3), INTENT(IN)  :: U
+    REAL(rp), DIMENSION(3), INTENT(IN)  :: E
+    REAL(rp), DIMENSION(3), INTENT(IN)  :: B
+    REAL(rp), DIMENSION(3), INTENT(OUT) :: Frad
+    REAL(rp), DIMENSION(3)              :: F1
+    REAL(rp), DIMENSION(3)              :: F2
+    REAL(rp), DIMENSION(3)              :: F3
+    REAL(rp), DIMENSION(3)              :: V
+    REAL(rp), DIMENSION(3)              :: vec
+    REAL(rp)                            :: g
+    REAL(rp)                            :: tmp
 
-	g = SQRT(1.0_rp + DOT_PRODUCT(U,U))
-	V = U/g
+    g = SQRT(1.0_rp + DOT_PRODUCT(U,U))
+    V = U/g
 
-	tmp = spp%q**4/(6.0_rp*C_PI*E0*spp%m**2)
+    tmp = spp%q**4/(6.0_rp*C_PI*E0*spp%m**2)
 
-	F2 = tmp*( DOT_PRODUCT(E,V)*E + cross(E,B) + cross(B,cross(B,V)) )
-	vec = E + cross(V,B)
-	F3 = (tmp*g**2)*( DOT_PRODUCT(E,V)**2 - DOT_PRODUCT(vec,vec) )*V
+    F2 = tmp*( DOT_PRODUCT(E,V)*E + cross(E,B) + cross(B,cross(B,V)) )
+    vec = E + cross(V,B)
+    F3 = (tmp*g**2)*( DOT_PRODUCT(E,V)**2 - DOT_PRODUCT(vec,vec) )*V
 
-	Frad = F2 + F3
+    Frad = F2 + F3
 end subroutine radiation_force
 
 
@@ -176,147 +176,151 @@ end subroutine radiation_force
 !! @param pp Particles iterator.
 !! @param ss_collisions Logical variable that indicates if collisions are included in the simulation.
 subroutine advance_particles_velocity(params,F,P,spp,dt,bool)
-	TYPE(KORC_PARAMS), INTENT(IN)                              :: params
-	TYPE(FIELDS), INTENT(IN)                                   :: F
-	TYPE(PROFILES), INTENT(IN)                                 :: P
-	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)    :: spp
-    LOGICAL, INTENT(IN)                                        :: bool
-	REAL(rp), INTENT(IN)                                       :: dt
-	REAL(rp)                                                   :: Prad
-    REAL(rp)                                                   :: B
-    REAL(rp)                                                   :: v
-    REAL(rp)                                                   :: vpar
-    REAL(rp)                                                   :: vperp
-    REAL(rp)                                                   :: tmp
-	REAL(rp)                                                   :: a
-    REAL(rp)                                                   :: gp
-    REAL(rp)                                                   :: sigma
-    REAL(rp)                                                   :: us
-    REAL(rp)                                                   :: g
-    REAL(rp)                                                   :: s
-	REAL(rp), DIMENSION(3)                                     :: U_L
-    REAL(rp), DIMENSION(3)                                     :: U_hs
-    REAL(rp), DIMENSION(3)                                     :: tau
-    REAL(rp), DIMENSION(3)                                     :: up
-    REAL(rp), DIMENSION(3)                                     :: t
-	REAL(rp), DIMENSION(3)                                     :: U
-    REAL(rp), DIMENSION(3)                                     :: U_RC
-    REAL(rp), DIMENSION(3)                                     :: U_os
-	REAL(rp), DIMENSION(3)                                     :: Frad
-	REAL(rp), DIMENSION(3)                                     :: vec
-    REAL(rp), DIMENSION(3)                                     :: b_unit
-	INTEGER                                                    :: ii
-    INTEGER                                                    :: pp
-    LOGICAL                                                    :: ss_collisions
+    TYPE(KORC_PARAMS), INTENT(IN)              :: params
+    TYPE(FIELDS), INTENT(IN)                   :: F
+    TYPE(PROFILES), INTENT(IN)                 :: P
+    TYPE(SPECIES), DIMENSION(:), INTENT(INOUT) :: spp
+    LOGICAL, INTENT(IN)                        :: bool
+    REAL(rp), INTENT(IN)                       :: dt
+    REAL(rp)                                   :: Prad
+    REAL(rp)                                   :: B
+    REAL(rp)                                   :: v
+    REAL(rp)                                   :: vpar
+    REAL(rp)                                   :: vperp
+    REAL(rp)                                   :: tmp
+    REAL(rp)                                   :: a
+    REAL(rp)                                   :: gp
+    REAL(rp)                                   :: sigma
+    REAL(rp)                                   :: us
+    REAL(rp)                                   :: g
+    REAL(rp)                                   :: s
+    REAL(rp), DIMENSION(3)                     :: U_L
+    REAL(rp), DIMENSION(3)                     :: U_hs
+    REAL(rp), DIMENSION(3)                     :: tau
+    REAL(rp), DIMENSION(3)                     :: up
+    REAL(rp), DIMENSION(3)                     :: t
+    REAL(rp), DIMENSION(3)                     :: U
+    REAL(rp), DIMENSION(3)                     :: U_RC
+    REAL(rp), DIMENSION(3)                     :: U_os
+    REAL(rp), DIMENSION(3)                     :: Frad
+    REAL(rp), DIMENSION(3)                     :: vec
+    REAL(rp), DIMENSION(3)                     :: b_unit
+    INTEGER                                    :: ii
+    INTEGER                                    :: pp
+    LOGICAL                                    :: ss_collisions
 
 
-	! Determine whether we are using a single-species collision model
-	ss_collisions = (TRIM(params%collisions_model) .EQ. 'SINGLE_SPECIES')
+    ! Determine whether we are using a single-species collision model
+    ss_collisions = TRIM(params%collisions_model) .EQ. 'SINGLE_SPECIES'
 
-	do ii = 1_idef,params%num_species
+    do ii = 1_idef,params%num_species
 
-		call get_fields(params,spp(ii)%vars,F)
+        call get_fields(params,spp(ii)%vars,F)
 
-		call get_profiles(params,spp(ii)%vars,P)
+        call get_profiles(params,spp(ii)%vars,P)
 
-	    a = spp(ii)%q*dt/spp(ii)%m
+        a = spp(ii)%q*dt/spp(ii)%m
 
-!$OMP PARALLEL DO SHARED(params,ii,spp,ss_collisions) FIRSTPRIVATE(a,dt,bool)&
-!$OMP& PRIVATE(pp,U,U_L,U_hs,tau,up,gp,sigma,us,g,t,s,Frad,U_RC,U_os,tmp,b_unit,B,vpar,v,vperp,vec,Prad)
-		do pp=1_idef,spp(ii)%ppp
-			if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
-				U = spp(ii)%vars%g(pp)*spp(ii)%vars%V(:,pp)
+!$OMP PARALLEL DO DEFAULT(SHARED), PRIVATE(pp,U,B,U_L,U_RC,U_hs,tau,up,gp,     &
+!$OMP&                                     sigma,us,g,t,s,U_os,Frad,b_unit,v,  &
+!$OMP&                                     vpar,vperp,tmp,vec)
+        do pp=1_idef,spp(ii)%ppp
+            if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
+                U = spp(ii)%vars%g(pp)*spp(ii)%vars%V(:,pp)
 
-				!! Magnitude of magnetic field
-				B = SQRT( DOT_PRODUCT(spp(ii)%vars%B(:,pp),spp(ii)%vars%B(:,pp)) )
+                !! Magnitude of magnetic field
+                B = SQRT( DOT_PRODUCT(spp(ii)%vars%B(:,pp),spp(ii)%vars%B(:,pp)) )
 
-				U_L = U
-				U_RC = U
+                U_L = U
+                U_RC = U
 
-				! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
-				U_hs = U_L + 0.5_rp*a*( spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)) )
-				tau = 0.5_rp*dt*spp(ii)%q*spp(ii)%vars%B(:,pp)/spp(ii)%m
-				up = U_hs + 0.5_rp*a*spp(ii)%vars%E(:,pp)
-				gp = SQRT( 1.0_rp + DOT_PRODUCT(up,up) )
-				sigma = gp**2 - DOT_PRODUCT(tau,tau)
-				us = DOT_PRODUCT(up,tau) ! variable 'u^*' in Vay, J.-L. PoP (2008)
-				g = SQRT( 0.5_rp*(sigma + SQRT(sigma**2 + 4.0_rp*(DOT_PRODUCT(tau,tau) + us**2))) )
-				t = tau/g
-				s = 1.0_rp/(1.0_rp + DOT_PRODUCT(t,t)) ! variable 's' in Vay, J.-L. PoP (2008)
-		        U_L = s*(up + DOT_PRODUCT(up,t)*t + cross(up,t))
-				! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
+                ! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
+                U_hs = U_L + 0.5_rp*a*( spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)) )
+                tau = 0.5_rp*dt*spp(ii)%q*spp(ii)%vars%B(:,pp)/spp(ii)%m
+                up = U_hs + 0.5_rp*a*spp(ii)%vars%E(:,pp)
+                gp = SQRT( 1.0_rp + DOT_PRODUCT(up,up) )
+                sigma = gp**2 - DOT_PRODUCT(tau,tau)
+                us = DOT_PRODUCT(up,tau) ! variable 'u^*' in Vay, J.-L. PoP (2008)
+                g = SQRT( 0.5_rp*(sigma + SQRT(sigma**2 + 4.0_rp*(DOT_PRODUCT(tau,tau) + us**2))) )
+                t = tau/g
+                s = 1.0_rp/(1.0_rp + DOT_PRODUCT(t,t)) ! variable 's' in Vay, J.-L. PoP (2008)
+                U_L = s*(up + DOT_PRODUCT(up,t)*t + cross(up,t))
+                ! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
 
-				! ! ! Splitting operator for including radiation
-				U_os = 0.5_rp*(U_L + U)
+                ! ! ! Splitting operator for including radiation
+                U_os = 0.5_rp*(U_L + U)
 
-				if (params%radiation) then
-					call radiation_force(spp(ii),U_os,spp(ii)%vars%E(:,pp),spp(ii)%vars%B(:,pp),Frad)
-					U_RC = U_RC + a*Frad/spp(ii)%q
-				end if
-				! ! ! Splitting operator for including radiation
+                if (params%radiation) then
+                    call radiation_force(spp(ii),U_os,spp(ii)%vars%E(:,pp),spp(ii)%vars%B(:,pp),Frad)
+                    U_RC = U_RC + a*Frad/spp(ii)%q
+                end if
+                ! ! ! Splitting operator for including radiation
 
-				U = U_L + U_RC - U
+                U = U_L + U_RC - U
 
-				! ! ! Stochastic differential equations for including collisions
-				if (params%collisions .AND. ss_collisions) then
-					call include_CoulombCollisions(params,U,spp(ii)%vars%ne(pp),spp(ii)%vars%Te(pp),spp(ii)%vars%Zeff(pp))
-				end if
-				! ! ! Stochastic differential equations for including collisions
+                ! ! ! Stochastic differential equations for including collisions
+                if (params%collisions .AND. ss_collisions) then
+                    call include_CoulombCollisions(params,U,spp(ii)%vars%ne(pp),spp(ii)%vars%Te(pp),spp(ii)%vars%Zeff(pp))
+                end if
+                ! ! ! Stochastic differential equations for including collisions
 
-				if (params%radiation .OR. params%collisions) then
-					g = SQRT( 1.0_rp + DOT_PRODUCT(U,U) )
-				end if
-		        spp(ii)%vars%V(:,pp) = U/g
-				spp(ii)%vars%g(pp) = g
+                if (params%radiation .OR. params%collisions) then
+                    g = SQRT( 1.0_rp + DOT_PRODUCT(U,U) )
+                end if
+                spp(ii)%vars%V(:,pp) = U/g
+                spp(ii)%vars%g(pp) = g
 
-				if (g.LT.params%minimum_particle_g) then
-					spp(ii)%vars%flag(pp) = 0_is
-				end if
+                if (g.LT.params%minimum_particle_g) then
+                    spp(ii)%vars%flag(pp) = 0_is
+                end if
 
                 if (bool) then
-				    !! Parallel unit vector
-				    b_unit = spp(ii)%vars%B(:,pp)/B
+                    !! Parallel unit vector
+                    b_unit = spp(ii)%vars%B(:,pp)/B
 
-					v = SQRT(DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)))
-					if (v.GT.korc_zero) then
-						!! Parallel and perpendicular components of velocity
-						vpar = DOT_PRODUCT(spp(ii)%vars%V(:,pp), b_unit)
-						vperp =  DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)) - vpar**2
-						if ( vperp .GE. korc_zero ) then
-							vperp = SQRT( vperp )
-						else
-							vperp = 0.0_rp
-						end if
+                    v = SQRT(DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)))
+                    if (v.GT.korc_zero) then
+                        !! Parallel and perpendicular components of velocity
+                        vpar = DOT_PRODUCT(spp(ii)%vars%V(:,pp), b_unit)
+                        vperp =  DOT_PRODUCT(spp(ii)%vars%V(:,pp),spp(ii)%vars%V(:,pp)) - vpar**2
+                        if ( vperp .GE. korc_zero ) then
+                            vperp = SQRT( vperp )
+                        else
+                            vperp = 0.0_rp
+                        end if
 
-						!! Pitch angle
-				        spp(ii)%vars%eta(pp) = 180.0_rp*MODULO(ATAN2(vperp,vpar), 2.0_rp*C_PI)/C_PI
+                        !! Pitch angle
+                        spp(ii)%vars%eta(pp) = 180.0_rp*MODULO(ATAN2(vperp,vpar), 2.0_rp*C_PI)/C_PI
 
-						!! Magnetic moment
-						spp(ii)%vars%mu(pp) = 0.5_rp*spp(ii)%m*g**2*vperp**2/B
-						! See Northrop's book (The adiabatic motion of charged particles)
+                        !! Magnetic moment
+                        spp(ii)%vars%mu(pp) = 0.5_rp*spp(ii)%m*g**2*vperp**2/B
+                        ! See Northrop's book (The adiabatic motion of charged particles)
 
-						!! Radiated power
-						tmp = spp(ii)%q**4/(6.0_rp*C_PI*E0*spp(ii)%m**2)
-						vec = spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp))
+                        !! Radiated power
+                        tmp = spp(ii)%q**4/(6.0_rp*C_PI*E0*spp(ii)%m**2)
+                        vec = spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp))
 
-						spp(ii)%vars%Prad(pp) = tmp*( DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%E(:,pp)) + &
-						DOT_PRODUCT(cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)),spp(ii)%vars%E(:,pp)) +&
-						spp(ii)%vars%g(pp)**2*(DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%V(:,pp))**2 - DOT_PRODUCT(vec,vec)) )
+                        spp(ii)%vars%Prad(pp) = tmp*(DOT_PRODUCT(spp(ii)%vars%E(:,pp), spp(ii)%vars%E(:,pp)) +      &
+                                                     DOT_PRODUCT(cross(spp(ii)%vars%V(:,pp), spp(ii)%vars%B(:,pp)), &
+                                                                 spp(ii)%vars%E(:,pp)) +                            &
+                                                     spp(ii)%vars%g(pp)**2*(DOT_PRODUCT(spp(ii)%vars%E(:,pp),       &
+                                                                                        spp(ii)%vars%V(:,pp))**2 -  &
+                                                                            DOT_PRODUCT(vec,vec)))
 
-						!! Input power due to electric field
-		                spp(ii)%vars%Pin(pp) = spp(ii)%q*DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%V(:,pp))
-					else
-				        spp(ii)%vars%eta(pp) = 0.0_rp
-						spp(ii)%vars%mu(pp) = 0.0_rp
-						spp(ii)%vars%Prad(pp) = 0.0_rp
-		                spp(ii)%vars%Pin(pp) = 0.0_rp
-					end if
+                        !! Input power due to electric field
+                        spp(ii)%vars%Pin(pp) = spp(ii)%q*DOT_PRODUCT(spp(ii)%vars%E(:,pp),spp(ii)%vars%V(:,pp))
+                    else
+                        spp(ii)%vars%eta(pp) = 0.0_rp
+                        spp(ii)%vars%mu(pp) = 0.0_rp
+                        spp(ii)%vars%Prad(pp) = 0.0_rp
+                        spp(ii)%vars%Pin(pp) = 0.0_rp
+                    end if
                 end if
-			end if
-		end do
+            end if
+        end do
 !$OMP END PARALLEL DO
 
-	end do
+    end do
 end subroutine advance_particles_velocity
 
 
@@ -332,26 +336,25 @@ end subroutine advance_particles_velocity
 !! @param ii Species iterator.
 !! @param pp Particles iterator.
 subroutine advance_particles_position(params,F,spp,dt)
-	TYPE(KORC_PARAMS), INTENT(IN)                              :: params
-	TYPE(FIELDS), INTENT(IN)                                   :: F
-	TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)    :: spp
-	REAL(rp), INTENT(IN)                                       :: dt
-	INTEGER                                                    :: ii
-    INTEGER                                                    :: pp
+    TYPE(KORC_PARAMS), INTENT(IN)              :: params
+    TYPE(FIELDS), INTENT(IN)                   :: F
+    TYPE(SPECIES), DIMENSION(:), INTENT(INOUT) :: spp
+    REAL(rp), INTENT(IN)                       :: dt
+    INTEGER                                    :: ii
+    INTEGER                                    :: pp
 
-	if (params%plasma_model .NE. 'UNIFORM') then
-		do ii=1_idef,params%num_species
-!$OMP PARALLEL DO FIRSTPRIVATE(dt) PRIVATE(pp) SHARED(ii,spp,params)
-		do pp=1_idef,spp(ii)%ppp
-		    if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
-				spp(ii)%vars%X(:,pp) = spp(ii)%vars%X(:,pp) + dt*spp(ii)%vars%V(:,pp)
-		    end if
-		end do
+    if (params%plasma_model .NE. 'UNIFORM') then
+        do ii=1_idef,params%num_species
+!$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp)
+            do pp=1_idef,spp(ii)%ppp
+                if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
+                    spp(ii)%vars%X(:,pp) = spp(ii)%vars%X(:,pp) + dt*spp(ii)%vars%V(:,pp)
+                end if
+            end do
 !$OMP END PARALLEL DO
-
-!		spp(ii)%vars%X = MERGE(spp(ii)%vars%X + dt*spp(ii)%vars%V,spp(ii)%vars%X,SPREAD(spp(ii)%vars%flag,1,3).EQ.1_idef)
-		end do
-	end if
+!        spp(ii)%vars%X = MERGE(spp(ii)%vars%X + dt*spp(ii)%vars%V,spp(ii)%vars%X,SPREAD(spp(ii)%vars%flag,1,3).EQ.1_idef)
+        end do
+    end if
 end subroutine advance_particles_position
 
 end module korc_ppusher
