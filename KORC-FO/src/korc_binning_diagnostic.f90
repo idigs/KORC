@@ -185,8 +185,7 @@ SUBROUTINE bin_variables(params,spp)
 	do ss=1_idef,params%num_species
 		q = ABS(spp(ss)%q)*params%cpp%charge
 		m = spp(ss)%m*params%cpp%mass
-!$OMP PARALLEL DO FIRSTPRIVATE(q,m,Dtor) PRIVATE(X,ii,jj,kk,pp)&
-!$OMP& SHARED(params,spp,ss,eta,g,N)
+!$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp,X,R,Z,ii,jj,phi,kk)
 		do pp=1_idef,spp(ss)%ppp
 			if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
 				X = spp(ss)%vars%X(:,pp)*params%cpp%length
