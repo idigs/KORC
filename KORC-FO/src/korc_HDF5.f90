@@ -1632,7 +1632,6 @@ subroutine save_simulation_outputs(params,spp)
 							call save_1d_array_to_hdf5(subgroup_id, dset, units*spp(ss)%vars%Pin)
 						CASE('flag')
 							dset = "flag"
-                            WRITE (*,*) SUM(INT(spp(ss)%vars%flag,idef))
 							call save_1d_array_to_hdf5(subgroup_id,dset, INT(spp(ss)%vars%flag,idef))
 						CASE('B')
 							dset = "B"

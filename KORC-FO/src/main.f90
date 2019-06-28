@@ -36,6 +36,8 @@ program main
 
     call initialize_communications(params)
 
+    call initialize_random(params%mpi_params%rank)
+
     call timing_KORC(params)
 
     ! * * * INITIALIZATION STAGE * * *
@@ -133,6 +135,8 @@ program main
     call deallocate_variables(params,F,spp)
 
     call deallocate_collisions_params(params)
+
+    call destroy_random
 
     call finalize_communications(params)
     ! * * * FINALIZING SIMULATION * * * 

@@ -1,3 +1,4 @@
+#if 0
 !> @brief Module with subrotuines for generating integer and real random numbers.
 !! @details This subroutines were taken from Numerical Recipes in Fortran 90, and provide a way for generating random numbers of 'better quality' in a faster way than
 !! build-in Fortran random generators (at least better than those of Fortran 77). For more details we refer the user to Numerical Recipes in Fortran 90.
@@ -43,7 +44,6 @@ module korc_rnd_numbers
 
 subroutine init_u_random(seed)
 	INTEGER(8), INTENT(IN) :: seed
-	INTEGER(8)             :: dummy_int64
 
 	urand_vars%u = seed**urand_vars%v
 	call rand_int64()
@@ -133,22 +133,22 @@ subroutine init_random_seed()
 		! useful in case one launches multiple instances of the same
 		! program in parallel.
 		call system_clock(t)
-	if (t == 0) then
-		call date_and_time(values=dt)
-		t = (dt(1) - 1970_8) * 365_8 * 24_8 * 60_8 * 60_8 * 1000_8 &
-			+ dt(2) * 31_8 * 24_8 * 60_8 * 60_8 * 1000_8 &
-			+ dt(3) * 24_8 * 60_8 * 60_8 * 1000_8 &
-			+ dt(5) * 60_8 * 60_8 * 1000_8 &
-			+ dt(6) * 60_8 * 1000_8 &
-			+ dt(7) * 1000_8 &
-			+ dt(8)
-	end if
-		pid = getpid()
-		write(6,'("PID: ",I15)') pid
-		t = ieor(t, int(pid, kind(t)))
-		do i = 1, n
-		seed(i) = lcg(t)
-		end do
+	    if (t == 0) then
+		    call date_and_time(values=dt)
+		    t = (dt(1) - 1970_8) * 365_8 * 24_8 * 60_8 * 60_8 * 1000_8 &
+			    + dt(2) * 31_8 * 24_8 * 60_8 * 60_8 * 1000_8 &
+			    + dt(3) * 24_8 * 60_8 * 60_8 * 1000_8 &
+			    + dt(5) * 60_8 * 60_8 * 1000_8 &
+			    + dt(6) * 60_8 * 1000_8 &
+			    + dt(7) * 1000_8 &
+			    + dt(8)
+	    end if
+        pid = getpid()
+        write(6,'("PID: ",I15)') pid
+        t = ieor(t, int(pid, kind(t)))
+        do i = 1, n
+            seed(i) = lcg(t)
+        end do
 	end if
 #ifdef PARALLEL_RANDOM
     call initialize_random(seed(1))
@@ -173,3 +173,4 @@ subroutine init_random_seed()
 end subroutine init_random_seed
 
 end module korc_rnd_numbers
+#endif

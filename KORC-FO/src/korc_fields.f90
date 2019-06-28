@@ -8,23 +8,23 @@ module korc_fields
 
     IMPLICIT NONE
 
-    PUBLIC :: mean_F_field,&
-                get_fields,&
-                initialize_fields,&
-                load_field_data_from_hdf5,&
-                load_dim_data_from_hdf5,&
-                ALLOCATE_2D_FIELDS_ARRAYS,&
-                ALLOCATE_3D_FIELDS_ARRAYS,&
-                DEALLOCATE_FIELDS_ARRAYS
-    PRIVATE :: get_analytical_fields,&
-                analytical_fields,&
-                uniform_magnetic_field,&
-                uniform_electric_field,&
-                uniform_fields,&
-                cross,&
-                analytical_electric_field_cyl,&
-                ALLOCATE_V_FIELD_2D,&
-                ALLOCATE_V_FIELD_3D
+    PUBLIC :: mean_F_field,              &
+              get_fields,                &
+              initialize_fields,         &
+              load_field_data_from_hdf5, &
+              load_dim_data_from_hdf5,   &
+              ALLOCATE_2D_FIELDS_ARRAYS, &
+              ALLOCATE_3D_FIELDS_ARRAYS, &
+              DEALLOCATE_FIELDS_ARRAYS
+    PRIVATE :: get_analytical_fields,         &
+               analytical_fields,             &
+               uniform_magnetic_field,        &
+               uniform_electric_field,        &
+               uniform_fields,                &
+               cross,                         &
+               analytical_electric_field_cyl, &
+               ALLOCATE_V_FIELD_2D,           &
+               ALLOCATE_V_FIELD_3D
 
     CONTAINS
 
@@ -257,7 +257,7 @@ subroutine unitVectors(params,vars,F,b1,b2,b3)
 
     ppp = SIZE(vars%X,2) ! Number of particles
 
-    call init_random_seed()
+!    call init_random_seed()
 
     call get_fields(params,vars,F)
 
