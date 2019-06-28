@@ -3,7 +3,6 @@
 module korc_interp
     use korc_types
     use korc_coords
-    use korc_rnd_numbers
     use korc_hpc
 
     use EZspline_obj    ! psplines module

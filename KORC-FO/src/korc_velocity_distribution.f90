@@ -5,7 +5,6 @@ MODULE korc_velocity_distribution
     USE korc_HDF5
     USE korc_hpc
     use korc_fields
-    use korc_rnd_numbers
     use korc_hammersley_generator
 
     use korc_avalanche

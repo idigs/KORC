@@ -20,7 +20,6 @@ list (APPEND korc_sources
     korc_avalanche.f90
     korc_energy_pdfs.f90
     korc_hpc.f90
-    korc_rnd_numbers.f90
     korc_units.f90
     special_fun_subroutines.f90
     korc_binning_diagnostic.f90
