@@ -13,14 +13,15 @@ MODULE korc_velocity_distribution
     use korc_energy_pdfs
     use korc_simple_equilibrium_pdf
 
+    use random
+
     IMPLICIT NONE
 
-    PUBLIC :: initial_gyro_distribution,&
-                thermal_distribution,&
-                initial_energy_pitch_dist
-    PRIVATE :: fth_3V,&
-                random_norm,&
-                gyro_distribution
+    PUBLIC :: initial_gyro_distribution, &
+              thermal_distribution,      &
+              initial_energy_pitch_dist
+    PRIVATE :: fth_3V,           &
+               gyro_distribution
 
     CONTAINS
 
@@ -32,39 +33,12 @@ MODULE korc_velocity_distribution
 !! @param[in] Vth Thermal velocity of the background electrons @f$v_{T_e}@f$.
 !! @param fth_3V Value of @f$f_{T_e}(v)@f$.
 FUNCTION fth_3V(Vth,V)
-    REAL(rp), DIMENSION(3), INTENT(IN)     :: V
-    REAL(rp), INTENT(IN)                 :: Vth
-    REAL(rp)                             :: fth_3V
+    REAL(rp), DIMENSION(3), INTENT(IN) :: V
+    REAL(rp), INTENT(IN)               :: Vth
+    REAL(rp)                           :: fth_3V
 
     fth_3V = EXP(-0.5_rp*DOT_PRODUCT(V,V)/Vth**2.0_rp)
 END FUNCTION fth_3V
-
-
-!> @brief Gaussian random number generator.
-!! @details This function returns a deviate of a Gaussian distribution @f$f_G(x;\mu,\sigma) = \frac{1}{\sigma\sqrt{2\pi}} \exp{\left( -(x-\mu)^2/2\sigma^2 \right)}@f$,
-!! with mean @f$\mu@f$, and standard deviation @f$\sigma@f$.
-!!
-!! We use the Inverse Transform Sampling Method for sampling @f$x@f$. With this method we get @f$x = \sqrt{-2\log{(1-y)}}\cos(2\pi z)@f$,
-!! where @f$y@f$ and @f$z@f$ are uniform random numbers in the interval @f$[0,1]@f$.
-!!
-!! @param[in] mu Mean value @f$\mu@f$ of the Gaussian distribution.
-!! @param[in] mu Standard deviation @f$\sigma@f$ of the Gaussian distribution.
-!! @param random_norm Sampled number @f$x@f$ from the Gaussian distribution @f$f_G(x;\mu,\sigma)@f$.
-!! @param rand1 Uniform random number in the interval @f$[0,1]@f$.
-!! @param rand2 Uniform random number in the interval @f$[0,1]@f$.
-FUNCTION random_norm(mu,sigma)
-    REAL(rp), INTENT(IN)     :: mu
-    REAL(rp), INTENT(IN)     :: sigma
-    REAL(rp)                 :: random_norm
-    REAL(rp)                 :: rand1
-    REAL(rp)                 :: rand2
-
-    call RANDOM_NUMBER(rand1)
-    call RANDOM_NUMBER(rand2)
-
-    random_norm = SQRT(-2.0_rp*LOG(1.0_rp-rand1))*COS(2.0_rp*C_PI*rand2);
-END FUNCTION random_norm
-
 
 !> @brief Subroutine that samples a thermal distribution function of electrons for generating the initial condition of a set of simulated particles.
 !! @details This subroutine uses the Inverse Transform Sampling Method along with the Metropolis-Hastings algorithm to generate an
@@ -84,18 +58,18 @@ END FUNCTION random_norm
 !! @param ii Iterator.
 !! @param ppp Number of particles per species.
 subroutine thermal_distribution(params,spp)
-    TYPE(KORC_PARAMS), INTENT(IN)     :: params
-    TYPE(SPECIES), INTENT(INOUT)     :: spp
-    REAL(rp)                         :: Vmax
-    REAL(rp)                         :: Vth
-    REAL(rp)                         :: sv
-    REAL(rp)                         :: ratio
-    REAL(rp)                         :: rand_unif
-    REAL(rp), DIMENSION(3)             :: V
-    REAL(rp), DIMENSION(3)             :: U
-    REAL(rp), DIMENSION(3)             :: b = (/1.0_rp,0.0_rp,0.0_rp/)
-    INTEGER                         :: ii
-    INTEGER                         :: ppp
+    TYPE(KORC_PARAMS), INTENT(IN) :: params
+    TYPE(SPECIES), INTENT(INOUT)  :: spp
+    REAL(rp)                      :: Vmax
+    REAL(rp)                      :: Vth
+    REAL(rp)                      :: sv
+    REAL(rp)                      :: ratio
+    REAL(rp)                      :: rand_unif
+    REAL(rp), DIMENSION(3)        :: V
+    REAL(rp), DIMENSION(3)        :: U
+    REAL(rp), DIMENSION(3)        :: b = (/1.0_rp,0.0_rp,0.0_rp/)
+    INTEGER                       :: ii
+    INTEGER                       :: ppp
 
     Vmax = 0.9_rp
     Vth = SQRT(spp%Eo*ABS(spp%q)/spp%m)
@@ -127,7 +101,8 @@ subroutine thermal_distribution(params,spp)
             V = U
             ii = ii + 1_idef
         else
-            call RANDOM_NUMBER(rand_unif)
+!            call RANDOM_NUMBER(rand_unif)
+            rand_unif = get_random()
             if (ratio .GT. rand_unif) then
                 V = U
                 ii = ii + 1_idef
@@ -157,7 +132,8 @@ subroutine thermal_distribution(params,spp)
             spp%vars%V(:,ii) = U
             ii = ii + 1_idef
         else
-            call RANDOM_NUMBER(rand_unif)
+!            call RANDOM_NUMBER(rand_unif)
+            rand_unif = get_random()
             if (ratio .GT. rand_unif) then
                 spp%vars%V(:,ii) = U
                 ii = ii + 1_idef
@@ -182,7 +158,7 @@ end subroutine thermal_distribution
 !! @param ii Species iterator.
 !! @param mpierr MPI error status.
 subroutine initial_energy_pitch_dist(params,spp)
-TYPE(KORC_PARAMS), INTENT(IN)                                 :: params
+TYPE(KORC_PARAMS), INTENT(IN)                               :: params
     TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
     INTEGER                                                 :: ii
     INTEGER                                                 :: mpierr
@@ -323,9 +299,12 @@ subroutine gyro_distribution(params,F,spp)
 
     ! * * * * INITIALIZE VELOCITY * * * *
 
-    call init_random_seed()
-    call RANDOM_NUMBER(theta)
-    theta = 2.0_rp*C_PI*theta
+!    call init_random_seed()
+!    call RANDOM_NUMBER(theta)
+!    theta = 2.0_rp*C_PI*theta
+
+    call set_random_dist(0.0_rp, 2.0_rp*C_PI)
+    call get_randoms(theta)
 
     Vo = SQRT( 1.0_rp - 1.0_rp/(spp%vars%g(:)**2) )
     V1 = Vo*COS(C_PI*spp%vars%eta/180.0_rp)

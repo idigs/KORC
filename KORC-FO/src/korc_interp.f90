@@ -584,7 +584,7 @@ subroutine check_if_in_domain(domain, Y,flag)
             CALL check_3d(domain, Y(:,pp), flag(pp))
         end do
 !$OMP END PARALLEL DO
-    else
+    else if (ALLOCATED(domain%FLAG2D)) then
 !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp,IR,IZ)
         do pp=1_idef,ss
             CALL check_2d(domain, Y(:,pp), flag(pp))
