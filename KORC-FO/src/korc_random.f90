@@ -104,7 +104,7 @@ SUBROUTINE get_randoms(nums)
     INTEGER                             :: i
 
 !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(i)
-    DO i = 0, SIZE(nums)
+    DO i = 1, SIZE(nums)
         nums(i) = get_random()
     END DO
 !$OMP END PARALLEL DO
