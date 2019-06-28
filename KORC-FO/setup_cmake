@@ -83,15 +83,17 @@ then
     module load cmake/3.14.0
     module load cray-hdf5-parallel/1.10.2.0
     module unload darshan/3.1.4
-    cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE                                          \
-          -DEZSpline_INCLUDE_PATH=/repo/trunk/build/modules/stell                        \
-          -DCMAKE_PREFIX_PATH=$MPICH_DIR                                                 \
-          -DEZSpline_INCLUDE_PATH=/global/homes/m/markcian/knl_trunk/build/modules/stell \
-          -DEZSpline_LINK_FLAGS="-L/global/homes/m/markcian/knl_trunk/build/lib -lstell" \
-          -DEZSpline_LIBRARIES=/global/homes/m/markcian/knl_trunk/build/lib/libstell.a   \
-          -DCMAKE_Fortran_FLAGS="-axMIC-AVX512,AVX -DHDF5_DOUBLE_PRESICION"              \
-          -DCMAKE_C_FLAGS=-axMIC-AVX512,AVX                                              \
-          -DCMAKE_CXX_FLAGS="-std=c++11 -axMIC-AVX512,AVX"
+    cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE                                                                                                              \
+          -DEZSpline_INCLUDE_PATH=/repo/trunk/build/modules/stell                                                                                            \
+          -DCMAKE_PREFIX_PATH=$MPICH_DIR                                                                                                                     \
+          -DEZSpline_INCLUDE_PATH=/global/homes/m/markcian/knl_trunk/build/modules/stell                                                                     \
+          -DEZSpline_LINK_FLAGS="-L/global/homes/m/markcian/knl_trunk/build/lib -lstell"                                                                     \
+          -DEZSpline_LIBRARIES=/global/homes/m/markcian/knl_trunk/build/lib/libstell.a                                                                       \
+          -DCMAKE_Fortran_FLAGS="-axMIC-AVX512,AVX -DHDF5_DOUBLE_PRESICION"                                                                                  \
+          -DCMAKE_C_FLAGS=-axMIC-AVX512,AVX                                                                                                                  \
+          -DCMAKE_CXX_FLAGS="-std=c++11 -axMIC-AVX512,AVX"                                                                                                   \
+          -DUSE_M3D_C1=ON                                                                                                                                    \
+          -DM3D_C1_LINK_FLAGS="-L/global/homes/m/markcian/fusion-io/build/fusion_io -lfusionio -L/global/homes/m/markcian/fusion-io/build/m3dc1_lib -lm3dc1"
 
 else
 # MACHINE_ID is new and unknown. Inform the user how to add support for this new machine.

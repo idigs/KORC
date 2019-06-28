@@ -20,7 +20,6 @@ list (APPEND korc_sources
     korc_avalanche.f90
     korc_energy_pdfs.f90
     korc_hpc.f90
-    korc_rnd_numbers.f90
     korc_units.f90
     special_fun_subroutines.f90
     korc_binning_diagnostic.f90
@@ -40,3 +39,4 @@ set_property(TARGET xkorc PROPERTY LINKER_LANGUAGE Fortran)
 target_link_libraries (xkorc ${MPI_Fortran_LIBRARIES})
 target_link_libraries (xkorc ${HDF5_LIBRARIES})
 target_link_libraries (xkorc ${EZSpline_LIBRARIES})
+target_link_libraries (xkorc /global/homes/m/markcian/fusion-io/build/fusion_io/libfusionio.a;/global/homes/m/markcian/fusion-io/build/m3dc1_lib/libm3dc1.a)
