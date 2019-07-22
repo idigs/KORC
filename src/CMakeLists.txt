@@ -1,35 +1,41 @@
-cmake_minimum_required (VERSION 2.8.8)
+#  Append all source files to variable korc_sources. As new files are added,
+#  this must be updated.
+set (korc_sources "")
+list (APPEND korc_sources
+    korc_collisions.f90
+    korc_fields.f90
+    korc_interp.f90
+    korc_spatial_distribution.f90
+    korc_constants.f90
+    korc_finalize.f90
+    korc_ppusher.f90
+    korc_synthetic_camera.f90
+    main_documentation_page.f90
+    korc_HDF5.f90
+    korc_coords.f90
+    korc_hammersley_generator.f90
+    korc_profiles.f90
+    korc_types.f90
+    special_fun_modules.f90
+    korc_avalanche.f90
+    korc_energy_pdfs.f90
+    korc_hpc.f90
+    korc_rnd_numbers.f90
+    korc_units.f90
+    special_fun_subroutines.f90
+    korc_binning_diagnostic.f90
+    korc_experimental_pdf.f90
+    korc_initialize.f90
+    korc_simple_equilibrium_pdf.f90
+    korc_velocity_distribution.f90
+    korc_c_random.cpp
+    korc_random.f90
+    main.f90
+)
 
-project (korc_proj C CXX Fortran)
+add_executable (xkorc ${korc_sources})
+set_property(TARGET xkorc PROPERTY LINKER_LANGUAGE Fortran)
 
-#  Set directories to build all binary files.
-set (EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/build/bin)
-
-#  Fortran specific settings.
-set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -cpp")
-set (CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/build/modules)
-
-#  Set definitions.
-add_definitions (-DDOUBLE_PRECISION)
-add_definitions (-DPARALLEL_RANDOM)
-
-#  Configure OpenMP
-find_package (OpenMP)
-set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS}")
-set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_Fortran_FLAGS}")
-
-#  Configure MPI
-find_package (MPI REQUIRED)
-set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${MPI_Fortran_COMPILE_FLAGS}")
-set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_Fortran_LINK_FLAGS}")
-include_directories (${MPI_Fortran_INCLUDE_PATH})
-
-#  Configure HDF5
-find_package (HDF5 REQUIRED COMPONENTS Fortran)
-include_directories (${HDF5_INCLUDE_DIRS})
-
-#  Configure EZspline
-include_directories (${EZSpline_INCLUDE_PATH})
-set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EZSpline_LINK_FLAGS}")
-
-add_subdirectory (src)
+target_link_libraries (xkorc ${MPI_Fortran_LIBRARIES})
+target_link_libraries (xkorc ${HDF5_LIBRARIES})
+target_link_libraries (xkorc ${EZSpline_LIBRARIES})

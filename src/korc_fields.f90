@@ -781,7 +781,7 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
     TYPE(FIELDS), INTENT(IN)           :: F
     !! An instance of the KORC derived type FIELDS.
 
-    SELECT CASE (TRIM(params%plasma_model))
+    SELECT CASE (TRIM(params%field_model))
     CASE('ANALYTICAL')
        if (params%field_eval.eq.'eqn') then
           call get_analytical_fields(params,vars, F)
@@ -816,7 +816,7 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
     REAL(rp),DIMENSION(8),INTENT(INOUT)   :: E_R,E_PHI,E_Z
     INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
 
-!    SELECT CASE (TRIM(params%plasma_model))
+!    SELECT CASE (TRIM(params%field_model))
 !    CASE('ANALYTICAL')
        if (params%field_eval.eq.'eqn') then
           call analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
@@ -909,7 +909,7 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
        write(6,'(/,"* * * * * * * * INITIALIZING FIELDS * * * * * * * *")')
     end if
        
-    SELECT CASE (TRIM(params%plasma_model))
+    SELECT CASE (TRIM(params%field_model))
        
     CASE('ANALYTICAL')
        ! Load the parameters of the analytical magnetic field
@@ -1003,6 +1003,11 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
        F%Efield = Efield
        F%axisymmetric_fields = axisymmetric_fields
 
+       F%AB%lambda=1._rp
+       F%AB%Ro=1._rp
+       F%AB%qo=1._rp
+       F%AB%a=1._rp
+       
        call load_dim_data_from_hdf5(params,F)
        !sets F%dims for 2D or 3D data
 
@@ -1045,9 +1050,6 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
           call initialize_fields_interpolant(params,F)
 
           F%Bfield=.TRUE.
-          F%Bflux=.FALSE.
-          F%Efield=.TRUE.
-          F%Efield_in_file=.TRUE.
 
           call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
                F%Bflux,F%Efield.AND.F%Efield_in_file)

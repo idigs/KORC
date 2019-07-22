@@ -395,7 +395,7 @@ CONTAINS
 
        ! * * * * * * * ALL IN METERS * * * * * * * 
 
-       IF (TRIM(params%plasma_model) .EQ. 'ANALYTICAL') THEN
+       IF (TRIM(params%field_model) .EQ. 'ANALYTICAL') THEN
           pplane%Rmin = F%Ro - F%AB%a
           pplane%Rmax = F%Ro + F%AB%a
           pplane%Zmin = -F%AB%a

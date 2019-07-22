@@ -1185,8 +1185,11 @@ CONTAINS
           ALLOCATE(attr_array(1))
           ALLOCATE(idata(1))
 
-          dset = TRIM(gname) // "/plasma_model"
-          call save_string_parameter(h5file_id,dset,(/params%plasma_model/))
+          dset = TRIM(gname) // "/field_model"
+          call save_string_parameter(h5file_id,dset,(/params%field_model/))
+
+          dset = TRIM(gname) // "/profile_model"
+          call save_string_parameter(h5file_id,dset,(/params%profile_model/))
 
           dset = TRIM(gname) // "/simulation_time"
           attr = "Total aimed simulation time in seconds"
@@ -1416,7 +1419,7 @@ CONTAINS
              attr = "Zeff at the magnetic axis"
              call save_to_hdf5(h5file_id,dset,P%Zeffo,attr)
 
-             if (TRIM(params%plasma_model) .EQ. 'ANALYTICAL') then
+             if (TRIM(params%profile_model) .EQ. 'ANALYTICAL') then
                 dset = TRIM(gname) // "/n_ne"
                 attr = "Exponent of tanh(x)^n for density profile"
                 call save_to_hdf5(h5file_id,dset,P%n_ne,attr)
@@ -1485,7 +1488,7 @@ CONTAINS
                    DEALLOCATE(attr_array)
                 end if
                 
-             else if (params%plasma_model .EQ. 'EXTERNAL') then
+             else if (params%profile_model .EQ. 'EXTERNAL') then
                 ALLOCATE(attr_array(1))
                 dset = TRIM(gname) // "/dims"
                 attr_array(1) = "Mesh dimension of the profiles (NR,NPHI,NZ)"
@@ -1525,7 +1528,7 @@ CONTAINS
                      P%Zeff_2D)
 
                 DEALLOCATE(attr_array)
-             else if (params%plasma_model .EQ. 'UNIFORM') then
+             else if (params%profile_model .EQ. 'UNIFORM') then
                 ! Something
              end if
 
@@ -1538,7 +1541,7 @@ CONTAINS
           gname = "fields"
           call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
-          if (TRIM(params%plasma_model) .EQ. 'ANALYTICAL') then
+          if (TRIM(params%field_model) .EQ. 'ANALYTICAL') then
              dset = TRIM(gname) // "/Bo"
              attr = "Toroidal field at the magnetic axis in T"
              call save_to_hdf5(h5file_id,dset,F%Bo*params%cpp%Bo,attr)
@@ -1653,7 +1656,7 @@ CONTAINS
                 DEALLOCATE(attr_array)
              end if
 
-          else if (params%plasma_model .EQ. 'EXTERNAL') then
+          else if (params%field_model .EQ. 'EXTERNAL') then
              ALLOCATE(attr_array(1))
              dset = TRIM(gname) // "/dims"
              attr_array(1) = "Mesh dimension of the magnetic  &
@@ -1759,7 +1762,7 @@ CONTAINS
              end if
 
              DEALLOCATE(attr_array)
-          else if (params%plasma_model .EQ. 'UNIFORM') then
+          else if (params%field_model .EQ. 'UNIFORM') then
              dset = TRIM(gname) // "/Bo"
              attr = "Magnetic field in T"
              call save_to_hdf5(h5file_id,dset,F%Bo*params%cpp%Bo,attr)

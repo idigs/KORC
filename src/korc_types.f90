@@ -203,7 +203,8 @@ module korc_types
      !! String with the name of the collisions model to be used in the
      !! simulation.
      CHARACTER(MAX_STRING_LENGTH) :: bound_electron_model 
-     CHARACTER(MAX_STRING_LENGTH) :: plasma_model 
+     CHARACTER(MAX_STRING_LENGTH) :: field_model
+     CHARACTER(MAX_STRING_LENGTH) :: profile_model 
      !! String with the name of the model for the fields and plasma profiles.
      CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename 
      !! String with the name of the model for the fields and plasma profiles.
@@ -256,6 +257,7 @@ module korc_types
      REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: B 
      !! Cartesian components of the magnetic field felt by each electron.
      !! dim(B) = dim(X).
+     REAL(rp), DIMENSION(:), ALLOCATABLE 	:: PHI_P 
      REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: BR 
      !! Cartesian components of the gradient of the R-component of the
      !! magnetic field felt by each electron. dim(B) = dim(X).

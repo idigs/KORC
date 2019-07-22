@@ -16,19 +16,14 @@ module korc_ppusher
   !! v_{ch}^3/q_{ch}^3 B_{ch})\), see [[korc_units]].
 
   PRIVATE :: cross,&
-       radiation_force,&
        radiation_force_p,&
-       GCEoM,&
        GCEoM_p,&
        aux_fields
   PUBLIC :: initialize_particle_pusher,&
-       advance_particles_position,&
-       advance_particles_velocity,&
        advance_FOeqn_vars,&
        advance_FOinterp_vars,&
        advance_GCeqn_vars,&
        advance_GCinterp_vars,&
-       advance_GC_vars_slow,&
        GC_init,&
        FO_init,&
        adv_GCeqn_top,&
@@ -71,72 +66,6 @@ contains
   end function cross
 
 
-  subroutine radiation_force(spp,U,E,B,Frad)
-    !! @note Subroutine that calculates the synchrotron radiation reaction
-    !! force. @endnote
-    !! This subroutine calculates the synchrotron radiation reaction
-    !! force [Carbajal et al. PoP <b>24</b>, 042512 (2017)] using the derivation
-    !! of Landau-Lifshiftz of the Lorentz-Abraham-Dirac radiation reaction
-    !! force:
-    !!
-    !! $$\mathbf{F}_R(\mathbf{x},\mathbf{v}) = \frac{q^3}{6\pi\epsilon_0 m
-    !! c^3}\left[ \mathbf{F}_1 + \mathbf{F}_2 + \mathbf{F}_3\right],$$
-    !! $$\mathbf{F}_1 = \gamma \left( \frac{D \mathbf{E}}{Dt} + \mathbf{v}\times
-    !! \frac{D \mathbf{B}}{Dt} \right),$$
-    !! $$\mathbf{F}_2 = \frac{q}{m}\left( \frac{(\mathbf{E}\cdot\mathbf{v})}
-    !! {c^2}\mathbf{E} + (\mathbf{E} + \mathbf{v}\times \mathbf{B})\times
-    !! \mathbf{B} \right),$$
-    !! $$\mathbf{F}_3 = -\frac{q\gamma^2}{mc^2} \left( (\mathbf{E} +
-    !! \mathbf{v}\times \mathbf{B})^2 -  \frac{(\mathbf{E}\cdot\mathbf{v})^2}
-    !! {c^2}\right)\mathbf{v},$$
-    !!
-    !! where \(\gamma = 1/\sqrt{1 - v^2/c^2}\) is the relativistic factor,
-    !! \(D/Dt = \partial/\partial t + \mathbf{v}\cdot\nabla\), \(q\) and \(m\)
-    !! are the charge and mass of the particle, and \(\epsilon_0\) is the vacuum
-    !! permittivity. For relativistic electrons we have \(F_1 \ll F_2\) and
-    !! \(F_1 \ll F_3\), therefore \(\mathbf{F}_1\) is not calculated here.
-    !!
-    !! @note Notice that all the variables in this subroutine have been
-    !! normalized using the characteristic scales in [[korc_units]]. @endnote
-    TYPE(SPECIES), INTENT(IN)              :: spp
-    !!An instance of the derived type SPECIES containing all the parameters
-    !! and simulation variables of the different species in the simulation.
-    REAL(rp), DIMENSION(3), INTENT(IN)     :: U
-    !! \(\mathbf{u} = \gamma \mathbf{v}\), where \(\mathbf{v}\) is the
-    !! particle's velocity.
-    REAL(rp), DIMENSION(3), INTENT(IN)     :: E
-    !! Electric field \(\mathbf{E}\) seen by each particle. This is given
-    !! in Cartesian coordinates.
-    REAL(rp), DIMENSION(3), INTENT(IN)     :: B
-    !! Magnetic field \(\mathbf{B}\) seen by each particle. This is given
-    !! in Cartesian coordinates.
-    REAL(rp), DIMENSION(3), INTENT(OUT)    :: Frad
-    !! The calculated synchrotron radiation reaction force \(\mathbf{F}_R\).
-    REAL(rp), DIMENSION(3)                 :: F1
-    !! The component \(\mathbf{F}_1\) of \(\mathbf{F}_R\).
-    REAL(rp), DIMENSION(3)                 :: F2
-    !! The component \(\mathbf{F}_2\) of \(\mathbf{F}_R\).
-    REAL(rp), DIMENSION(3)                 :: F3
-    !! The component \(\mathbf{F}_3\) of \(\mathbf{F}_R\).
-    REAL(rp), DIMENSION(3)                 :: V
-    !! The particle's velocity \(\mathbf{v}\).
-    REAL(rp), DIMENSION(3)                 :: vec
-    !! An auxiliary 3-D vector.
-    REAL(rp)                               :: g
-    !! The relativistic \(\gamma\) factor of the particle.
-    REAL(rp)                               :: tmp
-
-    g = SQRT(1.0_rp + DOT_PRODUCT(U,U))
-    V = U/g
-
-    tmp = spp%q**4/(6.0_rp*C_PI*E0*spp%m**2)
-
-    F2 = tmp*( DOT_PRODUCT(E,V)*E + cross(E,B) + cross(B,cross(B,V)) )
-    vec = E + cross(V,B)
-    F3 = (tmp*g**2)*( DOT_PRODUCT(E,V)**2 - DOT_PRODUCT(vec,vec) )*V
-
-    Frad = F2 + F3
-  end subroutine radiation_force
 
   subroutine radiation_force_p(q_cache,m_cache,U_X,U_Y,U_Z,E_X,E_Y,E_Z, &
        B_X,B_Y,B_Z,Frad_X,Frad_Y,Frad_Z)
@@ -220,310 +149,7 @@ contains
     
   end subroutine radiation_force_p
 
-  subroutine advance_particles_velocity(params,F,P,spp,dt,bool,init)
-    !! @note Subroutine for advancing the particles' velocity. @endnote
-    !! We are using the modified relativistic leapfrog method of J.-L. Vay,
-    !! PoP <b>15</b>, 056701 (2008) for advancing the particles'
-    !! position and velocity. For including the synchrotron radiation reaction
-    !! force we used the scheme in Tamburini et al., New J. Phys. <b>12</b>,
-    !! 123005 (2010). A comprehensive description of this can be found in
-    !! Carbajal et al., PoP <b>24</b>, 042512 (2017). The discretized equations
-    !! of motion to advance the change in the position and
-    !! momentum due to the Lorentz force are:
-    !!
-    !! $$\frac{\mathbf{x}^{i+1/2} - \mathbf{x}^{i-1/2}}{\Delta t}  =
-    !! \mathbf{v}^i$$
-    !! $$\frac{\mathbf{p}^{i+1}_L - \mathbf{p}^{i}}{\Delta t} =
-    !! q \left(  \mathbf{E}^{i+1/2}+ \frac{\mathbf{v}^i + \mathbf{v}^{i+1}_L}{2}
-    !! \times \mathbf{B}^{i+1/2} \right),$$
-    !!
-    !! where \(\Delta t\) is the time step, \(q\) denotes the charge,
-    !! \(\mathbf{p}^j = m \gamma^j \mathbf{v}^j\), and \(\gamma^j =
-    !! 1/\sqrt{1 + v^{j2}/c^2}\).
-    !! Here \(i\) and \(i+1\) indicate integer time leves, while \(i-1/2\)
-    !! and \(i+1/2\) indicate half-time steps.
-    !! The evolution of the relativistic \(\gamma\) factor is given by
-    !! \(\gamma^{i+1} = \sqrt{1 + \left(p_L^{i+1}/mc \right)^2} = \sqrt{1 +
-    !! \mathbf{p}_L^{i+1}\cdot \mathbf{p}'/m^2c^2}\), which can be combined
-    !! with the above equations to produce:
-    !!
-    !! $$\mathbf{p}^{i+1}_L = s\left[ \mathbf{p}' + (\mathbf{p}'\cdot\mathbf{t})
-    !! \mathbf{t} + \mathbf{p}'\times \mathbf{t} \right]$$
-    !! $$\gamma^{i+1} = \sqrt{\frac{\sigma + \sqrt{\sigma^2 + 4(\tau^2 +
-    !! p^{*2})}}{2}},$$
-    !!
-    !! where we have defined \(\mathbf{p}' = \mathbf{p}^i + q\Delta t \left(
-    !! \mathbf{E}^{i+1/2} + \frac{\mathbf{v}^i}{2} \times \mathbf{B}^{i+1/2}
-    !! \right)\), \(\mathbf{\tau} = (q\Delta t/2)\mathbf{B}^{i+1/2}\),
-    !! \(\mathbf{t} = {\mathbf \tau}/\gamma^{i+1}\), \(p^{*} = \mathbf{p}'\cdot
-    !! \mathbf{\tau}/mc\), \(\sigma = \gamma'^2 - \tau^2\), \(\gamma' = \sqrt{1
-    !! + p'^2/m^2c^2}\), and \(s = 1/(1+t^2)\).
-    !! The discretized equation of motion to advance the change in the momentum
-    !! due to the radiation reaction force force is
-    !!
-    !! $$\frac{\mathbf{p}^{i+1}_R - \mathbf{p}^{i}}{\Delta t} = \mathbf{F}_R(
-    !! \mathbf{x}^{i+1/2},\mathbf{p}^{i+1/2}),$$
-    !!
-    !! where \(\mathbf{p}^{i+1/2} = (\mathbf{p}^{i+1}_L + \mathbf{p}^i)/2\).
-    !! Finally, using  \(\mathbf{p}^{i+1}_L\) and \(\mathbf{p}^{i+1}_R\), the
-    !! momentum at time level \(i+1\) is given by
-    !!
-    !! $$\mathbf{p}^{i+1}  = \mathbf{p}^{i+1}_L + \mathbf{p}^{i+1}_R -
-    !! \mathbf{p}^i.$$
-    !!
-    !! Collisions are included by solving the stochastic differential equation
-    !! in a Cartesian coordinate system where \(\mathbf{p}\) is parallel to
-    !! \(\hat{e}_z :  \mathbf{p} = \mathbf{A}dt + \hat{\sigma}\cdot
-    !! d\mathbf{W}\),
-    !! where \(\mathbf{A} = p \nu_s\hat{b}\), \(\hat{b}=\mathbf{B}/B\) with
-    !! \(\mathbf{B}\) the magnetic field, and \(\nu_s\) the collision frequency
-    !! that corresponds to the drag force due to collisions.
-    !! \(\hat{\sigma}\) is a diagonal 3x3 matrix with elements
-    !! \(\hat{\sigma}_{11} = p\sqrt{\nu_{\parallel}}\), and \(\hat{\sigma}_{22}
-    !! = \hat{\sigma}_{33} = p\sqrt{\nu_{D}}\), with \(\nu_\parallel\) and
-    !! \(\nu_D\)
-    !! the collisional frequencies producing diffusive transport along and
-    !! across the direction of \(\mathbf{p}\), respectively.
-    !! @note Notice that all the variables in this subroutine have been
-    !! normalized using the characteristic scales in [[korc_units]]. @endnote
-    TYPE(KORC_PARAMS), INTENT(IN)                              :: params
-    !! Core KORC simulation parameters.
-    TYPE(FIELDS), INTENT(IN)                                   :: F
-    !! An instance of the KORC derived type FIELDS.
-    TYPE(PROFILES), INTENT(IN)                                 :: P
-    !! An instance of the KORC derived type PROFILES.
-    TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)    :: spp
-    !! An instance of the derived type SPECIES containing all the parameters
-    !! and simulation variables of the different species in the simulation.
-    LOGICAL, INTENT(IN)                                        :: bool
-    !! Logical variable used to indicate if we calculate or not quantities
-    !! listed in the outputs list.
-    REAL(rp), INTENT(IN)                                       :: dt
-    !! Time step used in the leapfrog step (\(\Delta t\)).
-    REAL(rp)                                                   :: Prad
-    !! Total radiated power of each particle.
-    REAL(rp)                                                   :: B
-    !! Magnitude of the magnetic field seen by each particle .
-    REAL(rp)                                                   :: v
-    !! Speed of each particle.
-    REAL(rp)                                                   :: vpar
-    !! Parallel velocity \(v_\parallel = \mathbf{v}\cdot \hat{b}\).
-    REAL(rp)                                                   :: vperp
-    !! Perpendicular velocity \(v_\parallel = |\mathbf{v} - (\mathbf{v}\cdot
-    !! \hat{b})\hat{b}|\).
-    REAL(rp)                                                   :: tmp
-    !! Temporary variable used for various computations.
-    REAL(rp)                                                   :: a
-    !! This variable is used to simplify notation in the code, and
-    !! is given by \(a=q\Delta t/m\),
-    REAL(rp)                                                   :: gp
-    !! This variable is \(\gamma' = \sqrt{1 + p'^2/m^2c^2}\) in the
-    !! above equations.
-    REAL(rp)                                                   :: sigma
-    !! This variable is \(\sigma = \gamma'^2 - \tau^2\) in the above equations.
-    REAL(rp)                                                   :: us
-    !! This variable is \(u^{*} = p^{*}/m\) where \( p^{*} =
-    !! \mathbf{p}'\cdot \mathbf{\tau}/mc\).
-    !! Variable 'u^*' in Vay, J.-L. PoP (2008).
-    REAL(rp)                                                   :: g
-    !! Relativistic factor \(\gamma\).
-    REAL(rp)                                                   :: s
-    !! This variable is \(s = 1/(1+t^2)\) in the equations above.
-    !! Variable 's' in Vay, J.-L. PoP (2008).
-    REAL(rp), DIMENSION(3)                                     :: U_L
-    !! This variable is \(\mathbf{u}_L = \mathbf{p}_L/m\) where
-    !! \(\mathbf{p}^{i+1}_L = s\left[ \mathbf{p}' + (\mathbf{p}'
-    !! \cdot\mathbf{t})\mathbf{t} + \mathbf{p}'\times \mathbf{t} \right]\).
-    REAL(rp), DIMENSION(3)                                     :: U_hs
-    !! Is \(\mathbf{u}=\mathbf{p}/m\) at half-time step (\(i+1/2\)) in
-    !! the absence of radiation losses or collisions. \(\mathbf{u}^{i+1/2} =
-    !! \mathbf{u}^i + \frac{q\Delta t}{2m}\left( \mathbf{E}^{i+1/2} +
-    !! \mathbf{v}^i\times \mathbf{B}^{i+1/2} \right)\).
-    REAL(rp), DIMENSION(3)                                     :: tau
-    !! This variable is \(\mathbf{\tau} = (q\Delta t/2)\mathbf{B}^{i+1/2}\).
-    REAL(rp), DIMENSION(3)                                     :: up
-    !! This variable is \(\mathbf{u}'= \mathbf{p}'/m\), where \(\mathbf{p}'
-    !! = \mathbf{p}^i + q\Delta t \left( \mathbf{E}^{i+1/2} +
-    !! \frac{\mathbf{v}^i}{2} \times \mathbf{B}^{i+1/2} \right)\).
-    REAL(rp), DIMENSION(3)                                     :: t
-    !! This variable is \(\mathbf{t} = {\mathbf \tau}/\gamma^{i+1}\).
-    REAL(rp), DIMENSION(3)                                     :: U
-    !! This variable is \(\mathbf{u}^{i+1}= \mathbf{p}^{i+1}/m\).
-    REAL(rp), DIMENSION(3)                                     :: U_RC
-    !! This variable is \(\mathbf{u}^{i+1}_R= \mathbf{p}^{i+1}_R/m\)
-    REAL(rp), DIMENSION(3)                                     :: U_os
-    !! This variable is \(\mathbf{u}^{i+1/2}= \mathbf{p}^{i+1/2}/m\) when
-    !! radiation losses are included. Here, \(\mathbf{p}^{i+1/2} =
-    !! (\mathbf{p}^{i+1}_L + \mathbf{p}^i)/2\)
-    REAL(rp), DIMENSION(3)                                     :: Frad
-    !! Synchrotron radiation reaction force of each particle.
-    REAL(rp), DIMENSION(3)                                     :: vec
-    !! Auxiliary vector used in various computations.
-    REAL(rp), DIMENSION(3)                                     :: b_unit
-    !! Unitary vector pointing along the local magnetic field \(\hat{b}\).
-    INTEGER                                                    :: ii
-    !! Species iterator.
-    INTEGER                                                    :: pp
-    !! Particles iterator.
-    LOGICAL                                                    :: ss_collisions
-    !! Logical variable that indicates if collisions are included in
-    !! the simulation.
-    LOGICAL, INTENT(IN)                                        :: init
-    !! Logical variable used to indicate if this is the initial timestep.
 
-
-    ! Determine whether we are using a single-species collision model
-    ss_collisions = (TRIM(params%collisions_model) .EQ. 'SINGLE_SPECIES')
-
-    do ii = 1_idef,params%num_species
-
-       call get_fields(params,spp(ii)%vars,F)
-       !! Calls [[get_fields]] in [[korc_fields]].
-       ! Interpolates fields at local particles' position and keeps in
-       ! spp%vars. Fields in (R,\(\phi\),Z) coordinates.
-
-       call get_profiles(params,spp(ii)%vars,P,F)
-       !! Calls [[get_profiles]] in [[korc_profiles]].
-       ! Interpolates profiles at local particles' position and keeps in
-       ! spp%vars. 
-
-       !      write(6,'("Density of particle 1: ",E17.10)') spp(ii)%vars%ne(1)* &
-       !           params%cpp%density
-
-       a = spp(ii)%q*dt/spp(ii)%m
-
-       !$OMP PARALLEL DO SHARED(params,ii,spp,ss_collisions) &
-       !$OMP& FIRSTPRIVATE(a,dt,bool) PRIVATE(pp,U,U_L,U_hs,tau,up,gp, &
-       !$OMP& sigma,us,g,t,s,Frad,U_RC,U_os,tmp,b_unit,B,vpar,v,vperp,vec,Prad)
-       ! Call OpenMP to advance the velocity of individual particles on each
-       ! MPI process.
-       do pp=1_idef,spp(ii)%ppp
-          if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
-
-             U = spp(ii)%vars%g(pp)*spp(ii)%vars%V(pp,:)
-
-             ! Magnitude of magnetic field
-             B = SQRT( DOT_PRODUCT(spp(ii)%vars%B(pp,:),spp(ii)%vars%B(pp,:)))
-
-             U_L = U
-             U_RC = U
-
-             ! LEAP-FROG SCHEME FOR LORENTZ FORCE !
-             U_hs = U_L + 0.5_rp*a*( spp(ii)%vars%E(pp,:) + &
-                  cross(spp(ii)%vars%V(pp,:),spp(ii)%vars%B(pp,:)) )
-
-             tau = 0.5_rp*dt*spp(ii)%q*spp(ii)%vars%B(pp,:)/spp(ii)%m
-
-             up = U_hs + 0.5_rp*a*spp(ii)%vars%E(pp,:)
-
-             gp = SQRT( 1.0_rp + DOT_PRODUCT(up,up) )
-
-             sigma = gp**2 - DOT_PRODUCT(tau,tau)
-
-             us = DOT_PRODUCT(up,tau)
-
-             ! variable 'u^*' in Vay, J.-L. PoP (2008)
-             g = SQRT( 0.5_rp*(sigma + SQRT(sigma**2 + &
-                  4.0_rp*(DOT_PRODUCT(tau,tau) + us**2))) )
-
-             t = tau/g
-             s = 1.0_rp/(1.0_rp + DOT_PRODUCT(t,t))
-             ! variable 's' in Vay, J.-L. PoP (2008)
-
-             U_L = s*(up + DOT_PRODUCT(up,t)*t + cross(up,t))
-             ! LEAP-FROG SCHEME FOR LORENTZ FORCE !
-
-             ! Splitting operator for including radiation
-             U_os = 0.5_rp*(U_L + U)
-
-             if (params%radiation) then
-                !! Calls [[radiation_force]] in [[korc_ppusher]].
-                call radiation_force(spp(ii),U_os,spp(ii)%vars%E(pp,:), &
-                     spp(ii)%vars%B(pp,:),Frad)
-                U_RC = U_RC + a*Frad/spp(ii)%q
-             end if
-             ! Splitting operator for including radiation
-
-             if (.not.(params%FokPlan)) U = U_L + U_RC - U
-
-             ! Stochastic differential equations for including collisions
-             if (params%collisions .AND. ss_collisions .and. .not.(init)) then
-                !! Calls [[include_CoulombCollisions]] in [[korc_collisions]].
-                b_unit = spp(ii)%vars%B(pp,:)/B
-
-                call include_CoulombCollisions(params,U,spp(ii)%m, &
-                     spp(ii)%vars%flag(pp),spp(ii)%vars%ne(pp), &
-                     spp(ii)%vars%Te(pp),spp(ii)%vars%Zeff(pp),b_unit)
-             end if
-             ! Stochastic differential equations for including collisions
-
-             if (params%radiation .OR. params%collisions) then
-                g = SQRT( 1.0_rp + DOT_PRODUCT(U,U) )
-             end if
-
-             spp(ii)%vars%V(pp,:) = U/g
-             spp(ii)%vars%g(pp) = g
-
-             if (g.LT.params%minimum_particle_g) then
-                spp(ii)%vars%flag(pp) = 0_is
-             end if
-
-             if (bool) then
-                ! Parallel unit vector
-                b_unit = spp(ii)%vars%B(pp,:)/B
-
-                v = SQRT(DOT_PRODUCT(spp(ii)%vars%V(pp,:),spp(ii)%vars%V(pp,:)))
-                if (v.GT.korc_zero) then
-                   ! Parallel and perpendicular components of velocity
-                   vpar = DOT_PRODUCT(spp(ii)%vars%V(pp,:), b_unit)
-                   vperp =  DOT_PRODUCT(spp(ii)%vars%V(pp,:), &
-                        spp(ii)%vars%V(pp,:)) &
-                        - vpar**2
-                   if ( vperp .GE. korc_zero ) then
-                      vperp = SQRT( vperp )
-                   else
-                      vperp = 0.0_rp
-                   end if
-
-                   ! Pitch angle
-                   spp(ii)%vars%eta(pp) = 180.0_rp*MODULO(ATAN2(vperp,vpar), &
-                        2.0_rp*C_PI)/C_PI
-
-                   ! Magnetic moment
-                   spp(ii)%vars%mu(pp) = 0.5_rp*spp(ii)%m*g**2*vperp**2/B
-                   ! See Northrop's book (The adiabatic motion of charged
-                   ! particles)
-
-                   ! Radiated power
-                   tmp = spp(ii)%q**4/(6.0_rp*C_PI*E0*spp(ii)%m**2)
-                   vec = spp(ii)%vars%E(pp,:) + cross(spp(ii)%vars%V(pp,:), &
-                        spp(ii)%vars%B(pp,:))
-
-                   spp(ii)%vars%Prad(pp) = tmp*( DOT_PRODUCT(spp(ii)% &
-                        vars%E(pp,:), &
-                        spp(ii)%vars%E(pp,:)) + &
-                        DOT_PRODUCT(cross(spp(ii)%vars%V(pp,:), &
-                        spp(ii)%vars%B(pp,:)),spp(ii)%vars%E(pp,:))+ &
-                        spp(ii)%vars%g(pp)**2* &
-                        (DOT_PRODUCT(spp(ii)%vars%E(pp,:), &
-                        spp(ii)%vars%V(pp,:))**2 - DOT_PRODUCT(vec,vec)) )
-
-                   ! Input power due to electric field
-                   spp(ii)%vars%Pin(pp) = spp(ii)%q*DOT_PRODUCT( &
-                        spp(ii)%vars%E(pp,:),spp(ii)%vars%V(pp,:))
-                else
-                   spp(ii)%vars%eta(pp) = 0.0_rp
-                   spp(ii)%vars%mu(pp) = 0.0_rp
-                   spp(ii)%vars%Prad(pp) = 0.0_rp
-                   spp(ii)%vars%Pin(pp) = 0.0_rp
-                end if
-             end if !if outputting data
-          end if ! if particle in domain, i.e. spp%vars%flag==1
-       end do ! loop over particles on an mpi process
-       !$OMP END PARALLEL DO
-
-    end do
-  end subroutine advance_particles_velocity
 
 
   subroutine FO_init(params,F,spp,output,step)
@@ -720,7 +346,7 @@ contains
        q_cache=spp(ii)%q
        a = q_cache*params%dt/m_cache
        
-       B0=F%AB%Bo
+       B0=F%Bo
        EF0=F%Eo
        lam=F%AB%lambda
        R0=F%AB%Ro
@@ -1066,7 +692,7 @@ contains
 
     if (params%collisions) then
 
-       call include_CoulombCollisions_FOeqn_p(tt,params,X_X,X_Y,X_Z, &
+       call include_CoulombCollisions_FO_p(tt,params,X_X,X_Y,X_Z, &
             U_X,U_Y,U_Z,B_X,B_Y,B_Z,m_cache,P,flag_cache)
           
     end if
@@ -1134,7 +760,7 @@ contains
     
     do tt=1_ip,params%t_skip
           
-       call include_CoulombCollisions_FOeqn_p(tt,params,X_X,X_Y,X_Z, &
+       call include_CoulombCollisions_FO_p(tt,params,X_X,X_Y,X_Z, &
             U_X,U_Y,U_Z,B_X,B_Y,B_Z,m_cache,P,flag_cache)
        
     end do
@@ -1191,11 +817,11 @@ contains
        m_cache=spp(ii)%m
        q_cache=spp(ii)%q
        a = q_cache*params%dt/m_cache
-       
-       
+
+
        !$OMP PARALLEL DO default(none) &
        !$OMP& FIRSTPRIVATE(a,m_cache,q_cache) &
-       !$OMP& shared(params,ii,spp) &
+       !$OMP& shared(params,ii,spp,P) &
        !$OMP& PRIVATE(E0,pp,tt,Bmag,cc,X_X,X_Y,X_Z,V_X,V_Y,V_Z,B_X,B_Y,B_Z, &
        !$OMP& E_X,E_Y,E_Z,b_unit_X,b_unit_Y,b_unit_Z,v,vpar,vperp,tmp, &
        !$OMP& cross_X,cross_Y,cross_Z,vec_X,vec_Y,vec_Z,g, &
@@ -1227,7 +853,7 @@ contains
                      E_X,E_Y,E_Z,flag_cache)             
 
                 call advance_FOinterp_vars(tt,a,q_cache,m_cache,params,X_X,X_Y,X_Z, &
-                     V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,g,flag_cache)
+                     V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,g,flag_cache,P)
              end do !timestep iterator
 
              !$OMP SIMD
@@ -1267,7 +893,7 @@ contains
              !$OMP END SIMD
              
              call advance_FP3Dinterp_vars(params,X_X,X_Y,X_Z,V_X,V_Y,V_Z, &
-                  g,m_cache,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flag_cache)
+                  g,m_cache,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flag_cache,P)
 
              !$OMP SIMD
              do cc=1_idef,8_idef
@@ -1356,10 +982,10 @@ contains
   end subroutine adv_FOinterp_top
   
   subroutine advance_FOinterp_vars(tt,a,q_cache,m_cache,params,X_X,X_Y,X_Z, &
-       V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,g,flag_cache)
+       V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,g,flag_cache,P)
     TYPE(KORC_PARAMS), INTENT(IN)                              :: params
     !! Core KORC simulation parameters.
-
+    TYPE(PROFILES), INTENT(IN)                                 :: P
     INTEGER(ip), INTENT(IN)                                       :: tt
     !! Time step used in the leapfrog step (\(\Delta t\)).
     REAL(rp)                                      :: dt
@@ -1528,8 +1154,8 @@ contains
    
     if (params%collisions) then
        
-       call include_CoulombCollisions_FOinterp_p(tt,params,X_X,X_Y,X_Z, &
-            U_X,U_Y,U_Z,B_X,B_Y,B_Z,m_cache,flag_cache)
+       call include_CoulombCollisions_FO_p(tt,params,X_X,X_Y,X_Z, &
+            U_X,U_Y,U_Z,B_X,B_Y,B_Z,m_cache,P,flag_cache)
        
     end if
 
@@ -1564,9 +1190,10 @@ contains
   end subroutine advance_FOinterp_vars
 
   subroutine advance_FP3Dinterp_vars(params,X_X,X_Y,X_Z,V_X,V_Y,V_Z,g, &
-       m_cache,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flag_cache)    
+       m_cache,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flag_cache,P)    
     TYPE(KORC_PARAMS), INTENT(INOUT)                              :: params
     !! Core KORC simulation parameters.
+    TYPE(PROFILES), INTENT(IN)                                 :: P
     INTEGER                                                    :: cc
     !! Chunk iterator.
     INTEGER(ip)                                                    :: tt
@@ -1594,8 +1221,8 @@ contains
     
     do tt=1_ip,params%t_skip
           
-       call include_CoulombCollisions_FOinterp_p(tt,params,X_X,X_Y,X_Z, &
-            U_X,U_Y,U_Z,B_X,B_Y,B_Z,m_cache,flag_cache)
+       call include_CoulombCollisions_FO_p(tt,params,X_X,X_Y,X_Z, &
+            U_X,U_Y,U_Z,B_X,B_Y,B_Z,m_cache,P,flag_cache)
        
     end do
 
@@ -1612,49 +1239,6 @@ contains
 
   end subroutine advance_FP3Dinterp_vars
   
-  subroutine advance_particles_position(params,F,spp,dt)
-    !! @note Subroutine to advance particles' position. @endnote
-    !! This subroutine advances the particles position using the information
-    !! of the updated velocity.
-    !!
-    !! $$\frac{\mathbf{x}^{i+1/2} - \mathbf{x}^{i-1/2}}{\Delta t}  =
-    !! \mathbf{v}^i$$
-    !!
-    !! @note Notice that all the variables in this subroutine have been
-    !! normalized using the characteristic scales in [[korc_units]]. @endnote
-    TYPE(KORC_PARAMS), INTENT(IN)                              :: params
-    !! Core KORC simulation parameters.
-    TYPE(FIELDS), INTENT(IN)                                   :: F
-    !! An instance of the KORC derived type FIELDS.
-    TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)    :: spp
-    !! An instance of the derived type SPECIES containing all the parameters
-    !! and simulation variables of the different species in the simulation.
-    REAL(rp), INTENT(IN)                                       :: dt
-    !! Time step used in the leapfrog step (\(\Delta t\)).
-    INTEGER                                                    :: ii
-    !! Species iterator.
-    INTEGER                                                    :: pp
-    !! Particles iterator.
-
-    do ii=1_idef,params%num_species
-       !$OMP PARALLEL DO FIRSTPRIVATE(dt) PRIVATE(pp) SHARED(ii,spp,params)
-       do pp=1_idef,spp(ii)%ppp          
-
-          if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
-
-
-             spp(ii)%vars%X(pp,:) = spp(ii)%vars%X(pp,:) + &
-                  dt*spp(ii)%vars%V(pp,:)
-
-          end if
-       end do
-       !$OMP END PARALLEL DO
-
-       !spp(ii)%vars%X = MERGE(spp(ii)%vars%X + dt*spp(ii)%vars%V, &
-       !     spp(ii)%vars%X,SPREAD(spp(ii)%vars%flag,1,3).EQ.1_idef)
-    end do
-
-  end subroutine advance_particles_position
 
   subroutine GC_init(params,F,spp)
     !! @note Subroutine to advance GC variables \(({\bf X},p_\parallel)\)
@@ -1723,12 +1307,17 @@ contains
 
                 bhat = spp(ii)%vars%B(pp,:)/Bmag1
 
-                if (params%plasma_model.eq.'ANALYTICAL') then
+                if (params%field_model.eq.'ANALYTICAL') then
                    rm=sqrt((spp(ii)%vars%Y(pp,1)-F%AB%Ro)**2+ &
                         (spp(ii)%vars%Y(pp,3))**2)
 
                    RAphi(pp,1)=-F%AB%lambda**2*F%AB%Bo/(2*F%AB%qo)* &
                         log(1+(rm/F%AB%lambda)**2)
+
+                else if (params%field_model.eq.'EXTERNAL') then
+
+                   RAphi(pp,1)=spp(ii)%vars%PHI_P(pp)
+                   
                 end if
 
                 !             write(6,'("bhat: ",E17.10)') bhat 
@@ -1747,6 +1336,7 @@ contains
           !$OMP END PARALLEL DO
 
           call cart_to_cyl(spp(ii)%vars%X,spp(ii)%vars%Y)
+          call get_fields(params,spp(ii)%vars,F)
 
           !$OMP PARALLEL DO SHARED(params,ii,spp,F,RAphi,RVphi) &
           !$OMP&  PRIVATE(pp,rm)
@@ -1755,11 +1345,16 @@ contains
           do pp=1_idef,spp(ii)%ppp
              if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
 
-                if (params%plasma_model.eq.'ANALYTICAL') then
+                if (params%field_model.eq.'ANALYTICAL') then
                    rm=sqrt((spp(ii)%vars%Y(pp,1)-F%AB%Ro)**2+ &
                         (spp(ii)%vars%Y(pp,3))**2)
                    RAphi(pp,2)=-F%AB%lambda**2*F%AB%Bo/(2*F%AB%qo)* &
                         log(1+(rm/F%AB%lambda)**2)
+
+                else if (params%field_model.eq.'EXTERNAL') then
+
+                   RAphi(pp,2)=spp(ii)%vars%PHI_P(pp)
+                   
                 end if
 
                 spp(ii)%vars%V(pp,1)=(spp(ii)%m*spp(ii)%vars%g(pp)* &
@@ -1770,8 +1365,6 @@ contains
              end if ! if particle in domain, i.e. spp%vars%flag==1
           end do ! loop over particles on an mpi process
           !$OMP END PARALLEL DO
-
-          call get_fields(params,spp(ii)%vars,F)
 
           !$OMP PARALLEL DO SHARED(ii,spp) PRIVATE(pp,Bmagc,bhatc)
           ! Call OpenMP to calculate p_par and mu for each particle and
@@ -1935,7 +1528,7 @@ contains
        q_cache=spp(ii)%q
        m_cache=spp(ii)%m
 
-       B0=F%AB%Bo
+       B0=F%Bo
        EF0=F%Eo
        lam=F%AB%lambda
        R0=F%AB%Ro
@@ -2261,7 +1854,7 @@ contains
     
     if (params%collisions) then
 
-       call include_CoulombCollisions_GCeqn_p(tt,params,Y_R,Y_PHI,Y_Z, &
+       call include_CoulombCollisions_GC_p(tt,params,Y_R,Y_PHI,Y_Z, &
             V_PLL,V_MU,m_cache,flag_cache,P,R0,B0,lam,q0,EF0)
 
     end if
@@ -2293,7 +1886,7 @@ contains
 
     do tt=1_ip,params%t_skip
        
-       call include_CoulombCollisions_GCeqn_p(tt,params,Y_R,Y_PHI,Y_Z, &
+       call include_CoulombCollisions_GC_p(tt,params,Y_R,Y_PHI,Y_Z, &
             V_PLL,V_MU,m_cache,flag_cache,P,R0,B0,lam,q0,EF0)
 
     end do
@@ -2306,6 +1899,7 @@ contains
     
     TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
     !! Core KORC simulation parameters.
+    TYPE(PROFILES), INTENT(IN)                                 :: P 
     TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)    :: spp
     !! An instance of the derived type SPECIES containing all the parameters
     !! and simulation variables of the different species in the simulation.
@@ -2316,7 +1910,7 @@ contains
     REAL(rp),DIMENSION(8) :: ne,Te,Zeff    
     REAL(rp),DIMENSION(8) :: V_PLL,V_MU
     INTEGER(is),DIMENSION(8) :: flag_cache
-    REAL(rp) :: m_cache,q_cache
+    REAL(rp) :: m_cache,q_cache,B0,EF0,R0,q0,lam,ar
 
     
     INTEGER                                                    :: ii
@@ -2334,10 +1928,16 @@ contains
        q_cache=spp(ii)%q
        m_cache=spp(ii)%m
 
+       B0=F%Bo
+       EF0=F%Eo
+       lam=F%AB%lambda
+       R0=F%AB%Ro
+       q0=F%AB%qo
+       ar=F%AB%a
        
        !$OMP PARALLEL DO default(none) &
-       !$OMP& FIRSTPRIVATE(q_cache,m_cache) &
-       !$OMP& shared(params,ii,spp) &
+       !$OMP& FIRSTPRIVATE(q_cache,m_cache,B0,EF0,lam,R0,q0,ar) &
+       !$OMP& shared(params,ii,spp,P) &
        !$OMP& PRIVATE(pp,tt,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,B_R,B_PHI,B_Z, &
        !$OMP& flag_cache)
        do pp=1_idef,spp(ii)%ppp,8
@@ -2358,7 +1958,8 @@ contains
           if (.not.params%FokPlan) then       
              do tt=1_ip,params%t_skip
                 call advance_GCinterp_vars(tt,params,Y_R,Y_PHI, &
-                  Y_Z,V_PLL,V_MU,q_cache,m_cache,flag_cache)
+                     Y_Z,V_PLL,V_MU,q_cache,m_cache,flag_cache, &
+                     B0,lam,R0,q0,ar,EF0,P)
              end do !timestep iterator
 
              !$OMP SIMD
@@ -2375,7 +1976,7 @@ contains
              
           else
              call advance_FPinterp_vars(params,Y_R,Y_PHI, &
-                  Y_Z,V_PLL,V_MU,m_cache,flag_cache)
+                  Y_Z,V_PLL,V_MU,m_cache,flag_cache,B0,lam,R0,q0,ar,EF0,P)
 
              !$OMP SIMD
              do cc=1_idef,8_idef
@@ -2419,14 +2020,14 @@ contains
   end subroutine adv_GCinterp_top
   
   subroutine advance_GCinterp_vars(tt,params,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
-       q_cache,m_cache,flag_cache)
+       q_cache,m_cache,flag_cache,B0,lam,R0,q0,ar,EF0,P)
     !! @note Subroutine to advance GC variables \(({\bf X},p_\parallel)\)
     !! @endnote
     !! Comment this section further with evolution equations, numerical
     !! methods, and descriptions of both.
     TYPE(KORC_PARAMS), INTENT(INOUT)                              :: params
     !! Core KORC simulation parameters.
-
+    TYPE(PROFILES), INTENT(IN)                                 :: P
     REAL(rp)                                      :: dt
     !! Time step used in the leapfrog step (\(\Delta t\)).
 
@@ -2459,7 +2060,7 @@ contains
     REAL(rp),DIMENSION(8) :: ne,Te,Zeff
 
     INTEGER(is),DIMENSION(8),intent(INOUT) :: flag_cache
-    REAL(rp),intent(IN)  :: q_cache,m_cache
+    REAL(rp),intent(IN)  :: q_cache,m_cache,B0,lam,R0,q0,ar,EF0
 
     dt=params%dt
 
@@ -2632,8 +2233,8 @@ contains
     
     if (params%collisions) then
        
-       call include_CoulombCollisions_GCinterp_p(tt,params, &
-            Y_R,Y_PHI,Y_Z,V_PLL,V_MU,m_cache,flag_cache)
+       call include_CoulombCollisions_GC_p(tt,params, &
+            Y_R,Y_PHI,Y_Z,V_PLL,V_MU,m_cache,flag_cache,P,R0,B0,lam,q0,EF0)
 
     end if
 
@@ -2641,9 +2242,10 @@ contains
   end subroutine advance_GCinterp_vars
 
   subroutine advance_FPinterp_vars(params,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
-       m_cache,flag_cache)    
+       m_cache,flag_cache,B0,lam,R0,q0,ar,EF0,P)    
     TYPE(KORC_PARAMS), INTENT(INOUT)                              :: params
     !! Core KORC simulation parameters.
+    TYPE(PROFILES), INTENT(IN)                                 :: P
     INTEGER                                                    :: cc
     !! Chunk iterator.
     INTEGER(ip)                                                    :: tt
@@ -2653,434 +2255,18 @@ contains
     REAL(rp),DIMENSION(8) :: B_R,B_PHI,B_Z
     REAL(rp),DIMENSION(8), INTENT(INOUT)  :: V_PLL,V_MU
     REAL(rp),DIMENSION(8) :: Bmag,ne,Te,Zeff
-    REAL(rp),intent(in) :: m_cache
+    REAL(rp),intent(in) :: m_cache,B0,EF0,R0,q0,lam,ar
     INTEGER(is),DIMENSION(8),intent(INOUT) :: flag_cache
 
 
     do tt=1_ip,params%t_skip
-       call include_CoulombCollisions_GCinterp_p(tt,params, &
-            Y_R,Y_PHI,Y_Z,V_PLL,V_MU,m_cache,flag_cache)
+       call include_CoulombCollisions_GC_p(tt,params, &
+            Y_R,Y_PHI,Y_Z,V_PLL,V_MU,m_cache,flag_cache,P,R0,B0,lam,q0,EF0)
     end do
 
   end subroutine advance_FPinterp_vars
 
   
-  subroutine advance_GC_vars_slow(params,F,P,spp,dt,output,init)
-    !! @note Subroutine to advance GC variables \(({\bf X},p_\parallel)\)
-    !! @endnote
-    !! Comment this section further with evolution equations, numerical
-    !! methods, and descriptions of both.
-    TYPE(KORC_PARAMS), INTENT(INOUT)                              :: params
-    !! Core KORC simulation parameters.
-    TYPE(FIELDS), INTENT(IN)                                   :: F
-    !! An instance of the KORC derived type FIELDS.
-    TYPE(PROFILES), INTENT(IN)                                 :: P
-    !! An instance of the KORC derived type PROFILES.
-    TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)    :: spp
-    !! An instance of the derived type SPECIES containing all the parameters
-    !! and simulation variables of the different species in the simulation.
-    REAL(rp), INTENT(IN)                                       :: dt
-    !! Time step used in the leapfrog step (\(\Delta t\)).
-    LOGICAL, INTENT(IN)                                        :: output
-    !! Logical variable used to indicate if we calculate or not quantities
-    !! listed in the outputs list.
-    LOGICAL, INTENT(IN)                                        :: init
-    !! Logical variable used to indicate if this is the initial timestep.
-    INTEGER                                                    :: ii
-    !! Species iterator.
-    INTEGER                                                    :: pp
-    !! Particles iterator.
-    REAL(rp)               :: Bmag
-    REAL(rp)               :: Bmagc
-    REAL(rp)               :: rm
-    REAL(rp),DIMENSION(:,:),ALLOCATABLE               :: RAphi
-    REAL(rp), DIMENSION(3) :: bhat
-    REAL(rp), DIMENSION(3) :: bhatc
-    REAL(rp),DIMENSION(:),ALLOCATABLE               :: RVphi
-    REAL(rp)              :: a1 = 1./5._rp
-    REAL(rp),DIMENSION(2) :: a2 = (/3./40._rp,9./40._rp/)
-    REAL(rp),DIMENSION(3) :: a3 = (/3./10._rp,-9./10._rp,6./5._rp/)
-    REAL(rp),DIMENSION(4) :: a4 = (/-11./54._rp,5./2._rp,-70./27._rp,35./27._rp/)
-    REAL(rp),DIMENSION(5) :: a5 = (/1631./55296._rp,175./512._rp,575./13824._rp,44275./110592._rp,253./4096._rp/)
-    REAL(rp),DIMENSION(6) :: b=(/37./378._rp,0._rp,250./621._rp,125./594._rp,0._rp,512./1771._rp/)
-    LOGICAL                                                    :: ss_collisions
-    !! Logical variable that indicates if collisions are included in
-    !! the simulation.
-
-    ! Determine whether we are using a single-species collision model
-    ss_collisions = (TRIM(params%collisions_model) .EQ. 'SINGLE_SPECIES')
-
-    do ii = 1_idef,params%num_species
-
-       call get_fields(params,spp(ii)%vars,F)
-       !! Calls [[get_fields]] in [[korc_fields]].
-       ! Interpolates fields at local particles' position and keeps in
-       ! spp%vars. Fields in (R,\(\phi\),Z) coordinates.
-
-
-       if (init) then
-
-          ALLOCATE(RAphi(spp(ii)%ppp,2))
-          ALLOCATE(RVphi(spp(ii)%ppp))
-          RAphi=0.0_rp
-
-          call cart_to_cyl(spp(ii)%vars%X,spp(ii)%vars%Y)
-
-          !$OMP PARALLEL DO SHARED(params,ii,spp,F,RAphi,RVphi) &
-          !$OMP&  PRIVATE(pp,Bmag,bhat,rm)
-          ! Call OpenMP to calculate p_par and mu for each particle and
-          ! put into spp%vars%V
-          do pp=1_idef,spp(ii)%ppp
-             if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
-
-                RVphi(pp)=(-sin(spp(ii)%vars%Y(pp,2))*spp(ii)%vars%V(pp,1)+ &
-                     cos(spp(ii)%vars%Y(pp,2))*spp(ii)%vars%V(pp,2))* &
-                     spp(ii)%vars%Y(pp,1)
-
-                Bmag = SQRT(spp(ii)%vars%B(pp,1)*spp(ii)%vars%B(pp,1)+ &
-                     spp(ii)%vars%B(pp,2)*spp(ii)%vars%B(pp,2)+ &
-                     spp(ii)%vars%B(pp,3)*spp(ii)%vars%B(pp,3))
-
-                !             write(6,'("pp: ",I16)') pp
-                !             write(6,'("Bmag: ",E17.10)') Bmag
-
-
-                bhat = spp(ii)%vars%B(pp,:)/Bmag
-
-                if (params%plasma_model.eq.'ANALYTICAL') then
-                   rm=sqrt((spp(ii)%vars%Y(pp,1)-F%AB%Ro)**2+ &
-                        (spp(ii)%vars%Y(pp,3))**2)
-
-                   RAphi(pp,1)=-F%AB%lambda**2*F%AB%Bo/(2*F%AB%qo)* &
-                        log(1+(rm/F%AB%lambda)**2)
-                end if
-
-                !             write(6,'("bhat: ",E17.10)') bhat 
-                !             write(6,'("V: ",E17.10)') spp(ii)%vars%V(pp,:)
-
-
-                spp(ii)%vars%X(pp,:)=spp(ii)%vars%X(pp,:)- &
-                     spp(ii)%m*spp(ii)%vars%g(pp)* &
-                     cross(bhat,spp(ii)%vars%V(pp,:))/(spp(ii)%q*Bmag)
-
-                ! transforming from particle location to associated
-                ! GC location
-
-             end if ! if particle in domain, i.e. spp%vars%flag==1
-          end do ! loop over particles on an mpi process
-          !$OMP END PARALLEL DO
-
-          call cart_to_cyl(spp(ii)%vars%X,spp(ii)%vars%Y)
-
-          !$OMP PARALLEL DO SHARED(params,ii,spp,F,RAphi,RVphi) &
-          !$OMP&  PRIVATE(pp,rm)
-          ! Call OpenMP to calculate p_par and mu for each particle and
-          ! put into spp%vars%V
-          do pp=1_idef,spp(ii)%ppp
-             if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
-
-                if (params%plasma_model.eq.'ANALYTICAL') then
-                   rm=sqrt((spp(ii)%vars%Y(pp,1)-F%AB%Ro)**2+ &
-                        (spp(ii)%vars%Y(pp,3))**2)
-                   RAphi(pp,2)=-F%AB%lambda**2*F%AB%Bo/(2*F%AB%qo)* &
-                        log(1+(rm/F%AB%lambda)**2)
-                end if
-
-                spp(ii)%vars%V(pp,1)=(spp(ii)%m*spp(ii)%vars%g(pp)* &
-                     RVphi(pp)+spp(ii)%q*(RAphi(pp,1)-RAphi(pp,2)))/ &
-                     spp(ii)%vars%Y(pp,1)
-                !GC ppar              
-
-             end if ! if particle in domain, i.e. spp%vars%flag==1
-          end do ! loop over particles on an mpi process
-          !$OMP END PARALLEL DO
-
-          call get_fields(params,spp(ii)%vars,F)
-
-          !$OMP PARALLEL DO SHARED(ii,spp) PRIVATE(pp,Bmagc,bhatc)
-          ! Call OpenMP to calculate p_par and mu for each particle and
-          ! put into spp%vars%V
-          do pp=1_idef,spp(ii)%ppp
-             if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
-
-                Bmagc = SQRT( DOT_PRODUCT(spp(ii)%vars%B(pp,:), &
-                     spp(ii)%vars%B(pp,:)))
-
-                bhatc = spp(ii)%vars%B(pp,:)/Bmagc
-
-                spp(ii)%vars%V(pp,1)=spp(ii)%vars%V(pp,1)/ &
-                     bhatc(2)
-                !GC ppar
-
-                spp(ii)%vars%V(pp,2)=spp(ii)%m/(2*Bmagc)*(spp(ii)%vars%g(pp)**2- &
-                     (1+(spp(ii)%vars%V(pp,1)/spp(ii)%m)**2))           
-                !GC mu
-
-
-             end if ! if particle in domain, i.e. spp%vars%flag==1
-          end do ! loop over particles on an mpi process
-          !$OMP END PARALLEL DO
-
-          params%GC_coords=.TRUE.
-          DEALLOCATE(RAphi)
-          DEALLOCATE(RVphi)
-
-       end if
-
-
-       if (.not.params%FokPlan) then
-
-          !$OMP PARALLEL
-          !$OMP WORKSHARE
-
-          spp(ii)%vars%Y0(:,:)=spp(ii)%vars%Y(:,:)
-          spp(ii)%vars%V0=spp(ii)%vars%V(:,1)
-
-          !$OMP END WORKSHARE
-          !$OMP END PARALLEL
-
-          !            write(6,'("Y0: ",E17.10)') spp(ii)%vars%Y0(1,:)
-
-          call GCEoM(params,spp(ii))
-
-          !            write(6,'("RHS: ",E17.10)') spp(ii)%vars%RHS(1,:)
-
-          !$OMP PARALLEL
-          !$OMP WORKSHARE
-
-          spp(ii)%vars%k1(:,:)=dt*spp(ii)%vars%RHS(:,:)    
-
-          spp(ii)%vars%Y(:,1)=spp(ii)%vars%Y0(:,1)+a1*spp(ii)%vars%k1(:,1)
-          spp(ii)%vars%Y(:,2)=spp(ii)%vars%Y0(:,2)+a1*spp(ii)%vars%k1(:,2)
-          spp(ii)%vars%Y(:,3)=spp(ii)%vars%Y0(:,3)+a1*spp(ii)%vars%k1(:,3)
-          spp(ii)%vars%V(:,1)=spp(ii)%vars%V0(:)+a1*spp(ii)%vars%k1(:,4)
-
-          !$OMP END WORKSHARE
-          !$OMP END PARALLEL
-
-          !           write(6,'("Y: ",E17.10)') spp(ii)%vars%Y(1,:)
-
-          call get_fields(params,spp(ii)%vars,F)
-
-          !       write(6,'("B: ",E17.10)') spp(ii)%vars%B(1,:)
-
-          call GCEoM(params,spp(ii))
-
-          !$OMP PARALLEL
-          !$OMP WORKSHARE
-
-          spp(ii)%vars%k2(:,:)=dt*spp(ii)%vars%RHS(:,:)
-
-          spp(ii)%vars%Y(:,1)=spp(ii)%vars%Y0(:,1)+ &
-               a2(1)*spp(ii)%vars%k1(:,1)+ &
-               a2(2)*spp(ii)%vars%k2(:,1)
-          spp(ii)%vars%Y(:,2)=spp(ii)%vars%Y0(:,2)+ &
-               a2(1)*spp(ii)%vars%k1(:,2)+ &
-               a2(2)*spp(ii)%vars%k2(:,2)
-          spp(ii)%vars%Y(:,3)=spp(ii)%vars%Y0(:,3)+ &
-               a2(1)*spp(ii)%vars%k1(:,3)+ &
-               a2(2)*spp(ii)%vars%k2(:,3)
-          spp(ii)%vars%V(:,1)=spp(ii)%vars%V0(:)+ &
-               a2(1)*spp(ii)%vars%k1(:,4)+ &
-               a2(2)*spp(ii)%vars%k2(:,4)
-
-          !$OMP END WORKSHARE
-          !$OMP END PARALLEL
-
-          call get_fields(params,spp(ii)%vars,F)
-
-          call GCEoM(params,spp(ii))
-
-
-          !$OMP PARALLEL
-          !$OMP WORKSHARE
-
-          spp(ii)%vars%k3(:,:)=dt*spp(ii)%vars%RHS(:,:)
-
-          spp(ii)%vars%Y(:,1)=spp(ii)%vars%Y0(:,1)+ &
-               a3(1)*spp(ii)%vars%k1(:,1)+ &
-               a3(2)*spp(ii)%vars%k2(:,1)+ &
-               a3(3)*spp(ii)%vars%k3(:,1)
-          spp(ii)%vars%Y(:,2)=spp(ii)%vars%Y0(:,2)+ &
-               a3(1)*spp(ii)%vars%k1(:,2)+ &
-               a3(2)*spp(ii)%vars%k2(:,2)+ &
-               a3(3)*spp(ii)%vars%k3(:,2)
-          spp(ii)%vars%Y(:,3)=spp(ii)%vars%Y0(:,3)+ &
-               a3(1)*spp(ii)%vars%k1(:,3)+ &
-               a3(2)*spp(ii)%vars%k2(:,3)+ &
-               a3(3)*spp(ii)%vars%k3(:,3)
-          spp(ii)%vars%V(:,1)=spp(ii)%vars%V0(:)+ &
-               a3(1)*spp(ii)%vars%k1(:,4)+ &
-               a3(2)*spp(ii)%vars%k2(:,4)+ &
-               a3(3)*spp(ii)%vars%k3(:,4)
-
-          !$OMP END WORKSHARE
-          !$OMP END PARALLEL
-
-          call get_fields(params,spp(ii)%vars,F)
-
-          call GCEoM(params,spp(ii))
-
-          !$OMP PARALLEL
-          !$OMP WORKSHARE
-
-          spp(ii)%vars%k4(:,:)=dt*spp(ii)%vars%RHS(:,:)
-
-          spp(ii)%vars%Y(:,1)=spp(ii)%vars%Y0(:,1)+ &
-               a4(1)*spp(ii)%vars%k1(:,1)+ &
-               a4(2)*spp(ii)%vars%k2(:,1)+ &
-               a4(3)*spp(ii)%vars%k3(:,1)+ &
-               a4(4)*spp(ii)%vars%k4(:,1)
-          spp(ii)%vars%Y(:,2)=spp(ii)%vars%Y0(:,2)+ &
-               a4(1)*spp(ii)%vars%k1(:,2)+ &
-               a4(2)*spp(ii)%vars%k2(:,2)+ &
-               a4(3)*spp(ii)%vars%k3(:,2)+ &
-               a4(4)*spp(ii)%vars%k4(:,2)
-          spp(ii)%vars%Y(:,3)=spp(ii)%vars%Y0(:,3)+ &
-               a4(1)*spp(ii)%vars%k1(:,3)+ &
-               a4(2)*spp(ii)%vars%k2(:,3)+ &
-               a4(3)*spp(ii)%vars%k3(:,3)+ &
-               a4(4)*spp(ii)%vars%k4(:,3)
-          spp(ii)%vars%V(:,1)=spp(ii)%vars%V0(:)+ &
-               a4(1)*spp(ii)%vars%k1(:,4)+ &
-               a4(2)*spp(ii)%vars%k2(:,4)+ &
-               a4(3)*spp(ii)%vars%k3(:,4)+ &
-               a4(4)*spp(ii)%vars%k4(:,4)
-
-          !$OMP END WORKSHARE
-          !$OMP END PARALLEL
-
-          call get_fields(params,spp(ii)%vars,F)
-
-          call GCEoM(params,spp(ii))
-
-          !$OMP PARALLEL
-          !$OMP WORKSHARE
-
-          spp(ii)%vars%k5(:,:)=dt*spp(ii)%vars%RHS(:,:)
-
-          spp(ii)%vars%Y(:,1)=spp(ii)%vars%Y0(:,1)+ &
-               a5(1)*spp(ii)%vars%k1(:,1)+ &
-               a5(2)*spp(ii)%vars%k2(:,1)+ &
-               a5(3)*spp(ii)%vars%k3(:,1)+ &
-               a5(4)*spp(ii)%vars%k4(:,1)+ &
-               a5(5)*spp(ii)%vars%k5(:,1)
-          spp(ii)%vars%Y(:,2)=spp(ii)%vars%Y0(:,2)+ &
-               a5(1)*spp(ii)%vars%k1(:,2)+ &
-               a5(2)*spp(ii)%vars%k2(:,2)+ &
-               a5(3)*spp(ii)%vars%k3(:,2)+ &
-               a5(4)*spp(ii)%vars%k4(:,2)+ &
-               a5(5)*spp(ii)%vars%k5(:,2)
-          spp(ii)%vars%Y(:,3)=spp(ii)%vars%Y0(:,3)+ &
-               a5(1)*spp(ii)%vars%k1(:,3)+ &
-               a5(2)*spp(ii)%vars%k2(:,3)+ &
-               a5(3)*spp(ii)%vars%k3(:,3)+ &
-               a5(4)*spp(ii)%vars%k4(:,3)+ &
-               a5(5)*spp(ii)%vars%k5(:,3)
-          spp(ii)%vars%V(:,1)=spp(ii)%vars%V0(:)+ &
-               a5(1)*spp(ii)%vars%k1(:,4)+ &
-               a5(2)*spp(ii)%vars%k2(:,4)+ &
-               a5(3)*spp(ii)%vars%k3(:,4)+ &
-               a5(4)*spp(ii)%vars%k4(:,4)+ &
-               a5(5)*spp(ii)%vars%k5(:,4)
-
-          !$OMP END WORKSHARE
-          !$OMP END PARALLEL         
-
-          call get_fields(params,spp(ii)%vars,F)
-
-          call GCEoM(params,spp(ii))
-
-          !$OMP PARALLEL
-          !$OMP WORKSHARE
-
-          spp(ii)%vars%k6(:,:)=dt*spp(ii)%vars%RHS(:,:)
-
-          spp(ii)%vars%Y(:,1)=spp(ii)%vars%Y0(:,1)+ &
-               b(1)*spp(ii)%vars%k1(:,1)+ &
-               b(2)*spp(ii)%vars%k2(:,1)+ &
-               b(3)*spp(ii)%vars%k3(:,1)+ &
-               b(4)*spp(ii)%vars%k4(:,1)+ &
-               b(5)*spp(ii)%vars%k5(:,1)+ &
-               b(6)*spp(ii)%vars%k6(:,1)
-          spp(ii)%vars%Y(:,2)=spp(ii)%vars%Y0(:,2)+ &
-               b(1)*spp(ii)%vars%k1(:,2)+ &
-               b(2)*spp(ii)%vars%k2(:,2)+ &
-               b(3)*spp(ii)%vars%k3(:,2)+ &
-               b(4)*spp(ii)%vars%k4(:,2)+ &
-               b(5)*spp(ii)%vars%k5(:,2)+ &
-               b(6)*spp(ii)%vars%k6(:,2)
-          spp(ii)%vars%Y(:,3)=spp(ii)%vars%Y0(:,3)+ &
-               b(1)*spp(ii)%vars%k1(:,3)+ &
-               b(2)*spp(ii)%vars%k2(:,3)+ &
-               b(3)*spp(ii)%vars%k3(:,3)+ &
-               b(4)*spp(ii)%vars%k4(:,3)+ &
-               b(5)*spp(ii)%vars%k5(:,3)+ &
-               b(6)*spp(ii)%vars%k6(:,3)
-          spp(ii)%vars%V(:,1)=spp(ii)%vars%V0(:)+ &
-               b(1)*spp(ii)%vars%k1(:,4)+ &
-               b(2)*spp(ii)%vars%k2(:,4)+ &
-               b(3)*spp(ii)%vars%k3(:,4)+ &
-               b(4)*spp(ii)%vars%k4(:,4)+ &
-               b(5)*spp(ii)%vars%k5(:,4)+ &
-               b(6)*spp(ii)%vars%k6(:,4)
-
-          !$OMP END WORKSHARE
-          !$OMP END PARALLEL 
-
-       end if ! if .not.params%FokPlan
-
-       call get_profiles(params,spp(ii)%vars,P,F)
-       !! Calls [[get_profiles]] in [[korc_profiles]].
-       ! Interpolates profiles at local particles' position and keeps in
-       ! spp%vars.
-
-       if (params%collisions .AND. ss_collisions .and. .not.(init)) then
-
-          call get_fields(params,spp(ii)%vars,F)
-
-          ! Stochastic differential equations for including collisions
-          !$OMP PARALLEL DO SHARED(ii,spp) PRIVATE(pp)
-          do pp=1_idef,spp(ii)%ppp
-
-             Bmag = SQRT( DOT_PRODUCT(spp(ii)%vars%B(pp,:), &
-                  spp(ii)%vars%B(pp,:)))
-
-             !! Calls [[include_CoulombCollisions_GC]] in [[korc_collisions]].
-             call include_CoulombCollisions_GC(params,spp(ii)%vars%V(pp,:), &
-                  Bmag, spp(ii)%m, spp(ii)%vars%flag(pp), &
-                  spp(ii)%vars%ne(pp),spp(ii)%vars%Te(pp),spp(ii)%vars%Zeff(pp))
-          end do
-          !$OMP END PARALLEL DO
-       end if
-
-       if (output) then
-
-          call get_fields(params,spp(ii)%vars,F)
-
-          !$OMP PARALLEL DO SHARED(ii,spp) PRIVATE(pp,Bmag)
-          ! Call OpenMP to calculate p_par and mu for each particle and
-          ! put into spp%vars%V
-          do pp=1_idef,spp(ii)%ppp
-             if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
-
-                Bmag = SQRT( DOT_PRODUCT(spp(ii)%vars%B(pp,:), &
-                     spp(ii)%vars%B(pp,:)))
-
-                spp(ii)%vars%g(pp)=sqrt(1+(spp(ii)%vars%V(pp,1))**2+ &
-                     2*spp(ii)%vars%V(pp,2)*Bmag)
-
-                spp(ii)%vars%eta(pp) = atan2(sqrt(2*spp(ii)%m*Bmag* &
-                     spp(ii)%vars%V(pp,2)),spp(ii)%vars%V(pp,1))*180.0_rp/C_PI
-
-             end if ! if particle in domain, i.e. spp%vars%flag==1
-          end do ! loop over particles on an mpi process
-          !$OMP END PARALLEL DO                
-       end if !if outputting data
-
-    end do ! loop over particle species
-
-  end subroutine advance_GC_vars_slow
 
   subroutine GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
        B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI, &
@@ -3148,106 +2334,6 @@ contains
 
   end subroutine GCEoM_p
 
-  subroutine GCEoM(params,spp)
-    TYPE(SPECIES), INTENT(INOUT)    :: spp
-    !! An instance of the derived type SPECIES containing all the parameters
-    !! and simulation variables of the different species in the simulation.
-    TYPE(KORC_PARAMS), INTENT(IN) :: params
-
-    REAL(rp) :: Bmag
-    REAL(rp),DIMENSION(3)  :: bhat
-    REAL(rp),DIMENSION(3) :: Bst
-    REAL(rp)  :: bdotBst
-    REAL(rp)  :: BstdotE
-    REAL(rp)  :: BstdotgradB
-    REAL(rp),DIMENSION(3)  :: EcrossB
-    REAL(rp),DIMENSION(3)  :: bcrossgradB
-    REAL(rp) :: gamgc
-    INTEGER  :: pp
-    REAL(rp),DIMENSION(3) :: gradB
-    REAL(rp),DIMENSION(3) :: curlb
-    REAL(rp),DIMENSION(3) :: B_cache
-    REAL(rp),DIMENSION(3) :: E_cache
-    REAL(rp),DIMENSION(2) :: V_cache
-    REAL(rp) :: R_cache
-
-
-    !$OMP PARALLEL DO &
-    !$OMP& PRIVATE(pp,Bmag,bhat,Bst,bdotBst,BstdotE,BstdotgradB, &
-    !$OMP& Ecrossb,bcrossgradB,gamgc,gradB,curlb,B_cache,V_cache, &
-    !$OMP& E_cache,R_cache)
-    do pp=1_idef,spp%ppp
-       !    if ( spp%vars%flag(pp) .EQ. 1_is ) then
-
-       B_cache(1)=spp%vars%B(pp,1)
-       B_cache(2)=spp%vars%B(pp,2)
-       B_cache(3)=spp%vars%B(pp,3)
-
-       E_cache(1)=spp%vars%E(pp,1)
-       E_cache(2)=spp%vars%E(pp,2)
-       E_cache(3)=spp%vars%E(pp,3)
-
-       V_cache(1)=spp%vars%V(pp,1)
-       V_cache(2)=spp%vars%V(pp,2)
-
-       R_cache=spp%vars%Y(pp,1)
-
-       Bmag = SQRT(B_cache(1)*B_cache(1)+B_cache(2)*B_cache(2)+ &
-            B_cache(3)*B_cache(3))
-
-       bhat(1) = B_cache(1)/Bmag
-       bhat(2) = B_cache(2)/Bmag
-       bhat(3) = B_cache(3)/Bmag
-
-       !       if (params%orbit_model(3:5)=='pre') then
-       curlb(1)=spp%vars%curlb(pp,1)
-       curlb(2)=spp%vars%curlb(pp,2)
-       curlb(3)=spp%vars%curlb(pp,3)
-
-       gradB(1)=spp%vars%gradB(pp,1)
-       gradB(2)=spp%vars%gradB(pp,2)
-       gradB(3)=spp%vars%gradB(pp,3)           
-       !       else if (params%orbit_model(3:6)=='grad') then
-       !          call aux_fields(pp,spp,gradB,curlb,Bmag)
-       !       end if
-
-       Bst(1)=spp%q*B_cache(1)+V_cache(1)*curlb(1)
-       Bst(2)=spp%q*B_cache(2)+V_cache(1)*curlb(2)
-       Bst(3)=spp%q*B_cache(3)+V_cache(1)*curlb(3)
-
-       bdotBst=bhat(1)*Bst(1)+bhat(2)*Bst(2)+bhat(3)*Bst(3)
-       BstdotE=Bst(1)*E_cache(1)+ &
-            Bst(2)*E_cache(2)+ &
-            Bst(3)*E_cache(3)      
-       BstdotgradB=Bst(1)*gradB(1)+Bst(2)*gradB(2)+Bst(3)*gradB(3)
-
-       Ecrossb(1)=E_cache(2)*bhat(3)-E_cache(3)*bhat(2)
-       Ecrossb(2)=E_cache(3)*bhat(1)-E_cache(1)*bhat(3)
-       Ecrossb(3)=E_cache(1)*bhat(2)-E_cache(2)*bhat(1)
-
-
-       bcrossgradB(1)=bhat(2)*gradB(3)-bhat(3)*gradB(2)
-       bcrossgradB(2)=bhat(3)*gradB(1)-bhat(1)*gradB(3)
-       bcrossgradB(3)=bhat(1)*gradB(2)-bhat(2)*gradB(1)
-
-       gamgc=sqrt(1+V_cache(1)**2+2*V_cache(2)*Bmag)
-
-       spp%vars%RHS(pp,1)=(spp%q*Ecrossb(1)+(spp%m*V_cache(2)* &
-            bcrossgradB(1)+V_cache(1)*Bst(1))/(spp%m*gamgc))/bdotBst
-       spp%vars%RHS(pp,2)=(spp%q*Ecrossb(2)+(spp%m*V_cache(2)* &
-            bcrossgradB(2)+V_cache(1)*Bst(2))/(spp%m*gamgc))/ &
-            (R_cache*bdotBst)
-       spp%vars%RHS(pp,3)=(spp%q*Ecrossb(3)+(spp%m*V_cache(2)* &
-            bcrossgradB(3)+V_cache(1)*Bst(3))/(spp%m*gamgc))/bdotBst
-       spp%vars%RHS(pp,4)=(spp%q*BstdotE-V_cache(2)* &
-            BstdotgradB/gamgc)/bdotBst
-
-       !    end if ! if particle in domain, i.e. spp%vars%flag==1
-    end do ! loop over particles on an mpi process
-    !$OMP END PARALLEL DO
-
-
-  end subroutine GCEoM
 
   subroutine aux_fields(pp,spp,gradB,curlb,Bmag)
     TYPE(SPECIES), INTENT(IN)    :: spp

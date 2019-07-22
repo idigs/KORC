@@ -123,13 +123,9 @@ module korc_collisions
        normalize_collisions_params,&
        collision_force,&
        deallocate_collisions_params,&
-       save_collision_params,&
-       include_CoulombCollisions,&
-       include_CoulombCollisions_GC,&
-       include_CoulombCollisions_GCeqn_p,&
-       include_CoulombCollisions_GCinterp_p,&
-       include_CoulombCollisions_FOeqn_p,&
-       include_CoulombCollisions_FOinterp_p,&
+       save_collision_params,&    
+       include_CoulombCollisions_GC_p,&
+       include_CoulombCollisions_FO_p,&
        check_collisions_params,&
        define_collisions_time_step
   PRIVATE :: load_params_ms,&
@@ -1116,138 +1112,9 @@ contains
   ! * * * * * * * * * * * *  * * * * * * * * * * * * * * * * * * * !
 
 
-  subroutine include_CoulombCollisions(params,U,me,flag,ne,Te,Zeff,b_unit)
-    !! This subroutine performs a Stochastic collision process consistent
-    !! with the Fokker-Planck model for relativitic electron colliding with
-    !! a thermal (Maxwellian) plasma. The collision operator is in spherical
-    !! coordinates of the form found in Papp et al., NF (2011). CA
-    !! corresponds to the parallel (speed diffusion) process, CF corresponds
-    !! to a slowing down (momentum loss) process, and CB corresponds to a
-    !! perpendicular diffusion process. Ordering of the processes are
-    !! $$ \sqrt{CB}\gg CB \gg CF \sim \sqrt{CA} \gg CA,$$
-    !! and only the dominant terms are kept.
-    TYPE(KORC_PARAMS), INTENT(IN) 		:: params
-    REAL(rp), DIMENSION(3), INTENT(INOUT) 	:: U
-    REAL(rp), INTENT(IN) 			:: me
-    INTEGER(is), INTENT(INOUT)                      :: flag
-    REAL(rp), INTENT(IN) 			:: ne
-    REAL(rp), INTENT(IN) 			:: Te
-    REAL(rp), INTENT(IN) 			:: Zeff
-    REAL(rp), DIMENSION(3), INTENT(IN) 		:: b_unit
-    REAL(rp), DIMENSION(3) 		:: b1
-    REAL(rp), DIMENSION(3) 		:: b2
-    REAL(rp), DIMENSION(3) 		:: b3
 
-    
-    REAL(rp), DIMENSION(3) 			:: dW
-    !! 3D Weiner process
-    REAL(rp), DIMENSION(3) 			:: rnd1
-    REAL(rp), DIMENSION(3) 			:: x = (/1.0_rp,0.0_rp,0.0_rp/)
-    REAL(rp), DIMENSION(3) 			:: y = (/0.0_rp,1.0_rp,0.0_rp/)
-    REAL(rp), DIMENSION(3) 			:: z = (/0.0_rp,0.0_rp,1.0_rp/)
-    REAL(rp) 					:: dt
-    REAL(rp) 					:: um
-    REAL(rp) 					:: dum
-    REAL(rp) 					:: vm
-    REAL(rp) 					:: pm
-    REAL(rp) 					:: gam
-    REAL(rp),DIMENSION(3) 			:: Ub
-    REAL(rp) 			:: eta
-    REAL(rp) 			:: deta
-    REAL(rp) 			:: phi
-    REAL(rp) 			:: dphi
-    !! speed of particle
-    REAL(rp) 					:: CAL
-    REAL(rp) 					:: dCAL
-    REAL(rp) 					:: CFL
-    REAL(rp) 					:: CBL
 
-    if (MODULO(params%it+1_ip,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
-       dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt
-       ! subcylcling iterations a fraction of fastest collision frequency,
-       ! where fraction set by dTau in namelist &CollisionParamsSingleSpecies
-
-       um = SQRT(DOT_PRODUCT(U,U))
-       pm=me*um
-       vm = um/SQRT(1.0_rp + um**2)
-       ! um is gamma times v, this solves for v
-
-       if (vm/VTe(Te).lt. 1) then
-          flag=0_is
-          return
-       endif
-       
-       eta = acos(DOT_PRODUCT(U,b_unit)/um)
-       ! pitch angle in b_unit reference frame
-
-       call unitVectorsC(b_unit,b1,b2,b3)
-       ! b1=b_unit, (b1,b2,b3) is right-handed
-
-       phi = atan2(dot_product(U,b3),dot_product(U,b2))
-       ! azimuthal angle in b_unit refernce frame
-       
-#ifdef PARALLEL_RANDOM
-       ! uses C library to generate normal_distribution random variables,
-       ! preserving parallelization where Fortran random number generator
-       ! does not
-       rnd1(1) = get_random()
-       rnd1(2) = get_random()
-       rnd1(3) = get_random()
-#else
-       call RANDOM_NUMBER(rnd1)
-#endif
-       
-       dW = SQRT(dt)*rnd1
-       ! 3D Weiner process 
-       
-       CAL = CA_SD(vm,ne,Te)
-       dCAL= dCA_SD(vm,me,ne,Te)
-       CFL = CF_SD(params,vm,ne,Te)
-       CBL = (CB_ee_SD(vm,ne,Te,Zeff)+ &
-            CB_ei_SD(params,vm,ne,Te,Zeff))
-       
-
-!       write(6,'("CAL, "E17.10)') CAL
-!       write(6,'("dCAL, "E17.10)') dCAL
-!       write(6,'("CFL, "E17.10)') CFL
-!       write(6,'("CBL, "E17.10)') CBL
-       
-       
-       dum=(-2.0_rp*CFL+dCAL)*dt+sqrt(2.0_rp*CAL)*dW(1)
-       deta=CBL/(pm**2*tan(eta))*dt+sqrt(2.0_rp*CBL)/pm*dW(2)
-       dphi=sqrt(2*CBL)/(pm*sin(eta))*dW(3)
-
-!       write(6,'("um, "E17.10)') um
-!       write(6,'("eta, "E17.10)') eta
-!       write(6,'("phi, "E17.10)') phi
-       
-!       write(6,'("dum, "E17.10)') dum
-!       write(6,'("deta, "E17.10)') deta
-!       write(6,'("dphi, "E17.10)') dphi
-       
-       um=um+dum
-       eta=eta+deta
-       phi=mod(phi+dphi,2*C_PI)
-
-       ! Keep eta between [0,pi]
-       if (eta<0) then
-          eta=-eta
-       else if (eta>C_PI) then
-          eta=2*C_PI-eta
-       endif
-       
-       Ub(1)=um*cos(eta)
-       Ub(2)=um*sin(eta)*cos(phi)
-       Ub(3)=um*sin(eta)*sin(phi)
-       
-       U(1) = Ub(1)*b1(1)+Ub(2)*b2(1)+Ub(3)*b3(1)
-       U(2) = Ub(1)*b1(2)+Ub(2)*b2(2)+Ub(3)*b3(2)
-       U(3) = Ub(1)*b1(3)+Ub(2)*b2(3)+Ub(3)*b3(3)
-       
-    end if
-  end subroutine include_CoulombCollisions
-
-  subroutine include_CoulombCollisions_FOeqn_p(tt,params,X_X,X_Y,X_Z, &
+  subroutine include_CoulombCollisions_FO_p(tt,params,X_X,X_Y,X_Z, &
        U_X,U_Y,U_Z,B_X,B_Y,B_Z,me,P,flag)
     !! This subroutine performs a Stochastic collision process consistent
     !! with the Fokker-Planck model for relativitic electron colliding with
@@ -1309,9 +1176,13 @@ contains
        ! where fraction set by dTau in namelist &CollisionParamsSingleSpecies
 
        call cart_to_cyl_p(X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
-       
-       call analytical_profiles_p(time,params,Y_R,Y_Z,P,ne,Te,Zeff)
-       
+
+       if (params%profile_model.eq.'ANALYTICAL') then
+          call analytical_profiles_p(time,params,Y_R,Y_Z,P,ne,Te,Zeff)
+       else  if (params%profile_model.eq.'EXTERNAL') then          
+          call interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff)
+       end if
+          
        !$OMP SIMD
        do cc=1_idef,8_idef
 
@@ -1433,196 +1304,11 @@ contains
        end do
        
     end if
-  end subroutine include_CoulombCollisions_FOeqn_p
+  end subroutine include_CoulombCollisions_FO_p
   
-  subroutine include_CoulombCollisions_FOinterp_p(tt,params,X_X,X_Y,X_Z, &
-       U_X,U_Y,U_Z,B_X,B_Y,B_Z,me,flag)
-    !! This subroutine performs a Stochastic collision process consistent
-    !! with the Fokker-Planck model for relativitic electron colliding with
-    !! a thermal (Maxwellian) plasma. The collision operator is in spherical
-    !! coordinates of the form found in Papp et al., NF (2011). CA
-    !! corresponds to the parallel (speed diffusion) process, CF corresponds
-    !! to a slowing down (momentum loss) process, and CB corresponds to a
-    !! perpendicular diffusion process. Ordering of the processes are
-    !! $$ \sqrt{CB}\gg CB \gg CF \sim \sqrt{CA} \gg CA,$$
-    !! and only the dominant terms are kept.
-
-    TYPE(KORC_PARAMS), INTENT(IN) 		:: params
-    REAL(rp), DIMENSION(8), INTENT(IN) 	:: X_X,X_Y,X_Z
-    REAL(rp), DIMENSION(8)  	:: Y_R,Y_PHI,Y_Z
-    REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: U_X,U_Y,U_Z
-
-    REAL(rp), DIMENSION(8) 			:: ne,Te,Zeff
-    INTEGER(is), DIMENSION(8), INTENT(IN) 			:: flag
-    REAL(rp), INTENT(IN)  :: me
-
-    INTEGER(ip), INTENT(IN) 			:: tt
-
-    REAL(rp), DIMENSION(8), INTENT(IN) 		:: B_X,B_Y,B_Z
-
-    REAL(rp), DIMENSION(8) 		:: b_unit_X,b_unit_Y,b_unit_Z
-    REAL(rp), DIMENSION(8) 		:: b1_X,b1_Y,b1_Z
-    REAL(rp), DIMENSION(8) 		:: b2_X,b2_Y,b2_Z
-    REAL(rp), DIMENSION(8) 		:: b3_X,b3_Y,b3_Z
-    REAL(rp), DIMENSION(8) 		:: Bmag
-
-    
-    REAL(rp), DIMENSION(8,3) 			:: dW
-    !! 3D Weiner process
-    REAL(rp), DIMENSION(8,3) 			:: rnd1
-
-    REAL(rp) 					:: dt
-    REAL(rp), DIMENSION(8) 					:: um
-    REAL(rp), DIMENSION(8) 					:: dpm
-    REAL(rp), DIMENSION(8) 					:: vm
-    REAL(rp), DIMENSION(8) 					:: pm
-
-    REAL(rp),DIMENSION(8) 			:: Ub_X,Ub_Y,Ub_Z
-    REAL(rp), DIMENSION(8) 			:: xi
-    REAL(rp), DIMENSION(8) 			:: dxi
-    REAL(rp), DIMENSION(8)  			:: phi
-    REAL(rp), DIMENSION(8)  			:: dphi
-    !! speed of particle
-    REAL(rp),DIMENSION(8) 					:: CAL
-    REAL(rp),DIMENSION(8) 					:: dCAL
-    REAL(rp),DIMENSION(8) 					:: CFL
-    REAL(rp),DIMENSION(8) 					:: CBL
-
-    integer(ip) :: cc
-
-    if (MODULO(params%it+tt,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
-       dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt
-       ! subcylcling iterations a fraction of fastest collision frequency,
-       ! where fraction set by dTau in namelist &CollisionParamsSingleSpecies
-
-       call cart_to_cyl_p(X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
-       
-       call interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff)
-       
-       !$OMP SIMD
-       do cc=1_idef,8_idef
-
-          um(cc) = SQRT(U_X(cc)*U_X(cc)+U_Y(cc)*U_Y(cc)+U_Z(cc)*U_Z(cc))
-          pm(cc)=me*um(cc)
-          vm(cc) = um(cc)/SQRT(1.0_rp + um(cc)*um(cc))
-          ! um is gamma times v, this solves for v
-          
-          Bmag(cc)= SQRT(B_X(cc)*B_X(cc)+B_Y(cc)*B_Y(cc)+B_Z(cc)*B_Z(cc))
-
-          b_unit_X(cc)=B_X(cc)/Bmag(cc)
-          b_unit_Y(cc)=B_Y(cc)/Bmag(cc)
-          b_unit_Z(cc)=B_Z(cc)/Bmag(cc)
-
-          xi(cc)=(U_X(cc)*b_unit_X(cc)+U_Y(cc)*b_unit_Y(cc)+ &
-               U_Z(cc)*b_unit_Z(cc))/um(cc)
-          
-          ! pitch angle in b_unit reference frame
-       end do
-       !$OMP END SIMD
-
-!       write(6,'("vm: ",E17.10)') vm
-!       write(6,'("xi: ",E17.10)') xi
-       
-       call unitVectors_p(b_unit_X,b_unit_Y,b_unit_Z,b1_X,b1_Y,b1_Z, &
-            b2_X,b2_Y,b2_Z,b3_X,b3_Y,b3_Z)
-          ! b1=b_unit, (b1,b2,b3) is right-handed
-
-       !$OMP SIMD
-       do cc=1_idef,8_idef
-          phi(cc) = atan2((U_X(cc)*b3_X(cc)+U_Y(cc)*b3_Y(cc)+ &
-               U_Z(cc)*b3_Z(cc)), &
-               (U_X(cc)*b2_X(cc)+U_Y(cc)*b2_Y(cc)+U_Z(cc)*b2_Z(cc)))
-          ! azimuthal angle in b_unit refernce frame
-       end do
-       !$OMP END SIMD
-
-!       write(6,'("phi: ",E17.10)') phi
-       
-       !$OMP SIMD
-       do cc=1_idef,8_idef
-          
-#ifdef PARALLEL_RANDOM
-          ! uses C library to generate normal_distribution random variables,
-          ! preserving parallelization where Fortran random number generator
-          ! does not
-          rnd1(cc,1) = get_random()
-          rnd1(cc,2) = get_random()
-          rnd1(cc,3) = get_random()
-#else
-          call RANDOM_NUMBER(rnd1)
-#endif
-
-          dW(cc,1) = SQRT(3*dt)*(-1+2*rnd1(cc,1))     
-          dW(cc,2) = SQRT(3*dt)*(-1+2*rnd1(cc,2))
-          dW(cc,3) = SQRT(3*dt)*(-1+2*rnd1(cc,3)) 
-          ! 3D Weiner process 
-
-          CAL(cc) = CA_SD(vm(cc),ne(cc),Te(cc))
-          dCAL(cc)= dCA_SD(vm(cc),me,ne(cc),Te(cc))
-          CFL(cc) = CF_SD(params,vm(cc),ne(cc),Te(cc))
-          CBL(cc) = (CB_ee_SD(vm(cc),ne(cc),Te(cc),Zeff(cc))+ &
-               CB_ei_SD(params,vm(cc),ne(cc),Te(cc),Zeff(cc)))
 
 
-          dpm(cc)=REAL(flag(cc))*((-CFL(cc)+dCAL(cc))*dt+ &
-               sqrt(2.0_rp*CAL(cc))*dW(cc,1))
-          dxi(cc)=REAL(flag(cc))*(-2*xi(cc)*CBL(cc)/(pm(cc)*pm(cc))*dt- &
-               sqrt(2.0_rp*CBL(cc)*(1-xi(cc)*xi(cc)))/pm(cc)*dW(cc,2))
-          dphi(cc)=REAL(flag(cc))*(sqrt(2*CBL(cc))/(pm(cc)* &
-               sqrt(1-xi(cc)*xi(cc)))*dW(cc,3))
-
-          pm(cc)=pm(cc)+dpm(cc)
-          xi(cc)=xi(cc)+dxi(cc)
-          phi(cc)=phi(cc)+dphi(cc)
-
-!          if (pm(cc)<0) pm(cc)=-pm(cc)
-
-          ! Keep xi between [-1,1]
-          if (xi(cc)>1) then
-             xi(cc)=1-mod(xi(cc),1._rp)
-          else if (xi(cc)<-1) then
-             xi(cc)=-1-mod(xi(cc),-1._rp)             
-          endif
-
-          ! Keep phi between [0,pi]
-!          if (phi(cc)>C_PI) then
-!             phi(cc)=C_PI-mod(phi(cc),C_PI)
-!          else if (phi(cc)<0) then
-!             phi(cc)=mod(-phi(cc),C_PI)             
-!          endif
-          
-          um(cc)=pm(cc)/me
-
-          Ub_X(cc)=um(cc)*xi(cc)
-          Ub_Y(cc)=um(cc)*sqrt(1-xi(cc)*xi(cc))*cos(phi(cc))
-          Ub_Z(cc)=um(cc)*sqrt(1-xi(cc)*xi(cc))*sin(phi(cc))
-
-          U_X(cc) = Ub_X(cc)*b1_X(cc)+Ub_Y(cc)*b2_X(cc)+Ub_Z(cc)*b3_X(cc)
-          U_Y(cc) = Ub_X(cc)*b1_Y(cc)+Ub_Y(cc)*b2_Y(cc)+Ub_Z(cc)*b3_Y(cc)
-          U_Z(cc) = Ub_X(cc)*b1_Z(cc)+Ub_Y(cc)*b2_Z(cc)+Ub_Z(cc)*b3_Z(cc)
-
-       end do
-       !$OMP END SIMD
-       
-!       if (tt .EQ. 1_ip) then
-!          write(6,'("CA: ",E17.10)') CAL(1)
-!          write(6,'("dCA: ",E17.10)') dCAL(1)
-!          write(6,'("CF ",E17.10)') CFL(1)
-!          write(6,'("CB: ",E17.10)') CBL(1)
-!       end if
-
-       
-       do cc=1_idef,8_idef
-          if (pm(cc).lt.0) then
-             write(6,'("Momentum less than zero")')
-             stop
-          end if
-       end do
-       
-    end if
-  end subroutine include_CoulombCollisions_FOinterp_p
-
-  subroutine include_CoulombCollisions_GCeqn_p(tt,params,Y_R,Y_PHI,Y_Z, &
+  subroutine include_CoulombCollisions_GC_p(tt,params,Y_R,Y_PHI,Y_Z, &
        Ppll,Pmu,me,flag,P,R0,B0,lam,q0,EF0)
 
     TYPE(PROFILES), INTENT(IN)                                 :: P    
@@ -1656,11 +1342,27 @@ contains
        dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt       
        time=(params%it+tt)*params%dt
 
-       call analytical_profiles_p(time,params,Y_R,Y_Z,P,ne,Te,Zeff)
+       if (params%profile_model.eq.'ANALYTICAL') then
+          call analytical_profiles_p(time,params,Y_R,Y_Z,P,ne,Te,Zeff)
+          
+          call analytical_fields_Bmag_p(R0,B0,lam,q0,EF0,Y_R,Y_PHI,Y_Z, &
+               Bmag,E_PHI)
 
-       call analytical_fields_Bmag_p(R0,B0,lam,q0,EF0,Y_R,Y_PHI,Y_Z,Bmag,E_PHI)
+       else if (params%profile_model.eq.'EXTERNAL') then
+       
+          call interp_collision_p(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
+               ne,Te,Zeff,flag)   
 
+          !$OMP SIMD 
+          do cc=1_idef,8_idef
 
+             Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
+
+          end do
+          !$OMP END SIMD
+
+       end if
+             
 !       write(6,'("ne: "E17.10)') ne(1)
 !       write(6,'("Te: "E17.10)') Te(1)
 !       write(6,'("Bmag: "E17.10)') Bmag(1)
@@ -1766,239 +1468,7 @@ contains
        
     end if
     
-  end subroutine include_CoulombCollisions_GCeqn_p
-  
-  subroutine include_CoulombCollisions_GCinterp_p(tt,params,Y_R,Y_PHI,Y_Z, &
-       Ppll,Pmu,me,flag)
-
-    TYPE(KORC_PARAMS), INTENT(IN) 		:: params
-    REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: Ppll
-    REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: Pmu
-    REAL(rp), DIMENSION(8) 			:: Bmag
-    REAL(rp), DIMENSION(8) 			:: B_R,B_PHI,B_Z
-    REAL(rp), DIMENSION(8) 			:: E_R,E_PHI,E_Z
-    REAL(rp), DIMENSION(8), INTENT(IN) 			:: Y_R,Y_PHI,Y_Z
-    INTEGER(is), DIMENSION(8), INTENT(INOUT) 			:: flag
-    REAL(rp), INTENT(IN) 			:: me
-    REAL(rp), DIMENSION(8) 			:: ne,Te,Zeff
-    REAL(rp), DIMENSION(8,2) 			:: dW
-    REAL(rp), DIMENSION(8,2) 			:: rnd1
-    REAL(rp) 					:: dt
-    REAL(rp), DIMENSION(8) 					:: pm
-    REAL(rp), DIMENSION(8)  					:: dp
-    REAL(rp), DIMENSION(8)  					:: xi
-    REAL(rp), DIMENSION(8)  					:: dxi
-    REAL(rp), DIMENSION(8)  					:: v,gam
-    !! speed of particle
-    REAL(rp), DIMENSION(8) 					:: CAL
-    REAL(rp) , DIMENSION(8)					:: dCAL
-    REAL(rp), DIMENSION(8) 					:: CFL
-    REAL(rp), DIMENSION(8) 					:: CBL
-    integer(ip) :: cc
-    integer(ip),INTENT(IN) :: tt
-
-    
-    if (MODULO(params%it+tt,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
-       dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt       
-
-       call interp_collision_p(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
-            ne,Te,Zeff,flag)       
-       
-       !$OMP SIMD 
-       do cc=1_idef,8_idef
-
-          Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
-          
-          ! Transform p_pll,mu to P,eta
-          pm(cc) = SQRT(Ppll(cc)*Ppll(cc)+2*me*Bmag(cc)*Pmu(cc))
-          xi(cc) = Ppll(cc)/pm(cc)
-
-          gam(cc) = sqrt(1+pm(cc)*pm(cc))
-          
-          v(cc) = pm(cc)/gam(cc)
-          ! normalized speed (v_K=v_P/c)
-       end do
-       !$OMP END SIMD
-
-          
-!       write(6,'("v: ",E17.10)') v
-!       write(6,'("xi: ",E17.10)') xi
-
-       !$OMP SIMD 
-       do cc=1_idef,8_idef
-       
-#ifdef PARALLEL_RANDOM
-          rnd1(cc,1) = get_random()
-          rnd1(cc,2) = get_random()
-          !       rnd1(:,1) = get_random_mkl()
-          !       rnd1(:,2) = get_random_mkl()
-#else
-          call RANDOM_NUMBER(rnd1)
-#endif
-
-          dW(cc,1) = SQRT(3*dt)*(-1+2*rnd1(cc,1))     
-          dW(cc,2) = SQRT(3*dt)*(-1+2*rnd1(cc,2))     
-
-          CAL(cc) = CA_SD(v(cc),ne(cc),Te(cc))
-          dCAL(cc)= dCA_SD(v(cc),me,ne(cc),Te(cc))
-          CFL(cc) = CF_SD(params,v(cc),ne(cc),Te(cc))
-          CBL(cc) = (CB_ee_SD(v(cc),ne(cc),Te(cc),Zeff(cc))+ &
-               CB_ei_SD(params,v(cc),ne(cc),Te(cc),Zeff(cc)))
-          
-          
-          dp(cc)=REAL(flag(cc))*((-CFL(cc)+dCAL(cc))*dt+ &
-               sqrt(2.0_rp*CAL(cc))*dW(cc,1))
-
-          dxi(cc)=REAL(flag(cc))*(-2*xi(cc)*CBL(cc)/(pm(cc)*pm(cc))*dt- &
-               sqrt(2.0_rp*CBL(cc)*(1-xi(cc)*xi(cc)))/pm(cc)*dW(cc,2))
-
-          if (params%radiation) then
-             if(params%GC_rad_model.eq.'SDE') then
-                dp(cc)=dp(cc)-gam(cc)*pm(cc)*(1-xi(cc)*xi(cc))/ &
-                     (cparams_ss%taur/(Bmag(cc)*params%cpp%Bo)**2)*dt
-                dxi(cc)=dxi(cc)+xi(cc)*(1-xi(cc)*xi(cc))/ &
-                     ((cparams_ss%taur/(Bmag(cc)*params%cpp%Bo)**2)*gam(cc))*dt
-                
-             end if
-          end if
-
-       
-          pm(cc)=pm(cc)+dp(cc)
-          xi(cc)=xi(cc)+dxi(cc)
-
-!          if (pm(cc)<0) pm(cc)=-pm(cc)
-
-          ! Keep xi between [-1,1]
-          if (xi(cc)>1) then
-             xi(cc)=1-mod(xi(cc),1._rp)
-          else if (xi(cc)<-1) then
-             xi(cc)=-1-mod(xi(cc),-1._rp)             
-          endif
-
-          ! Transform P,xi to p_pll,mu
-          Ppll(cc)=pm(cc)*xi(cc)
-          Pmu(cc)=(pm(cc)*pm(cc)-Ppll(cc)*Ppll(cc))/(2*me*Bmag(cc))
-       end do
-       !$OMP END SIMD
-
-       do cc=1_idef,8_idef
-          if (pm(cc).lt.0) then
-             write(6,'("Momentum less than zero")')
-             stop
-          end if
-       end do
-
-!       if (tt .EQ. 1_ip) then
-!          write(6,'("dp_rad: ",E17.10)') &
-!               -gam(1)*pm(1)*(1-xi(1)*xi(1))/ &
-!               (cparams_ss%taur/Bmag(1)**2)*dt
-!          write(6,'("dxi_rad: ",E17.10)') &
-!               xi(1)*(1-xi(1)*xi(1))/ &
-!               ((cparams_ss%taur/Bmag(1)**2)*gam(1))*dt
-!       end if
-       
-!       if (tt .EQ. 1_ip) then
-!          write(6,'("CA: ",E17.10)') CAL(1)
-!          write(6,'("dCA: ",E17.10)') dCAL(1)
-!          write(6,'("CF ",E17.10)') CFL(1)
-!          write(6,'("CB: ",E17.10)') CBL(1)
-!       end if
-       
-    end if
-    
-  end subroutine include_CoulombCollisions_GCinterp_p
-
-  subroutine include_CoulombCollisions_GC(params,P,Bmag,me,flag,ne,Te,Zeff)
-    !! Stochastic relativistic electron Coulomb collision operator defined
-    !! in subroutine [[include_CoulombCollisions]] applied to the GC model.
-    !! As compared to the FO model in 3D cartesian geometry, the 2D
-    !! (\(p_\parallel, \mu\)) coordinates of the GC model are amenable
-    !! to the collision model of Papp et al., NF (2011) without costly
-    !! transformation of coordinates and less random numbers generation.
-    TYPE(KORC_PARAMS), INTENT(IN) 		:: params
-    REAL(rp), DIMENSION(3), INTENT(INOUT) 	:: P
-    REAL(rp), INTENT(IN) 			:: Bmag
-    REAL(rp), INTENT(IN) 			:: me
-    INTEGER(is), INTENT(INOUT)                      :: flag
-    REAL(rp), INTENT(IN) 			:: ne
-    REAL(rp), INTENT(IN) 			:: Te
-    REAL(rp), INTENT(IN) 			:: Zeff
-    REAL(rp), DIMENSION(2) 			:: dW
-    REAL(rp), DIMENSION(2) 			:: rnd1
-    REAL(rp) 					:: dt
-    REAL(rp) 					:: pm
-    REAL(rp) 					:: dp
-    REAL(rp) 					:: eta
-    REAL(rp) 					:: deta
-    REAL(rp) 					:: v
-    !! speed of particle
-    REAL(rp) 					:: CAL
-    REAL(rp) 					:: dCAL
-    REAL(rp) 					:: CFL
-    REAL(rp) 					:: CBL
-
-    if (MODULO(params%it+1_ip,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
-       dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt
-       
-       ! Transform p_pll,mu to P,eta
-       pm = SQRT(P(1)**2+2*me*Bmag*P(2))
-       eta=atan2(sqrt(2*me*Bmag*P(2)),P(1))
-       
-       v = (pm/me)/SQRT(1.0_rp +(pm/me)**2)
-       ! normalized speed (v_K=v_P/c)
-
-       
-       if (v/VTe(Te).lt. 1) then
-          flag=0_is
-          return
-       endif
-
-#ifdef PARALLEL_RANDOM
-       rnd1(1) = get_random()
-       rnd1(2) = get_random()
-#else
-       call RANDOM_NUMBER(rnd1)
-#endif
-       
-       dW = SQRT(dt)*rnd1     
-       
-       CAL = CA_SD(v,ne,Te)
-       dCAL= dCA_SD(v,me,ne,Te)
-       CFL = CF_SD(params,v,ne,Te)
-       CBL = (CB_ee_SD(v,ne,Te,Zeff)+ &
-            CB_ei_SD(params,v,ne,Te,Zeff))
-
-!       write(6,'("CAL, "E17.10)') CAL
-!       write(6,'("dCAL, "E17.10)') dCAL
-!       write(6,'("CFL, "E17.10)') CFL
-!       write(6,'("CBL, "E17.10)') CBL
-              
-       
-       dp=(-2.0_rp*CFL+dCAL)*dt+sqrt(2.0_rp*CAL)*dW(1)
-       deta=CBL/(pm**2*tan(eta))*dt+sqrt(2.0_rp*CBL)/pm*dW(2)
-
-!       write(6,'("pm, "E17.10)') pm
-!       write(6,'("eta, "E17.10)') eta
-       
-!       write(6,'("dp, "E17.10)') dp
-!       write(6,'("deta, "E17.10)') deta
-       
-       pm=pm+dp
-       eta=eta+deta
-
-       ! Keep eta between [0,pi]
-       if (eta<0) then
-          eta=-eta
-       else if (eta>C_PI) then
-          eta=2*C_PI-eta
-       endif       
-       
-       ! Transform P,eta to p_pll,mu
-       P(1)=pm*cos(eta)
-       P(2)=(pm*sin(eta))**2/(2*me*Bmag)
-
-    end if
-  end subroutine include_CoulombCollisions_GC
+  end subroutine include_CoulombCollisions_GC_p
   
   subroutine save_params_ms(params)
     TYPE(KORC_PARAMS), INTENT(IN) 			:: params

@@ -163,7 +163,31 @@ subroutine normalize_variables(params,spp,F,P)
   P%n_lamfront=P%n_lamfront/params%cpp%length
   P%n_lamback=P%n_lamback/params%cpp%length
 
-  if (params%plasma_model .EQ. 'ANALYTICAL') then
+  if (params%profile_model .EQ. 'ANALYTICAL') then
+
+     if (params%field_eval.eq.'interp') then
+        if (ALLOCATED(P%X%R)) P%X%R = P%X%R/params%cpp%length
+        if (ALLOCATED(P%X%Z)) P%X%Z = P%X%Z/params%cpp%length
+
+        if (ALLOCATED(P%ne_2D)) P%ne_2D = P%ne_2D/params%cpp%density
+        if (ALLOCATED(P%Te_2D)) P%Te_2D = P%Te_2D/params%cpp%temperature
+     end if
+
+  else if (params%profile_model .EQ. 'EXTERNAL') then
+
+     
+     if (ALLOCATED(P%X%R)) P%X%R = P%X%R/params%cpp%length
+     if (ALLOCATED(P%X%Z)) P%X%Z = P%X%Z/params%cpp%length
+
+     if (ALLOCATED(P%ne_2D)) P%ne_2D = P%ne_2D/params%cpp%density
+     if (ALLOCATED(P%Te_2D)) P%Te_2D = P%Te_2D/params%cpp%temperature
+
+     if (ALLOCATED(P%ne_3D)) P%ne_3D = P%ne_3D/params%cpp%density
+     if (ALLOCATED(P%Te_3D)) P%Te_3D = P%Te_3D/params%cpp%temperature
+
+  end if
+  
+  if (params%field_model .EQ. 'ANALYTICAL') then
      F%AB%Bo = F%AB%Bo/params%cpp%Bo
      F%AB%a = F%AB%a/params%cpp%length
      F%AB%Ro = F%AB%Ro/params%cpp%length
@@ -183,27 +207,6 @@ subroutine normalize_variables(params,spp,F,P)
         ! Nothing to do for the PHI component
         F%X%Z = F%X%Z/params%cpp%length
         
-!        if (params%collisions) then
-        if (ALLOCATED(P%X%R)) P%X%R = P%X%R/params%cpp%length
-        if (ALLOCATED(P%X%Z)) P%X%Z = P%X%Z/params%cpp%length
-           
-
-!           write(6,'("P_R: ",E17.10)') P%X%R
-!           write(6,'("P_Z: ",E17.10)') P%X%Z
-           
-        if (ALLOCATED(P%ne_2D)) P%ne_2D = P%ne_2D/params%cpp%density
-        if (ALLOCATED(P%Te_2D)) P%Te_2D = P%Te_2D/params%cpp%temperature
-
-
-        
-!           write(6,'("P_ne: ",E17.10)') P%ne_2d(:,10)
-!           write(6,'("P_Te: ",E17.10)') P%Te_2d(:,10)
-           
-           !       write(6,'("Te: ",E17.10)') P%Te_2D(1,1)
-
-!        end if
-        
-
 
         if (params%orbit_model(3:5).eq.'pre') then
            if (ALLOCATED(F%gradB_2D%R)) F%gradB_2D%R = F%gradB_2D%R/ &
@@ -223,10 +226,8 @@ subroutine normalize_variables(params,spp,F,P)
         
      end if
 
-
-      
-     
-  else if (params%plasma_model .EQ. 'EXTERNAL') then
+          
+  else if (params%field_model .EQ. 'EXTERNAL') then
      if (ALLOCATED(F%B_3D%R)) F%B_3D%R = F%B_3D%R/params%cpp%Bo
      if (ALLOCATED(F%B_3D%PHI)) F%B_3D%PHI = F%B_3D%PHI/params%cpp%Bo
      if (ALLOCATED(F%B_3D%Z)) F%B_3D%Z = F%B_3D%Z/params%cpp%Bo
@@ -265,18 +266,6 @@ subroutine normalize_variables(params,spp,F,P)
      ! Nothing to do for the PHI component
      F%X%Z = F%X%Z/params%cpp%length
 
-!     if (params%collisions) then
-        if (ALLOCATED(P%X%R)) P%X%R = P%X%R/params%cpp%length
-        if (ALLOCATED(P%X%Z)) P%X%Z = P%X%Z/params%cpp%length
-
-        if (ALLOCATED(P%ne_2D)) P%ne_2D = P%ne_2D/params%cpp%density
-        if (ALLOCATED(P%Te_2D)) P%Te_2D = P%Te_2D/params%cpp%temperature
-
-        if (ALLOCATED(P%ne_3D)) P%ne_3D = P%ne_3D/params%cpp%density
-        if (ALLOCATED(P%Te_3D)) P%Te_3D = P%Te_3D/params%cpp%temperature
-
- !       write(6,'("Te: ",E17.10)') P%Te_2D(1,1)
-        
 !     end if
   end if
 end subroutine normalize_variables

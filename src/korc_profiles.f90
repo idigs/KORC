@@ -99,6 +99,7 @@ CONTAINS
     REAL(rp)  ::  n_tauion
     REAL(rp)  ::  n_lamfront
     REAL(rp)  ::  n_lamback
+    REAL(rp)  ::  rm,r_a
 
     NAMELIST /plasmaProfiles/ radius_profile,ne_profile,neo,n_ne,a_ne, &
          Te_profile,Teo,n_Te,a_Te,n_REr0,n_tauion,n_lamfront,n_lamback, &
@@ -108,7 +109,7 @@ CONTAINS
        write(6,'(/,"* * * * * * * * INITIALIZING PROFILES * * * * * * * *")')
     end if
     
-    SELECT CASE (TRIM(params%plasma_model))
+    SELECT CASE (TRIM(params%profile_model))
     CASE('ANALYTICAL')
        open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
             status='OLD',form='formatted')
@@ -141,6 +142,7 @@ CONTAINS
        P%a_Zeff = a_Zeff
 
        if (params%field_eval.eq.'interp') then
+
           P%axisymmetric = axisymmetric
 
           P%dims(1) = F%dims(1)
@@ -148,19 +150,43 @@ CONTAINS
 
           call ALLOCATE_2D_PROFILES_ARRAYS(P)
 
-          do ii=1_idef,P%dims(1)
-             P%X%R(ii)=(F%Ro-F%AB%a)+(ii-1)*2*F%AB%a/(F%dims(1)-1)
-          end do
-          do ii=1_idef,P%dims(3)
-             P%X%Z(ii)=(F%Zo-F%AB%a)+(ii-1)*2*F%AB%a/(F%dims(3)-1)
-          end do
+          P%X%R=F%X%R
+          P%X%Z=F%X%Z
 
           do ii=1_idef,P%dims(1)
              do kk=1_idef,P%dims(3)
 
-                P%ne_2D(ii,kk)  =P%neo
-                P%Te_2D(ii,kk)  =P%Teo
-                P%Zeff_2D(ii,kk)=P%Zeffo
+                rm=sqrt((P%X%R(ii)-P%R0)**2+(P%X%Z(jj)-P%Z0)**2)
+                r_a=rm/P%a
+
+                SELECT CASE (TRIM(P%ne_profile))
+                CASE('FLAT')
+                   P%ne_2D(ii,kk) = P%neo
+                CASE('SPONG')
+                   P%ne_2D(ii,kk) = P%neo*(1._rp-0.2*r_a**8)+P%n_ne
+                CASE DEFAULT
+                   P%ne_2D(ii,kk) = P%neo
+                END SELECT
+
+                SELECT CASE (TRIM(P%Te_profile))
+                CASE('FLAT')       
+                   P%Te_2D(ii,kk) = P%Teo
+                CASE('SPONG')
+                   P%Te_2D(ii,kk) = (P%Teo-P%n_Te)*(1._rp-0.6*r_a**2)**2+P%n_Te
+                CASE DEFAULT
+                   P%Te_2D(ii,kk) = P%Teo
+                END SELECT
+
+                SELECT CASE (TRIM(P%Zeff_profile))
+                CASE('FLAT') 
+                   P%Zeff_2D(ii,kk) = P%Zeffo
+                CASE('SPONG')
+                   P%Zeff_2D(ii,kk) = P%Zeffo
+                CASE DEFAULT
+                   P%Zeff_2D(ii,kk) = P%Zeffo
+                END SELECT
+
+                
              end do
           end do
 
@@ -430,7 +456,7 @@ CONTAINS
     TYPE(FIELDS), INTENT(IN)                                   :: F
     !! An instance of the KORC derived type FIELDS.
 
-    SELECT CASE (TRIM(params%plasma_model))
+    SELECT CASE (TRIM(params%profile_model))
     CASE('ANALYTICAL')
 
 !       write(6,'("Y in: ",E17.10)') vars%Y(1,:)

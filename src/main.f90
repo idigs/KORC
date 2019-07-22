@@ -221,31 +221,13 @@ program main
   if (.NOT.(params%restart.OR.params%proceed)) then
 
      if (params%orbit_model.eq.'FO') then
-!        call advance_particles_velocity(params,F,P,spp,0.0_rp,.TRUE.,.TRUE.)
-!        if (params%field_eval.eq.'eqn') then
-!           call advance_FOeqn_vars(params,F,P,spp,0.0_rp,.TRUE.,.TRUE.)
-!        else if (params%field_eval.eq.'interp') then
-!           call advance_FOinterp_vars(params,spp,0.0_rp,.TRUE.,.TRUE.)
-        !        end if
+
         call FO_init(params,F,spp,.true.,.false.)
-        !! new subroutine that first computes save data, then does the
-        !! initial half-step in position
-        
+
      else if (params%orbit_model(1:2).eq.'GC') then
 
- !       write(6,'("GC_coords",L2)') params%GC_coords
- !       write(6,'("X ",E17.10)') spp(1)%vars%X
- !       write(6,'("Y ",E17.10)') spp(1)%vars%Y
-        
-        
-
         call GC_init(params,F,spp)
-        ! transforms from FO initial conditions (x,y,z,vx,vy,vz)
-        ! to GC initial conditions (R,phi,Z,ppll,mu) for tracer
-        ! and from (g,eta) to (ppll,mu) for other initializations
 
-           
-!        call advance_GC_vars_slow(params,F,P,spp,0.0_rp,.TRUE.,.TRUE.)
      end if
      
      call save_simulation_outputs(params,spp) ! Save initial condition
@@ -262,20 +244,10 @@ program main
 
   if (params%orbit_model(1:2).eq.'FO'.and.params%field_eval.eq.'eqn') then
      call FO_init(params,F,spp,.false.,.true.)
-     ! Initial half-time particle push
 
-!     write(6,'("BX: ",E17.10)') spp(1)%vars%B(:,1)
-!     write(6,'("BY: ",E17.10)') spp(1)%vars%B(:,2)
-!     write(6,'("BZ: ",E17.10)') spp(1)%vars%B(:,3)
-
-     
      do it=params%ito,params%t_steps,params%t_skip
         call adv_FOeqn_top(params,F,P,spp)
 
-!        write(6,'("BX: ",E17.10)') spp(1)%vars%B(:,1)
-!        write(6,'("BY: ",E17.10)') spp(1)%vars%B(:,2)
-!        write(6,'("BZ: ",E17.10)') spp(1)%vars%B(:,3)
-        
         params%time = params%init_time &
              +REAL(it-1_ip+params%t_skip,rp)*params%dt        
         params%it = it-1_ip+params%t_skip

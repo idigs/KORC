@@ -352,7 +352,7 @@ CONTAINS
     !! about the fields used in the simulation.
     !! See [[korc_types]] and [[korc_fields]].
 
-    if ((params%plasma_model .EQ. 'EXTERNAL').or. &
+    if ((params%field_model .EQ. 'EXTERNAL').or. &
          (params%field_eval.eq.'interp')) then
 
        if (params%mpi_params%rank .EQ. 0) then
@@ -386,7 +386,9 @@ CONTAINS
 
           fields_domain%DR = ABS(F%X%R(2) - F%X%R(1))
           fields_domain%DZ = ABS(F%X%Z(2) - F%X%Z(1))
-       else if (F%axisymmetric_fields) then
+       end if
+
+       if (F%axisymmetric_fields) then
           bfield_2d%NR = F%dims(1)
           bfield_2d%NZ = F%dims(3)
 
@@ -504,7 +506,7 @@ CONTAINS
 
           fields_domain%DR = ABS(F%X%R(2) - F%X%R(1))
           fields_domain%DZ = ABS(F%X%Z(2) - F%X%Z(1))
-       else
+       else 
           bfield_3d%NR = F%dims(1)
           bfield_3d%NPHI = F%dims(2)
           bfield_3d%NZ = F%dims(3)
@@ -646,13 +648,13 @@ CONTAINS
           write(6,'("* * * * * * INTERPOLANT INITIALIZED * * * * * *")')
           write(6,'("* * * * * * * * * * * * * * * * * * * * * * * *",/)')
        end if
-    else if (params%plasma_model .EQ. 'ANALYTICAL') then
+    else if (params%field_model .EQ. 'ANALYTICAL') then
        if (params%mpi_params%rank .EQ. 0) then
           write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * *")')
           write(6,'("* * * * USING ANALYTICAL MAGNETIC FIELD * * * *")')
           write(6,'("* * * * * * * * * * * * * * * * * * * * * * * *",/)')
        end if
-    else if (params%plasma_model .EQ. 'UNIFORM') then
+    else if (params%field_model .EQ. 'UNIFORM') then
        if (params%mpi_params%rank .EQ. 0) then
           write(6,'(/,"* * * * * * * * * * *  * * * * * * * * * * *")')
           write(6,'("* * * * USING UNIFORM MAGNETIC FIELD * * * *")')
@@ -827,7 +829,7 @@ CONTAINS
     !! See [[korc_types]] and [[korc_profiles]].
     
     if (params%collisions) then
-       if ((params%plasma_model .EQ. 'EXTERNAL').or. &
+       if ((params%profile_model .EQ. 'EXTERNAL').or. &
             (params%field_eval.eq.'interp')) then
           
           if (params%mpi_params%rank .EQ. 0) then
@@ -953,13 +955,13 @@ CONTAINS
              write(6,'("* * * * * * INTERPOLANT   INITIALIZED * * * * * *")')
              write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * *",/)')
           end if
-       else if (params%plasma_model .EQ. 'ANALYTICAL') then
+       else if (params%profile_model .EQ. 'ANALYTICAL') then
           if (params%mpi_params%rank .EQ. 0) then
              write(6,'(/,"* * * * * * * * * * * * * * * * * * * * *")')
              write(6,'("* * * * USING ANALYTICAL PROFILES * * * *")')
              write(6,'("* * * * * * * * * * * * * * * * * * * * *",/)')
           end if
-       else if (params%plasma_model .EQ. 'UNIFORM') then
+       else if (params%profile_model .EQ. 'UNIFORM') then
           if (params%mpi_params%rank .EQ. 0) then
              write(6,'(/,"* * * * * * * * * * * * *  * * * * * * * * * * *")')
              write(6,'("* * * * UNIFORM PLASMA: NO PROFILES USED * * * *")')
@@ -1509,10 +1511,11 @@ end subroutine interp_3D_bfields
 !! of the magnetic field (its value changes through the subroutine).
 !! @param pp Particle iterator.
 !! @param ss Species iterator.
-subroutine calculate_magnetic_field(Y,F,B,flag)
+subroutine calculate_magnetic_field(Y,F,B,PHI_P,flag)
   REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN)      :: Y
   TYPE(FIELDS), INTENT(IN)                               :: F
   REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT)   :: B
+  REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)   :: PHI_P
   INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)  :: flag
   REAL(rp), DIMENSION(:,:), ALLOCATABLE                  :: A
   INTEGER                                                :: pp
@@ -1525,6 +1528,11 @@ subroutine calculate_magnetic_field(Y,F,B,flag)
   !$OMP& SHARED(F,Y,A,B,flag,bfield_2d)
   do pp=1_idef,ss
      if ( flag(pp) .EQ. 1_is ) then
+
+        call EZspline_interp(bfield_2d%A, Y(pp,1), Y(pp,3), &
+             PHI_P(pp), ezerr)
+        call EZspline_error(ezerr)
+        
         ! FR = (dA/dZ)/R
         call EZspline_derivative(bfield_2d%A, 0, 1, Y(pp,1), Y(pp,3), &
              A(pp,1), ezerr)
@@ -1560,9 +1568,6 @@ subroutine calculate_initial_magnetic_field(F)
   REAL(rp),dimension(F%dims(1),F%dims(3),2)                  :: gradA
   INTEGER                                                :: ii
   INTEGER                                                :: jj
-
-
-
         
         ! FR = (dA/dZ)/R
         call EZspline_gradient(bfield_2d%A,F%dims(1),F%dims(3),F%X%R, F%X%Z, &
@@ -1577,10 +1582,7 @@ subroutine calculate_initial_magnetic_field(F)
            
 !        write(6,'("AR",E17.10)') gradA(1)
 !        write(6,'("AZ",E17.10)') gradA(2)        
-
-        
-
-
+       
 end subroutine calculate_initial_magnetic_field
 
 !> @brief Subroutine for interpolating the pre-computed, axisymmetric electric field to the particles' position.
@@ -1708,7 +1710,7 @@ subroutine interp_fields(params,prtcls,F)
   call check_if_in_fields_domain(prtcls%Y, prtcls%flag)
 
   if (ALLOCATED(F%PSIp).and.F%Bflux) then
-     call calculate_magnetic_field(prtcls%Y,F,prtcls%B,prtcls%flag)
+     call calculate_magnetic_field(prtcls%Y,F,prtcls%B,prtcls%PHI_P,prtcls%flag)
   end if
 
   if (ALLOCATED(F%B_2D%R)) then
@@ -1883,51 +1885,70 @@ end subroutine interp_profiles
 subroutine finalize_interpolants(params)
   TYPE(KORC_PARAMS), INTENT(IN) :: params
 
-  if (params%plasma_model .EQ. 'EXTERNAL') then
+  if (params%field_model .EQ. 'EXTERNAL') then
      if (params%mpi_params%rank .EQ. 0) then
-        write(6,'("* * * * FINALIZING INTERPOLANT * * * *")')
+        write(6,'("* * * * FINALIZING FIELD INTERPOLANT * * * *")')
      end if
 
      if (EZspline_allocated(bfield_3d%R)) call Ezspline_free(bfield_3d%R, ezerr)
-     if (EZspline_allocated(bfield_3d%PHI)) call Ezspline_free(bfield_3d%PHI, &
-          ezerr)
+     if (EZspline_allocated(bfield_3d%PHI)) &
+          call Ezspline_free(bfield_3d%PHI,ezerr)
+     
      if (EZspline_allocated(bfield_3d%Z)) call Ezspline_free(bfield_3d%Z, ezerr)
      if (EZspline_allocated(bfield_2d%A)) call Ezspline_free(bfield_2d%A, ezerr)
      if (EZspline_allocated(bfield_2d%R)) call Ezspline_free(bfield_2d%R, ezerr)
-     if (EZspline_allocated(bfield_2d%PHI)) call Ezspline_free(bfield_2d%PHI, &
-          ezerr)
+     if (EZspline_allocated(bfield_2d%PHI)) &
+          call Ezspline_free(bfield_2d%PHI,ezerr)
+     
      if (EZspline_allocated(bfield_2d%Z)) call Ezspline_free(bfield_2d%Z, ezerr)
 
      if (EZspline_allocated(gradB_2d%R)) call Ezspline_free(gradB_2d%R, ezerr)
-     if (EZspline_allocated(gradB_2d%PHI)) call Ezspline_free(gradB_2d%PHI, ezerr)
+     if (EZspline_allocated(gradB_2d%PHI)) &
+          call Ezspline_free(gradB_2d%PHI, ezerr)
+     
      if (EZspline_allocated(gradB_2d%Z)) call Ezspline_free(gradB_2d%Z, ezerr)
 
      if (EZspline_allocated(curlb_2d%R)) call Ezspline_free(curlb_2d%R, ezerr)
-     if (EZspline_allocated(curlb_2d%PHI)) call Ezspline_free(curlb_2d%PHI, ezerr)
+     if (EZspline_allocated(curlb_2d%PHI)) &
+          call Ezspline_free(curlb_2d%PHI, ezerr)
+     
      if (EZspline_allocated(curlb_2d%Z)) call Ezspline_free(curlb_2d%Z, ezerr)
-
-     if (EZspline_allocated(profiles_3d%ne)) call Ezspline_free(profiles_3d%ne, &
-          ezerr)
-     if (EZspline_allocated(profiles_3d%Te)) call Ezspline_free(profiles_3d%Te,&
-          ezerr)
-     if (EZspline_allocated(profiles_3d%Zeff)) call Ezspline_free( &
-          profiles_3d%Zeff, ezerr)
-     if (EZspline_allocated(profiles_2d%ne)) call Ezspline_free(profiles_2d%ne, &
-          ezerr)
-     if (EZspline_allocated(profiles_2d%Te)) call Ezspline_free(profiles_2d%Te, &
-          ezerr)
-     if (EZspline_allocated(profiles_2d%Zeff)) call Ezspline_free( &
-          profiles_2d%Zeff, ezerr)
-
-
-     if (ALLOCATED(fields_domain%FLAG2D)) DEALLOCATE(fields_domain%FLAG2D)
-     if (ALLOCATED(fields_domain%FLAG3D)) DEALLOCATE(fields_domain%FLAG3D)
 
      if (ALLOCATED(profiles_domain%FLAG2D)) DEALLOCATE(profiles_domain%FLAG2D)
      if (ALLOCATED(profiles_domain%FLAG3D)) DEALLOCATE(profiles_domain%FLAG3D)
 
      if (params%mpi_params%rank .EQ. 0) then
-        write(6,'("* * * * INTERPOLANT  FINALIZED * * * *")')
+        write(6,'("* * * * FIELD INTERPOLANT FINALIZED * * * *")')
+     end if
+  end if
+     
+  if (params%profile_model .EQ. 'EXTERNAL') then
+     if (params%mpi_params%rank .EQ. 0) then
+        write(6,'("* * * * FINALIZING PROFILE INTERPOLANT * * * *")')
+     end if
+     
+     if (EZspline_allocated(profiles_3d%ne)) &
+          call Ezspline_free(profiles_3d%ne,ezerr)
+     
+     if (EZspline_allocated(profiles_3d%Te)) &
+          call Ezspline_free(profiles_3d%Te,ezerr)
+     
+     if (EZspline_allocated(profiles_3d%Zeff)) call Ezspline_free( &
+          profiles_3d%Zeff, ezerr)
+     if (EZspline_allocated(profiles_2d%ne)) &
+          call Ezspline_free(profiles_2d%ne,ezerr)
+     
+     if (EZspline_allocated(profiles_2d%Te)) &
+          call Ezspline_free(profiles_2d%Te,ezerr)
+     
+     if (EZspline_allocated(profiles_2d%Zeff)) call Ezspline_free( &
+          profiles_2d%Zeff, ezerr)
+
+     if (ALLOCATED(profiles_domain%FLAG2D)) DEALLOCATE(profiles_domain%FLAG2D)
+     if (ALLOCATED(profiles_domain%FLAG3D)) DEALLOCATE(profiles_domain%FLAG3D)
+
+     if (params%mpi_params%rank .EQ. 0) then
+        write(6,'("* * * * PROFILE INTERPOLANT FINALIZED * * * *")')
      end if
   end if
 end subroutine finalize_interpolants

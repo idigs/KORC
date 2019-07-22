@@ -87,8 +87,10 @@ subroutine load_korc_params(params)
   CHARACTER(MAX_STRING_LENGTH) 		:: collisions_model
   !! String with the name of the collisions model to be used in the simulation.
   CHARACTER(MAX_STRING_LENGTH) 		:: bound_electron_model
-  CHARACTER(MAX_STRING_LENGTH) 		:: plasma_model
-  !! String with the name of the model for the fields and plasma profiles.
+  CHARACTER(MAX_STRING_LENGTH) 		:: profile_model
+  !! String with the name of the model for the plasma profiles.
+  CHARACTER(MAX_STRING_LENGTH) 		:: field_model
+  !! String with the name of the model for the field profiles.
   CHARACTER(MAX_STRING_LENGTH) 		:: magnetic_field_filename
   !! String with the name of the model for the fields and plasma profiles.
   CHARACTER(MAX_STRING_LENGTH) 		:: outputs_list
@@ -118,10 +120,10 @@ subroutine load_korc_params(params)
   LOGICAL 				:: FokPlan
   !! Flag to decouple spatial-dependence of evolution
 
-  NAMELIST /input_parameters/ restart,plasma_model,magnetic_field_filename, &
+  NAMELIST /input_parameters/ restart,field_model,magnetic_field_filename, &
        simulation_time,snapshot_frequency,dt,num_species,radiation, &
        collisions,collisions_model,outputs_list,minimum_particle_energy, &
-       HDF5_error_handling,orbit_model,field_eval,proceed, &
+       HDF5_error_handling,orbit_model,field_eval,proceed,profile_model, &
        restart_overwrite_frequency,FokPlan,GC_rad_model,bound_electron_model
 
   open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
@@ -138,7 +140,8 @@ subroutine load_korc_params(params)
   params%dt = dt
 
   params%num_species = num_species
-  params%plasma_model = TRIM(plasma_model)
+  params%profile_model = TRIM(profile_model)
+  params%field_model = TRIM(field_model)
   params%magnetic_field_filename = TRIM(magnetic_field_filename)
   params%minimum_particle_energy = minimum_particle_energy*C_E
   params%minimum_particle_g = 1.0_rp + params%minimum_particle_energy/ &
@@ -203,9 +206,9 @@ subroutine load_korc_params(params)
      write(6,'("Continuing simulation: ",L1)') params%proceed
      write(6,'("Number of electron populations: ",I16)') params%num_species
      write(6,'("Orbit model: ",A50)') TRIM(params%orbit_model)
-     write(6,'("Magnetic field model: ",A50)') TRIM(params%plasma_model)
+     write(6,'("Magnetic field model: ",A50)') TRIM(params%field_model)
      write(6,'("Magnetic field evaluation: ",A50)') TRIM(params%field_eval)
-     if (TRIM(params%plasma_model).EQ.'EXTERNAL') then
+     if (TRIM(params%field_model).EQ.'EXTERNAL') then
         write(6,'("Magnetic field file: ",A100)') TRIM(params%magnetic_field_filename)
      end if
 
