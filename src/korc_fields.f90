@@ -728,14 +728,18 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
     ALLOCATE( vars%B(ppp,3) )
     ALLOCATE( vars%gradB(ppp,3) )
     ALLOCATE( vars%curlb(ppp,3) )
+    ALLOCATE( vars%PSI_P(ppp) )
     ALLOCATE( vars%E(ppp,3) )
     ALLOCATE( vars%flag(ppp) )
 
     vars%X = Xo
     vars%flag = 1_idef
-
+    vars%B=0._rp
+    vars%PSI_P=0._rp
+    
+    
     call init_random_seed()
-
+    
     call get_fields(params,vars,F)
 
 !    write(6,'("Bx: ",E17.10)') vars%B(:,1)
@@ -764,6 +768,7 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
     DEALLOCATE( vars%X )
     DEALLOCATE( vars%Y )
     DEALLOCATE( vars%B )
+    DEALLOCATE( vars%PSI_P )
     DEALLOCATE( vars%gradB )
     DEALLOCATE( vars%curlb )
     DEALLOCATE( vars%E )
@@ -790,6 +795,8 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
        end if       
     CASE('EXTERNAL')
 
+!       write(6,'("2 size of PSI_P: ",I16)') size(vars%PSI_P)
+       
        call interp_fields(params,vars, F)
        if (F%Efield.AND..NOT.F%Efield_in_file) then
           call analytical_electric_field_cyl(F,vars%Y,vars%E,vars%flag)
@@ -903,7 +910,8 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
     NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
          qa,qo,Eo,current_direction,nR,nZ
 
-    NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux, axisymmetric_fields
+    NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux, &
+         axisymmetric_fields, Eo
 
     if (params%mpi_params%rank .EQ. 0) then
        write(6,'(/,"* * * * * * * * INITIALIZING FIELDS * * * * * * * *")')
@@ -1007,6 +1015,7 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
        F%AB%Ro=1._rp
        F%AB%qo=1._rp
        F%AB%a=1._rp
+
        
        call load_dim_data_from_hdf5(params,F)
        !sets F%dims for 2D or 3D data
@@ -1044,12 +1053,22 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
        !allocates 2D or 3D data arrays (fields and spatial)
        
        call load_field_data_from_hdf5(params,F)
-      
+
+       if (params%mpi_params%rank .EQ. 0) then
+
+          if (F%Bflux.and.(params%orbit_model(1:2).EQ.'GC')) F%Eo = Eo
+          
+          write(6,'("EXTERNAL")')
+          write(6,'("Magnetic field: ",E17.10)') F%Bo
+          write(6,'("Electric field: ",E17.10)') F%Eo
+          
+       end if
+       
        if (F%Bflux.and.(params%orbit_model(1:2).EQ.'GC')) then
 
-          call initialize_fields_interpolant(params,F)
-
           F%Bfield=.TRUE.
+          F%Efield=.TRUE.
+          F%Efield_in_file=.TRUE.
 
           call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
                F%Bflux,F%Efield.AND.F%Efield_in_file)
@@ -1082,25 +1101,27 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
           end do
 
           F%E_2D%R=0._rp
-          F%E_2D%PHI=0._rp
+          do ii=1_idef,F%dims(1)
+             F%E_2D%PHI(ii,:)=F%Eo*F%Ro/F%X%R(ii)
+          end do
           F%E_2D%Z=0._rp
           
        end if
 
-       write(6,'("BR",E17.10)') F%B_2D%R(F%dims(1)/2,F%dims(3)/2)
-       write(6,'("BPHI",E17.10)') F%B_2D%PHI(F%dims(1)/2,F%dims(3)/2)
-       write(6,'("BZ",E17.10)') F%B_2D%Z(F%dims(1)/2,F%dims(3)/2)
+       write(6,'("BR(r=0)",E17.10)') F%B_2D%R(F%dims(1)/2,F%dims(3)/2)
+       write(6,'("BPHI(r=0)",E17.10)') F%B_2D%PHI(F%dims(1)/2,F%dims(3)/2)
+       write(6,'("BZ(r=0)",E17.10)') F%B_2D%Z(F%dims(1)/2,F%dims(3)/2)
 
-
+       write(6,'("EPHI(r=0)",E17.10)') F%E_2D%PHI(F%dims(1)/2,F%dims(3)/2)
        
        if (params%orbit_model(3:5).EQ.'pre') then
           write(6,'("Initializing GC fields from external EM fields")')
           call initialize_GC_fields(F)
        end if
 
-       write(6,'("gradBR",E17.10)') F%gradB_2D%R(F%dims(1)/2,F%dims(3)/2)
-       write(6,'("gradBPHI",E17.10)') F%gradB_2D%PHI(F%dims(1)/2,F%dims(3)/2)
-       write(6,'("gradBZ",E17.10)') F%gradB_2D%Z(F%dims(1)/2,F%dims(3)/2)
+!       write(6,'("gradBR",E17.10)') F%gradB_2D%R(F%dims(1)/2,F%dims(3)/2)
+!       write(6,'("gradBPHI",E17.10)') F%gradB_2D%PHI(F%dims(1)/2,F%dims(3)/2)
+!       write(6,'("gradBZ",E17.10)') F%gradB_2D%Z(F%dims(1)/2,F%dims(3)/2)
        
     CASE DEFAULT
     END SELECT

@@ -1315,7 +1315,9 @@ contains
     TYPE(KORC_PARAMS), INTENT(IN) 		:: params
     REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: Ppll
     REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: Pmu
-    REAL(rp), DIMENSION(8) 			:: Bmag,E_PHI
+    REAL(rp), DIMENSION(8) 			:: Bmag
+    REAL(rp), DIMENSION(8) 			:: E_R,E_PHI,E_Z
+    REAL(rp), DIMENSION(8) 			:: B_R,B_PHI,B_Z
     REAL(rp), INTENT(IN) 			:: R0,B0,lam,q0,EF0
     REAL(rp), DIMENSION(8), INTENT(IN) 			:: Y_R,Y_PHI,Y_Z
     INTEGER(is), DIMENSION(8), INTENT(INOUT) 			:: flag

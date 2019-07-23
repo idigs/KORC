@@ -1274,7 +1274,7 @@ contains
     do ii = 1_idef,params%num_species
 
 
-       if (spp(1)%spatial_distribution.eq.'TRACER') then
+       if (spp(ii)%spatial_distribution.eq.'TRACER') then
           call get_fields(params,spp(ii)%vars,F)
           !! Calls [[get_fields]] in [[korc_fields]].
           ! Interpolates fields at local particles' position and keeps in
@@ -1316,7 +1316,7 @@ contains
 
                 else if (params%field_model.eq.'EXTERNAL') then
 
-                   RAphi(pp,1)=spp(ii)%vars%PHI_P(pp)
+                   RAphi(pp,1)=spp(ii)%vars%PSI_P(pp)
                    
                 end if
 
@@ -1353,7 +1353,7 @@ contains
 
                 else if (params%field_model.eq.'EXTERNAL') then
 
-                   RAphi(pp,2)=spp(ii)%vars%PHI_P(pp)
+                   RAphi(pp,2)=spp(ii)%vars%PSI_P(pp)
                    
                 end if
 
@@ -1430,8 +1430,7 @@ contains
           end do ! loop over particles on an mpi process
           !$OMP END PARALLEL DO                
        else
-
-
+          
           params%GC_coords=.TRUE.
           call get_fields(params,spp(ii)%vars,F)
 
@@ -1895,11 +1894,12 @@ contains
   end subroutine advance_FPeqn_vars
 
 
-  subroutine adv_GCinterp_top(params,spp)
+  subroutine adv_GCinterp_top(params,spp,P,F)
     
     TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
     !! Core KORC simulation parameters.
-    TYPE(PROFILES), INTENT(IN)                                 :: P 
+    TYPE(PROFILES), INTENT(IN)                                 :: P
+    TYPE(FIELDS), INTENT(IN)                                   :: F
     TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)    :: spp
     !! An instance of the derived type SPECIES containing all the parameters
     !! and simulation variables of the different species in the simulation.

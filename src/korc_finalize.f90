@@ -46,6 +46,7 @@ CONTAINS
        DEALLOCATE(spp(ii)%vars%Y)
        DEALLOCATE(spp(ii)%vars%E)
        DEALLOCATE(spp(ii)%vars%B)
+       DEALLOCATE(spp(ii)%vars%PSI_P)
        DEALLOCATE(spp(ii)%vars%ne)
        DEALLOCATE(spp(ii)%vars%Te)
        DEALLOCATE(spp(ii)%vars%Zeff)

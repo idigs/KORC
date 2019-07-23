@@ -496,6 +496,7 @@ subroutine initialize_particles(params,F,spp)
      ALLOCATE( spp(ii)%vars%Y(spp(ii)%ppp,3) )
      ALLOCATE( spp(ii)%vars%E(spp(ii)%ppp,3) )
      ALLOCATE( spp(ii)%vars%B(spp(ii)%ppp,3) )
+     ALLOCATE( spp(ii)%vars%PSI_P(spp(ii)%ppp) )
      ALLOCATE( spp(ii)%vars%ne(spp(ii)%ppp) )
      ALLOCATE( spp(ii)%vars%Te(spp(ii)%ppp) )
      ALLOCATE( spp(ii)%vars%Zeff(spp(ii)%ppp) )
@@ -508,12 +509,15 @@ subroutine initialize_particles(params,F,spp)
      ALLOCATE( spp(ii)%vars%AUX(spp(ii)%ppp) )
      ALLOCATE( spp(ii)%vars%wt(spp(ii)%ppp) )
 
+!     write(6,'("0 size of PSI_P: ",I16)') size(spp(ii)%vars%PSI_P)
+     
      spp(ii)%vars%X = 0.0_rp
      spp(ii)%vars%V = 0.0_rp
      spp(ii)%vars%Rgc = 0.0_rp
      spp(ii)%vars%Y = 0.0_rp
      spp(ii)%vars%E = 0.0_rp
      spp(ii)%vars%B = 0.0_rp
+     spp(ii)%vars%PSI_P = 0.0_rp
      spp(ii)%vars%ne = 0.0_rp
      spp(ii)%vars%Te = 0.0_rp
      spp(ii)%vars%Zeff = 0.0_rp

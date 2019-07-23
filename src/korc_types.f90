@@ -257,7 +257,7 @@ module korc_types
      REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: B 
      !! Cartesian components of the magnetic field felt by each electron.
      !! dim(B) = dim(X).
-     REAL(rp), DIMENSION(:), ALLOCATABLE 	:: PHI_P 
+     REAL(rp), DIMENSION(:), ALLOCATABLE 	:: PSI_P 
      REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: BR 
      !! Cartesian components of the gradient of the R-component of the
      !! magnetic field felt by each electron. dim(B) = dim(X).

@@ -356,12 +356,12 @@ CONTAINS
          (params%field_eval.eq.'interp')) then
 
        if (params%mpi_params%rank .EQ. 0) then
-          write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * *")')
           write(6,'("* * * * INITIALIZING FIELDS INTERPOLANT * * * *")')
        end if
 
        ! * * * * * * * * MAGNETIC FIELD * * * * * * * * !
        if (F%Bflux) then
+          
           bfield_2d%NR = F%dims(1)
           bfield_2d%NZ = F%dims(3)
 
@@ -645,20 +645,15 @@ CONTAINS
        end if
 
        if (params%mpi_params%rank .EQ. 0) then
-          write(6,'("* * * * * * INTERPOLANT INITIALIZED * * * * * *")')
-          write(6,'("* * * * * * * * * * * * * * * * * * * * * * * *",/)')
+          write(6,'("* * * * * * INTERPOLANT INITIALIZED * * * * * *",/)')
        end if
     else if (params%field_model .EQ. 'ANALYTICAL') then
        if (params%mpi_params%rank .EQ. 0) then
-          write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * *")')
-          write(6,'("* * * * USING ANALYTICAL MAGNETIC FIELD * * * *")')
-          write(6,'("* * * * * * * * * * * * * * * * * * * * * * * *",/)')
+          write(6,'("* * * * USING ANALYTICAL MAGNETIC FIELD * * * *",/)')
        end if
     else if (params%field_model .EQ. 'UNIFORM') then
        if (params%mpi_params%rank .EQ. 0) then
-          write(6,'(/,"* * * * * * * * * * *  * * * * * * * * * * *")')
-          write(6,'("* * * * USING UNIFORM MAGNETIC FIELD * * * *")')
-          write(6,'("* * * * * * * * * * *  * * * * * * * * * * *",/)')
+          write(6,'("* * * * USING UNIFORM MAGNETIC FIELD * * * *",/)')
        end if
     end if
   end subroutine initialize_fields_interpolant
@@ -833,7 +828,6 @@ CONTAINS
             (params%field_eval.eq.'interp')) then
           
           if (params%mpi_params%rank .EQ. 0) then
-             write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * * *")')
              write(6,'("* * * * INITIALIZING PROFILES INTERPOLANT * * * *")')
           end if
 
@@ -953,19 +947,14 @@ CONTAINS
 
           if (params%mpi_params%rank .EQ. 0) then
              write(6,'("* * * * * * INTERPOLANT   INITIALIZED * * * * * *")')
-             write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * *",/)')
           end if
        else if (params%profile_model .EQ. 'ANALYTICAL') then
           if (params%mpi_params%rank .EQ. 0) then
-             write(6,'(/,"* * * * * * * * * * * * * * * * * * * * *")')
              write(6,'("* * * * USING ANALYTICAL PROFILES * * * *")')
-             write(6,'("* * * * * * * * * * * * * * * * * * * * *",/)')
           end if
        else if (params%profile_model .EQ. 'UNIFORM') then
           if (params%mpi_params%rank .EQ. 0) then
-             write(6,'(/,"* * * * * * * * * * * * *  * * * * * * * * * * *")')
              write(6,'("* * * * UNIFORM PLASMA: NO PROFILES USED * * * *")')
-             write(6,'("* * * * * * * * * * * * *  * * * * * * * * * * *",/)')
           end if
        end if
     end if
@@ -1511,26 +1500,36 @@ end subroutine interp_3D_bfields
 !! of the magnetic field (its value changes through the subroutine).
 !! @param pp Particle iterator.
 !! @param ss Species iterator.
-subroutine calculate_magnetic_field(Y,F,B,PHI_P,flag)
+subroutine calculate_magnetic_field(Y,F,B,PSI_P,flag)
   REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN)      :: Y
   TYPE(FIELDS), INTENT(IN)                               :: F
   REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT)   :: B
-  REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)   :: PHI_P
+  REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)   :: PSI_P
   INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)  :: flag
   REAL(rp), DIMENSION(:,:), ALLOCATABLE                  :: A
   INTEGER                                                :: pp
   INTEGER                                                :: ss
 
+
+  
   ss = size(Y,1)
 
-  ALLOCATE(A(3,ss))
+  ALLOCATE(A(ss,3))
+  A=0._rp
   !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) &
-  !$OMP& SHARED(F,Y,A,B,flag,bfield_2d)
+  !$OMP& SHARED(F,Y,A,B,flag,bfield_2d,PSI_P)
   do pp=1_idef,ss
      if ( flag(pp) .EQ. 1_is ) then
 
+!        write(6,'("pp: ",I16)') pp
+        
+!        write(6,'("Y_R: ",E17.10)') Y(:,1)
+!        write(6,'("Y_PHI: ",E17.10)') Y(:,2)
+!        write(6,'("Y_Z: ",E17.10)') Y(:,3)
+!        write(6,'("PSI_P: ",E17.10)') PSI_P
+        
         call EZspline_interp(bfield_2d%A, Y(pp,1), Y(pp,3), &
-             PHI_P(pp), ezerr)
+             PSI_P(pp), ezerr)
         call EZspline_error(ezerr)
         
         ! FR = (dA/dZ)/R
@@ -1552,6 +1551,15 @@ subroutine calculate_magnetic_field(Y,F,B,PHI_P,flag)
            call EZspline_error(ezerr)
            A(pp,3) = -A(pp,3)/Y(pp,1)
 
+!           write(6,'("B_R: ",E17.10)') A(:,1)
+!           write(6,'("B_PHI: ",E17.10)') A(:,2)
+!           write(6,'("B_Z: ",E17.10)') A(:,3)
+
+!           write(6,'("B_X: ",E17.10)') B(:,1)
+!           write(6,'("B_Y: ",E17.10)') B(:,2)
+!           write(6,'("B_Z: ",E17.10)') B(:,3)
+
+           
            B(pp,1) = A(pp,1)*COS(Y(pp,2)) - A(pp,2)*SIN(Y(pp,2))
            B(pp,2) = A(pp,1)*SIN(Y(pp,2)) + A(pp,2)*COS(Y(pp,2))
            B(pp,3) = A(pp,3)
@@ -1710,7 +1718,15 @@ subroutine interp_fields(params,prtcls,F)
   call check_if_in_fields_domain(prtcls%Y, prtcls%flag)
 
   if (ALLOCATED(F%PSIp).and.F%Bflux) then
-     call calculate_magnetic_field(prtcls%Y,F,prtcls%B,prtcls%PHI_P,prtcls%flag)
+
+!     write(6,'("3 size of PSI_P: ",I16)') size(prtcls%PSI_P)
+
+!     write(6,'("B_X: ",E17.10)') prtcls%B(:,1)
+!     write(6,'("B_Z: ",E17.10)') prtcls%B(:,3)
+!     write(6,'("B_Y: ",E17.10)') prtcls%B(:,2)
+!     write(6,'("PSI_P: ",E17.10)') prtcls%PSI_P
+     
+     call calculate_magnetic_field(prtcls%Y,F,prtcls%B,prtcls%PSI_P,prtcls%flag)
   end if
 
   if (ALLOCATED(F%B_2D%R)) then

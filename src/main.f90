@@ -191,8 +191,15 @@ program main
   !! field interpolations. 
   !! Only initialized if collisions (params%collisions==T) are present for
   !! ne, Te, Zeff
-  
+
+  if (params%mpi_params%rank .EQ. 0) then
+     write(6,'("* * * * INITIALIZING INITIAL CONDITIONS * * * *")')
+  end if
   call set_up_particles_ic(params,F,spp,P)
+  if (params%mpi_params%rank .EQ. 0) then
+     write(6,'("* * * * * * * * * * * * * * * * * * * * * * * *",/)')
+  end if
+  
   !! <h4>17\. Set Particle Initial Conditions</h4>  
   !!
   !! Subroutine [[set_up_particles_ic]] in [[korc_initialize]] calls
@@ -316,7 +323,7 @@ program main
 
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp') then
      do it=params%ito,params%t_steps,params%t_skip
-        call adv_GCinterp_top(params,spp)
+        call adv_GCinterp_top(params,spp,P,F)
         
         params%time = params%init_time &
              +REAL(it-1_ip+params%t_skip,rp)*params%dt        

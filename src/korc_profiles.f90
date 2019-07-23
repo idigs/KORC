@@ -106,7 +106,7 @@ CONTAINS
          Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename,axisymmetric
 
     if (params%mpi_params%rank .EQ. 0) then
-       write(6,'(/,"* * * * * * * * INITIALIZING PROFILES * * * * * * * *")')
+       write(6,'("* * * * * * * * INITIALIZING PROFILES * * * * * * * *")')
     end if
     
     SELECT CASE (TRIM(params%profile_model))
@@ -156,7 +156,7 @@ CONTAINS
           do ii=1_idef,P%dims(1)
              do kk=1_idef,P%dims(3)
 
-                rm=sqrt((P%X%R(ii)-P%R0)**2+(P%X%Z(jj)-P%Z0)**2)
+                rm=sqrt((P%X%R(ii)-P%R0)**2+(P%X%Z(kk)-P%Z0)**2)
                 r_a=rm/P%a
 
                 SELECT CASE (TRIM(P%ne_profile))
@@ -241,7 +241,7 @@ CONTAINS
     END SELECT
 
     if (params%mpi_params%rank .EQ. 0) then
-       write(6,'(/,"* * * * * * * * * * * * * * * * * * * * * * * * *")')
+       write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * *")')
     end if
     
   end subroutine initialize_profiles
