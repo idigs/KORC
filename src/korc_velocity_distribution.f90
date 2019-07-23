@@ -217,6 +217,19 @@ CONTAINS
     !! MPI error status.
 
     do ii=1_idef,params%num_species
+
+       if (params%mpi_params%rank .EQ. 0) then
+          write(6,'(/,"* * * * * SPECIES: ",I2," * * * * * * * * * * *")') ii
+          write(6,'("Particles per MPI process: ",I16)') spp(ii)%ppp
+          write(6,'("Energy distribution is: ",A20)') &
+               TRIM(spp(ii)%energy_distribution)
+          write(6,'("Pitch-angle distribution is: ",A20)') &
+               TRIM(spp(ii)%pitch_distribution)
+          write(6,'("Spatial distribution is: ",A20)') &
+               TRIM(spp(ii)%spatial_distribution)
+          write(6,'("* * * * * * * * * * * * * * * * * * * * * *",/)')
+       end if
+       
        SELECT CASE (TRIM(spp(ii)%energy_distribution))
        CASE ('MONOENERGETIC')
           spp(ii)%go = (spp(ii)%Eo + spp(ii)%m*C_C**2)/(spp(ii)%m*C_C**2)
@@ -327,15 +340,7 @@ CONTAINS
           ! Something to be done
        END SELECT
 
-       if (params%mpi_params%rank .EQ. 0) then
-          write(6,'(/,"* * * * * SPECIES: ",I2," * * * * * * * * * * *")') ii
-          write(6,'("Partilces per MPI process: ",I16)') spp(ii)%ppp
-          write(6,'("Energy distribution is: ",A20)') &
-               TRIM(spp(ii)%energy_distribution)
-          write(6,'("Pitch-angle distribution is: ",A20)') &
-               TRIM(spp(ii)%pitch_distribution)
-          write(6,'("* * * * * * * * * * * * * * * * * * * * * *",/)')
-       end if
+
 
        call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
     end do

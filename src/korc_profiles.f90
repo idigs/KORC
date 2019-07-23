@@ -141,6 +141,14 @@ CONTAINS
        P%n_Zeff = n_Zeff
        P%a_Zeff = a_Zeff
 
+
+       if (params%mpi_params%rank .EQ. 0) then
+          write(6,'("ANALYTICAL")')
+          write(6,'("ne profile: ",A20)') P%ne_profile
+          write(6,'("Te profile: ",A20)') P%Te_profile
+          write(6,'("Zeff profile: ",A20)') P%Zeff_profile
+       end if
+       
        if (params%field_eval.eq.'interp') then
 
           P%axisymmetric = axisymmetric
@@ -209,6 +217,13 @@ CONTAINS
        P%Zeff_profile = TRIM(Zeff_profile)
        P%Zeffo = Zeffo
 
+       if (params%mpi_params%rank .EQ. 0) then
+          write(6,'("EXTERNAL")')
+          write(6,'("ne profile:",A20)') P%ne_profile
+          write(6,'("Te profile: ",A20)') P%Te_profile
+          write(6,'("Zeff profile: ",A20)') P%Zeff_profile
+       end if
+       
        P%filename = TRIM(filename)
        P%axisymmetric = axisymmetric
 
@@ -237,6 +252,14 @@ CONTAINS
        P%Zeffo = Zeffo
        P%n_Zeff = 0.0_rp
        P%a_Zeff = (/0.0_rp,0.0_rp,0.0_rp,0.0_rp/)
+
+       if (params%mpi_params%rank .EQ. 0) then
+          write(6,'("UNIFORM")')
+          write(6,'("ne profile: ",A20)') P%ne_profile
+          write(6,'("Te profile: ",A20)') P%Te_profile
+          write(6,'("Zeff profile: ",A20)') P%Zeff_profile
+       end if
+       
     CASE DEFAULT
     END SELECT
 

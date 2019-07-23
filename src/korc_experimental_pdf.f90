@@ -983,7 +983,11 @@ CONTAINS
              g_test = g_buffer + random_norm(0.0_rp,dg)
           end do
 
-          ratio = fRE_H(eta_test,g_test)/fRE_H(eta_buffer,g_buffer)
+          ratio = fRE_H(eta_test,g_test)*sin(deg2rad(eta_test))* &
+                  g_test*sqrt(g_test**2-1)/(fRE_H(eta_buffer,g_buffer)* &
+                  sin(deg2rad(eta_buffer))*g_buffer* &
+                  sqrt(g_buffer**2-1))
+          !ratio = fRE_H(eta_test,g_test)/fRE_H(eta_buffer,g_buffer)
           !ratio = fRE_HxPR(eta_test,g_test)/fRE_HxPR(eta_buffer,g_buffer)
 
           if (ratio .GE. 1.0_rp) then
@@ -1009,19 +1013,32 @@ CONTAINS
        do while(num_accepted.LT.nsamples)
           ii=2_idef
           do while (ii .LE. nsamples)
+             
+!             write(6,'("iisample",I16)') ii
              eta_test = eta_tmp(ii-1) + random_norm(0.0_rp,deta)
+!             write(6,'("max_pitch_angle: ",E17.10)') max_pitch_angle
+!             write(6,'("min_pitch_angle: ",E17.10)') min_pitch_angle
              do while ((ABS(eta_test) .GT. max_pitch_angle).OR. &
                   (ABS(eta_test) .LT. min_pitch_angle))
                 eta_test = eta_tmp(ii-1) + random_norm(0.0_rp,deta)
+!                write(6,'("eta_test: ",E17.10)') eta_test
              end do
 
              g_test = g_tmp(ii-1) + random_norm(0.0_rp,dg)
+!             write(6,'("max_g: ",E17.10)') max_g
+!             write(6,'("min_g: ",E17.10)') min_g
              do while ((g_test.LT.min_g).OR.(g_test.GT.max_g))
                 g_test = g_tmp(ii-1) + random_norm(0.0_rp,dg)
+!                write(6,'("g_test: ",E17.10)') g_test
              end do
 
-             ratio = fRE_H(eta_test,g_test)/fRE_H(eta_tmp(ii-1),g_tmp(ii-1))
+             ratio = fRE_H(eta_test,g_test)*sin(deg2rad(eta_test))* &
+                  g_test*sqrt(g_test**2-1)/(fRE_H(eta_tmp(ii-1),g_tmp(ii-1))* &
+                  sin(deg2rad(eta_tmp(ii-1)))*g_tmp(ii-1)* &
+                  sqrt(g_tmp(ii-1)**2-1))
+!             ratio = fRE_H(eta_test,g_test)/fRE_H(eta_tmp(ii-1),g_tmp(ii-1))
              !ratio = fRE_HxPR(eta_test,g_test)/fRE_HxPR(eta_tmp(ii-1),g_tmp(ii-1))
+!             write(6,'("ratio: ",E17.10)') ratio
 
              if (ratio .GE. 1.0_rp) then
                 g_tmp(ii) = g_test
@@ -1041,6 +1058,7 @@ CONTAINS
 
           ii = 1_idef
           do while ( (ii.LT.nsamples).AND.(num_accepted.LT.nsamples) )
+!             write(6,'("iiaccept",I16)') ii
              lp = (g_tmp(ii).LE.h_params%max_sampling_g).AND. &
                   (g_tmp(ii).GE.h_params%min_sampling_g)
              if (lp) then
