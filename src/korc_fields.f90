@@ -1056,7 +1056,7 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
 
        if (params%mpi_params%rank .EQ. 0) then
 
-          if (F%Bflux.and.(params%orbit_model(1:2).EQ.'GC')) F%Eo = Eo
+          if (F%Bflux) F%Eo = Eo
           
           write(6,'("EXTERNAL")')
           write(6,'("Magnetic field: ",E17.10)') F%Bo
@@ -1064,7 +1064,7 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
           
        end if
        
-       if (F%Bflux.and.(params%orbit_model(1:2).EQ.'GC')) then
+       if (F%Bflux) then
 
           F%Bfield=.TRUE.
           F%Efield=.TRUE.
@@ -1108,12 +1108,16 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
           
        end if
 
-       write(6,'("BR(r=0)",E17.10)') F%B_2D%R(F%dims(1)/2,F%dims(3)/2)
-       write(6,'("BPHI(r=0)",E17.10)') F%B_2D%PHI(F%dims(1)/2,F%dims(3)/2)
-       write(6,'("BZ(r=0)",E17.10)') F%B_2D%Z(F%dims(1)/2,F%dims(3)/2)
+       if ((params%mpi_params%rank.EQ.0).and. &
+            (params%orbit_model(1:2).EQ.'GC')) then
+          write(6,'("BR(r=0)",E17.10)') F%B_2D%R(F%dims(1)/2,F%dims(3)/2)
+          write(6,'("BPHI(r=0)",E17.10)') F%B_2D%PHI(F%dims(1)/2,F%dims(3)/2)
+          write(6,'("BZ(r=0)",E17.10)') F%B_2D%Z(F%dims(1)/2,F%dims(3)/2)
 
-       write(6,'("EPHI(r=0)",E17.10)') F%E_2D%PHI(F%dims(1)/2,F%dims(3)/2)
-       
+          write(6,'("EPHI(r=0)",E17.10)') F%E_2D%PHI(F%dims(1)/2,F%dims(3)/2)
+
+       end if
+          
        if (params%orbit_model(3:5).EQ.'pre') then
           write(6,'("Initializing GC fields from external EM fields")')
           call initialize_GC_fields(F)

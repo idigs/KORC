@@ -388,175 +388,177 @@ CONTAINS
           fields_domain%DZ = ABS(F%X%Z(2) - F%X%Z(1))
        end if
 
-       if (F%axisymmetric_fields) then
-          bfield_2d%NR = F%dims(1)
-          bfield_2d%NZ = F%dims(3)
+       if (F%Bfield) then
+          if (F%axisymmetric_fields) then
+             bfield_2d%NR = F%dims(1)
+             bfield_2d%NZ = F%dims(3)
 
-          ! Initializing R component
-          call EZspline_init(bfield_2d%R,bfield_2d%NR,bfield_2d%NZ, &
-               bfield_2d%BCSR,bfield_2d%BCSZ,ezerr)
-          call EZspline_error(ezerr)
-
-          bfield_2d%R%x1 = F%X%R
-          bfield_2d%R%x2 = F%X%Z
-
-          call EZspline_setup(bfield_2d%R, F%B_2D%R, ezerr, .TRUE.)
-          call EZspline_error(ezerr)
-
-          ! Initializing PHI component
-          call EZspline_init(bfield_2d%PHI,bfield_2d%NR,bfield_2d%NZ, &
-               bfield_2d%BCSR,bfield_2d%BCSZ,ezerr)
-          call EZspline_error(ezerr)
-
-          bfield_2d%PHI%x1 = F%X%R
-          bfield_2d%PHI%x2 = F%X%Z
-
-          call EZspline_setup(bfield_2d%PHI, F%B_2D%PHI, ezerr, .TRUE.)
-          call EZspline_error(ezerr)
-
-          ! Initializing Z component
-          call EZspline_init(bfield_2d%Z,bfield_2d%NR,bfield_2d%NZ, &
-               bfield_2d%BCSR,bfield_2d%BCSZ,ezerr)
-          call EZspline_error(ezerr)
-
-          bfield_2d%Z%x1 = F%X%R
-          bfield_2d%Z%x2 = F%X%Z
-          
-          call EZspline_setup(bfield_2d%Z, F%B_2D%Z, ezerr, .TRUE.)
-          call EZspline_error(ezerr)
-
-          if (params%orbit_model.eq.'GCpre') then
-             gradB_2d%NR = F%dims(1)
-             gradB_2d%NZ = F%dims(3)
-
-             ! Initializing GRADBR component
-             call EZspline_init(gradB_2d%R,gradB_2d%NR,gradB_2d%NZ, &
-                  gradB_2d%BCSR,gradB_2d%BCSZ,ezerr)
+             ! Initializing R component
+             call EZspline_init(bfield_2d%R,bfield_2d%NR,bfield_2d%NZ, &
+                  bfield_2d%BCSR,bfield_2d%BCSZ,ezerr)
              call EZspline_error(ezerr)
 
-             gradB_2d%R%x1 = F%X%R
-             gradB_2d%R%x2 = F%X%Z
+             bfield_2d%R%x1 = F%X%R
+             bfield_2d%R%x2 = F%X%Z
 
-             call EZspline_setup(gradB_2d%R, F%gradB_2D%R, ezerr, .TRUE.)
+             call EZspline_setup(bfield_2d%R, F%B_2D%R, ezerr, .TRUE.)
              call EZspline_error(ezerr)
 
-             ! Initializing GRADBPHI component
-             call EZspline_init(gradB_2d%PHI,gradB_2d%NR,gradB_2d%NZ, &
-                  gradB_2d%BCSR,gradB_2d%BCSZ,ezerr)
+             ! Initializing PHI component
+             call EZspline_init(bfield_2d%PHI,bfield_2d%NR,bfield_2d%NZ, &
+                  bfield_2d%BCSR,bfield_2d%BCSZ,ezerr)
              call EZspline_error(ezerr)
 
-             gradB_2d%PHI%x1 = F%X%R
-             gradB_2d%PHI%x2 = F%X%Z
+             bfield_2d%PHI%x1 = F%X%R
+             bfield_2d%PHI%x2 = F%X%Z
 
-             call EZspline_setup(gradB_2d%PHI, F%gradB_2D%PHI, ezerr, .TRUE.)
+             call EZspline_setup(bfield_2d%PHI, F%B_2D%PHI, ezerr, .TRUE.)
              call EZspline_error(ezerr)
 
-             ! Initializing GRADBZ component
-             call EZspline_init(gradB_2d%Z,gradB_2d%NR,gradB_2d%NZ, &
-                  gradB_2d%BCSR,gradB_2d%BCSZ,ezerr)
+             ! Initializing Z component
+             call EZspline_init(bfield_2d%Z,bfield_2d%NR,bfield_2d%NZ, &
+                  bfield_2d%BCSR,bfield_2d%BCSZ,ezerr)
              call EZspline_error(ezerr)
 
-             gradB_2d%Z%x1 = F%X%R
-             gradB_2d%Z%x2 = F%X%Z
+             bfield_2d%Z%x1 = F%X%R
+             bfield_2d%Z%x2 = F%X%Z
 
-             call EZspline_setup(gradB_2d%Z, F%gradB_2D%Z, ezerr, .TRUE.)
+             call EZspline_setup(bfield_2d%Z, F%B_2D%Z, ezerr, .TRUE.)
              call EZspline_error(ezerr)
 
-             curlb_2d%NR = F%dims(1)
-             curlb_2d%NZ = F%dims(3)
+             if (params%orbit_model.eq.'GCpre') then
+                gradB_2d%NR = F%dims(1)
+                gradB_2d%NZ = F%dims(3)
 
-             ! Initializing CURLBR component
-             call EZspline_init(curlb_2d%R,curlb_2d%NR,curlb_2d%NZ, &
-                  curlb_2d%BCSR,curlb_2d%BCSZ,ezerr)
+                ! Initializing GRADBR component
+                call EZspline_init(gradB_2d%R,gradB_2d%NR,gradB_2d%NZ, &
+                     gradB_2d%BCSR,gradB_2d%BCSZ,ezerr)
+                call EZspline_error(ezerr)
+
+                gradB_2d%R%x1 = F%X%R
+                gradB_2d%R%x2 = F%X%Z
+
+                call EZspline_setup(gradB_2d%R, F%gradB_2D%R, ezerr, .TRUE.)
+                call EZspline_error(ezerr)
+
+                ! Initializing GRADBPHI component
+                call EZspline_init(gradB_2d%PHI,gradB_2d%NR,gradB_2d%NZ, &
+                     gradB_2d%BCSR,gradB_2d%BCSZ,ezerr)
+                call EZspline_error(ezerr)
+
+                gradB_2d%PHI%x1 = F%X%R
+                gradB_2d%PHI%x2 = F%X%Z
+
+                call EZspline_setup(gradB_2d%PHI, F%gradB_2D%PHI, ezerr, .TRUE.)
+                call EZspline_error(ezerr)
+
+                ! Initializing GRADBZ component
+                call EZspline_init(gradB_2d%Z,gradB_2d%NR,gradB_2d%NZ, &
+                     gradB_2d%BCSR,gradB_2d%BCSZ,ezerr)
+                call EZspline_error(ezerr)
+
+                gradB_2d%Z%x1 = F%X%R
+                gradB_2d%Z%x2 = F%X%Z
+
+                call EZspline_setup(gradB_2d%Z, F%gradB_2D%Z, ezerr, .TRUE.)
+                call EZspline_error(ezerr)
+
+                curlb_2d%NR = F%dims(1)
+                curlb_2d%NZ = F%dims(3)
+
+                ! Initializing CURLBR component
+                call EZspline_init(curlb_2d%R,curlb_2d%NR,curlb_2d%NZ, &
+                     curlb_2d%BCSR,curlb_2d%BCSZ,ezerr)
+                call EZspline_error(ezerr)
+
+                curlb_2d%R%x1 = F%X%R
+                curlb_2d%R%x2 = F%X%Z
+
+                call EZspline_setup(curlb_2d%R, F%curlb_2D%R, ezerr, .TRUE.)
+                call EZspline_error(ezerr)
+
+                ! Initializing CURLBPHI component
+                call EZspline_init(curlb_2d%PHI,curlb_2d%NR,curlb_2d%NZ, &
+                     curlb_2d%BCSR,curlb_2d%BCSZ,ezerr)
+                call EZspline_error(ezerr)
+
+                curlb_2d%PHI%x1 = F%X%R
+                curlb_2d%PHI%x2 = F%X%Z
+
+                call EZspline_setup(curlb_2d%PHI, F%curlb_2D%PHI, ezerr, .TRUE.)
+                call EZspline_error(ezerr)
+
+                ! Initializing CURLBZ component
+                call EZspline_init(curlb_2d%Z,curlb_2d%NR,curlb_2d%NZ, &
+                     curlb_2d%BCSR,curlb_2d%BCSZ,ezerr)
+                call EZspline_error(ezerr)
+
+                curlb_2d%Z%x1 = F%X%R
+                curlb_2d%Z%x2 = F%X%Z
+
+                call EZspline_setup(curlb_2d%Z, F%curlb_2D%Z, ezerr, .TRUE.)
+                call EZspline_error(ezerr)
+
+             end if
+
+             if (.not.ALLOCATED(fields_domain%FLAG2D)) &
+                  ALLOCATE(fields_domain%FLAG2D(bfield_2d%NR,bfield_2d%NZ))
+             fields_domain%FLAG2D = F%FLAG2D
+
+             fields_domain%DR = ABS(F%X%R(2) - F%X%R(1))
+             fields_domain%DZ = ABS(F%X%Z(2) - F%X%Z(1))
+          else 
+             bfield_3d%NR = F%dims(1)
+             bfield_3d%NPHI = F%dims(2)
+             bfield_3d%NZ = F%dims(3)
+
+             ! Initializing R component of interpolant
+             call EZspline_init(bfield_3d%R, bfield_3d%NR, bfield_3d%NPHI, &
+                  bfield_3d%NZ,&
+                  bfield_3d%BCSR, bfield_3d%BCSPHI, bfield_3d%BCSZ, ezerr)
              call EZspline_error(ezerr)
 
-             curlb_2d%R%x1 = F%X%R
-             curlb_2d%R%x2 = F%X%Z
+             bfield_3d%R%x1 = F%X%R
+             ! bfield_3d%R%x2 = F%X%PHI
+             bfield_3d%R%x3 = F%X%Z
 
-             call EZspline_setup(curlb_2d%R, F%curlb_2D%R, ezerr, .TRUE.)
+             call EZspline_setup(bfield_3d%R, F%B_3D%R, ezerr)
              call EZspline_error(ezerr)
 
-             ! Initializing CURLBPHI component
-             call EZspline_init(curlb_2d%PHI,curlb_2d%NR,curlb_2d%NZ, &
-                  curlb_2d%BCSR,curlb_2d%BCSZ,ezerr)
+             ! Initializing PHI component of interpolant
+             call EZspline_init(bfield_3d%PHI, bfield_3d%NR, bfield_3d%NPHI, &
+                  bfield_3d%NZ,&
+                  bfield_3d%BCSR, bfield_3d%BCSPHI, bfield_3d%BCSZ, ezerr)
              call EZspline_error(ezerr)
 
-             curlb_2d%PHI%x1 = F%X%R
-             curlb_2d%PHI%x2 = F%X%Z
+             bfield_3d%PHI%x1 = F%X%R
+             ! bfield_3d%PHI%x2 = F%X%PHI
+             bfield_3d%PHI%x3 = F%X%Z
 
-             call EZspline_setup(curlb_2d%PHI, F%curlb_2D%PHI, ezerr, .TRUE.)
+             call EZspline_setup(bfield_3d%PHI, F%B_3D%PHI, ezerr)
              call EZspline_error(ezerr)
 
-             ! Initializing CURLBZ component
-             call EZspline_init(curlb_2d%Z,curlb_2d%NR,curlb_2d%NZ, &
-                  curlb_2d%BCSR,curlb_2d%BCSZ,ezerr)
+             ! Initializing Z component of interpolant
+             call EZspline_init(bfield_3d%Z, bfield_3d%NR, bfield_3d%NPHI, &
+                  bfield_3d%NZ,&
+                  bfield_3d%BCSR, bfield_3d%BCSPHI, bfield_3d%BCSZ, ezerr)
              call EZspline_error(ezerr)
 
-             curlb_2d%Z%x1 = F%X%R
-             curlb_2d%Z%x2 = F%X%Z
+             bfield_3d%Z%x1 = F%X%R
+             ! bfield_3d%Z%x2 = F%X%PHI
+             bfield_3d%Z%x3 = F%X%Z
 
-             call EZspline_setup(curlb_2d%Z, F%curlb_2D%Z, ezerr, .TRUE.)
+             call EZspline_setup(bfield_3d%Z, F%B_3D%Z, ezerr)
              call EZspline_error(ezerr)
-             
+
+             ALLOCATE(fields_domain%FLAG3D(bfield_3d%NR,bfield_3d%NPHI, &
+                  bfield_3d%NZ))
+             fields_domain%FLAG3D = F%FLAG3D
+
+             fields_domain%DR = ABS(F%X%R(2) - F%X%R(1))
+             fields_domain%DPHI = 2.0_rp*C_PI/bfield_3d%NPHI
+             fields_domain%DZ = ABS(F%X%Z(2) - F%X%Z(1))
           end if
-                   
-          if (.not.ALLOCATED(fields_domain%FLAG2D)) &
-               ALLOCATE(fields_domain%FLAG2D(bfield_2d%NR,bfield_2d%NZ))
-          fields_domain%FLAG2D = F%FLAG2D
-
-          fields_domain%DR = ABS(F%X%R(2) - F%X%R(1))
-          fields_domain%DZ = ABS(F%X%Z(2) - F%X%Z(1))
-       else 
-          bfield_3d%NR = F%dims(1)
-          bfield_3d%NPHI = F%dims(2)
-          bfield_3d%NZ = F%dims(3)
-
-          ! Initializing R component of interpolant
-          call EZspline_init(bfield_3d%R, bfield_3d%NR, bfield_3d%NPHI, &
-               bfield_3d%NZ,&
-               bfield_3d%BCSR, bfield_3d%BCSPHI, bfield_3d%BCSZ, ezerr)
-          call EZspline_error(ezerr)
-
-          bfield_3d%R%x1 = F%X%R
-          ! bfield_3d%R%x2 = F%X%PHI
-          bfield_3d%R%x3 = F%X%Z
-
-          call EZspline_setup(bfield_3d%R, F%B_3D%R, ezerr)
-          call EZspline_error(ezerr)
-
-          ! Initializing PHI component of interpolant
-          call EZspline_init(bfield_3d%PHI, bfield_3d%NR, bfield_3d%NPHI, &
-               bfield_3d%NZ,&
-               bfield_3d%BCSR, bfield_3d%BCSPHI, bfield_3d%BCSZ, ezerr)
-          call EZspline_error(ezerr)
-
-          bfield_3d%PHI%x1 = F%X%R
-          ! bfield_3d%PHI%x2 = F%X%PHI
-          bfield_3d%PHI%x3 = F%X%Z
-
-          call EZspline_setup(bfield_3d%PHI, F%B_3D%PHI, ezerr)
-          call EZspline_error(ezerr)
-
-          ! Initializing Z component of interpolant
-          call EZspline_init(bfield_3d%Z, bfield_3d%NR, bfield_3d%NPHI, &
-               bfield_3d%NZ,&
-               bfield_3d%BCSR, bfield_3d%BCSPHI, bfield_3d%BCSZ, ezerr)
-          call EZspline_error(ezerr)
-
-          bfield_3d%Z%x1 = F%X%R
-          ! bfield_3d%Z%x2 = F%X%PHI
-          bfield_3d%Z%x3 = F%X%Z
-
-          call EZspline_setup(bfield_3d%Z, F%B_3D%Z, ezerr)
-          call EZspline_error(ezerr)
-
-          ALLOCATE(fields_domain%FLAG3D(bfield_3d%NR,bfield_3d%NPHI, &
-               bfield_3d%NZ))
-          fields_domain%FLAG3D = F%FLAG3D
-
-          fields_domain%DR = ABS(F%X%R(2) - F%X%R(1))
-          fields_domain%DPHI = 2.0_rp*C_PI/bfield_3d%NPHI
-          fields_domain%DZ = ABS(F%X%Z(2) - F%X%Z(1))
        end if
        
        fields_domain%Ro = F%X%R(1)
@@ -796,8 +798,11 @@ CONTAINS
                0.5_rp*fields_domain%DZ)/fields_domain%DZ) + 1.0_rp,idef)
 
 !          write(6,'("IR: ",I16)') IR
-!          write(6,'("IZ: ",I16)') IR
-                  
+!          write(6,'("IZ: ",I16)') IZ
+!          write(6,'("Size of fields_domain R: ",I16)') &
+!               size(fields_domain%FLAG2D,1)
+!          write(6,'("Size of fields_domain Z: ",I16)') &
+!               size(fields_domain%FLAG2D,2)   
           
           if ((fields_domain%FLAG2D(IR,IZ).NE.1_is).OR. &
                ((IR.GT.bfield_2d%NR).OR.(IZ.GT.bfield_2d%NZ))) then

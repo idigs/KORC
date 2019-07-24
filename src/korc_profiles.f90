@@ -307,22 +307,29 @@ CONTAINS
     INTEGER(ip)                                        :: cc
     !! Particle iterator.
     REAL(rp) :: R0,Z0,a,ne0,n_ne,Te0,n_Te,Zeff0
+    REAL(rp) :: R0_RE,Z0_RE,sigmaR_RE,sigmaZ_RE,psimax_RE
     REAL(rp) :: n_REr0,n_tauion,n_lamfront,n_lamback
     REAL(rp), DIMENSION(8) :: r_a,rm
 
     R0=P%R0
     Z0=P%Z0
     a=P%a
+    
     ne0=P%neo
     n_ne=P%n_ne
+
     Te0=P%Teo
     n_Te=P%n_Te
+
     Zeff0=P%Zeffo
+
+    R0_RE=P%R0_RE
+    Z0_RE=P%Z0_RE
     n_REr0=P%n_REr0
     n_tauion=P%n_tauion
     n_lamfront=P%n_lamfront
     n_lamback=P%n_lamback
-        
+    
     !$OMP SIMD
     do cc=1_idef,8_idef
 
@@ -334,7 +341,7 @@ CONTAINS
           ne(cc) = ne0
        CASE('SPONG')
           ne(cc) = ne0*(1._rp-0.2*r_a(cc)**8)+n_ne
-       CASE('SPONG-EVO')
+       CASE('RE-EVO')
           ne(cc) = (ne0-n_ne)/4._rp*(1+tanh((rm(cc)+ &
                n_REr0*(time/n_tauion-1))/n_lamfront))* &
                (1+tanh(-(rm(cc)-n_REr0)/n_lamback))+n_ne

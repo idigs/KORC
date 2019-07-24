@@ -546,10 +546,12 @@ module korc_types
      TYPE(MESH) 				        :: X 
      !! An instance of the KORC derived data type MESH.
      REAL(rp) 				        :: a 
-     !! Plasma radius as measured from the magnetic axis.
+     !! Plasma radius as measured from the magnetic axis
      REAL(rp) 				        :: R0
      REAL(rp) 				        :: Z0
 
+     REAL(rp) 				        :: R0_RE
+     REAL(rp) 				        :: Z0_RE
      
      INTEGER, DIMENSION(3) 			:: dims 
      !! Dimensions of the arrays containing the pre-computed profiles data. dims=(number of grid nodes along \(R\), 

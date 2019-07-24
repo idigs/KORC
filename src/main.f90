@@ -91,7 +91,7 @@ program main
   !! file. Reads in &amp;plasmaProfiles namelist from input file.
   !! Only initialized if collisions (params%collisions==T) are present.
 
-  call initialize_particles(params,F,spp) ! Initialize particles
+  call initialize_particles(params,F,P,spp) ! Initialize particles
   !! <h4>5\. Initialize Particle Velocity Phase Space</h4>
   !! 
   !! Subroutine [[initialize_particles]] in [[korc_initialize]] that 
@@ -354,6 +354,10 @@ program main
 
   
   call finalize_communications(params)
-  ! * * * FINALIZING SIMULATION * * * 
+  ! * * * FINALIZING SIMULATION * * *
+
+
+  write(6,'("KORC ran successfully!")')
+  
 end program main
 

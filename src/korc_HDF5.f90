@@ -1709,7 +1709,8 @@ CONTAINS
                      F%FLAG2D)
              end if
              
-             if  (F%axisymmetric_fields) then
+             if  (F%axisymmetric_fields.and. &
+                  (params%orbit_model(1:2).EQ.'GC')) then
 
                 dset = TRIM(gname) // "/BR"
                 units = params%cpp%Bo

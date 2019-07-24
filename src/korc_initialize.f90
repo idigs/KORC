@@ -317,16 +317,18 @@ end subroutine define_time_step
 ! * * * SUBROUTINES FOR INITIALIZING PARTICLES * * * !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
-subroutine initialize_particles(params,F,spp)
+subroutine initialize_particles(params,F,P,spp)
   !! @note Subroutine that loads the information of the initial condition 
   !! of the different particle species. This subroutine calls
   !! the subroutine that generates the initial energy and pitch angle 
   !! distribution functions. @endnote
   TYPE(KORC_PARAMS), INTENT(IN) 				:: params
-    !! Core KORC simulation parameters.
+  !! Core KORC simulation parameters.
   TYPE(FIELDS), INTENT(IN) 					:: F
-    !! An instance of KORC's derived type FIELDS containing all the information 
-    !! about the fields used in the simulation. See [[korc_types]] and [[korc_fields]].
+  !! An instance of KORC's derived type FIELDS containing all the information 
+  !! about the fields used in the simulation. See [[korc_types]]
+  !!and [[korc_fields]].
+  TYPE(PROFILES), INTENT(OUT) 					:: P
   TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(OUT) 	:: spp
     !! An instance of KORC's derived type SPECIES containing all the information 
     !! of different electron species. See [[korc_types]].
@@ -568,6 +570,11 @@ subroutine initialize_particles(params,F,spp)
      end if
      
   end do
+
+  P%R0_RE=spp(1)%Ro
+  P%Z0_RE=spp(1)%Zo
+  P%n_REr0=max(sqrt(spp(1)%psi_max*2*spp(1)%sigmaR**2), &
+       sqrt(spp(1)%psi_max*2*spp(1)%sigmaZ**2))  
 
   call initial_energy_pitch_dist(params,spp)
 

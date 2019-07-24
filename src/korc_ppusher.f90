@@ -1316,7 +1316,7 @@ contains
 
                 else if (params%field_model.eq.'EXTERNAL') then
 
-                   RAphi(pp,1)=spp(ii)%vars%PSI_P(pp)
+                   RAphi(pp,1)=spp(ii)%vars%PSI_P(pp)/(2*C_PI)
                    
                 end if
 
@@ -1353,7 +1353,7 @@ contains
 
                 else if (params%field_model.eq.'EXTERNAL') then
 
-                   RAphi(pp,2)=spp(ii)%vars%PSI_P(pp)
+                   RAphi(pp,2)=spp(ii)%vars%PSI_P(pp)/(2*C_PI)
                    
                 end if
 
@@ -1678,9 +1678,9 @@ contains
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z)
 
-    write(6,'("ER:",E17.10)') E_R
-    write(6,'("EPHI:",E17.10)') E_PHI
-    write(6,'("EZ:",E17.10)') E_Z
+!    write(6,'("ER:",E17.10)') E_R
+!    write(6,'("EPHI:",E17.10)') E_PHI
+!    write(6,'("EZ:",E17.10)') E_Z
     
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
@@ -1970,7 +1970,11 @@ contains
                 spp(ii)%vars%V(pp-1+cc,1)=V_PLL(cc)
                 spp(ii)%vars%V(pp-1+cc,2)=V_MU(cc)
 
-                spp(ii)%vars%flag(pp-1+cc)=flag_cache(cc)   
+                spp(ii)%vars%flag(pp-1+cc)=flag_cache(cc)
+
+                spp(ii)%vars%B(pp-1+cc,1) = B_R(cc)
+                spp(ii)%vars%B(pp-1+cc,2) = B_PHI(cc)
+                spp(ii)%vars%B(pp-1+cc,3) = B_Z(cc)
              end do
              !$OMP END SIMD
              
