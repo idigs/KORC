@@ -73,6 +73,7 @@ CONTAINS
     !! Iterator.
 
     !$OMP SIMD
+!    !$OMP& aligned(Y_R,Y_PHI,Y_Z,X_X,X_Y,X_Z)
     do pp=1_idef,8_idef
        Y_R(pp) = SQRT(X_X(pp)*X_X(pp) + X_Y(pp)*X_Y(pp))
        Y_PHI(pp) = ATAN2(X_Y(pp), X_X(pp))
@@ -167,6 +168,7 @@ CONTAINS
     INTEGER                                  :: cc
     
     !$OMP SIMD
+!    !$OMP& aligned(Xcyl_R,Xcyl_Z,flag)
     do cc=1_idef,8_idef
        if (sqrt((Xcyl_R(cc)-R0)**2+Xcyl_Z(cc)**2) .gt. a) flag(cc)=0_is
     end do
@@ -254,6 +256,7 @@ CONTAINS
     !! Particle chunk iterator.
 
     !$OMP SIMD
+!    !$OMP& aligned(RR,X_X,X_Y,T_R,T_T,T_Z,X_Z)
     do cc=1_idef,8
        RR(cc)=SQRT(X_X(cc)*X_X(cc) + X_Y(cc)*X_Y(cc)) - R0
 
@@ -279,6 +282,7 @@ CONTAINS
     !! Particle chunk iterator.
 
     !$OMP SIMD
+!    !$OMP& aligned(RR,X_X,X_Y,T_R,T_T,T_Z,X_Z)
     do cc=1_idef,8
        RR(cc)=SQRT(X_X(cc)*X_X(cc) + X_Y(cc)*X_Y(cc)) - R0
 

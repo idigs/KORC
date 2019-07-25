@@ -331,6 +331,7 @@ CONTAINS
     n_lamback=P%n_lamback
     
     !$OMP SIMD
+!    !$OMP& aligned(rm,r_a,ne,Te,Zeff)
     do cc=1_idef,8_idef
 
        rm(cc)=sqrt((Y_R(cc)-R0)**2+(Y_Z(cc)-Z0)**2)

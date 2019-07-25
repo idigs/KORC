@@ -775,6 +775,7 @@ CONTAINS
     
     if (ALLOCATED(fields_domain%FLAG3D)) then
        !$OMP SIMD
+!       !$OMP&  aligned(IR,IPHI,IZ)
        do pp=1_idef,8_idef
           IR = INT(FLOOR((Y_R(pp)  - fields_domain%Ro + &
                0.5_rp*fields_domain%DR)/fields_domain%DR) + 1.0_rp,idef)
@@ -791,6 +792,7 @@ CONTAINS
        !$OMP END SIMD
     else
        !$OMP SIMD
+!       !$OMP& aligned(IR,IZ)
        do pp=1_idef,8_idef
           IR = INT(FLOOR((Y_R(pp)  - fields_domain%Ro + &
                0.5_rp*fields_domain%DR)/fields_domain%DR) + 1.0_rp,idef)
@@ -1060,6 +1062,7 @@ CONTAINS
 
     if (ALLOCATED(profiles_domain%FLAG3D)) then
        !$OMP SIMD
+!       !$OMP& aligned(IR,IPHI,IZ)
        do pp=1_idef,8_idef
           IR = INT(FLOOR((Y_R(pp)  - profiles_domain%Ro + &
                0.5_rp*profiles_domain%DR)/profiles_domain%DR) + 1.0_rp,idef)
@@ -1076,6 +1079,7 @@ CONTAINS
        !$OMP END SIMD
     else
        !$OMP SIMD
+!       !$OMP& aligned(IR,IZ)
        do pp=1_idef,8_idef
           IR = INT(FLOOR((Y_R(pp)  - profiles_domain%Ro + &
                0.5_rp*profiles_domain%DR)/profiles_domain%DR) + 1.0_rp,idef)
@@ -1342,6 +1346,7 @@ subroutine interp_FOfields_p(Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flag_cache)
   call EZspline_error(ezerr)
  
   !$OMP SIMD
+!  !$OMP& aligned (cP,sP,B_X,B_Y,E_X,E_Y,Y_PHI,B_R,B_PHI,E_R,E_PHI)
   do cc=1_idef,8_idef
      cP(cc)=cos(Y_PHI(cc))
      sP(cc)=sin(Y_PHI(cc))

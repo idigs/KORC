@@ -1058,7 +1058,9 @@ contains
     REAL(rp), DIMENSION(8) :: b2mag,b3mag
     integer(ip) :: cc
 
-    !$OMP SIMD
+    !$OMP SIMD 
+!    !$OMP& aligned(b1_X,b1_Y,b1_Z,b_unit_X,b_unit_Y,b_unit_Z, &
+!    !$OMP& b2_X,b2_Y,b2_Z,b2mag,b3_X,b3_Y,b3_Z,b3mag)
     do cc=1_idef,8_idef
        b1_X(cc) = b_unit_X(cc)
        b1_Y(cc) = b_unit_Y(cc)
@@ -1184,6 +1186,8 @@ contains
        end if
           
        !$OMP SIMD
+!       !$OMP& aligned(um,pm,vm,U_X,U_Y,U_Z,Bmag,B_X,B_Y,B_Z, &
+!       !$OMP& b_unit_X,b_unit_Y,b_unit_Z,xi)
        do cc=1_idef,8_idef
 
           um(cc) = SQRT(U_X(cc)*U_X(cc)+U_Y(cc)*U_Y(cc)+U_Z(cc)*U_Z(cc))
@@ -1212,6 +1216,7 @@ contains
           ! b1=b_unit, (b1,b2,b3) is right-handed
 
        !$OMP SIMD
+!       !$OMP& aligned(phi,U_X,U_Y,U_Z,b3_X,b3_Y,b3_Z,b2_X,b2_Y,b2_Z)
        do cc=1_idef,8_idef
           phi(cc) = atan2((U_X(cc)*b3_X(cc)+U_Y(cc)*b3_Y(cc)+ &
                U_Z(cc)*b3_Z(cc)), &
@@ -1223,6 +1228,9 @@ contains
 !       write(6,'("phi: ",E17.10)') phi
        
        !$OMP SIMD
+!       !$OMP& aligned(rnd1,dW,CAL,dCAL,CFL,CBL,vm,ne,Te,Zeff,dpm, &
+!       !$OMP& flag,dxi,xi,pm,dphi,um,Ub_X,Ub_Y,Ub_Z,U_X,U_Y,U_Z, &
+!       !$OMP& b1_X,b1_Y,b1_Z,b2_X,b2_Y,b2_Z,b3_X,b3_Y,b3_Z)
        do cc=1_idef,8_idef
           
 #ifdef PARALLEL_RANDOM
@@ -1355,7 +1363,8 @@ contains
           call interp_collision_p(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
                ne,Te,Zeff,flag)   
 
-          !$OMP SIMD 
+          !$OMP SIMD
+!          !$OMP& aligned(Bmag,B_R,B_PHI,B_Z)
           do cc=1_idef,8_idef
 
              Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
@@ -1369,7 +1378,8 @@ contains
 !       write(6,'("Te: "E17.10)') Te(1)
 !       write(6,'("Bmag: "E17.10)') Bmag(1)
        
-       !$OMP SIMD 
+       !$OMP SIMD
+!       !$OMP& aligned (pm,xi,v,Ppll,Bmag,Pmu)
        do cc=1_idef,8_idef
           ! Transform p_pll,mu to P,eta
           pm(cc) = SQRT(Ppll(cc)*Ppll(cc)+2*me*Bmag(cc)*Pmu(cc))
@@ -1386,7 +1396,9 @@ contains
 !       write(6,'("v: ",E17.10)') v
 !       write(6,'("xi: ",E17.10)') xi
 
-       !$OMP SIMD 
+       !$OMP SIMD
+!       !$OMP& aligned(rnd1,dW,CAL,dCAL,CFL,CBL,v,ne,Te,Zeff,dp, &
+!       !$OMP& flag,dxi,xi,pm,Ppll,Pmu,Bmag)
        do cc=1_idef,8_idef
        
 #ifdef PARALLEL_RANDOM

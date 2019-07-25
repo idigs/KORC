@@ -143,6 +143,8 @@ CONTAINS
          T_R,T_T,T_Z,flag_cache)
 
     !$OMP SIMD
+!    !$OMP& aligned(cT,sT,cZ,sZ,eta,q,Bp,Bzeta,B_X,B_Y,B_Z, &
+!    !$OMP& Ezeta,E_X,E_Y,E_Z,T_T,T_Z,T_R)
     do cc=1_idef,8
        cT(cc)=cos(T_T(cc))
        sT(cc)=sin(T_T(cc))
@@ -400,7 +402,8 @@ subroutine analytical_fields_Bmag_p(R0,B0,lam,q0,EF0,Y_R,Y_PHI,Y_Z,Bmag,E_PHI)
     integer(ip) :: cc
     
 
-    !$OMP SIMD 
+    !$OMP SIMD
+!    !$OMP& aligned(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,rm,qprof,Bmag)
     do cc=1_idef,8_idef
        rm(cc)=sqrt((Y_R(cc)-R0)*(Y_R(cc)-R0)+Y_Z(cc)*Y_Z(cc))
        qprof(cc) = 1.0_rp + (rm(cc)*rm(cc)/(lam*lam))
@@ -431,6 +434,8 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
     
 
     !$OMP SIMD
+!    !$OMP& aligned(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z, &
+!    !$OMP& curlB_R,curlB_PHI,curlB_Z,E_R,E_PHI,E_Z)
     do cc=1_idef,8_idef
        rm(cc)=sqrt((Y_R(cc)-R0)*(Y_R(cc)-R0)+Y_Z(cc)*Y_Z(cc))
        qprof(cc) = 1.0_rp + (rm(cc)*rm(cc)/(lam*lam))

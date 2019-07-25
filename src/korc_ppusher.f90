@@ -2289,7 +2289,10 @@ contains
     REAL(rp),INTENT(in) :: q_cache,m_cache
     INTEGER(ip)  :: cc
 
-    !$OMP SIMD 
+    !$OMP SIMD
+!    !$OMP& aligned(gradB_R,gradB_PHI,gradB_Z,curlb_R,curlb_Z, &
+!    !$OMP& B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,RHS_R,RHS_PHI,RHS_Z,RHS_PLL, &
+!    !$OMP& V_PLL,V_MU,Y_R,curlb_PHI)
     do cc=1_idef,8
        Bmag(cc) = SQRT(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
 
