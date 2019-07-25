@@ -1465,7 +1465,7 @@ CONTAINS
                            field grid nodes"
                       call save_1d_array_to_hdf5(h5file_id,dset,F%X%PHI,attr_array)
                    end if
-
+                   
                    dset = TRIM(gname) // "/Z"
                    attr_array(1) = "Z position of the magnetic field grid nodes"
                    call save_1d_array_to_hdf5(h5file_id,dset,F%X%Z* &

@@ -172,6 +172,9 @@ CONTAINS
                    P%ne_2D(ii,kk) = P%neo
                 CASE('SPONG')
                    P%ne_2D(ii,kk) = P%neo*(1._rp-0.2*r_a**8)+P%n_ne
+                CASE('RE-EVO')                   
+                   !flat profile placeholder, updates every timestep
+                   P%ne_2D(ii,kk) = P%neo
                 CASE DEFAULT
                    P%ne_2D(ii,kk) = P%neo
                 END SELECT
@@ -198,6 +201,8 @@ CONTAINS
              end do
           end do
 
+
+          
        end if
        
     CASE('EXTERNAL')

@@ -91,6 +91,8 @@ program main
   !! file. Reads in &amp;plasmaProfiles namelist from input file.
   !! Only initialized if collisions (params%collisions==T) are present.
 
+
+  
   call initialize_particles(params,F,P,spp) ! Initialize particles
   !! <h4>5\. Initialize Particle Velocity Phase Space</h4>
   !! 
@@ -101,6 +103,7 @@ program main
   !! calls [[initial_energy_pitch_dist]] to assign particles' energy and pitch
   !! angle according to the chosen distribution.
 
+
   
   call initialize_collision_params(params)
   !! <h4>6\. Initialize Collision Parameters</h4>
@@ -110,6 +113,8 @@ program main
   !! (multiple-species) data types, reading in namefiles from the KORC input file.
   !! MS reads in namelist &CollisionParamsMultipleSpecies while SS reads in
   !! namelist &CollisionParamsSingleSpecies.
+
+
   
   call initialize_synthetic_camera(params,F)
   !! <h4>7\. Initialize Synthetic Cameras</h4>
@@ -125,6 +130,8 @@ program main
   !! Also finds the maximum non-relativistic and relativistic cyclotron frequencies
   !! to be used for setting the timstep for the time-evolution algorithms.
 
+
+  
   call define_time_step(params)
   !! <h4>10\. Define Time Step</h4>
   !!
@@ -142,6 +149,7 @@ program main
   !! Subroutine [[normalize_variables]] in [[korc_units]] normalizes 
   !! variables consistent with characteristic plasma parameters 
   !! calculated in [[compute_charcs_plasma_params]].
+
 
   
   call normalize_collisions_params(params)
@@ -163,6 +171,8 @@ program main
   ! *** BEYOND THIS POINT VARIABLES ARE DIMENSIONLESS ***
   ! *** *** *** *** *** ***   *** *** *** *** *** *** ***
 
+
+  
   call initialize_fields_interpolant(params,F)
   !! <h4>15\. Initialize Fields Interpolant</h4>
   !!
@@ -215,6 +225,8 @@ program main
 
   ! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !
 
+
+  
   call save_simulation_parameters(params,spp,F,P)
 
   call save_collision_params(params)

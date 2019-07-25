@@ -328,7 +328,7 @@ subroutine initialize_particles(params,F,P,spp)
   !! An instance of KORC's derived type FIELDS containing all the information 
   !! about the fields used in the simulation. See [[korc_types]]
   !!and [[korc_fields]].
-  TYPE(PROFILES), INTENT(OUT) 					:: P
+  TYPE(PROFILES), INTENT(INOUT) 			:: P
   TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(OUT) 	:: spp
     !! An instance of KORC's derived type SPECIES containing all the information 
     !! of different electron species. See [[korc_types]].

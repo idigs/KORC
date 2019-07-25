@@ -368,6 +368,7 @@ CONTAINS
           ! Initializing poloidal flux interpolant
           call EZspline_init(bfield_2d%A,bfield_2d%NR,bfield_2d%NZ, &
                bfield_2d%BCSR,bfield_2d%BCSZ,ezerr)
+          
           call EZspline_error(ezerr)
 
           bfield_2d%A%x1 = F%X%R
@@ -378,7 +379,7 @@ CONTAINS
 
           call EZspline_setup(bfield_2d%A, F%PSIp, ezerr, .TRUE.)
           call EZspline_error(ezerr)
-
+          
 !          write(6,'("PSIp",E17.10)') F%PSIp
 
           ALLOCATE(fields_domain%FLAG2D(bfield_2d%NR,bfield_2d%NZ))
@@ -397,7 +398,7 @@ CONTAINS
              call EZspline_init(bfield_2d%R,bfield_2d%NR,bfield_2d%NZ, &
                   bfield_2d%BCSR,bfield_2d%BCSZ,ezerr)
              call EZspline_error(ezerr)
-
+             
              bfield_2d%R%x1 = F%X%R
              bfield_2d%R%x2 = F%X%Z
 
