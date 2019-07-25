@@ -1445,7 +1445,8 @@ END FUNCTION indicator_exp
            eta_samples(ii) = eta_buffer
            G_samples(ii) = G_buffer
            ! Sample phi location uniformly
-           PHI_samples(ii) = 2.0_rp*C_PI*rand()
+           call RANDOM_NUMBER(rand_unif)
+           PHI_samples(ii) = 2.0_rp*C_PI*rand_unif
            ii = ii + 1_idef 
         END IF
 

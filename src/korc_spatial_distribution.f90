@@ -783,8 +783,9 @@ subroutine MH_gaussian_elliptic_torus(params,spp)
 
         IF (INT(indicator(psi1,spp%psi_max)).EQ.1) THEN
            R_samples(ii) = R_buffer
-           Z_samples(ii) = Z_buffer        
-           ZETA_samples(ii) = 2.0_rp*C_PI*rand()
+           Z_samples(ii) = Z_buffer
+           call RANDOM_NUMBER(rand_unif)
+           ZETA_samples(ii) = 2.0_rp*C_PI*rand_unif
            ii = ii + 1_idef 
         END IF
         
@@ -1150,7 +1151,8 @@ subroutine Spong_3D(params,spp)
            Z_samples(ii) = Z_buffer
            T_samples(ii) = T_buffer
            ! Sample phi location uniformly
-           PHI_samples(ii) = 2.0_rp*C_PI*rand()
+           call RANDOM_NUMBER(rand_unif)
+           PHI_samples(ii) = 2.0_rp*C_PI*rand_unif
            ii = ii + 1_idef 
         END IF
 

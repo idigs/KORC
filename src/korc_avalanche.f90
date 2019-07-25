@@ -817,7 +817,8 @@ subroutine Avalanche_4D(params,spp,P,F)
            P_samples(ii) = P_buffer
            T_samples(ii) = T_buffer
            ! Sample phi location uniformly
-           PHI_samples(ii) = 2.0_rp*C_PI*rand()
+           call RANDOM_NUMBER(rand_unif)
+           PHI_samples(ii) = 2.0_rp*C_PI*rand_unif
            ii = ii + 1_idef 
         END IF
 

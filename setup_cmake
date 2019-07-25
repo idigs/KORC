@@ -1,4 +1,3 @@
-
 #!/bin/bash
 #
 #  setup_cmake Chooses the correct cmake build command for a machine.
@@ -111,9 +110,9 @@ then
     cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE                                          \
           -DEZSpline_INCLUDE_PATH=/repo/trunk/build/modules/stell                        \
           -DCMAKE_PREFIX_PATH=$MPICH_DIR                                                 \
-          -DEZSpline_INCLUDE_PATH=/global/u1/m/mbeidler/KORC/PSPLINES/LINUX/mod \
-          -DEZSpline_LINK_FLAGS="-L/global/u1/m/mbeidler/KORC/PSPLINES/LINUX/lib -lpspline" \
-          -DEZSpline_LIBRARIES=/global/u1/m/mbeidler/KORC/PSPLINES/LINUX/lib/libpspline.a   \
+          -DEZSpline_INCLUDE_PATH=/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX/mod \
+          -DEZSpline_LINK_FLAGS="-L/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX/lib -lpspline" \
+          -DEZSpline_LIBRARIES=/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX/lib/libpspline.a   \
           -DCMAKE_Fortran_FLAGS="-O3 -mkl -axMIC-AVX512,AVX -DHDF5_DOUBLE_PRESICION -vec-threshold0 -simd -qopenmp-simd -align array64byte -assume contiguous_assumed_shape -vecabi=cmdtarget"  \
           -DCMAKE_C_FLAGS="-O3 -mkl -axMIC-AVX512,AVX -vec-threshold0 -simd -qopenmp"   \
           -DCMAKE_CXX_FLAGS="-O3 -mkl -std=c++11 -axMIC-AVX512,AVX -vec-threshold0 -simd -qopenmp" \
