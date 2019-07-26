@@ -1382,6 +1382,8 @@ contains
 !       write(6,'("Bmag: "E17.10)') Bmag                
 !       write(6,'("v: ",E17.10)') v
 !       write(6,'("xi: ",E17.10)') xi
+       !       write(6,'("size(E_PHI_GC): ",I16)') size(E_PHI)
+
 
        !$OMP SIMD
 !       !$OMP& aligned(rnd1,dW,CAL,dCAL,CFL,CBL,v,ne,Te,Zeff,dp, &
@@ -1409,8 +1411,6 @@ contains
           CBL(cc) = (CB_ee_SD(v(cc),ne(cc),Te(cc),Zeff(cc))+ &
                CB_ei_SD(params,v(cc),ne(cc),Te(cc),Zeff(cc)))
           
-
-!          write(6,'("E_PHI: ",E17.10)') E_PHI(cc)
           
           dp(cc)=REAL(flag(cc))*((-CFL(cc)+dCAL(cc)+E_PHI(cc)*xi(cc))*dt+ &
                sqrt(2.0_rp*CAL(cc))*dW(cc,1))
@@ -1460,8 +1460,8 @@ contains
 !       write(6,'("dp: ",E17.10)') dp
 !       write(6,'("dxi: ",E17.10)') dxi
 !       write(6,'("Ppll: ",E17.10)') Ppll
-!       write(6,'("Pmu: ",E17.10)') Pmu
-
+!      write(6,'("Pmu: ",E17.10)') Pmu
+!       write(6,'("E_PHI_COL: ",E17.10)') E_PHI
        
        do cc=1_idef,8_idef
           if (pm(cc).lt.1._rp) then

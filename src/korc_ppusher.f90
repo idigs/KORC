@@ -1274,7 +1274,7 @@ contains
     do ii = 1_idef,params%num_species
 
 
-       if (spp(ii)%spatial_distribution.eq.'TRACER') then
+       if (spp(ii)%spatial_distribution.eq.'TRACER'.and.params%FO_GC_compare) then
           call get_fields(params,spp(ii)%vars,F)
           !! Calls [[get_fields]] in [[korc_fields]].
           ! Interpolates fields at local particles' position and keeps in
@@ -1283,9 +1283,9 @@ contains
           ALLOCATE(RAphi(spp(ii)%ppp,2))
           ALLOCATE(RVphi(spp(ii)%ppp))
           RAphi=0.0_rp
-
+          
           call cart_to_cyl(spp(ii)%vars%X,spp(ii)%vars%Y)
-
+          
           !$OMP PARALLEL DO SHARED(params,ii,spp,F,RAphi,RVphi) &
           !$OMP&  PRIVATE(pp,Bmag1,bhat,rm)
           ! Call OpenMP to calculate p_par and mu for each particle and
@@ -1357,6 +1357,9 @@ contains
                    
                 end if
 
+                write(6,'("RAphi1: ",E17.10)') RAphi(pp,1)
+                write(6,'("RAphi2: ",E17.10)') RAphi(pp,2)
+                
                 spp(ii)%vars%V(pp,1)=(spp(ii)%m*spp(ii)%vars%g(pp)* &
                      RVphi(pp)+spp(ii)%q*(RAphi(pp,1)-RAphi(pp,2)))/ &
                      spp(ii)%vars%Y(pp,1)
@@ -1411,6 +1414,10 @@ contains
                 spp(ii)%vars%g(pp)=sqrt(1+(spp(ii)%vars%V(pp,1))**2+ &
                      2*spp(ii)%vars%V(pp,2)*Bmag1)
 
+                write(6,'("Bmag:",E17.10)') Bmag1
+                write(6,'("PPLL:",E17.10)') spp(ii)%vars%V(pp,1)
+                write(6,'("MU:",E17.10)') spp(ii)%vars%V(pp,2)
+                
                 spp(ii)%vars%eta(pp) = atan2(sqrt(2*spp(ii)%m*Bmag1* &
                      spp(ii)%vars%V(pp,2)),spp(ii)%vars%V(pp,1))*180.0_rp/C_PI
 
@@ -1422,7 +1429,7 @@ contains
                 !             write(6,'("pperp",E17.10)') sqrt(2*spp(ii)%m*Bmag1* &
                 !                  spp(ii)%vars%V(pp,2))
 
-                !             write(6,'("eta",E17.10)') spp(ii)%vars%eta(pp)
+                             write(6,'("eta GCinit",E17.10)') spp(ii)%vars%eta(pp)
                 !             write(6,'("gam",E17.10)') spp(ii)%vars%g(pp)
 
 
@@ -1430,6 +1437,9 @@ contains
           end do ! loop over particles on an mpi process
           !$OMP END PARALLEL DO                
        else
+
+          if (spp(ii)%spatial_distribution.eq.'TRACER') &
+               call cart_to_cyl(spp(ii)%vars%X,spp(ii)%vars%Y)
           
           params%GC_coords=.TRUE.
           call get_fields(params,spp(ii)%vars,F)
@@ -1604,6 +1614,8 @@ contains
                 spp(ii)%vars%V(pp-1+cc,2)=V_MU(cc)
 
                 spp(ii)%vars%flag(pp-1+cc)=flag_cache(cc)
+
+                spp(ii)%vars%E(pp-1+cc,2)=E_PHI(cc)
              end do
              !$OMP END SIMD
              
@@ -1905,8 +1917,12 @@ contains
        call include_CoulombCollisions_GC_p(tt,params,Y_R,Y_PHI,Y_Z, &
             V_PLL,V_MU,m_cache,flag_cache,P,B_R,B_PHI,B_Z,E_PHI)
 
+!       write(6,'("Collision Loop in FP")')
+       
     end do
 
+
+    
 
   end subroutine advance_FPeqn_vars
 
@@ -1959,6 +1975,8 @@ contains
        !$OMP& flag_cache,E_PHI)
        do pp=1_idef,spp(ii)%ppp,8
 
+!          write(6,'("pp: ",I16)') pp
+          
           !$OMP SIMD
           do cc=1_idef,8_idef
              Y_R(cc)=spp(ii)%vars%Y(pp-1+cc,1)
@@ -2288,9 +2306,14 @@ contains
     REAL(rp),intent(in) :: m_cache
     INTEGER(is),DIMENSION(8),intent(INOUT) :: flag_cache
 
+!    write(6,'("E_PHI_FP: ",E17.10)') E_PHI
+    
     do tt=1_ip,params%t_skip
        call include_CoulombCollisions_GC_p(tt,params,Y_R,Y_PHI,Y_Z, &
             V_PLL,V_MU,m_cache,flag_cache,P,B_R,B_PHI,B_Z,E_PHI)
+
+!       write(6,'("Collision Loop in FP")')
+       
     end do
 
 !    write(6,'("V_PLL: ",E17.10)') V_PLL

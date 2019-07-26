@@ -103,7 +103,7 @@ program main
   !! calls [[initial_energy_pitch_dist]] to assign particles' energy and pitch
   !! angle according to the chosen distribution.
 
-
+!  write(6,'("init eta: ",E17.10)') spp(1)%vars%eta
   
   call initialize_collision_params(params)
   !! <h4>6\. Initialize Collision Parameters</h4>
@@ -209,6 +209,8 @@ program main
   if (params%mpi_params%rank .EQ. 0) then
      write(6,'("* * * * * * * * * * * * * * * * * * * * * * * *",/)')
   end if
+
+!  write(6,'("post ic eta: ",E17.10)') spp(1)%vars%eta
   
   !! <h4>17\. Set Particle Initial Conditions</h4>  
   !!
@@ -236,6 +238,7 @@ program main
   !! [[save_collision_params]] in [[korc_collisions]] call
   !! subroutines to save simulation and collision parameters.
 
+!  write(6,'("GC init eta: ",E17.10)') spp(1)%vars%eta
   
   if (.NOT.(params%restart.OR.params%proceed)) then
 
@@ -258,6 +261,8 @@ program main
   end if
   ! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !
 
+!  write(6,'("pre ppusher loop eta: ",E17.10)') spp(1)%vars%eta
+  
   call timing_KORC(params)
 
 

@@ -217,6 +217,7 @@ module korc_types
      !! An instance of the KORC_MPI derived type.
      TYPE(CHARCS_PARAMS) 		:: cpp 
      !! An instance of the CHARCS_PARAMS derived type.
+     LOGICAL :: FO_GC_compare
      CHARACTER(MAX_STRING_LENGTH) :: orbit_model
      !! String with the name of the orbit model ('FO' or 'GC').
      CHARACTER(MAX_STRING_LENGTH) :: field_eval

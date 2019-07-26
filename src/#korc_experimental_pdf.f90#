@@ -1097,8 +1097,6 @@ CONTAINS
        DEALLOCATE(g_tmp)
        DEALLOCATE(eta_tmp)
     end if
-
- !   write(6,'("sampled eta: ",E17.10)') eta
     
   END SUBROUTINE sample_Hollmann_distribution
 

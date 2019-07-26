@@ -112,6 +112,7 @@ subroutine load_korc_params(params)
   !! Auxiliary variable used to parse the output_list
   LOGICAL 				:: HDF5_error_handling
   !! Flag for HDF5 error handling
+  LOGICAL 		:: FO_GC_compare
   CHARACTER(MAX_STRING_LENGTH) 		:: orbit_model
   !! String with the name of the orbit model ('FO' or 'GC').
   CHARACTER(MAX_STRING_LENGTH) :: field_eval
@@ -124,7 +125,8 @@ subroutine load_korc_params(params)
        simulation_time,snapshot_frequency,dt,num_species,radiation, &
        collisions,collisions_model,outputs_list,minimum_particle_energy, &
        HDF5_error_handling,orbit_model,field_eval,proceed,profile_model, &
-       restart_overwrite_frequency,FokPlan,GC_rad_model,bound_electron_model
+       restart_overwrite_frequency,FokPlan,GC_rad_model,bound_electron_model, &
+       FO_GC_compare
 
   open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
        status='OLD',form='formatted')
@@ -159,6 +161,7 @@ subroutine load_korc_params(params)
   end if
 
   params%orbit_model = orbit_model
+  params%FO_GC_compare = FO_GC_compare
   params%field_eval = field_eval
 
   params%GC_coords=.FALSE.
