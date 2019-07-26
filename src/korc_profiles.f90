@@ -314,7 +314,7 @@ CONTAINS
     REAL(rp) :: R0,Z0,a,ne0,n_ne,Te0,n_Te,Zeff0
     REAL(rp) :: R0_RE,Z0_RE,sigmaR_RE,sigmaZ_RE,psimax_RE
     REAL(rp) :: n_REr0,n_tauion,n_lamfront,n_lamback
-    REAL(rp), DIMENSION(8) :: r_a,rm
+    REAL(rp), DIMENSION(8) :: r_a,rm,rm_RE
 
     R0=P%R0
     Z0=P%Z0
@@ -334,12 +334,17 @@ CONTAINS
     n_tauion=P%n_tauion
     n_lamfront=P%n_lamfront
     n_lamback=P%n_lamback
+
+!    write(6,'("R0_RE: "E17.10)') R0_RE
+!    write(6,'("Z0_RE: "E17.10)') Z0_RE
+!    write(6,'("n_REr0: "E17.10)') n_REr0
     
     !$OMP SIMD
 !    !$OMP& aligned(rm,r_a,ne,Te,Zeff)
     do cc=1_idef,8_idef
 
        rm(cc)=sqrt((Y_R(cc)-R0)**2+(Y_Z(cc)-Z0)**2)
+       rm_RE(cc)=sqrt((Y_R(cc)-R0_RE)**2+(Y_Z(cc)-Z0_RE)**2)
        r_a(cc)=rm(cc)/a
        
        SELECT CASE (TRIM(P%ne_profile))
@@ -348,13 +353,13 @@ CONTAINS
        CASE('SPONG')
           ne(cc) = ne0*(1._rp-0.2*r_a(cc)**8)+n_ne
        CASE('RE-EVO')
-          ne(cc) = (ne0-n_ne)/4._rp*(1+tanh((rm(cc)+ &
+          ne(cc) = (ne0-n_ne)/4._rp*(1+tanh((rm_RE(cc)+ &
                n_REr0*(time/n_tauion-1))/n_lamfront))* &
-               (1+tanh(-(rm(cc)-n_REr0)/n_lamback))+n_ne
+               (1+tanh(-(rm_RE(cc)-n_REr0)/n_lamback))+n_ne
        CASE DEFAULT
           ne(cc) = ne0
        END SELECT
-
+       
        SELECT CASE (TRIM(P%Te_profile))
        CASE('FLAT')       
           Te(cc) = Te0
@@ -376,6 +381,9 @@ CONTAINS
     end do
     !$OMP END SIMD
 
+!    write(6,'("ne: "E17.10)') ne(1)
+!    write(6,'("rm_RE: "E17.10)') rm_RE(1)
+    
   end subroutine analytical_profiles_p
 
   subroutine get_analytical_profiles(P,Y,ne,Te,Zeff,flag)

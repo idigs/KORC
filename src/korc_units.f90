@@ -155,6 +155,8 @@ subroutine normalize_variables(params,spp,F,P)
   P%a = P%a/params%cpp%length
   P%R0 = P%R0/params%cpp%length
   P%Z0 = P%Z0/params%cpp%length
+  P%R0_RE = P%R0_RE/params%cpp%length
+  P%Z0_RE = P%Z0_RE/params%cpp%length
   P%neo = P%neo/params%cpp%density
   P%n_ne = P%n_ne/params%cpp%density
   P%Teo = P%Teo/params%cpp%temperature

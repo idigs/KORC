@@ -1363,12 +1363,13 @@ subroutine interp_FOfields_p(Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flag_cache)
   
 end subroutine interp_FOfields_p
 
-subroutine interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff)
+subroutine interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag_cache)
 
   REAL(rp),DIMENSION(8),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
   REAL(rp),DIMENSION(8),INTENT(OUT)   :: ne,Te,Zeff
+  INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
 
-
+  call check_if_in_profiles_domain_p(Y_R,Y_PHI,Y_Z,flag_cache)
 !  write(6,'("YR: ",E17.10)') Y_R(1)
 !  write(6,'("YPHI: ",E17.10)') Y_PHI(1)
 !  write(6,'("YZ: ",E17.10)') Y_Z(1)

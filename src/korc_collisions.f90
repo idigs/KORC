@@ -1134,7 +1134,7 @@ contains
     REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: U_X,U_Y,U_Z
 
     REAL(rp), DIMENSION(8) 			:: ne,Te,Zeff
-    INTEGER(is), DIMENSION(8), INTENT(IN) 			:: flag
+    INTEGER(is), DIMENSION(8), INTENT(INOUT) 			:: flag
     REAL(rp), INTENT(IN)  :: me
 
     INTEGER(ip), INTENT(IN) 			:: tt
@@ -1182,7 +1182,7 @@ contains
        if (params%profile_model.eq.'ANALYTICAL') then
           call analytical_profiles_p(time,params,Y_R,Y_Z,P,ne,Te,Zeff)
        else  if (params%profile_model.eq.'EXTERNAL') then          
-          call interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff)
+          call interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag)
        end if
           
        !$OMP SIMD
@@ -1317,16 +1317,14 @@ contains
 
 
   subroutine include_CoulombCollisions_GC_p(tt,params,Y_R,Y_PHI,Y_Z, &
-       Ppll,Pmu,me,flag,P,R0,B0,lam,q0,EF0)
+       Ppll,Pmu,me,flag,P,B_R,B_PHI,B_Z,E_PHI)
 
     TYPE(PROFILES), INTENT(IN)                                 :: P    
     TYPE(KORC_PARAMS), INTENT(IN) 		:: params
     REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: Ppll
     REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: Pmu
     REAL(rp), DIMENSION(8) 			:: Bmag
-    REAL(rp), DIMENSION(8) 			:: E_R,E_PHI,E_Z
-    REAL(rp), DIMENSION(8) 			:: B_R,B_PHI,B_Z
-    REAL(rp), INTENT(IN) 			:: R0,B0,lam,q0,EF0
+    REAL(rp), DIMENSION(8),INTENT(IN) 			:: B_R,B_PHI,B_Z,E_PHI
     REAL(rp), DIMENSION(8), INTENT(IN) 			:: Y_R,Y_PHI,Y_Z
     INTEGER(is), DIMENSION(8), INTENT(INOUT) 			:: flag
     REAL(rp), INTENT(IN) 			:: me
@@ -1353,34 +1351,19 @@ contains
        time=(params%it+tt)*params%dt
 
        if (params%profile_model.eq.'ANALYTICAL') then
-          call analytical_profiles_p(time,params,Y_R,Y_Z,P,ne,Te,Zeff)
-          
-          call analytical_fields_Bmag_p(R0,B0,lam,q0,EF0,Y_R,Y_PHI,Y_Z, &
-               Bmag,E_PHI)
+          call analytical_profiles_p(time,params,Y_R,Y_Z,P,ne,Te,Zeff)          
 
        else if (params%profile_model.eq.'EXTERNAL') then
        
-          call interp_collision_p(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
-               ne,Te,Zeff,flag)   
+          call interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag)
 
-          !$OMP SIMD
-!          !$OMP& aligned(Bmag,B_R,B_PHI,B_Z)
-          do cc=1_idef,8_idef
+       end if         
 
-             Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
-
-          end do
-          !$OMP END SIMD
-
-       end if
-             
-!       write(6,'("ne: "E17.10)') ne(1)
-!       write(6,'("Te: "E17.10)') Te(1)
-!       write(6,'("Bmag: "E17.10)') Bmag(1)
        
        !$OMP SIMD
 !       !$OMP& aligned (pm,xi,v,Ppll,Bmag,Pmu)
        do cc=1_idef,8_idef
+          Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
           ! Transform p_pll,mu to P,eta
           pm(cc) = SQRT(Ppll(cc)*Ppll(cc)+2*me*Bmag(cc)*Pmu(cc))
           xi(cc) = Ppll(cc)/pm(cc)
@@ -1392,7 +1375,9 @@ contains
        end do
        !$OMP END SIMD
 
-          
+!       write(6,'("ne: "E17.10)') ne
+!       write(6,'("Te: "E17.10)') Te
+!       write(6,'("Bmag: "E17.10)') Bmag                
 !       write(6,'("v: ",E17.10)') v
 !       write(6,'("xi: ",E17.10)') xi
 
@@ -1409,16 +1394,21 @@ contains
 #else
           call RANDOM_NUMBER(rnd1)
 #endif
-
+          
           dW(cc,1) = SQRT(3*dt)*(-1+2*rnd1(cc,1))     
           dW(cc,2) = SQRT(3*dt)*(-1+2*rnd1(cc,2))     
 
+!          write(6,'("dW1: ",E17.10)') dW(cc,1)
+!          write(6,'("dW2: ",E17.10)') dW(cc,2)
+          
           CAL(cc) = CA_SD(v(cc),ne(cc),Te(cc))
           dCAL(cc)= dCA_SD(v(cc),me,ne(cc),Te(cc))
           CFL(cc) = CF_SD(params,v(cc),ne(cc),Te(cc))
           CBL(cc) = (CB_ee_SD(v(cc),ne(cc),Te(cc),Zeff(cc))+ &
                CB_ei_SD(params,v(cc),ne(cc),Te(cc),Zeff(cc)))
           
+
+!          write(6,'("E_PHI: ",E17.10)') E_PHI(cc)
           
           dp(cc)=REAL(flag(cc))*((-CFL(cc)+dCAL(cc)+E_PHI(cc)*xi(cc))*dt+ &
                sqrt(2.0_rp*CAL(cc))*dW(cc,1))
@@ -1427,6 +1417,9 @@ contains
                E_PHI(cc)*(1-xi(cc)*xi(cc))/pm(cc))*dt- &
                sqrt(2.0_rp*CBL(cc)*(1-xi(cc)*xi(cc)))/pm(cc)*dW(cc,2))
 
+!          write(6,'("dp: ",E17.10)') dp(cc)
+!          write(6,'("dxi: ",E17.10)') dxi(cc)
+          
           if (params%radiation) then
              if(params%GC_rad_model.eq.'SDE') then
                 dp(cc)=dp(cc)-gam(cc)*pm(cc)*(1-xi(cc)*xi(cc))/ &
@@ -1456,6 +1449,18 @@ contains
        end do
        !$OMP END SIMD
 
+!       write(6,'("rnd1: ",E17.10)') rnd1
+!       write(6,'("flag: ",I16)') flag
+!       write(6,'("CA: ",E17.10)') CAL
+!       write(6,'("dCA: ",E17.10)') dCAL
+!       write(6,'("CF ",E17.10)') CFL
+!       write(6,'("CB: ",E17.10)') CBL
+!       write(6,'("dp: ",E17.10)') dp
+!       write(6,'("dxi: ",E17.10)') dxi
+!       write(6,'("Ppll: ",E17.10)') Ppll
+!       write(6,'("Pmu: ",E17.10)') Pmu
+
+       
        do cc=1_idef,8_idef
           if (pm(cc).lt.1._rp) then
 !             write(6,'("Momentum less than zero")')
