@@ -1892,7 +1892,7 @@ contains
 
 
     REAL(rp),DIMENSION(8), INTENT(INOUT)  :: Y_R,Y_PHI,Y_Z
-    REAL(rp),DIMENSION(8),INTENT(IN) :: E_PHI
+    REAL(rp),DIMENSION(8),INTENT(INOUT) :: E_PHI
     REAL(rp),DIMENSION(8),INTENT(IN) :: B_R,B_PHI,B_Z
     REAL(rp),DIMENSION(8), INTENT(INOUT)  :: V_PLL,V_MU
     INTEGER(is),DIMENSION(8), INTENT(INOUT)  :: flag_cache
@@ -2281,7 +2281,7 @@ contains
     INTEGER(ip)                                                    :: tt
     !! time iterator.
     REAL(rp),DIMENSION(8), INTENT(IN)  :: Y_R,Y_PHI,Y_Z
-    REAL(rp),DIMENSION(8),INTENT(IN) :: E_PHI
+    REAL(rp),DIMENSION(8),INTENT(INOUT) :: E_PHI
     REAL(rp),DIMENSION(8),INTENT(IN) :: B_R,B_PHI,B_Z
     REAL(rp),DIMENSION(8), INTENT(INOUT)  :: V_PLL,V_MU
     REAL(rp),DIMENSION(8) :: Bmag,ne,Te,Zeff

@@ -1324,7 +1324,8 @@ contains
     REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: Ppll
     REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: Pmu
     REAL(rp), DIMENSION(8) 			:: Bmag
-    REAL(rp), DIMENSION(8),INTENT(IN) 			:: B_R,B_PHI,B_Z,E_PHI
+    REAL(rp), DIMENSION(8),INTENT(IN) 	:: B_R,B_PHI,B_Z
+    REAL(rp), DIMENSION(8),INTENT(INOUT) 	:: E_PHI
     REAL(rp), DIMENSION(8), INTENT(IN) 			:: Y_R,Y_PHI,Y_Z
     INTEGER(is), DIMENSION(8), INTENT(INOUT) 			:: flag
     REAL(rp), INTENT(IN) 			:: me
