@@ -1359,6 +1359,7 @@ contains
 
        end if         
 
+       if (.not.params%FokPlan) E_PHI=0._rp
        
        !$OMP SIMD
 !       !$OMP& aligned (pm,xi,v,Ppll,Bmag,Pmu)
