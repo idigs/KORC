@@ -1574,11 +1574,11 @@ CONTAINS
              dset = TRIM(gname) // "/Bpo"
              attr = "Poloidal magnetic field in T"
              call save_to_hdf5(h5file_id,dset,F%AB%Bpo*params%cpp%Bo,attr)
-
+             
              dset = TRIM(gname) // "/Eo"
              attr = "Electric field at the magnetic axis in V/m"
              call save_to_hdf5(h5file_id,dset,F%Eo*params%cpp%Eo,attr)
-
+             
              if  (params%field_eval.EQ.'interp') then
 
                 ALLOCATE(attr_array(1))
@@ -1688,6 +1688,18 @@ CONTAINS
              attr = "Electric field at the magnetic axis in V/m"
              call save_to_hdf5(h5file_id,dset,F%Eo*params%cpp%Eo,attr)
 
+             dset = TRIM(gname) // "/E_dyn"
+             attr = "Magnitude of dynamic E"
+             call save_to_hdf5(h5file_id,dset,F%E_dyn*params%cpp%Eo,attr)
+             
+             dset = TRIM(gname) // "/E_pulse"
+             attr = "Magnitude of dynamic E"
+             call save_to_hdf5(h5file_id,dset,F%E_pulse*params%cpp%time,attr)
+
+             dset = TRIM(gname) // "/E_width"
+             attr = "Magnitude of dynamic E"
+             call save_to_hdf5(h5file_id,dset,F%E_width*params%cpp%time,attr)
+             
              dset = TRIM(gname) // "/Ro"
              attr = "Radial position of magnetic axis"
              call save_to_hdf5(h5file_id,dset,F%Ro*params%cpp%length,attr)

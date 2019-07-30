@@ -151,6 +151,9 @@ subroutine normalize_variables(params,spp,F,P)
   F%Eo = F%Eo/params%cpp%Eo
   F%Ro = F%Ro/params%cpp%length
   F%Zo = F%Zo/params%cpp%length
+  F%E_dyn = F%E_dyn/params%cpp%Eo
+  F%E_pulse=F%E_pulse/params%cpp%time
+  F%E_width=F%E_width/params%cpp%time
 
   P%a = P%a/params%cpp%length
   P%R0 = P%R0/params%cpp%length

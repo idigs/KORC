@@ -483,6 +483,12 @@ module korc_types
      !! direction of the pre-computed magnetic field.
      TYPE(MESH) 		 		:: X 
      !! An instance of the KORC derived type MESH.
+     CHARACTER(MAX_STRING_LENGTH) :: E_model
+     !! Name for dynamical, analytic, electric field model to be added to
+     REAL(rp)  :: E_dyn
+     REAL(rp)  :: E_pulse
+     REAL(rp)  :: E_width
+     !! interpolated E field
      INTEGER, DIMENSION(3) 			:: dims 
      !! Dimensions of the KORC vector field. dims=(number of grid 
      !! nodes along \(R\), number of grid nodes along \(\phi\), 

@@ -1317,15 +1317,19 @@ contains
 
 
   subroutine include_CoulombCollisions_GC_p(tt,params,Y_R,Y_PHI,Y_Z, &
-       Ppll,Pmu,me,flag,P,B_R,B_PHI,B_Z,E_PHI)
+       Ppll,Pmu,me,flag,F,P,E_PHI)
 
-    TYPE(PROFILES), INTENT(IN)                                 :: P    
-    TYPE(KORC_PARAMS), INTENT(IN) 		:: params
+    TYPE(PROFILES), INTENT(IN)                                 :: P
+    TYPE(FIELDS), INTENT(IN)                                   :: F
+    TYPE(KORC_PARAMS), INTENT(INOUT) 		:: params
     REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: Ppll
     REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: Pmu
     REAL(rp), DIMENSION(8) 			:: Bmag
-    REAL(rp), DIMENSION(8),INTENT(IN) 	:: B_R,B_PHI,B_Z
-    REAL(rp), DIMENSION(8),INTENT(INOUT) 	:: E_PHI
+    REAL(rp), DIMENSION(8) 	:: B_R,B_PHI,B_Z
+    REAL(rp), DIMENSION(8) :: curlb_R,curlb_PHI,curlb_Z
+    REAL(rp), DIMENSION(8) :: gradB_R,gradB_PHI,gradB_Z
+    REAL(rp), DIMENSION(8) 	:: E_R,E_Z
+    REAL(rp), DIMENSION(8), INTENT(OUT) 	:: E_PHI
     REAL(rp), DIMENSION(8), INTENT(IN) 			:: Y_R,Y_PHI,Y_Z
     INTEGER(is), DIMENSION(8), INTENT(INOUT) 			:: flag
     REAL(rp), INTENT(IN) 			:: me
@@ -1351,13 +1355,21 @@ contains
        dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt       
        time=(params%it+tt)*params%dt
 
+       if (params%field_eval.eq.'eqn') then
+          call analytical_fields_GC_p(F,Y_R,Y_PHI, &
+               Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+               gradB_R,gradB_PHI,gradB_Z)          
+       else if (params%field_eval.eq.'interp') then
+          call interp_fields_p(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+               E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
+               flag)
+          call add_analytical_E_p(params,tt,F,E_PHI)
+       end if
+       
        if (params%profile_model.eq.'ANALYTICAL') then
           call analytical_profiles_p(time,params,Y_R,Y_Z,P,ne,Te,Zeff)          
-
-       else if (params%profile_model.eq.'EXTERNAL') then
-       
+       else if (params%profile_model.eq.'EXTERNAL') then      
           call interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag)
-
        end if         
 
        if (.not.params%FokPlan) E_PHI=0._rp

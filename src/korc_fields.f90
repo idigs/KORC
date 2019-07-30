@@ -12,7 +12,7 @@ module korc_fields
 
   PUBLIC :: mean_F_field,&
        get_fields,&
-       get_fields_p,&
+       add_analytical_E_p,&
        analytical_fields_GC_p,&
        analytical_fields_Bmag_p,&
        analytical_fields_p,&
@@ -23,7 +23,6 @@ module korc_fields
        ALLOCATE_3D_FIELDS_ARRAYS,&
        DEALLOCATE_FIELDS_ARRAYS
   PRIVATE :: get_analytical_fields,&
-       get_analytical_fields_p,&
        analytical_fields,&
        analytical_fields_GC_init,&
        analytical_fields_GC,&
@@ -143,8 +142,8 @@ CONTAINS
          T_R,T_T,T_Z,flag_cache)
 
     !$OMP SIMD
-!    !$OMP& aligned(cT,sT,cZ,sZ,eta,q,Bp,Bzeta,B_X,B_Y,B_Z, &
-!    !$OMP& Ezeta,E_X,E_Y,E_Z,T_T,T_Z,T_R)
+    !    !$OMP& aligned(cT,sT,cZ,sZ,eta,q,Bp,Bzeta,B_X,B_Y,B_Z, &
+    !    !$OMP& Ezeta,E_X,E_Y,E_Z,T_T,T_Z,T_R)
     do cc=1_idef,8
        cT(cc)=cos(T_T(cc))
        sT(cc)=sin(T_T(cc))
@@ -225,60 +224,60 @@ CONTAINS
     REAL(rp)    ::  qprof
     REAL(rp)    ::  rm
 
-!    write(6,'("Y: ",E17.10)') Y
-    
+    !    write(6,'("Y: ",E17.10)') Y
+
     ss = SIZE(Y,1)
 
     !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,rm,Btmp,qprof,dRBR,dRBPHI, &
     !$OMP dRBZ,dZBR,dZBPHI,dZBZ,Bmag,dRbhatPHI,dRbhatZ,dZbhatR,dZbhatPHI) &
     !$OMP& SHARED(F,Y,E,B,gradB,curlb,flag)
     do pp=1_idef,ss
-!       if ( flag(pp) .EQ. 1_is ) then
+       !       if ( flag(pp) .EQ. 1_is ) then
 
-          rm=sqrt((Y(pp,1)-F%AB%Ro)**2+Y(pp,3)**2)
-          qprof = 1.0_rp + (rm/F%AB%lambda)**2
-          
-          Btmp(1)=F%AB%Bo*Y(pp,3)/(F%AB%qo*qprof*Y(pp,1))
-          Btmp(2)=-F%AB%Bo*F%AB%Ro/Y(pp,1)
-          Btmp(3)=-F%AB%Bo*(Y(pp,1)-F%AB%Ro)/(F%AB%qo*qprof*Y(pp,1))
+       rm=sqrt((Y(pp,1)-F%AB%Ro)**2+Y(pp,3)**2)
+       qprof = 1.0_rp + (rm/F%AB%lambda)**2
+
+       Btmp(1)=F%AB%Bo*Y(pp,3)/(F%AB%qo*qprof*Y(pp,1))
+       Btmp(2)=-F%AB%Bo*F%AB%Ro/Y(pp,1)
+       Btmp(3)=-F%AB%Bo*(Y(pp,1)-F%AB%Ro)/(F%AB%qo*qprof*Y(pp,1))
 
 
-          B(pp,1) = Btmp(1)*COS(Y(pp,2)) - Btmp(2)*SIN(Y(pp,2))
-          B(pp,2) = Btmp(1)*SIN(Y(pp,2)) + Btmp(2)*COS(Y(pp,2))
-          B(pp,3) = Btmp(3)
+       B(pp,1) = Btmp(1)*COS(Y(pp,2)) - Btmp(2)*SIN(Y(pp,2))
+       B(pp,2) = Btmp(1)*SIN(Y(pp,2)) + Btmp(2)*COS(Y(pp,2))
+       B(pp,3) = Btmp(3)
 
-          dRBR=-F%AB%Bo*Y(pp,3)/(F%AB%qo*qprof*Y(pp,1))*(1./Y(pp,1)+ &
-               2*(Y(pp,1)-F%AB%Ro)/(F%AB%lambda**2*qprof))
-          dRBPHI=F%AB%Bo*F%AB%Ro/Y(pp,1)**2
-          dRBZ=F%AB%Bo/(F%AB%qo*qprof*Y(pp,1))*(-F%AB%Ro/Y(pp,1)+2*(Y(pp,1)- &
-               F%AB%Ro)**2/(F%AB%lambda**2*qprof))
-          dZBR=F%AB%Bo/(F%AB%qo*qprof*Y(pp,1))*(1-2*Y(pp,3)*Y(pp,3)/ &
-               (F%AB%lambda**2*qprof))
-          dZBPHI=0._rp
-          dZBZ=F%AB%Bo*(Y(pp,1)-F%AB%Ro)/(F%AB%qo*Y(pp,1))*2*Y(pp,3)/ &
-               ((F%AB%lambda*qprof)**2)
+       dRBR=-F%AB%Bo*Y(pp,3)/(F%AB%qo*qprof*Y(pp,1))*(1./Y(pp,1)+ &
+            2*(Y(pp,1)-F%AB%Ro)/(F%AB%lambda**2*qprof))
+       dRBPHI=F%AB%Bo*F%AB%Ro/Y(pp,1)**2
+       dRBZ=F%AB%Bo/(F%AB%qo*qprof*Y(pp,1))*(-F%AB%Ro/Y(pp,1)+2*(Y(pp,1)- &
+            F%AB%Ro)**2/(F%AB%lambda**2*qprof))
+       dZBR=F%AB%Bo/(F%AB%qo*qprof*Y(pp,1))*(1-2*Y(pp,3)*Y(pp,3)/ &
+            (F%AB%lambda**2*qprof))
+       dZBPHI=0._rp
+       dZBZ=F%AB%Bo*(Y(pp,1)-F%AB%Ro)/(F%AB%qo*Y(pp,1))*2*Y(pp,3)/ &
+            ((F%AB%lambda*qprof)**2)
 
-          Bmag=sqrt(B(pp,1)*B(pp,1)+B(pp,2)*B(pp,2)+B(pp,3)*B(pp,3))
+       Bmag=sqrt(B(pp,1)*B(pp,1)+B(pp,2)*B(pp,2)+B(pp,3)*B(pp,3))
 
-          gradB(pp,1)=(B(pp,1)*dRBR+B(pp,2)*dRBPHI+B(pp,3)*dRBZ)/Bmag
-          gradB(pp,2)=0._rp
-          gradB(pp,3)=(B(pp,1)*dZBR+B(pp,2)*dZBPHI+B(pp,3)*dZBZ)/Bmag
-          
-          dRbhatPHI=(Bmag*dRBPHI-B(pp,2)*gradB(pp,1))/Bmag**2
-          dRbhatZ=(Bmag*dRBZ-B(pp,3)*gradB(pp,1))/Bmag**2
-          dZbhatR=(Bmag*dZBR-B(pp,1)*gradB(pp,3))/Bmag**2
-          dZbhatPHI=(Bmag*dZBPHI-B(pp,2)*gradB(pp,3))/Bmag**2
+       gradB(pp,1)=(B(pp,1)*dRBR+B(pp,2)*dRBPHI+B(pp,3)*dRBZ)/Bmag
+       gradB(pp,2)=0._rp
+       gradB(pp,3)=(B(pp,1)*dZBR+B(pp,2)*dZBPHI+B(pp,3)*dZBZ)/Bmag
 
-          curlb(pp,1)=-dZbhatPHI
-          curlb(pp,2)=dZbhatR-dRbhatZ
-          curlb(pp,3)=B(pp,2)/(Bmag*Y(pp,1))+dRbhatPHI          
+       dRbhatPHI=(Bmag*dRBPHI-B(pp,2)*gradB(pp,1))/Bmag**2
+       dRbhatZ=(Bmag*dRBZ-B(pp,3)*gradB(pp,1))/Bmag**2
+       dZbhatR=(Bmag*dZBR-B(pp,1)*gradB(pp,3))/Bmag**2
+       dZbhatPHI=(Bmag*dZBPHI-B(pp,2)*gradB(pp,3))/Bmag**2
 
-!          if (abs(F%Eo) > 0) then
-             E(pp,1) = 0.0_rp
-             E(pp,2) = F%Eo*F%AB%Ro/Y(pp,1)
-             E(pp,3) = 0.0_rp
- !         end if
- !      end if
+       curlb(pp,1)=-dZbhatPHI
+       curlb(pp,2)=dZbhatR-dRbhatZ
+       curlb(pp,3)=B(pp,2)/(Bmag*Y(pp,1))+dRbhatPHI          
+
+       !          if (abs(F%Eo) > 0) then
+       E(pp,1) = 0.0_rp
+       E(pp,2) = F%Eo*F%AB%Ro/Y(pp,1)
+       E(pp,3) = 0.0_rp
+       !         end if
+       !      end if
     end do
     !$OMP END PARALLEL DO
   end subroutine analytical_fields_GC_init
@@ -337,73 +336,79 @@ CONTAINS
     REAL(rp)    ::  qprof
     REAL(rp)    ::  rm
 
-    
+
     ss = SIZE(Y,1)
 
     !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,rm,Btmp,qprof,dRBR,dRBPHI, &
     !$OMP dRBZ,dZBR,dZBPHI,dZBZ,Bmag,dRbhatPHI,dRbhatZ,dZbhatR,dZbhatPHI) &
     !$OMP& SHARED(F,Y,E,B,gradB,curlb,flag)
     do pp=1_idef,ss
-!       if ( flag(pp) .EQ. 1_is ) then
+       !       if ( flag(pp) .EQ. 1_is ) then
 
-          rm=sqrt((Y(pp,1)-F%AB%Ro)**2+Y(pp,3)**2)
-          qprof = 1.0_rp + (rm/F%AB%lambda)**2
-          
-          Btmp(1)=F%AB%Bo*Y(pp,3)/(F%AB%qo*qprof*Y(pp,1))
-          Btmp(2)=-F%AB%Bo*F%AB%Ro/Y(pp,1)
-          Btmp(3)=-F%AB%Bo*(Y(pp,1)-F%AB%Ro)/(F%AB%qo*qprof*Y(pp,1))
+       rm=sqrt((Y(pp,1)-F%AB%Ro)**2+Y(pp,3)**2)
+       qprof = 1.0_rp + (rm/F%AB%lambda)**2
 
-          B(pp,1) = Btmp(1)
-          B(pp,2) = Btmp(2)
-          B(pp,3) = Btmp(3)
+       Btmp(1)=F%AB%Bo*Y(pp,3)/(F%AB%qo*qprof*Y(pp,1))
+       Btmp(2)=-F%AB%Bo*F%AB%Ro/Y(pp,1)
+       Btmp(3)=-F%AB%Bo*(Y(pp,1)-F%AB%Ro)/(F%AB%qo*qprof*Y(pp,1))
 
-          dRBR=-F%AB%Bo*Y(pp,3)/(F%AB%qo*qprof*Y(pp,1))*(1./Y(pp,1)+ &
-               2*(Y(pp,1)-F%AB%Ro)/(F%AB%lambda**2*qprof))
-          dRBPHI=F%AB%Bo*F%AB%Ro/Y(pp,1)**2
-          dRBZ=F%AB%Bo/(F%AB%qo*qprof*Y(pp,1))*(-F%AB%Ro/Y(pp,1)+2*(Y(pp,1)- &
-               F%AB%Ro)**2/(F%AB%lambda**2*qprof))
-          dZBR=F%AB%Bo/(F%AB%qo*qprof*Y(pp,1))*(1-2*Y(pp,3)*Y(pp,3)/ &
-               (F%AB%lambda**2*qprof))
-          dZBPHI=0._rp
-          dZBZ=F%AB%Bo*(Y(pp,1)-F%AB%Ro)/(F%AB%qo*Y(pp,1))*2*Y(pp,3)/ &
-               ((F%AB%lambda*qprof)**2)
+       B(pp,1) = Btmp(1)
+       B(pp,2) = Btmp(2)
+       B(pp,3) = Btmp(3)
 
-          Bmag=sqrt(B(pp,1)*B(pp,1)+B(pp,2)*B(pp,2)+B(pp,3)*B(pp,3))
+       dRBR=-F%AB%Bo*Y(pp,3)/(F%AB%qo*qprof*Y(pp,1))*(1./Y(pp,1)+ &
+            2*(Y(pp,1)-F%AB%Ro)/(F%AB%lambda**2*qprof))
+       dRBPHI=F%AB%Bo*F%AB%Ro/Y(pp,1)**2
+       dRBZ=F%AB%Bo/(F%AB%qo*qprof*Y(pp,1))*(-F%AB%Ro/Y(pp,1)+2*(Y(pp,1)- &
+            F%AB%Ro)**2/(F%AB%lambda**2*qprof))
+       dZBR=F%AB%Bo/(F%AB%qo*qprof*Y(pp,1))*(1-2*Y(pp,3)*Y(pp,3)/ &
+            (F%AB%lambda**2*qprof))
+       dZBPHI=0._rp
+       dZBZ=F%AB%Bo*(Y(pp,1)-F%AB%Ro)/(F%AB%qo*Y(pp,1))*2*Y(pp,3)/ &
+            ((F%AB%lambda*qprof)**2)
 
-          gradB(pp,1)=(B(pp,1)*dRBR+B(pp,2)*dRBPHI+B(pp,3)*dRBZ)/Bmag
-          gradB(pp,2)=0._rp
-          gradB(pp,3)=(B(pp,1)*dZBR+B(pp,2)*dZBPHI+B(pp,3)*dZBZ)/Bmag
-          
-          dRbhatPHI=(Bmag*dRBPHI-B(pp,2)*gradB(pp,1))/Bmag**2
-          dRbhatZ=(Bmag*dRBZ-B(pp,3)*gradB(pp,1))/Bmag**2
-          dZbhatR=(Bmag*dZBR-B(pp,1)*gradB(pp,3))/Bmag**2
-          dZbhatPHI=(Bmag*dZBPHI-B(pp,2)*gradB(pp,3))/Bmag**2
+       Bmag=sqrt(B(pp,1)*B(pp,1)+B(pp,2)*B(pp,2)+B(pp,3)*B(pp,3))
 
-          curlb(pp,1)=-dZbhatPHI
-          curlb(pp,2)=dZbhatR-dRbhatZ
-          curlb(pp,3)=B(pp,2)/(Bmag*Y(pp,1))+dRbhatPHI          
+       gradB(pp,1)=(B(pp,1)*dRBR+B(pp,2)*dRBPHI+B(pp,3)*dRBZ)/Bmag
+       gradB(pp,2)=0._rp
+       gradB(pp,3)=(B(pp,1)*dZBR+B(pp,2)*dZBPHI+B(pp,3)*dZBZ)/Bmag
 
-!          if (abs(F%Eo) > 0) then
-             E(pp,1) = 0.0_rp
-             E(pp,2) = F%Eo*F%AB%Ro/Y(pp,1)
-             E(pp,3) = 0.0_rp
- !         end if
- !      end if
+       dRbhatPHI=(Bmag*dRBPHI-B(pp,2)*gradB(pp,1))/Bmag**2
+       dRbhatZ=(Bmag*dRBZ-B(pp,3)*gradB(pp,1))/Bmag**2
+       dZbhatR=(Bmag*dZBR-B(pp,1)*gradB(pp,3))/Bmag**2
+       dZbhatPHI=(Bmag*dZBPHI-B(pp,2)*gradB(pp,3))/Bmag**2
+
+       curlb(pp,1)=-dZbhatPHI
+       curlb(pp,2)=dZbhatR-dRbhatZ
+       curlb(pp,3)=B(pp,2)/(Bmag*Y(pp,1))+dRbhatPHI          
+
+       !          if (abs(F%Eo) > 0) then
+       E(pp,1) = 0.0_rp
+       E(pp,2) = F%Eo*F%AB%Ro/Y(pp,1)
+       E(pp,3) = 0.0_rp
+       !         end if
+       !      end if
     end do
     !$OMP END PARALLEL DO
   end subroutine analytical_fields_GC
 
-subroutine analytical_fields_Bmag_p(R0,B0,lam,q0,EF0,Y_R,Y_PHI,Y_Z,Bmag,E_PHI)
+  subroutine analytical_fields_Bmag_p(F,Y_R,Y_PHI,Y_Z,Bmag,E_PHI)
 
-    REAL(rp),INTENT(IN)  :: R0,B0,lam,q0,EF0
+    TYPE(FIELDS), INTENT(IN)                                   :: F
+    REAL(rp)  :: R0,B0,lam,q0,EF0
     REAL(rp),DIMENSION(8),INTENT(IN)  :: Y_R,Y_PHI,Y_Z
     REAL(rp),DIMENSION(8) :: B_R,B_PHI,B_Z,rm,qprof
     REAL(rp),DIMENSION(8),INTENT(OUT) :: Bmag,E_PHI
     integer(ip) :: cc
-    
+
+    B0=F%Bo
+    EF0=F%Eo
+    lam=F%AB%lambda
+    R0=F%AB%Ro
+    q0=F%AB%qo
 
     !$OMP SIMD
-!    !$OMP& aligned(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,rm,qprof,Bmag)
+    !    !$OMP& aligned(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,rm,qprof,Bmag)
     do cc=1_idef,8_idef
        rm(cc)=sqrt((Y_R(cc)-R0)*(Y_R(cc)-R0)+Y_Z(cc)*Y_Z(cc))
        qprof(cc) = 1.0_rp + (rm(cc)*rm(cc)/(lam*lam))
@@ -420,22 +425,57 @@ subroutine analytical_fields_Bmag_p(R0,B0,lam,q0,EF0,Y_R,Y_PHI,Y_Z,Bmag,E_PHI)
 
   end subroutine analytical_fields_Bmag_p
 
-subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
+  subroutine add_analytical_E_p(params,tt,F,E_PHI)
+
+    TYPE(KORC_PARAMS), INTENT(INOUT)                              :: params
+    TYPE(FIELDS), INTENT(IN)                                   :: F
+    INTEGER(ip),INTENT(IN)  :: tt
+    REAL(rp)  :: E_dyn,E_pulse,E_width,time
+    REAL(rp),DIMENSION(8),INTENT(INOUT) :: E_PHI
+    integer(ip) :: cc
+
+    time=(params%it+tt)*params%dt
+    
+    E_dyn=F%E_dyn
+    E_pulse=F%E_pulse
+    E_width=F%E_width
+
+!    write(6,'("E_dyn: ",E17.10)') E_dyn
+!    write(6,'("E_pulse: ",E17.10)') E_pulse
+!    write(6,'("E_width: ",E17.10)') E_width
+    
+    !$OMP SIMD
+    !    !$OMP& aligned(E_PHI)
+    do cc=1_idef,8_idef
+       E_PHI(cc)=E_PHI(cc)+E_dyn*exp(-(time-E_pulse)**2/(2._rp*E_width**2))* &
+            (1._rp+erf(-10._rp*(time-E_pulse)/(sqrt(2._rp)*E_width)))/2._rp
+    end do
+    !$OMP END SIMD
+
+  end subroutine add_analytical_E_p
+
+  subroutine analytical_fields_GC_p(F,Y_R,Y_PHI, &
        Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
        gradB_PHI,gradB_Z)
 
-    REAL(rp),INTENT(IN)  :: R0,B0,lam,q0,E0
+    TYPE(FIELDS), INTENT(IN)                                   :: F
     REAL(rp),DIMENSION(8),INTENT(IN)  :: Y_R,Y_PHI,Y_Z
     REAL(rp),DIMENSION(8),INTENT(OUT) :: B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z
     REAL(rp),DIMENSION(8),INTENT(OUT) :: curlB_R,curlB_PHI,curlB_Z,E_R,E_PHI,E_Z
     REAL(rp),DIMENSION(8)  :: dRBR,dRBPHI,dRBZ,dZBR,dZBPHI,dZBZ,Bmag,dRbhatPHI
     REAL(rp),DIMENSION(8)  :: dRbhatZ,dZbhatR,dZbhatPHI,qprof,rm
+    REAL(rp)  :: B0,E0,lam,R0,q0
     integer(ip) :: cc
-    
+
+    B0=F%Bo
+    E0=F%Eo
+    lam=F%AB%lambda
+    R0=F%AB%Ro
+    q0=F%AB%qo
 
     !$OMP SIMD
-!    !$OMP& aligned(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z, &
-!    !$OMP& curlB_R,curlB_PHI,curlB_Z,E_R,E_PHI,E_Z)
+    !    !$OMP& aligned(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z, &
+    !    !$OMP& curlB_R,curlB_PHI,curlB_Z,E_R,E_PHI,E_Z)
     do cc=1_idef,8_idef
        rm(cc)=sqrt((Y_R(cc)-R0)*(Y_R(cc)-R0)+Y_Z(cc)*Y_Z(cc))
        qprof(cc) = 1.0_rp + (rm(cc)*rm(cc)/(lam*lam))
@@ -586,7 +626,7 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
        call korc_abort()
     end if
   end subroutine mean_F_field
-  
+
 
   subroutine get_analytical_fields(params,vars,F)
     !! @note Interface for calculating the analytical electric and magnetic
@@ -601,10 +641,10 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
     if (params%orbit_model(1:2).eq.'FO') then
 
        call cart_to_tor_check_if_confined(vars%X,F,vars%Y,vars%flag)
-       
+
        call analytical_fields(F,vars%Y, vars%E, vars%B, vars%flag)
 
-!       call cart_to_cyl(vars%X,vars%Y)
+       !       call cart_to_cyl(vars%X,vars%Y)
 
     elseif (params%orbit_model(1:2).eq.'GC') then
 
@@ -613,62 +653,23 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
           call cart_to_cyl(vars%X,vars%Y)
 
           call cyl_check_if_confined(F,vars%Y,vars%flag)
-       
+
           call analytical_fields_GC_init(params,F,vars%Y, vars%E, vars%B, &
                vars%gradB,vars%curlb, vars%flag)
 
        else
 
           call cyl_check_if_confined(F,vars%Y,vars%flag)
-       
+
           call analytical_fields_GC(params,F,vars%Y, vars%E, vars%B, &
                vars%gradB,vars%curlb, vars%flag)
 
-    end if
+       end if
 
     endif
-    
+
   end subroutine get_analytical_fields
 
-  elemental subroutine get_analytical_fields_p(Y_R,Y_PHI,Y_Z,B_R,B_PHI, &
-       B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,R0,B0,lam,q0,E0)
-    !! @note Interface for calculating the analytical electric and magnetic
-    !! fields for each particle in the simulation. @endnote
-    REAL(rp), INTENT(in)  :: R0,B0,E0,q0,lam
-    REAL(rp),  INTENT(INOUT)   :: Y_R
-    REAL(rp),  INTENT(INOUT)   :: Y_PHI
-    REAL(rp),  INTENT(INOUT)   :: Y_Z
-    REAL(rp),  INTENT(INOUT)   :: B_R
-    REAL(rp),  INTENT(INOUT)   :: B_PHI
-    REAL(rp),  INTENT(INOUT)   :: B_Z
-    REAL(rp),  INTENT(INOUT)   :: gradB_R
-    REAL(rp),  INTENT(INOUT)   :: gradB_PHI
-    REAL(rp),  INTENT(INOUT)   :: gradB_Z
-    REAL(rp),  INTENT(INOUT)   :: curlB_R
-    REAL(rp),  INTENT(INOUT)   :: curlB_PHI
-    REAL(rp),  INTENT(INOUT)   :: curlB_Z
-    REAL(rp),  INTENT(INOUT)   :: E_R
-    REAL(rp),  INTENT(INOUT)   :: E_PHI
-    REAL(rp),  INTENT(INOUT)   :: E_Z
-
-
-!    if (params%orbit_model(1:2).eq.'FO') then
-
-!       call cart_to_tor_check_if_confined(vars%X,F,vars%Y,vars%flag)
-       
-!       call analytical_fields(F,vars%Y, vars%E, vars%B, vars%flag)
-
-!    elseif (params%orbit_model(1:2).eq.'GC') then
-
-!          call cyl_check_if_confined_p(F,Y_R,Y_Z,flag)
-       
-!          call analytical_fields_GC_p(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
-!               curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,R0,B0,lam,q0,E0)
-
-!    end if
-
-    
-  end subroutine get_analytical_fields_p
 
   subroutine uniform_fields(vars,F)
     !! @note Interface for calculating the uniform electric and magnetic
@@ -677,7 +678,7 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
     !! An instance of the KORC derived type PARTICLES.
     TYPE(FIELDS), INTENT(IN)       :: F
     !! An instance of the KORC derived type FIELDS.
-    
+
     call uniform_magnetic_field(F, vars%B)
 
     call uniform_electric_field(F, vars%E)
@@ -741,16 +742,16 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
     vars%flag = 1_idef
     vars%B=0._rp
     vars%PSI_P=0._rp
-    
-    
+
+
     call init_random_seed()
-    
+
     call get_fields(params,vars,F)
 
-!    write(6,'("Bx: ",E17.10)') vars%B(:,1)
-!    write(6,'("By: ",E17.10)') vars%B(:,2)
-!    write(6,'("Bz: ",E17.10)') vars%B(:,3)
-    
+    !    write(6,'("Bx: ",E17.10)') vars%B(:,1)
+    !    write(6,'("By: ",E17.10)') vars%B(:,2)
+    !    write(6,'("Bz: ",E17.10)') vars%B(:,3)
+
     do ii=1_idef,ppp
        if ( vars%flag(ii) .EQ. 1_idef ) then
           b1(ii,:) = vars%B(ii,:)/sqrt(vars%B(ii,1)*vars%B(ii,1)+ &
@@ -797,59 +798,21 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
           call get_analytical_fields(params,vars, F)
        else
           call interp_fields(params,vars, F)          
-       end if       
+       end if
     CASE('EXTERNAL')
 
-!       write(6,'("2 size of PSI_P: ",I16)') size(vars%PSI_P)
-       
+       !       write(6,'("2 size of PSI_P: ",I16)') size(vars%PSI_P)
+
        call interp_fields(params,vars, F)
        if (F%Efield.AND..NOT.F%Efield_in_file) then
           call analytical_electric_field_cyl(F,vars%Y,vars%E,vars%flag)
        end if
     CASE('UNIFORM')
-       
+
        call uniform_fields(vars, F)
     CASE DEFAULT
     END SELECT
   end subroutine get_fields
-
-  subroutine get_fields_p(params,R0,B0,lam,q0,E0,Y_R,Y_PHI, &
-                  Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-                  gradB_R,gradB_PHI,gradB_Z,flag_cache)
-    !! @note Inferface with calls to subroutines for calculating the electric 
-    !! and magnetic field for each particle in the simulation. @endnote
-    TYPE(KORC_PARAMS), INTENT(IN)      :: params
-    !! Core KORC simulation parameters.
-    REAL(rp),INTENT(in)  :: R0,B0,E0,q0,lam
-    REAL(rp),DIMENSION(8),INTENT(INOUT)   :: Y_R,Y_PHI,Y_Z
-    REAL(rp),DIMENSION(8),INTENT(INOUT)   :: B_R,B_PHI,B_Z
-    REAL(rp),DIMENSION(8),INTENT(INOUT)   :: gradB_R,gradB_PHI,gradB_Z
-    REAL(rp),DIMENSION(8),INTENT(INOUT)   :: curlB_R,curlB_PHI,curlB_Z
-    REAL(rp),DIMENSION(8),INTENT(INOUT)   :: E_R,E_PHI,E_Z
-    INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
-
-!    SELECT CASE (TRIM(params%field_model))
-!    CASE('ANALYTICAL')
-       if (params%field_eval.eq.'eqn') then
-          call analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
-                  Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-                  gradB_R,gradB_PHI,gradB_Z)
-       else
-          call interp_fields_p(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
-               curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,flag_cache)
-       end if       
-!    CASE('EXTERNAL')
-
-!       call interp_fields(params,vars, F)
-!       if (F%Efield.AND..NOT.F%Efield_in_file) then
-!          call analytical_electric_field_cyl(F,vars%Y,vars%E,vars%flag)
-!       end if
-!    CASE('UNIFORM')
-       
-!       call uniform_fields(vars, F)
-!    CASE DEFAULT
-!    END SELECT
-  end subroutine get_fields_p
 
 
   ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
@@ -880,7 +843,8 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
     CHARACTER(MAX_STRING_LENGTH)   :: current_direction
     !! String with information about the direction of the plasma current, 
     !! 'PARALLEL'  or 'ANTI-PARALLEL' to the toroidal magnetic field.
-    REAL(rp)                       :: Eo
+    CHARACTER(MAX_STRING_LENGTH)   :: E_model
+    REAL(rp)                       :: Eo,E_dyn,E_pulse,E_width   
     !! Electric field at the magnetic axis.
     LOGICAL                        :: Efield
     !! Logical variable that specifies if the electric field is 
@@ -911,19 +875,18 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
     !! Poloidal angle at each position in the grid for
     !! GC model of analytical field
 
-    
+
     NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
          qa,qo,Eo,current_direction,nR,nZ
-
     NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux, &
-         axisymmetric_fields, Eo
+         axisymmetric_fields, Eo,E_model,E_dyn,E_pulse,E_width
 
     if (params%mpi_params%rank .EQ. 0) then
        write(6,'(/,"* * * * * * * * INITIALIZING FIELDS * * * * * * * *")')
     end if
-       
+
     SELECT CASE (TRIM(params%field_model))
-       
+
     CASE('ANALYTICAL')
        ! Load the parameters of the analytical magnetic field
        open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
@@ -955,10 +918,10 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
           write(6,'("ANALYTIC")')
           write(6,'("Magnetic field: ",E17.10)') F%Bo
           write(6,'("Electric field: ",E17.10)') F%Eo
-          
+
        end if
-       
-       
+
+
        if (params%field_eval.eq.'interp') then
           F%dims(1) = nR
           F%dims(3) = nZ
@@ -976,7 +939,7 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
           do ii=1_idef,F%dims(3)
              F%X%Z(ii)=(F%Zo-F%AB%a)+(ii-1)*2*F%AB%a/(F%dims(3)-1)
           end do
-          
+
           do ii=1_idef,F%dims(1)
              do kk=1_idef,F%dims(3)
                 rm=sqrt((F%X%R(ii)-F%Ro)**2+(F%X%Z(kk)-F%Zo)**2)
@@ -994,16 +957,16 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
                 !! DIII-D fields with \(B_\phi<0\) and \(B_\theta<0\).
                 F%FLAG2D=1.
              end do
-          end do         
+          end do
 
           if (params%orbit_model(3:5).eq.'pre') then
              write(6,'("Initializing GC fields from analytic EM fields")')
              call initialize_GC_fields(F)
           end if
 
-                    
+
        end if
-       
+
     CASE('EXTERNAL')
        ! Load the magnetic field from an external HDF5 file
        open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
@@ -1016,11 +979,14 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
        F%Efield = Efield
        F%axisymmetric_fields = axisymmetric_fields
 
-       F%AB%lambda=1._rp
-       F%AB%Ro=1._rp
-       F%AB%qo=1._rp
-       F%AB%a=1._rp
+       F%E_model=E_model
+       F%E_dyn = E_dyn
+       F%E_pulse = E_pulse
+       F%E_width = E_width
 
+       write(6,'("E_dyn: ",E17.10)') E_dyn
+       write(6,'("E_pulse: ",E17.10)') E_pulse
+       write(6,'("E_width: ",E17.10)') E_width
        
        call load_dim_data_from_hdf5(params,F)
        !sets F%dims for 2D or 3D data
@@ -1047,28 +1013,28 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
        end if
 
        if (F%axisymmetric_fields) then
-          
+
           call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
                F%Bflux,F%Efield.AND. &
                F%Efield_in_file)
-          
+
        else
           call ALLOCATE_3D_FIELDS_ARRAYS(F,F%Bfield,F%Efield)
        end if
        !allocates 2D or 3D data arrays (fields and spatial)
-       
+
        call load_field_data_from_hdf5(params,F)
 
        if (params%mpi_params%rank .EQ. 0) then
 
           if (F%Bflux) F%Eo = Eo
-          
+
           write(6,'("EXTERNAL")')
           write(6,'("Magnetic field: ",E17.10)') F%Bo
           write(6,'("Electric field: ",E17.10)') F%Eo
-          
+
        end if
-       
+
        if (F%Bflux) then
 
           F%Bfield=.TRUE.
@@ -1088,7 +1054,7 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
                (F%X%R(F%dims(1))-F%X%R(F%dims(1)-1))/F%X%R(F%dims(1))
           F%B_2D%R(:,F%dims(3))=(F%PSIp(:,F%dims(3))-F%PSIp(:,F%dims(3)-1))/ &
                (F%X%Z(F%dims(3))-F%X%Z(F%dims(3)-1))/F%X%R(:)
-          
+
           do ii=2_idef,F%dims(1)-1
              ! central difference over R for interior nodes for BZ
              F%B_2D%Z(ii,:)=-(F%PSIp(ii+1,:)-F%PSIp(ii-1,:))/ &
@@ -1110,7 +1076,7 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
              F%E_2D%PHI(ii,:)=F%Eo*F%Ro/F%X%R(ii)
           end do
           F%E_2D%Z=0._rp
-          
+
        end if
 
        if ((params%mpi_params%rank.EQ.0).and. &
@@ -1122,16 +1088,16 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
           write(6,'("EPHI(r=0)",E17.10)') F%E_2D%PHI(F%dims(1)/2,F%dims(3)/2)
 
        end if
-          
+
        if (params%orbit_model(3:5).EQ.'pre') then
           write(6,'("Initializing GC fields from external EM fields")')
           call initialize_GC_fields(F)
        end if
 
-!       write(6,'("gradBR",E17.10)') F%gradB_2D%R(F%dims(1)/2,F%dims(3)/2)
-!       write(6,'("gradBPHI",E17.10)') F%gradB_2D%PHI(F%dims(1)/2,F%dims(3)/2)
-!       write(6,'("gradBZ",E17.10)') F%gradB_2D%Z(F%dims(1)/2,F%dims(3)/2)
-       
+       !       write(6,'("gradBR",E17.10)') F%gradB_2D%R(F%dims(1)/2,F%dims(3)/2)
+       !       write(6,'("gradBPHI",E17.10)') F%gradB_2D%PHI(F%dims(1)/2,F%dims(3)/2)
+       !       write(6,'("gradBZ",E17.10)') F%gradB_2D%Z(F%dims(1)/2,F%dims(3)/2)
+
     CASE DEFAULT
     END SELECT
 
@@ -1151,7 +1117,7 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
     !! Magnetic field magnitude
     REAL(rp), DIMENSION(:,:,:),ALLOCATABLE :: bhat
     !! Magnetic field unit vector
-    
+
     Bmag=SQRT(F%B_2D%R**2+F%B_2D%PHI**2+F%B_2D%Z**2)
 
     ALLOCATE(bhat(F%dims(1),F%dims(3),3))
@@ -1215,7 +1181,7 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
     F%curlb_2D%Z(F%dims(1),:)=((bhat(F%dims(1),:,2)*F%X%R(F%dims(1))- &
          bhat(F%dims(1)-1,:,2)*F%X%R(F%dims(1)-1))/(F%X%R(F%dims(1))- &
          F%X%R(F%dims(1)-1)))/F%X%R(F%dims(1))
-    
+
     do ii=2_idef,F%dims(1)-1
        ! central difference over R for interior nodes
        F%gradB_2D%R(ii,:)=(Bmag(ii+1,:)-Bmag(ii-1,:))/ &
@@ -1236,10 +1202,10 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
        F%curlb_2D%PHI(:,ii)=F%curlb_2D%PHI(:,ii)+ &
             ((bhat(:,ii+1,1)-bhat(:,ii-1,1))/(F%X%Z(ii+1)-F%X%Z(ii-1)))
     end do
-    
+
     DEALLOCATE(Bmag)
     DEALLOCATE(bhat) 
-    
+
   end subroutine initialize_GC_fields
 
   ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -1608,7 +1574,7 @@ subroutine analytical_fields_GC_p(R0,B0,lam,q0,E0,Y_R,Y_PHI, &
     if (ALLOCATED(F%curlb_2D%R)) DEALLOCATE(F%curlb_2D%R)
     if (ALLOCATED(F%curlb_2D%PHI)) DEALLOCATE(F%curlb_2D%PHI)
     if (ALLOCATED(F%curlb_2D%Z)) DEALLOCATE(F%curlb_2D%Z)
-    
+
     if (ALLOCATED(F%B_3D%R)) DEALLOCATE(F%B_3D%R)
     if (ALLOCATED(F%B_3D%PHI)) DEALLOCATE(F%B_3D%PHI)
     if (ALLOCATED(F%B_3D%Z)) DEALLOCATE(F%B_3D%Z)
