@@ -218,8 +218,10 @@ contains
           cparams_ms%IZj(i) = C_E*cparams_ms%IAr(int(cparams_ms%Zj(i)+1))
           cparams_ms%aZj(i) = cparams_ms%aAr(int(cparams_ms%Zj(i)+1))
        else
-          write(6,'("Atomic number not defined!")')
-          exit
+          if (params%mpi_params%rank .EQ. 0) then
+             write(6,'("Atomic number not defined!")')
+          end if
+          exit             
        end if
     end do
 
@@ -229,24 +231,26 @@ contains
     cparams_ms%rD = SQRT( C_E0*cparams_ms%Te/(cparams_ms%ne*C_E**2) )
     cparams_ms%re = C_RE
     cparams_ms%Ee_IZj = C_ME*C_C**2/cparams_ms%IZj
-
-    write(6,'("Number of impurity species: ",I16)')& 
-         cparams_ms%num_impurity_species
-    do i=1,cparams_ms%num_impurity_species
-       if (cparams_ms%Zo(i).eq.10) then
-          write(6,'("Ne with charge state: ",I16)') int(cparams_ms%Zj(i))
-          write(6,'("Mean excitation energy I (eV)",E17.10)') &
-               cparams_ms%IZj(i)/C_E
-          write(6,'("Effective ion length scale a (a_0)",E17.10)') &
-               cparams_ms%aZj(i)
-       else if (cparams_ms%Zo(i).eq.18) then
-          write(6,'("Ar with charge state: ",I16)') int(cparams_ms%Zj(i))
-          write(6,'("Mean excitation energy I (eV)",E17.10)') &
-               cparams_ms%IZj(i)/C_E
-          write(6,'("Effective ion length scale a (a_0)",E17.10)') &
-               cparams_ms%aZj(i)
-       end if
-    end do
+    
+    if (params%mpi_params%rank .EQ. 0) then
+       write(6,'("Number of impurity species: ",I16)')& 
+            cparams_ms%num_impurity_species
+       do i=1,cparams_ms%num_impurity_species
+          if (cparams_ms%Zo(i).eq.10) then
+             write(6,'("Ne with charge state: ",I16)') int(cparams_ms%Zj(i))
+             write(6,'("Mean excitation energy I (eV)",E17.10)') &
+                  cparams_ms%IZj(i)/C_E
+             write(6,'("Effective ion length scale a (a_0)",E17.10)') &
+                  cparams_ms%aZj(i)
+          else if (cparams_ms%Zo(i).eq.18) then
+             write(6,'("Ar with charge state: ",I16)') int(cparams_ms%Zj(i))
+             write(6,'("Mean excitation energy I (eV)",E17.10)') &
+                  cparams_ms%IZj(i)/C_E
+             write(6,'("Effective ion length scale a (a_0)",E17.10)') &
+                  cparams_ms%aZj(i)
+          end if
+       end do
+    end if
     
   end subroutine load_params_ms
 
@@ -355,8 +359,10 @@ contains
 
     if (params%collisions) then
 
-       write(6,'(/,"* * * * * * * INITIALIZING COLLISIONS * * * * * * *")')
-       
+       if (params%mpi_params%rank .EQ. 0) then
+          write(6,'(/,"* * * * * * * INITIALIZING COLLISIONS * * * * * * *")')
+       end if
+          
        SELECT CASE (TRIM(params%collisions_model))
        CASE (MODEL1)
           call load_params_ss(params)
@@ -378,7 +384,9 @@ contains
           write(6,'("Default case")')
        END SELECT
 
-       write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * * *",/)')
+       if (params%mpi_params%rank .EQ. 0) then
+          write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * * *",/)')
+       end if
        
     end if
 
@@ -547,8 +555,8 @@ contains
        num_collisions_in_simulation = params%simulation_time/Tau
 
        if (params%mpi_params%rank .EQ. 0) then
-          write(6,'("* * * * * * * * * * * * * * SUBCYCLING FOR  &
-               COLLISIONS * * * * * * * * * * * * * *")')
+          write(6,'("* * * * * * * * * * * SUBCYCLING FOR  &
+               COLLISIONS * * * * * * * * * * *")')
 
          write(6,'("Slowing down freqency (CF): ",E17.10)') &
                nu(1)/params%cpp%time
@@ -558,12 +566,12 @@ contains
                nu(3)/params%cpp%time
           
           write(6,'("The shorter collisional time in the simulations  &
-               is: ",E217.10," s")') Tau*params%cpp%time
+               is: ",E17.10," s")') Tau*params%cpp%time
           write(6,'("Number of KORC iterations per collision: ",I16)')  &
                cparams_ss%subcycling_iterations
           write(6,'("Number of collisions in simulated time: ",E17.10)')  &
                num_collisions_in_simulation
-          write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * * * &
+          write(6,'("* * * * * * * * * * * * * * * * * * * * &
                * * * * * * * * * * * * * * *",/)')
        end if
     end if
@@ -986,6 +994,8 @@ contains
          (cparams_ms%Zo(i)-cparams_ms%Zj(i))**2* &
          (p*cparams_ms%aZj(i))**(3._rp/2._rp)/ &
          ((p*cparams_ms%aZj(i))**(3._rp/2._rp)+1))
+
+!    write(6,'("g_j: ",E17.10)') g_j
     
   end function g_j
 
@@ -1427,7 +1437,7 @@ contains
           dp(cc)=REAL(flag(cc))*((-CFL(cc)+dCAL(cc)+E_PHI(cc)*xi(cc))*dt+ &
                sqrt(2.0_rp*CAL(cc))*dW(cc,1))
 
-          dxi(cc)=REAL(flag(cc))*(-2*xi(cc)*CBL(cc)/(pm(cc)*pm(cc)+ &
+          dxi(cc)=REAL(flag(cc))*((-2*xi(cc)*CBL(cc)/(pm(cc)*pm(cc))+ &
                E_PHI(cc)*(1-xi(cc)*xi(cc))/pm(cc))*dt- &
                sqrt(2.0_rp*CBL(cc)*(1-xi(cc)*xi(cc)))/pm(cc)*dW(cc,2))
 
@@ -1437,9 +1447,11 @@ contains
           if (params%radiation) then
              if(params%GC_rad_model.eq.'SDE') then
                 dp(cc)=dp(cc)-gam(cc)*pm(cc)*(1-xi(cc)*xi(cc))/ &
-                     (cparams_ss%taur/(Bmag(cc)*params%cpp%Bo)**2)*dt
+                     (cparams_ss%taur/(Bmag(cc)*params%cpp%Bo)**2)* &
+                     dt*REAL(flag(cc))
                 dxi(cc)=dxi(cc)+xi(cc)*(1-xi(cc)*xi(cc))/ &
-                     ((cparams_ss%taur/(Bmag(cc)*params%cpp%Bo)**2)*gam(cc))*dt
+                     ((cparams_ss%taur/(Bmag(cc)*params%cpp%Bo)**2)*gam(cc))* &
+                     dt*REAL(flag(cc))
                 
              end if
           end if
@@ -1452,9 +1464,13 @@ contains
 
           ! Keep xi between [-1,1]
           if (xi(cc)>1) then
+!             write(6,'("High xi at: ",E17.10," with dxi: ",E17.10)') &
+!                  time*params%cpp%time, dxi(cc)
              xi(cc)=1-mod(xi(cc),1._rp)
           else if (xi(cc)<-1) then
-             xi(cc)=-1-mod(xi(cc),-1._rp)             
+             xi(cc)=-1-mod(xi(cc),-1._rp)
+!             write(6,'("Low xi at: ",E17.10," with dxi: ",E17.10)') &
+!                  time*params%cpp%time, dxi(cc)
           endif
 
           ! Transform P,xi to p_pll,mu
@@ -1476,9 +1492,11 @@ contains
 !       write(6,'("E_PHI_COL: ",E17.10)') E_PHI
        
        do cc=1_idef,8_idef
-          if (pm(cc).lt.1._rp) then
+          if ((pm(cc).lt.2._rp).and.flag(cc).eq.1_ip) then
 !             write(6,'("Momentum less than zero")')
-!             stop
+             !             stop
+!             write(6,'("Particle not tracked at: ",E17.10," &
+!                  & with xi: ",E17.10)') time*params%cpp%time, xi(cc)
              flag(cc)=0_ip
           end if
        end do

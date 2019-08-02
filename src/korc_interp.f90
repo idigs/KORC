@@ -351,6 +351,7 @@ CONTAINS
     !! An instance of KORC's derived type FIELDS containing all the information
     !! about the fields used in the simulation.
     !! See [[korc_types]] and [[korc_fields]].
+    integer :: ii,jj
 
     if ((params%field_model .EQ. 'EXTERNAL').or. &
          (params%field_eval.eq.'interp')) then
@@ -426,6 +427,16 @@ CONTAINS
 
              call EZspline_setup(bfield_2d%Z, F%B_2D%Z, ezerr, .TRUE.)
              call EZspline_error(ezerr)
+
+!             do ii=1_idef,bfield_2d%PHI%n1
+!                do jj=1_idef,bfield_2d%PHI%n2                   
+!                   write(6,'("BPHI_spline1 at R ",E17.10,", Z ",E17.10,": ",E17.10)') &
+!                        bfield_2d%PHI%x1(ii)*params%cpp%length, &
+!                        bfield_2d%PHI%x2(jj)*params%cpp%length, &
+!                        bfield_2d%PHI%fspl(1,ii,jj)*params%cpp%Bo
+!                end do
+!             end do
+             
 
              if (params%orbit_model.eq.'GCpre') then
                 gradB_2d%NR = F%dims(1)
@@ -832,8 +843,7 @@ CONTAINS
     !! See [[korc_types]] and [[korc_profiles]].
     
     if (params%collisions) then
-       if ((params%profile_model .EQ. 'EXTERNAL').or. &
-            (params%field_eval.eq.'interp')) then
+       if (params%profile_model .EQ. 'EXTERNAL') then
           
           if (params%mpi_params%rank .EQ. 0) then
              write(6,'("* * * * INITIALIZING PROFILES INTERPOLANT * * * *")')
@@ -954,15 +964,15 @@ CONTAINS
           profiles_domain%Zo = P%X%Z(1)
 
           if (params%mpi_params%rank .EQ. 0) then
-             write(6,'("* * * * * * INTERPOLANT   INITIALIZED * * * * * *")')
+             write(6,'("* * * * * * INTERPOLANT   INITIALIZED * * * * * *",/)')
           end if
        else if (params%profile_model .EQ. 'ANALYTICAL') then
           if (params%mpi_params%rank .EQ. 0) then
-             write(6,'("* * * * USING ANALYTICAL PROFILES * * * *")')
+             write(6,'("* * * * USING ANALYTICAL PROFILES * * * *",/)')
           end if
        else if (params%profile_model .EQ. 'UNIFORM') then
           if (params%mpi_params%rank .EQ. 0) then
-             write(6,'("* * * * UNIFORM PLASMA: NO PROFILES USED * * * *")')
+             write(6,'("* * * * UNIFORM PLASMA: NO PROFILES USED * * * *",/)')
           end if
        end if
     end if

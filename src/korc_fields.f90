@@ -984,9 +984,9 @@ CONTAINS
        F%E_pulse = E_pulse
        F%E_width = E_width
 
-       write(6,'("E_dyn: ",E17.10)') E_dyn
-       write(6,'("E_pulse: ",E17.10)') E_pulse
-       write(6,'("E_width: ",E17.10)') E_width
+!       write(6,'("E_dyn: ",E17.10)') E_dyn
+!       write(6,'("E_pulse: ",E17.10)') E_pulse
+!       write(6,'("E_width: ",E17.10)') E_width
        
        call load_dim_data_from_hdf5(params,F)
        !sets F%dims for 2D or 3D data
@@ -1025,9 +1025,9 @@ CONTAINS
 
        call load_field_data_from_hdf5(params,F)
 
+       if (F%Bflux) F%Eo = Eo
+       
        if (params%mpi_params%rank .EQ. 0) then
-
-          if (F%Bflux) F%Eo = Eo
 
           write(6,'("EXTERNAL")')
           write(6,'("Magnetic field: ",E17.10)') F%Bo
@@ -1090,8 +1090,10 @@ CONTAINS
        end if
 
        if (params%orbit_model(3:5).EQ.'pre') then
-          write(6,'("Initializing GC fields from external EM fields")')
-          call initialize_GC_fields(F)
+          if (params%mpi_params%rank.eq.0) then
+             write(6,'("Initializing GC fields from external EM fields")')
+          end if
+          call initialize_GC_fields(F)             
        end if
 
        !       write(6,'("gradBR",E17.10)') F%gradB_2D%R(F%dims(1)/2,F%dims(3)/2)
@@ -1101,8 +1103,10 @@ CONTAINS
     CASE DEFAULT
     END SELECT
 
-    write(6,'("* * * * * * * * * * * * ** * * * * * * * * * * *",/)')
-
+    if (params%mpi_params%rank.eq.0) then
+       write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * *",/)')
+    end if
+       
   end subroutine initialize_fields
 
   subroutine initialize_GC_fields(F)

@@ -103,6 +103,12 @@ contains
     INTEGER :: cc
 
     !$OMP SIMD
+    !    !$OMP& aligned(g,U_X,U_Y,U_Z,V_X,V_Y,V_Z, &
+    !    !$OMP& cross_EB_X,cross_EB_Y,cross_EB_Z,E_X,E_Y,E_Z,B_X,B_Y,B_Z, &
+    !    !$OMP& dot_EV,V_X,V_Y,V_Z,cross_BV_X,cross_BV_Y,cross_BV_Z, &
+    !    !$OMP& cross_BBV_X,cross_BBV_X,cross_BBV_X,F2_X,F2_Y,F2_Z, &
+    !    !$OMP& vec_X,vec_Y,vec_Z,dot_vecvec,F3_X,F3_Y,F3_Z, &
+    !    !$OMP& Frad_X,Frad_Y,Frad_Z)
     do cc=1_idef,8_idef
        g(cc) = SQRT(1.0_rp + U_X(cc)*U_X(cc)+ U_Y(cc)*U_Y(cc)+ U_Z(cc)*U_Z(cc))
        
@@ -446,6 +452,10 @@ contains
           end if
           
           !$OMP SIMD
+          !          !$OMP& aligned(Bmag,B_X,B_Y,B_Z, &
+          !          !$OMP& b_unit_X,b_unit_Y,b_unit_Z,v,V_X,V_Y,V_Z,vpar, &
+          !          !$OMP& vperp,tmp,cross_X,cross_Y,cross_Z, &
+          !          !$OMP& vec_X,vec_Y,vec_Z,E_X,E_Y,E_Z)
           do cc=1_idef,8_idef
              !Derived output data
              Bmag(cc) = SQRT(B_X(cc)*B_X(cc)+B_Y(cc)*B_Y(cc)+B_Z(cc)*B_Z(cc))
@@ -588,6 +598,11 @@ contains
     
     
     !$OMP SIMD
+    !    !$OMP& aligned(g0,g,U_X,U_Y,U_Z,V_X,V_Y,V_Z,Bmag,B_X,B_Y,B_Z, &
+    !    !$OMP& U_L_X,U_L_Y,U_L_Z,U_RC_X,U_RC_Y,U_RC_Z, &
+    !    !$OMP& cross_X,cross_Y,cross_Z,U_hs_X,U_hs_Y,U_hs_Z,E_X,E_Y,E_Z, &
+    !    !$OMP& tau_X,tau_Y,tau_Z,up_X,up_Y,up_Z,gp,sigma,us,t_X,t_Y,t_Z,s, &
+    !    !$OMP& U_os_X,U_os_Y,U_os_Z,Frad_X,Frad_Y,Frad_Z)
     do cc=1_idef,8
 
        g0(cc)=g(cc)
@@ -700,6 +715,7 @@ contains
     if (params%radiation.or.params%collisions) then
 
        !$OMP SIMD
+!       !$OMP& aligned(g,U_X,U_Y,U_Z)
        do cc=1_idef,8_idef
           g(cc)=sqrt(1._rp+U_X(cc)*U_X(cc)+U_Y(cc)*U_Y(cc)+U_Z(cc)*U_Z(cc))
        end do
@@ -708,6 +724,7 @@ contains
     end if
     
     !$OMP SIMD
+!    !$OMP& aligned(g,g0,V_X,_Y,V_Z,U_X,U_Y,U_Z,X_X,X_Y,X_Z,flag_cache)
     do cc=1_idef,8_idef
 
        if (flag_cache(cc).eq.0_is) then
@@ -751,6 +768,7 @@ contains
 !         B_X,B_Y,B_Z,E_X,E_Y,E_Z)
 
     !$OMP SIMD
+    !    !$OMP& aligned(U_X,U_Y,U_Z,V_X,V_Y,V_Z,g)
     do cc=1_idef,8_idef
        U_X(cc)=V_X(cc)*g(cc)
        U_Y(cc)=V_Y(cc)*g(cc)
@@ -766,6 +784,7 @@ contains
     end do
 
     !$OMP SIMD
+    !    !$OMP& aligned(U_X,U_Y,U_Z,V_X,V_Y,V_Z,g)
     do cc=1_idef,8_idef
 
        g(cc)=sqrt(1._rp+U_X(cc)*U_X(cc)+U_Y(cc)*U_Y(cc)+U_Z(cc)*U_Z(cc))
@@ -909,6 +928,10 @@ contains
           end if
 
           !$OMP SIMD
+          !          !$OMP& aligned(Bmag,B_X,B_Y,B_Z, &
+          !          !$OMP& b_unit_X,b_unit_Y,b_unit_Z,v,V_X,V_Y,V_Z,vpar, &
+          !          !$OMP& vperp,tmp,cross_X,cross_Y,cross_Z, &
+          !          !$OMP& vec_X,vec_Y,vec_Z,E_X,E_Y,E_Z)
           do cc=1_idef,8_idef
              !Derived output data
              Bmag(cc) = SQRT(B_X(cc)*B_X(cc)+B_Y(cc)*B_Y(cc)+B_Z(cc)*B_Z(cc))
@@ -1051,6 +1074,11 @@ contains
     
     
     !$OMP SIMD
+    !    !$OMP& aligned(g0,g,U_X,U_Y,U_Z,V_X,V_Y,V_Z,Bmag,B_X,B_Y,B_Z, &
+    !    !$OMP& U_L_X,U_L_Y,U_L_Z,U_RC_X,U_RC_Y,U_RC_Z, &
+    !    !$OMP& cross_X,cross_Y,cross_Z,U_hs_X,U_hs_Y,U_hs_Z,E_X,E_Y,E_Z, &
+    !    !$OMP& tau_X,tau_Y,tau_Z,up_X,up_Y,up_Z,gp,sigma,us,t_X,t_Y,t_Z,s, &
+    !    !$OMP& U_os_X,U_os_Y,U_os_Z,Frad_X,Frad_Y,Frad_Z)
     do cc=1_idef,8
 
        g0(cc)=g(cc)
@@ -1162,6 +1190,7 @@ contains
     if (params%radiation.or.params%collisions) then
 
        !$OMP SIMD
+       !       !$OMP& aligned(g,U_X,U_Y,U_Z)
        do cc=1_idef,8_idef
           g(cc)=sqrt(1._rp+U_X(cc)*U_X(cc)+U_Y(cc)*U_Y(cc)+U_Z(cc)*U_Z(cc))
        end do
@@ -1170,6 +1199,7 @@ contains
     end if
     
     !$OMP SIMD
+    !    !$OMP& aligned(g,g0,V_X,_Y,V_Z,U_X,U_Y,U_Z,X_X,X_Y,X_Z,flag_cache)
     do cc=1_idef,8_idef
        
        if (flag_cache(cc).eq.0_is) then
@@ -1212,6 +1242,7 @@ contains
       
     
     !$OMP SIMD
+    !    !$OMP& aligned(U_X,U_Y,U_Z,V_X,V_Y,V_Z,g)
     do cc=1_idef,8_idef
        U_X(cc)=V_X(cc)*g(cc)
        U_Y(cc)=V_Y(cc)*g(cc)
@@ -1227,6 +1258,7 @@ contains
     end do
 
     !$OMP SIMD
+    !    !$OMP& aligned(U_X,U_Y,U_Z,V_X,V_Y,V_Z,g)
     do cc=1_idef,8_idef
 
        g(cc)=sqrt(1._rp+U_X(cc)*U_X(cc)+U_Y(cc)*U_Y(cc)+U_Z(cc)*U_Z(cc))
@@ -1275,7 +1307,8 @@ contains
     do ii = 1_idef,params%num_species
 
 
-       if (spp(ii)%spatial_distribution.eq.'TRACER'.and.params%FO_GC_compare) then
+       if (spp(ii)%spatial_distribution.eq.'TRACER'.and. &
+            params%FO_GC_compare) then
           call get_fields(params,spp(ii)%vars,F)
           !! Calls [[get_fields]] in [[korc_fields]].
           ! Interpolates fields at local particles' position and keeps in
@@ -1385,7 +1418,8 @@ contains
                      bhatc(2)
                 !GC ppar
 
-                spp(ii)%vars%V(pp,2)=spp(ii)%m/(2*Bmagc)*(spp(ii)%vars%g(pp)**2- &
+                spp(ii)%vars%V(pp,2)=spp(ii)%m/(2*Bmagc)* &
+                     (spp(ii)%vars%g(pp)**2- &
                      (1+(spp(ii)%vars%V(pp,1)/spp(ii)%m)**2))           
                 !GC mu
 
@@ -1435,9 +1469,9 @@ contains
                 spp(ii)%vars%g(pp)=sqrt(1+(spp(ii)%vars%V(pp,1))**2+ &
                      2*spp(ii)%vars%V(pp,2)*Bmag1)
 
-                write(6,'("Bmag:",E17.10)') Bmag1
-                write(6,'("PPLL:",E17.10)') spp(ii)%vars%V(pp,1)
-                write(6,'("MU:",E17.10)') spp(ii)%vars%V(pp,2)
+!                write(6,'("Bmag:",E17.10)') Bmag1
+!                write(6,'("PPLL:",E17.10)') spp(ii)%vars%V(pp,1)
+!                write(6,'("MU:",E17.10)') spp(ii)%vars%V(pp,2)
                 
                 spp(ii)%vars%eta(pp) = atan2(sqrt(2*spp(ii)%m*Bmag1* &
                      spp(ii)%vars%V(pp,2)),spp(ii)%vars%V(pp,1))*180.0_rp/C_PI
@@ -1450,7 +1484,7 @@ contains
                 !             write(6,'("pperp",E17.10)') sqrt(2*spp(ii)%m*Bmag1* &
                 !                  spp(ii)%vars%V(pp,2))
 
-                             write(6,'("eta GCinit",E17.10)') spp(ii)%vars%eta(pp)
+!                             write(6,'("eta GCinit",E17.10)') spp(ii)%vars%eta(pp)
                 !             write(6,'("gam",E17.10)') spp(ii)%vars%g(pp)
 
 
@@ -1713,6 +1747,7 @@ contains
     dt=params%dt
         
     !$OMP SIMD
+    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL)
     do cc=1_idef,8_idef
        Y0_R(cc)=Y_R(cc)
        Y0_PHI(cc)=Y_PHI(cc)
@@ -1735,6 +1770,8 @@ contains
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache) 
 
     !$OMP SIMD
+    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
+    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,k1_R,k1_PHI,k1_Z,k1_PLL)
     do cc=1_idef,8
        k1_R(cc)=dt*RHS_R(cc)              
        k1_PHI(cc)=dt*RHS_PHI(cc)    
@@ -1763,6 +1800,8 @@ contains
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache) 
 
     !$OMP SIMD
+    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
+    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,k2_R,k2_PHI,k2_Z,k2_PLL)
     do cc=1_idef,8
        k2_R(cc)=dt*RHS_R(cc)    
        k2_PHI(cc)=dt*RHS_PHI (cc)   
@@ -1786,6 +1825,8 @@ contains
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache)
 
     !$OMP SIMD
+    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
+    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,k3_R,k3_PHI,k3_Z,k3_PLL)
     do cc=1_idef,8
        k3_R(cc)=dt*RHS_R(cc)   
        k3_PHI(cc)=dt*RHS_PHI(cc)    
@@ -1810,6 +1851,8 @@ contains
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache)     
 
     !$OMP SIMD
+    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
+    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,k4_R,k4_PHI,k4_Z,k4_PLL)
     do cc=1_idef,8
        k4_R(cc)=dt*RHS_R(cc)   
        k4_PHI(cc)=dt*RHS_PHI(cc)    
@@ -1838,6 +1881,8 @@ contains
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache)   
 
     !$OMP SIMD
+    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
+    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,k5_R,k5_PHI,k5_Z,k5_PLL)
     do cc=1_idef,8
        k5_R(cc)=dt*RHS_R(cc)    
        k5_PHI(cc)=dt*RHS_PHI(cc)    
@@ -1866,6 +1911,8 @@ contains
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache)         
 
     !$OMP SIMD
+    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
+    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,k6_R,k6_PHI,k6_Z,k6_PLL)
     do cc=1_idef,8
        k6_R(cc)=dt*RHS_R(cc)    
        k6_PHI(cc)=dt*RHS_PHI(cc)    
@@ -1886,6 +1933,7 @@ contains
     call cyl_check_if_confined_p(ar,R0,Y_R,Y_Z,flag_cache)
 
     !$OMP SIMD
+    !    !$OMP& aligned(Y_R,Y_PHI,Y_Z,V_PLL,Y0_R,Y0_PHI,Y0_Z,V0)
     do cc=1_idef,8
 
        if (flag_cache(cc).eq.0_is) then
@@ -2111,6 +2159,7 @@ contains
     dt=params%dt
 
     !$OMP SIMD
+    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL)
     do cc=1_idef,8_idef
 
        Y0_R(cc)=Y_R(cc)
@@ -2130,6 +2179,8 @@ contains
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache) 
 
     !$OMP SIMD
+    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
+    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,k1_R,k1_PHI,k1_Z,k1_PLL)
     do cc=1_idef,8
        k1_R(cc)=dt*RHS_R(cc)              
        k1_PHI(cc)=dt*RHS_PHI(cc)    
@@ -2153,6 +2204,8 @@ contains
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache) 
 
     !$OMP SIMD
+    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
+    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,k2_R,k2_PHI,k2_Z,k2_PLL)
     do cc=1_idef,8
        k2_R(cc)=dt*RHS_R(cc)    
        k2_PHI(cc)=dt*RHS_PHI (cc)   
@@ -2176,6 +2229,8 @@ contains
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache)
 
     !$OMP SIMD
+    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
+    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,k3_R,k3_PHI,k3_Z,k3_PLL)
     do cc=1_idef,8
        k3_R(cc)=dt*RHS_R(cc)   
        k3_PHI(cc)=dt*RHS_PHI(cc)    
@@ -2200,6 +2255,8 @@ contains
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache)     
 
     !$OMP SIMD
+    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
+    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,k4_R,k4_PHI,k4_Z,k4_PLL)
     do cc=1_idef,8
        k4_R(cc)=dt*RHS_R(cc)   
        k4_PHI(cc)=dt*RHS_PHI(cc)    
@@ -2228,6 +2285,8 @@ contains
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache)   
 
     !$OMP SIMD
+    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
+    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,k5_R,k5_PHI,k5_Z,k5_PLL)
     do cc=1_idef,8
        k5_R(cc)=dt*RHS_R(cc)    
        k5_PHI(cc)=dt*RHS_PHI(cc)    
@@ -2255,6 +2314,8 @@ contains
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache)         
 
     !$OMP SIMD
+    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
+    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,k6_R,k6_PHI,k6_Z,k6_PLL)
     do cc=1_idef,8
        k6_R(cc)=dt*RHS_R(cc)    
        k6_PHI(cc)=dt*RHS_PHI(cc)    
@@ -2274,6 +2335,7 @@ contains
     !$OMP END SIMD
 
     !$OMP SIMD
+    !    !$OMP& aligned(Y_R,Y_PHI,Y_Z,V_PLL,Y0_R,Y0_PHI,Y0_Z,V0)
     do cc=1_idef,8
 
        if (flag_cache(cc).eq.0_is) then

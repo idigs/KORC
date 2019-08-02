@@ -373,8 +373,9 @@ program main
   call finalize_communications(params)
   ! * * * FINALIZING SIMULATION * * *
 
-
-  write(6,'("KORC ran successfully!")')
+  if (params%mpi_params%rank .EQ. 0) then
+     write(6,'("KORC ran successfully!")')
+  end if
   
 end program main
 
