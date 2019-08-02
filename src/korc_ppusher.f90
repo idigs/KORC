@@ -105,8 +105,8 @@ contains
     !$OMP SIMD
     !    !$OMP& aligned(g,U_X,U_Y,U_Z,V_X,V_Y,V_Z, &
     !    !$OMP& cross_EB_X,cross_EB_Y,cross_EB_Z,E_X,E_Y,E_Z,B_X,B_Y,B_Z, &
-    !    !$OMP& dot_EV,V_X,V_Y,V_Z,cross_BV_X,cross_BV_Y,cross_BV_Z, &
-    !    !$OMP& cross_BBV_X,cross_BBV_X,cross_BBV_X,F2_X,F2_Y,F2_Z, &
+    !    !$OMP& dot_EV,cross_BV_X,cross_BV_Y,cross_BV_Z, &
+    !    !$OMP& cross_BBV_X,cross_BBV_Y,cross_BBV_Z,F2_X,F2_Y,F2_Z, &
     !    !$OMP& vec_X,vec_Y,vec_Z,dot_vecvec,F3_X,F3_Y,F3_Z, &
     !    !$OMP& Frad_X,Frad_Y,Frad_Z)
     do cc=1_idef,8_idef
@@ -724,7 +724,7 @@ contains
     end if
     
     !$OMP SIMD
-!    !$OMP& aligned(g,g0,V_X,_Y,V_Z,U_X,U_Y,U_Z,X_X,X_Y,X_Z,flag_cache)
+!    !$OMP& aligned(g,g0,V_X,V_Y,V_Z,U_X,U_Y,U_Z,X_X,X_Y,X_Z,flag_cache)
     do cc=1_idef,8_idef
 
        if (flag_cache(cc).eq.0_is) then
@@ -1199,7 +1199,7 @@ contains
     end if
     
     !$OMP SIMD
-    !    !$OMP& aligned(g,g0,V_X,_Y,V_Z,U_X,U_Y,U_Z,X_X,X_Y,X_Z,flag_cache)
+    !    !$OMP& aligned(g,g0,V_X,V_Y,V_Z,U_X,U_Y,U_Z,X_X,X_Y,X_Z,flag_cache)
     do cc=1_idef,8_idef
        
        if (flag_cache(cc).eq.0_is) then
