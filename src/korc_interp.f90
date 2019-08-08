@@ -316,6 +316,7 @@ module korc_interp
   PUBLIC :: interp_fields,&
        interp_fields_p,&
        interp_FOfields_p,&
+       interp_FOfields1_p,&
        interp_bmag_p,&
        interp_collision_p,&
 !       interp_fields_FO_p,&
@@ -323,7 +324,9 @@ module korc_interp
        initialize_fields_interpolant,&
        initialize_profiles_interpolant,&
        finalize_interpolants,&
-       calculate_initial_magnetic_field
+       calculate_initial_magnetic_field,&
+       calculate_magnetic_field_p,&
+       sample_poloidal_flux
   PRIVATE :: interp_3D_bfields,&
        interp_2D_bfields,&
        interp_3D_efields,&
@@ -375,15 +378,18 @@ CONTAINS
           bfield_2d%A%x1 = F%X%R
           bfield_2d%A%x2 = F%X%Z
 
-!          write(6,'("R",E17.10)') F%X%R
-!          write(6,'("Z",E17.10)') F%X%Z
+ !         write(6,'("R",E17.10)') F%X%R
+ !         write(6,'("Z",E17.10)') F%X%Z
 
           call EZspline_setup(bfield_2d%A, F%PSIp, ezerr, .TRUE.)
           call EZspline_error(ezerr)
           
 !          write(6,'("PSIp",E17.10)') F%PSIp
+!          write(6,'("bfield_2d%A: ",E17.10)') bfield_2d%A%fspl(1,:,:)
 
-          ALLOCATE(fields_domain%FLAG2D(bfield_2d%NR,bfield_2d%NZ))
+          if (.not.ALLOCATED(fields_domain%FLAG2D)) &
+               ALLOCATE(fields_domain%FLAG2D(bfield_2d%NR,bfield_2d%NZ))
+          
           fields_domain%FLAG2D = F%FLAG2D
 
           fields_domain%DR = ABS(F%X%R(2) - F%X%R(1))
@@ -515,6 +521,7 @@ CONTAINS
 
              if (.not.ALLOCATED(fields_domain%FLAG2D)) &
                   ALLOCATE(fields_domain%FLAG2D(bfield_2d%NR,bfield_2d%NZ))
+
              fields_domain%FLAG2D = F%FLAG2D
 
              fields_domain%DR = ABS(F%X%R(2) - F%X%R(1))
@@ -1373,6 +1380,45 @@ subroutine interp_FOfields_p(Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flag_cache)
   
 end subroutine interp_FOfields_p
 
+subroutine interp_FOfields1_p(F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z, &
+     flag_cache)
+  TYPE(FIELDS), INTENT(IN)                               :: F
+  REAL(rp),DIMENSION(8),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
+  REAL(rp),DIMENSION(8),INTENT(OUT)   :: B_X,B_Y,B_Z
+  REAL(rp),DIMENSION(8)   :: B_R,B_PHI  
+  REAL(rp),DIMENSION(8),INTENT(OUT)   :: E_X,E_Y,E_Z
+  REAL(rp),DIMENSION(8)   :: E_R,E_PHI
+  REAL(rp),DIMENSION(8)   :: cP,sP  
+  !  INTEGER(ip) :: ezerr
+  INTEGER                                      :: cc
+  !! Particle chunk iterator.
+  INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
+
+  call check_if_in_fields_domain_p(Y_R,Y_PHI,Y_Z,flag_cache)
+
+  call calculate_magnetic_field_p(F,Y_R,Y_Z,B_R,B_PHI,B_Z)
+  
+  call EZspline_interp(efield_2d%R,efield_2d%PHI,efield_2d%Z,8,Y_R,Y_Z, &
+       E_R,E_PHI,E_Z,ezerr)
+  call EZspline_error(ezerr)
+ 
+  !$OMP SIMD
+!  !$OMP& aligned (cP,sP,B_X,B_Y,E_X,E_Y,Y_PHI,B_R,B_PHI,E_R,E_PHI)
+  do cc=1_idef,8_idef
+     cP(cc)=cos(Y_PHI(cc))
+     sP(cc)=sin(Y_PHI(cc))
+     
+     B_X(cc) = B_R(cc)*cP(cc) - B_PHI(cc)*sP(cc)
+     B_Y(cc) = B_R(cc)*sP(cc) + B_PHI(cc)*cP(cc)
+
+     E_X(cc) = E_R(cc)*cP(cc) - E_PHI(cc)*sP(cc)
+     E_Y(cc) = E_R(cc)*sP(cc) + E_PHI(cc)*cP(cc)
+
+  end do
+  !$OMP END SIMD
+  
+end subroutine interp_FOfields1_p
+
 subroutine interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag_cache)
 
   REAL(rp),DIMENSION(8),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
@@ -1406,7 +1452,7 @@ subroutine interp_fields_p(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
   REAL(rp),DIMENSION(8),INTENT(OUT)   :: E_R,E_PHI,E_Z
   INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
 
-  call check_if_in_fields_domain_p(Y_R,Y_PHI,Y_Z,flag_cache)
+!  call check_if_in_fields_domain_p(Y_R,Y_PHI,Y_Z,flag_cache)
   
   call EZspline_interp(bfield_2d%R,bfield_2d%PHI,bfield_2d%Z,efield_2d%R, &
        efield_2d%PHI,efield_2d%Z,gradB_2d%R,gradB_2d%PHI,gradB_2d%Z, &
@@ -1562,6 +1608,9 @@ subroutine calculate_magnetic_field(Y,F,B,PSI_P,flag)
         if (ezerr .NE. 0) then ! We flag the particle as lost
            flag(pp) = 0_is
         else
+
+!           write(6,'("R*B_R: ",E17.10)') A(pp,1)
+           
            A(pp,1) = A(pp,1)/Y(pp,1)
 
            ! FPHI = Fo*Ro/R
@@ -1571,15 +1620,13 @@ subroutine calculate_magnetic_field(Y,F,B,PSI_P,flag)
            call EZspline_derivative(bfield_2d%A, 1, 0, Y(pp,1), Y(pp,3), &
                 A(pp,3), ezerr)
            call EZspline_error(ezerr)
+
+!           write(6,'("R*B_Z: ",E17.10)') A(pp,3)
+
            A(pp,3) = -A(pp,3)/Y(pp,1)
+         
 
-!           write(6,'("B_R: ",E17.10)') A(:,1)
-!           write(6,'("B_PHI: ",E17.10)') A(:,2)
-!           write(6,'("B_Z: ",E17.10)') A(:,3)
 
-!           write(6,'("B_X: ",E17.10)') B(:,1)
-!           write(6,'("B_Y: ",E17.10)') B(:,2)
-!           write(6,'("B_Z: ",E17.10)') B(:,3)
 
            
            B(pp,1) = A(pp,1)*COS(Y(pp,2)) - A(pp,2)*SIN(Y(pp,2))
@@ -1589,8 +1636,64 @@ subroutine calculate_magnetic_field(Y,F,B,PSI_P,flag)
      end if
   end do
   !$OMP END PARALLEL DO
+
+!  write(6,'("calculate_fields")')
+  
+!  write(6,'("B_R: ",E17.10)') A(:,1)
+!  write(6,'("B_PHI: ",E17.10)') A(:,2)
+!  write(6,'("B_Z: ",E17.10)') A(:,3)
+
+!  write(6,'("B_X: ",E17.10)') B(:,1)
+!  write(6,'("B_Y: ",E17.10)') B(:,2)
+!  write(6,'("B_Z: ",E17.10)') B(:,3)
+  
   DEALLOCATE(A)
 end subroutine calculate_magnetic_field
+
+
+subroutine calculate_magnetic_field_p(F,Y_R,Y_Z,B_R,B_PHI,B_Z)
+  REAL(rp), DIMENSION(8), INTENT(IN)      :: Y_R,Y_Z
+  TYPE(FIELDS), INTENT(IN)                               :: F
+  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: B_R,B_PHI,B_Z
+  INTEGER                                                :: pp
+  REAL(rp), DIMENSION(8)  :: PSIp
+  REAL(rp), DIMENSION(8,2)  :: A
+  
+  call EZspline_interp(bfield_2d%A, 8, Y_R, Y_Z, &
+       PSIp, ezerr)
+  call EZspline_error(ezerr)
+     
+  ! FR = (dA/dZ)/R
+  call EZspline_gradient(bfield_2d%A, 8, Y_R, Y_Z, &
+       A, ezerr)
+  call EZspline_error(ezerr)
+
+  !write(6,'("dPSIp/dR: ",E17.10)') A(:,1)
+  !write(6,'("dPSIp/dZ: ",E17.10)') A(:,2)
+  !write(6,'("Y_R: ",E17.10)') Y_R
+
+  B_R = A(:,2)/Y_R
+
+  ! FPHI = Fo*Ro/R
+  B_PHI = F%Bo*F%Ro/Y_R
+
+  ! FR = -(dA/dR)/R
+
+  !     write(6,'("R*B_Z: ",E17.10)') B_Z(1)
+
+  B_Z= -A(:,1)/Y_R
+
+   
+!  write(6,'("PSIp: ",E17.10)') PSIp
+  
+!  write(6,'("Y_R: ",E17.10)') Y_R(1)
+!  write(6,'("Y_Z: ",E17.10)') Y_Z(1)
+  
+!  write(6,'("B_R: ",E17.10)') B_R
+!  write(6,'("B_PHI: ",E17.10)') B_PHI
+!  write(6,'("B_Z: ",E17.10)') B_Z
+
+end subroutine calculate_magnetic_field_p
 
 subroutine calculate_initial_magnetic_field(F)
 
@@ -1598,22 +1701,37 @@ subroutine calculate_initial_magnetic_field(F)
   REAL(rp),dimension(F%dims(1),F%dims(3),2)                  :: gradA
   INTEGER                                                :: ii
   INTEGER                                                :: jj
-        
-        ! FR = (dA/dZ)/R
-        call EZspline_gradient(bfield_2d%A,F%dims(1),F%dims(3),F%X%R, F%X%Z, &
-             gradA, ezerr)
-        call EZspline_error(ezerr)
+  
+  ! FR = (dA/dZ)/R
+  call EZspline_gradient(bfield_2d%A,F%dims(1),F%dims(3),F%X%R, F%X%Z, &
+       gradA, ezerr)
+  call EZspline_error(ezerr)
 
-        do ii=1,F%dims(1)
-           F%B_2D%R(ii,:) = gradA(ii,:,2)/F%X%R(ii)
-           F%B_2D%PHI(ii,:) = F%Bo*F%Ro/F%X%R(ii)
-           F%B_2D%Z(ii,:) = -gradA(ii,:,1)/F%X%R(ii)
-        end do
-           
-!        write(6,'("AR",E17.10)') gradA(1)
-!        write(6,'("AZ",E17.10)') gradA(2)        
+  do ii=1,F%dims(1)
+     F%B_2D%R(ii,:) = gradA(ii,:,2)/F%X%R(ii)
+     F%B_2D%PHI(ii,:) = F%Bo*F%Ro/F%X%R(ii)
+     F%B_2D%Z(ii,:) = -gradA(ii,:,1)/F%X%R(ii)
+  end do
+
+  !        write(6,'("AR",E17.10)') gradA(1)
+  !        write(6,'("AZ",E17.10)') gradA(2)        
        
 end subroutine calculate_initial_magnetic_field
+
+subroutine sample_poloidal_flux(F)
+
+  TYPE(FIELDS), INTENT(INOUT)                               :: F
+  
+  ! FR = (dA/dZ)/R
+  call EZspline_interp(bfield_2d%A,F%dims(1),F%dims(3),F%X%R, F%X%Z, &
+       F%PSIp, ezerr)
+  call EZspline_error(ezerr)
+
+
+  !        write(6,'("AR",E17.10)') gradA(1)
+  !        write(6,'("AZ",E17.10)') gradA(2)        
+       
+end subroutine sample_poloidal_flux
 
 !> @brief Subroutine for interpolating the pre-computed, axisymmetric electric field to the particles' position.
 !!
@@ -1737,7 +1855,7 @@ subroutine interp_fields(params,prtcls,F)
 !  write(6,'("Y: ",E17.10)') prtcls%X(2,1)
 !  write(6,'("Z: ",E17.10)') prtcls%X(3,1)
   
-  call check_if_in_fields_domain(prtcls%Y, prtcls%flag)
+!  call check_if_in_fields_domain(prtcls%Y, prtcls%flag)
 
   if (ALLOCATED(F%PSIp).and.F%Bflux) then
 
@@ -1749,6 +1867,12 @@ subroutine interp_fields(params,prtcls,F)
 !     write(6,'("PSI_P: ",E17.10)') prtcls%PSI_P
      
      call calculate_magnetic_field(prtcls%Y,F,prtcls%B,prtcls%PSI_P,prtcls%flag)
+
+!     write(6,'("interp_fields")')
+!     write(6,'("B_X: ",E17.10)') prtcls%B(:,1)
+!     write(6,'("B_Z: ",E17.10)') prtcls%B(:,3)
+!     write(6,'("B_Y: ",E17.10)') prtcls%B(:,2)
+
   end if
 
   if (ALLOCATED(F%B_2D%R)) then

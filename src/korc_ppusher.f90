@@ -215,6 +215,11 @@ contains
           ! Interpolates fields at local particles' position and keeps in
           ! spp%vars. Fields in (R,\(\phi\),Z) coordinates.
 
+!          write(6,'("korc_ppusher")')
+!          write(6,'("B_X: ",E17.10)') spp(ii)%vars%B(:,1)
+!          write(6,'("B_Z: ",E17.10)') spp(ii)%vars%B(:,2)
+!          write(6,'("B_Y: ",E17.10)') spp(ii)%vars%B(:,3)
+          
           !$OMP PARALLEL DO DEFAULT(none) SHARED(ii,spp) &
           !$OMP& FIRSTPRIVATE(E0) &
           !$OMP& PRIVATE(pp,b_unit,Bmag1,vpar,v,vperp,vec,tmp)
@@ -840,7 +845,7 @@ contains
 
        !$OMP PARALLEL DO default(none) &
        !$OMP& FIRSTPRIVATE(a,m_cache,q_cache) &
-       !$OMP& shared(params,ii,spp,P) &
+       !$OMP& shared(params,ii,spp,P,F) &
        !$OMP& PRIVATE(E0,pp,tt,Bmag,cc,X_X,X_Y,X_Z,V_X,V_Y,V_Z,B_X,B_Y,B_Z, &
        !$OMP& E_X,E_Y,E_Z,b_unit_X,b_unit_Y,b_unit_Z,v,vpar,vperp,tmp, &
        !$OMP& cross_X,cross_Y,cross_Z,vec_X,vec_Y,vec_Z,g, &
@@ -869,9 +874,16 @@ contains
                 call cart_to_cyl_p(X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
                 
                 call interp_FOfields_p(Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
-                     E_X,E_Y,E_Z,flag_cache)             
+                     E_X,E_Y,E_Z,flag_cache)
+!                call interp_FOfields1_p(F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
+!                     E_X,E_Y,E_Z,flag_cache)             
 
-                call advance_FOinterp_vars(tt,a,q_cache,m_cache,params,X_X,X_Y,X_Z, &
+ !               write(6,'("B_X: ",E17.10)') B_X(1)
+ !               write(6,'("B_Y: ",E17.10)') B_Y(1)
+ !               write(6,'("B_Z: ",E17.10)') B_Z(1)
+                
+                call advance_FOinterp_vars(tt,a,q_cache,m_cache,params, &
+                     X_X,X_Y,X_Z, &
                      V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,g,flag_cache,P)
              end do !timestep iterator
 
@@ -1522,7 +1534,7 @@ contains
           !$OMP PARALLEL DO SHARED(ii,spp) PRIVATE(pp,Bmag1)
 
           do pp=1_idef,spp(ii)%ppp
-             if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
+!             if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
 
 !                write(6,'("BR: ",E17.10)') spp(ii)%vars%B(pp,1)
 !                write(6,'("BPHI: ",E17.10)') spp(ii)%vars%B(pp,2)
@@ -1550,7 +1562,7 @@ contains
                 !     write(6,'("gam",E17.10)') spp(ii)%vars%g(pp)
 
 
-             end if ! if particle in domain, i.e. spp%vars%flag==1
+!             end if ! if particle in domain, i.e. spp%vars%flag==1
           end do ! loop over particles on an mpi process
           !$OMP END PARALLEL DO  
           
@@ -1742,10 +1754,14 @@ contains
     REAL(rp),intent(IN) :: q_cache,m_cache
 
     ar=F%AB%a
-    ar=F%AB%Ro
+    R0=F%AB%Ro
     
     dt=params%dt
-        
+
+!    write(6,'("Y_R 0: ",E17.10)') Y_R(1)
+!    write(6,'("Y_PHI 0: ",E17.10)') Y_PHI(1)
+!    write(6,'("Y_Z 0: ",E17.10)') Y_Z(1)
+    
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL)
     do cc=1_idef,8_idef
@@ -1785,6 +1801,11 @@ contains
     end do
     !$OMP END SIMD
 
+
+!    write(6,'("Y_R 1: ",E17.10)') Y_R(1)
+!    write(6,'("Y_PHI 1: ",E17.10)') Y_PHI(1)
+!    write(6,'("Y_Z 1: ",E17.10)') Y_Z(1)
+    
 !    write(6,'("k1R: ",E17.10)') k1_R(1)
 !    write(6,'("k1PHI: ",E17.10)') k1_PHI(1)
 !    write(6,'("k1Z: ",E17.10)') k1_Z(1)
@@ -1815,6 +1836,11 @@ contains
     end do
     !$OMP END SIMD
 
+
+!    write(6,'("Y_R 2: ",E17.10)') Y_R(1)
+!    write(6,'("Y_PHI 2: ",E17.10)') Y_PHI(1)
+!    write(6,'("Y_Z 2: ",E17.10)') Y_Z(1)
+    
     call analytical_fields_GC_p(F,Y_R,Y_PHI, &
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z)
@@ -1841,6 +1867,10 @@ contains
     end do
     !$OMP END SIMD
 
+!    write(6,'("Y_R 3: ",E17.10)') Y_R(1)
+!    write(6,'("Y_PHI 3: ",E17.10)') Y_PHI(1)
+!    write(6,'("Y_Z 3: ",E17.10)') Y_Z(1)
+    
     call analytical_fields_GC_p(F,Y_R,Y_PHI, &
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z)
@@ -1870,7 +1900,10 @@ contains
     end do
     !$OMP END SIMD
 
-
+!    write(6,'("Y_R 4: ",E17.10)') Y_R(1)
+!    write(6,'("Y_PHI 4: ",E17.10)') Y_PHI(1)
+!    write(6,'("Y_Z 4: ",E17.10)') Y_Z(1)
+    
     call analytical_fields_GC_p(F,Y_R,Y_PHI, &
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z)
@@ -1900,7 +1933,10 @@ contains
     end do
     !$OMP END SIMD
 
-
+!    write(6,'("Y_R 5: ",E17.10)') Y_R(1)
+!    write(6,'("Y_PHI 5: ",E17.10)') Y_PHI(1)
+!    write(6,'("Y_Z 5: ",E17.10)') Y_Z(1)
+    
     call analytical_fields_GC_p(F,Y_R,Y_PHI, &
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z)
@@ -1930,6 +1966,10 @@ contains
     end do
     !$OMP END SIMD
 
+!    write(6,'("Y_R 6: ",E17.10)') Y_R(1)
+!    write(6,'("Y_PHI 6: ",E17.10)') Y_PHI(1)
+!    write(6,'("Y_Z 6: ",E17.10)') Y_Z(1)
+    
     call cyl_check_if_confined_p(ar,R0,Y_R,Y_Z,flag_cache)
 
     !$OMP SIMD

@@ -804,6 +804,12 @@ CONTAINS
        !       write(6,'("2 size of PSI_P: ",I16)') size(vars%PSI_P)
 
        call interp_fields(params,vars, F)
+
+!       write(6,'("get_fields")')
+!       write(6,'("B_X: ",E17.10)') vars%B(:,1)
+!       write(6,'("B_Z: ",E17.10)') vars%B(:,2)
+!       write(6,'("B_Y: ",E17.10)') vars%B(:,3)
+       
        if (F%Efield.AND..NOT.F%Efield_in_file) then
           call analytical_electric_field_cyl(F,vars%Y,vars%E,vars%flag)
        end if
@@ -874,6 +880,9 @@ CONTAINS
     real(rp)                       :: theta
     !! Poloidal angle at each position in the grid for
     !! GC model of analytical field
+    logical :: test
+    logical :: res_double
+    real(rp) :: RMAX,RMIN,ZMAX,ZMIN
 
 
     NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
@@ -1035,15 +1044,100 @@ CONTAINS
 
        end if
 
-       if (F%Bflux) then
+       test=.false.
+       res_double=.true.
+       
+       if (F%Bflux.and.(.not.test)) then
+
+          call initialize_fields_interpolant(params,F)
 
           F%Bfield=.TRUE.
           F%Efield=.TRUE.
           F%Efield_in_file=.TRUE.
 
+          if (res_double) then
+
+             RMIN=F%X%R(1)
+             RMAX=F%X%R(F%dims(1))
+
+             ZMIN=F%X%Z(1)
+             ZMAX=F%X%Z(F%dims(3))
+
+             F%dims(1)=2*F%dims(1)-1
+             F%dims(3)=2*F%dims(3)-1
+             
+             DEALLOCATE(F%X%R)
+             DEALLOCATE(F%X%Z)
+
+             DEALLOCATE(F%PSIp)
+             
+          end if
+          
           call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
                F%Bflux,F%Efield.AND.F%Efield_in_file)
 
+          if (res_double) then
+
+             do ii=1_idef,F%dims(1)
+                F%X%R(ii)=RMIN+REAL(ii-1)/REAL(F%dims(1)-1)*(RMAX-RMIN)
+             end do
+
+             do ii=1_idef,F%dims(3)
+                F%X%Z(ii)=ZMIN+REAL(ii-1)/REAL(F%dims(3)-1)*(ZMAX-ZMIN)
+             end do
+             
+          end if
+          
+          call calculate_initial_magnetic_field(F)
+          
+          F%E_2D%R=0._rp
+          do ii=1_idef,F%dims(1)
+             F%E_2D%PHI(ii,:)=F%Eo*F%Ro/F%X%R(ii)
+          end do
+          F%E_2D%Z=0._rp
+
+          F%Bflux=.FALSE.
+          
+       end if
+
+       
+       if (F%Bflux.and.test) then
+
+          F%Bfield=.TRUE.
+          F%Efield=.TRUE.
+          F%Efield_in_file=.TRUE.
+
+          if (res_double) then
+
+             RMIN=F%X%R(1)
+             RMAX=F%X%R(F%dims(1))
+
+             ZMIN=F%X%Z(1)
+             ZMAX=F%X%Z(F%dims(3))
+
+             F%dims(1)=2*F%dims(1)-1
+             F%dims(3)=2*F%dims(3)-1
+             
+             DEALLOCATE(F%X%R)
+             DEALLOCATE(F%X%Z)
+             
+          end if
+          
+          call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
+               F%Bflux,F%Efield.AND.F%Efield_in_file)
+
+          if (res_double) then
+
+             do ii=1_idef,F%dims(1)
+                F%X%R(ii)=RMIN+REAL(ii-1)/REAL(F%dims(1)-1)*(RMAX-RMIN)
+             end do
+
+             do ii=1_idef,F%dims(3)
+                F%X%Z(ii)=ZMIN+REAL(ii-1)/REAL(F%dims(3)-1)*(ZMAX-ZMIN)
+             end do
+
+          end if
+          
           ! B
           ! edge nodes at minimum R,Z
           F%B_2D%Z(1,:)=-(F%PSIp(2,:)-F%PSIp(1,:))/(F%X%R(2)-F%X%R(1))/F%X%R(1)
@@ -1077,10 +1171,15 @@ CONTAINS
           end do
           F%E_2D%Z=0._rp
 
+          F%Bflux=.FALSE.
+          
        end if
 
-       if ((params%mpi_params%rank.EQ.0).and. &
-            (params%orbit_model(1:2).EQ.'GC')) then
+       if (params%mpi_params%rank.EQ.0) then
+
+          if (F%Bflux) write(6,'("PSIp(r=0)",E17.10)') &
+               F%PSIp(F%dims(1)/2,F%dims(3)/2)
+             
           write(6,'("BR(r=0)",E17.10)') F%B_2D%R(F%dims(1)/2,F%dims(3)/2)
           write(6,'("BPHI(r=0)",E17.10)') F%B_2D%PHI(F%dims(1)/2,F%dims(3)/2)
           write(6,'("BZ(r=0)",E17.10)') F%B_2D%Z(F%dims(1)/2,F%dims(3)/2)
@@ -1502,7 +1601,7 @@ CONTAINS
     if (.NOT.ALLOCATED(F%FLAG2D)) ALLOCATE(F%FLAG2D(F%dims(1),F%dims(3)))
 
     if (.NOT.ALLOCATED(F%X%R)) ALLOCATE(F%X%R(F%dims(1)))
-    if (.NOT.ALLOCATED(F%X%z)) ALLOCATE(F%X%Z(F%dims(3)))
+    if (.NOT.ALLOCATED(F%X%Z)) ALLOCATE(F%X%Z(F%dims(3)))
   end subroutine ALLOCATE_2D_FIELDS_ARRAYS
 
 

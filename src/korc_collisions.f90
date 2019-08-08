@@ -1492,7 +1492,7 @@ contains
 !       write(6,'("E_PHI_COL: ",E17.10)') E_PHI
        
        do cc=1_idef,8_idef
-          if ((pm(cc).lt.2._rp).and.flag(cc).eq.1_ip) then
+          if ((pm(cc).lt.1._rp).and.flag(cc).eq.1_ip) then
 !             write(6,'("Momentum less than zero")')
              !             stop
 !             write(6,'("Particle not tracked at: ",E17.10," &
