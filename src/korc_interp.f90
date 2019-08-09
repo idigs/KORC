@@ -365,6 +365,9 @@ CONTAINS
 
        ! * * * * * * * * MAGNETIC FIELD * * * * * * * * !
        if (F%Bflux) then
+
+          if (EZspline_allocated(bfield_2d%A)) &
+               call Ezspline_free(bfield_2d%A, ezerr)
           
           bfield_2d%NR = F%dims(1)
           bfield_2d%NZ = F%dims(3)
@@ -384,7 +387,6 @@ CONTAINS
           call EZspline_setup(bfield_2d%A, F%PSIp, ezerr, .TRUE.)
           call EZspline_error(ezerr)
           
-!          write(6,'("PSIp",E17.10)') F%PSIp
 !          write(6,'("bfield_2d%A: ",E17.10)') bfield_2d%A%fspl(1,:,:)
 
           if (.not.ALLOCATED(fields_domain%FLAG2D)) &
@@ -1343,12 +1345,14 @@ subroutine interp_2D_curlbfields(Y,curlb,flag)
   DEALLOCATE(F)
 end subroutine interp_2D_curlbfields
 
-subroutine interp_FOfields_p(Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flag_cache)
+subroutine interp_FOfields_p(Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,PSIp, &
+     flag_cache)
 
   REAL(rp),DIMENSION(8),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
   REAL(rp),DIMENSION(8),INTENT(OUT)   :: B_X,B_Y,B_Z
   REAL(rp),DIMENSION(8)   :: B_R,B_PHI  
   REAL(rp),DIMENSION(8),INTENT(OUT)   :: E_X,E_Y,E_Z
+  REAL(rp),DIMENSION(8),INTENT(OUT)   :: PSIp
   REAL(rp),DIMENSION(8)   :: E_R,E_PHI
   REAL(rp),DIMENSION(8)   :: cP,sP  
   !  INTEGER(ip) :: ezerr
@@ -1357,7 +1361,10 @@ subroutine interp_FOfields_p(Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flag_cache)
   INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
 
   !call check_if_in_fields_domain_p(Y_R,Y_PHI,Y_Z,flag_cache)
-  
+
+  call EZspline_interp(bfield_2d%A,8,Y_R, Y_Z,PSIp, ezerr)
+  call EZspline_error(ezerr)
+
   call EZspline_interp(bfield_2d%R,bfield_2d%PHI,bfield_2d%Z,efield_2d%R, &
        efield_2d%PHI,efield_2d%Z,8,Y_R,Y_Z,B_R,B_PHI,B_Z, &
        E_R,E_PHI,E_Z,ezerr)
@@ -1380,13 +1387,14 @@ subroutine interp_FOfields_p(Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flag_cache)
   
 end subroutine interp_FOfields_p
 
-subroutine interp_FOfields1_p(F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z, &
+subroutine interp_FOfields1_p(F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,PSIp, &
      flag_cache)
   TYPE(FIELDS), INTENT(IN)                               :: F
   REAL(rp),DIMENSION(8),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
   REAL(rp),DIMENSION(8),INTENT(OUT)   :: B_X,B_Y,B_Z
   REAL(rp),DIMENSION(8)   :: B_R,B_PHI  
   REAL(rp),DIMENSION(8),INTENT(OUT)   :: E_X,E_Y,E_Z
+  REAL(rp),DIMENSION(8),INTENT(OUT)   :: PSIp
   REAL(rp),DIMENSION(8)   :: E_R,E_PHI
   REAL(rp),DIMENSION(8)   :: cP,sP  
   !  INTEGER(ip) :: ezerr
@@ -1396,6 +1404,9 @@ subroutine interp_FOfields1_p(F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z, &
 
   !call check_if_in_fields_domain_p(Y_R,Y_PHI,Y_Z,flag_cache)
 
+  call EZspline_interp(bfield_2d%A,8,Y_R, Y_Z,PSIp, ezerr)
+  call EZspline_error(ezerr)
+  
   call calculate_magnetic_field_p(F,Y_R,Y_Z,B_R,B_PHI,B_Z)
   
   call EZspline_interp(efield_2d%R,efield_2d%PHI,efield_2d%Z,8,Y_R,Y_Z, &
@@ -1701,7 +1712,11 @@ subroutine calculate_initial_magnetic_field(F)
   REAL(rp),dimension(F%dims(1),F%dims(3),2)                  :: gradA
   INTEGER                                                :: ii
   INTEGER                                                :: jj
-  
+
+  call EZspline_interp(bfield_2d%A,F%dims(1),F%dims(3),F%X%R, F%X%Z, &
+       F%PSIp, ezerr)
+  call EZspline_error(ezerr)
+ 
   ! FR = (dA/dZ)/R
   call EZspline_gradient(bfield_2d%A,F%dims(1),F%dims(3),F%X%R, F%X%Z, &
        gradA, ezerr)

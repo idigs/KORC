@@ -2021,6 +2021,12 @@ CONTAINS
                    units = params%cpp%Eo
                    call rsave_2d_array_to_hdf5(subgroup_id, dset, &
                         units*spp(ss)%vars%E)
+
+                CASE('PSIp')
+                   dset = "PSIp"
+                   units = params%cpp%Bo*params%cpp%length**2
+                   call save_1d_array_to_hdf5(subgroup_id, dset, &
+                        units*spp(ss)%vars%PSI_P)
                 CASE('AUX')
                    dset = "AUX"
                    call save_1d_array_to_hdf5(subgroup_id, dset, &

@@ -824,6 +824,7 @@ contains
     REAL(rp),DIMENSION(8) :: V_X,V_Y,V_Z
     REAL(rp),DIMENSION(8) :: B_X,B_Y,B_Z
     REAL(rp),DIMENSION(8) :: E_X,E_Y,E_Z
+    REAL(rp),DIMENSION(8) :: PSIp
     INTEGER(is),DIMENSION(8) :: flag_cache
     REAL(rp) :: a,m_cache,q_cache    
     INTEGER                                                    :: ii
@@ -849,7 +850,7 @@ contains
        !$OMP& PRIVATE(E0,pp,tt,Bmag,cc,X_X,X_Y,X_Z,V_X,V_Y,V_Z,B_X,B_Y,B_Z, &
        !$OMP& E_X,E_Y,E_Z,b_unit_X,b_unit_Y,b_unit_Z,v,vpar,vperp,tmp, &
        !$OMP& cross_X,cross_Y,cross_Z,vec_X,vec_Y,vec_Z,g, &
-       !$OMP& Y_R,Y_PHI,Y_Z,flag_cache)
+       !$OMP& Y_R,Y_PHI,Y_Z,flag_cache,PSIp)
        do pp=1_idef,spp(ii)%ppp,8
 
           !$OMP SIMD
@@ -872,12 +873,16 @@ contains
              do tt=1_ip,params%t_skip
 
                 call cart_to_cyl_p(X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
-                
-                call interp_FOfields_p(Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
-                     E_X,E_Y,E_Z,flag_cache)
-!                call interp_FOfields1_p(F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
-!                     E_X,E_Y,E_Z,flag_cache)             
 
+                if (params%orbit_model(3:5).eq.'new') then
+                   call interp_FOfields_p(Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
+                        E_X,E_Y,E_Z,PSIp,flag_cache)
+                else if (params%orbit_model(3:5).eq.'old') then
+                   call interp_FOfields1_p(F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
+                        E_X,E_Y,E_Z,PSIp,flag_cache)
+                end if
+
+                
  !               write(6,'("B_X: ",E17.10)') B_X(1)
  !               write(6,'("B_Y: ",E17.10)') B_Y(1)
  !               write(6,'("B_Z: ",E17.10)') B_Z(1)
@@ -907,6 +912,8 @@ contains
                 spp(ii)%vars%E(pp-1+cc,1) = E_X(cc)
                 spp(ii)%vars%E(pp-1+cc,2) = E_Y(cc)
                 spp(ii)%vars%E(pp-1+cc,3) = E_Z(cc)
+
+                spp(ii)%vars%PSI_P(pp-1+cc) = PSIp(cc)
              end do
              !$OMP END SIMD
 

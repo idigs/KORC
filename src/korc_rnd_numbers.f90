@@ -132,6 +132,7 @@ subroutine init_random_seed()
   if (istat == 0) then
      read(default_unit_open) seed
      close(default_unit_open)
+     
   else
      ! Fallback to XOR:ing the current time and pid. The PID is
      ! useful in case one launches multiple instances of the same

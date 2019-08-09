@@ -1095,8 +1095,6 @@ CONTAINS
              F%E_2D%PHI(ii,:)=F%Eo*F%Ro/F%X%R(ii)
           end do
           F%E_2D%Z=0._rp
-
-          F%Bflux=.FALSE.
           
        end if
 

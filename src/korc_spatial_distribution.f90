@@ -96,6 +96,7 @@ subroutine disk(params,spp)
 
   call init_random_seed()
   call RANDOM_NUMBER(theta)
+  
   theta = 2.0_rp*C_PI*theta
 
   ! Uniform distribution on a disk at a fixed azimuthal theta
