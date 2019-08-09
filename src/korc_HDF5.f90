@@ -1947,7 +1947,7 @@ CONTAINS
 
                 CASE('V')
                    dset = "V"
-                   if (params%orbit_model.eq.'FO') then
+                   if (params%orbit_model(1:2).eq.'FO') then
                       units = params%cpp%velocity
                       call rsave_2d_array_to_hdf5(subgroup_id, dset, &
                            units*spp(ss)%vars%V)
@@ -2183,7 +2183,7 @@ CONTAINS
        ALLOCATE(send_buffer_rp(numel_send))
        ALLOCATE(receive_buffer_rp(numel_receive))
 
-       if (params%orbit_model.EQ.'FO') then             
+       if (params%orbit_model(1:2).EQ.'FO') then             
           send_buffer_rp = RESHAPE(spp(ss)%vars%X,(/numel_send/))
        else if (params%orbit_model(1:2).EQ.'GC') then
           send_buffer_rp = RESHAPE(spp(ss)%vars%Y,(/numel_send/))
@@ -2474,7 +2474,7 @@ CONTAINS
        X_receive_buffer = 0.0_rp
        CALL MPI_SCATTER(X_send_buffer,3*spp(ss)%ppp,MPI_REAL8, &
             X_receive_buffer,3*spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
-       if (params%orbit_model.EQ.'FO') then  
+       if (params%orbit_model(1:2).EQ.'FO') then  
           spp(ss)%vars%X = RESHAPE(X_receive_buffer,(/spp(ss)%ppp,3/))
        else if (params%orbit_model(1:2).EQ.'GC') then
           spp(ss)%vars%Y = RESHAPE(X_receive_buffer,(/spp(ss)%ppp,3/))

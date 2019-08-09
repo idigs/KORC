@@ -242,7 +242,7 @@ program main
   
   if (.NOT.(params%restart.OR.params%proceed)) then
 
-     if (params%orbit_model.eq.'FO') then
+     if (params%orbit_model(1:2).eq.'FO') then
 
         call FO_init(params,F,spp,.true.,.false.)
 

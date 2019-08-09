@@ -1356,7 +1356,7 @@ subroutine interp_FOfields_p(Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flag_cache)
   !! Particle chunk iterator.
   INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
 
-  call check_if_in_fields_domain_p(Y_R,Y_PHI,Y_Z,flag_cache)
+  !call check_if_in_fields_domain_p(Y_R,Y_PHI,Y_Z,flag_cache)
   
   call EZspline_interp(bfield_2d%R,bfield_2d%PHI,bfield_2d%Z,efield_2d%R, &
        efield_2d%PHI,efield_2d%Z,8,Y_R,Y_Z,B_R,B_PHI,B_Z, &
@@ -1394,7 +1394,7 @@ subroutine interp_FOfields1_p(F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z, &
   !! Particle chunk iterator.
   INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
 
-  call check_if_in_fields_domain_p(Y_R,Y_PHI,Y_Z,flag_cache)
+  !call check_if_in_fields_domain_p(Y_R,Y_PHI,Y_Z,flag_cache)
 
   call calculate_magnetic_field_p(F,Y_R,Y_Z,B_R,B_PHI,B_Z)
   
