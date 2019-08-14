@@ -228,6 +228,7 @@ module korc_types
      !! coordinate transformation needs to be performed
      LOGICAL :: FokPlan
      !! Flag to decouple spatial-dependence of evolution
+     LOGICAL :: SameRandSeed
      
   END TYPE KORC_PARAMS
 
@@ -489,6 +490,7 @@ module korc_types
      REAL(rp)  :: E_pulse
      REAL(rp)  :: E_width
      !! interpolated E field
+     INTEGER 			:: res_double
      INTEGER, DIMENSION(3) 			:: dims 
      !! Dimensions of the KORC vector field. dims=(number of grid 
      !! nodes along \(R\), number of grid nodes along \(\phi\), 

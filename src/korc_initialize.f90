@@ -120,13 +120,14 @@ subroutine load_korc_params(params)
   !! analytical fields ('interp' or 'eqn')
   LOGICAL 				:: FokPlan
   !! Flag to decouple spatial-dependence of evolution
+  LOGICAL :: SameRandSeed
 
   NAMELIST /input_parameters/ restart,field_model,magnetic_field_filename, &
        simulation_time,snapshot_frequency,dt,num_species,radiation, &
        collisions,collisions_model,outputs_list,minimum_particle_energy, &
        HDF5_error_handling,orbit_model,field_eval,proceed,profile_model, &
        restart_overwrite_frequency,FokPlan,GC_rad_model,bound_electron_model, &
-       FO_GC_compare
+       FO_GC_compare,SameRandSeed
 
   open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
        status='OLD',form='formatted')
@@ -167,6 +168,8 @@ subroutine load_korc_params(params)
   params%GC_coords=.FALSE.
   
   params%FokPlan=FokPlan
+
+  params%SameRandSeed = SameRandSeed
 
   ! Loading list of output parameters (parsing)
   imin = SCAN(outputs_list,'{')
@@ -637,6 +640,8 @@ subroutine set_up_particles_ic(params,F,spp,P)
 
   if (params%restart.OR.params%proceed) then
      call load_particles_ic(params,spp)
+
+     call init_random_seed()
      
   else
      call intitial_spatial_distribution(params,spp,P,F)

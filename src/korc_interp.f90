@@ -682,13 +682,14 @@ CONTAINS
   end subroutine initialize_fields_interpolant
 
 
-  subroutine check_if_in_fields_domain(Y,flag)
+  subroutine check_if_in_fields_domain(F,Y,flag)
     !! @note Subrotuine that checks if particles in the simulation are within
     !! the spatial domain where interpolants and fields are known. @endnote
     !! External fields and interpolants can have different spatial domains where
     !! they are defined. Therefore, it is necessary to
-    !! check if a given particle has left these spatial domains to stop following
-    !! it, otherwise this will cause an error in the simulation.
+    !! check if a given particle has left these spatial domains to stop
+    !! following it, otherwise this will cause an error in the simulation.
+    TYPE(FIELDS), INTENT(IN)                                   :: F
     REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN)      :: Y
     !! Particles' position in cylindrical coordinates,
     !! Y(1,:) = \(R\), Y(2,:) = \(\phi\), and Y(3,:) = \(Z\).
@@ -756,13 +757,14 @@ CONTAINS
     end if
   end subroutine check_if_in_fields_domain
   
-  subroutine check_if_in_fields_domain_p(Y_R,Y_PHI,Y_Z,flag)
+  subroutine check_if_in_fields_domain_p(F,Y_R,Y_PHI,Y_Z,flag)
     !! @note Subrotuine that checks if particles in the simulation are within
     !! the spatial domain where interpolants and fields are known. @endnote
     !! External fields and interpolants can have different spatial domains where
     !! they are defined. Therefore, it is necessary to
-    !! check if a given particle has left these spatial domains to stop following
-    !! it, otherwise this will cause an error in the simulation.
+    !! check if a given particle has left these spatial domains to
+    !! stop following it, otherwise this will cause an error in the simulation.
+    TYPE(FIELDS), INTENT(IN)                                   :: F
     REAL(rp), DIMENSION(8),  INTENT(IN)      :: Y_R,Y_PHI,Y_Z
     INTEGER(is), DIMENSION(8), INTENT(INOUT)  :: flag
     !! Flag that determines whether particles are followed in the
@@ -816,9 +818,11 @@ CONTAINS
 !       !$OMP& aligned(IR,IZ)
        do pp=1_idef,8_idef
           IR = INT(FLOOR((Y_R(pp)  - fields_domain%Ro + &
-               0.5_rp*fields_domain%DR)/fields_domain%DR) + 1.0_rp,idef)
+               0.5_rp*fields_domain%DR)/fields_domain%DR) + 1.0_rp,idef)/ &
+               2_idef**F%res_double
           IZ = INT(FLOOR((Y_Z(pp)  + ABS(fields_domain%Zo) + &
-               0.5_rp*fields_domain%DZ)/fields_domain%DZ) + 1.0_rp,idef)
+               0.5_rp*fields_domain%DZ)/fields_domain%DZ) + 1.0_rp,idef)/ &
+               2_idef**F%res_double
 
 !          write(6,'("IR: ",I16)') IR
 !          write(6,'("IZ: ",I16)') IZ
@@ -1345,9 +1349,9 @@ subroutine interp_2D_curlbfields(Y,curlb,flag)
   DEALLOCATE(F)
 end subroutine interp_2D_curlbfields
 
-subroutine interp_FOfields_p(Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,PSIp, &
+subroutine interp_FOfields_p(F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,PSIp, &
      flag_cache)
-
+  TYPE(FIELDS), INTENT(IN)                               :: F
   REAL(rp),DIMENSION(8),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
   REAL(rp),DIMENSION(8),INTENT(OUT)   :: B_X,B_Y,B_Z
   REAL(rp),DIMENSION(8)   :: B_R,B_PHI  
@@ -1360,7 +1364,7 @@ subroutine interp_FOfields_p(Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,PSIp, &
   !! Particle chunk iterator.
   INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
 
-  !call check_if_in_fields_domain_p(Y_R,Y_PHI,Y_Z,flag_cache)
+  call check_if_in_fields_domain_p(F,Y_R,Y_PHI,Y_Z,flag_cache)
 
   call EZspline_interp(bfield_2d%A,8,Y_R, Y_Z,PSIp, ezerr)
   call EZspline_error(ezerr)
@@ -1402,7 +1406,7 @@ subroutine interp_FOfields1_p(F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,PSIp, &
   !! Particle chunk iterator.
   INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
 
-  !call check_if_in_fields_domain_p(Y_R,Y_PHI,Y_Z,flag_cache)
+  call check_if_in_fields_domain_p(F,Y_R,Y_PHI,Y_Z,flag_cache)
 
   call EZspline_interp(bfield_2d%A,8,Y_R, Y_Z,PSIp, ezerr)
   call EZspline_error(ezerr)
@@ -1453,17 +1457,21 @@ subroutine interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag_cache)
   
 end subroutine interp_FOcollision_p
 
-subroutine interp_fields_p(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
-     curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,flag_cache)
-
+subroutine interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
+     curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,flag_cache,PSIp)
+  TYPE(FIELDS), INTENT(IN)                               :: F
   REAL(rp),DIMENSION(8),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
   REAL(rp),DIMENSION(8),INTENT(OUT)   :: B_R,B_PHI,B_Z
   REAL(rp),DIMENSION(8),INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
   REAL(rp),DIMENSION(8),INTENT(OUT)   :: curlB_R,curlB_PHI,curlB_Z
   REAL(rp),DIMENSION(8),INTENT(OUT)   :: E_R,E_PHI,E_Z
+  REAL(rp),DIMENSION(8),INTENT(OUT)   :: PSIp
   INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
 
-!  call check_if_in_fields_domain_p(Y_R,Y_PHI,Y_Z,flag_cache)
+  call check_if_in_fields_domain_p(F,Y_R,Y_PHI,Y_Z,flag_cache)
+
+  call EZspline_interp(bfield_2d%A,8,Y_R, Y_Z,PSIp, ezerr)
+  call EZspline_error(ezerr)
   
   call EZspline_interp(bfield_2d%R,bfield_2d%PHI,bfield_2d%Z,efield_2d%R, &
        efield_2d%PHI,efield_2d%Z,gradB_2d%R,gradB_2d%PHI,gradB_2d%Z, &
@@ -1870,7 +1878,7 @@ subroutine interp_fields(params,prtcls,F)
 !  write(6,'("Y: ",E17.10)') prtcls%X(2,1)
 !  write(6,'("Z: ",E17.10)') prtcls%X(3,1)
   
-!  call check_if_in_fields_domain(prtcls%Y, prtcls%flag)
+!  call check_if_in_fields_domain(F,prtcls%Y, prtcls%flag)
 
   if (ALLOCATED(F%PSIp).and.F%Bflux) then
 

@@ -202,15 +202,64 @@ contains
 
     LOGICAL,intent(in) :: output
     LOGICAL,intent(in) :: step   
-    
-    INTEGER ,DIMENSION(8)                                     :: flag_cache
 
+    REAL(rp),DIMENSION(8) :: X_X,X_Y,X_Z
+    REAL(rp),DIMENSION(8) :: Y_R,Y_PHI,Y_Z
+    REAL(rp),DIMENSION(8) :: B_X,B_Y,B_Z
+    REAL(rp),DIMENSION(8) :: E_X,E_Y,E_Z
+    REAL(rp),DIMENSION(8) :: PSIp
+    INTEGER(is) ,DIMENSION(8) :: flag_cache
+
+    
 
     do ii = 1_idef,params%num_species
 
        if(output) then
-       
-          call get_fields(params,spp(ii)%vars,F)
+
+          !$OMP PARALLEL DO default(none) &
+          !$OMP& shared(params,ii,spp,F) &
+          !$OMP& PRIVATE(pp,cc,X_X,X_Y,X_Z,B_X,B_Y,B_Z, &
+          !$OMP& E_X,E_Y,E_Z,Y_R,Y_PHI,Y_Z,flag_cache,PSIp)
+          do pp=1_idef,spp(ii)%ppp,8
+
+             !$OMP SIMD
+             do cc=1_idef,8_idef
+                X_X(cc)=spp(ii)%vars%X(pp-1+cc,1)
+                X_Y(cc)=spp(ii)%vars%X(pp-1+cc,2)
+                X_Z(cc)=spp(ii)%vars%X(pp-1+cc,3)
+
+                flag_cache(cc)=spp(ii)%vars%flag(pp-1+cc)
+             end do
+             !$OMP END SIMD
+
+
+             call cart_to_cyl_p(X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
+
+             if (params%orbit_model(3:5).eq.'new') then
+                call interp_FOfields_p(F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
+                     E_X,E_Y,E_Z,PSIp,flag_cache)
+             else if (params%orbit_model(3:5).eq.'old') then
+                call interp_FOfields1_p(F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
+                     E_X,E_Y,E_Z,PSIp,flag_cache)
+             end if
+
+             !$OMP SIMD
+             do cc=1_idef,8_idef
+                spp(ii)%vars%B(pp-1+cc,1) = B_X(cc)
+                spp(ii)%vars%B(pp-1+cc,2) = B_Y(cc)
+                spp(ii)%vars%B(pp-1+cc,3) = B_Z(cc)
+
+                spp(ii)%vars%E(pp-1+cc,1) = E_X(cc)
+                spp(ii)%vars%E(pp-1+cc,2) = E_Y(cc)
+                spp(ii)%vars%E(pp-1+cc,3) = E_Z(cc)
+
+                spp(ii)%vars%PSI_P(pp-1+cc) = PSIp(cc)
+             end do
+             !$OMP END SIMD
+             
+          end do
+          !$OMP END PARALLEL DO                         
+
           !! Calls [[get_fields]] in [[korc_fields]].
           ! Interpolates fields at local particles' position and keeps in
           ! spp%vars. Fields in (R,\(\phi\),Z) coordinates.
@@ -875,7 +924,7 @@ contains
                 call cart_to_cyl_p(X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
 
                 if (params%orbit_model(3:5).eq.'new') then
-                   call interp_FOfields_p(Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
+                   call interp_FOfields_p(F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
                         E_X,E_Y,E_Z,PSIp,flag_cache)
                 else if (params%orbit_model(3:5).eq.'old') then
                    call interp_FOfields1_p(F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
@@ -2048,6 +2097,7 @@ contains
     REAL(rp),DIMENSION(8) :: E_R,E_PHI,E_Z
     REAL(rp),DIMENSION(8) :: ne,Te,Zeff    
     REAL(rp),DIMENSION(8) :: V_PLL,V_MU
+    REAL(rp),DIMENSION(8) :: PSIp
     INTEGER(is),DIMENSION(8) :: flag_cache
     REAL(rp) :: m_cache,q_cache,B0,EF0,R0,q0,lam,ar
 
@@ -2071,7 +2121,7 @@ contains
        !$OMP& FIRSTPRIVATE(q_cache,m_cache) &
        !$OMP& SHARED(params,ii,spp,P,F) &
        !$OMP& PRIVATE(pp,tt,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,B_R,B_PHI,B_Z, &
-       !$OMP& flag_cache,E_PHI)
+       !$OMP& flag_cache,E_PHI,PSIp)
        do pp=1_idef,spp(ii)%ppp,8
 
 !          write(6,'("pp: ",I16)') pp
@@ -2093,7 +2143,7 @@ contains
              do tt=1_ip,params%t_skip
                 call advance_GCinterp_vars(tt,params,Y_R,Y_PHI, &
                      Y_Z,V_PLL,V_MU,q_cache,m_cache,flag_cache, &
-                     F,P,B_R,B_PHI,B_Z,E_PHI)
+                     F,P,B_R,B_PHI,B_Z,E_PHI,PSIp)
              end do !timestep iterator
 
              !$OMP SIMD
@@ -2111,6 +2161,7 @@ contains
                 spp(ii)%vars%B(pp-1+cc,3) = B_Z(cc)
 
                 spp(ii)%vars%E(pp-1+cc,2) = E_PHI(cc)
+                spp(ii)%vars%PSI_P(pp-1+cc) = PSIp(cc)                
              end do
              !$OMP END SIMD
              
@@ -2158,7 +2209,7 @@ contains
   end subroutine adv_GCinterp_top
   
   subroutine advance_GCinterp_vars(tt,params,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
-       q_cache,m_cache,flag_cache,F,P,B_R,B_PHI,B_Z,E_PHI)
+       q_cache,m_cache,flag_cache,F,P,B_R,B_PHI,B_Z,E_PHI,PSIp)
     !! @note Subroutine to advance GC variables \(({\bf X},p_\parallel)\)
     !! @endnote
     !! Comment this section further with evolution equations, numerical
@@ -2195,6 +2246,7 @@ contains
     REAL(rp),DIMENSION(8),INTENT(OUT) :: B_R,B_PHI,B_Z
     REAL(rp),DIMENSION(8) :: E_R,E_Z
     REAL(rp),DIMENSION(8),INTENT(OUT) :: E_PHI
+    REAL(rp),DIMENSION(8),INTENT(OUT) :: PSIp
     REAL(rp),DIMENSION(8) :: curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z
     REAL(rp),DIMENSION(8),INTENT(INOUT) :: V_PLL,V_MU
     REAL(rp),DIMENSION(8) :: RHS_R,RHS_PHI,RHS_Z,RHS_PLL,V0
@@ -2216,8 +2268,9 @@ contains
     end do
     !$OMP END SIMD
 
-    call interp_fields_p(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
-         E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,flag_cache)
+    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+         E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
+         flag_cache,PSIp)
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
@@ -2241,8 +2294,9 @@ contains
     end do
     !$OMP END SIMD
 
-    call interp_fields_p(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
-         E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,flag_cache)
+    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+         E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
+         flag_cache,PSIp)
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
@@ -2266,8 +2320,9 @@ contains
     end do
     !$OMP END SIMD
 
-    call interp_fields_p(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
-         E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,flag_cache)
+    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+         E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
+         flag_cache,PSIp)
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
@@ -2292,8 +2347,9 @@ contains
     end do
     !$OMP END SIMD
 
-    call interp_fields_p(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
-         E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,flag_cache)
+    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+         E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
+         flag_cache,PSIp)
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
@@ -2322,8 +2378,9 @@ contains
     !$OMP END SIMD
 
 
-    call interp_fields_p(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
-         E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,flag_cache)
+    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+         E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
+         flag_cache,PSIp)
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
@@ -2351,8 +2408,9 @@ contains
     end do
     !$OMP END SIMD
 
-    call interp_fields_p(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
-         E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,flag_cache)
+    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+         E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
+         flag_cache,PSIp)
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     

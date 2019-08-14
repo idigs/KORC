@@ -881,14 +881,14 @@ CONTAINS
     !! Poloidal angle at each position in the grid for
     !! GC model of analytical field
     logical :: test
-    logical :: res_double
+    integer :: res_double
     real(rp) :: RMAX,RMIN,ZMAX,ZMIN
 
 
     NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
          qa,qo,Eo,current_direction,nR,nZ
     NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux, &
-         axisymmetric_fields, Eo,E_model,E_dyn,E_pulse,E_width
+         axisymmetric_fields, Eo,E_model,E_dyn,E_pulse,E_width,res_double
 
     if (params%mpi_params%rank .EQ. 0) then
        write(6,'(/,"* * * * * * * * INITIALIZING FIELDS * * * * * * * *")')
@@ -937,11 +937,13 @@ CONTAINS
 
           F%Bfield= .TRUE.
           F%axisymmetric_fields = .TRUE.
-          F%Bflux=.FALSE.
+          F%Bflux=.TRUE.
           F%Efield=.TRUE.
 
-          call ALLOCATE_2D_FIELDS_ARRAYS(params,F,.TRUE.,.FALSE.,.TRUE.)
+          call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield,F%Bflux,F%Efield)
 
+          F%PSIp(:,:)=0._rp
+          
           do ii=1_idef,F%dims(1)
              F%X%R(ii)=(F%Ro-F%AB%a)+(ii-1)*2*F%AB%a/(F%dims(1)-1)
           end do
@@ -992,6 +994,8 @@ CONTAINS
        F%E_dyn = E_dyn
        F%E_pulse = E_pulse
        F%E_width = E_width
+
+       F%res_double=res_double
 
 !       write(6,'("E_dyn: ",E17.10)') E_dyn
 !       write(6,'("E_pulse: ",E17.10)') E_pulse
@@ -1045,7 +1049,6 @@ CONTAINS
        end if
 
        test=.false.
-       res_double=.true.
        
        if (F%Bflux.and.(.not.test)) then
 
@@ -1055,38 +1058,32 @@ CONTAINS
           F%Efield=.TRUE.
           F%Efield_in_file=.TRUE.
 
-          if (res_double) then
 
-             RMIN=F%X%R(1)
-             RMAX=F%X%R(F%dims(1))
+          RMIN=F%X%R(1)
+          RMAX=F%X%R(F%dims(1))
 
-             ZMIN=F%X%Z(1)
-             ZMAX=F%X%Z(F%dims(3))
+          ZMIN=F%X%Z(1)
+          ZMAX=F%X%Z(F%dims(3))
 
+          do ii=1_idef,res_double
              F%dims(1)=2*F%dims(1)-1
              F%dims(3)=2*F%dims(3)-1
-             
-             DEALLOCATE(F%X%R)
-             DEALLOCATE(F%X%Z)
+          end do
 
-             DEALLOCATE(F%PSIp)
-             
-          end if
+          DEALLOCATE(F%X%R)
+          DEALLOCATE(F%X%Z)
+          DEALLOCATE(F%PSIp)             
           
           call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
                F%Bflux,F%Efield.AND.F%Efield_in_file)
 
-          if (res_double) then
+          do ii=1_idef,F%dims(1)
+             F%X%R(ii)=RMIN+REAL(ii-1)/REAL(F%dims(1)-1)*(RMAX-RMIN)
+          end do
 
-             do ii=1_idef,F%dims(1)
-                F%X%R(ii)=RMIN+REAL(ii-1)/REAL(F%dims(1)-1)*(RMAX-RMIN)
-             end do
-
-             do ii=1_idef,F%dims(3)
-                F%X%Z(ii)=ZMIN+REAL(ii-1)/REAL(F%dims(3)-1)*(ZMAX-ZMIN)
-             end do
-             
-          end if
+          do ii=1_idef,F%dims(3)
+             F%X%Z(ii)=ZMIN+REAL(ii-1)/REAL(F%dims(3)-1)*(ZMAX-ZMIN)
+          end do            
           
           call calculate_initial_magnetic_field(F)
           
@@ -1105,36 +1102,34 @@ CONTAINS
           F%Efield=.TRUE.
           F%Efield_in_file=.TRUE.
 
-          if (res_double) then
+          RMIN=F%X%R(1)
+          RMAX=F%X%R(F%dims(1))
 
-             RMIN=F%X%R(1)
-             RMAX=F%X%R(F%dims(1))
+          ZMIN=F%X%Z(1)
+          ZMAX=F%X%Z(F%dims(3))
 
-             ZMIN=F%X%Z(1)
-             ZMAX=F%X%Z(F%dims(3))
-
+          do ii=1_idef,res_double
              F%dims(1)=2*F%dims(1)-1
              F%dims(3)=2*F%dims(3)-1
+          end do
+
+          DEALLOCATE(F%X%R)
+          DEALLOCATE(F%X%Z)
              
-             DEALLOCATE(F%X%R)
-             DEALLOCATE(F%X%Z)
-             
-          end if
           
           call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
                F%Bflux,F%Efield.AND.F%Efield_in_file)
 
-          if (res_double) then
 
-             do ii=1_idef,F%dims(1)
-                F%X%R(ii)=RMIN+REAL(ii-1)/REAL(F%dims(1)-1)*(RMAX-RMIN)
-             end do
+          do ii=1_idef,F%dims(1)
+             F%X%R(ii)=RMIN+REAL(ii-1)/REAL(F%dims(1)-1)*(RMAX-RMIN)
+          end do
 
-             do ii=1_idef,F%dims(3)
-                F%X%Z(ii)=ZMIN+REAL(ii-1)/REAL(F%dims(3)-1)*(ZMAX-ZMIN)
-             end do
+          do ii=1_idef,F%dims(3)
+             F%X%Z(ii)=ZMIN+REAL(ii-1)/REAL(F%dims(3)-1)*(ZMAX-ZMIN)
+          end do
 
-          end if
+
           
           ! B
           ! edge nodes at minimum R,Z
@@ -1175,18 +1170,22 @@ CONTAINS
 
        if (params%mpi_params%rank.EQ.0) then
 
-          if (F%Bflux) write(6,'("PSIp(r=0)",E17.10)') &
-               F%PSIp(F%dims(1)/2,F%dims(3)/2)
-             
-          write(6,'("BR(r=0)",E17.10)') F%B_2D%R(F%dims(1)/2,F%dims(3)/2)
-          write(6,'("BPHI(r=0)",E17.10)') F%B_2D%PHI(F%dims(1)/2,F%dims(3)/2)
-          write(6,'("BZ(r=0)",E17.10)') F%B_2D%Z(F%dims(1)/2,F%dims(3)/2)
+          if (F%Bflux) then
+             write(6,'("PSIp(r=0)",E17.10)') F%PSIp(F%dims(1)/2,F%dims(3)/2)
+             write(6,'("BPHI(r=0)",E17.10)') F%Bo
+             write(6,'("EPHI(r=0)",E17.10)') F%Eo
+          else
+             write(6,'("BR(r=0)",E17.10)') F%B_2D%R(F%dims(1)/2,F%dims(3)/2)
+             write(6,'("BPHI(r=0)",E17.10)') F%B_2D%PHI(F%dims(1)/2,F%dims(3)/2)
+             write(6,'("BZ(r=0)",E17.10)') F%B_2D%Z(F%dims(1)/2,F%dims(3)/2)
+             write(6,'("EPHI(r=0)",E17.10)') F%E_2D%PHI(F%dims(1)/2,F%dims(3)/2)
+          end if
 
-          write(6,'("EPHI(r=0)",E17.10)') F%E_2D%PHI(F%dims(1)/2,F%dims(3)/2)
+
 
        end if
 
-       if (params%orbit_model(3:5).EQ.'pre') then
+       if (params%orbit_model(3:5).EQ.'pre'.and.(.not.F%Bflux)) then
           if (params%mpi_params%rank.eq.0) then
              write(6,'("Initializing GC fields from external EM fields")')
           end if

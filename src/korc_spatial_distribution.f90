@@ -130,11 +130,13 @@ subroutine torus(params,spp)
   REAL(rp), DIMENSION(:), ALLOCATABLE 	:: r
     !! Radial position of the particles \(r\).
   REAL(rp), DIMENSION(:), ALLOCATABLE 	:: theta
-    !! Uniform deviates in the range \([0,2\pi]\) 
-    !! representing the uniform poloidal angle \(\theta\) distribution of the particles.
+  !! Uniform deviates in the range \([0,2\pi]\) 
+  !! representing the uniform poloidal angle \(\theta\)
+  !! distribution of the particles.
   REAL(rp), DIMENSION(:), ALLOCATABLE 	:: zeta
-    !! Uniform deviates in the range \([0,2\pi]\) representing 
-    !! the uniform toroidal angle \(\zeta\) distribution of the particles.
+  !! Uniform deviates in the range \([0,2\pi]\) representing 
+  !! the uniform toroidal angle \(\zeta\) distribution of the particles.
+  INTEGER,DIMENSION(33) :: seed=(/1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1/)
 
   ALLOCATE( theta(spp%ppp) )
   ALLOCATE( zeta(spp%ppp) )
@@ -144,16 +146,28 @@ subroutine torus(params,spp)
   ! A unique velocity direction
   call init_u_random(10986546_8)
 
-  call init_random_seed()
+  if (.not.params%SameRandSeed) then
+     call init_random_seed()
+  else
+     call random_seed(put=seed)
+  end if
   call RANDOM_NUMBER(theta)
   theta = 2.0_rp*C_PI*theta
 
-  call init_random_seed()
+  if (.not.params%SameRandSeed) then
+     call init_random_seed()
+  else
+     call random_seed(put=seed)
+  end if
   call RANDOM_NUMBER(zeta)
   zeta = 2.0_rp*C_PI*zeta
 
   ! Uniform distribution on a disk at a fixed azimuthal theta
-  call init_random_seed()
+  if (.not.params%SameRandSeed) then
+     call init_random_seed()
+  else
+     call random_seed(put=seed)
+  end if
   call RANDOM_NUMBER(r)
 
   r = SQRT((spp%r_outter**2 - spp%r_inner**2)*r + spp%r_inner**2)
