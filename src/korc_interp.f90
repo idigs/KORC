@@ -1469,14 +1469,12 @@ subroutine interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
   INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
 
   call check_if_in_fields_domain_p(F,Y_R,Y_PHI,Y_Z,flag_cache)
-
-  call EZspline_interp(bfield_2d%A,8,Y_R, Y_Z,PSIp, ezerr)
-  call EZspline_error(ezerr)
   
   call EZspline_interp(bfield_2d%R,bfield_2d%PHI,bfield_2d%Z,efield_2d%R, &
        efield_2d%PHI,efield_2d%Z,gradB_2d%R,gradB_2d%PHI,gradB_2d%Z, &
        curlb_2d%R,curlb_2d%PHI,curlb_2d%Z,8,Y_R,Y_Z,B_R,B_PHI,B_Z, &
-       E_R,E_PHI,E_Z,gradB_R,gradB_PHI,gradB_Z,curlb_R,curlb_PHI,curlb_Z,ezerr)
+       E_R,E_PHI,E_Z,gradB_R,gradB_PHI,gradB_Z,curlb_R,curlb_PHI,curlb_Z,PSIp, &
+       ezerr)
   call EZspline_error(ezerr)
 
 end subroutine interp_fields_p
