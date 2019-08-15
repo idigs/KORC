@@ -102,6 +102,7 @@ TYPE, PUBLIC :: KORC_PARAMS
 	CHARACTER(MAX_STRING_LENGTH) 	:: path_to_outputs !< Absolute path to the outputs' folder.
 	INTEGER 						:: num_omp_threads !< Number of open MP threads per MPI process used in the simulation.
 	LOGICAL 						:: restart !< Flag to indicate if the simulations restarts (restart=T) or not (restart=F).
+    LOGICAL                         :: extend_time !< Flag to indicate if the simulations restarts override time and output parameters with new values.
 	REAL(rp) 						:: simulation_time !< Total simulation time in seconds.
 	REAL(rp) 						:: snapshot_frequency !< Time between snapshots in time of the simulation.
 	REAL(rp) 						:: dt !< Time step in the simulation as a fraction of the relativistic electron gyro-period @f$\tau_e = 2\pi\gamma m_e/eB_0@f$.
