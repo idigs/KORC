@@ -156,13 +156,11 @@ end subroutine radiation_force
 !! @param vperp Perpendicular velocity @f$v_\parallel = |\mathbf{v} - (\mathbf{v}\cdot \hat{b})\hat{b}|@f$.
 !! @param tmp Temporary variable used for various computations.
 !! @param a This variable is used to simplify notation in the code, and is given by @f$a=q\Delta t/m@f$,
-!! @param gp This variable is @f$\gamma' = \sqrt{1 + p'^2/m^2c^2}@f$ in the above equations.
 !! @param sigma This variable is @f$\sigma = \gamma'^2 - \tau^2@f$ in the above equations.
 !! @param us This variable is @f$u^{*} = p^{*}/m@f$ where @f$ p^{*} = \mathbf{p}'\cdot \mathbf{\tau}/mc@f$.
 !! @param g Relativistic factor @f$\gamma@f$.
 !! @param s This variable is @f$s = 1/(1+t^2)@f$ in the equations above.
 !! @param U_L This variable is @f$\mathbf{u}_L = \mathbf{p}_L/m@f$ where @f$\mathbf{p}^{i+1}_L = s\left[ \mathbf{p}' + (\mathbf{p}'\cdot\mathbf{t})\mathbf{t} + \mathbf{p}'\times \mathbf{t} \right]@f$.
-!! @param U_hs Is @f$\mathbf{u}=\mathbf{p}/m@f$ at half-time step (@f$i+1/2@f$) in the absence of radiation losses or collisions. @f$\mathbf{u}^{i+1/2} = \mathbf{u}^i + \frac{q\Delta t}{2m}\left( \mathbf{E}^{i+1/2} + \mathbf{v}^i\times \mathbf{B}^{i+1/2} \right)@f$.
 !! @param tau This variable is @f$\mathbf{\tau} = (q\Delta t/2)\mathbf{B}^{i+1/2}@f$.
 !! @param up This variable is @f$\mathbf{u}'= \mathbf{p}'/m@f$, where @f$\mathbf{p}' = \mathbf{p}^i + q\Delta t \left( \mathbf{E}^{i+1/2} + \frac{\mathbf{v}^i}{2} \times \mathbf{B}^{i+1/2} \right)@f$.
 !! @param t This variable is @f$\mathbf{t} = {\mathbf \tau}/\gamma^{i+1}@f$.
@@ -189,13 +187,11 @@ subroutine advance_particles_velocity(params,F,P,spp,dt,bool)
     REAL(rp)                                   :: vperp
     REAL(rp)                                   :: tmp
     REAL(rp)                                   :: a
-    REAL(rp)                                   :: gp
     REAL(rp)                                   :: sigma
     REAL(rp)                                   :: us
     REAL(rp)                                   :: g
     REAL(rp)                                   :: s
     REAL(rp), DIMENSION(3)                     :: U_L
-    REAL(rp), DIMENSION(3)                     :: U_hs
     REAL(rp), DIMENSION(3)                     :: tau
     REAL(rp), DIMENSION(3)                     :: up
     REAL(rp), DIMENSION(3)                     :: t
@@ -221,8 +217,8 @@ subroutine advance_particles_velocity(params,F,P,spp,dt,bool)
 
         a = spp(ii)%q*dt/spp(ii)%m
 
-!$OMP PARALLEL DO DEFAULT(SHARED), PRIVATE(pp,U,B,U_L,U_RC,U_hs,tau,up,gp,     &
-!$OMP&                                     sigma,us,g,t,s,U_os,Frad,b_unit,v,  &
+!$OMP PARALLEL DO DEFAULT(SHARED), PRIVATE(pp,U,B,U_L,U_RC,tau,up,sigma,       &
+!$OMP&                                     us,g,t,s,U_os,Frad,b_unit,v,        &
 !$OMP&                                     vpar,vperp,tmp,vec)
         do pp=1_idef,spp(ii)%ppp
             if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
@@ -235,11 +231,9 @@ subroutine advance_particles_velocity(params,F,P,spp,dt,bool)
                 U_RC = U
 
                 ! ! ! LEAP-FROG SCHEME FOR LORENTZ FORCE ! ! !
-                U_hs = U_L + 0.5_rp*a*( spp(ii)%vars%E(:,pp) + cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)) )
+                up = U_L + a*(spp(ii)%vars%E(:,pp) + 0.5_rp*cross(spp(ii)%vars%V(:,pp),spp(ii)%vars%B(:,pp)))
                 tau = 0.5_rp*dt*spp(ii)%q*spp(ii)%vars%B(:,pp)/spp(ii)%m
-                up = U_hs + 0.5_rp*a*spp(ii)%vars%E(:,pp)
-                gp = SQRT( 1.0_rp + DOT_PRODUCT(up,up) )
-                sigma = gp**2 - DOT_PRODUCT(tau,tau)
+                sigma = 1.0_rp + DOT_PRODUCT(up,up) - DOT_PRODUCT(tau,tau)
                 us = DOT_PRODUCT(up,tau) ! variable 'u^*' in Vay, J.-L. PoP (2008)
                 g = SQRT( 0.5_rp*(sigma + SQRT(sigma**2 + 4.0_rp*(DOT_PRODUCT(tau,tau) + us**2))) )
                 t = tau/g
@@ -334,25 +328,24 @@ end subroutine advance_particles_velocity
 !! @param[in,out] spp An instance of the derived type SPECIES containing all the parameters and simulation variables of the different species in the simulation.
 !! @param[in] dt Time step used in the leapfrog step (@f$\Delta t@f$).
 !! @param ii Species iterator.
-!! @param pp Particles iterator.
 subroutine advance_particles_position(params,F,spp,dt)
-    TYPE(KORC_PARAMS), INTENT(IN)              :: params
-    TYPE(FIELDS), INTENT(IN)                   :: F
-    TYPE(SPECIES), DIMENSION(:), INTENT(INOUT) :: spp
-    REAL(rp), INTENT(IN)                       :: dt
-    INTEGER                                    :: ii
-    INTEGER                                    :: pp
+    TYPE(KORC_PARAMS), INTENT(IN)                              :: params
+    TYPE(FIELDS), INTENT(IN)                                   :: F
+    TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)    :: spp
+    REAL(rp), INTENT(IN)                                       :: dt
+    INTEGER                                                    :: ii
 
     if (params%plasma_model .NE. 'UNIFORM') then
         do ii=1_idef,params%num_species
-!$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp)
-            do pp=1_idef,spp(ii)%ppp
-                if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
-                    spp(ii)%vars%X(:,pp) = spp(ii)%vars%X(:,pp) + dt*spp(ii)%vars%V(:,pp)
-                end if
-            end do
-!$OMP END PARALLEL DO
-!        spp(ii)%vars%X = MERGE(spp(ii)%vars%X + dt*spp(ii)%vars%V,spp(ii)%vars%X,SPREAD(spp(ii)%vars%flag,1,3).EQ.1_idef)
+!$OMP PARALLEL WORKSHARE
+            WHERE (spp(ii)%vars%flag .EQ. 1_is)
+                spp(ii)%vars%X(1,:) = spp(ii)%vars%X(1,:) + dt*spp(ii)%vars%V(1,:)
+                spp(ii)%vars%X(2,:) = spp(ii)%vars%X(2,:) + dt*spp(ii)%vars%V(2,:)
+                spp(ii)%vars%X(3,:) = spp(ii)%vars%X(3,:) + dt*spp(ii)%vars%V(3,:)
+            END WHERE
+!$OMP END PARALLEL WORKSHARE
+
+!	    spp(ii)%vars%X = MERGE(spp(ii)%vars%X + dt*spp(ii)%vars%V,spp(ii)%vars%X,SPREAD(spp(ii)%vars%flag,1,3).EQ.1_idef)
         end do
     end if
 end subroutine advance_particles_position

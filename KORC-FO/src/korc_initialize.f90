@@ -75,6 +75,7 @@ subroutine load_korc_params(params)
 
 	TYPE (KORC_PARAMS), INTENT(INOUT) :: params
 	LOGICAL                           :: restart
+    LOGICAL                           :: extend_time
 	REAL(rp)                          :: simulation_time
 	REAL(rp)                          :: snapshot_frequency
 	REAL(rp)                          :: dt
@@ -99,7 +100,7 @@ subroutine load_korc_params(params)
     REAL(rp)                          :: zmax
     REAL(rp)                          :: zmin
 
-	NAMELIST /input_parameters/ restart,plasma_model,magnetic_field_filename,simulation_time,                        &
+	NAMELIST /input_parameters/ restart,extend_time,plasma_model,magnetic_field_filename,simulation_time,            &
 								snapshot_frequency,dt,num_species,radiation,collisions,collisions_model,outputs_list,&
 								minimum_particle_energy,HDF5_error_handling,time_slice,rmax,rmin,zmax,zmin
 
@@ -111,6 +112,7 @@ subroutine load_korc_params(params)
 	close(default_unit_open)
 
  	params%restart = restart
+    params%extend_time = extend_time
 
 	params%simulation_time = simulation_time
 	params%snapshot_frequency = snapshot_frequency
