@@ -1123,7 +1123,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
         do pp = 1, SIZE(prtcls%hint)
             if (prtcls%flag(pp) .EQ. 1_is) then
                 x(1) = prtcls%Y(1,pp)*params%cpp%length
-                x(2) = prtcls%Y(1,pp)
+                x(2) = prtcls%Y(2,pp)
                 x(3) = prtcls%Y(3,pp)*params%cpp%length
                 status = fio_eval_field(F%M3D_C1_B, x(1),                      &
                                         prtcls%B(1,pp),                        &
@@ -1171,7 +1171,7 @@ subroutine get_m3d_c1_electric_fields(prtcls, F, params)
         do pp = 1, SIZE(prtcls%hint)
             if (prtcls%flag(pp) .EQ. 1_is) then
                 x(1) = prtcls%Y(1,pp)*params%cpp%length
-                x(2) = prtcls%Y(1,pp)
+                x(2) = prtcls%Y(2,pp)
                 x(3) = prtcls%Y(3,pp)*params%cpp%length
                 status = fio_eval_field(F%M3D_C1_E, x(1),                      &
                                         prtcls%E(1,pp),                        &
@@ -1235,7 +1235,7 @@ subroutine get_m3d_c1_profile(prtcls, P, params)
         do pp = 1, SIZE(prtcls%hint)
             if (prtcls%flag(pp) .EQ. 1_is) then
                 x(1) = prtcls%Y(1,pp)*params%cpp%length
-                x(2) = prtcls%Y(1,pp)
+                x(2) = prtcls%Y(2,pp)
                 x(3) = prtcls%Y(3,pp)*params%cpp%length
                 status = fio_eval_field(P%M3D_C1_ne, x(1),                     &
                                         prtcls%ne(pp),                         &
