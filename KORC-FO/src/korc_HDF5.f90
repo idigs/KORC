@@ -1902,30 +1902,40 @@ subroutine load_time_stepping_params(params)
 		call load_from_hdf5(h5file_id,dset,real_number)
 		params%ito = INT(real_number,ip) + 1_ip
 
-		dset = "/dt"
-		call load_from_hdf5(h5file_id,dset,params%dt)
+        dset = "/dt"
+        call load_from_hdf5(h5file_id,dset,params%dt)
 
-		dset = "/t_steps"
-		call load_from_hdf5(h5file_id,dset,real_number)
-		params%t_steps = INT(real_number,ip)
+        if (.not.params%extend_time) then
+            dset = "/t_steps"
+            call load_from_hdf5(h5file_id,dset,real_number)
+            params%t_steps = INT(real_number,ip)
 
-		dset = "/simulation_time"
-		call load_from_hdf5(h5file_id,dset,params%simulation_time)
+            dset = "/simulation_time"
+		    call load_from_hdf5(h5file_id,dset,params%simulation_time)
 
-		dset = "/snapshot_frequency"
-		call load_from_hdf5(h5file_id,dset,params%snapshot_frequency)
+		    dset = "/snapshot_frequency"
+		    call load_from_hdf5(h5file_id,dset,params%snapshot_frequency)
 
-		dset = "/output_cadence"
-		call load_from_hdf5(h5file_id,dset,real_number)
-		params%output_cadence = INT(real_number,ip)
+		    dset = "/output_cadence"
+		    call load_from_hdf5(h5file_id,dset,real_number)
+		    params%output_cadence = INT(real_number,ip)
 
-		dset = "/restart_output_cadence"
+            dset = "/num_snapshots"
+            call load_from_hdf5(h5file_id,dset,real_number)
+            params%num_snapshots = INT(real_number,ip)
+        else
+            params%t_steps = CEILING(params%simulation_time/params%dt,ip)
+
+            params%output_cadence = FLOOR(params%snapshot_frequency/params%dt,ip)
+
+            if (params%output_cadence.EQ.0_ip) params%output_cadence = 1_ip
+
+            params%num_snapshots = params%t_steps/params%output_cadence
+        end if
+
+        dset = "/restart_output_cadence"
 		call load_from_hdf5(h5file_id,dset,real_number)
 		params%restart_output_cadence = INT(real_number,ip)
-
-		dset = "/num_snapshots"
-		call load_from_hdf5(h5file_id,dset,real_number)
-		params%num_snapshots = INT(real_number,ip)
 
 		call h5fclose_f(h5file_id, h5error)
 	end if

@@ -346,8 +346,10 @@ subroutine initialize_fields(params,F)
 
     NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux, axisymmetric_fields
 
+#ifdef M3D_C1
     F%M3D_C1_B = -1
     F%M3D_C1_E = -1
+#endif
 
     SELECT CASE (TRIM(params%plasma_model))
         CASE('ANALYTICAL')

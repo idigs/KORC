@@ -100,34 +100,34 @@ END TYPE CHARCS_PARAMS
 TYPE, PUBLIC :: KORC_PARAMS
 !< @brief Core KORC parameters.
 !! @details This KORC derived type contains the variables that control KORC's core behavior.
+	CHARACTER(MAX_STRING_LENGTH) 	:: path_to_inputs !< Absolute path to KORC's input file.
+	CHARACTER(MAX_STRING_LENGTH) 	:: path_to_outputs !< Absolute path to the outputs' folder.
+	INTEGER 						:: num_omp_threads !< Number of open MP threads per MPI process used in the simulation.
+	LOGICAL 						:: restart !< Flag to indicate if the simulations restarts (restart=T) or not (restart=F).
+    LOGICAL                         :: extend_time !< Flag to indicate if the simulations restarts override time and output parameters with new values.
+	REAL(rp) 						:: simulation_time !< Total simulation time in seconds.
+	REAL(rp) 						:: snapshot_frequency !< Time between snapshots in time of the simulation.
+	REAL(rp) 						:: dt !< Time step in the simulation as a fraction of the relativistic electron gyro-period @f$\tau_e = 2\pi\gamma m_e/eB_0@f$.
+	REAL(rp) 						:: time = 0.0_rp !< Current physical time in the simulation.
+	INTEGER(ip) 					:: ito = 0_ip !< Initial time iteration in the simulation, this is different from zero in case is a restarting simulation.
+	INTEGER(ip) 					:: it = 0_ip !< Current time iteration in the simulation, this is different from zero in case is a restarting simulation.
+	INTEGER(ip) 					:: t_steps !< Number of time steps needed for evolving the electrons up to "simulation_time".
+	INTEGER(ip) 					:: output_cadence !< Time iteration offset used to decide when the outputs are generated.
+	INTEGER(ip) 					:: restart_output_cadence !< Time iteration offset used to decide when the restart files are generated.
+	INTEGER(ip) 					:: num_snapshots !< Number of snapshots in time for generating the output files.
+	INTEGER 						:: num_species !< Number of different populations of simulated relativistic electrons in KORC.
+	REAL(rp) 						:: minimum_particle_energy !< Minimum allowed energy of simulated electrons. @todo To improve the criterium to decide when an electron will not be followed anymore in the simulation.
+	REAL(rp) 						:: minimum_particle_g !< Minimum allowed relativistic factor @f$\gamma@f$ of simulated electrons.
+	LOGICAL 						:: radiation !< Flag to indicate if synchrotron radiation losses are included (radiation=T) or not (radiation=F).
+	LOGICAL 						:: collisions !< Flag to indicate if collisionsare included (collisions=T) or not (collisions=F).
+	CHARACTER(MAX_STRING_LENGTH) 	:: collisions_model !< String with the name of the collisions model to be used in the simulation.
+	CHARACTER(MAX_STRING_LENGTH) 	:: plasma_model !< String with the name of the model for the fields and plasma profiles.
+	CHARACTER(MAX_STRING_LENGTH) 	:: magnetic_field_filename !< String with the name of the model for the fields and plasma profiles.
+	CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: outputs_list !< List of electron variables to include in the outputs.
+	INTEGER 						:: HDF5_error_handling !< Flag to indicate whether we allow HDF5 to show warnings during runtime (HDF5_error_handling=1) or not (HDF5_error_handling=0)
 
-    CHARACTER(MAX_STRING_LENGTH) :: path_to_inputs !< Absolute path to KORC's input file.
-    CHARACTER(MAX_STRING_LENGTH) :: path_to_outputs !< Absolute path to the outputs' folder.
-    INTEGER                      :: num_omp_threads !< Number of open MP threads per MPI process used in the simulation.
-    LOGICAL                      :: restart !< Flag to indicate if the simulations restarts (restart=T) or not (restart=F).
-    REAL(rp)                     :: simulation_time !< Total simulation time in seconds.
-    REAL(rp)                     :: snapshot_frequency !< Time between snapshots in time of the simulation.
-    REAL(rp)                     :: dt !< Time step in the simulation as a fraction of the relativistic electron gyro-period @f$\tau_e = 2\pi\gamma m_e/eB_0@f$.
-    REAL(rp)                     :: time = 0.0_rp !< Current physical time in the simulation.
-    INTEGER(ip)                  :: ito = 0_ip !< Initial time iteration in the simulation, this is different from zero in case is a restarting simulation.
-    INTEGER(ip)                  :: it = 0_ip !< Current time iteration in the simulation, this is different from zero in case is a restarting simulation.
-    INTEGER(ip)                  :: t_steps !< Number of time steps needed for evolving the electrons up to "simulation_time".
-    INTEGER(ip)                  :: output_cadence !< Time iteration offset used to decide when the outputs are generated.
-    INTEGER(ip)                  :: restart_output_cadence !< Time iteration offset used to decide when the restart files are generated.
-    INTEGER(ip)                  :: num_snapshots !< Number of snapshots in time for generating the output files.
-    INTEGER                      :: num_species !< Number of different populations of simulated relativistic electrons in KORC.
-    REAL(rp)                     :: minimum_particle_energy !< Minimum allowed energy of simulated electrons. @todo To improve the criterium to decide when an electron will not be followed anymore in the simulation.
-    REAL(rp)                     :: minimum_particle_g !< Minimum allowed relativistic factor @f$\gamma@f$ of simulated electrons.
-    LOGICAL                      :: radiation !< Flag to indicate if synchrotron radiation losses are included (radiation=T) or not (radiation=F).
-    LOGICAL                      :: collisions !< Flag to indicate if collisionsare included (collisions=T) or not (collisions=F).
-    CHARACTER(MAX_STRING_LENGTH) :: collisions_model !< String with the name of the collisions model to be used in the simulation.
-    CHARACTER(MAX_STRING_LENGTH) :: plasma_model !< String with the name of the model for the fields and plasma profiles.
-    CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename !< String with the name of the model for the fields and plasma profiles.
-    CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: outputs_list !< List of electron variables to include in the outputs.
-    INTEGER                      :: HDF5_error_handling !< Flag to indicate whether we allow HDF5 to show warnings during runtime (HDF5_error_handling=1) or not (HDF5_error_handling=0)
-
-    TYPE(KORC_MPI)               :: mpi_params !< An instance of the KORC_MPI derived type.
-    TYPE(CHARCS_PARAMS)          :: cpp !< An instance of the CHARCS_PARAMS derived type.
+	TYPE(KORC_MPI) 					:: mpi_params !< An instance of the KORC_MPI derived type.
+	TYPE(CHARCS_PARAMS) 			:: cpp !< An instance of the CHARCS_PARAMS derived type.
 
     INTEGER                      :: time_slice !< M3D-C1 time slice to use.
     REAL(rp)                     :: rmax !< Maximum r for M3D-C1 fields.

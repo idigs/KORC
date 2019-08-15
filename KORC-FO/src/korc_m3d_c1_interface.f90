@@ -11,6 +11,7 @@
       IMPLICIT NONE
 
       INTEGER (C_INT), PARAMETER :: FIO_SUCCESS        = 0
+      INTEGER (C_INT), PARAMETER :: FIO_OUT_OF_BOUNDS  = 10002
       INTEGER (C_INT), PARAMETER :: FIO_NO_DATA        = 10006
 
       INTEGER (C_INT), PARAMETER :: FIO_M3DC1_SOURCE   = 3
@@ -218,7 +219,7 @@
 
       IMPLICIT NONE
 
-      TYPE(KORC_PARAMS), INTENT(IN)              :: params
+      TYPE(KORC_PARAMS), INTENT(INOUT)           :: params
       TYPE(FIELDS), INTENT(INOUT)                :: F
       TYPE(PROFILES), INTENT(INOUT)              :: P
       TYPE(SPECIES), DIMENSION(:), INTENT(INOUT) :: spp
@@ -245,6 +246,7 @@
 !  Hardcode Bo to one for now until a better method of determining the a
 !  characteristic magnetic field value.
       F%Bo = 1.0
+      params%cpp%Bo = 1.0
 
       do ii = 1, params%num_species
         ALLOCATE(spp(ii)%vars%hint(spp(ii)%ppp))
