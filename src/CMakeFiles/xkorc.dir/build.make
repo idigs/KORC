@@ -508,6 +508,7 @@ build/bin/xkorc: /opt/local/lib/libhdf5.dylib
 build/bin/xkorc: /opt/local/lib/libz.dylib
 build/bin/xkorc: /usr/lib/libdl.dylib
 build/bin/xkorc: /usr/lib/libm.dylib
+build/bin/xkorc: /Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/lib/libpspline.a
 build/bin/xkorc: src/CMakeFiles/xkorc.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/21b/Desktop/KORC/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Linking Fortran executable ../build/bin/xkorc"
 	cd /Users/21b/Desktop/KORC/src && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/xkorc.dir/link.txt --verbose=$(VERBOSE)

@@ -208,6 +208,9 @@ subroutine normalize_variables(params,spp,F,P)
         if (ALLOCATED(F%E_2D%PHI)) F%E_2D%PHI = F%E_2D%PHI/params%cpp%Eo
         if (ALLOCATED(F%E_2D%Z)) F%E_2D%Z = F%E_2D%Z/params%cpp%Eo
 
+        if (ALLOCATED(F%PSIp)) F%PSIp = F%PSIp/ &
+             (params%cpp%Bo*params%cpp%length**2)
+        
         F%X%R = F%X%R/params%cpp%length
         ! Nothing to do for the PHI component
         F%X%Z = F%X%Z/params%cpp%length

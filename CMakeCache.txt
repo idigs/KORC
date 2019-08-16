@@ -246,6 +246,9 @@ CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 EZSpline_INCLUDE_PATH:UNINITIALIZED=/Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/mod
 
 //No help, variable specified on the command line.
+EZSpline_LIBRARIES:UNINITIALIZED=/Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/lib/libpspline.a
+
+//No help, variable specified on the command line.
 EZSpline_LINK_FLAGS:UNINITIALIZED=-L/Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/lib -lpspline
 
 //HDF5 file differencing tool.

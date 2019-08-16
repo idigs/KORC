@@ -170,7 +170,7 @@ CONTAINS
 
   end subroutine analytical_fields_p
 
-  subroutine analytical_fields_GC_init(params,F,Y,E,B,gradB,curlb,flag)
+  subroutine analytical_fields_GC_init(params,F,Y,E,B,gradB,curlb,flag,PSIp)
     TYPE(KORC_PARAMS), INTENT(IN)      :: params
     !! Core KORC simulation parameters.
     TYPE(FIELDS), INTENT(IN)                               :: F
@@ -193,6 +193,7 @@ CONTAINS
     REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT)   :: E
     !! Electric field components in cylindricalcoordinates; 
     !! E(1,:) = \(E_R\), E(2,:) = \(E_\phi\), E(3,:) = \(E_Z\)
+    REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)   :: PSIp
     INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(IN)     :: flag
     !! Flag for each particle to decide whether it is being followed (flag=T)
     !! or not (flag=F).
@@ -222,21 +223,27 @@ CONTAINS
     REAL(rp)    ::  dZbhatR
     REAL(rp)    ::  dZbhatPHI
     REAL(rp)    ::  qprof
-    REAL(rp)    ::  rm
+    REAL(rp)    ::  rm,theta
 
     !    write(6,'("Y: ",E17.10)') Y
 
     ss = SIZE(Y,1)
 
     !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,rm,Btmp,qprof,dRBR,dRBPHI, &
-    !$OMP dRBZ,dZBR,dZBPHI,dZBZ,Bmag,dRbhatPHI,dRbhatZ,dZbhatR,dZbhatPHI) &
+    !$OMP dRBZ,dZBR,dZBPHI,dZBZ,Bmag,dRbhatPHI,dRbhatZ,dZbhatR,dZbhatPHI, &
+    !$OMP theta,PSIp) &
     !$OMP& SHARED(F,Y,E,B,gradB,curlb,flag)
     do pp=1_idef,ss
        !       if ( flag(pp) .EQ. 1_is ) then
 
        rm=sqrt((Y(pp,1)-F%AB%Ro)**2+Y(pp,3)**2)
+       theta=atan2(Y(pp,3),(Y(pp,1)-F%AB%Ro))
        qprof = 1.0_rp + (rm/F%AB%lambda)**2
 
+       PSIp(pp)=Y(pp,1)*F%AB%lambda**2*F%Bo/ &
+            (2*F%AB%qo*(F%AB%Ro+rm*cos(theta)))* &
+            log(1+(rm/F%AB%lambda)**2)
+       
        Btmp(1)=F%AB%Bo*Y(pp,3)/(F%AB%qo*qprof*Y(pp,1))
        Btmp(2)=-F%AB%Bo*F%AB%Ro/Y(pp,1)
        Btmp(3)=-F%AB%Bo*(Y(pp,1)-F%AB%Ro)/(F%AB%qo*qprof*Y(pp,1))
@@ -282,7 +289,7 @@ CONTAINS
     !$OMP END PARALLEL DO
   end subroutine analytical_fields_GC_init
 
-  subroutine analytical_fields_GC(params,F,Y,E,B,gradB,curlb,flag)
+  subroutine analytical_fields_GC(params,F,Y,E,B,gradB,curlb,flag,PSIp)
     TYPE(KORC_PARAMS), INTENT(IN)      :: params
     !! Core KORC simulation parameters.
     TYPE(FIELDS), INTENT(IN)                               :: F
@@ -305,6 +312,7 @@ CONTAINS
     REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT)   :: E
     !! Electric field components in cylindricalcoordinates; 
     !! E(1,:) = \(E_R\), E(2,:) = \(E_\phi\), E(3,:) = \(E_Z\)
+    REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)   :: PSIp
     INTEGER(is), DIMENSION(:), ALLOCATABLE, INTENT(IN)     :: flag
     !! Flag for each particle to decide whether it is being followed (flag=T)
     !! or not (flag=F).
@@ -316,6 +324,7 @@ CONTAINS
     !! Poloidal magnetic field \(B_\theta(r)\).
     REAL(rp)                                               :: eta
     !! Aspect ratio \(\eta\).
+
     REAL(rp)                                               :: q
     !! Safety profile \(q(r)\).
     INTEGER(ip)                                            :: pp ! Iterator(s)
@@ -334,20 +343,33 @@ CONTAINS
     REAL(rp)    ::  dZbhatR
     REAL(rp)    ::  dZbhatPHI
     REAL(rp)    ::  qprof
-    REAL(rp)    ::  rm
+    REAL(rp)    ::  rm,theta
 
 
     ss = SIZE(Y,1)
 
     !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,rm,Btmp,qprof,dRBR,dRBPHI, &
-    !$OMP dRBZ,dZBR,dZBPHI,dZBZ,Bmag,dRbhatPHI,dRbhatZ,dZbhatR,dZbhatPHI) &
-    !$OMP& SHARED(F,Y,E,B,gradB,curlb,flag)
+    !$OMP dRBZ,dZBR,dZBPHI,dZBZ,Bmag,dRbhatPHI,dRbhatZ,dZbhatR,dZbhatPHI, &
+    !$OMP theta) &
+    !$OMP& SHARED(F,Y,E,B,gradB,curlb,flag,PSIp)
     do pp=1_idef,ss
        !       if ( flag(pp) .EQ. 1_is ) then
 
        rm=sqrt((Y(pp,1)-F%AB%Ro)**2+Y(pp,3)**2)
+       theta=atan2(Y(pp,3),(Y(pp,1)-F%AB%Ro))
        qprof = 1.0_rp + (rm/F%AB%lambda)**2
 
+!       write(6,*) 'rm: ',rm
+!       write(6,*) 'R0: ',F%AB%Ro
+!       write(6,*) 'Y_R: ',Y(pp,1)
+!       write(6,*) 'theta: ',theta
+       
+       PSIp(pp)=Y(pp,1)*F%AB%lambda**2*F%Bo/ &
+            (2*F%AB%qo*(F%AB%Ro+rm*cos(theta)))* &
+            log(1+(rm/F%AB%lambda)**2)
+
+!       write(6,*) 'PSIp: ',PSIp(pp)
+       
        Btmp(1)=F%AB%Bo*Y(pp,3)/(F%AB%qo*qprof*Y(pp,1))
        Btmp(2)=-F%AB%Bo*F%AB%Ro/Y(pp,1)
        Btmp(3)=-F%AB%Bo*(Y(pp,1)-F%AB%Ro)/(F%AB%qo*qprof*Y(pp,1))
@@ -390,6 +412,10 @@ CONTAINS
        !      end if
     end do
     !$OMP END PARALLEL DO
+
+!    write(6,*) 'PSIp: ',PSIp(:)
+!    write(6,*) 'B_PHI: ',B(:,2)
+    
   end subroutine analytical_fields_GC
 
   subroutine analytical_fields_Bmag_p(F,Y_R,Y_PHI,Y_Z,Bmag,E_PHI)
@@ -456,14 +482,17 @@ CONTAINS
 
   subroutine analytical_fields_GC_p(F,Y_R,Y_PHI, &
        Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-       gradB_PHI,gradB_Z)
+       gradB_PHI,gradB_Z,PSIp)
 
     TYPE(FIELDS), INTENT(IN)                                   :: F
     REAL(rp),DIMENSION(8),INTENT(IN)  :: Y_R,Y_PHI,Y_Z
-    REAL(rp),DIMENSION(8),INTENT(OUT) :: B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z
-    REAL(rp),DIMENSION(8),INTENT(OUT) :: curlB_R,curlB_PHI,curlB_Z,E_R,E_PHI,E_Z
+    REAL(rp),DIMENSION(8),INTENT(OUT) :: B_R,B_PHI,B_Z
+    REAL(rp),DIMENSION(8),INTENT(OUT) :: gradB_R,gradB_PHI,gradB_Z
+    REAL(rp),DIMENSION(8),INTENT(OUT) :: curlB_R,curlB_PHI,curlB_Z
+    REAL(rp),DIMENSION(8),INTENT(OUT) :: E_R,E_PHI,E_Z
+    REAL(rp),DIMENSION(8),INTENT(OUT) :: PSIp
     REAL(rp),DIMENSION(8)  :: dRBR,dRBPHI,dRBZ,dZBR,dZBPHI,dZBZ,Bmag,dRbhatPHI
-    REAL(rp),DIMENSION(8)  :: dRbhatZ,dZbhatR,dZbhatPHI,qprof,rm
+    REAL(rp),DIMENSION(8)  :: dRbhatZ,dZbhatR,dZbhatPHI,qprof,rm,theta
     REAL(rp)  :: B0,E0,lam,R0,q0
     integer(ip) :: cc
 
@@ -475,11 +504,16 @@ CONTAINS
 
     !$OMP SIMD
     !    !$OMP& aligned(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z, &
-    !    !$OMP& curlB_R,curlB_PHI,curlB_Z,E_R,E_PHI,E_Z)
+    !    !$OMP& curlB_R,curlB_PHI,curlB_Z,E_R,E_PHI,E_Z,PSIp)
     do cc=1_idef,8_idef
        rm(cc)=sqrt((Y_R(cc)-R0)*(Y_R(cc)-R0)+Y_Z(cc)*Y_Z(cc))
+       theta(cc)=atan2(Y_Z(cc),(Y_R(cc)-R0))
        qprof(cc) = 1.0_rp + (rm(cc)*rm(cc)/(lam*lam))
 
+       PSIp(cc)=Y_R(cc)*lam**2*B0/ &
+            (2*q0*(R0+rm(cc)*cos(theta(cc))))* &
+            log(1+(rm(cc)/lam)**2)
+       
        B_R(cc)=B0*Y_Z(cc)/(q0*qprof(cc)*Y_R(cc))
        B_PHI(cc)=-B0*R0/Y_R(cc)
        B_Z(cc)=-B0*(Y_R(cc)-R0)/(q0*qprof(cc)*Y_R(cc))
@@ -655,14 +689,14 @@ CONTAINS
           call cyl_check_if_confined(F,vars%Y,vars%flag)
 
           call analytical_fields_GC_init(params,F,vars%Y, vars%E, vars%B, &
-               vars%gradB,vars%curlb, vars%flag)
+               vars%gradB,vars%curlb, vars%flag, vars%PSI_P)
 
        else
 
           call cyl_check_if_confined(F,vars%Y,vars%flag)
 
           call analytical_fields_GC(params,F,vars%Y, vars%E, vars%B, &
-               vars%gradB,vars%curlb, vars%flag)
+               vars%gradB,vars%curlb, vars%flag,vars%PSI_P)
 
        end if
 
@@ -941,8 +975,6 @@ CONTAINS
           F%Efield=.TRUE.
 
           call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield,F%Bflux,F%Efield)
-
-          F%PSIp(:,:)=0._rp
           
           do ii=1_idef,F%dims(1)
              F%X%R(ii)=(F%Ro-F%AB%a)+(ii-1)*2*F%AB%a/(F%dims(1)-1)
@@ -964,18 +996,32 @@ CONTAINS
                 F%E_2D%R(ii,kk)=0.0_rp
                 F%E_2D%PHI(ii,kk)=-(F%Ro/F%X%R(ii))*F%Eo
                 F%E_2D%Z(ii,kk)=0.0_rp
+
+                F%PSIp(ii,kk)=F%X%R(ii)*F%AB%lambda**2*F%Bo/ &
+                     (2*F%AB%qo*(F%Ro+rm*cos(theta)))* &
+                     log(1+(rm/F%AB%lambda)**2)
+                
                 !! Sign convention in analytical fields corresponds to
                 !! DIII-D fields with \(B_\phi<0\) and \(B_\theta<0\).
                 F%FLAG2D=1.
              end do
           end do
+          
+          F%FLAG2D(1:2,:)=0.
+          F%FLAG2D(F%dims(1)-1:F%dims(1),:)=0.
+          F%FLAG2D(:,1:2)=0.
+          F%FLAG2D(:,F%dims(3)-1:F%dims(3))=0.
 
           if (params%orbit_model(3:5).eq.'pre') then
              write(6,'("Initializing GC fields from analytic EM fields")')
              call initialize_GC_fields(F)
           end if
 
-
+          F%Bfield= .FALSE.
+          F%axisymmetric_fields = .TRUE.
+          F%Bflux=.TRUE.
+          F%Efield=.FALSE.
+          
        end if
 
     CASE('EXTERNAL')
@@ -1101,34 +1147,10 @@ CONTAINS
           F%Bfield=.TRUE.
           F%Efield=.TRUE.
           F%Efield_in_file=.TRUE.
-
-          RMIN=F%X%R(1)
-          RMAX=F%X%R(F%dims(1))
-
-          ZMIN=F%X%Z(1)
-          ZMAX=F%X%Z(F%dims(3))
-
-          do ii=1_idef,res_double
-             F%dims(1)=2*F%dims(1)-1
-             F%dims(3)=2*F%dims(3)-1
-          end do
-
-          DEALLOCATE(F%X%R)
-          DEALLOCATE(F%X%Z)
-             
+            
           
           call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
                F%Bflux,F%Efield.AND.F%Efield_in_file)
-
-
-          do ii=1_idef,F%dims(1)
-             F%X%R(ii)=RMIN+REAL(ii-1)/REAL(F%dims(1)-1)*(RMAX-RMIN)
-          end do
-
-          do ii=1_idef,F%dims(3)
-             F%X%Z(ii)=ZMIN+REAL(ii-1)/REAL(F%dims(3)-1)*(ZMAX-ZMIN)
-          end do
-
 
           
           ! B
@@ -1163,8 +1185,6 @@ CONTAINS
              F%E_2D%PHI(ii,:)=F%Eo*F%Ro/F%X%R(ii)
           end do
           F%E_2D%Z=0._rp
-
-          F%Bflux=.FALSE.
           
        end if
 
@@ -1185,7 +1205,7 @@ CONTAINS
 
        end if
 
-       if (params%orbit_model(3:5).EQ.'pre'.and.(.not.F%Bflux)) then
+       if (params%orbit_model(3:5).EQ.'pre') then
           if (params%mpi_params%rank.eq.0) then
              write(6,'("Initializing GC fields from external EM fields")')
           end if

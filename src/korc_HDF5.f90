@@ -1555,9 +1555,13 @@ CONTAINS
              call save_to_hdf5(h5file_id,dset,F%AB%a*params%cpp%length,attr)
 
              dset = TRIM(gname) // "/Ro"
-             attr = "Major radius in m"
+             attr = "Magnetic axis radial position"
              call save_to_hdf5(h5file_id,dset,F%Ro*params%cpp%length,attr)
 
+             dset = TRIM(gname) // "/Zo"
+             attr = "Magnetic axis vertical position"
+             call save_to_hdf5(h5file_id,dset,F%Zo*params%cpp%length,attr)
+             
              dset = TRIM(gname) // "/qa"
              attr = "Safety factor at minor radius"
              call save_to_hdf5(h5file_id,dset,F%AB%qa,attr)
@@ -1619,6 +1623,19 @@ CONTAINS
                 call rsave_2d_array_to_hdf5(h5file_id, dset, &
                      units*F%B_2D%Z)
 
+                if (ALLOCATED(F%PSIp)) then
+                   dset = TRIM(gname) // "/psi_p"
+                   units = params%cpp%Bo*params%cpp%length**2
+                   call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                        units*F%PSIp)
+                end if
+
+                if (ALLOCATED(F%FLAG2D)) then
+                   dset = TRIM(gname) // "/Flag"
+                   call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                        F%FLAG2D)
+                end if
+                
                 if  (params%orbit_model(3:5).EQ.'pre') then
 
                    dset = TRIM(gname) // "/gradBR"
@@ -1963,6 +1980,21 @@ CONTAINS
                       DEALLOCATE(YY)
 
                    end if
+                CASE('RHS')
+                   dset = "RHS"
+                   YY=spp(ss)%vars%RHS
+
+                   units = params%cpp%length/params%cpp%time
+                   YY(:,1)=YY(:,1)*units
+                   YY(:,2)=YY(:,2)*units
+                   YY(:,3)=YY(:,3)*units
+                   units = params%cpp%mass*params%cpp%velocity/params%cpp%time
+                   YY(:,4)=YY(:,4)*units
+
+                   call rsave_2d_array_to_hdf5(subgroup_id, dset, &
+                        YY)
+                   DEALLOCATE(YY)
+                   
                 CASE('Rgc')
                    dset = "Rgc"
                    units = params%cpp%length

@@ -66,6 +66,7 @@ then
     cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE                             \
           -DEZSpline_INCLUDE_PATH=/Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/mod \
           -DEZSpline_LINK_FLAGS="-L/Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/lib -lpspline" \
+	  -DEZSpline_LIBRARIES=/Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/lib/libpspline.a   \
           -DCMAKE_Fortran_FLAGS="-O3 -msse2 -DHDF5_DOUBLE_PRESICION -fopenmp-simd -malign-double" \
           -DCMAKE_C_FLAGS="-O3 -msse2 -fopenmp-simd -malign-double"  \
           -DCMAKE_CXX_FLAGS="-O3 -msse2 -fopenmp-simd -malign-double" \

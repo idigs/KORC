@@ -1369,7 +1369,7 @@ contains
        if (params%field_eval.eq.'eqn') then
           call analytical_fields_GC_p(F,Y_R,Y_PHI, &
                Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-               gradB_R,gradB_PHI,gradB_Z)          
+               gradB_R,gradB_PHI,gradB_Z,PSIp)          
        else if (params%field_eval.eq.'interp') then
           call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
                E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &

@@ -178,6 +178,7 @@ subroutine torus(params,spp)
   DEALLOCATE(theta)
   DEALLOCATE(zeta)
   DEALLOCATE(r)
+  
 end subroutine torus
 
 

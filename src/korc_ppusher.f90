@@ -1561,11 +1561,15 @@ contains
           !$OMP END PARALLEL DO                
        else
 
-          if (spp(ii)%spatial_distribution.eq.'TRACER') &
+          if ((spp(ii)%spatial_distribution.eq.'TRACER').or. &
+               (spp(ii)%spatial_distribution.eq.'TORUS')) &
                call cart_to_cyl(spp(ii)%vars%X,spp(ii)%vars%Y)
           
           params%GC_coords=.TRUE.
+          
           call get_fields(params,spp(ii)%vars,F)
+
+          
           !$OMP PARALLEL DO shared(F,params,spp) PRIVATE(pp,E_PHI)
           do pp=1_idef,spp(ii)%ppp,8
 
@@ -1656,6 +1660,7 @@ contains
     REAL(rp), DIMENSION(8)               :: Bmag
     REAL(rp),DIMENSION(8) :: Y_R,Y_PHI,Y_Z
     REAL(rp),DIMENSION(8) :: B_R,B_PHI,B_Z,E_PHI
+    REAL(rp),DIMENSION(8) :: PSIp
     REAL(rp),DIMENSION(8) :: V_PLL,V_MU
     REAL(rp) :: B0,EF0,R0,q0,lam,ar,m_cache,q_cache,ne0,Te0,Zeff0
     INTEGER(is),DIMENSION(8)  :: flag_cache
@@ -1686,7 +1691,7 @@ contains
        !$OMP& FIRSTPRIVATE(E0,q_cache,m_cache) &
        !$OMP& shared(F,P,params,ii,spp) &
        !$OMP& PRIVATE(pp,tt,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,flag_cache, &
-       !$OMP& B_R,B_PHI,B_Z,E_PHI)
+       !$OMP& B_R,B_PHI,B_Z,E_PHI,PSIp)
        do pp=1_idef,spp(ii)%ppp,8
 
           !$OMP SIMD
@@ -1704,9 +1709,9 @@ contains
           
           if (.not.params%FokPlan) then       
              do tt=1_ip,params%t_skip
-                call advance_GCeqn_vars(tt,params,Y_R,Y_PHI, &
+                call advance_GCeqn_vars(spp(ii)%vars,pp,tt,params,Y_R,Y_PHI, &
                      Y_Z,V_PLL,V_MU,flag_cache,q_cache,m_cache, &
-                     B_R,B_PHI,B_Z,F,P)
+                     B_R,B_PHI,B_Z,F,P,PSIp)
              end do !timestep iterator
 
              !$OMP SIMD
@@ -1723,6 +1728,8 @@ contains
                 spp(ii)%vars%B(pp-1+cc,1) = B_R(cc)
                 spp(ii)%vars%B(pp-1+cc,2) = B_PHI(cc)
                 spp(ii)%vars%B(pp-1+cc,3) = B_Z(cc)
+
+                spp(ii)%vars%PSI_P(pp-1+cc) = PSIp(cc)
              end do
              !$OMP END SIMD
              
@@ -1765,14 +1772,15 @@ contains
     
   end subroutine adv_GCeqn_top
 
-  subroutine advance_GCeqn_vars(tt,params,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,flag_cache, &
-       q_cache,m_cache,B_R,B_PHI,B_Z,F,P)
+  subroutine advance_GCeqn_vars(vars,pp,tt,params,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
+       flag_cache,q_cache,m_cache,B_R,B_PHI,B_Z,F,P,PSIp)
     !! @note Subroutine to advance GC variables \(({\bf X},p_\parallel)\)
     !! @endnote
     !! Comment this section further with evolution equations, numerical
     !! methods, and descriptions of both.
     TYPE(KORC_PARAMS), INTENT(INOUT)                              :: params
     !! Core KORC simulation parameters.
+    TYPE(PARTICLES), INTENT(INOUT)     :: vars
     TYPE(PROFILES), INTENT(IN)                                 :: P
     TYPE(FIELDS), INTENT(IN)                                 :: F
     !! An instance of the KORC derived type PROFILES.
@@ -1781,8 +1789,9 @@ contains
 
     INTEGER                                                    :: cc
     !! Chunk iterator.
-    INTEGER(ip)                                                    :: tt
+    INTEGER(ip),INTENT(IN)                     :: tt
     !! time iterator.
+    INTEGER,INTENT(IN)                                      :: pp
 
     REAL(rp) :: a1 = 1./5._rp
     REAL(rp) :: a21 = 3./40._rp,a22=9./40._rp
@@ -1800,6 +1809,7 @@ contains
     REAL(rp),DIMENSION(8) :: Y0_R,Y0_PHI,Y0_Z
     REAL(rp),DIMENSION(8),INTENT(INOUT) :: Y_R,Y_PHI,Y_Z
     REAL(rp),DIMENSION(8),INTENT(OUT) :: B_R,B_PHI,B_Z
+    REAL(rp),DIMENSION(8),INTENT(OUT) :: PSIp
     REAL(rp),DIMENSION(8) :: curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z
     REAL(rp),DIMENSION(8),INTENT(INOUT) :: V_PLL,V_MU
     REAL(rp),DIMENSION(8) :: RHS_R,RHS_PHI,RHS_Z,RHS_PLL,V0,E_PHI,E_Z,E_R
@@ -1830,7 +1840,7 @@ contains
 
     call analytical_fields_GC_p(F,Y_R,Y_PHI, &
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-         gradB_R,gradB_PHI,gradB_Z)
+         gradB_R,gradB_PHI,gradB_Z,PSIp)
 
 !    write(6,'("ER:",E17.10)') E_R
 !    write(6,'("EPHI:",E17.10)') E_PHI
@@ -1850,6 +1860,11 @@ contains
        k1_Z(cc)=dt*RHS_Z(cc)    
        k1_PLL(cc)=dt*RHS_PLL(cc)    
 
+!       vars%RHS(pp-1+cc,1)=RHS_R(cc)
+!       vars%RHS(pp-1+cc,2)=RHS_PHI(cc)
+!       vars%RHS(pp-1+cc,3)=RHS_Z(cc)
+!       vars%RHS(pp-1+cc,4)=RHS_PLL(cc)
+       
        Y_R(cc)=Y0_R(cc)+a1*k1_R(cc)
        Y_PHI(cc)=Y0_PHI(cc)+a1*k1_PHI(cc)
        Y_Z(cc)=Y0_Z(cc)+a1*k1_Z(cc)
@@ -1869,7 +1884,7 @@ contains
     
     call analytical_fields_GC_p(F,Y_R,Y_PHI, &
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-         gradB_R,gradB_PHI,gradB_Z)
+         gradB_R,gradB_PHI,gradB_Z,PSIp)
 
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
@@ -1899,7 +1914,7 @@ contains
     
     call analytical_fields_GC_p(F,Y_R,Y_PHI, &
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-         gradB_R,gradB_PHI,gradB_Z)
+         gradB_R,gradB_PHI,gradB_Z,PSIp)
 
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
@@ -1929,7 +1944,7 @@ contains
     
     call analytical_fields_GC_p(F,Y_R,Y_PHI, &
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-         gradB_R,gradB_PHI,gradB_Z)
+         gradB_R,gradB_PHI,gradB_Z,PSIp)
 
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
@@ -1962,7 +1977,7 @@ contains
     
     call analytical_fields_GC_p(F,Y_R,Y_PHI, &
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-         gradB_R,gradB_PHI,gradB_Z)
+         gradB_R,gradB_PHI,gradB_Z,PSIp)
 
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
@@ -1995,7 +2010,7 @@ contains
     
     call analytical_fields_GC_p(F,Y_R,Y_PHI, &
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-         gradB_R,gradB_PHI,gradB_Z)
+         gradB_R,gradB_PHI,gradB_Z,PSIp)
 
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
@@ -2041,6 +2056,10 @@ contains
  
     end do
     !$OMP END SIMD
+
+    call analytical_fields_GC_p(F,Y_R,Y_PHI, &
+         Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+         gradB_R,gradB_PHI,gradB_Z,PSIp)
     
     if (params%collisions) then
        
@@ -2098,6 +2117,8 @@ contains
     REAL(rp),DIMENSION(8) :: ne,Te,Zeff    
     REAL(rp),DIMENSION(8) :: V_PLL,V_MU
     REAL(rp),DIMENSION(8) :: PSIp
+    REAL(rp),DIMENSION(8) :: curlb_R,curlb_PHI,curlb_Z
+    REAL(rp),DIMENSION(8) :: gradB_R,gradB_PHI,gradB_Z
     INTEGER(is),DIMENSION(8) :: flag_cache
     REAL(rp) :: m_cache,q_cache,B0,EF0,R0,q0,lam,ar
 
@@ -2121,7 +2142,8 @@ contains
        !$OMP& FIRSTPRIVATE(q_cache,m_cache) &
        !$OMP& SHARED(params,ii,spp,P,F) &
        !$OMP& PRIVATE(pp,tt,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,B_R,B_PHI,B_Z, &
-       !$OMP& flag_cache,E_PHI,PSIp)
+       !$OMP& flag_cache,E_PHI,PSIp,curlb_R,curlb_PHI,curlb_Z, &
+       !$OMP& gradB_R,gradB_PHI,gradB_Z)
        do pp=1_idef,spp(ii)%ppp,8
 
 !          write(6,'("pp: ",I16)') pp
@@ -2141,11 +2163,13 @@ contains
           
           if (.not.params%FokPlan) then       
              do tt=1_ip,params%t_skip
-                call advance_GCinterp_vars(tt,params,Y_R,Y_PHI, &
+                call advance_GCinterp_vars(spp(ii)%vars,pp,tt,params,Y_R,Y_PHI, &
                      Y_Z,V_PLL,V_MU,q_cache,m_cache,flag_cache, &
-                     F,P,B_R,B_PHI,B_Z,E_PHI,PSIp)
+                     F,P,B_R,B_PHI,B_Z,E_PHI,PSIp,curlb_R,curlb_PHI,curlb_Z, &
+                     gradB_R,gradB_PHI,gradB_Z)
              end do !timestep iterator
 
+             
              !$OMP SIMD
              do cc=1_idef,8_idef
                 spp(ii)%vars%Y(pp-1+cc,1)=Y_R(cc)
@@ -2160,6 +2184,14 @@ contains
                 spp(ii)%vars%B(pp-1+cc,2) = B_PHI(cc)
                 spp(ii)%vars%B(pp-1+cc,3) = B_Z(cc)
 
+                spp(ii)%vars%gradB(pp-1+cc,1) = gradB_R(cc)
+                spp(ii)%vars%gradB(pp-1+cc,2) = gradB_PHI(cc)
+                spp(ii)%vars%gradB(pp-1+cc,3) = gradB_Z(cc)
+
+                spp(ii)%vars%curlb(pp-1+cc,1) = curlb_R(cc)
+                spp(ii)%vars%curlb(pp-1+cc,2) = curlb_PHI(cc)
+                spp(ii)%vars%curlb(pp-1+cc,3) = curlb_Z(cc)
+                
                 spp(ii)%vars%E(pp-1+cc,2) = E_PHI(cc)
                 spp(ii)%vars%PSI_P(pp-1+cc) = PSIp(cc)                
              end do
@@ -2208,14 +2240,16 @@ contains
     
   end subroutine adv_GCinterp_top
   
-  subroutine advance_GCinterp_vars(tt,params,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
-       q_cache,m_cache,flag_cache,F,P,B_R,B_PHI,B_Z,E_PHI,PSIp)
+  subroutine advance_GCinterp_vars(vars,pp,tt,params,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
+       q_cache,m_cache,flag_cache,F,P,B_R,B_PHI,B_Z,E_PHI,PSIp, &
+       curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z)
     !! @note Subroutine to advance GC variables \(({\bf X},p_\parallel)\)
     !! @endnote
     !! Comment this section further with evolution equations, numerical
     !! methods, and descriptions of both.
     TYPE(KORC_PARAMS), INTENT(INOUT)                              :: params
     !! Core KORC simulation parameters.
+    TYPE(PARTICLES), INTENT(INOUT)     :: vars
     TYPE(PROFILES), INTENT(IN)                                 :: P
     TYPE(FIELDS), INTENT(IN)                                   :: F
     REAL(rp)                                      :: dt
@@ -2225,6 +2259,7 @@ contains
     !! Chunk iterator.
     INTEGER(ip),intent(in)                                      :: tt
     !! time iterator.
+    INTEGER,intent(in)                                  :: pp
     
 
     REAL(rp),DIMENSION(8)               :: Bmag
@@ -2247,7 +2282,8 @@ contains
     REAL(rp),DIMENSION(8) :: E_R,E_Z
     REAL(rp),DIMENSION(8),INTENT(OUT) :: E_PHI
     REAL(rp),DIMENSION(8),INTENT(OUT) :: PSIp
-    REAL(rp),DIMENSION(8) :: curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z
+    REAL(rp),DIMENSION(8),INTENT(OUT) :: curlb_R,curlb_PHI,curlb_Z
+    REAL(rp),DIMENSION(8),INTENT(OUT) :: gradB_R,gradB_PHI,gradB_Z
     REAL(rp),DIMENSION(8),INTENT(INOUT) :: V_PLL,V_MU
     REAL(rp),DIMENSION(8) :: RHS_R,RHS_PHI,RHS_Z,RHS_PLL,V0
     REAL(rp),DIMENSION(8) :: ne,Te,Zeff
@@ -2267,8 +2303,9 @@ contains
        V0(cc)=V_PLL(cc)
     end do
     !$OMP END SIMD
-
-    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+    
+!    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+    call calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
@@ -2286,6 +2323,11 @@ contains
        k1_PHI(cc)=dt*RHS_PHI(cc)    
        k1_Z(cc)=dt*RHS_Z(cc)    
        k1_PLL(cc)=dt*RHS_PLL(cc)    
+
+!       vars%RHS(pp-1+cc,1)=RHS_R(cc)
+!       vars%RHS(pp-1+cc,2)=RHS_PHI(cc)
+!       vars%RHS(pp-1+cc,3)=RHS_Z(cc)
+!       vars%RHS(pp-1+cc,4)=RHS_PLL(cc)
        
        Y_R(cc)=Y0_R(cc)+a1*k1_R(cc)
        Y_PHI(cc)=Y0_PHI(cc)+a1*k1_PHI(cc)
@@ -2293,8 +2335,9 @@ contains
        V_PLL(cc)=V0(cc)   +a1*k1_PLL(cc)
     end do
     !$OMP END SIMD
-
-    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+    
+!    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+    call calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
@@ -2320,7 +2363,8 @@ contains
     end do
     !$OMP END SIMD
 
-    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+!    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+    call calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
@@ -2347,7 +2391,8 @@ contains
     end do
     !$OMP END SIMD
 
-    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+!    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+    call calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
@@ -2378,7 +2423,8 @@ contains
     !$OMP END SIMD
 
 
-    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+!    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+    call calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
@@ -2408,7 +2454,8 @@ contains
     end do
     !$OMP END SIMD
 
-    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+!    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+    call calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
@@ -2452,6 +2499,12 @@ contains
  
     end do
     !$OMP END SIMD
+
+    call calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+         E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
+         flag_cache,PSIp)
+
+    call add_analytical_E_p(params,tt,F,E_PHI)
     
     if (params%collisions) then       
        
@@ -2511,6 +2564,18 @@ contains
     REAL(rp),INTENT(in) :: q_cache,m_cache
     INTEGER(ip)  :: cc
 
+!    write(6,*) 'B_R: ',B_R(1)
+!    write(6,*) 'B_PHI: ',B_PHI(1)
+!    write(6,*) 'B_Z: ',B_Z(1)
+    
+!    write(6,*) 'gradB_R: ',gradB_R(1)
+!    write(6,*) 'gradB_PHI: ',gradB_PHI(1)
+!    write(6,*) 'gradB_Z: ',gradB_Z(1)
+
+!    write(6,*) 'curlb_R: ',curlb_R(1)
+!    write(6,*) 'curlb_PHI: ',curlb_PHI(1)
+!    write(6,*) 'curlb_Z: ',curlb_Z(1)
+    
     !$OMP SIMD
 !    !$OMP& aligned(gradB_R,gradB_PHI,gradB_Z,curlb_R,curlb_Z, &
 !    !$OMP& B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,RHS_R,RHS_PHI,RHS_Z,RHS_PLL, &
@@ -2557,10 +2622,17 @@ contains
             bdotBst(cc)
        RHS_PLL(cc)=(q_cache*BstdotE(cc)-V_MU(cc)*BstdotgradB(cc)/gamgc(cc))/ &
             bdotBst(cc)
+
+
        
     end do
     !$OMP END SIMD
 
+!    write(6,*) 'RHS_R: ',RHS_R(1)
+!    write(6,*) 'RHS_PHI: ',RHS_PHI(1)
+!    write(6,*) 'RHS_Z: ',RHS_Z(1)
+!    write(6,*) 'RHS_PLL: ',RHS_PLL(1)
+    
   end subroutine GCEoM_p
 
 

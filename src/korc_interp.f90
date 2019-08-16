@@ -326,6 +326,7 @@ module korc_interp
        finalize_interpolants,&
        calculate_initial_magnetic_field,&
        calculate_magnetic_field_p,&
+       calculate_GCfields_p,&
        sample_poloidal_flux
   PRIVATE :: interp_3D_bfields,&
        interp_2D_bfields,&
@@ -1631,7 +1632,7 @@ subroutine calculate_magnetic_field(Y,F,B,PSI_P,flag)
            A(pp,1) = A(pp,1)/Y(pp,1)
 
            ! FPHI = Fo*Ro/R
-           A(pp,2) = F%Bo*F%Ro/Y(pp,1)
+           A(pp,2) = -F%Bo*F%Ro/Y(pp,1)
 
            ! FR = -(dA/dR)/R
            call EZspline_derivative(bfield_2d%A, 1, 0, Y(pp,1), Y(pp,3), &
@@ -1640,11 +1641,7 @@ subroutine calculate_magnetic_field(Y,F,B,PSI_P,flag)
 
 !           write(6,'("R*B_Z: ",E17.10)') A(pp,3)
 
-           A(pp,3) = -A(pp,3)/Y(pp,1)
-         
-
-
-
+           A(pp,3) = -A(pp,3)/Y(pp,1)         
            
            B(pp,1) = A(pp,1)*COS(Y(pp,2)) - A(pp,2)*SIN(Y(pp,2))
            B(pp,2) = A(pp,1)*SIN(Y(pp,2)) + A(pp,2)*COS(Y(pp,2))
@@ -1711,6 +1708,77 @@ subroutine calculate_magnetic_field_p(F,Y_R,Y_Z,B_R,B_PHI,B_Z)
 !  write(6,'("B_Z: ",E17.10)') B_Z
 
 end subroutine calculate_magnetic_field_p
+
+subroutine calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
+     curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,flag_cache,PSIp)
+  REAL(rp), DIMENSION(8), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
+  TYPE(FIELDS), INTENT(IN)                               :: F
+  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: B_R,B_PHI,B_Z
+  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
+  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: curlb_R,curlb_PHI,curlb_Z
+  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: E_R,E_PHI,E_Z
+  REAL(rp), DIMENSION(8)   :: Bmag
+  INTEGER                                                :: cc
+  REAL(rp), DIMENSION(8),INTENT(OUT)  :: PSIp
+  REAL(rp), DIMENSION(8,6)  :: A
+  INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
+
+  call check_if_in_fields_domain_p(F,Y_R,Y_PHI,Y_Z,flag_cache)
+       
+  call EZspline_derivative(bfield_2d%A, 8, Y_R, Y_Z, A, ezerr)
+  call EZspline_error(ezerr)
+
+  !A(:,1) = PSIp
+  !A(:,2) = dPSIp/dR
+  !A(:,3) = dPSIp/dZ
+  !A(:,4) = d^2PSIp/dR^2
+  !A(:,5) = d^2PSIp/dZ^2
+  !A(:,6) = d^2PSIp/dRdZ
+
+  !$OMP SIMD
+  !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL)
+  do cc=1_idef,8_idef
+     PSIp(cc)=A(cc,1)
+
+     B_R(cc) = A(cc,3)/Y_R(cc)
+     ! BR = (dA/dZ)/R
+     B_PHI(cc) = -F%Bo*F%Ro/Y_R(cc)
+     ! BPHI = Fo*Ro/R
+     B_Z(cc) = -A(cc,2)/Y_R(cc)
+     ! BR = -(dA/dR)/R
+
+     Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
+
+     gradB_R(cc)=(B_R(cc)*A(cc,6)-B_Z(cc)*A(cc,4)-Bmag(cc)*Bmag(cc))/ &
+          (Y_R(cc)*Bmag(cc))
+     gradB_PHI(cc)=0._rp
+     gradB_Z(cc)=(B_R(cc)*A(cc,5)-B_Z(cc)*A(cc,6))/ &
+          (Y_R(cc)*Bmag(cc))
+
+     curlb_R(cc)=B_PHI(cc)*gradB_Z(cc)/(Bmag(cc)*Bmag(cc))
+     curlb_PHI(cc)=(Bmag(cc)/Y_R(cc)*(B_Z(cc)+A(cc,4)+A(cc,5))- &
+          B_R(cc)*gradB_Z(cc)+B_Z(cc)*gradB_R(cc))/ &
+          (Bmag(cc)*Bmag(cc))
+     curlb_Z(cc)=-B_PHI(cc)*gradB_R(cc)/(Bmag(cc)*Bmag(cc))
+
+     E_R(cc) = 0._rp
+     E_PHI(cc) = F%Eo*F%Ro/Y_R(cc)
+     E_Z(cc) = 0._rp 
+     
+  end do
+  !$OMP END SIMD
+  
+   
+!  write(6,'("PSIp: ",E17.10)') PSIp
+  
+!  write(6,'("Y_R: ",E17.10)') Y_R
+!  write(6,'("Y_Z: ",E17.10)') Y_Z
+  
+!  write(6,'("B_R: ",E17.10)') B_R
+!  write(6,'("B_PHIinterp: ",E17.10)') B_PHI
+!  write(6,'("B_Z: ",E17.10)') B_Z
+
+end subroutine calculate_GCfields_p
 
 subroutine calculate_initial_magnetic_field(F)
 
@@ -1869,7 +1937,7 @@ subroutine interp_fields(params,prtcls,F)
     !! An instance of KORC's derived type FIELDS containing all the 
     !! information about the fields used in the simulation.
     !! See [[korc_types]] and [[korc_fields]].
-
+  
   if (.not.params%GC_coords) call cart_to_cyl(prtcls%X,prtcls%Y)
   
 !  write(6,'("BR: ",E17.10)') prtcls%BR(:,1)
@@ -1896,28 +1964,28 @@ subroutine interp_fields(params,prtcls,F)
 
   end if
 
-  if (ALLOCATED(F%B_2D%R)) then
+  if (ALLOCATED(F%B_2D%R).and.F%Bfield) then
      call interp_2D_bfields(params,prtcls%Y,prtcls%B,prtcls%flag)
   end if
 
-  if (ALLOCATED(F%B_3D%R)) then
+  if (ALLOCATED(F%B_3D%R).and.F%Bfield) then
      call interp_3D_bfields(prtcls%Y,prtcls%B,prtcls%flag)
   end if
 
-  if (ALLOCATED(F%E_2D%R)) then
+  if (ALLOCATED(F%E_2D%R).and.F%Efield) then
      call interp_2D_efields(params,prtcls%Y,prtcls%E,prtcls%flag)
   end if
 
-  if (ALLOCATED(F%E_3D%R)) then
+  if (ALLOCATED(F%E_3D%R).and.F%Efield) then
      call interp_3D_efields(prtcls%Y,prtcls%E,prtcls%flag)
   end if
 
-  if (params%GC_coords.and.ALLOCATED(F%gradB_2D%R)) then
+  if (params%GC_coords.and.ALLOCATED(F%gradB_2D%R).and.F%Bfield) then
      call interp_2D_gradBfields(prtcls%Y,prtcls%gradB,prtcls%flag)
 
   end if
 
-  if (params%GC_coords.and.ALLOCATED(F%gradB_2D%R)) then
+  if (params%GC_coords.and.ALLOCATED(F%gradB_2D%R).and.F%Bfield) then
      call interp_2D_curlbfields(prtcls%Y,prtcls%curlb,prtcls%flag)
   end if
 
