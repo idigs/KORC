@@ -1586,7 +1586,8 @@ end subroutine interp_3D_bfields
 !! of the magnetic field (its value changes through the subroutine).
 !! @param pp Particle iterator.
 !! @param ss Species iterator.
-subroutine calculate_magnetic_field(Y,F,B,PSI_P,flag)
+subroutine calculate_magnetic_field(params,Y,F,B,PSI_P,flag)
+  TYPE(KORC_PARAMS), INTENT(IN)      :: params
   REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN)      :: Y
   TYPE(FIELDS), INTENT(IN)                               :: F
   REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT)   :: B
@@ -1641,11 +1642,18 @@ subroutine calculate_magnetic_field(Y,F,B,PSI_P,flag)
 
 !           write(6,'("R*B_Z: ",E17.10)') A(pp,3)
 
-           A(pp,3) = -A(pp,3)/Y(pp,1)         
+           A(pp,3) = -A(pp,3)/Y(pp,1)                    
+
+           if (.not.params%GC_coords) then
+              B(pp,1) = A(pp,1)*COS(Y(pp,2)) - A(pp,2)*SIN(Y(pp,2))
+              B(pp,2) = A(pp,1)*SIN(Y(pp,2)) + A(pp,2)*COS(Y(pp,2))
+              B(pp,3) = A(pp,3)
+           else
+              B(pp,1) = A(pp,1)
+              B(pp,2) = A(pp,2)
+              B(pp,3) = A(pp,3)
+           end if
            
-           B(pp,1) = A(pp,1)*COS(Y(pp,2)) - A(pp,2)*SIN(Y(pp,2))
-           B(pp,2) = A(pp,1)*SIN(Y(pp,2)) + A(pp,2)*COS(Y(pp,2))
-           B(pp,3) = A(pp,3)
         end if
      end if
   end do
@@ -1689,7 +1697,7 @@ subroutine calculate_magnetic_field_p(F,Y_R,Y_Z,B_R,B_PHI,B_Z)
   B_R = A(:,2)/Y_R
 
   ! FPHI = Fo*Ro/R
-  B_PHI = F%Bo*F%Ro/Y_R
+  B_PHI = -F%Bo*F%Ro/Y_R
 
   ! FR = -(dA/dR)/R
 
@@ -1798,7 +1806,7 @@ subroutine calculate_initial_magnetic_field(F)
 
   do ii=1,F%dims(1)
      F%B_2D%R(ii,:) = gradA(ii,:,2)/F%X%R(ii)
-     F%B_2D%PHI(ii,:) = F%Bo*F%Ro/F%X%R(ii)
+     F%B_2D%PHI(ii,:) = -F%Bo*F%Ro/F%X%R(ii)
      F%B_2D%Z(ii,:) = -gradA(ii,:,1)/F%X%R(ii)
   end do
 
@@ -1955,7 +1963,8 @@ subroutine interp_fields(params,prtcls,F)
 !     write(6,'("B_Y: ",E17.10)') prtcls%B(:,2)
 !     write(6,'("PSI_P: ",E17.10)') prtcls%PSI_P
      
-     call calculate_magnetic_field(prtcls%Y,F,prtcls%B,prtcls%PSI_P,prtcls%flag)
+     call calculate_magnetic_field(params,prtcls%Y,F,prtcls%B, &
+          prtcls%PSI_P,prtcls%flag)
 
 !     write(6,'("interp_fields")')
 !     write(6,'("B_X: ",E17.10)') prtcls%B(:,1)

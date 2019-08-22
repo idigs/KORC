@@ -18,6 +18,7 @@ module korc_ppusher
   PRIVATE :: cross,&
        radiation_force_p,&
        GCEoM_p,&
+       GCEoM1_p,&
        aux_fields
   PUBLIC :: initialize_particle_pusher,&
        advance_FOeqn_vars,&
@@ -2270,12 +2271,12 @@ contains
     REAL(rp) :: a51 = 1631./55296._rp,a52=175./512._rp,a53=575./13824._rp,a54=44275./110592._rp,a55=253./4096._rp
     REAL(rp) :: b1=37./378._rp,b2=0._rp,b3=250./621._rp,b4=125./594._rp,b5=0._rp,b6=512./1771._rp
 
-    REAL(rp),DIMENSION(8) :: k1_R,k1_PHI,k1_Z,k1_PLL
-    REAL(rp),DIMENSION(8) :: k2_R,k2_PHI,k2_Z,k2_PLL
-    REAL(rp),DIMENSION(8) :: k3_R,k3_PHI,k3_Z,k3_PLL
-    REAL(rp),DIMENSION(8) :: k4_R,k4_PHI,k4_Z,k4_PLL
-    REAL(rp),DIMENSION(8) :: k5_R,k5_PHI,k5_Z,k5_PLL
-    REAL(rp),DIMENSION(8) :: k6_R,k6_PHI,k6_Z,k6_PLL
+    REAL(rp),DIMENSION(8) :: k1_R,k1_PHI,k1_Z,k1_PLL,k1_MU
+    REAL(rp),DIMENSION(8) :: k2_R,k2_PHI,k2_Z,k2_PLL,k2_MU
+    REAL(rp),DIMENSION(8) :: k3_R,k3_PHI,k3_Z,k3_PLL,k3_MU
+    REAL(rp),DIMENSION(8) :: k4_R,k4_PHI,k4_Z,k4_PLL,k4_MU
+    REAL(rp),DIMENSION(8) :: k5_R,k5_PHI,k5_Z,k5_PLL,k5_MU
+    REAL(rp),DIMENSION(8) :: k6_R,k6_PHI,k6_Z,k6_PLL,k6_MU
     REAL(rp),DIMENSION(8) :: Y0_R,Y0_PHI,Y0_Z
     REAL(rp),DIMENSION(8),INTENT(INOUT) :: Y_R,Y_PHI,Y_Z
     REAL(rp),DIMENSION(8),INTENT(OUT) :: B_R,B_PHI,B_Z
@@ -2285,7 +2286,8 @@ contains
     REAL(rp),DIMENSION(8),INTENT(OUT) :: curlb_R,curlb_PHI,curlb_Z
     REAL(rp),DIMENSION(8),INTENT(OUT) :: gradB_R,gradB_PHI,gradB_Z
     REAL(rp),DIMENSION(8),INTENT(INOUT) :: V_PLL,V_MU
-    REAL(rp),DIMENSION(8) :: RHS_R,RHS_PHI,RHS_Z,RHS_PLL,V0
+    REAL(rp),DIMENSION(8) :: RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU
+    REAL(rp),DIMENSION(8) :: V0_PLL,V0_MU
     REAL(rp),DIMENSION(8) :: ne,Te,Zeff
 
     INTEGER(is),DIMENSION(8),intent(INOUT) :: flag_cache
@@ -2294,13 +2296,14 @@ contains
     dt=params%dt
 
     !$OMP SIMD
-    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL)
+    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL)
     do cc=1_idef,8_idef
 
        Y0_R(cc)=Y_R(cc)
        Y0_PHI(cc)=Y_PHI(cc)
        Y0_Z(cc)=Y_Z(cc)
-       V0(cc)=V_PLL(cc)
+       V0_PLL(cc)=V_PLL(cc)
+       V0_MU(cc)=V_MU(cc)
     end do
     !$OMP END SIMD
     
@@ -2311,18 +2314,20 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
-    call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
+    call GCEoM1_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache) 
 
     !$OMP SIMD
-    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
-    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,k1_R,k1_PHI,k1_Z,k1_PLL)
+    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL, &
+    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,,RHS_MU, &
+    !    !$OMP& k1_R,k1_PHI,k1_Z,k1_PLL,k1_MU)
     do cc=1_idef,8
        k1_R(cc)=dt*RHS_R(cc)              
        k1_PHI(cc)=dt*RHS_PHI(cc)    
        k1_Z(cc)=dt*RHS_Z(cc)    
-       k1_PLL(cc)=dt*RHS_PLL(cc)    
+       k1_PLL(cc)=dt*RHS_PLL(cc)
+       k1_MU(cc)=dt*RHS_MU(cc)    
 
 !       vars%RHS(pp-1+cc,1)=RHS_R(cc)
 !       vars%RHS(pp-1+cc,2)=RHS_PHI(cc)
@@ -2332,7 +2337,8 @@ contains
        Y_R(cc)=Y0_R(cc)+a1*k1_R(cc)
        Y_PHI(cc)=Y0_PHI(cc)+a1*k1_PHI(cc)
        Y_Z(cc)=Y0_Z(cc)+a1*k1_Z(cc)
-       V_PLL(cc)=V0(cc)   +a1*k1_PLL(cc)
+       V_PLL(cc)=V0_PLL(cc)   +a1*k1_PLL(cc)
+       V_MU(cc)=V0_MU(cc)   +a1*k1_MU(cc)
     end do
     !$OMP END SIMD
     
@@ -2343,23 +2349,26 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
-    call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
+    call GCEoM1_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache) 
 
     !$OMP SIMD
-    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
-    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,k2_R,k2_PHI,k2_Z,k2_PLL)
+    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL, &
+    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+    !    !$OMP& k2_R,k2_PHI,k2_Z,k2_PLL,k2_MU)
     do cc=1_idef,8
        k2_R(cc)=dt*RHS_R(cc)    
        k2_PHI(cc)=dt*RHS_PHI (cc)   
        k2_Z(cc)=dt*RHS_Z(cc)   
        k2_PLL(cc)=dt*RHS_PLL(cc)
+       k2_MU(cc)=dt*RHS_MU(cc)
 
        Y_R(cc)=Y0_R(cc)+a21*k1_R(cc)+a22*k2_R(cc)
        Y_PHI(cc)=Y0_PHI(cc)+a21*k1_PHI(cc)+a22*k2_PHI(cc)
        Y_Z(cc)=Y0_Z(cc)+a21*k1_Z(cc)+a22*k2_Z(cc)
-       V_PLL(cc)=V0(cc)   +a21*k1_PLL(cc)+a22*k2_PLL(cc)
+       V_PLL(cc)=V0_PLL(cc)   +a21*k1_PLL(cc)+a22*k2_PLL(cc)
+       V_MU(cc)=V0_MU(cc)   +a21*k1_MU(cc)+a22*k2_MU(cc)
     end do
     !$OMP END SIMD
 
@@ -2370,24 +2379,27 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
-    call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
+    call GCEoM1_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache)
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
-    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,k3_R,k3_PHI,k3_Z,k3_PLL)
+    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+    !    !$OMP& k3_R,k3_PHI,k3_Z,k3_PLL,k3_MU)
     do cc=1_idef,8
        k3_R(cc)=dt*RHS_R(cc)   
        k3_PHI(cc)=dt*RHS_PHI(cc)    
        k3_Z(cc)=dt*RHS_Z(cc)    
        k3_PLL(cc)=dt*RHS_PLL(cc)
+       k3_MU(cc)=dt*RHS_MU(cc)
 
        Y_R(cc)=Y0_R(cc)+a31*k1_R(cc)+a32*k2_R(cc)+a33*k3_R(cc)
        Y_PHI(cc)=Y0_PHI(cc)+a31*k1_PHI(cc)+a32*k2_PHI(cc)+ &
             a33*k3_PHI(cc)
        Y_Z(cc)=Y0_Z(cc)+a31*k1_Z(cc)+a32*k2_Z(cc)+a33*k3_Z(cc)
-       V_PLL(cc)=V0(cc)   +a31*k1_PLL(cc)+a32*k2_PLL(cc)+a33*k3_PLL(cc)
+       V_PLL(cc)=V0_PLL(cc)   +a31*k1_PLL(cc)+a32*k2_PLL(cc)+a33*k3_PLL(cc)
+       V_MU(cc)=V0_MU(cc)   +a31*k1_MU(cc)+a32*k2_MU(cc)+a33*k3_MU(cc)
     end do
     !$OMP END SIMD
 
@@ -2398,18 +2410,20 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
-    call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
+    call GCEoM1_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache)     
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
-    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,k4_R,k4_PHI,k4_Z,k4_PLL)
+    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+    !    !$OMP& k4_R,k4_PHI,k4_Z,k4_PLL,k4_MU)
     do cc=1_idef,8
        k4_R(cc)=dt*RHS_R(cc)   
        k4_PHI(cc)=dt*RHS_PHI(cc)    
        k4_Z(cc)=dt*RHS_Z(cc)    
        k4_PLL(cc)=dt*RHS_PLL(cc)
+       k4_MU(cc)=dt*RHS_MU(cc)
 
        Y_R(cc)=Y0_R(cc)+a41*k1_R(cc)+a42*k2_R(cc)+a43*k3_R(cc)+ &
             a44*k4_R(cc)
@@ -2417,8 +2431,10 @@ contains
             a43*k3_PHI(cc)+a44*k4_PHI(cc)
        Y_Z(cc)=Y0_Z(cc)+a41*k1_Z(cc)+a42*k2_Z(cc)+a43*k3_Z(cc)+ &
             a44*k4_Z(cc)
-       V_PLL(cc)=V0(cc)   +a41*k1_PLL(cc)+a42*k2_PLL(cc)+ &
+       V_PLL(cc)=V0_PLL(cc)   +a41*k1_PLL(cc)+a42*k2_PLL(cc)+ &
             a43*k3_PLL(cc)+a44*k4_PLL(cc)
+       V_MU(cc)=V0_MU(cc)   +a41*k1_MU(cc)+a42*k2_MU(cc)+ &
+            a43*k3_MU(cc)+a44*k4_MU(cc)
     end do
     !$OMP END SIMD
 
@@ -2430,18 +2446,20 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
-    call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
+    call GCEoM1_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache)   
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
-    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,k5_R,k5_PHI,k5_Z,k5_PLL)
+    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+    !    !$OMP& k5_R,k5_PHI,k5_Z,k5_PLL,k5_MU)
     do cc=1_idef,8
        k5_R(cc)=dt*RHS_R(cc)    
        k5_PHI(cc)=dt*RHS_PHI(cc)    
        k5_Z(cc)=dt*RHS_Z(cc)    
        k5_PLL(cc)=dt*RHS_PLL(cc)
+       k5_MU(cc)=dt*RHS_MU(cc)
 
        Y_R(cc)=Y0_R(cc)+a51*k1_R(cc)+a52*k2_R(cc)+a53*k3_R(cc)+ &
             a54*k4_R(cc)+a55*k5_R(cc)
@@ -2449,8 +2467,10 @@ contains
             a53*k3_PHI(cc)+a54*k4_PHI(cc)+a55*k5_PHI(cc)
        Y_Z(cc)=Y0_Z(cc)+a51*k1_Z(cc)+a52*k2_Z(cc)+a53*k3_Z(cc)+ &
             a54*k4_Z(cc)+a55*k5_Z(cc)
-       V_PLL(cc)=V0(cc)   +a51*k1_PLL(cc)+a52*k2_PLL(cc)+ &
+       V_PLL(cc)=V0_PLL(cc)   +a51*k1_PLL(cc)+a52*k2_PLL(cc)+ &
             a53*k3_PLL(cc)+a54*k4_PLL(cc)+a55*k5_PLL(cc)
+       V_MU(cc)=V0_MU(cc)   +a51*k1_MU(cc)+a52*k2_MU(cc)+ &
+            a53*k3_MU(cc)+a54*k4_MU(cc)+a55*k5_MU(cc)
     end do
     !$OMP END SIMD
 
@@ -2461,19 +2481,20 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
-    call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
+    call GCEoM1_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache)         
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
-    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,k6_R,k6_PHI,k6_Z,k6_PLL)
+    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+    !    !$OMP& k6_R,k6_PHI,k6_Z,k6_PLL,k6_MU)
     do cc=1_idef,8
        k6_R(cc)=dt*RHS_R(cc)    
        k6_PHI(cc)=dt*RHS_PHI(cc)    
        k6_Z(cc)=dt*RHS_Z(cc)    
        k6_PLL(cc)=dt*RHS_PLL(cc)
-
+       k6_MU(cc)=dt*RHS_MU(cc)
 
        Y_R(cc)=Y0_R(cc)+b1*k1_R(cc)+b2*k2_R(cc)+ &
             b3*k3_R(cc)+b4*k4_R(cc)+b5*k5_R(cc)+b6*k6_R(cc)
@@ -2481,8 +2502,10 @@ contains
             b3*k3_PHI(cc)+b4*k4_PHI(cc)+b5*k5_PHI(cc)+b6*k6_PHI(cc)
        Y_Z(cc)=Y0_Z(cc)+b1*k1_Z(cc)+b2*k2_Z(cc)+ &
             b3*k3_Z(cc)+b4*k4_Z(cc)+b5*k5_Z(cc)+b6*k6_Z(cc)
-       V_PLL(cc)=V0(cc)+b1*k1_PLL(cc)+b2*k2_PLL(cc)+ &
+       V_PLL(cc)=V0_PLL(cc)+b1*k1_PLL(cc)+b2*k2_PLL(cc)+ &
             b3*k3_PLL(cc)+b4*k4_PLL(cc)+b5*k5_PLL(cc)+b6*k6_PLL(cc)
+       V_MU(cc)=V0_MU(cc)+b1*k1_MU(cc)+b2*k2_MU(cc)+ &
+            b3*k3_MU(cc)+b4*k4_MU(cc)+b5*k5_MU(cc)+b6*k6_MU(cc)
     end do
     !$OMP END SIMD
 
@@ -2494,7 +2517,8 @@ contains
           Y_R(cc)=Y0_R(cc)
           Y_PHI(cc)=Y0_PHI(cc)
           Y_Z(cc)=Y0_Z(cc)
-          V_PLL(cc)=V0(cc)
+          V_PLL(cc)=V0_PLL(cc)
+          V_MU(cc)=V0_MU(cc)
        end if          
  
     end do
@@ -2556,29 +2580,18 @@ contains
     REAL(rp),DIMENSION(8)  :: BstdotE,BstdotgradB,EcrossB_R,EcrossB_PHI,bdotBst
     REAL(rp),DIMENSION(8)  :: bcrossgradB_R,bcrossgradB_PHI,bcrossgradB_Z,gamgc
     REAL(rp),DIMENSION(8)  :: EcrossB_Z,Bst_Z
-    REAL(rp),DIMENSION(8)  :: pm,xi
+    REAL(rp),DIMENSION(8)  :: pm,xi,tau_R
     REAL(rp),DIMENSION(8),INTENT(in) :: gradB_R,gradB_PHI,gradB_Z,curlb_R
     REAL(rp),DIMENSION(8),INTENT(in) :: curlb_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z
-    REAL(rp),DIMENSION(8),INTENT(OUT) :: RHS_R,RHS_PHI,RHS_Z,RHS_PLL
+    REAL(rp),DIMENSION(8),INTENT(OUT) :: RHS_R,RHS_PHI,RHS_Z
+    REAL(rp),DIMENSION(8),INTENT(OUT) :: RHS_PLL
     REAL(rp),DIMENSION(8),INTENT(IN) :: V_PLL,V_MU,Y_R,curlb_PHI
     REAL(rp),INTENT(in) :: q_cache,m_cache
     INTEGER(ip)  :: cc
-
-!    write(6,*) 'B_R: ',B_R(1)
-!    write(6,*) 'B_PHI: ',B_PHI(1)
-!    write(6,*) 'B_Z: ',B_Z(1)
-    
-!    write(6,*) 'gradB_R: ',gradB_R(1)
-!    write(6,*) 'gradB_PHI: ',gradB_PHI(1)
-!    write(6,*) 'gradB_Z: ',gradB_Z(1)
-
-!    write(6,*) 'curlb_R: ',curlb_R(1)
-!    write(6,*) 'curlb_PHI: ',curlb_PHI(1)
-!    write(6,*) 'curlb_Z: ',curlb_Z(1)
     
     !$OMP SIMD
 !    !$OMP& aligned(gradB_R,gradB_PHI,gradB_Z,curlb_R,curlb_Z, &
-!    !$OMP& B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,RHS_R,RHS_PHI,RHS_Z,RHS_PLL, &
+!    !$OMP& B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU &
 !    !$OMP& V_PLL,V_MU,Y_R,curlb_PHI)
     do cc=1_idef,8
        Bmag(cc) = SQRT(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
@@ -2622,8 +2635,6 @@ contains
             bdotBst(cc)
        RHS_PLL(cc)=(q_cache*BstdotE(cc)-V_MU(cc)*BstdotgradB(cc)/gamgc(cc))/ &
             bdotBst(cc)
-
-
        
     end do
     !$OMP END SIMD
@@ -2635,7 +2646,93 @@ contains
     
   end subroutine GCEoM_p
 
+  subroutine GCEoM1_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+       B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI, &
+       gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache)
+    TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
+    !! Core KORC simulation parameters.
+    REAL(rp),DIMENSION(8)  :: Bmag,bhat_R,bhat_PHI,bhat_Z,Bst_R,Bst_PHI
+    REAL(rp),DIMENSION(8)  :: BstdotE,BstdotgradB,EcrossB_R,EcrossB_PHI,bdotBst
+    REAL(rp),DIMENSION(8)  :: bcrossgradB_R,bcrossgradB_PHI,bcrossgradB_Z,gamgc
+    REAL(rp),DIMENSION(8)  :: EcrossB_Z,Bst_Z
+    REAL(rp),DIMENSION(8)  :: pm,xi,tau_R
+    REAL(rp),DIMENSION(8),INTENT(in) :: gradB_R,gradB_PHI,gradB_Z,curlb_R
+    REAL(rp),DIMENSION(8),INTENT(in) :: curlb_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z
+    REAL(rp),DIMENSION(8),INTENT(OUT) :: RHS_R,RHS_PHI,RHS_Z
+    REAL(rp),DIMENSION(8),INTENT(OUT) :: RHS_PLL,RHS_MU
+    REAL(rp),DIMENSION(8),INTENT(IN) :: V_PLL,V_MU,Y_R,curlb_PHI
+    REAL(rp),INTENT(in) :: q_cache,m_cache
+    INTEGER(ip)  :: cc
+    
+    !$OMP SIMD
+!    !$OMP& aligned(gradB_R,gradB_PHI,gradB_Z,curlb_R,curlb_Z, &
+!    !$OMP& B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU &
+!    !$OMP& V_PLL,V_MU,Y_R,curlb_PHI)
+    do cc=1_idef,8
+       Bmag(cc) = SQRT(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
 
+       bhat_R(cc) = B_R(cc)/Bmag(cc)
+       bhat_PHI(cc) = B_PHI(cc)/Bmag(cc)
+       bhat_Z(cc) = B_Z(cc)/Bmag(cc)
+
+       Bst_R(cc)=q_cache*B_R(cc)+V_PLL(cc)*curlb_R(cc)
+       Bst_PHI(cc)=q_cache*B_PHI(cc)+V_PLL(cc)*curlb_PHI(cc)
+       Bst_Z(cc)=q_cache*B_Z(cc)+V_PLL(cc)*curlb_Z(cc)
+
+       bdotBst(cc)=bhat_R(cc)*Bst_R(cc)+bhat_PHI(cc)*Bst_PHI(cc)+ &
+            bhat_Z(cc)*Bst_Z(cc)
+       BstdotE(cc)=Bst_R(cc)*E_R(cc)+Bst_PHI(cc)*E_PHI(cc)+Bst_Z(cc)*E_Z(cc)   
+       BstdotgradB(cc)=Bst_R(cc)*gradB_R(cc)+Bst_PHI(cc)*gradB_PHI(cc)+ &
+            Bst_Z(cc)*gradB_Z(cc)
+
+       Ecrossb_R(cc)=E_PHI(cc)*bhat_Z(cc)-E_Z(cc)*bhat_PHI(cc)
+       Ecrossb_PHI(cc)=E_Z(cc)*bhat_R(cc)-E_R(cc)*bhat_Z(cc)
+       Ecrossb_Z(cc)=E_R(cc)*bhat_PHI(cc)-E_PHI(cc)*bhat_R(cc)
+
+
+       bcrossgradB_R(cc)=bhat_PHI(cc)*gradB_Z(cc)-bhat_Z(cc)*gradB_PHI(cc)
+       bcrossgradB_PHI(cc)=bhat_Z(cc)*gradB_R(cc)-bhat_R(cc)*gradB_Z(cc)
+       bcrossgradB_Z(cc)=bhat_R(cc)*gradB_PHI(cc)-bhat_PHI(cc)*gradB_R(cc)
+
+       gamgc(cc)=sqrt(1+V_PLL(cc)*V_PLL(cc)+2*V_MU(cc)*Bmag(cc))
+
+       pm(cc)=sqrt(gamgc(cc)**2-1)
+       xi(cc)=V_PLL(cc)/pm(cc)
+       
+       RHS_R(cc)=(q_cache*Ecrossb_R(cc)+(m_cache*V_MU(cc)* &
+            bcrossgradB_R(cc)+V_PLL(cc)*Bst_R(cc))/(m_cache*gamgc(cc)))/ &
+            bdotBst(cc)
+       RHS_PHI(cc)=(q_cache*Ecrossb_PHI(cc)+(m_cache*V_MU(cc)* &
+            bcrossgradB_PHI(cc)+V_PLL(cc)*Bst_PHI(cc))/(m_cache*gamgc(cc)))/ &
+            (Y_R(cc)*bdotBst(cc))
+       RHS_Z(cc)=(q_cache*Ecrossb_Z(cc)+(m_cache*V_MU(cc)* &
+            bcrossgradB_Z(cc)+V_PLL(cc)*Bst_Z(cc))/(m_cache*gamgc(cc)))/ &
+            bdotBst(cc)
+       RHS_PLL(cc)=(q_cache*BstdotE(cc)-V_MU(cc)*BstdotgradB(cc)/gamgc(cc))/ &
+            bdotBst(cc)
+       RHS_MU(cc)=0._rp
+
+       if (params%radiation.and.(params%GC_rad_model.eq.'SDE')) then
+          tau_R(cc)=6*C_PI*E0/(Bmag(cc)*Bmag(cc))
+
+          RHS_PLL(cc)=RHS_PLL(cc)+V_PLL(cc)*(1._rp-xi(cc)*xi(cc))/tau_R(cc)* &
+               (1._rp/gamgc(cc)-gamgc(cc))
+          RHS_MU(cc)=-2._rp*V_MU(cc)/tau_R(cc)* &
+               (1._rp-xi(cc)*xi(cc)*(1._rp-1._rp/(gamgc(cc)*gamgc(cc))))
+       end if
+
+       
+    end do
+    !$OMP END SIMD
+
+!    write(6,*) 'RHS_R: ',RHS_R(1)
+!    write(6,*) 'RHS_PHI: ',RHS_PHI(1)
+!    write(6,*) 'RHS_Z: ',RHS_Z(1)
+!    write(6,*) 'RHS_PLL: ',RHS_PLL(1)
+!    write(6,*) 'RHS_MU: ',RHS_MU(1)
+    
+  end subroutine GCEoM1_p
+  
   subroutine aux_fields(pp,spp,gradB,curlb,Bmag)
     TYPE(SPECIES), INTENT(IN)    :: spp
     !! An instance of the derived type SPECIES containing all the parameters

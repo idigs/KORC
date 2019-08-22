@@ -1094,7 +1094,7 @@ CONTAINS
 
        end if
 
-       test=.false.
+       test=.true.
        
        if (F%Bflux.and.(.not.test)) then
 
@@ -1116,9 +1116,11 @@ CONTAINS
              F%dims(3)=2*F%dims(3)-1
           end do
 
-          DEALLOCATE(F%X%R)
-          DEALLOCATE(F%X%Z)
-          DEALLOCATE(F%PSIp)             
+          if (res_double>0) then
+             DEALLOCATE(F%X%R)
+             DEALLOCATE(F%X%Z)
+             DEALLOCATE(F%PSIp)
+          end if
           
           call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
                F%Bflux,F%Efield.AND.F%Efield_in_file)
@@ -1177,7 +1179,7 @@ CONTAINS
           end do
 
           do ii=1_idef,F%dims(1)             
-             F%B_2D%PHI(ii,:)=F%Bo*F%Ro/F%X%R(ii)
+             F%B_2D%PHI(ii,:)=-F%Bo*F%Ro/F%X%R(ii)
           end do
 
           F%E_2D%R=0._rp
@@ -1185,6 +1187,8 @@ CONTAINS
              F%E_2D%PHI(ii,:)=F%Eo*F%Ro/F%X%R(ii)
           end do
           F%E_2D%Z=0._rp
+
+          F%Bfield=.FALSE.
           
        end if
 
