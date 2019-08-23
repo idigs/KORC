@@ -2296,7 +2296,7 @@ contains
     dt=params%dt
 
     !$OMP SIMD
-    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL)
+!    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU)
     do cc=1_idef,8_idef
 
        Y0_R(cc)=Y_R(cc)
@@ -2319,9 +2319,9 @@ contains
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache) 
 
     !$OMP SIMD
-    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL, &
-    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,,RHS_MU, &
-    !    !$OMP& k1_R,k1_PHI,k1_Z,k1_PLL,k1_MU)
+!    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
+!    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,,RHS_MU, &
+!    !$OMP& k1_R,k1_PHI,k1_Z,k1_PLL,k1_MU)
     do cc=1_idef,8
        k1_R(cc)=dt*RHS_R(cc)              
        k1_PHI(cc)=dt*RHS_PHI(cc)    
@@ -2354,9 +2354,9 @@ contains
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache) 
 
     !$OMP SIMD
-    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL, &
-    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
-    !    !$OMP& k2_R,k2_PHI,k2_Z,k2_PLL,k2_MU)
+!    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
+!    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+!    !$OMP& k2_R,k2_PHI,k2_Z,k2_PLL,k2_MU)
     do cc=1_idef,8
        k2_R(cc)=dt*RHS_R(cc)    
        k2_PHI(cc)=dt*RHS_PHI (cc)   
@@ -2384,9 +2384,9 @@ contains
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache)
 
     !$OMP SIMD
-    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
-    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
-    !    !$OMP& k3_R,k3_PHI,k3_Z,k3_PLL,k3_MU)
+!    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
+!    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+!    !$OMP& k3_R,k3_PHI,k3_Z,k3_PLL,k3_MU)
     do cc=1_idef,8
        k3_R(cc)=dt*RHS_R(cc)   
        k3_PHI(cc)=dt*RHS_PHI(cc)    
@@ -2415,9 +2415,9 @@ contains
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache)     
 
     !$OMP SIMD
-    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
-    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
-    !    !$OMP& k4_R,k4_PHI,k4_Z,k4_PLL,k4_MU)
+!    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
+!    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+!    !$OMP& k4_R,k4_PHI,k4_Z,k4_PLL,k4_MU)
     do cc=1_idef,8
        k4_R(cc)=dt*RHS_R(cc)   
        k4_PHI(cc)=dt*RHS_PHI(cc)    
@@ -2451,9 +2451,9 @@ contains
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache)   
 
     !$OMP SIMD
-    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
-    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
-    !    !$OMP& k5_R,k5_PHI,k5_Z,k5_PLL,k5_MU)
+!    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
+!    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+!    !$OMP& k5_R,k5_PHI,k5_Z,k5_PLL,k5_MU)
     do cc=1_idef,8
        k5_R(cc)=dt*RHS_R(cc)    
        k5_PHI(cc)=dt*RHS_PHI(cc)    
@@ -2486,9 +2486,9 @@ contains
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache)         
 
     !$OMP SIMD
-    !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL, &
-    !    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
-    !    !$OMP& k6_R,k6_PHI,k6_Z,k6_PLL,k6_MU)
+!    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
+!    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+!    !$OMP& k6_R,k6_PHI,k6_Z,k6_PLL,k6_MU)
     do cc=1_idef,8
        k6_R(cc)=dt*RHS_R(cc)    
        k6_PHI(cc)=dt*RHS_PHI(cc)    
@@ -2510,7 +2510,7 @@ contains
     !$OMP END SIMD
 
     !$OMP SIMD
-    !    !$OMP& aligned(Y_R,Y_PHI,Y_Z,V_PLL,Y0_R,Y0_PHI,Y0_Z,V0)
+    !    !$OMP& aligned(Y_R,Y_PHI,Y_Z,V_PLL,V_MU,Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU)
     do cc=1_idef,8
 
        if (flag_cache(cc).eq.0_is) then
@@ -2591,7 +2591,7 @@ contains
     
     !$OMP SIMD
 !    !$OMP& aligned(gradB_R,gradB_PHI,gradB_Z,curlb_R,curlb_Z, &
-!    !$OMP& B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU &
+!    !$OMP& B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,RHS_R,RHS_PHI,RHS_Z,RHS_PLL, &
 !    !$OMP& V_PLL,V_MU,Y_R,curlb_PHI)
     do cc=1_idef,8
        Bmag(cc) = SQRT(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
@@ -2666,8 +2666,8 @@ contains
     
     !$OMP SIMD
 !    !$OMP& aligned(gradB_R,gradB_PHI,gradB_Z,curlb_R,curlb_Z, &
-!    !$OMP& B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU &
-!    !$OMP& V_PLL,V_MU,Y_R,curlb_PHI)
+!    !$OMP& B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+!    !$OMP& V_PLL,V_MU,Y_R,curlb_PHI,tau_R)
     do cc=1_idef,8
        Bmag(cc) = SQRT(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
 

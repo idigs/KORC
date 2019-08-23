@@ -325,7 +325,8 @@ contains
     cparams_ss%ED = cparams_ss%ne*C_E**3*cparams_ss%CoulombLogee/ &
          (4.0_rp*C_PI*C_E0**2*cparams_ss%Te)
 
-    cparams_ss%taur=6*C_PI*C_E0*(C_ME*C_C)**3/C_E**4
+    cparams_ss%taur=6*C_PI*C_E0*(C_ME*C_C)**3/(C_E**4*params%cpp%Bo**2* &
+         params%cpp%time)
     
     !	ALLOCATE(cparams_ss%rnd_num(3,cparams_ss%rnd_dim))
     !	call RANDOM_NUMBER(cparams_ss%rnd_num)
@@ -1446,13 +1447,13 @@ contains
 !          write(6,'("dp: ",E17.10)') dp(cc)
 !          write(6,'("dxi: ",E17.10)') dxi(cc)
           
-          if (params%radiation) then
+          if (params%FokPlan.and.params%radiation) then
              if(params%GC_rad_model.eq.'SDE') then
                 dp(cc)=dp(cc)-gam(cc)*pm(cc)*(1-xi(cc)*xi(cc))/ &
-                     (cparams_ss%taur/(Bmag(cc)*params%cpp%Bo)**2)* &
+                     (cparams_ss%taur/Bmag(cc)**2)* &
                      dt*REAL(flag(cc))
                 dxi(cc)=dxi(cc)+xi(cc)*(1-xi(cc)*xi(cc))/ &
-                     ((cparams_ss%taur/(Bmag(cc)*params%cpp%Bo)**2)*gam(cc))* &
+                     ((cparams_ss%taur/Bmag(cc)**2)*gam(cc))* &
                      dt*REAL(flag(cc))
                 
              end if
