@@ -2320,7 +2320,7 @@ contains
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
-!    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,,RHS_MU, &
+!    !$OMP& RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
 !    !$OMP& k1_R,k1_PHI,k1_Z,k1_PLL,k1_MU)
     do cc=1_idef,8
        k1_R(cc)=dt*RHS_R(cc)              
@@ -2328,11 +2328,6 @@ contains
        k1_Z(cc)=dt*RHS_Z(cc)    
        k1_PLL(cc)=dt*RHS_PLL(cc)
        k1_MU(cc)=dt*RHS_MU(cc)    
-
-!       vars%RHS(pp-1+cc,1)=RHS_R(cc)
-!       vars%RHS(pp-1+cc,2)=RHS_PHI(cc)
-!       vars%RHS(pp-1+cc,3)=RHS_Z(cc)
-!       vars%RHS(pp-1+cc,4)=RHS_PLL(cc)
        
        Y_R(cc)=Y0_R(cc)+a1*k1_R(cc)
        Y_PHI(cc)=Y0_PHI(cc)+a1*k1_PHI(cc)
@@ -2528,6 +2523,22 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
+    call GCEoM1_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+         B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,q_cache,m_cache) 
+
+    !$OMP SIMD
+    do cc=1_idef,8
+       vars%RHS(pp-1+cc,1)=RHS_R(cc)
+       vars%RHS(pp-1+cc,2)=RHS_PHI(cc)
+       vars%RHS(pp-1+cc,3)=RHS_Z(cc)
+       vars%RHS(pp-1+cc,4)=RHS_PLL(cc)
+       vars%RHS(pp-1+cc,5)=RHS_MU(cc)
+    end do
+    !$OMP END SIMD
+
+ 
+    
     call add_analytical_E_p(params,tt,F,E_PHI)
     
     if (params%collisions) then       
@@ -2712,18 +2723,28 @@ contains
             bdotBst(cc)
        RHS_MU(cc)=0._rp
 
-       if (params%radiation.and.(params%GC_rad_model.eq.'SDE')) then
+    end do
+    !$OMP END SIMD
+
+    if (params%radiation.and.(params%GC_rad_model.eq.'SDE')) then
+
+       !$OMP SIMD
+!       !$OMP& aligned(tau_R,Bmag,RHS_PLL,V_PLL,xi,gamgc,RHS_MU,V_MU)
+       do cc=1_idef,8
+
           tau_R(cc)=6*C_PI*E0/(Bmag(cc)*Bmag(cc))
 
           RHS_PLL(cc)=RHS_PLL(cc)+V_PLL(cc)*(1._rp-xi(cc)*xi(cc))/tau_R(cc)* &
                (1._rp/gamgc(cc)-gamgc(cc))
           RHS_MU(cc)=-2._rp*V_MU(cc)/tau_R(cc)* &
-               (1._rp-xi(cc)*xi(cc)*(1._rp-1._rp/(gamgc(cc)*gamgc(cc))))
-       end if
+               (gamgc(cc)*(1-xi(cc)*xi(cc))+xi(cc)*xi(cc)/gamgc(cc))
 
-       
-    end do
-    !$OMP END SIMD
+       end do
+       !$OMP END SIMD
+
+    end if
+
+      
 
 !    write(6,*) 'RHS_R: ',RHS_R(1)
 !    write(6,*) 'RHS_PHI: ',RHS_PHI(1)

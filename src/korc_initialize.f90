@@ -562,7 +562,7 @@ subroutine initialize_particles(params,F,P,spp)
            spp(ii)%vars%BPHI = 0.0_rp
            spp(ii)%vars%BZ = 0.0_rp
         end if
-        ALLOCATE( spp(ii)%vars%RHS(spp(ii)%ppp,4) )
+        ALLOCATE( spp(ii)%vars%RHS(spp(ii)%ppp,5) )
 
         spp(ii)%vars%Y0 = 0.0_rp
         spp(ii)%vars%V0 = 0.0_rp

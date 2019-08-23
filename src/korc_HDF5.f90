@@ -1990,6 +1990,8 @@ CONTAINS
                    YY(:,3)=YY(:,3)*units
                    units = params%cpp%mass*params%cpp%velocity/params%cpp%time
                    YY(:,4)=YY(:,4)*units
+                   YY(:,5)=YY(:,5)*params%cpp%mass* &
+                           (params%cpp%velocity)**2/params%cpp%Bo/params%cpp%time
 
                    call rsave_2d_array_to_hdf5(subgroup_id, dset, &
                         YY)
