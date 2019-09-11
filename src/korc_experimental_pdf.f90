@@ -576,18 +576,19 @@ CONTAINS
   END SUBROUTINE sample_distribution
 
 
-  SUBROUTINE get_Hollmann_distribution(params,g,eta,go,etao)
+  SUBROUTINE get_Hollmann_distribution(params,spp)
     TYPE(KORC_PARAMS), INTENT(IN) :: params
-    REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: g
-    REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: eta
-    REAL(rp), INTENT(OUT) :: go
-    REAL(rp), INTENT(OUT) :: etao
+    TYPE(SPECIES),  INTENT(INOUT) :: spp
+!    REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: g
+!    REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: eta
+!    REAL(rp), INTENT(OUT) :: go
+!    REAL(rp), INTENT(OUT) :: etao
 
     call initialize_Hollmann_params(params)
 
     call save_Hollmann_params(params)
 
-    call sample_Hollmann_distribution(params,g,eta,go,etao)
+    call sample_Hollmann_distribution(params,spp)
 
 
   END SUBROUTINE get_Hollmann_distribution
@@ -863,12 +864,13 @@ CONTAINS
   END FUNCTION fRE_pitch
 
 
-  SUBROUTINE sample_Hollmann_distribution(params,g,eta,go,etao)
+  SUBROUTINE sample_Hollmann_distribution(params,spp)
     TYPE(KORC_PARAMS), INTENT(IN) 			:: params
-    REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) 	:: g
-    REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) 	:: eta
-    REAL(rp), INTENT(OUT) 				:: go
-    REAL(rp), INTENT(OUT) 				:: etao
+    TYPE(SPECIES), INTENT(INOUT) 		:: spp
+!    REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) 	:: g
+!    REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) 	:: eta
+!    REAL(rp), INTENT(OUT) 				:: go
+!    REAL(rp), INTENT(OUT) 				:: etao
     REAL(rp), DIMENSION(:), ALLOCATABLE 			:: p
     REAL(rp) 						:: g_buffer
     REAL(rp) 						:: g_test
@@ -897,8 +899,7 @@ CONTAINS
     INTEGER 						:: nsamples
     INTEGER 						:: mpierr
 
-    ppp = SIZE(g)
-    nsamples = ppp*params%mpi_params%nmpi
+    nsamples = spp%ppp*params%mpi_params%nmpi
 
     index_i = MINLOC(ABS(h_params%g - h_params%min_sampling_g),1)
     !index of minimum gamma range desired
@@ -971,16 +972,16 @@ CONTAINS
 
        ii=2_idef
        do while (ii .LE. 1000_idef)
-          eta_test = eta_buffer + random_norm(0.0_rp,deta)
+          eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
           do while ((ABS(eta_test) .GT. h_params%max_pitch_angle).OR. &
                (ABS(eta_test) .LT. h_params%min_pitch_angle))
-             eta_test = eta_buffer + random_norm(0.0_rp,deta)
+             eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
           end do
 
-          g_test = g_buffer + random_norm(0.0_rp,dg)
+          g_test = g_buffer + random_norm(0.0_rp,spp%dgam)
           do while ((g_test.LT.h_params%min_sampling_g).OR. &
                (g_test.GT.h_params%max_sampling_g))
-             g_test = g_buffer + random_norm(0.0_rp,dg)
+             g_test = g_buffer + random_norm(0.0_rp,spp%dgam)
           end do
 
           ratio = fRE_H(eta_test,g_test)*sin(deg2rad(eta_test))* &
@@ -1013,22 +1014,26 @@ CONTAINS
        do while(num_accepted.LT.nsamples)
           ii=2_idef
           do while (ii .LE. nsamples)
+
+             if (modulo(ii,nsamples/10).eq.0) then
+                write(6,'("Sample: ",I10)') ii
+             end if
              
 !             write(6,'("iisample",I16)') ii
-             eta_test = eta_tmp(ii-1) + random_norm(0.0_rp,deta)
+             eta_test = eta_tmp(ii-1) + random_norm(0.0_rp,spp%dth)
 !             write(6,'("max_pitch_angle: ",E17.10)') max_pitch_angle
 !             write(6,'("min_pitch_angle: ",E17.10)') min_pitch_angle
              do while ((ABS(eta_test) .GT. max_pitch_angle).OR. &
                   (ABS(eta_test) .LT. min_pitch_angle))
-                eta_test = eta_tmp(ii-1) + random_norm(0.0_rp,deta)
+                eta_test = eta_tmp(ii-1) + random_norm(0.0_rp,spp%dth)
 !                write(6,'("eta_test: ",E17.10)') eta_test
              end do
 
-             g_test = g_tmp(ii-1) + random_norm(0.0_rp,dg)
+             g_test = g_tmp(ii-1) + random_norm(0.0_rp,spp%dgam)
 !             write(6,'("max_g: ",E17.10)') max_g
 !             write(6,'("min_g: ",E17.10)') min_g
              do while ((g_test.LT.min_g).OR.(g_test.GT.max_g))
-                g_test = g_tmp(ii-1) + random_norm(0.0_rp,dg)
+                g_test = g_tmp(ii-1) + random_norm(0.0_rp,spp%dgam)
 !                write(6,'("g_test: ",E17.10)') g_test
              end do
 
@@ -1075,19 +1080,19 @@ CONTAINS
       !			eta_samples = 180.0_rp - eta_samples
       !		end if
 
-       go = SUM(g_samples)/nsamples
-       etao = SUM(eta_samples)/nsamples
+!       go = SUM(g_samples)/nsamples
+!       etao = SUM(eta_samples)/nsamples
     end if !MCMC computed on single MPI process
 
-    CALL MPI_SCATTER(g_samples,ppp,MPI_REAL8,g,ppp,MPI_REAL8, &
+    CALL MPI_SCATTER(g_samples,spp%ppp,MPI_REAL8,spp%vars%g,spp%ppp,MPI_REAL8, &
          0,MPI_COMM_WORLD,mpierr)
 
-    CALL MPI_SCATTER(eta_samples,ppp,MPI_REAL8,eta,ppp,MPI_REAL8, &
+    CALL MPI_SCATTER(eta_samples,spp%ppp,MPI_REAL8,spp%vars%eta,spp%ppp,MPI_REAL8, &
          0,MPI_COMM_WORLD,mpierr)
 
-    CALL MPI_BCAST(go,1,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+!    CALL MPI_BCAST(go,1,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
 
-    CALL MPI_BCAST(etao,1,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+!    CALL MPI_BCAST(etao,1,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
 
     call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
@@ -1277,6 +1282,7 @@ END FUNCTION indicator_exp
      R_buffer = spp%Ro
      Z_buffer = spp%Zo
 
+     call RANDOM_SEED()
      
      call RANDOM_NUMBER(rand_unif)
      eta_buffer = min_pitch_angle + (max_pitch_angle &
