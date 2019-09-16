@@ -76,6 +76,26 @@ module korc_interp
      !! ends of the \(Z\) direction.
   END TYPE KORC_2D_FIELDS_INTERPOLANT
 
+  TYPE, PRIVATE :: KORC_1D_FIELDS_INTERPOLANT
+     !! @note Derived type containing 2-D PSPLINE interpolants for
+     !! cylindrical components of vector fields \(\mathbf{F}(R,Z) =
+     !! F_R\hat{e}_R + F_\phi\hat{e}_phi+ F_Z\hat{e}_Z\).
+     !! Real precision of 8 bytes. @endnote
+     TYPE(EZspline1_r8)    :: A
+     !! Interpolant of a scalar field \(A(R,Z)\).
+     TYPE(EZspline1_r8)    :: R
+     !! Interpolant of \(F_R(R,Z)\).
+     TYPE(EZspline1_r8)    :: PHI
+     !! Interpolant of \(F_\phi(R,Z)\).
+     TYPE(EZspline1_r8)    :: Z
+     !! Interpolant of \(F_Z(R,Z)\).
+     
+     INTEGER               :: Nrm
+     !! Size of mesh containing the field data along the \(R\)-axis.
+     INTEGER, DIMENSION(2) :: BCSrm = (/ 0, 0 /)
+     !! Not-a-knot boundary condition for the interpolants at both
+     !! ends of the \(R\) direction.
+  END TYPE KORC_1D_FIELDS_INTERPOLANT
 
   TYPE, PRIVATE :: KORC_3D_PROFILES_INTERPOLANT
      !! @note Derived type containing 3-D PSPLINE interpolants for cylindrical
@@ -191,7 +211,26 @@ module korc_interp
      !! of the \(Z\) direction.
   END TYPE KORC_2D_FIELDS_INTERPOLANT
 
-
+  TYPE, PRIVATE :: KORC_1D_FIELDS_INTERPOLANT
+     !! @note Derived type containing 2-D PSPLINE interpolants for
+     !! cylindrical components of vector fields \(\mathbf{F}(R,Z) =
+     !! F_R\hat{e}_R + F_\phi\hat{e}_phi+ F_Z\hat{e}_Z\).
+     !! Real precision of 8 bytes. @endnote
+     TYPE(EZspline1_r4)    :: A
+     !! Interpolant of a scalar field \(A(R,Z)\).
+     TYPE(EZspline1_r4)    :: R
+     !! Interpolant of \(F_R(R,Z)\).
+     TYPE(EZspline1_r4)    :: PHI
+     !! Interpolant of \(F_\phi(R,Z)\).
+     TYPE(EZspline1_r4)    :: Z
+     !! Interpolant of \(F_Z(R,Z)\).
+     
+     INTEGER               :: Nrm
+     !! Size of mesh containing the field data along the \(R\)-axis.
+     INTEGER, DIMENSION(2) :: BCSrm = (/ 0, 0 /)
+     !! Not-a-knot boundary condition for the interpolants at both
+     !! ends of the \(R\) direction.
+  END TYPE KORC_1D_FIELDS_INTERPOLANT
 
   TYPE, PRIVATE :: KORC_3D_PROFILES_INTERPOLANT
      !! @note Derived type containing 3-D PSPLINE interpolants for cylindrical
@@ -259,6 +298,9 @@ module korc_interp
      !! the spatial domain where the fields and profiles are known.
      !! This info is used for detecting when a particle is lost, and therefore not
      !! followed anymore. @endnote
+     INTEGER(KIND=1), DIMENSION(:), ALLOCATABLE      :: FLAG1D
+     !! 2-D array with info of the spatial domain where the axisymmetric fields
+     !! and plasma profiles are known.
      INTEGER(KIND=1), DIMENSION(:,:), ALLOCATABLE      :: FLAG2D
      !! 2-D array with info of the spatial domain where the axisymmetric fields
      !! and plasma profiles are known.
@@ -271,6 +313,7 @@ module korc_interp
      REAL(rp)                                          :: Zo
      !! Smaller vertical position of the fields and profiles domain.
 
+     REAL(rp)                                          :: Drm
      REAL(rp)                                          :: DR
      !! Separation between grid points along the radial direction.
      REAL(rp)                                          :: DPHI  !
@@ -292,6 +335,9 @@ module korc_interp
   TYPE(KORC_3D_FIELDS_INTERPOLANT), PRIVATE      :: efield_3d
   !! An instance of KORC_3D_FIELDS_INTERPOLANT for interpolating
   !! the electric field.
+  TYPE(KORC_1D_FIELDS_INTERPOLANT), PRIVATE      :: efield_SC1d
+  !! An instance of KORC_1D_FIELDS_INTERPOLANT for interpolating
+  !! the self-consistent electric field.  
   TYPE(KORC_2D_FIELDS_INTERPOLANT), PRIVATE      :: gradB_2d
   !! An instance of KORC_2D_FIELDS_INTERPOLANT for interpolating
   !! the magnetic field.
@@ -327,7 +373,8 @@ module korc_interp
        calculate_initial_magnetic_field,&
        calculate_magnetic_field_p,&
        calculate_GCfields_p,&
-       sample_poloidal_flux
+       sample_poloidal_flux,&
+       initialize_SC1D_field_interpolant
   PRIVATE :: interp_3D_bfields,&
        interp_2D_bfields,&
        interp_3D_efields,&
@@ -682,7 +729,42 @@ CONTAINS
     end if
   end subroutine initialize_fields_interpolant
 
+  subroutine initialize_SC1D_field_interpolant(params,F)
+    !! @note Subroutine that initializes fields interpolants. @endnote
+    !! This subroutine initializes either 2-D or 3-D PSPLINE interpolants
+    !! using the data of fields in the KORC-dervied-type variable F.
+    TYPE(KORC_PARAMS), INTENT(IN)  :: params
+    !! Core KORC simulation parameters.
+    TYPE(FIELDS), INTENT(IN)       :: F
+    !! An instance of KORC's derived type FIELDS containing all the information
+    !! about the fields used in the simulation.
+    !! See [[korc_types]] and [[korc_fields]].
+    integer :: ii,jj
 
+     
+!    if (EZspline_allocated(efield_SC1d%PHI)) &
+!         call Ezspline_free(efield_SC1d%PHI, ezerr)
+
+    if (.not.(EZspline_allocated(efield_SC1d%PHI))) then
+       efield_SC1d%Nrm = F%dim_1D
+
+       call EZspline_init(efield_SC1d%PHI,efield_SC1d%Nrm, &
+            efield_SC1d%BCSrm,ezerr)
+       call EZspline_error(ezerr)
+
+       efield_SC1d%PHI%x1 = F%r_1D/params%cpp%length
+    end if
+
+    call EZspline_setup(efield_SC1d%PHI, F%E_SC_1D%PHI, ezerr, .TRUE.)
+    call EZspline_error(ezerr)
+
+    if (.not.ALLOCATED(fields_domain%FLAG1D)) &
+         ALLOCATE(fields_domain%FLAG1D(efield_SC1d%Nrm))
+
+    fields_domain%Drm = ABS(F%r_1D(2) - F%r_1D(1))
+
+  end subroutine initialize_SC1D_field_interpolant
+  
   subroutine check_if_in_fields_domain(F,Y,flag)
     !! @note Subrotuine that checks if particles in the simulation are within
     !! the spatial domain where interpolants and fields are known. @endnote

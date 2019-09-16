@@ -143,6 +143,10 @@ program main
   call initialize_particle_pusher(params)
   !! <h4>11\. Initialize Particle Pusher</h4>    
 
+  if (params%SC_E) then
+     call define_SC_time_step(params,F)
+  end if
+     
   call normalize_variables(params,spp,F,P)
   !! <h4>12\. Normalize Variables</h4>
   !!
@@ -251,8 +255,10 @@ program main
         call GC_init(params,F,spp)
 
      end if
+
+     call calculate_SC_E1D(params,F,spp(1),.true.)
      
-     call save_simulation_outputs(params,spp) ! Save initial condition
+     call save_simulation_outputs(params,spp,F) ! Save initial condition
 
      call synthetic_camera(params,spp) 
 
@@ -276,7 +282,7 @@ program main
              +REAL(it-1_ip+params%t_skip,rp)*params%dt        
         params%it = it-1_ip+params%t_skip
 
-        call save_simulation_outputs(params,spp)
+        call save_simulation_outputs(params,spp,F)
         call synthetic_camera(params,spp) ! Synthetic camera
         call binning_diagnostic(params,spp) ! Binning diagnostic
         call save_restart_variables(params,spp)
@@ -294,7 +300,7 @@ program main
              +REAL(it-1_ip+params%t_skip,rp)*params%dt        
         params%it = it-1_ip+params%t_skip
 
-        call save_simulation_outputs(params,spp)
+        call save_simulation_outputs(params,spp,F)
         call synthetic_camera(params,spp) ! Synthetic camera
         call binning_diagnostic(params,spp) ! Binning diagnostic
         call save_restart_variables(params,spp)
@@ -324,14 +330,14 @@ program main
 !  end if
 
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'eqn') then
-     do it=params%ito,params%t_steps,params%t_skip
+     do it=params%ito,params%t_steps,params%t_skip*params%t_it_SC
         call adv_GCeqn_top(params,F,P,spp)
         
         params%time = params%init_time &
-             +REAL(it-1_ip+params%t_skip,rp)*params%dt        
-        params%it = it-1_ip+params%t_skip
+             +REAL(it-1_ip+params%t_skip*params%t_it_SC,rp)*params%dt        
+        params%it = it-1_ip+params%t_skip*params%t_it_SC
 
-        call save_simulation_outputs(params,spp)
+        call save_simulation_outputs(params,spp,F)
         call synthetic_camera(params,spp) ! Synthetic camera
         call binning_diagnostic(params,spp) ! Binning diagnostic
         call save_restart_variables(params,spp)
@@ -346,7 +352,7 @@ program main
              +REAL(it-1_ip+params%t_skip,rp)*params%dt        
         params%it = it-1_ip+params%t_skip
 
-        call save_simulation_outputs(params,spp)
+        call save_simulation_outputs(params,spp,F)
         call synthetic_camera(params,spp) ! Synthetic camera
         call binning_diagnostic(params,spp) ! Binning diagnostic
         call save_restart_variables(params,spp)

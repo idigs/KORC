@@ -1582,6 +1582,23 @@ CONTAINS
              dset = TRIM(gname) // "/Eo"
              attr = "Electric field at the magnetic axis in V/m"
              call save_to_hdf5(h5file_id,dset,F%Eo*params%cpp%Eo,attr)
+
+             if (params%SC_E) then
+                dset = TRIM(gname) // "/dt_E_SC"
+                attr = "Time step for self-consistent E calculation"
+                call save_to_hdf5(h5file_id,dset,F%dt_E_SC,attr)
+
+                dset = TRIM(gname) // "/Ip_exp"
+                attr = "Scaling for self-consistent current density"
+                call save_to_hdf5(h5file_id,dset,F%Ip_exp,attr)
+
+                ALLOCATE(attr_array(1))
+                dset = TRIM(gname) // "/r_1D"
+                attr_array(1) = "1D minor radial mesh for &
+                     self-consistent fields"
+                call save_1d_array_to_hdf5(h5file_id,dset,F%r_1D,attr_array)
+                DEALLOCATE(attr_array)
+             end if
              
              if  (params%field_eval.EQ.'interp') then
 
@@ -1861,7 +1878,7 @@ CONTAINS
   end subroutine save_simulation_parameters
 
 
-  subroutine save_simulation_outputs(params,spp)
+  subroutine save_simulation_outputs(params,spp,F)
     !! @note Subroutine that saves the electrons' variables specified in
     !! params::outputs_list to HDF5 files. @endnote
     TYPE(KORC_PARAMS), INTENT(IN) 				:: params
@@ -1870,6 +1887,7 @@ CONTAINS
     !! An instance of KORC's derived type SPECIES containing all
     !! the information
     !! of different electron species. See [[korc_types]].
+    TYPE(FIELDS), INTENT(IN)                 :: F
     CHARACTER(MAX_STRING_LENGTH) 				:: filename
     !! String containing the name of the HDF5 file.
     CHARACTER(MAX_STRING_LENGTH) 				:: gname
@@ -1914,7 +1932,8 @@ CONTAINS
     !! are lengths, while keeping vars%Y(2,:), which is an angle
 
     if (params%mpi_params%rank .EQ. 0) then
-       write(6,'("Saving snapshot: ",I15)') params%it/params%t_skip
+       write(6,'("Saving snapshot: ",I15)') &
+            params%it/(params%t_skip*params%t_it_SC)
     end if
 
     if (SIZE(params%outputs_list).GT.1_idef) then
@@ -2079,6 +2098,19 @@ CONTAINS
                    dset = "Zeff"
                    call save_1d_array_to_hdf5(subgroup_id, dset, &
                         spp(ss)%vars%Zeff)
+                CASE ('J_SC')
+                   dset = "J_SC"
+                   call save_1d_array_to_hdf5(subgroup_id, dset, &
+                        F%J_SC_1D%PHI)
+                CASE ('A_SC')
+                   dset = "A_SC"
+                   call save_1d_array_to_hdf5(subgroup_id, dset, &
+                        F%A1_SC_1D%PHI)
+                CASE ('E_SC')
+                   dset = "E_SC"
+                   units = params%cpp%Eo
+                   call save_1d_array_to_hdf5(subgroup_id, dset, &
+                        units*F%E_SC_1D%PHI)
                 CASE DEFAULT
 
                 END SELECT
@@ -2164,7 +2196,8 @@ CONTAINS
 !    if ( MODULO(params%it,params%restart_output_cadence) .EQ. 0_ip ) then 
     if (params%mpi_params%rank.EQ.0_idef) then
 
-       write(6,'("Saving restart: ",I15)') params%it/params%t_skip
+       write(6,'("Saving restart: ",I15)') &
+            params%it/(params%t_skip*params%t_it_SC)
 
        filename = TRIM(params%path_to_outputs) // "restart_file.h5"
        call h5fcreate_f(TRIM(filename), H5F_ACC_TRUNC_F, h5file_id, h5error)

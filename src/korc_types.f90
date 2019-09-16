@@ -83,6 +83,24 @@ module korc_types
      !! \(Z \) component of the vector field variable.
   END TYPE V_FIELD_2D
 
+  TYPE, PUBLIC :: V_FIELD_1D
+     !! @note KORC 1-D vector field type @endnote
+     !! This KORC type represents a 1-D vector field varible in cylindrical
+     !! coordinates. For example, this could be the magnetic
+     !! field in an axisymmetric plasma, which can be written as
+     !! $$\mathbf{B}(r) = B_R(r) \hat{R} + B_\phi(r) \hat{\phi} + B_Z(r)
+     !! \hat{Z}.$$
+     !! All the members (components) of the V_FIELD_1D type follow the
+     !! following index convention:
+     !! (\(r\) index).
+     REAL(rp), DIMENSION(:), ALLOCATABLE :: R 
+     !! \(R \) component of the vector field variable.
+     REAL(rp), DIMENSION(:), ALLOCATABLE :: PHI 
+     !! \(\phi \) component of the vector field variable.
+     REAL(rp), DIMENSION(:), ALLOCATABLE :: Z 
+     !! \(Z \) component of the vector field variable.
+  END TYPE V_FIELD_1D
+  
   ! * * * * * * * * * * * * * * * * * * * * !
   ! * * * Basic korc array structures * * * !
   ! * * * * * * * * * * * * * * * * * * * * !
@@ -175,7 +193,8 @@ module korc_types
      INTEGER(ip) 			:: t_steps 
      !! Number of time steps needed for evolving the electrons up to
      !! "simulation_time".
-     INTEGER(ip) 			:: t_skip 
+     INTEGER(ip) 			:: t_skip
+     INTEGER(ip) 			:: t_it_SC=1_ip 
      INTEGER(ip) 			:: output_cadence 
      !! Time iteration offset used to decide when the outputs are generated.
      INTEGER(ip) 			:: restart_output_cadence 
@@ -229,6 +248,7 @@ module korc_types
      LOGICAL :: FokPlan
      !! Flag to decouple spatial-dependence of evolution
      LOGICAL :: SameRandSeed
+     LOGICAL :: SC_E
      
   END TYPE KORC_PARAMS
 
@@ -482,6 +502,12 @@ module korc_types
      TYPE(V_FIELD_2D) 				:: curlb_2D 
      !! KORC 3-D vector field of the curl of the unit vector in the
      !! direction of the pre-computed magnetic field.
+     TYPE(V_FIELD_1D) 				:: E_SC_1D
+     TYPE(V_FIELD_1D) 				:: J_SC_1D
+     TYPE(V_FIELD_1D) 				:: A1_SC_1D
+     TYPE(V_FIELD_1D) 				:: A2_SC_1D
+     TYPE(V_FIELD_1D) 				:: A3_SC_1D
+     REAL(rp), DIMENSION(:), ALLOCATABLE :: r_1D 
      TYPE(MESH) 		 		:: X 
      !! An instance of the KORC derived type MESH.
      CHARACTER(MAX_STRING_LENGTH) :: E_model
@@ -495,6 +521,9 @@ module korc_types
      !! Dimensions of the KORC vector field. dims=(number of grid 
      !! nodes along \(R\), number of grid nodes along \(\phi\), 
      !! number of grid nodes along \(Z\)).
+     INTEGER 			:: dim_1D
+     INTEGER 			:: subcycle_E_SC
+     REAL(rp)  :: dt_E_SC,Ip_exp
      REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: PSIp 
      !! 2-D array for storing the data of the poloidal magnetic flux.
      REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: FLAG2D 

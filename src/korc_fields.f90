@@ -21,7 +21,9 @@ module korc_fields
        load_dim_data_from_hdf5,&
        ALLOCATE_2D_FIELDS_ARRAYS,&
        ALLOCATE_3D_FIELDS_ARRAYS,&
-       DEALLOCATE_FIELDS_ARRAYS
+       DEALLOCATE_FIELDS_ARRAYS,&
+       calculate_SC_E1D,&
+       define_SC_time_step
   PRIVATE :: get_analytical_fields,&
        analytical_fields,&
        analytical_fields_GC_init,&
@@ -854,6 +856,137 @@ CONTAINS
     END SELECT
   end subroutine get_fields
 
+  subroutine calculate_SC_E1D(params,F,spp,init)
+
+    TYPE(FIELDS), INTENT(INOUT)                 :: F
+    TYPE(KORC_PARAMS), INTENT(IN) 		:: params
+    TYPE(SPECIES), INTENT(INOUT)    :: spp
+    real(rp),dimension(spp%ppp) :: RR,ZZ,rm,vpll
+    real(rp),dimension(F%dim_1D) :: Vpart,Vden,Jsam,Jexp,a,b,c,u,gam,r,r_1D
+    real(rp) :: dr,Isam=0._rp,bet
+    integer :: pp,ii,rind
+    logical :: init
+
+    if (params%mpi_params%rank .EQ. 0) then
+       write(6,*) 'Calculating SC_E1D'
+    end if
+
+    ! 1D nearest grid point weighting in minor radius
+    
+    RR=spp%vars%Y(:,1)
+    ZZ=spp%vars%Y(:,3)
+    rm=sqrt((RR-F%Ro)**2+(ZZ-F%Zo)**2)*params%cpp%length
+
+    dr=F%r_1D(2)-F%r_1D(1)
+
+    vpll=spp%vars%V(:,1)*params%cpp%velocity/spp%vars%g
+
+    ! Weighting parallel velocity
+    
+    Vpart=0._rp
+    do pp=1_idef,spp%ppp
+       rind=FLOOR((rm(pp)-dr/2)/dr)+2_ip
+       Vpart(rind)=Vpart(rind)+vpll(pp)
+    end do
+
+    ! Calculating density of minor radial annulus
+    
+    do ii=1_idef,F%dim_1D
+       if(ii.eq.1) then
+          Vden(ii)=Vpart(ii)/(C_PI*dr**2/4)
+       else
+          Vden(ii)=Vpart(ii)/(2*C_PI*dr**2*(ii-1))
+       end if
+    end do
+    
+    Jsam=C_E*Vden
+    r_1D=F%r_1D
+!    write(6,*) 'Jsam: ',Jsam
+
+    ! Integrating current density to scale total current to
+    ! experimentally determined total current
+    
+    do ii=1_idef,F%dim_1D
+       if ((ii.eq.1).or.(ii.eq.F%dim_1D)) then
+          Isam=Isam+Jsam(ii)*r_1D(ii)/2
+       else 
+          Isam=Isam+Jsam(ii)*r_1D(ii)
+       end if
+    end do
+    Isam=2*C_PI*Isam*dr
+    write(6,*) 'Isam: ',Isam
+
+    Jexp=Jsam*F%Ip_exp/Isam
+
+    F%J_SC_1D%PHI=Jexp
+
+    write(6,*) 'J(1)',F%J_SC_1D%PHI(1)
+    
+    ! Solving 1D Poisson equation with tridiagonal matrix solve
+
+    a=0._rp
+    b=-2._rp
+    c=0._rp
+    u=0._rp
+    gam=0._rp
+    r=-2*dr**2*C_MU*Jexp
+
+    do ii=1_idef,F%dim_1D
+       a(ii)=(REAL(ii)-2._rp)/(REAL(ii)-1._rp)
+       c(ii)=REAL(ii)/(REAL(ii)-1._rp)
+    end do
+
+    bet=b(2)
+    u(2)=r(2)/bet
+    do ii=3_idef,F%dim_1D-1
+       gam(ii)=c(ii-1)/bet
+       bet=b(ii)-a(ii)*gam(ii)
+       if (bet.eq.0) then
+          stop 'tridiag failed'         
+       end if
+       u(ii)=(r(ii)-a(ii)*u(ii-1))/bet
+    end do
+
+    do ii=F%dim_1D-2,2,-1
+       u(ii)=u(ii)-gam(ii+1)*u(ii+1)
+    end do
+
+    u(1)=(4*u(2)-u(3))/3._rp
+
+    ! Writing over F%A* data
+    
+    F%A3_SC_1D%PHI=F%A2_SC_1D%PHI
+    F%A2_SC_1D%PHI=F%A1_SC_1D%PHI
+    F%A1_SC_1D%PHI=u
+
+
+    
+    if (init) then
+       F%A3_SC_1D%PHI=F%A1_SC_1D%PHI
+       F%A2_SC_1D%PHI=F%A1_SC_1D%PHI 
+    end if
+
+    write(6,*) 'A1(1)',F%A1_SC_1D%PHI(1)
+    write(6,*) 'A2(1)',F%A2_SC_1D%PHI(1)
+    write(6,*) 'A3(1)',F%A3_SC_1D%PHI(1)
+    
+    ! Calculating inductive E_phi
+
+    F%E_SC_1D%PHI=-(3*F%A1_SC_1D%PHI-4*F%A2_SC_1D%PHI+F%A3_SC_1D%PHI)/ &
+         (2*F%dt_E_SC)
+
+    write(6,*) 'E(1)',F%E_SC_1D%PHI(1)
+    write(6,*) 'E(1)',-(3*F%A1_SC_1D%PHI(1)-4*F%A2_SC_1D%PHI(1)+ &
+         F%A3_SC_1D%PHI(1))
+    
+    ! Normalizing inductive E_phi
+    
+    F%E_SC_1D%PHI=F%E_SC_1D%PHI/params%cpp%Eo
+
+    call initialize_SC1D_field_interpolant(params,F)
+    
+  end subroutine calculate_SC_E1D
+  
 
   ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
   ! * * *  SUBROUTINES FOR INITIALIZING FIELDS   * * * !
@@ -917,10 +1050,12 @@ CONTAINS
     logical :: test
     integer :: res_double
     real(rp) :: RMAX,RMIN,ZMAX,ZMIN
-
+    integer :: dim_1D
+    real(rp) :: dt_E_SC,Ip_exp
+    
 
     NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
-         qa,qo,Eo,current_direction,nR,nZ
+         qa,qo,Eo,current_direction,nR,nZ,dim_1D,dt_E_SC,Ip_exp
     NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux, &
          axisymmetric_fields, Eo,E_model,E_dyn,E_pulse,E_width,res_double
 
@@ -1013,7 +1148,9 @@ CONTAINS
           F%FLAG2D(:,F%dims(3)-1:F%dims(3))=0.
 
           if (params%orbit_model(3:5).eq.'pre') then
-             write(6,'("Initializing GC fields from analytic EM fields")')
+             if (params%mpi_params%rank .EQ. 0) then
+                write(6,'("Initializing GC fields from analytic EM fields")')
+             end if
              call initialize_GC_fields(F)
           end if
 
@@ -1024,6 +1161,32 @@ CONTAINS
           
        end if
 
+       if (params%SC_E) then
+
+          F%dim_1D=dim_1D
+          F%dt_E_SC=dt_E_SC
+          F%Ip_exp=Ip_exp
+
+          ALLOCATE(F%E_SC_1D%PHI(F%dim_1D))
+          ALLOCATE(F%A1_SC_1D%PHI(F%dim_1D))
+          ALLOCATE(F%A2_SC_1D%PHI(F%dim_1D))
+          ALLOCATE(F%A3_SC_1D%PHI(F%dim_1D))
+          ALLOCATE(F%J_SC_1D%PHI(F%dim_1D))
+          ALLOCATE(F%r_1D(F%dim_1D))
+
+          F%E_SC_1D%PHI=0._rp
+          F%A1_SC_1D%PHI=0._rp
+          F%A2_SC_1D%PHI=0._rp
+          F%A3_SC_1D%PHI=0._rp
+          F%J_SC_1D%PHI=0._rp
+          F%r_1D=0._rp
+                    
+          do ii=1_idef,F%dim_1D
+             F%r_1D(ii)=(ii-1)*F%AB%a/(F%dim_1D-1)
+          end do
+          
+       end if
+       
     CASE('EXTERNAL')
        ! Load the magnetic field from an external HDF5 file
        open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
@@ -1332,6 +1495,31 @@ CONTAINS
 
   end subroutine initialize_GC_fields
 
+  subroutine define_SC_time_step(params,F)
+    TYPE(KORC_PARAMS), INTENT(INOUT) 	:: params
+    TYPE(FIELDS), INTENT(INOUT)         :: F
+
+    F%subcycle_E_SC = FLOOR(F%dt_E_SC/params%dt,ip)
+
+    params%t_it_SC = params%t_skip/F%subcycle_E_SC
+    params%t_skip=F%subcycle_E_SC
+
+    F%dt_E_SC=params%t_skip*params%dt
+
+    if (params%mpi_params%rank.EQ.0) then
+
+     write(6,'(/,"* * * * * SC_E1D SUBCYCLING * * * * *")')
+     write(6,*) "SC_E1D sybcycling iterations: ",F%subcycle_E_SC
+     write(6,*) "Updated number of outputs: ", &
+          params%t_steps/(params%t_skip*params%t_it_SC)
+
+     write(6,'("* * * * * * * * * * * * * * * * * * *",/)')
+    end if
+    
+
+    
+  end subroutine define_SC_time_step
+  
   ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
   ! Subroutines for getting the fields data from HDF5 files
   ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -1710,6 +1898,12 @@ CONTAINS
     if (ALLOCATED(F%E_3D%R)) DEALLOCATE(F%E_3D%R)
     if (ALLOCATED(F%E_3D%PHI)) DEALLOCATE(F%E_3D%PHI)
     if (ALLOCATED(F%E_3D%Z)) DEALLOCATE(F%E_3D%Z)
+
+    if (ALLOCATED(F%E_SC_1D%PHI)) DEALLOCATE(F%E_SC_1D%PHI)
+    if (ALLOCATED(F%J_SC_1D%PHI)) DEALLOCATE(F%J_SC_1D%PHI)
+    if (ALLOCATED(F%A1_SC_1D%PHI)) DEALLOCATE(F%A1_SC_1D%PHI)
+    if (ALLOCATED(F%A2_SC_1D%PHI)) DEALLOCATE(F%A2_SC_1D%PHI)
+    if (ALLOCATED(F%A3_SC_1D%PHI)) DEALLOCATE(F%A3_SC_1D%PHI)
 
     if (ALLOCATED(F%X%R)) DEALLOCATE(F%X%R)
     if (ALLOCATED(F%X%PHI)) DEALLOCATE(F%X%PHI)

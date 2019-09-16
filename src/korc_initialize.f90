@@ -121,13 +121,14 @@ subroutine load_korc_params(params)
   LOGICAL 				:: FokPlan
   !! Flag to decouple spatial-dependence of evolution
   LOGICAL :: SameRandSeed
+  LOGICAL :: SC_E
 
   NAMELIST /input_parameters/ restart,field_model,magnetic_field_filename, &
        simulation_time,snapshot_frequency,dt,num_species,radiation, &
        collisions,collisions_model,outputs_list,minimum_particle_energy, &
        HDF5_error_handling,orbit_model,field_eval,proceed,profile_model, &
        restart_overwrite_frequency,FokPlan,GC_rad_model,bound_electron_model, &
-       FO_GC_compare,SameRandSeed
+       FO_GC_compare,SameRandSeed,SC_E
 
   open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
        status='OLD',form='formatted')
@@ -170,6 +171,8 @@ subroutine load_korc_params(params)
   params%FokPlan=FokPlan
 
   params%SameRandSeed = SameRandSeed
+
+  params%SC_E=SC_E
 
   ! Loading list of output parameters (parsing)
   imin = SCAN(outputs_list,'{')
@@ -228,6 +231,7 @@ subroutine load_korc_params(params)
         write(6,'("Bound electron model: ",A50)') &
              TRIM(params%bound_electron_model)
      end if
+     write(6,'("Self-consistent E included: ",L1)') params%SC_E
      write(6,'("* * * * * * * * * * * * * * * * * * * * *",/)')
   end if
 end subroutine load_korc_params
@@ -315,7 +319,7 @@ subroutine define_time_step(params)
      write(6,'("Output cadence: ",I16)') params%output_cadence
      write(6,'("Restart cadence: ",I16)') params%restart_output_cadence
      write(6,'("Number of outputs: ",I16)') params%num_snapshots
-     write(6,'("* * * * * * * * * ** * * * * * * * * * * * *",/)')
+     write(6,'("* * * * * * * * * * * * * * * * * * * * * * *",/)')
   end if
 end subroutine define_time_step
 

@@ -91,7 +91,9 @@ program main
   !! file. Reads in &amp;plasmaProfiles namelist from input file.
   !! Only initialized if collisions (params%collisions==T) are present.
 
-  call initialize_particles(params,F,spp) ! Initialize particles
+
+  
+  call initialize_particles(params,F,P,spp) ! Initialize particles
   !! <h4>5\. Initialize Particle Velocity Phase Space</h4>
   !! 
   !! Subroutine [[initialize_particles]] in [[korc_initialize]] that 
@@ -101,6 +103,7 @@ program main
   !! calls [[initial_energy_pitch_dist]] to assign particles' energy and pitch
   !! angle according to the chosen distribution.
 
+!  write(6,'("init eta: ",E17.10)') spp(1)%vars%eta
   
   call initialize_collision_params(params)
   !! <h4>6\. Initialize Collision Parameters</h4>
@@ -110,6 +113,8 @@ program main
   !! (multiple-species) data types, reading in namefiles from the KORC input file.
   !! MS reads in namelist &CollisionParamsMultipleSpecies while SS reads in
   !! namelist &CollisionParamsSingleSpecies.
+
+
   
   call initialize_synthetic_camera(params,F)
   !! <h4>7\. Initialize Synthetic Cameras</h4>
@@ -125,6 +130,8 @@ program main
   !! Also finds the maximum non-relativistic and relativistic cyclotron frequencies
   !! to be used for setting the timstep for the time-evolution algorithms.
 
+
+  
   call define_time_step(params)
   !! <h4>10\. Define Time Step</h4>
   !!
@@ -136,12 +143,15 @@ program main
   call initialize_particle_pusher(params)
   !! <h4>11\. Initialize Particle Pusher</h4>    
 
+  call define_SC_time_step(params,F)
+  
   call normalize_variables(params,spp,F,P)
   !! <h4>12\. Normalize Variables</h4>
   !!
   !! Subroutine [[normalize_variables]] in [[korc_units]] normalizes 
   !! variables consistent with characteristic plasma parameters 
   !! calculated in [[compute_charcs_plasma_params]].
+
 
   
   call normalize_collisions_params(params)
@@ -163,6 +173,8 @@ program main
   ! *** BEYOND THIS POINT VARIABLES ARE DIMENSIONLESS ***
   ! *** *** *** *** *** ***   *** *** *** *** *** *** ***
 
+
+  
   call initialize_fields_interpolant(params,F)
   !! <h4>15\. Initialize Fields Interpolant</h4>
   !!
@@ -191,8 +203,17 @@ program main
   !! field interpolations. 
   !! Only initialized if collisions (params%collisions==T) are present for
   !! ne, Te, Zeff
-  
+
+  if (params%mpi_params%rank .EQ. 0) then
+     write(6,'("* * * * INITIALIZING INITIAL CONDITIONS * * * *")')
+  end if
   call set_up_particles_ic(params,F,spp,P)
+  if (params%mpi_params%rank .EQ. 0) then
+     write(6,'("* * * * * * * * * * * * * * * * * * * * * * * *",/)')
+  end if
+
+!  write(6,'("post ic eta: ",E17.10)') spp(1)%vars%eta
+  
   !! <h4>17\. Set Particle Initial Conditions</h4>  
   !!
   !! Subroutine [[set_up_particles_ic]] in [[korc_initialize]] calls
@@ -208,6 +229,8 @@ program main
 
   ! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !
 
+
+  
   call save_simulation_parameters(params,spp,F,P)
 
   call save_collision_params(params)
@@ -217,33 +240,18 @@ program main
   !! [[save_collision_params]] in [[korc_collisions]] call
   !! subroutines to save simulation and collision parameters.
 
+!  write(6,'("GC init eta: ",E17.10)') spp(1)%vars%eta
   
   if (.NOT.(params%restart.OR.params%proceed)) then
 
-     if (params%orbit_model.eq.'FO') then
-!        call advance_particles_velocity(params,F,P,spp,0.0_rp,.TRUE.,.TRUE.)
-!        if (params%field_eval.eq.'eqn') then
-!           call advance_FOeqn_vars(params,F,P,spp,0.0_rp,.TRUE.,.TRUE.)
-!        else if (params%field_eval.eq.'interp') then
-!           call advance_FOinterp_vars(params,spp,0.0_rp,.TRUE.,.TRUE.)
-        !        end if
+     if (params%orbit_model(1:2).eq.'FO') then
+
         call FO_init(params,F,spp,.true.,.false.)
-        !! new subroutine that first computes save data, then does the
-        !! initial half-step in position
-        
+
      else if (params%orbit_model(1:2).eq.'GC') then
 
- !       write(6,'("GC_coords",L2)') params%GC_coords
- !       write(6,'("X ",E17.10)') spp(1)%vars%X
- !       write(6,'("Y ",E17.10)') spp(1)%vars%Y
-        
-        
-        if (spp(1)%spatial_distribution.eq.'TRACER') then
-           call GC_init(params,F,spp)
-           ! transforms from FO initial conditions to GC initial conditions
-        end if
-           
-!        call advance_GC_vars_slow(params,F,P,spp,0.0_rp,.TRUE.,.TRUE.)
+        call GC_init(params,F,spp)
+
      end if
      
      call save_simulation_outputs(params,spp) ! Save initial condition
@@ -255,25 +263,17 @@ program main
   end if
   ! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !
 
+!  write(6,'("pre ppusher loop eta: ",E17.10)') spp(1)%vars%eta
+  
   call timing_KORC(params)
 
 
   if (params%orbit_model(1:2).eq.'FO'.and.params%field_eval.eq.'eqn') then
      call FO_init(params,F,spp,.false.,.true.)
-     ! Initial half-time particle push
 
-!     write(6,'("BX: ",E17.10)') spp(1)%vars%B(:,1)
-!     write(6,'("BY: ",E17.10)') spp(1)%vars%B(:,2)
-!     write(6,'("BZ: ",E17.10)') spp(1)%vars%B(:,3)
-
-     
      do it=params%ito,params%t_steps,params%t_skip
         call adv_FOeqn_top(params,F,P,spp)
 
-!        write(6,'("BX: ",E17.10)') spp(1)%vars%B(:,1)
-!        write(6,'("BY: ",E17.10)') spp(1)%vars%B(:,2)
-!        write(6,'("BZ: ",E17.10)') spp(1)%vars%B(:,3)
-        
         params%time = params%init_time &
              +REAL(it-1_ip+params%t_skip,rp)*params%dt        
         params%it = it-1_ip+params%t_skip
@@ -342,7 +342,7 @@ program main
 
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp') then
      do it=params%ito,params%t_steps,params%t_skip
-        call adv_GCinterp_top(params,spp)
+        call adv_GCinterp_top(params,spp,P,F)
         
         params%time = params%init_time &
              +REAL(it-1_ip+params%t_skip,rp)*params%dt        
@@ -373,6 +373,11 @@ program main
 
   
   call finalize_communications(params)
-  ! * * * FINALIZING SIMULATION * * * 
+  ! * * * FINALIZING SIMULATION * * *
+
+  if (params%mpi_params%rank .EQ. 0) then
+     write(6,'("KORC ran successfully!")')
+  end if
+  
 end program main
 
