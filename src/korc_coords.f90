@@ -48,15 +48,28 @@ CONTAINS
        ss = size(X,1)
     end if
 
+!    write(6,*) 'varX',X(:,1)
+!    write(6,*) 'varY',X(:,2)
+!    write(6,*) 'varR',Xcyl(:,1)
+!    write(6,*) 'varPHI',Xcyl(:,2)
 
-    !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(X,Xcyl)
+!    !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(X,Xcyl)
     do pp=1_idef,ss
+!       write(6,*) 'pp',pp
        Xcyl(pp,1) = SQRT(X(pp,1)**2 + X(pp,2)**2)
        Xcyl(pp,2) = ATAN2(X(pp,2), X(pp,1))
        Xcyl(pp,2) = MODULO(Xcyl(pp,2), 2.0_rp*C_PI)
        Xcyl(pp,3) = X(pp,3)
     end do
-    !$OMP END PARALLEL DO
+!    !$OMP END PARALLEL DO
+
+!    write(6,*) 'varX',X(:,1)
+!    write(6,*) 'varY',X(:,2)
+!    write(6,*) 'varR',Xcyl(:,1)
+!    write(6,*) 'varPHI',Xcyl(:,2)
+
+
+    
   end subroutine cart_to_cyl
 
   subroutine cart_to_cyl_p(X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)

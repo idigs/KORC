@@ -40,6 +40,7 @@ program main
   !! See [[korc_profiles(module)]] for details.
   INTEGER(ip) :: it 
   !! Time iteration
+    INTEGER 				:: mpierr
 
   call initialize_communications(params)
   !!<h2>Order of KORC operations</h2>
@@ -49,13 +50,13 @@ program main
   !!
   !! Subroutine [[initialize_communications]] in [[korc_hpc]] that 
   !! initializes MPI and OpenMP communications.
-
+  
   call timing_KORC(params)
   !! <h4>2\. Timers</h4>
   !!
   !! Subroutine [[timing_KORC]] in [[korc_hpc]] that times the 
   !! execution of any parallel sections of KORC.
-
+  
   ! * * * INITIALIZATION STAGE * * *!
 
   call initialize_HDF5()
@@ -65,14 +66,14 @@ program main
   !!
   !! Subroutine [[initialize_HDF5]] in [[korc_HDF5]] that initializes
   !! HDF5 library. 
-
+  
   call initialize_korc_parameters(params)
   !! <h4>2\. Initialize korc parameters</h4>
   !!
   !! Subroutine [[initialize_korc_parameters]] in [[korc_initialize]] that 
   !! initializes paths and KORC parameters through [[load_korc_params]]
   !! on MPI processes.
-
+  
   call initialize_fields(params,F)
   !! <h4>3\. Initialize fields</h4>
   !!
@@ -205,7 +206,7 @@ program main
   !! field interpolations. 
   !! Only initialized if collisions (params%collisions==T) are present for
   !! ne, Te, Zeff
-
+  
   if (params%mpi_params%rank .EQ. 0) then
      write(6,'("* * * * INITIALIZING INITIAL CONDITIONS * * * *")')
   end if
@@ -213,7 +214,7 @@ program main
   if (params%mpi_params%rank .EQ. 0) then
      write(6,'("* * * * * * * * * * * * * * * * * * * * * * * *",/)')
   end if
-
+  
 !  write(6,'("post ic eta: ",E17.10)') spp(1)%vars%eta
   
   !! <h4>17\. Set Particle Initial Conditions</h4>  
@@ -265,6 +266,7 @@ program main
      call binning_diagnostic(params,spp) 
 
   end if
+  
   ! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !
 
 !  write(6,'("pre ppusher loop eta: ",E17.10)') spp(1)%vars%eta

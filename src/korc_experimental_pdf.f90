@@ -1158,7 +1158,7 @@ END FUNCTION indicator_exp
   !! and simulation variables of the different species in the simulation.
 
   !! An instance of the KORC derived type FIELDS.
-  REAL(rp), DIMENSION(:), ALLOCATABLE 	:: R_samples
+  REAL(rp), DIMENSION(:), ALLOCATABLE 	:: R_samples,X_samples,Y_samples
   !! Major radial location of all samples
   REAL(rp), DIMENSION(:), ALLOCATABLE 	:: PHI_samples
   !! Azimuithal angle of all samples
@@ -1219,7 +1219,7 @@ END FUNCTION indicator_exp
   INTEGER 				:: mpierr
   !! mpi error indicator
   REAL(rp) 						:: dg,deta
-  
+  LOGICAL :: accepted
   
   nsamples = spp%ppp*params%mpi_params%nmpi
 
@@ -1267,6 +1267,8 @@ END FUNCTION indicator_exp
   
   if (params%mpi_params%rank.EQ.0_idef) then
      ALLOCATE(R_samples(nsamples))
+     ALLOCATE(X_samples(nsamples))
+     ALLOCATE(Y_samples(nsamples))
      ! Number of samples to distribute among all MPI processes
      ALLOCATE(PHI_samples(nsamples))
      ! Number of samples to distribute among all MPI processes
@@ -1349,7 +1351,7 @@ END FUNCTION indicator_exp
              G_test*sqrt(G_test**2-1)/ &
              (R_buffer*EXP(-psi0)*f0*sin(deg2rad(eta_buffer))* &
              G_buffer*sqrt(G_buffer**2-1))
-        
+
         if (ratio .GE. 1.0_rp) then
            R_buffer = R_test
            Z_buffer = Z_test
@@ -1423,7 +1425,9 @@ END FUNCTION indicator_exp
              (R_buffer*EXP(-psi0)*f0*sin(deg2rad(eta_buffer))* &
              G_buffer*sqrt(G_buffer**2-1))
 
+        accepted=.false.
         if (ratio .GE. 1.0_rp) then
+           accepted=.true.
            R_buffer = R_test
            Z_buffer = Z_test
            eta_buffer = eta_test
@@ -1431,6 +1435,7 @@ END FUNCTION indicator_exp
         else
            call RANDOM_NUMBER(rand_unif)
            if (rand_unif .LT. ratio) then
+              accepted=.true.
               R_buffer = R_test
               Z_buffer = Z_test
               eta_buffer = eta_test
@@ -1448,28 +1453,42 @@ END FUNCTION indicator_exp
              (G_buffer.LE.h_params%max_sampling_g).AND. &
              (G_buffer.GE.h_params%min_sampling_g).AND. &
              (eta_buffer.LE.h_params%max_pitch_angle).AND. &
-             (eta_buffer.GE.h_params%min_pitch_angle)) THEN
+             (eta_buffer.GE.h_params%min_pitch_angle).AND. &
+             ACCEPTED) THEN
            R_samples(ii) = R_buffer
            Z_samples(ii) = Z_buffer
            eta_samples(ii) = eta_buffer
            G_samples(ii) = G_buffer
+
+!           write(6,*) 'RS',R_buffer
+           
            ! Sample phi location uniformly
            call RANDOM_NUMBER(rand_unif)
            PHI_samples(ii) = 2.0_rp*C_PI*rand_unif
            ii = ii + 1_idef 
         END IF
-
         
      end do
 
 !  if (minval(R_samples(:)).lt.1._rp/params%cpp%length) stop 'error with sample'
 !  write(6,'("R_sample: ",E17.10)') R_samples(:)*params%cpp%length
-  
+
+     X_samples=R_samples*cos(PHI_samples)
+     Y_samples=R_samples*sin(PHI_samples)
+
+!     write(6,*) params%mpi_params%rank,'R_samples',R_samples
+!     write(6,*) params%mpi_params%rank,'PHI_samples',PHI_samples
+     
   end if
 
-  CALL MPI_SCATTER(R_samples*cos(PHI_samples),spp%ppp,MPI_REAL8, &
+
+  
+  call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+
+
+  CALL MPI_SCATTER(X_samples,spp%ppp,MPI_REAL8, &
        spp%vars%X(:,1),spp%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
-  CALL MPI_SCATTER(R_samples*sin(PHI_samples),spp%ppp,MPI_REAL8, &
+  CALL MPI_SCATTER(Y_samples,spp%ppp,MPI_REAL8, &
        spp%vars%X(:,2),spp%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
   CALL MPI_SCATTER(Z_samples,spp%ppp,MPI_REAL8, &
        spp%vars%X(:,3),spp%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
@@ -1477,22 +1496,30 @@ END FUNCTION indicator_exp
        spp%vars%eta,spp%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
   CALL MPI_SCATTER(G_samples,spp%ppp,MPI_REAL8, &
        spp%vars%g,spp%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
-  
+
   
   call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
+!  write(6,*) params%mpi_params%rank,'varX',spp%vars%X(:,1)
+!  write(6,*) params%mpi_params%rank,'varY',spp%vars%X(:,2)
+  
 !  write(6,'("X_X: ",E17.10)') spp%vars%X(:,1)*params%cpp%length
   
   ! gamma is kept for each particle, not the momentum
 
   if (params%orbit_model(1:2).eq.'GC') call cart_to_cyl(spp%vars%X,spp%vars%Y)
 
+!  write(6,*) params%mpi_params%rank,'varX',spp%vars%X(:,1)
+!  write(6,*) params%mpi_params%rank,'varR',spp%vars%Y(:,1)
+  
 !  write(6,'("Y_R: ",E17.10)') spp%vars%Y(:,1)*params%cpp%length
   
 !  if (minval(spp%vars%Y(:,1)).lt.1._rp/params%cpp%length) stop 'error with avalanche'
   
   if (params%mpi_params%rank.EQ.0_idef) then
      DEALLOCATE(R_samples)
+     DEALLOCATE(X_samples)
+     DEALLOCATE(Y_samples)
      DEALLOCATE(Z_samples)
      DEALLOCATE(PHI_samples)
      DEALLOCATE(eta_samples)

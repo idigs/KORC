@@ -694,7 +694,7 @@ CONTAINS
                vars%gradB,vars%curlb, vars%flag, vars%PSI_P)
 
        else
-
+          
           call cyl_check_if_confined(F,vars%Y,vars%flag)
 
           call analytical_fields_GC(params,F,vars%Y, vars%E, vars%B, &
@@ -877,15 +877,23 @@ CONTAINS
     ZZ=spp%vars%Y(:,3)
     rm=sqrt((RR-F%Ro)**2+(ZZ-F%Zo)**2)*params%cpp%length
 
+!    write (6,*) params%mpi_params%rank,'RR',RR
+!    write (6,*) params%mpi_params%rank,'ZZ',spp%vars%Y(:,3)
+!    write (6,*) params%mpi_params%rank,'rm',rm
+    
+    
     dr=F%r_1D(2)-F%r_1D(1)
 
     vpll=spp%vars%V(:,1)*params%cpp%velocity/spp%vars%g
 
     ! Weighting parallel velocity
+
+!    write (6,*) params%mpi_params%rank,'vpll',vpll
     
     Vpart=0._rp
     do pp=1_idef,spp%ppp
        rind=FLOOR((rm(pp)-dr/2)/dr)+2_ip
+!       write (6,*) params%mpi_params%rank,'rind',rind
        Vpart(rind)=Vpart(rind)+vpll(pp)
     end do
 
@@ -914,13 +922,13 @@ CONTAINS
        end if
     end do
     Isam=2*C_PI*Isam*dr
-    write(6,*) 'Isam: ',Isam
+!    write(6,*) params%mpi_params%rank,'Isam: ',Isam
 
     Jexp=Jsam*F%Ip_exp/Isam
 
     F%J_SC_1D%PHI=Jexp
 
-    write(6,*) 'J(1)',F%J_SC_1D%PHI(1)
+!    write(6,*) params%mpi_params%rank,'J(1)',F%J_SC_1D%PHI(1)
     
     ! Solving 1D Poisson equation with tridiagonal matrix solve
 
@@ -931,7 +939,7 @@ CONTAINS
     gam=0._rp
     r=-2*dr**2*C_MU*Jexp
 
-    do ii=1_idef,F%dim_1D
+    do ii=2_idef,F%dim_1D
        a(ii)=(REAL(ii)-2._rp)/(REAL(ii)-1._rp)
        c(ii)=REAL(ii)/(REAL(ii)-1._rp)
     end do
@@ -966,18 +974,16 @@ CONTAINS
        F%A2_SC_1D%PHI=F%A1_SC_1D%PHI 
     end if
 
-    write(6,*) 'A1(1)',F%A1_SC_1D%PHI(1)
-    write(6,*) 'A2(1)',F%A2_SC_1D%PHI(1)
-    write(6,*) 'A3(1)',F%A3_SC_1D%PHI(1)
+!    write(6,*) params%mpi_params%rank,'A1(1)',F%A1_SC_1D%PHI(1)
+!    write(6,*) params%mpi_params%rank,'A2(1)',F%A2_SC_1D%PHI(1)
+!    write(6,*) params%mpi_params%rank,'A3(1)',F%A3_SC_1D%PHI(1)
     
     ! Calculating inductive E_phi
 
     F%E_SC_1D%PHI=-(3*F%A1_SC_1D%PHI-4*F%A2_SC_1D%PHI+F%A3_SC_1D%PHI)/ &
          (2*F%dt_E_SC)
 
-    write(6,*) 'E(1)',F%E_SC_1D%PHI(1)
-    write(6,*) 'E(1)',-(3*F%A1_SC_1D%PHI(1)-4*F%A2_SC_1D%PHI(1)+ &
-         F%A3_SC_1D%PHI(1))
+!    write(6,*) params%mpi_params%rank,'E(1)',F%E_SC_1D%PHI(1)
     
     ! Normalizing inductive E_phi
     

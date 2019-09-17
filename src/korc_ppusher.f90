@@ -1562,7 +1562,7 @@ contains
           end do ! loop over particles on an mpi process
           !$OMP END PARALLEL DO                
        else
-
+          
           if ((spp(ii)%spatial_distribution.eq.'TRACER').or. &
                (spp(ii)%spatial_distribution.eq.'TORUS')) &
                call cart_to_cyl(spp(ii)%vars%X,spp(ii)%vars%Y)
@@ -1712,12 +1712,16 @@ contains
 
              if (.not.params%FokPlan) then       
                 do tt=1_ip,params%t_skip
-                      
+
+!                   write(6,*) params%mpi_params%rank,'Y_R',Y_R
+                   
                    call advance_GCeqn_vars(spp(ii)%vars,pp, &
                         tt+params%t_skip*(ttt-1),params, &
                         Y_R,Y_PHI, Y_Z,V_PLL,V_MU,flag_cache,q_cache,m_cache, &
                         B_R,B_PHI,B_Z,F,P,PSIp)
 
+!                   write(6,*) params%mpi_params%rank,'Y_R',Y_R
+                   
                 end do !timestep iterator
 
                 !$OMP SIMD
