@@ -1372,9 +1372,9 @@ contains
     REAL(rp),DIMENSION(:),ALLOCATABLE               :: RVphi
 
     REAL(rp),DIMENSION(8) :: rm8,Y_R,Y_Z,V_PLL,vpll,gam
-    real(rp),dimension(F%dim_1D) :: Vpart,Vpartave,VpartOMP
+    real(rp),dimension(F%dim_1D) :: Vpart,Vden,VdenOMP
     real(rp) :: dr
-    integer :: rind
+    integer :: rind,jj
     
 !    write(6,'("eta",E17.10)') spp(ii)%vars%eta(pp)
 !    write(6,'("gam",E17.10)') spp(ii)%vars%g(pp)
@@ -1612,10 +1612,9 @@ contains
           end do ! loop over particles on an mpi process
           !$OMP END PARALLEL DO  
 
-          VpartOMP=0._rp
+
           !$OMP PARALLEL DO shared(F,params,spp) &
-          !$OMP& PRIVATE(pp,E_PHI,rm8,rind,Vpart,dr,Y_R,Y_Z,V_PLL,gam,vpll) &
-          !$OMP& REDUCTION(+:VpartOMP)
+          !$OMP& PRIVATE(pp,E_PHI)
           do pp=1_idef,spp(ii)%ppp,8
 
              !$OMP SIMD
@@ -1632,40 +1631,12 @@ contains
              end do
              !$OMP END SIMD
 
-             if (params%SC_E) then
-
-                Vpart=0._rp
-                !$OMP SIMD
-                do cc=1_idef,8_idef
-                   Y_R(cc)=spp(ii)%vars%Y(pp-1+cc,1)
-                   Y_Z(cc)=spp(ii)%vars%Y(pp-1+cc,3)
-                   V_PLL(cc)=spp(ii)%vars%V(pp-1+cc,1)
-                   gam(cc)=spp(ii)%vars%g(pp-1+cc)
-                   vpll(cc)=V_PLL(cc)/gam(cc)
-                   
-                   rm8(cc)=sqrt((Y_R(cc)-F%Ro)**2+(Y_Z(cc)-F%Zo)**2)* &
-                        params%cpp%length
-                   dr=F%r_1D(2)-F%r_1D(1)
-
-                   rind=FLOOR(rm8(cc)/dr)+1_ip
-                   Vpart(rind)=Vpart(rind)+ &
-                        vpll(cc)*(F%r_1D(rind+1)-rm8(cc))/dr
-                   Vpart(rind+1)=Vpart(rind+1)+ &
-                        vpll(cc)*(rm8(cc)-F%r_1D(rind))/dr
-                end do
-                !$OMP END SIMD
-
-                VpartOMP=VpartOMP+Vpart
-                
-             end if
-
              
           end do
           !$OMP END PARALLEL DO
 
           if (params%SC_E) then
-!             write(6,*) VpartOMP
-             call calculate_SC_E1D(params,F,spp(1),VpartOMP,.true.)
+             call init_SC(params,F,spp(1))
           end if
           
        end if
@@ -1721,11 +1692,8 @@ contains
     INTEGER(ip)                                                    :: ttt
     !! time iterator.
 
-    REAL(rp),DIMENSION(8) :: rm,gam,vpll
-    real(rp),dimension(F%dim_1D) :: Vpart,Vpartave,VpartOMP
-    real(rp) :: dr
-    integer :: rind
-
+    real(rp),dimension(F%dim_1D) :: Jsamone,J1,J2,J3,dJdt
+    real(rp),dimension(F%dim_1D) :: dJdtave,Jave,dJdtOMP,JOMP
     
     do ii = 1_idef,params%num_species      
 
@@ -1735,15 +1703,16 @@ contains
 
        do ttt=1_ip,params%t_it_SC
 
-          VpartOMP=0._rp
+          dJdtOMP=0._rp
+          JOMP=0._rp
           
           !$OMP PARALLEL DO default(none) &
           !$OMP& FIRSTPRIVATE(E0,q_cache,m_cache) &
           !$OMP& shared(F,P,params,ii,spp) &
           !$OMP& PRIVATE(pp,tt,ttt,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
           !$OMP& flag_cache,B_R,B_PHI,B_Z,E_PHI,PSIp, &
-          !$OMP& rm,rind,Vpart,Vpartave,dr,vpll,gam) &
-          !$OMP& REDUCTION(+:VpartOMP)
+          !$OMP& Jsamone,J1,J2,J3,dJdtave,dJdt,Jave) &
+          !$OMP& REDUCTION(+:dJdtOMP,JOMP)
           do pp=1_idef,spp(ii)%ppp,8
 
              !$OMP SIMD
@@ -1759,7 +1728,12 @@ contains
              end do
              !$OMP END SIMD
 
-             Vpartave=0._rp
+             dJdtave=0._rp
+             Jave=0._rp
+             J1=0._rp
+             J2=0._rp
+             J3=0._rp
+             
              if (.not.params%FokPlan) then       
                 do tt=1_ip,params%t_skip
 
@@ -1772,29 +1746,37 @@ contains
 
 !                   write(6,*) params%mpi_params%rank,'Y_R',Y_R
 
-                   Vpart=0._rp
-                   !$OMP SIMD
-                   do cc=1_idef,8_idef
-                      Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+ &
-                           B_Z(cc)*B_Z(cc))
-                      gam(cc)=sqrt(1+V_PLL(cc)**2+ &
-                           2*V_MU(cc)*Bmag(cc)*m_cache)
-                      vpll(cc)=V_PLL(cc)/gam(cc)
-                      rm(cc)=sqrt((Y_R(cc)-F%Ro)**2+(Y_Z(cc)-F%Zo)**2)* &
-                           params%cpp%length
-                      dr=F%r_1D(2)-F%r_1D(1)
+                   if (params%SC_E) then
 
-                      rind=FLOOR(rm(cc)/dr)+1_ip
-                      Vpart(rind)=Vpart(rind)+ &
-                           vpll(cc)*(F%r_1D(rind+1)-rm(cc))/dr
-                      Vpart(rind+1)=Vpart(rind+1)+ &
-                           vpll(cc)*(rm(cc)-F%r_1D(rind))/dr
-                   end do
-                   !$OMP END SIMD
-                   Vpartave=(Vpartave*REAL(tt-1_ip)+Vpart)/REAL(tt)
+                      call calculate_SC_p(params,F,B_R,B_PHI,B_Z,V_PLL,V_MU, &
+                           m_cache,Y_R,Y_Z,Jsamone)                      
+
+                      J3=J2
+                      J2=J1
+                      J1=Jsamone
+
+                      if (tt.eq.1_idef) then
+                         J2=J1
+                         J3=J1
+                      end if
+
+                      dJdt=(3*J1-4*J2+J3)/(2*params%dt*params%cpp%time)
+
+                      if ((pp.eq.1).and. &
+                           (params%mpi_params%rank.eq.0)) then
+!                         write(6,*) 'J1',J1(1:20)
+!                         write(6,*) 'J2',J2(1:20)
+!                         write(6,*) 'J3',J3(1:20)
+!                         write(6,*) 'dJdt',dJdt(1:20)
+                      end if
+                      
+                      dJdtave=(dJdtave*REAL(tt-1_ip)+dJdt)/REAL(tt)
+                      Jave=(Jave*REAL(tt-1_ip)+J1)/REAL(tt)
+                   end if
                 end do !timestep iterator
 
-                VpartOMP=VpartOMP+Vpartave
+                dJdtOMP=dJdtOMP+dJdtave
+                JOMP=JOMP+Jave
 
                 
                 !$OMP SIMD
@@ -1852,7 +1834,7 @@ contains
 
           if (params%SC_E) then
 
-             call calculate_SC_E1D(params,F,spp(ii),VpartOMP,.false.)
+             call calculate_SC_E1D(params,F,spp(ii),dJdtOMP,JOMP)
              
           end if
           

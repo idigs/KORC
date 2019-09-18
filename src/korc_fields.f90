@@ -23,6 +23,8 @@ module korc_fields
        ALLOCATE_3D_FIELDS_ARRAYS,&
        DEALLOCATE_FIELDS_ARRAYS,&
        calculate_SC_E1D,&
+       calculate_SC_p,&
+       init_SC,&
        define_SC_time_step
   PRIVATE :: get_analytical_fields,&
        analytical_fields,&
@@ -856,133 +858,113 @@ CONTAINS
     END SELECT
   end subroutine get_fields
 
-  subroutine calculate_SC_E1D(params,F,spp,Vpart,init)
+  subroutine calculate_SC_p(params,F,B_R,B_PHI,B_Z,V_PLL,V_MU, &
+       m_cache,Y_R,Y_Z,Jsamone)
+
+    TYPE(FIELDS), INTENT(IN)                 :: F
+    TYPE(KORC_PARAMS), INTENT(IN) 		:: params
+    real(rp),dimension(8),intent(in) :: B_R,B_PHI,B_Z
+    real(rp),dimension(8),intent(in) :: Y_R,Y_Z
+    real(rp),dimension(8),intent(in) :: V_PLL,V_MU
+    real(rp),intent(in) :: m_cache
+    real(rp),dimension(F%dim_1D),intent(out) :: Jsamone
+    
+
+    real(rp),dimension(8) :: Bmag,gam,rm,vpll
+    real(rp),dimension(F%dim_1D) :: Vpart,Vden
+    real(rp) :: dr
+    integer :: cc,jj,rind
+
+
+    Vpart=0._rp
+    dr=F%r_1D(2)-F%r_1D(1)
+    
+    !$OMP SIMD
+    do cc=1_idef,8_idef
+       Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+ &
+            B_Z(cc)*B_Z(cc))
+       gam(cc)=sqrt(1+V_PLL(cc)**2+ &
+            2*V_MU(cc)*Bmag(cc)*m_cache)
+       vpll(cc)=V_PLL(cc)/gam(cc)
+       rm(cc)=sqrt((Y_R(cc)-F%Ro)**2+(Y_Z(cc)-F%Zo)**2)* &
+            params%cpp%length
+
+       rind=FLOOR(rm(cc)/dr)+1_ip
+       Vpart(rind)=Vpart(rind)+ &
+            vpll(cc)*(F%r_1D(rind+1)-rm(cc))/dr
+       Vpart(rind+1)=Vpart(rind+1)+ &
+            vpll(cc)*(rm(cc)-F%r_1D(rind))/dr
+    end do
+    !$OMP END SIMD
+
+    Vden=0._rp
+    
+    do jj=1_idef,F%dim_1D
+       if(jj.eq.1) then
+          Vden(jj)=Vpart(jj)/(C_PI*dr**2/3)
+       else
+          Vden(jj)=Vpart(jj)/(2*C_PI*dr**2*(jj-1))
+       end if
+    end do
+
+    Jsamone=C_E*Vden*F%Ip0
+    
+  end subroutine calculate_SC_p
+  
+  subroutine calculate_SC_E1D(params,F,spp,dJdt,J)
 
     TYPE(FIELDS), INTENT(INOUT)                 :: F
     TYPE(KORC_PARAMS), INTENT(IN) 		:: params
     TYPE(SPECIES), INTENT(INOUT)    :: spp
-    real(rp),dimension(F%dim_1D),intent(in) :: Vpart
-    real(rp),dimension(spp%ppp) :: RR,ZZ,rm,vpll
-    real(rp),dimension(F%dim_1D) :: Vden,Jsamone,Jsamall,Jexp,dJdt
-    real(rp),dimension(F%dim_1D) :: a,b,c,u,gam,r,r_1D
-    real(rp) :: dr,Isam=0._rp,bet
-    integer :: pp,ii,rind
-    logical :: init
+    real(rp),dimension(F%dim_1D),intent(in) :: dJdt,J
+
+    real(rp),dimension(F%dim_1D) :: dJdtall,Jall
+    real(rp),dimension(F%dim_1D) :: a,b,c,u,gam,r
+    real(rp) :: dr,bet
+    integer :: ii
     INTEGER 				:: mpierr
 
     if (params%mpi_params%rank .EQ. 0) then
        write(6,*) 'Calculating SC_E1D'
     end if
 
-    ! 1D nearest grid point weighting in minor radius
+!    write(6,*) params%mpi_params%rank,'J(1)',J(1)
+
     
-!    RR=spp%vars%Y(:,1)
-!    ZZ=spp%vars%Y(:,3)
-!    rm=sqrt((RR-F%Ro)**2+(ZZ-F%Zo)**2)*params%cpp%length
 
-!    write (6,*) params%mpi_params%rank,'RR',RR
-!    write (6,*) params%mpi_params%rank,'ZZ',spp%vars%Y(:,3)
-!    write (6,*) params%mpi_params%rank,'rm',rm
-    
-    
-    dr=F%r_1D(2)-F%r_1D(1)
 
-!    vpll=spp%vars%V(:,1)*params%cpp%velocity/spp%vars%g
-
-    ! Weighting parallel velocity
-
-!    write (6,*) params%mpi_params%rank,'vpll',vpll
-    
-!    Vpart=0._rp
-
- !   do pp=1_idef,spp%ppp
-       ! NGP weighting
-!       rind=FLOOR((rm(pp)-dr/2)/dr)+2_ip
-!       Vpart(rind)=Vpart(rind)+vpll(pp)
-
-       ! First-order weighting
- !      rind=FLOOR(rm(pp)/dr)+1_ip
- !      Vpart(rind)=Vpart(rind)+vpll(pp)*(F%r_1D(rind+1)-rm(pp))/dr
- !      Vpart(rind+1)=Vpart(rind+1)+vpll(pp)*(rm(pp)-F%r_1D(rind))/dr       
- !   end do
-
-    ! Calculating density of minor radial annulus
-    
-    do ii=1_idef,F%dim_1D
-       ! NGP weighting
-!       if(ii.eq.1) then
-!          Vden(ii)=Vpart(ii)/(C_PI*dr**2/4)
-!       else
-!          Vden(ii)=Vpart(ii)/(2*C_PI*dr**2*(ii-1))
-!       end if
-       ! First-order weighting
-       if(ii.eq.1) then
-          Vden(ii)=Vpart(ii)/(C_PI*dr**2/3)
-       else
-          Vden(ii)=Vpart(ii)/(2*C_PI*dr**2*(ii-1))
-       end if
-       
-    end do
-    
-    Jsamone=C_E*Vden
-
-    ! Add sampled current densities from all MPI processes Jsamone,
-    ! and output of total sampled current density Jsamall to each
-    ! MPI process.
-    
-    call MPI_ALLREDUCE(Jsamone,Jsamall,F%dim_1D,MPI_REAL8,MPI_SUM, &
+    call MPI_ALLREDUCE(dJdt,dJdtall,F%dim_1D,MPI_REAL8,MPI_SUM, &
+         MPI_COMM_WORLD,mpierr)
+    call MPI_ALLREDUCE(J,Jall,F%dim_1D,MPI_REAL8,MPI_SUM, &
          MPI_COMM_WORLD,mpierr)
 
-    if (init) then
+
     
-       r_1D=F%r_1D
-!    write(6,*) 'Jsam: ',Jsam
+!    Jexp=Jsamall*F%Ip0
 
-    ! Integrating current density to scale total current to
-    ! experimentally determined total current
-
-
-       
-       do ii=1_idef,F%dim_1D
-          if ((ii.eq.1).or.(ii.eq.F%dim_1D)) then
-             Isam=Isam+Jsamall(ii)*r_1D(ii)/2
-          else 
-             Isam=Isam+Jsamall(ii)*r_1D(ii)
-          end if
-       end do
-       Isam=2*C_PI*Isam*dr
-!    write(6,*) params%mpi_params%rank,'Isam: ',Isam
-
-       F%Ip0=F%Ip_exp/Isam
-    end if
+!    F%J3_SC_1D%PHI=F%J2_SC_1D%PHI
+!    F%J2_SC_1D%PHI=F%J1_SC_1D%PHI
+    F%J1_SC_1D%PHI=Jall    
     
-    Jexp=Jsamall*F%Ip0
-
-    F%J3_SC_1D%PHI=F%J2_SC_1D%PHI
-    F%J2_SC_1D%PHI=F%J1_SC_1D%PHI
-    F%J1_SC_1D%PHI=Jexp    
-    
-    if (init) then
-       F%J3_SC_1D%PHI=F%J1_SC_1D%PHI
-       F%J2_SC_1D%PHI=F%J1_SC_1D%PHI 
-    end if
     
     ! Calculating time-derivative of E_phi
     
-    dJdt=(3*F%J1_SC_1D%PHI-4*F%J2_SC_1D%PHI+F%J3_SC_1D%PHI)/ &
-         (2*F%dt_E_SC)
+!    dJdt=(3*F%J1_SC_1D%PHI-4*F%J2_SC_1D%PHI+F%J3_SC_1D%PHI)/ &
+!         (2*F%dt_E_SC)
     
-!    write(6,*) params%mpi_params%rank,'J(1)',F%J_SC_1D%PHI(1)
+!    write(6,*) 'dJdt(1)',dJdt(1)
     
     ! Solving 1D Poisson equation with tridiagonal matrix solve
 
+    dr=F%r_1D(2)-F%r_1D(1)
+    
     a=0._rp
     b=-2._rp
     c=0._rp
     u=0._rp
     gam=0._rp
 !    r=-2*dr**2*C_MU*Jexp
-    r=2*dr**2*C_MU*dJdt
+    r=2*dr**2*C_MU*dJdtall
 
     do ii=2_idef,F%dim_1D
        a(ii)=(REAL(ii)-2._rp)/(REAL(ii)-1._rp)
@@ -1006,33 +988,11 @@ CONTAINS
 
     u(1)=(4*u(2)-u(3))/3._rp
 
-    ! Writing over F%A* data
-    
-!    F%A3_SC_1D%PHI=F%A2_SC_1D%PHI
-!    F%A2_SC_1D%PHI=F%A1_SC_1D%PHI
-!    F%A1_SC_1D%PHI=u
-    
-!    if (init) then
-!       F%A3_SC_1D%PHI=F%A1_SC_1D%PHI
-!       F%A2_SC_1D%PHI=F%A1_SC_1D%PHI 
-!    end if
-
-!    write(6,*) params%mpi_params%rank,'A1(1)',F%A1_SC_1D%PHI(1)
-!    write(6,*) params%mpi_params%rank,'A2(1)',F%A2_SC_1D%PHI(1)
-!    write(6,*) params%mpi_params%rank,'A3(1)',F%A3_SC_1D%PHI(1)
-    
-    ! Calculating inductive E_phi
-
-!    F%E_SC_1D%PHI=-(3*F%A1_SC_1D%PHI-4*F%A2_SC_1D%PHI+F%A3_SC_1D%PHI)/ &
-!         (2*F%dt_E_SC)
-
     F%E_SC_1D%PHI=u
 
     if (params%mpi_params%rank.eq.0) then
-       write(6,*) 'J1(1)',F%J1_SC_1D%PHI(1)
-       write(6,*) 'J2(1)',F%J2_SC_1D%PHI(1)
-       write(6,*) 'J3(1)',F%J3_SC_1D%PHI(1)
-       
+       write(6,*) 'tot_dJdt(1)',dJdt(1)
+       write(6,*) 'tot_J1(1)',F%J1_SC_1D%PHI(1)       
        write(6,*) 'E(1)',F%E_SC_1D%PHI(1)
     end if
        
@@ -1044,7 +1004,118 @@ CONTAINS
     
   end subroutine calculate_SC_E1D
   
+  subroutine init_SC(params,F,spp)
 
+    TYPE(FIELDS), INTENT(INOUT)                 :: F
+    TYPE(KORC_PARAMS), INTENT(IN) 		:: params
+    TYPE(SPECIES), INTENT(INOUT)    :: spp
+    real(rp),dimension(spp%ppp) :: RR,ZZ,rm,vpll
+    real(rp),dimension(F%dim_1D) :: Jsam,Jsamone,Jsamall,Jexp,Vpart,Vden
+    real(rp),dimension(F%dim_1D) :: r_1D
+    real(rp) :: dr,Isam=0._rp
+    integer :: pp,ii,rind
+    INTEGER 				:: mpierr
+
+    if (params%mpi_params%rank .EQ. 0) then
+       write(6,*) 'Calculating SC_E1D'
+    end if
+
+    ! 1D nearest grid point weighting in minor radius
+    
+    RR=spp%vars%Y(:,1)
+    ZZ=spp%vars%Y(:,3)
+    rm=sqrt((RR-F%Ro)**2+(ZZ-F%Zo)**2)*params%cpp%length
+
+!    write (6,*) params%mpi_params%rank,'RR',RR
+!    write (6,*) params%mpi_params%rank,'ZZ',spp%vars%Y(:,3)
+!    write (6,*) params%mpi_params%rank,'rm',rm
+    
+    
+    vpll=spp%vars%V(:,1)/spp%vars%g
+
+    ! Weighting parallel velocity
+
+    write (6,*) params%mpi_params%rank,'vpll(1)',vpll(1)
+
+    dr=F%r_1D(2)-F%r_1D(1)
+    
+    Vpart=0._rp
+    do pp=1_idef,spp%ppp
+       ! NGP weighting
+!       rind=FLOOR((rm(pp)-dr/2)/dr)+2_ip
+!       Vpart(rind)=Vpart(rind)+vpll(pp)
+
+       ! First-order weighting
+       rind=FLOOR(rm(pp)/dr)+1_ip
+       Vpart(rind)=Vpart(rind)+vpll(pp)*(F%r_1D(rind+1)-rm(pp))/dr
+       Vpart(rind+1)=Vpart(rind+1)+vpll(pp)*(rm(pp)-F%r_1D(rind))/dr       
+    end do
+
+    ! Calculating density of minor radial annulus
+
+    Vden=0._rp
+    do ii=1_idef,F%dim_1D
+       ! NGP weighting
+!       if(ii.eq.1) then
+!          Vden(ii)=Vpart(ii)/(C_PI*dr**2/4)
+!       else
+!          Vden(ii)=Vpart(ii)/(2*C_PI*dr**2*(ii-1))
+!       end if
+       ! First-order weighting
+       if(ii.eq.1) then
+          Vden(ii)=Vpart(ii)/(C_PI*dr**2/3)
+       else
+          Vden(ii)=Vpart(ii)/(2*C_PI*dr**2*(ii-1))
+       end if
+       
+    end do
+   
+
+    ! Add sampled current densities from all MPI processes Jsamone,
+    ! and output of total sampled current density Jsamall to each
+    ! MPI process.
+    
+
+!    write(6,*) 'Vden(1): ',Vden(1)
+    Jsamone=C_E*Vden
+
+    call MPI_ALLREDUCE(Jsamone,Jsamall,F%dim_1D,MPI_REAL8,MPI_SUM, &
+         MPI_COMM_WORLD,mpierr)
+
+
+    r_1D=F%r_1D
+
+
+    ! Integrating current density to scale total current to
+    ! experimentally determined total current
+
+    do ii=1_idef,F%dim_1D
+       if ((ii.eq.1).or.(ii.eq.F%dim_1D)) then
+          Isam=Isam+Jsamall(ii)*r_1D(ii)/2
+       else 
+          Isam=Isam+Jsamall(ii)*r_1D(ii)
+       end if
+    end do
+    Isam=2*C_PI*Isam*dr
+
+    !       write(6,*) params%mpi_params%rank,'Isam: ',Isam
+
+    F%Ip0=F%Ip_exp/Isam
+    Jsam=Jsamall
+
+    
+    Jexp=Jsam*F%Ip0
+
+    F%J1_SC_1D%PHI=Jexp      
+
+    write(6,*) 'Ip0',F%Ip0
+    
+    if (params%mpi_params%rank.eq.0) then
+       write(6,*) 'J1(1)',F%J1_SC_1D%PHI(1)
+    end if
+       
+  end subroutine init_SC
+  
   ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
   ! * * *  SUBROUTINES FOR INITIALIZING FIELDS   * * * !
   ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
