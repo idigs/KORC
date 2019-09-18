@@ -256,8 +256,6 @@ program main
         call GC_init(params,F,spp)
 
      end if
-
-     call calculate_SC_E1D(params,F,spp(1),.true.)
      
      call save_simulation_outputs(params,spp,F) ! Save initial condition
 

@@ -503,7 +503,9 @@ module korc_types
      !! KORC 3-D vector field of the curl of the unit vector in the
      !! direction of the pre-computed magnetic field.
      TYPE(V_FIELD_1D) 				:: E_SC_1D
-     TYPE(V_FIELD_1D) 				:: J_SC_1D
+     TYPE(V_FIELD_1D) 				:: J1_SC_1D
+     TYPE(V_FIELD_1D) 				:: J2_SC_1D
+     TYPE(V_FIELD_1D) 				:: J3_SC_1D
      TYPE(V_FIELD_1D) 				:: A1_SC_1D
      TYPE(V_FIELD_1D) 				:: A2_SC_1D
      TYPE(V_FIELD_1D) 				:: A3_SC_1D
@@ -523,7 +525,7 @@ module korc_types
      !! number of grid nodes along \(Z\)).
      INTEGER 			:: dim_1D
      INTEGER 			:: subcycle_E_SC
-     REAL(rp)  :: dt_E_SC,Ip_exp
+     REAL(rp)  :: dt_E_SC,Ip_exp,Ip0
      REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: PSIp 
      !! 2-D array for storing the data of the poloidal magnetic flux.
      REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: FLAG2D 

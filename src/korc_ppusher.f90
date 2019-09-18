@@ -1349,7 +1349,7 @@ contains
     !! methods, and descriptions of both.
     TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
     !! Core KORC simulation parameters.
-    TYPE(FIELDS), INTENT(IN)                                   :: F
+    TYPE(FIELDS), INTENT(INOUT)                                   :: F
     !! An instance of the KORC derived type FIELDS.
 
     TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)    :: spp
@@ -1371,6 +1371,11 @@ contains
     REAL(rp), DIMENSION(8) :: E_PHI
     REAL(rp),DIMENSION(:),ALLOCATABLE               :: RVphi
 
+    REAL(rp),DIMENSION(8) :: rm8,Y_R,Y_Z,V_PLL,vpll,gam
+    real(rp),dimension(F%dim_1D) :: Vpart,Vpartave,VpartOMP
+    real(rp) :: dr
+    integer :: rind
+    
 !    write(6,'("eta",E17.10)') spp(ii)%vars%eta(pp)
 !    write(6,'("gam",E17.10)') spp(ii)%vars%g(pp)
 
@@ -1569,28 +1574,7 @@ contains
           
           params%GC_coords=.TRUE.
           
-          call get_fields(params,spp(ii)%vars,F)
-
-          
-          !$OMP PARALLEL DO shared(F,params,spp) PRIVATE(pp,E_PHI)
-          do pp=1_idef,spp(ii)%ppp,8
-
-             !$OMP SIMD
-             do cc=1_idef,8_idef
-                E_PHI(cc)=spp(ii)%vars%E(pp-1+cc,2)
-             end do
-             !$OMP END SIMD
-             
-             call add_analytical_E_p(params,0_ip,F,E_PHI)
-
-             !$OMP SIMD
-             do cc=1_idef,8_idef
-                spp(ii)%vars%E(pp-1+cc,2) = E_PHI(cc)
-             end do
-             !$OMP END SIMD
-             
-          end do
-          !$OMP END PARALLEL DO
+          call get_fields(params,spp(ii)%vars,F)        
 
           
           !$OMP PARALLEL DO SHARED(ii,spp) PRIVATE(pp,Bmag1)
@@ -1627,6 +1611,62 @@ contains
 !             end if ! if particle in domain, i.e. spp%vars%flag==1
           end do ! loop over particles on an mpi process
           !$OMP END PARALLEL DO  
+
+          VpartOMP=0._rp
+          !$OMP PARALLEL DO shared(F,params,spp) &
+          !$OMP& PRIVATE(pp,E_PHI,rm8,rind,Vpart,dr,Y_R,Y_Z,V_PLL,gam,vpll) &
+          !$OMP& REDUCTION(+:VpartOMP)
+          do pp=1_idef,spp(ii)%ppp,8
+
+             !$OMP SIMD
+             do cc=1_idef,8_idef
+                E_PHI(cc)=spp(ii)%vars%E(pp-1+cc,2)
+             end do
+             !$OMP END SIMD
+             
+             call add_analytical_E_p(params,0_ip,F,E_PHI)
+
+             !$OMP SIMD
+             do cc=1_idef,8_idef
+                spp(ii)%vars%E(pp-1+cc,2) = E_PHI(cc)
+             end do
+             !$OMP END SIMD
+
+             if (params%SC_E) then
+
+                Vpart=0._rp
+                !$OMP SIMD
+                do cc=1_idef,8_idef
+                   Y_R(cc)=spp(ii)%vars%Y(pp-1+cc,1)
+                   Y_Z(cc)=spp(ii)%vars%Y(pp-1+cc,3)
+                   V_PLL(cc)=spp(ii)%vars%V(pp-1+cc,1)
+                   gam(cc)=spp(ii)%vars%g(pp-1+cc)
+                   vpll(cc)=V_PLL(cc)/gam(cc)
+                   
+                   rm8(cc)=sqrt((Y_R(cc)-F%Ro)**2+(Y_Z(cc)-F%Zo)**2)* &
+                        params%cpp%length
+                   dr=F%r_1D(2)-F%r_1D(1)
+
+                   rind=FLOOR(rm8(cc)/dr)+1_ip
+                   Vpart(rind)=Vpart(rind)+ &
+                        vpll(cc)*(F%r_1D(rind+1)-rm8(cc))/dr
+                   Vpart(rind+1)=Vpart(rind+1)+ &
+                        vpll(cc)*(rm8(cc)-F%r_1D(rind))/dr
+                end do
+                !$OMP END SIMD
+
+                VpartOMP=VpartOMP+Vpart
+                
+             end if
+
+             
+          end do
+          !$OMP END PARALLEL DO
+
+          if (params%SC_E) then
+!             write(6,*) VpartOMP
+             call calculate_SC_E1D(params,F,spp(1),VpartOMP,.true.)
+          end if
           
        end if
 
@@ -1680,8 +1720,13 @@ contains
     INTEGER(ip)                                                    :: tt
     INTEGER(ip)                                                    :: ttt
     !! time iterator.
- 
 
+    REAL(rp),DIMENSION(8) :: rm,gam,vpll
+    real(rp),dimension(F%dim_1D) :: Vpart,Vpartave,VpartOMP
+    real(rp) :: dr
+    integer :: rind
+
+    
     do ii = 1_idef,params%num_species      
 
        q_cache=spp(ii)%q
@@ -1689,12 +1734,16 @@ contains
 
 
        do ttt=1_ip,params%t_it_SC
-       
+
+          VpartOMP=0._rp
+          
           !$OMP PARALLEL DO default(none) &
           !$OMP& FIRSTPRIVATE(E0,q_cache,m_cache) &
           !$OMP& shared(F,P,params,ii,spp) &
           !$OMP& PRIVATE(pp,tt,ttt,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
-          !$OMP& flag_cache,B_R,B_PHI,B_Z,E_PHI,PSIp)
+          !$OMP& flag_cache,B_R,B_PHI,B_Z,E_PHI,PSIp, &
+          !$OMP& rm,rind,Vpart,Vpartave,dr,vpll,gam) &
+          !$OMP& REDUCTION(+:VpartOMP)
           do pp=1_idef,spp(ii)%ppp,8
 
              !$OMP SIMD
@@ -1710,6 +1759,7 @@ contains
              end do
              !$OMP END SIMD
 
+             Vpartave=0._rp
              if (.not.params%FokPlan) then       
                 do tt=1_ip,params%t_skip
 
@@ -1721,9 +1771,32 @@ contains
                         B_R,B_PHI,B_Z,F,P,PSIp)
 
 !                   write(6,*) params%mpi_params%rank,'Y_R',Y_R
-                   
+
+                   Vpart=0._rp
+                   !$OMP SIMD
+                   do cc=1_idef,8_idef
+                      Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+ &
+                           B_Z(cc)*B_Z(cc))
+                      gam(cc)=sqrt(1+V_PLL(cc)**2+ &
+                           2*V_MU(cc)*Bmag(cc)*m_cache)
+                      vpll(cc)=V_PLL(cc)/gam(cc)
+                      rm(cc)=sqrt((Y_R(cc)-F%Ro)**2+(Y_Z(cc)-F%Zo)**2)* &
+                           params%cpp%length
+                      dr=F%r_1D(2)-F%r_1D(1)
+
+                      rind=FLOOR(rm(cc)/dr)+1_ip
+                      Vpart(rind)=Vpart(rind)+ &
+                           vpll(cc)*(F%r_1D(rind+1)-rm(cc))/dr
+                      Vpart(rind+1)=Vpart(rind+1)+ &
+                           vpll(cc)*(rm(cc)-F%r_1D(rind))/dr
+                   end do
+                   !$OMP END SIMD
+                   Vpartave=(Vpartave*REAL(tt-1_ip)+Vpart)/REAL(tt)
                 end do !timestep iterator
 
+                VpartOMP=VpartOMP+Vpartave
+
+                
                 !$OMP SIMD
                 do cc=1_idef,8_idef
                    spp(ii)%vars%Y(pp-1+cc,1)=Y_R(cc)
@@ -1760,7 +1833,6 @@ contains
 
              end if
 
-
              call analytical_fields_Bmag_p(F,Y_R,Y_PHI,Y_Z, &
                   Bmag,E_PHI)
 
@@ -1780,7 +1852,7 @@ contains
 
           if (params%SC_E) then
 
-             call calculate_SC_E1D(params,F,spp(ii),.false.)
+             call calculate_SC_E1D(params,F,spp(ii),VpartOMP,.false.)
              
           end if
           

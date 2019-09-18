@@ -2101,7 +2101,7 @@ CONTAINS
                 CASE ('J_SC')
                    dset = "J_SC"
                    call save_1d_array_to_hdf5(subgroup_id, dset, &
-                        F%J_SC_1D%PHI)
+                        F%J1_SC_1D%PHI)
                 CASE ('A_SC')
                    dset = "A_SC"
                    call save_1d_array_to_hdf5(subgroup_id, dset, &
