@@ -1372,9 +1372,9 @@ contains
     REAL(rp),DIMENSION(:),ALLOCATABLE               :: RVphi
 
     REAL(rp),DIMENSION(8) :: rm8,Y_R,Y_Z,V_PLL,vpll,gam
-    real(rp),dimension(F%dim_1D) :: Vpart,Vden,VdenOMP
+    real(rp),dimension(F%dim_1D) :: Vpart,Vpartave,VpartOMP
     real(rp) :: dr
-    integer :: rind,jj
+    integer :: rind
     
 !    write(6,'("eta",E17.10)') spp(ii)%vars%eta(pp)
 !    write(6,'("gam",E17.10)') spp(ii)%vars%g(pp)
@@ -1612,9 +1612,8 @@ contains
           end do ! loop over particles on an mpi process
           !$OMP END PARALLEL DO  
 
-
           !$OMP PARALLEL DO shared(F,params,spp) &
-          !$OMP& PRIVATE(pp,E_PHI)
+          !$OMP& PRIVATE(pp,cc,E_PHI) 
           do pp=1_idef,spp(ii)%ppp,8
 
              !$OMP SIMD
@@ -1630,13 +1629,13 @@ contains
                 spp(ii)%vars%E(pp-1+cc,2) = E_PHI(cc)
              end do
              !$OMP END SIMD
-
-             
+            
           end do
           !$OMP END PARALLEL DO
 
           if (params%SC_E) then
-             call init_SC(params,F,spp(1))
+!             write(6,*) VpartOMP
+             call init_SC_E1D(params,F,spp(1))
           end if
           
        end if
@@ -1692,8 +1691,9 @@ contains
     INTEGER(ip)                                                    :: ttt
     !! time iterator.
 
-    real(rp),dimension(F%dim_1D) :: Jsamone,J1,J2,J3,dJdt
-    real(rp),dimension(F%dim_1D) :: dJdtave,Jave,dJdtOMP,JOMP
+    real(rp),dimension(F%dim_1D) :: Vden,Vdenave,VdenOMP
+
+
     
     do ii = 1_idef,params%num_species      
 
@@ -1703,16 +1703,15 @@ contains
 
        do ttt=1_ip,params%t_it_SC
 
-          dJdtOMP=0._rp
-          JOMP=0._rp
+          VdenOMP=0._rp
           
           !$OMP PARALLEL DO default(none) &
           !$OMP& FIRSTPRIVATE(E0,q_cache,m_cache) &
           !$OMP& shared(F,P,params,ii,spp) &
           !$OMP& PRIVATE(pp,tt,ttt,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
           !$OMP& flag_cache,B_R,B_PHI,B_Z,E_PHI,PSIp, &
-          !$OMP& Jsamone,J1,J2,J3,dJdtave,dJdt,Jave) &
-          !$OMP& REDUCTION(+:dJdtOMP,JOMP)
+          !$OMP& Vden,Vdenave) &
+          !$OMP& REDUCTION(+:VdenOMP)
           do pp=1_idef,spp(ii)%ppp,8
 
              !$OMP SIMD
@@ -1728,13 +1727,8 @@ contains
              end do
              !$OMP END SIMD
 
-             dJdtave=0._rp
-             Jave=0._rp
-             J1=0._rp
-             J2=0._rp
-             J3=0._rp
-             
-             if (.not.params%FokPlan) then       
+             if (.not.params%FokPlan) then
+                Vdenave=0._rp
                 do tt=1_ip,params%t_skip
 
 !                   write(6,*) params%mpi_params%rank,'Y_R',Y_R
@@ -1746,37 +1740,13 @@ contains
 
 !                   write(6,*) params%mpi_params%rank,'Y_R',Y_R
 
-                   if (params%SC_E) then
+                   call calculate_SC_p(params,F,B_R,B_PHI,B_Z,Y_R,Y_Z, &
+                        V_PLL,V_MU,m_cache,Vden)
 
-                      call calculate_SC_p(params,F,B_R,B_PHI,B_Z,V_PLL,V_MU, &
-                           m_cache,Y_R,Y_Z,Jsamone)                      
-
-                      J3=J2
-                      J2=J1
-                      J1=Jsamone
-
-                      if (tt.eq.1_idef) then
-                         J2=J1
-                         J3=J1
-                      end if
-
-                      dJdt=(3*J1-4*J2+J3)/(2*params%dt*params%cpp%time)
-
-                      if ((pp.eq.1).and. &
-                           (params%mpi_params%rank.eq.0)) then
-!                         write(6,*) 'J1',J1(1:20)
-!                         write(6,*) 'J2',J2(1:20)
-!                         write(6,*) 'J3',J3(1:20)
-!                         write(6,*) 'dJdt',dJdt(1:20)
-                      end if
-                      
-                      dJdtave=(dJdtave*REAL(tt-1_ip)+dJdt)/REAL(tt)
-                      Jave=(Jave*REAL(tt-1_ip)+J1)/REAL(tt)
-                   end if
+                   Vdenave=(Vdenave*REAL(tt-1_ip)+Vden)/REAL(tt)
                 end do !timestep iterator
 
-                dJdtOMP=dJdtOMP+dJdtave
-                JOMP=JOMP+Jave
+                VdenOMP=VdenOMP+Vdenave
 
                 
                 !$OMP SIMD
@@ -1834,7 +1804,7 @@ contains
 
           if (params%SC_E) then
 
-             call calculate_SC_E1D(params,F,spp(ii),dJdtOMP,JOMP)
+             call calculate_SC_E1D(params,F,VdenOMP)
              
           end if
           
