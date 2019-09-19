@@ -374,7 +374,8 @@ module korc_interp
        calculate_magnetic_field_p,&
        calculate_GCfields_p,&
        sample_poloidal_flux,&
-       initialize_SC1D_field_interpolant
+       initialize_SC1D_field_interpolant,&
+       add_interp_SCE_p
   PRIVATE :: interp_3D_bfields,&
        interp_2D_bfields,&
        interp_3D_efields,&
@@ -1870,6 +1871,36 @@ subroutine calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
 !  write(6,'("B_Z: ",E17.10)') B_Z
 
 end subroutine calculate_GCfields_p
+
+subroutine add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+  TYPE(KORC_PARAMS), INTENT(IN)                              :: params
+  TYPE(FIELDS), INTENT(IN)                               :: F
+  REAL(rp), DIMENSION(8), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
+  REAL(rp), DIMENSION(8), INTENT(INOUT)      :: E_PHI
+
+  REAL(rp),DIMENSION(8) :: rm,E_SC_PHI
+  REAL(rp) :: R0,Z0
+  INTEGER :: cc
+
+  R0=F%Ro
+  Z0=F%Zo
+  
+  !$OMP SIMD
+  do cc=1_idef,8_idef
+     rm(cc)=sqrt((Y_R(cc)-R0)*(Y_R(cc)-R0)+(Y_Z(cc)-Z0)*(Y_Z(cc)-Z0))     
+  end do
+  !$OMP END SIMD
+
+  call EZspline_interp(efield_SC1d%PHI,8, rm, E_SC_PHI, ezerr)
+  call EZspline_error(ezerr)
+
+  !$OMP SIMD
+  do cc=1_idef,8_idef
+     E_PHI(cc)=E_PHI(cc)+E_SC_PHI(cc)
+  end do
+  !$OMP END SIMD  
+  
+end subroutine add_interp_SCE_p
 
 subroutine calculate_initial_magnetic_field(F)
 

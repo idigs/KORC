@@ -283,6 +283,8 @@ CONTAINS
        curlb(pp,2)=dZbhatR-dRbhatZ
        curlb(pp,3)=B(pp,2)/(Bmag*Y(pp,1))+dRbhatPHI          
 
+
+       
        !          if (abs(F%Eo) > 0) then
        E(pp,1) = 0.0_rp
        E(pp,2) = F%Eo*F%AB%Ro/Y(pp,1)
@@ -460,7 +462,7 @@ CONTAINS
     TYPE(KORC_PARAMS), INTENT(INOUT)                              :: params
     TYPE(FIELDS), INTENT(IN)                                   :: F
     INTEGER(ip),INTENT(IN)  :: tt
-    REAL(rp)  :: E_dyn,E_pulse,E_width,time
+    REAL(rp)  :: E_dyn,E_pulse,E_width,time,arg,arg1
     REAL(rp),DIMENSION(8),INTENT(INOUT) :: E_PHI
     integer(ip) :: cc
 
@@ -477,8 +479,11 @@ CONTAINS
     !$OMP SIMD
     !    !$OMP& aligned(E_PHI)
     do cc=1_idef,8_idef
-       E_PHI(cc)=E_PHI(cc)+E_dyn*exp(-(time-E_pulse)**2/(2._rp*E_width**2))* &
-            (1._rp+erf(-10._rp*(time-E_pulse)/(sqrt(2._rp)*E_width)))/2._rp
+
+       arg=(time-E_pulse)**2/(2._rp*E_width**2)
+       arg1=10._rp*(time-E_pulse)/(sqrt(2._rp)*E_width)
+       
+       E_PHI(cc)=E_PHI(cc)+E_dyn*exp(-arg)*(1._rp+erf(-arg1))/2._rp
     end do
     !$OMP END SIMD
 
@@ -507,8 +512,8 @@ CONTAINS
     q0=F%AB%qo
 
     !$OMP SIMD
-    !    !$OMP& aligned(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z, &
-    !    !$OMP& curlB_R,curlB_PHI,curlB_Z,E_R,E_PHI,E_Z,PSIp)
+!    !$OMP& aligned(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z, &
+!    !$OMP& curlB_R,curlB_PHI,curlB_Z,E_R,E_PHI,E_Z,PSIp)
     do cc=1_idef,8_idef
        rm(cc)=sqrt((Y_R(cc)-R0)*(Y_R(cc)-R0)+Y_Z(cc)*Y_Z(cc))
        theta(cc)=atan2(Y_Z(cc),(Y_R(cc)-R0))
@@ -552,10 +557,13 @@ CONTAINS
        curlb_PHI(cc)=dZbhatR(cc)-dRbhatZ(cc)
        curlb_Z(cc)=B_PHI(cc)/(Bmag(cc)*Y_R(cc))+dRbhatPHI(cc)         
 
-
+       
        E_R(cc) = 0.0_rp
        E_PHI(cc) = E0*R0/Y_R(cc)
        E_Z(cc) = 0.0_rp
+
+
+       
     end do
     !$OMP END SIMD
 
@@ -968,7 +976,7 @@ CONTAINS
   end subroutine calculate_SC_E1D
 
   subroutine calculate_SC_p(params,F,B_R,B_PHI,B_Z,Y_R,Y_Z, &
-       V_PLL,V_MU,m_cache,Vden)
+       V_PLL,V_MU,m_cache,flag_cache,Vden)
 
     TYPE(FIELDS), INTENT(IN)                 :: F
     TYPE(KORC_PARAMS), INTENT(IN) 		:: params
@@ -976,6 +984,7 @@ CONTAINS
     real(rp),dimension(8),intent(in) :: B_R,B_PHI,B_Z
     real(rp),dimension(8),intent(in) :: V_PLL,V_MU
     real(rp),intent(in) :: m_cache
+    integer(is),dimension(8),intent(in) :: flag_cache
     real(rp),dimension(8) :: rm,Bmag,gam,vpll
     real(rp),dimension(F%dim_1D),intent(out) :: Vden
     real(rp),dimension(F%dim_1D) :: Vpart,Ai
@@ -1017,7 +1026,7 @@ CONTAINS
        !   do pp=1_idef,spp%ppp
        ! NGP weighting
        rind=FLOOR((rm(cc)-dr/2)/dr)+2_ip
-       Vpart(rind)=Vpart(rind)+vpll(cc)
+       Vpart(rind)=Vpart(rind)+real(flag_cache(cc))*vpll(cc)
 
        ! First-order weighting
 !       rind=FLOOR(rm(cc)/dr)+1_ip
@@ -1266,6 +1275,8 @@ CONTAINS
     ! Normalizing inductive E_phi
     
     F%E_SC_1D%PHI=F%E_SC_1D%PHI/params%cpp%Eo
+
+    call initialize_SC1D_field_interpolant(params,F)
     
   end subroutine init_SC_E1D
 
@@ -1373,6 +1384,13 @@ CONTAINS
        F%Eo = Eo
        F%Bo = F%AB%Bo
 
+       F%E_model=E_model
+       F%E_dyn = E_dyn
+       F%E_pulse = E_pulse
+       F%E_width = E_width
+
+       F%res_double=res_double
+       
        if (params%mpi_params%rank .EQ. 0) then
           write(6,'("ANALYTIC")')
           write(6,'("Magnetic field: ",E17.10)') F%Bo

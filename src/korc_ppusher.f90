@@ -1611,7 +1611,7 @@ contains
 !             end if ! if particle in domain, i.e. spp%vars%flag==1
           end do ! loop over particles on an mpi process
           !$OMP END PARALLEL DO  
-
+          
           !$OMP PARALLEL DO shared(F,params,spp) &
           !$OMP& PRIVATE(pp,cc,E_PHI) 
           do pp=1_idef,spp(ii)%ppp,8
@@ -1619,13 +1619,16 @@ contains
              !$OMP SIMD
              do cc=1_idef,8_idef
                 E_PHI(cc)=spp(ii)%vars%E(pp-1+cc,2)
+                
              end do
              !$OMP END SIMD
+
              
              call add_analytical_E_p(params,0_ip,F,E_PHI)
 
              !$OMP SIMD
              do cc=1_idef,8_idef
+                
                 spp(ii)%vars%E(pp-1+cc,2) = E_PHI(cc)
              end do
              !$OMP END SIMD
@@ -1736,14 +1739,16 @@ contains
                    call advance_GCeqn_vars(spp(ii)%vars,pp, &
                         tt+params%t_skip*(ttt-1),params, &
                         Y_R,Y_PHI, Y_Z,V_PLL,V_MU,flag_cache,q_cache,m_cache, &
-                        B_R,B_PHI,B_Z,F,P,PSIp)
+                        B_R,B_PHI,B_Z,F,P,PSIp,E_PHI)
 
 !                   write(6,*) params%mpi_params%rank,'Y_R',Y_R
 
-                   call calculate_SC_p(params,F,B_R,B_PHI,B_Z,Y_R,Y_Z, &
-                        V_PLL,V_MU,m_cache,Vden)
-
-                   Vdenave=(Vdenave*REAL(tt-1_ip)+Vden)/REAL(tt)
+                   if (params%SC_E) then                  
+                      call calculate_SC_p(params,F,B_R,B_PHI,B_Z,Y_R,Y_Z, &
+                           V_PLL,V_MU,m_cache,flag_cache,Vden)
+                      Vdenave=(Vdenave*REAL(tt-1_ip)+Vden)/REAL(tt)
+                   end if
+                   
                 end do !timestep iterator
 
                 VdenOMP=VdenOMP+Vdenave
@@ -1765,6 +1770,7 @@ contains
                    spp(ii)%vars%B(pp-1+cc,3) = B_Z(cc)
 
                    spp(ii)%vars%PSI_P(pp-1+cc) = PSIp(cc)
+                   spp(ii)%vars%E(pp-1+cc,2) = E_PHI(cc)
                 end do
                 !$OMP END SIMD
 
@@ -1803,9 +1809,7 @@ contains
           !$OMP END PARALLEL DO
 
           if (params%SC_E) then
-
-             call calculate_SC_E1D(params,F,VdenOMP)
-             
+             call calculate_SC_E1D(params,F,VdenOMP)             
           end if
           
        end do
@@ -1815,7 +1819,7 @@ contains
   end subroutine adv_GCeqn_top
 
   subroutine advance_GCeqn_vars(vars,pp,tt,params,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
-       flag_cache,q_cache,m_cache,B_R,B_PHI,B_Z,F,P,PSIp)
+       flag_cache,q_cache,m_cache,B_R,B_PHI,B_Z,F,P,PSIp,E_PHI)
     !! @note Subroutine to advance GC variables \(({\bf X},p_\parallel)\)
     !! @endnote
     !! Comment this section further with evolution equations, numerical
@@ -1854,7 +1858,8 @@ contains
     REAL(rp),DIMENSION(8),INTENT(OUT) :: PSIp
     REAL(rp),DIMENSION(8) :: curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z
     REAL(rp),DIMENSION(8),INTENT(INOUT) :: V_PLL,V_MU
-    REAL(rp),DIMENSION(8) :: RHS_R,RHS_PHI,RHS_Z,RHS_PLL,V0,E_PHI,E_Z,E_R
+    REAL(rp),DIMENSION(8) :: RHS_R,RHS_PHI,RHS_Z,RHS_PLL,V0,E_Z,E_R
+    REAL(rp),DIMENSION(8),INTENT(OUT) :: E_PHI
     REAL(rp),DIMENSION(8) :: Bmag,ne,Te,Zeff
     INTEGER(is),dimension(8), intent(inout) :: flag_cache
     
@@ -1884,6 +1889,10 @@ contains
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
+    if (params%SC_E) then
+       call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+    end if
+       
 !    write(6,'("ER:",E17.10)') E_R
 !    write(6,'("EPHI:",E17.10)') E_PHI
 !    write(6,'("EZ:",E17.10)') E_Z
@@ -1928,6 +1937,9 @@ contains
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
+    if (params%SC_E) then
+       call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+    end if
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -1958,6 +1970,9 @@ contains
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
+    if (params%SC_E) then
+       call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+    end if
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -1987,7 +2002,10 @@ contains
     call analytical_fields_GC_p(F,Y_R,Y_PHI, &
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
-
+    
+    if (params%SC_E) then
+       call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+    end if
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -2021,6 +2039,9 @@ contains
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
+    if (params%SC_E) then
+       call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+    end if
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -2054,6 +2075,9 @@ contains
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
+    if (params%SC_E) then
+       call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+    end if
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -2102,6 +2126,10 @@ contains
     call analytical_fields_GC_p(F,Y_R,Y_PHI, &
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
+
+    if (params%SC_E) then
+       call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+    end if
     
     if (params%collisions) then
        
