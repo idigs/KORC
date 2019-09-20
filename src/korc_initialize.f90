@@ -66,11 +66,13 @@ subroutine load_korc_params(params)
   !! Flag to indicate if the simulations proceeds (proceed=T) or not
   !! (proceed=F). Append simulation results after previous simulation_time
   !! reached.
+  LOGICAL  :: reinit
+  !! Flag to begin a new simulation, reinitializing from restart file state
   REAL(rp) 				:: simulation_time
   !! Total simulation time in seconds.
   REAL(rp) 				:: snapshot_frequency
   !! Time between snapshots in time of the simulation.
-    REAL(rp) 				:: restart_overwrite_frequency
+  REAL(rp) 				:: restart_overwrite_frequency
   !! Time between overwrites of restart file in time of the simulation.
   REAL(rp) 				:: dt
   !! Time step in the simulation as a fraction of the relativistic 
@@ -128,7 +130,7 @@ subroutine load_korc_params(params)
        collisions,collisions_model,outputs_list,minimum_particle_energy, &
        HDF5_error_handling,orbit_model,field_eval,proceed,profile_model, &
        restart_overwrite_frequency,FokPlan,GC_rad_model,bound_electron_model, &
-       FO_GC_compare,SameRandSeed,SC_E
+       FO_GC_compare,SameRandSeed,SC_E,reinit
 
   open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
        status='OLD',form='formatted')
@@ -137,6 +139,7 @@ subroutine load_korc_params(params)
 
   params%restart = restart
   params%proceed = proceed
+  params%reinit  = reinit
 
   params%simulation_time = simulation_time
   params%snapshot_frequency = snapshot_frequency
@@ -640,7 +643,7 @@ subroutine set_up_particles_ic(params,F,spp,P)
   INTEGER                                                    :: ii
   !! Species iterator.
 
-  if (params%restart.OR.params%proceed) then
+  if (params%restart.OR.params%proceed.or.params%reinit) then
      call load_particles_ic(params,spp)
 
      call init_random_seed()

@@ -1635,11 +1635,6 @@ contains
             
           end do
           !$OMP END PARALLEL DO
-
-          if (params%SC_E) then
-!             write(6,*) VpartOMP
-             call init_SC_E1D(params,F,spp(1))
-          end if
           
        end if
 

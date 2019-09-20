@@ -891,6 +891,8 @@ CONTAINS
     
     call MPI_ALLREDUCE(Jsamone,Jsamall,F%dim_1D,MPI_REAL8,MPI_SUM, &
          MPI_COMM_WORLD,mpierr)
+
+    !write(6,*) 'Jsam: ',Jsamall(1:5)
     
     Jexp=Jsamall*F%Ip0
 
@@ -1010,14 +1012,14 @@ CONTAINS
 
        !    write (6,*) params%mpi_params%rank,'RR',RR
        !    write (6,*) params%mpi_params%rank,'ZZ',spp%vars%Y(:,3)
-       !    write (6,*) params%mpi_params%rank,'rm',rm
+       !write (6,*) params%mpi_params%rank,'rm',rm
 
        Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+ &
             B_Z(cc)*B_Z(cc))
        gam(cc)=sqrt(1+V_PLL(cc)**2+ &
             2*V_MU(cc)*Bmag(cc)*m_cache)
        vpll(cc)=V_PLL(cc)/gam(cc)    
-
+       
 
        ! Weighting parallel velocity
 
@@ -1102,7 +1104,7 @@ CONTAINS
 
 !    write (6,*) params%mpi_params%rank,'RR',RR
 !    write (6,*) params%mpi_params%rank,'ZZ',spp%vars%Y(:,3)
-!    write (6,*) params%mpi_params%rank,'rm',rm
+    !write (6,*) params%mpi_params%rank,'rm',rm
     
     
     dr=F%r_1D(2)-F%r_1D(1)
@@ -1177,7 +1179,7 @@ CONTAINS
     call MPI_ALLREDUCE(Jsamone,Jsamall,F%dim_1D,MPI_REAL8,MPI_SUM, &
          MPI_COMM_WORLD,mpierr)
     
-!    write(6,*) 'Jsam: ',Jsam
+    !write(6,*) 'Jsam: ',Jsamall(1:5)
 
     ! Integrating current density to scale total current to
     ! experimentally determined total current

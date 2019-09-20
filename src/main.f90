@@ -211,6 +211,7 @@ program main
      write(6,'("* * * * INITIALIZING INITIAL CONDITIONS * * * *")')
   end if
   call set_up_particles_ic(params,F,spp,P)
+  
   if (params%mpi_params%rank .EQ. 0) then
      write(6,'("* * * * * * * * * * * * * * * * * * * * * * * *",/)')
   end if
@@ -244,9 +245,8 @@ program main
   !! subroutines to save simulation and collision parameters.
 
 !  write(6,'("GC init eta: ",E17.10)') spp(1)%vars%eta
-  
-  if (.NOT.(params%restart.OR.params%proceed)) then
 
+  if (.NOT.(params%restart.OR.params%proceed.or.params%reinit)) then
      if (params%orbit_model(1:2).eq.'FO') then
 
         call FO_init(params,F,spp,.true.,.false.)
@@ -256,6 +256,13 @@ program main
         call GC_init(params,F,spp)
 
      end if
+  end if
+
+  if (params%SC_E) then
+     call init_SC_E1D(params,F,spp(1))
+  end if
+  
+  if (.NOT.params%restart) then
      
      call save_simulation_outputs(params,spp,F) ! Save initial condition
 
@@ -265,6 +272,8 @@ program main
 
   end if
   
+
+  
   ! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !
 
 !  write(6,'("pre ppusher loop eta: ",E17.10)') spp(1)%vars%eta
@@ -273,7 +282,6 @@ program main
 
 
   if (params%orbit_model(1:2).eq.'FO'.and.params%field_eval.eq.'eqn') then
-     call FO_init(params,F,spp,.false.,.true.)
 
      do it=params%ito,params%t_steps,params%t_skip
         call adv_FOeqn_top(params,F,P,spp)
@@ -341,6 +349,7 @@ program main
         call synthetic_camera(params,spp) ! Synthetic camera
         call binning_diagnostic(params,spp) ! Binning diagnostic
         call save_restart_variables(params,spp)
+        
      end do
   end if
 
