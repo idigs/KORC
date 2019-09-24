@@ -259,7 +259,12 @@ program main
   end if
 
   if (params%SC_E) then
+
+     call get_fields(params,spp(1)%vars,F)        
+     
      call init_SC_E1D(params,F,spp(1))
+
+     
   end if
   
   if (.NOT.params%restart) then

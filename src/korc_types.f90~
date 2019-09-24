@@ -83,6 +83,24 @@ module korc_types
      !! \(Z \) component of the vector field variable.
   END TYPE V_FIELD_2D
 
+  TYPE, PUBLIC :: V_FIELD_1D
+     !! @note KORC 1-D vector field type @endnote
+     !! This KORC type represents a 1-D vector field varible in cylindrical
+     !! coordinates. For example, this could be the magnetic
+     !! field in an axisymmetric plasma, which can be written as
+     !! $$\mathbf{B}(r) = B_R(r) \hat{R} + B_\phi(r) \hat{\phi} + B_Z(r)
+     !! \hat{Z}.$$
+     !! All the members (components) of the V_FIELD_1D type follow the
+     !! following index convention:
+     !! (\(r\) index).
+     REAL(rp), DIMENSION(:), ALLOCATABLE :: R 
+     !! \(R \) component of the vector field variable.
+     REAL(rp), DIMENSION(:), ALLOCATABLE :: PHI 
+     !! \(\phi \) component of the vector field variable.
+     REAL(rp), DIMENSION(:), ALLOCATABLE :: Z 
+     !! \(Z \) component of the vector field variable.
+  END TYPE V_FIELD_1D
+  
   ! * * * * * * * * * * * * * * * * * * * * !
   ! * * * Basic korc array structures * * * !
   ! * * * * * * * * * * * * * * * * * * * * !
@@ -153,6 +171,8 @@ module korc_types
      !! Flag to indicate if the simulations continues (proceed=T) or not
      !! (proceed=F). Append simulation results after previous simulation_time
      !! reached.
+     LOGICAL  :: reinit
+     !! Flag to begin a new simulation, reinitializing from restart file state
      REAL(rp) 			:: simulation_time 
      !! Total simulation time in seconds.
      REAL(rp) 			:: snapshot_frequency 
@@ -175,7 +195,8 @@ module korc_types
      INTEGER(ip) 			:: t_steps 
      !! Number of time steps needed for evolving the electrons up to
      !! "simulation_time".
-     INTEGER(ip) 			:: t_skip 
+     INTEGER(ip) 			:: t_skip
+     INTEGER(ip) 			:: t_it_SC=1_ip 
      INTEGER(ip) 			:: output_cadence 
      !! Time iteration offset used to decide when the outputs are generated.
      INTEGER(ip) 			:: restart_output_cadence 
@@ -203,7 +224,8 @@ module korc_types
      !! String with the name of the collisions model to be used in the
      !! simulation.
      CHARACTER(MAX_STRING_LENGTH) :: bound_electron_model 
-     CHARACTER(MAX_STRING_LENGTH) :: plasma_model 
+     CHARACTER(MAX_STRING_LENGTH) :: field_model
+     CHARACTER(MAX_STRING_LENGTH) :: profile_model 
      !! String with the name of the model for the fields and plasma profiles.
      CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename 
      !! String with the name of the model for the fields and plasma profiles.
@@ -216,6 +238,7 @@ module korc_types
      !! An instance of the KORC_MPI derived type.
      TYPE(CHARCS_PARAMS) 		:: cpp 
      !! An instance of the CHARCS_PARAMS derived type.
+     LOGICAL :: FO_GC_compare
      CHARACTER(MAX_STRING_LENGTH) :: orbit_model
      !! String with the name of the orbit model ('FO' or 'GC').
      CHARACTER(MAX_STRING_LENGTH) :: field_eval
@@ -226,6 +249,8 @@ module korc_types
      !! coordinate transformation needs to be performed
      LOGICAL :: FokPlan
      !! Flag to decouple spatial-dependence of evolution
+     LOGICAL :: SameRandSeed
+     LOGICAL :: SC_E
      
   END TYPE KORC_PARAMS
 
@@ -256,6 +281,7 @@ module korc_types
      REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: B 
      !! Cartesian components of the magnetic field felt by each electron.
      !! dim(B) = dim(X).
+     REAL(rp), DIMENSION(:), ALLOCATABLE 	:: PSI_P 
      REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: BR 
      !! Cartesian components of the gradient of the R-component of the
      !! magnetic field felt by each electron. dim(B) = dim(X).
@@ -397,6 +423,7 @@ module korc_types
      REAL(rp)                            :: Spong_w
      REAL(rp)                            :: Spong_dlam
      REAL(rp)                            :: dth
+     REAL(rp)                            :: dgam
      REAL(rp)                            :: dR
      REAL(rp)                            :: dZ
      REAL(rp),DIMENSION(3) :: Xtrace
@@ -477,12 +504,30 @@ module korc_types
      TYPE(V_FIELD_2D) 				:: curlb_2D 
      !! KORC 3-D vector field of the curl of the unit vector in the
      !! direction of the pre-computed magnetic field.
+     TYPE(V_FIELD_1D) 				:: E_SC_1D
+     TYPE(V_FIELD_1D) 				:: J1_SC_1D
+     TYPE(V_FIELD_1D) 				:: J2_SC_1D
+     TYPE(V_FIELD_1D) 				:: J3_SC_1D
+     TYPE(V_FIELD_1D) 				:: A1_SC_1D
+     TYPE(V_FIELD_1D) 				:: A2_SC_1D
+     TYPE(V_FIELD_1D) 				:: A3_SC_1D
+     REAL(rp), DIMENSION(:), ALLOCATABLE :: r_1D 
      TYPE(MESH) 		 		:: X 
      !! An instance of the KORC derived type MESH.
+     CHARACTER(MAX_STRING_LENGTH) :: E_model
+     !! Name for dynamical, analytic, electric field model to be added to
+     REAL(rp)  :: E_dyn
+     REAL(rp)  :: E_pulse
+     REAL(rp)  :: E_width
+     !! interpolated E field
+     INTEGER 			:: res_double
      INTEGER, DIMENSION(3) 			:: dims 
      !! Dimensions of the KORC vector field. dims=(number of grid 
      !! nodes along \(R\), number of grid nodes along \(\phi\), 
      !! number of grid nodes along \(Z\)).
+     INTEGER 			:: dim_1D
+     INTEGER 			:: subcycle_E_SC
+     REAL(rp)  :: dt_E_SC,Ip_exp,Ip0
      REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: PSIp 
      !! 2-D array for storing the data of the poloidal magnetic flux.
      REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: FLAG2D 
@@ -543,10 +588,12 @@ module korc_types
      TYPE(MESH) 				        :: X 
      !! An instance of the KORC derived data type MESH.
      REAL(rp) 				        :: a 
-     !! Plasma radius as measured from the magnetic axis.
+     !! Plasma radius as measured from the magnetic axis
      REAL(rp) 				        :: R0
      REAL(rp) 				        :: Z0
 
+     REAL(rp) 				        :: R0_RE
+     REAL(rp) 				        :: Z0_RE
      
      INTEGER, DIMENSION(3) 			:: dims 
      !! Dimensions of the arrays containing the pre-computed profiles data. dims=(number of grid nodes along \(R\), 

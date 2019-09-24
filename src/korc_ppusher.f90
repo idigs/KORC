@@ -1884,7 +1884,7 @@ contains
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
-    if (params%SC_E) then
+    if (params%SC_E_add) then
        call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
     end if
        
@@ -1932,7 +1932,7 @@ contains
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
-    if (params%SC_E) then
+    if (params%SC_E_add) then
        call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
     end if
 
@@ -1965,7 +1965,7 @@ contains
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
-    if (params%SC_E) then
+    if (params%SC_E_add) then
        call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
     end if
 
@@ -1998,7 +1998,7 @@ contains
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
     
-    if (params%SC_E) then
+    if (params%SC_E_add) then
        call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
     end if
 
@@ -2034,7 +2034,7 @@ contains
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
-    if (params%SC_E) then
+    if (params%SC_E_add) then
        call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
     end if
 
@@ -2070,7 +2070,7 @@ contains
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
-    if (params%SC_E) then
+    if (params%SC_E_add) then
        call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
     end if
 
@@ -2122,7 +2122,7 @@ contains
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
-    if (params%SC_E) then
+    if (params%SC_E_add) then
        call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
     end if
     

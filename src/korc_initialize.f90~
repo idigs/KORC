@@ -66,11 +66,13 @@ subroutine load_korc_params(params)
   !! Flag to indicate if the simulations proceeds (proceed=T) or not
   !! (proceed=F). Append simulation results after previous simulation_time
   !! reached.
+  LOGICAL  :: reinit
+  !! Flag to begin a new simulation, reinitializing from restart file state
   REAL(rp) 				:: simulation_time
   !! Total simulation time in seconds.
   REAL(rp) 				:: snapshot_frequency
   !! Time between snapshots in time of the simulation.
-    REAL(rp) 				:: restart_overwrite_frequency
+  REAL(rp) 				:: restart_overwrite_frequency
   !! Time between overwrites of restart file in time of the simulation.
   REAL(rp) 				:: dt
   !! Time step in the simulation as a fraction of the relativistic 
@@ -87,8 +89,10 @@ subroutine load_korc_params(params)
   CHARACTER(MAX_STRING_LENGTH) 		:: collisions_model
   !! String with the name of the collisions model to be used in the simulation.
   CHARACTER(MAX_STRING_LENGTH) 		:: bound_electron_model
-  CHARACTER(MAX_STRING_LENGTH) 		:: plasma_model
-  !! String with the name of the model for the fields and plasma profiles.
+  CHARACTER(MAX_STRING_LENGTH) 		:: profile_model
+  !! String with the name of the model for the plasma profiles.
+  CHARACTER(MAX_STRING_LENGTH) 		:: field_model
+  !! String with the name of the model for the field profiles.
   CHARACTER(MAX_STRING_LENGTH) 		:: magnetic_field_filename
   !! String with the name of the model for the fields and plasma profiles.
   CHARACTER(MAX_STRING_LENGTH) 		:: outputs_list
@@ -110,6 +114,7 @@ subroutine load_korc_params(params)
   !! Auxiliary variable used to parse the output_list
   LOGICAL 				:: HDF5_error_handling
   !! Flag for HDF5 error handling
+  LOGICAL 		:: FO_GC_compare
   CHARACTER(MAX_STRING_LENGTH) 		:: orbit_model
   !! String with the name of the orbit model ('FO' or 'GC').
   CHARACTER(MAX_STRING_LENGTH) :: field_eval
@@ -117,12 +122,15 @@ subroutine load_korc_params(params)
   !! analytical fields ('interp' or 'eqn')
   LOGICAL 				:: FokPlan
   !! Flag to decouple spatial-dependence of evolution
+  LOGICAL :: SameRandSeed
+  LOGICAL :: SC_E
 
-  NAMELIST /input_parameters/ restart,plasma_model,magnetic_field_filename, &
+  NAMELIST /input_parameters/ restart,field_model,magnetic_field_filename, &
        simulation_time,snapshot_frequency,dt,num_species,radiation, &
        collisions,collisions_model,outputs_list,minimum_particle_energy, &
-       HDF5_error_handling,orbit_model,field_eval,proceed, &
-       restart_overwrite_frequency,FokPlan,GC_rad_model,bound_electron_model
+       HDF5_error_handling,orbit_model,field_eval,proceed,profile_model, &
+       restart_overwrite_frequency,FokPlan,GC_rad_model,bound_electron_model, &
+       FO_GC_compare,SameRandSeed,SC_E,reinit
 
   open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
        status='OLD',form='formatted')
@@ -131,6 +139,7 @@ subroutine load_korc_params(params)
 
   params%restart = restart
   params%proceed = proceed
+  params%reinit  = reinit
 
   params%simulation_time = simulation_time
   params%snapshot_frequency = snapshot_frequency
@@ -138,7 +147,8 @@ subroutine load_korc_params(params)
   params%dt = dt
 
   params%num_species = num_species
-  params%plasma_model = TRIM(plasma_model)
+  params%profile_model = TRIM(profile_model)
+  params%field_model = TRIM(field_model)
   params%magnetic_field_filename = TRIM(magnetic_field_filename)
   params%minimum_particle_energy = minimum_particle_energy*C_E
   params%minimum_particle_g = 1.0_rp + params%minimum_particle_energy/ &
@@ -156,11 +166,16 @@ subroutine load_korc_params(params)
   end if
 
   params%orbit_model = orbit_model
+  params%FO_GC_compare = FO_GC_compare
   params%field_eval = field_eval
 
   params%GC_coords=.FALSE.
   
   params%FokPlan=FokPlan
+
+  params%SameRandSeed = SameRandSeed
+
+  params%SC_E=SC_E
 
   ! Loading list of output parameters (parsing)
   imin = SCAN(outputs_list,'{')
@@ -203,9 +218,9 @@ subroutine load_korc_params(params)
      write(6,'("Continuing simulation: ",L1)') params%proceed
      write(6,'("Number of electron populations: ",I16)') params%num_species
      write(6,'("Orbit model: ",A50)') TRIM(params%orbit_model)
-     write(6,'("Magnetic field model: ",A50)') TRIM(params%plasma_model)
+     write(6,'("Magnetic field model: ",A50)') TRIM(params%field_model)
      write(6,'("Magnetic field evaluation: ",A50)') TRIM(params%field_eval)
-     if (TRIM(params%plasma_model).EQ.'EXTERNAL') then
+     if (TRIM(params%field_model).EQ.'EXTERNAL') then
         write(6,'("Magnetic field file: ",A100)') TRIM(params%magnetic_field_filename)
      end if
 
@@ -219,6 +234,7 @@ subroutine load_korc_params(params)
         write(6,'("Bound electron model: ",A50)') &
              TRIM(params%bound_electron_model)
      end if
+     write(6,'("Self-consistent E included: ",L1)') params%SC_E
      write(6,'("* * * * * * * * * * * * * * * * * * * * *",/)')
   end if
 end subroutine load_korc_params
@@ -306,7 +322,7 @@ subroutine define_time_step(params)
      write(6,'("Output cadence: ",I16)') params%output_cadence
      write(6,'("Restart cadence: ",I16)') params%restart_output_cadence
      write(6,'("Number of outputs: ",I16)') params%num_snapshots
-     write(6,'("* * * * * * * * * ** * * * * * * * * * * * *",/)')
+     write(6,'("* * * * * * * * * * * * * * * * * * * * * * *",/)')
   end if
 end subroutine define_time_step
 
@@ -314,16 +330,18 @@ end subroutine define_time_step
 ! * * * SUBROUTINES FOR INITIALIZING PARTICLES * * * !
 ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
 
-subroutine initialize_particles(params,F,spp)
+subroutine initialize_particles(params,F,P,spp)
   !! @note Subroutine that loads the information of the initial condition 
   !! of the different particle species. This subroutine calls
   !! the subroutine that generates the initial energy and pitch angle 
   !! distribution functions. @endnote
   TYPE(KORC_PARAMS), INTENT(IN) 				:: params
-    !! Core KORC simulation parameters.
+  !! Core KORC simulation parameters.
   TYPE(FIELDS), INTENT(IN) 					:: F
-    !! An instance of KORC's derived type FIELDS containing all the information 
-    !! about the fields used in the simulation. See [[korc_types]] and [[korc_fields]].
+  !! An instance of KORC's derived type FIELDS containing all the information 
+  !! about the fields used in the simulation. See [[korc_types]]
+  !!and [[korc_fields]].
+  TYPE(PROFILES), INTENT(INOUT) 			:: P
   TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(OUT) 	:: spp
     !! An instance of KORC's derived type SPECIES containing all the information 
     !! of different electron species. See [[korc_types]].
@@ -393,7 +411,7 @@ subroutine initialize_particles(params,F,spp)
   REAL(rp), DIMENSION(:), ALLOCATABLE                          :: Spong_b
   REAL(rp), DIMENSION(:), ALLOCATABLE                          :: Spong_w
   REAL(rp), DIMENSION(:), ALLOCATABLE                          :: Spong_dlam
-  REAL(rp), DIMENSION(:), ALLOCATABLE                          :: dth
+  REAL(rp), DIMENSION(:), ALLOCATABLE                          :: dth,dgam
   REAL(rp), DIMENSION(:), ALLOCATABLE                          :: dR
   REAL(rp), DIMENSION(:), ALLOCATABLE                          :: dZ
   
@@ -493,6 +511,7 @@ subroutine initialize_particles(params,F,spp)
      ALLOCATE( spp(ii)%vars%Y(spp(ii)%ppp,3) )
      ALLOCATE( spp(ii)%vars%E(spp(ii)%ppp,3) )
      ALLOCATE( spp(ii)%vars%B(spp(ii)%ppp,3) )
+     ALLOCATE( spp(ii)%vars%PSI_P(spp(ii)%ppp) )
      ALLOCATE( spp(ii)%vars%ne(spp(ii)%ppp) )
      ALLOCATE( spp(ii)%vars%Te(spp(ii)%ppp) )
      ALLOCATE( spp(ii)%vars%Zeff(spp(ii)%ppp) )
@@ -502,15 +521,17 @@ subroutine initialize_particles(params,F,spp)
      ALLOCATE( spp(ii)%vars%Prad(spp(ii)%ppp) )
      ALLOCATE( spp(ii)%vars%Pin(spp(ii)%ppp) )
      ALLOCATE( spp(ii)%vars%flag(spp(ii)%ppp) )
-     ALLOCATE( spp(ii)%vars%AUX(spp(ii)%ppp) )
      ALLOCATE( spp(ii)%vars%wt(spp(ii)%ppp) )
 
+!     write(6,'("0 size of PSI_P: ",I16)') size(spp(ii)%vars%PSI_P)
+     
      spp(ii)%vars%X = 0.0_rp
      spp(ii)%vars%V = 0.0_rp
      spp(ii)%vars%Rgc = 0.0_rp
      spp(ii)%vars%Y = 0.0_rp
      spp(ii)%vars%E = 0.0_rp
      spp(ii)%vars%B = 0.0_rp
+     spp(ii)%vars%PSI_P = 0.0_rp
      spp(ii)%vars%ne = 0.0_rp
      spp(ii)%vars%Te = 0.0_rp
      spp(ii)%vars%Zeff = 0.0_rp
@@ -520,7 +541,6 @@ subroutine initialize_particles(params,F,spp)
      spp(ii)%vars%Prad = 0.0_rp
      spp(ii)%vars%Pin = 0.0_rp
      spp(ii)%vars%flag = 1_is
-     spp(ii)%vars%AUX = 0.0_rp
      spp(ii)%vars%wt = 0.0_rp
 
      if (params%orbit_model(1:2).eq.'GC') then
@@ -547,7 +567,7 @@ subroutine initialize_particles(params,F,spp)
            spp(ii)%vars%BPHI = 0.0_rp
            spp(ii)%vars%BZ = 0.0_rp
         end if
-        ALLOCATE( spp(ii)%vars%RHS(spp(ii)%ppp,4) )
+        ALLOCATE( spp(ii)%vars%RHS(spp(ii)%ppp,5) )
 
         spp(ii)%vars%Y0 = 0.0_rp
         spp(ii)%vars%V0 = 0.0_rp
@@ -561,6 +581,11 @@ subroutine initialize_particles(params,F,spp)
      end if
      
   end do
+
+  P%R0_RE=spp(1)%Ro
+  P%Z0_RE=spp(1)%Zo
+  P%n_REr0=max(sqrt(spp(1)%psi_max*2*spp(1)%sigmaR**2), &
+       sqrt(spp(1)%psi_max*2*spp(1)%sigmaZ**2))  
 
   call initial_energy_pitch_dist(params,spp)
 
@@ -591,6 +616,7 @@ subroutine initialize_particles(params,F,spp)
   DEALLOCATE(Spong_w)
   DEALLOCATE(Spong_dlam)
   DEALLOCATE(dth)
+  DEALLOCATE(dgam)
   DEALLOCATE(dR)
   DEALLOCATE(dZ)
   DEALLOCATE(Xtrace)
@@ -617,8 +643,10 @@ subroutine set_up_particles_ic(params,F,spp,P)
   INTEGER                                                    :: ii
   !! Species iterator.
 
-  if (params%restart.OR.params%proceed) then
+  if (params%restart.OR.params%proceed.or.params%reinit) then
      call load_particles_ic(params,spp)
+
+     call init_random_seed()
      
   else
      call intitial_spatial_distribution(params,spp,P,F)

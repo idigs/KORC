@@ -1954,7 +1954,7 @@ CONTAINS
           attr = "Simulation time in secs"
           call save_to_hdf5(h5file_id,dset,params%init_time*params%cpp%time &
                + REAL(params%it,rp)*params%dt*params%cpp%time,attr)
-
+          
           do ss=1_idef,params%num_species
 
              write(tmp_str,'(I18)') ss
@@ -2074,12 +2074,16 @@ CONTAINS
                    units = params%cpp%Eo
                    call rsave_2d_array_to_hdf5(subgroup_id, dset, &
                         units*spp(ss)%vars%E)
-
+                   
                 CASE('PSIp')
+                   
                    dset = "PSIp"
                    units = params%cpp%Bo*params%cpp%length**2
                    call save_1d_array_to_hdf5(subgroup_id, dset, &
                         units*spp(ss)%vars%PSI_P)
+
+
+                   
                 CASE('AUX')
                    dset = "AUX"
                    call save_1d_array_to_hdf5(subgroup_id, dset, &
@@ -2097,22 +2101,37 @@ CONTAINS
                 CASE ('Zeff')
                    dset = "Zeff"
                    call save_1d_array_to_hdf5(subgroup_id, dset, &
-                        spp(ss)%vars%Zeff)
+                        spp(ss)%vars%Zeff)                   
+                   
                 CASE ('J_SC')
+
                    dset = "J_SC"
-                   call save_1d_array_to_hdf5(subgroup_id, dset, &
-                        F%J1_SC_1D%PHI)
+                   if (params%SC_E) then
+                      call save_1d_array_to_hdf5(subgroup_id, dset, &
+                           F%J1_SC_1D%PHI)
+                   end if
+
+
                 CASE ('A_SC')
+
                    dset = "A_SC"
-                   call save_1d_array_to_hdf5(subgroup_id, dset, &
-                        F%A1_SC_1D%PHI)
+                   if (params%SC_E) then
+                      call save_1d_array_to_hdf5(subgroup_id, dset, &
+                           F%A1_SC_1D%PHI)
+                   end if
+
                 CASE ('E_SC')
+
                    dset = "E_SC"
                    units = params%cpp%Eo
-                   call save_1d_array_to_hdf5(subgroup_id, dset, &
-                        units*F%E_SC_1D%PHI)
+                   if (params%SC_E) then
+                      call save_1d_array_to_hdf5(subgroup_id, dset, &
+                           units*F%E_SC_1D%PHI)
+                   end if
+
                 CASE DEFAULT
 
+                   
                 END SELECT
              end do
 

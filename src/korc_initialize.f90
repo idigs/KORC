@@ -124,13 +124,14 @@ subroutine load_korc_params(params)
   !! Flag to decouple spatial-dependence of evolution
   LOGICAL :: SameRandSeed
   LOGICAL :: SC_E
+  LOGICAL :: SC_E_add
 
   NAMELIST /input_parameters/ restart,field_model,magnetic_field_filename, &
        simulation_time,snapshot_frequency,dt,num_species,radiation, &
        collisions,collisions_model,outputs_list,minimum_particle_energy, &
        HDF5_error_handling,orbit_model,field_eval,proceed,profile_model, &
        restart_overwrite_frequency,FokPlan,GC_rad_model,bound_electron_model, &
-       FO_GC_compare,SameRandSeed,SC_E,reinit
+       FO_GC_compare,SameRandSeed,SC_E,reinit,SC_E_add
 
   open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
        status='OLD',form='formatted')
@@ -176,6 +177,7 @@ subroutine load_korc_params(params)
   params%SameRandSeed = SameRandSeed
 
   params%SC_E=SC_E
+  params%SC_E_add=SC_E_add
 
   ! Loading list of output parameters (parsing)
   imin = SCAN(outputs_list,'{')

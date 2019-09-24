@@ -251,6 +251,7 @@ module korc_types
      !! Flag to decouple spatial-dependence of evolution
      LOGICAL :: SameRandSeed
      LOGICAL :: SC_E
+     LOGICAL :: SC_E_add
      
   END TYPE KORC_PARAMS
 

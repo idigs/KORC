@@ -1,3 +1,4 @@
+
 module korc_ppusher
   !! @note Module with subroutines for advancing the particles' position and
   !! velocity in the simulations. @endnote
@@ -1348,7 +1349,7 @@ contains
     !! methods, and descriptions of both.
     TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
     !! Core KORC simulation parameters.
-    TYPE(FIELDS), INTENT(IN)                                   :: F
+    TYPE(FIELDS), INTENT(INOUT)                                   :: F
     !! An instance of the KORC derived type FIELDS.
 
     TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)    :: spp
@@ -1370,6 +1371,11 @@ contains
     REAL(rp), DIMENSION(8) :: E_PHI
     REAL(rp),DIMENSION(:),ALLOCATABLE               :: RVphi
 
+    REAL(rp),DIMENSION(8) :: rm8,Y_R,Y_Z,V_PLL,vpll,gam
+    real(rp),dimension(F%dim_1D) :: Vpart,Vpartave,VpartOMP
+    real(rp) :: dr
+    integer :: rind
+    
 !    write(6,'("eta",E17.10)') spp(ii)%vars%eta(pp)
 !    write(6,'("gam",E17.10)') spp(ii)%vars%g(pp)
 
@@ -1561,35 +1567,14 @@ contains
           end do ! loop over particles on an mpi process
           !$OMP END PARALLEL DO                
        else
-
+          
           if ((spp(ii)%spatial_distribution.eq.'TRACER').or. &
                (spp(ii)%spatial_distribution.eq.'TORUS')) &
                call cart_to_cyl(spp(ii)%vars%X,spp(ii)%vars%Y)
           
           params%GC_coords=.TRUE.
           
-          call get_fields(params,spp(ii)%vars,F)
-
-          
-          !$OMP PARALLEL DO shared(F,params,spp) PRIVATE(pp,E_PHI)
-          do pp=1_idef,spp(ii)%ppp,8
-
-             !$OMP SIMD
-             do cc=1_idef,8_idef
-                E_PHI(cc)=spp(ii)%vars%E(pp-1+cc,2)
-             end do
-             !$OMP END SIMD
-             
-             call add_analytical_E_p(params,0_ip,F,E_PHI)
-
-             !$OMP SIMD
-             do cc=1_idef,8_idef
-                spp(ii)%vars%E(pp-1+cc,2) = E_PHI(cc)
-             end do
-             !$OMP END SIMD
-             
-          end do
-          !$OMP END PARALLEL DO
+          call get_fields(params,spp(ii)%vars,F)        
 
           
           !$OMP PARALLEL DO SHARED(ii,spp) PRIVATE(pp,Bmag1)
@@ -1627,6 +1612,30 @@ contains
           end do ! loop over particles on an mpi process
           !$OMP END PARALLEL DO  
           
+          !$OMP PARALLEL DO shared(F,params,spp) &
+          !$OMP& PRIVATE(pp,cc,E_PHI) 
+          do pp=1_idef,spp(ii)%ppp,8
+
+             !$OMP SIMD
+             do cc=1_idef,8_idef
+                E_PHI(cc)=spp(ii)%vars%E(pp-1+cc,2)
+                
+             end do
+             !$OMP END SIMD
+
+             
+             call add_analytical_E_p(params,0_ip,F,E_PHI)
+
+             !$OMP SIMD
+             do cc=1_idef,8_idef
+                
+                spp(ii)%vars%E(pp-1+cc,2) = E_PHI(cc)
+             end do
+             !$OMP END SIMD
+            
+          end do
+          !$OMP END PARALLEL DO
+          
        end if
 
     end do ! loop over particle species
@@ -1651,7 +1660,7 @@ contains
     
     TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
     !! Core KORC simulation parameters.
-    TYPE(FIELDS), INTENT(IN)                                   :: F
+    TYPE(FIELDS), INTENT(INOUT)                                   :: F
     !! An instance of the KORC derived type FIELDS.
     TYPE(PROFILES), INTENT(IN)                                 :: P
     !! An instance of the KORC derived type PROFILES.
@@ -1677,104 +1686,135 @@ contains
     INTEGER                                                    :: cc
     !! Chunk iterator.
     INTEGER(ip)                                                    :: tt
+    INTEGER(ip)                                                    :: ttt
     !! time iterator.
- 
 
+    real(rp),dimension(F%dim_1D) :: Vden,Vdenave,VdenOMP
+
+
+    
     do ii = 1_idef,params%num_species      
 
        q_cache=spp(ii)%q
        m_cache=spp(ii)%m
 
 
+       do ttt=1_ip,params%t_it_SC
 
-       
-       !$OMP PARALLEL DO default(none) &
-       !$OMP& FIRSTPRIVATE(E0,q_cache,m_cache) &
-       !$OMP& shared(F,P,params,ii,spp) &
-       !$OMP& PRIVATE(pp,tt,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,flag_cache, &
-       !$OMP& B_R,B_PHI,B_Z,E_PHI,PSIp)
-       do pp=1_idef,spp(ii)%ppp,8
-
-          !$OMP SIMD
-          do cc=1_idef,8_idef
-             Y_R(cc)=spp(ii)%vars%Y(pp-1+cc,1)
-             Y_PHI(cc)=spp(ii)%vars%Y(pp-1+cc,2)
-             Y_Z(cc)=spp(ii)%vars%Y(pp-1+cc,3)
-
-             V_PLL(cc)=spp(ii)%vars%V(pp-1+cc,1)
-             V_MU(cc)=spp(ii)%vars%V(pp-1+cc,2)
-
-             flag_cache(cc)=spp(ii)%vars%flag(pp-1+cc)
-          end do
-          !$OMP END SIMD
+          VdenOMP=0._rp
           
-          if (.not.params%FokPlan) then       
-             do tt=1_ip,params%t_skip
-                call advance_GCeqn_vars(spp(ii)%vars,pp,tt,params,Y_R,Y_PHI, &
-                     Y_Z,V_PLL,V_MU,flag_cache,q_cache,m_cache, &
-                     B_R,B_PHI,B_Z,F,P,PSIp)
-             end do !timestep iterator
+          !$OMP PARALLEL DO default(none) &
+          !$OMP& FIRSTPRIVATE(E0,q_cache,m_cache) &
+          !$OMP& shared(F,P,params,ii,spp) &
+          !$OMP& PRIVATE(pp,tt,ttt,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
+          !$OMP& flag_cache,B_R,B_PHI,B_Z,E_PHI,PSIp, &
+          !$OMP& Vden,Vdenave) &
+          !$OMP& REDUCTION(+:VdenOMP)
+          do pp=1_idef,spp(ii)%ppp,8
 
              !$OMP SIMD
              do cc=1_idef,8_idef
-                spp(ii)%vars%Y(pp-1+cc,1)=Y_R(cc)
-                spp(ii)%vars%Y(pp-1+cc,2)=Y_PHI(cc)
-                spp(ii)%vars%Y(pp-1+cc,3)=Y_Z(cc)
-                
-                spp(ii)%vars%V(pp-1+cc,1)=V_PLL(cc)
-                spp(ii)%vars%V(pp-1+cc,2)=V_MU(cc)
-                
-                spp(ii)%vars%flag(pp-1+cc)=flag_cache(cc)
+                Y_R(cc)=spp(ii)%vars%Y(pp-1+cc,1)
+                Y_PHI(cc)=spp(ii)%vars%Y(pp-1+cc,2)
+                Y_Z(cc)=spp(ii)%vars%Y(pp-1+cc,3)
 
-                spp(ii)%vars%B(pp-1+cc,1) = B_R(cc)
-                spp(ii)%vars%B(pp-1+cc,2) = B_PHI(cc)
-                spp(ii)%vars%B(pp-1+cc,3) = B_Z(cc)
+                V_PLL(cc)=spp(ii)%vars%V(pp-1+cc,1)
+                V_MU(cc)=spp(ii)%vars%V(pp-1+cc,2)
 
-                spp(ii)%vars%PSI_P(pp-1+cc) = PSIp(cc)
+                flag_cache(cc)=spp(ii)%vars%flag(pp-1+cc)
              end do
              !$OMP END SIMD
-             
-          else
-             
-             call advance_FPeqn_vars(params,Y_R,Y_PHI, &
-                  Y_Z,V_PLL,V_MU,flag_cache,m_cache, &
-                  F,P)
+
+             if (.not.params%FokPlan) then
+                Vdenave=0._rp
+                do tt=1_ip,params%t_skip
+
+!                   write(6,*) params%mpi_params%rank,'Y_R',Y_R
+                   
+                   call advance_GCeqn_vars(spp(ii)%vars,pp, &
+                        tt+params%t_skip*(ttt-1),params, &
+                        Y_R,Y_PHI, Y_Z,V_PLL,V_MU,flag_cache,q_cache,m_cache, &
+                        B_R,B_PHI,B_Z,F,P,PSIp,E_PHI)
+
+!                   write(6,*) params%mpi_params%rank,'Y_R',Y_R
+
+                   if (params%SC_E) then                  
+                      call calculate_SC_p(params,F,B_R,B_PHI,B_Z,Y_R,Y_Z, &
+                           V_PLL,V_MU,m_cache,flag_cache,Vden)
+                      Vdenave=(Vdenave*REAL(tt-1_ip)+Vden)/REAL(tt)
+                   end if
+                   
+                end do !timestep iterator
+
+                VdenOMP=VdenOMP+Vdenave
+
+                
+                !$OMP SIMD
+                do cc=1_idef,8_idef
+                   spp(ii)%vars%Y(pp-1+cc,1)=Y_R(cc)
+                   spp(ii)%vars%Y(pp-1+cc,2)=Y_PHI(cc)
+                   spp(ii)%vars%Y(pp-1+cc,3)=Y_Z(cc)
+
+                   spp(ii)%vars%V(pp-1+cc,1)=V_PLL(cc)
+                   spp(ii)%vars%V(pp-1+cc,2)=V_MU(cc)
+
+                   spp(ii)%vars%flag(pp-1+cc)=flag_cache(cc)
+
+                   spp(ii)%vars%B(pp-1+cc,1) = B_R(cc)
+                   spp(ii)%vars%B(pp-1+cc,2) = B_PHI(cc)
+                   spp(ii)%vars%B(pp-1+cc,3) = B_Z(cc)
+
+                   spp(ii)%vars%PSI_P(pp-1+cc) = PSIp(cc)
+                   spp(ii)%vars%E(pp-1+cc,2) = E_PHI(cc)
+                end do
+                !$OMP END SIMD
+
+             else
+
+                call advance_FPeqn_vars(params,Y_R,Y_PHI, &
+                     Y_Z,V_PLL,V_MU,flag_cache,m_cache, &
+                     F,P)
+
+                !$OMP SIMD
+                do cc=1_idef,8_idef
+                   spp(ii)%vars%V(pp-1+cc,1)=V_PLL(cc)
+                   spp(ii)%vars%V(pp-1+cc,2)=V_MU(cc)
+
+                   spp(ii)%vars%flag(pp-1+cc)=flag_cache(cc)
+                end do
+                !$OMP END SIMD
+
+             end if
+
+             call analytical_fields_Bmag_p(F,Y_R,Y_PHI,Y_Z, &
+                  Bmag,E_PHI)
 
              !$OMP SIMD
              do cc=1_idef,8_idef
-                spp(ii)%vars%V(pp-1+cc,1)=V_PLL(cc)
-                spp(ii)%vars%V(pp-1+cc,2)=V_MU(cc)
+                spp(ii)%vars%g(pp-1+cc)=sqrt(1+V_PLL(cc)**2+ &
+                     2*V_MU(cc)*Bmag(cc)*m_cache)
 
-                spp(ii)%vars%flag(pp-1+cc)=flag_cache(cc)
+                spp(ii)%vars%eta(pp-1+cc) = rad2deg(atan2(sqrt(2*m_cache* &
+                     Bmag(cc)*spp(ii)%vars%V(pp-1+cc,2)), &
+                     spp(ii)%vars%V(pp-1+cc,1)))
              end do
              !$OMP END SIMD
-             
+
+          end do !particle chunk iterator
+          !$OMP END PARALLEL DO
+
+          if (params%SC_E) then
+             call calculate_SC_E1D(params,F,VdenOMP)             
           end if
-                  
           
-          call analytical_fields_Bmag_p(F,Y_R,Y_PHI,Y_Z, &
-               Bmag,E_PHI)
-
-          !$OMP SIMD
-          do cc=1_idef,8_idef
-             spp(ii)%vars%g(pp-1+cc)=sqrt(1+V_PLL(cc)**2+ &
-                  2*V_MU(cc)*Bmag(cc)*m_cache)
-
-             spp(ii)%vars%eta(pp-1+cc) = rad2deg(atan2(sqrt(2*m_cache* &
-                  Bmag(cc)*spp(ii)%vars%V(pp-1+cc,2)), &
-                  spp(ii)%vars%V(pp-1+cc,1)))
-          end do
-          !$OMP END SIMD
-             
-       end do !particle chunk iterator
-       !$OMP END PARALLEL DO
-       
+       end do
+    
     end do !species iterator
     
   end subroutine adv_GCeqn_top
 
   subroutine advance_GCeqn_vars(vars,pp,tt,params,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
-       flag_cache,q_cache,m_cache,B_R,B_PHI,B_Z,F,P,PSIp)
+       flag_cache,q_cache,m_cache,B_R,B_PHI,B_Z,F,P,PSIp,E_PHI)
     !! @note Subroutine to advance GC variables \(({\bf X},p_\parallel)\)
     !! @endnote
     !! Comment this section further with evolution equations, numerical
@@ -1813,7 +1853,8 @@ contains
     REAL(rp),DIMENSION(8),INTENT(OUT) :: PSIp
     REAL(rp),DIMENSION(8) :: curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z
     REAL(rp),DIMENSION(8),INTENT(INOUT) :: V_PLL,V_MU
-    REAL(rp),DIMENSION(8) :: RHS_R,RHS_PHI,RHS_Z,RHS_PLL,V0,E_PHI,E_Z,E_R
+    REAL(rp),DIMENSION(8) :: RHS_R,RHS_PHI,RHS_Z,RHS_PLL,V0,E_Z,E_R
+    REAL(rp),DIMENSION(8),INTENT(OUT) :: E_PHI
     REAL(rp),DIMENSION(8) :: Bmag,ne,Te,Zeff
     INTEGER(is),dimension(8), intent(inout) :: flag_cache
     
@@ -1843,6 +1884,10 @@ contains
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
+    if (params%SC_E) then
+       call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+    end if
+       
 !    write(6,'("ER:",E17.10)') E_R
 !    write(6,'("EPHI:",E17.10)') E_PHI
 !    write(6,'("EZ:",E17.10)') E_Z
@@ -1887,6 +1932,9 @@ contains
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
+    if (params%SC_E) then
+       call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+    end if
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -1917,6 +1965,9 @@ contains
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
+    if (params%SC_E) then
+       call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+    end if
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -1946,7 +1997,10 @@ contains
     call analytical_fields_GC_p(F,Y_R,Y_PHI, &
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
-
+    
+    if (params%SC_E) then
+       call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+    end if
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -1980,6 +2034,9 @@ contains
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
+    if (params%SC_E) then
+       call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+    end if
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -2013,6 +2070,9 @@ contains
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
+    if (params%SC_E) then
+       call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+    end if
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -2061,6 +2121,10 @@ contains
     call analytical_fields_GC_p(F,Y_R,Y_PHI, &
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
          gradB_R,gradB_PHI,gradB_Z,PSIp)
+
+    if (params%SC_E) then
+       call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+    end if
     
     if (params%collisions) then
        
@@ -2068,7 +2132,6 @@ contains
             V_PLL,V_MU,m_cache,flag_cache,F,P,E_PHI)
 
     end if
-
 
   end subroutine advance_GCeqn_vars
 
