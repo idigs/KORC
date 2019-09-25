@@ -2147,7 +2147,7 @@ CONTAINS
 
 
 
-  subroutine save_restart_variables(params,spp)
+  subroutine save_restart_variables(params,spp,F)
     !! @note Subroutine that saves all the variables that KORC needs for
     !! restarting a simulation. These variables are saved to "restart_file.h5".
     TYPE(KORC_PARAMS), INTENT(IN) 				:: params
@@ -2155,6 +2155,7 @@ CONTAINS
     TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(IN) 	:: spp
     !! An instance of KORC's derived type SPECIES containing
     !! all the information of different electron species. See [[korc_types]].
+    TYPE(FIELDS), INTENT(IN)      :: F
     REAL(rp), DIMENSION(:), ALLOCATABLE :: send_buffer_rp, receive_buffer_rp
     !! Temporary buffer to be used by MPI to gather different electrons'
     !! variables.
@@ -2168,6 +2169,10 @@ CONTAINS
     REAL(rp), DIMENSION(:,:), ALLOCATABLE 			:: X
     REAL(rp), DIMENSION(:,:), ALLOCATABLE 			:: V
     REAL(rp), DIMENSION(:), ALLOCATABLE 			:: g
+    REAL(rp), DIMENSION(:), ALLOCATABLE 			:: J1_SC
+    REAL(rp), DIMENSION(:), ALLOCATABLE 			:: J2_SC
+    REAL(rp), DIMENSION(:), ALLOCATABLE 			:: J3_SC
+    REAL(rp), DIMENSION(:), ALLOCATABLE 			:: E_SC
     INTEGER(is), DIMENSION(:), ALLOCATABLE 			:: flag
     CHARACTER(MAX_STRING_LENGTH) 				:: filename
     !! String containing the name of the HDF5 file.
@@ -2259,6 +2264,7 @@ CONTAINS
        dset = "num_snapshots"
        attr = "Number of snapshots in time for saving simulation variables"
        call save_to_hdf5(h5file_id,dset,params%num_snapshots,attr)
+       
     end if
 
     do ss=1_idef,params%num_species
@@ -2351,6 +2357,32 @@ CONTAINS
           dset = "g"
           call save_1d_array_to_hdf5(group_id,dset, g)
 
+          if (params%SC_E) then
+
+             ALLOCATE(J1_SC(F%dim_1D))
+             ALLOCATE(J2_SC(F%dim_1D))
+             ALLOCATE(J3_SC(F%dim_1D))
+             ALLOCATE(E_SC(F%dim_1D))
+             J1_SC=F%J1_SC_1D%PHI/F%Ip0
+             J2_SC=F%J2_SC_1D%PHI
+             J3_SC=F%J3_SC_1D%PHI
+             E_SC=F%E_SC_1D%PHI
+             
+             dset = "J1_SC"
+             call save_1d_array_to_hdf5(group_id,dset,J1_SC)
+             dset = "J2_SC"
+             call save_1d_array_to_hdf5(group_id,dset,J2_SC)
+             dset = "J3_SC"
+             call save_1d_array_to_hdf5(group_id,dset,J3_SC)
+             dset = "E_SC"
+             call save_1d_array_to_hdf5(group_id,dset,E_SC)
+             
+             DEALLOCATE(J1_SC)
+             DEALLOCATE(J2_SC)
+             DEALLOCATE(J3_SC)
+             DEALLOCATE(E_SC)
+          end if
+          
           call h5gclose_f(group_id, h5error)
        end if
 
@@ -2362,6 +2394,7 @@ CONTAINS
        end if
     end do
 
+    
     if (params%mpi_params%rank.EQ.0_idef) then
        call h5fclose_f(h5file_id, h5error)
     end if
@@ -2495,7 +2528,7 @@ CONTAINS
   end subroutine load_prev_time
 
 
-  subroutine load_particles_ic(params,spp)
+  subroutine load_particles_ic(params,spp,F)
     !! @note Subroutine that loads all the electrons' data from
     !! "restart_file.h5" to restart a simulation.
     TYPE(KORC_PARAMS), INTENT(INOUT) 			:: params
@@ -2503,6 +2536,7 @@ CONTAINS
     TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
     !! An instance of KORC's derived type SPECIES containing all the
     !! information of different electron species. See korc_types.f90.
+    TYPE(FIELDS), INTENT(INOUT) 			:: F
     REAL(rp), DIMENSION(:), ALLOCATABLE 		:: X_send_buffer
     !! Temporary buffer used by MPI for scattering the electrons' position
     !! to different MPI processes.
@@ -2521,6 +2555,12 @@ CONTAINS
     REAL(rp), DIMENSION(:), ALLOCATABLE 		:: AUX_receive_buffer
     !! Temporary buffer used by MPI to scatter various electrons' variables
     !! among MPI processes.
+    REAL(rp), DIMENSION(:), ALLOCATABLE 		:: JSC1_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE 		:: JSC2_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE 		:: JSC3_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE 		:: ESC_buffer
+
+
     CHARACTER(MAX_STRING_LENGTH) 			:: filename
     !! String containing the name of the HDF5 file.
     CHARACTER(MAX_STRING_LENGTH) 			:: dset
@@ -2545,7 +2585,7 @@ CONTAINS
 
        ALLOCATE(AUX_send_buffer(spp(ss)%ppp*params%mpi_params%nmpi))
        ALLOCATE(AUX_receive_buffer(spp(ss)%ppp))
-
+       
        if (params%mpi_params%rank.EQ.0_idef) then
           filename = TRIM(params%path_to_outputs) // "restart_file.h5"
           call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
@@ -2638,6 +2678,49 @@ CONTAINS
             AUX_receive_buffer,spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
        spp(ss)%vars%g = AUX_receive_buffer
 
+       if (params%SC_E) then
+          
+          ALLOCATE(JSC1_buffer(F%dim_1D))
+          ALLOCATE(JSC2_buffer(F%dim_1D))
+          ALLOCATE(JSC3_buffer(F%dim_1D))
+          ALLOCATE(ESC_buffer(F%dim_1D))
+
+          filename = TRIM(params%path_to_outputs) // "restart_file.h5"
+          call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
+          if (h5error .EQ. -1) then
+             write(6,'("KORC ERROR: Something went wrong in: &
+                  &load_particles_ic --> h5fopen_f")')
+             call KORC_ABORT()
+          end if
+
+          write(tmp_str,'(I18)') ss
+
+          dset = "/spp_" // TRIM(ADJUSTL(tmp_str)) // "/J1_SC"
+          call load_array_from_hdf5(h5file_id,dset,JSC1_buffer)
+
+          dset = "/spp_" // TRIM(ADJUSTL(tmp_str)) // "/J2_SC"
+          call load_array_from_hdf5(h5file_id,dset,JSC2_buffer)
+
+          dset = "/spp_" // TRIM(ADJUSTL(tmp_str)) // "/J3_SC"
+          call load_array_from_hdf5(h5file_id,dset,JSC3_buffer)
+
+          dset = "/spp_" // TRIM(ADJUSTL(tmp_str)) // "/E_SC"
+          call load_array_from_hdf5(h5file_id,dset,ESC_buffer)
+          
+          call h5fclose_f(h5file_id, h5error)
+
+          F%J1_SC_1D%PHI=JSC1_buffer
+          F%J2_SC_1D%PHI=JSC2_buffer
+          F%J3_SC_1D%PHI=JSC3_buffer
+          F%E_SC_1D%PHI=ESC_buffer
+          
+          DEALLOCATE(JSC1_buffer)
+          DEALLOCATE(JSC2_buffer)
+          DEALLOCATE(JSC3_buffer)
+          DEALLOCATE(ESC_buffer)
+          
+       end if
+       
        DEALLOCATE(X_send_buffer)
        DEALLOCATE(X_receive_buffer)
 

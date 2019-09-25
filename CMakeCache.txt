@@ -111,7 +111,7 @@ CMAKE_Fortran_COMPILER_RANLIB:FILEPATH=CMAKE_Fortran_COMPILER_RANLIB-NOTFOUND
 CMAKE_Fortran_FLAGS:STRING=-O3 -msse2 -DHDF5_DOUBLE_PRESICION -fopenmp-simd -malign-double
 
 //Flags used by the Fortran compiler during DEBUG builds.
-CMAKE_Fortran_FLAGS_DEBUG:STRING=-g -ffpe-trap=zero,overflow,underflow -fimplicit-none -fbacktrace
+CMAKE_Fortran_FLAGS_DEBUG:STRING=-g -ffpe-trap=invalid,zero,overflow -fimplicit-none -fbacktrace
 
 //Flags used by the Fortran compiler during MINSIZEREL builds.
 CMAKE_Fortran_FLAGS_MINSIZEREL:STRING=-Os -DNDEBUG -Os

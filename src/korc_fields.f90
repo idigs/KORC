@@ -25,6 +25,7 @@ module korc_fields
        calculate_SC_E1D,&
        calculate_SC_p,&
        init_SC_E1D,&
+       reinit_SC_E1D,&
        define_SC_time_step
   PRIVATE :: get_analytical_fields,&
        analytical_fields,&
@@ -1078,17 +1079,17 @@ CONTAINS
     end do
     
   end subroutine calculate_SC_p
-  
-  subroutine init_SC_E1D(params,F,spp)
 
+  subroutine init_SC_E1D(params,F,spp)
+ 
     TYPE(FIELDS), INTENT(INOUT)                 :: F
     TYPE(KORC_PARAMS), INTENT(IN) 		:: params
-    TYPE(SPECIES), INTENT(INOUT)    :: spp
+    TYPE(SPECIES), INTENT(IN)    :: spp
     real(rp),dimension(F%dim_1D) :: Vpart
     real(rp),dimension(spp%ppp) :: RR,ZZ,rm,vpll
     real(rp),dimension(F%dim_1D) :: Vden,Jsamone,Jsamall,Jexp,dJdt
     real(rp),dimension(F%dim_1D) :: a,b,c,u,gam,r,r_1D,Ai
-    real(rp) :: dr,Isam=0._rp,bet,sigr,ar,arg,arg1,arg2,arg3
+    real(rp) :: dr,Isam,bet,sigr,ar,arg,arg1,arg2,arg3
     integer :: pp,ii,rind
     INTEGER 				:: mpierr
 
@@ -1104,7 +1105,7 @@ CONTAINS
 
 !    write (6,*) params%mpi_params%rank,'RR',RR
 !    write (6,*) params%mpi_params%rank,'ZZ',spp%vars%Y(:,3)
-    !write (6,*) params%mpi_params%rank,'rm',rm
+!    write (6,*) 'rm',rm
     
     
     dr=F%r_1D(2)-F%r_1D(1)
@@ -1113,7 +1114,7 @@ CONTAINS
 
     ! Weighting parallel velocity
 
-!    write (6,*) params%mpi_params%rank,'vpll',vpll
+!    write (6,*) 'vpll',vpll
     
     Vpart=0._rp
     r_1D=F%r_1D
@@ -1179,13 +1180,13 @@ CONTAINS
     call MPI_ALLREDUCE(Jsamone,Jsamall,F%dim_1D,MPI_REAL8,MPI_SUM, &
          MPI_COMM_WORLD,mpierr)
     
-    !write(6,*) 'Jsam: ',Jsamall(1:5)
+!    write(6,*) 'Jsam: ',Jsamall(1:10)
 
     ! Integrating current density to scale total current to
     ! experimentally determined total current
 
 
-       
+    Isam=0._rp
     do ii=1_idef,F%dim_1D
        if ((ii.eq.1).or.(ii.eq.F%dim_1D)) then
           Isam=Isam+Jsamall(ii)*r_1D(ii)/2._rp
@@ -1281,6 +1282,128 @@ CONTAINS
     call initialize_SC1D_field_interpolant(params,F)
     
   end subroutine init_SC_E1D
+  
+  subroutine reinit_SC_E1D(params,F)
+ 
+    TYPE(FIELDS), INTENT(INOUT)                 :: F
+    TYPE(KORC_PARAMS), INTENT(IN) 		:: params
+
+    real(rp),dimension(F%dim_1D) :: Jsamall,Jexp,dJdt
+    real(rp),dimension(F%dim_1D) :: a,b,c,u,gam,r,r_1D,Ai
+    real(rp) :: dr,Isam,bet,sigr,ar,arg,arg1,arg2,arg3
+    integer :: pp,ii,rind
+    INTEGER 				:: mpierr
+
+    if (params%mpi_params%rank .EQ. 0) then
+       write(6,*) 'Calculating SC_E1D'
+    end if
+
+    dr=F%r_1D(2)-F%r_1D(1)
+    r_1D=F%r_1D
+    Jsamall=F%J1_SC_1D%PHI
+
+!    write(6,*) Jsamall
+    
+    Isam=0._rp
+    do ii=1_idef,F%dim_1D
+!       write(6,*) Isam
+!       write(6,*) ii
+!       write(6,*) Jsamall(ii)
+!       write(6,*) (ii)
+       if ((ii.eq.1_idef).or.(ii.eq.F%dim_1D)) then
+          Isam=Isam+Jsamall(ii)*r_1D(ii)/2._rp
+       else 
+          Isam=Isam+Jsamall(ii)*r_1D(ii)
+       end if
+    end do
+    Isam=2._rp*C_PI*Isam*dr
+!    write(6,*) params%mpi_params%rank,'Isam: ',Isam
+
+    F%Ip0=F%Ip_exp/Isam
+
+    
+    Jexp=Jsamall*F%Ip0
+
+    F%J3_SC_1D%PHI=Jexp 
+    F%J2_SC_1D%PHI=Jexp
+    F%J1_SC_1D%PHI=Jexp        
+    
+    ! Calculating time-derivative of E_phi
+    
+    dJdt=(3._rp*F%J1_SC_1D%PHI-4._rp*F%J2_SC_1D%PHI+F%J3_SC_1D%PHI)/ &
+         (2._rp*F%dt_E_SC)
+    
+!    write(6,*) params%mpi_params%rank,'J(1)',F%J_SC_1D%PHI(1)
+    
+    ! Solving 1D Poisson equation with tridiagonal matrix solve
+
+    a=0._rp
+    b=-2._rp
+    c=0._rp
+    u=0._rp
+    gam=0._rp
+!    r=-2*dr**2*C_MU*Jexp
+    r=2*dr**2*C_MU*dJdt
+
+    do ii=2_idef,F%dim_1D
+       a(ii)=(REAL(ii)-2._rp)/(REAL(ii)-1._rp)
+       c(ii)=REAL(ii)/(REAL(ii)-1._rp)
+    end do
+
+    bet=b(2)
+    u(2)=r(2)/bet
+    do ii=3_idef,F%dim_1D-1
+       gam(ii)=c(ii-1)/bet
+       bet=b(ii)-a(ii)*gam(ii)
+       if (bet.eq.0) then
+          stop 'tridiag failed'         
+       end if
+       u(ii)=(r(ii)-a(ii)*u(ii-1))/bet
+    end do
+
+    do ii=F%dim_1D-2,2,-1
+       u(ii)=u(ii)-gam(ii+1)*u(ii+1)
+    end do
+
+    u(1)=(4._rp*u(2)-u(3))/3._rp
+
+    ! Writing over F%A* data
+    
+!    F%A3_SC_1D%PHI=F%A2_SC_1D%PHI
+!    F%A2_SC_1D%PHI=F%A1_SC_1D%PHI
+!    F%A1_SC_1D%PHI=u
+    
+!    if (init) then
+!       F%A3_SC_1D%PHI=F%A1_SC_1D%PHI
+!       F%A2_SC_1D%PHI=F%A1_SC_1D%PHI 
+!    end if
+
+!    write(6,*) params%mpi_params%rank,'A1(1)',F%A1_SC_1D%PHI(1)
+!    write(6,*) params%mpi_params%rank,'A2(1)',F%A2_SC_1D%PHI(1)
+!    write(6,*) params%mpi_params%rank,'A3(1)',F%A3_SC_1D%PHI(1)
+    
+    ! Calculating inductive E_phi
+
+!    F%E_SC_1D%PHI=-(3*F%A1_SC_1D%PHI-4*F%A2_SC_1D%PHI+F%A3_SC_1D%PHI)/ &
+!         (2*F%dt_E_SC)
+
+    F%E_SC_1D%PHI=u
+
+    if (params%mpi_params%rank.eq.0) then
+       write(6,*) 'J1(1)',F%J1_SC_1D%PHI(1)
+       write(6,*) 'J2(1)',F%J2_SC_1D%PHI(1)
+       write(6,*) 'J3(1)',F%J3_SC_1D%PHI(1)
+       
+       write(6,*) 'E(1)',F%E_SC_1D%PHI(1)
+    end if
+       
+    ! Normalizing inductive E_phi
+    
+    F%E_SC_1D%PHI=F%E_SC_1D%PHI/params%cpp%Eo
+
+    call initialize_SC1D_field_interpolant(params,F)
+    
+  end subroutine reinit_SC_E1D
 
   ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
   ! * * *  SUBROUTINES FOR INITIALIZING FIELDS   * * * !

@@ -633,7 +633,7 @@ subroutine set_up_particles_ic(params,F,spp,P)
   !! simulation. @endnote
   TYPE(KORC_PARAMS), INTENT(INOUT) 				:: params
   !! Core KORC simulation parameters.
-  TYPE(FIELDS), INTENT(IN) 					:: F
+  TYPE(FIELDS), INTENT(INOUT) 					:: F
   !! An instance of KORC's derived type FIELDS containing all 
   !! the information about the fields used in the simulation. 
   !! See [[korc_types]] and [[korc_fields]].
@@ -646,7 +646,7 @@ subroutine set_up_particles_ic(params,F,spp,P)
   !! Species iterator.
 
   if (params%restart.OR.params%proceed.or.params%reinit) then
-     call load_particles_ic(params,spp)
+     call load_particles_ic(params,spp,F)
 
      call init_random_seed()
      

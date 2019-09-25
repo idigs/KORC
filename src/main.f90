@@ -106,14 +106,7 @@ program main
 
 !  write(6,'("init eta: ",E17.10)') spp(1)%vars%eta
   
-  call initialize_collision_params(params)
-  !! <h4>6\. Initialize Collision Parameters</h4>
-  !!
-  !! Subroutine [[initialize_collision_params]] in [[korc_collisions]] that
-  !! initializes collision parameters for the SS (single-species) and MS
-  !! (multiple-species) data types, reading in namefiles from the KORC input file.
-  !! MS reads in namelist &CollisionParamsMultipleSpecies while SS reads in
-  !! namelist &CollisionParamsSingleSpecies.
+
 
 
   
@@ -131,7 +124,14 @@ program main
   !! Also finds the maximum non-relativistic and relativistic cyclotron frequencies
   !! to be used for setting the timstep for the time-evolution algorithms.
 
-
+  call initialize_collision_params(params)
+  !! <h4>6\. Initialize Collision Parameters</h4>
+  !!
+  !! Subroutine [[initialize_collision_params]] in [[korc_collisions]] that
+  !! initializes collision parameters for the SS (single-species) and MS
+  !! (multiple-species) data types, reading in namefiles from the KORC input file.
+  !! MS reads in namelist &CollisionParamsMultipleSpecies while SS reads in
+  !! namelist &CollisionParamsSingleSpecies.
   
   call define_time_step(params)
   !! <h4>10\. Define Time Step</h4>
@@ -256,16 +256,26 @@ program main
         call GC_init(params,F,spp)
 
      end if
+
+     if (params%SC_E) then
+     
+        call init_SC_E1D(params,F,spp(1))
+     
+     end if
+
+  else
+
+     call get_fields(params,spp(1)%vars,F)
+
+     if (params%SC_E) then
+
+        call reinit_SC_E1D(params,F)
+     
+     end if
+     
   end if
 
-  if (params%SC_E) then
 
-     call get_fields(params,spp(1)%vars,F)        
-     
-     call init_SC_E1D(params,F,spp(1))
-
-     
-  end if
   
   if (.NOT.params%restart) then
      
@@ -298,7 +308,7 @@ program main
         call save_simulation_outputs(params,spp,F)
         call synthetic_camera(params,spp) ! Synthetic camera
         call binning_diagnostic(params,spp) ! Binning diagnostic
-        call save_restart_variables(params,spp)
+        call save_restart_variables(params,spp,F)
      end do
   end if
 
@@ -316,7 +326,7 @@ program main
         call save_simulation_outputs(params,spp,F)
         call synthetic_camera(params,spp) ! Synthetic camera
         call binning_diagnostic(params,spp) ! Binning diagnostic
-        call save_restart_variables(params,spp)
+        call save_restart_variables(params,spp,F)
      end do
   end if
 
@@ -353,7 +363,7 @@ program main
         call save_simulation_outputs(params,spp,F)
         call synthetic_camera(params,spp) ! Synthetic camera
         call binning_diagnostic(params,spp) ! Binning diagnostic
-        call save_restart_variables(params,spp)
+        call save_restart_variables(params,spp,F)
         
      end do
   end if
@@ -369,7 +379,7 @@ program main
         call save_simulation_outputs(params,spp,F)
         call synthetic_camera(params,spp) ! Synthetic camera
         call binning_diagnostic(params,spp) ! Binning diagnostic
-        call save_restart_variables(params,spp)
+        call save_restart_variables(params,spp,F)
      end do
   end if
   
