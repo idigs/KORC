@@ -962,13 +962,13 @@ CONTAINS
 
     F%E_SC_1D%PHI=u
 
-!    if (params%mpi_params%rank.eq.0) then
-!       write(6,*) 'J1(1)',F%J1_SC_1D%PHI(1)
-!       write(6,*) 'J2(1)',F%J2_SC_1D%PHI(1)
-!       write(6,*) 'J3(1)',F%J3_SC_1D%PHI(1)
+    if (params%mpi_params%rank.eq.0) then
+       write(6,*) 'J1(2)',F%J1_SC_1D%PHI(2)
+       write(6,*) 'J2(2)',F%J2_SC_1D%PHI(2)
+       write(6,*) 'J3(2)',F%J3_SC_1D%PHI(2)
        
-!       write(6,*) 'E(1)',F%E_SC_1D%PHI(1)
-!    end if
+       write(6,*) 'E(1)',F%E_SC_1D%PHI(1)
+    end if
        
     ! Normalizing inductive E_phi
     
@@ -1013,7 +1013,7 @@ CONTAINS
 
        !    write (6,*) params%mpi_params%rank,'RR',RR
        !    write (6,*) params%mpi_params%rank,'ZZ',spp%vars%Y(:,3)
-       !write (6,*) params%mpi_params%rank,'rm',rm
+       write (6,*) 'rm',rm(cc)
 
        Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+ &
             B_Z(cc)*B_Z(cc))
@@ -1105,7 +1105,7 @@ CONTAINS
 
 !    write (6,*) params%mpi_params%rank,'RR',RR
 !    write (6,*) params%mpi_params%rank,'ZZ',spp%vars%Y(:,3)
-!    write (6,*) 'rm',rm
+    write (6,*) 'rm',rm
     
     
     dr=F%r_1D(2)-F%r_1D(1)
@@ -1267,13 +1267,13 @@ CONTAINS
 
     F%E_SC_1D%PHI=u
 
-!    if (params%mpi_params%rank.eq.0) then
-!       write(6,*) 'J1(1)',F%J1_SC_1D%PHI(1)
-!       write(6,*) 'J2(1)',F%J2_SC_1D%PHI(1)
-!       write(6,*) 'J3(1)',F%J3_SC_1D%PHI(1)
-!       
-!       write(6,*) 'E(1)',F%E_SC_1D%PHI(1)
-!    end if
+    if (params%mpi_params%rank.eq.0) then
+       write(6,*) 'J1(2)',F%J1_SC_1D%PHI(2)
+       write(6,*) 'J2(2)',F%J2_SC_1D%PHI(2)
+       write(6,*) 'J3(2)',F%J3_SC_1D%PHI(2)
+       
+       write(6,*) 'E(1)',F%E_SC_1D%PHI(1)
+    end if
        
     ! Normalizing inductive E_phi
     

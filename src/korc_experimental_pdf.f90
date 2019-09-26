@@ -1220,6 +1220,7 @@ END FUNCTION indicator_exp
   !! mpi error indicator
   REAL(rp) 						:: dg,deta
   LOGICAL :: accepted
+  INTEGER,DIMENSION(33) :: seed=(/1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1/)
   
   nsamples = spp%ppp*params%mpi_params%nmpi
 
@@ -1284,7 +1285,12 @@ END FUNCTION indicator_exp
      R_buffer = spp%Ro
      Z_buffer = spp%Zo
 
-     call RANDOM_SEED()
+
+     if (.not.params%SameRandSeed) then
+        call RANDOM_SEED()
+     else
+        call random_seed(put=seed)
+     end if
      
      call RANDOM_NUMBER(rand_unif)
      eta_buffer = min_pitch_angle + (max_pitch_angle &
@@ -1376,9 +1382,9 @@ END FUNCTION indicator_exp
 
 !        write(6,'("sample:",I15)') ii
         
-        if (modulo(ii,nsamples/10).eq.0) then
-           write(6,'("Sample: ",I10)') ii
-        end if
+!       if (modulo(ii,nsamples/10).eq.0) then
+!           write(6,'("Sample: ",I10)') ii
+!        end if
         
         R_test = R_buffer + random_norm(0.0_rp,spp%dR)
         Z_test = Z_buffer + random_norm(0.0_rp,spp%dZ)
