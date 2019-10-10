@@ -1760,6 +1760,14 @@ CONTAINS
              attr = "Radial position of magnetic axis"
              call save_to_hdf5(h5file_id,dset,F%Zo*params%cpp%length,attr)
 
+             dset = TRIM(gname) // "/Axisymmetric"
+             attr = "Radial position of magnetic axis"
+             if(F%axisymmetric_fields) then
+                call save_to_hdf5(h5file_id,dset,1_idef,attr)
+             else
+                call save_to_hdf5(h5file_id,dset,0_idef,attr)
+             end if
+
              if (ALLOCATED(F%PSIp)) then
                 dset = TRIM(gname) // "/psi_p"
                 units = params%cpp%Bo*params%cpp%length**2

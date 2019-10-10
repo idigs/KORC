@@ -945,7 +945,7 @@ CONTAINS
     !! check if a given particle has left these spatial domains to
     !! stop following it, otherwise this will cause an error in the simulation.
     TYPE(FIELDS), INTENT(IN)                                   :: F
-    REAL(rp), DIMENSION(8),  INTENT(IN)      :: Y_R,Y_PHI,Y_Z
+    REAL(rp), DIMENSION(8),  INTENT(IN)      :: Y_R,Y_PHI,Y_Z    
     INTEGER(is), DIMENSION(8), INTENT(INOUT)  :: flag
     !! Flag that determines whether particles are followed in the
     !! simulation (flag=1), or not (flag=0).
@@ -965,7 +965,7 @@ CONTAINS
     !! Particle iterator.
     INTEGER(ip)                                            :: ss
     !! Species iterator.
-    
+    REAL(rp), DIMENSION(8)     :: Y_PHI_mod  
 
 !    write(6,'("YR:",E17.10)') Y_R
 !    write(6,'("YPHI:",E17.10)') Y_PHI
@@ -975,22 +975,32 @@ CONTAINS
 !    write(6,'("Zo:",E17.10)') fields_domain%Zo
 !    write(6,'("DR:",E17.10)') fields_domain%DR
 !    write(6,'("DZ:",E17.10)') fields_domain%DZ
+
+
     
     if (ALLOCATED(fields_domain%FLAG3D)) then
        !$OMP SIMD
 !       !$OMP&  aligned(IR,IPHI,IZ)
        do pp=1_idef,8_idef
+
+          Y_PHI_mod(pp)=mod(Y_PHI(pp),2._rp*C_PI)
+          
           IR = INT(FLOOR((Y_R(pp)  - fields_domain%Ro + &
                0.5_rp*fields_domain%DR)/fields_domain%DR) + 1.0_rp,idef)
-          IPHI = INT(FLOOR((Y_PHI(pp)  + 0.5_rp*fields_domain%DPHI)/ &
+          IPHI = INT(FLOOR((Y_PHI_mod(pp)  + 0.5_rp*fields_domain%DPHI)/ &
                fields_domain%DPHI) + 1.0_rp,idef)
           IZ = INT(FLOOR((Y_Z(pp)  + ABS(fields_domain%Zo) + &
                0.5_rp*fields_domain%DZ)/fields_domain%DZ) + 1.0_rp,idef)
-
+          
           if ((fields_domain%FLAG3D(IR,IPHI,IZ).NE.1_is).OR. &
                ((IR.GT.bfield_3d%NR).OR.(IZ.GT.bfield_3d%NZ))) then
              flag(pp) = 0_is
           end if
+
+          !write(6,'("IPHI: ",I16)') IPHI
+          !write(6,'("flag: ",I16)') flag(pp)
+
+          
        end do
        !$OMP END SIMD
     else

@@ -728,6 +728,7 @@ subroutine MH_gaussian_elliptic_torus(params,spp)
   INTEGER 				:: ii
   !! Particle iterator.
   INTEGER 				:: mpierr
+  LOGICAL :: accepted
 
   nsamples = spp%ppp*params%mpi_params%nmpi
 
@@ -759,6 +760,7 @@ subroutine MH_gaussian_elliptic_torus(params,spp)
 
         ratio = indicator(psi1,spp%psi_max)*R_test*EXP(-psi1)/(R_buffer*EXP(-psi0))
 
+
         if (ratio .GE. 1.0_rp) then
            R_buffer = R_test
            Z_buffer = Z_test
@@ -786,18 +788,21 @@ subroutine MH_gaussian_elliptic_torus(params,spp)
 
         ratio = indicator(psi1,psi_max_buff)*R_test*EXP(-psi1)/(R_buffer*EXP(-psi0))
 
+        accepted=.false.
         if (ratio .GE. 1.0_rp) then
+           accepted=.true.
            R_buffer = R_test
            Z_buffer = Z_test
         else
            call RANDOM_NUMBER(rand_unif)
            if (rand_unif .LT. ratio) then
+              accepted=.true.
               R_buffer = R_test
               Z_buffer = Z_test
            end if
         end if
 
-        IF (INT(indicator(psi1,spp%psi_max)).EQ.1) THEN
+        IF (INT(indicator(psi1,spp%psi_max)).EQ.1.and.accepted) THEN
            R_samples(ii) = R_buffer
            Z_samples(ii) = Z_buffer
            call RANDOM_NUMBER(rand_unif)
