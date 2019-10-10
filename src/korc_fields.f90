@@ -38,7 +38,8 @@ module korc_fields
        analytical_electric_field_cyl,&
        ALLOCATE_V_FIELD_2D,&
        ALLOCATE_V_FIELD_3D,&
-       initialize_GC_fields
+       initialize_GC_fields,&
+       initialize_GC_fields_3D
 
 CONTAINS
 
@@ -857,9 +858,9 @@ CONTAINS
 !       write(6,'("B_Z: ",E17.10)') vars%B(:,2)
 !       write(6,'("B_Y: ",E17.10)') vars%B(:,3)
        
-       if (F%Efield.AND..NOT.F%Efield_in_file) then
-          call analytical_electric_field_cyl(F,vars%Y,vars%E,vars%flag)
-       end if
+       !if (F%Efield.AND..NOT.F%Efield_in_file) then
+       !   call analytical_electric_field_cyl(F,vars%Y,vars%E,vars%flag)
+       !end if
     CASE('UNIFORM')
 
        call uniform_fields(vars, F)
@@ -1001,7 +1002,6 @@ CONTAINS
     sigr=dr
 
     Vpart=0._rp
-    !$OMP SIMD
     do cc=1_idef,8_idef
 
        ! 1D nearest grid point weighting in minor radius
@@ -1047,7 +1047,6 @@ CONTAINS
 !       end do
 
     end do
-    !$OMP END SIMD
 
     ar=F%AB%a
     ! Calculating density of minor radial annulus    
@@ -1300,7 +1299,7 @@ CONTAINS
 
     dr=F%r_1D(2)-F%r_1D(1)
     r_1D=F%r_1D
-    Jsamall=F%J1_SC_1D%PHI
+    Jsamall=F%J0_SC_1D%PHI
 
 !    write(6,*) Jsamall
     
@@ -1404,7 +1403,7 @@ CONTAINS
     call initialize_SC1D_field_interpolant(params,F)
     
   end subroutine reinit_SC_E1D
-
+  
   ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
   ! * * *  SUBROUTINES FOR INITIALIZING FIELDS   * * * !
   ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
@@ -1669,13 +1668,26 @@ CONTAINS
                F%Efield_in_file)
 
        else
-          call ALLOCATE_3D_FIELDS_ARRAYS(F,F%Bfield,F%Efield)
+          call ALLOCATE_3D_FIELDS_ARRAYS(params,F,F%Bfield,F%Efield)
+          
        end if
        !allocates 2D or 3D data arrays (fields and spatial)
 
        call load_field_data_from_hdf5(params,F)
-
+       
        if (F%Bflux) F%Eo = Eo
+
+       if (.not.axisymmetric_fields) then
+          if (.not.F%Efield_in_file) then
+             F%Eo = Eo
+          
+             F%E_3D%R=0._rp
+             do ii=1_idef,F%dims(1)
+                F%E_3D%PHI(ii,:,:)=F%Eo*F%Ro/F%X%R(ii)
+             end do
+             F%E_3D%Z=0._rp
+          end if
+       end if
        
        if (params%mpi_params%rank .EQ. 0) then
 
@@ -1785,17 +1797,20 @@ CONTAINS
 
        if (params%mpi_params%rank.EQ.0) then
 
-          if (F%Bflux) then
-             write(6,'("PSIp(r=0)",E17.10)') F%PSIp(F%dims(1)/2,F%dims(3)/2)
-             write(6,'("BPHI(r=0)",E17.10)') F%Bo
-             write(6,'("EPHI(r=0)",E17.10)') F%Eo
-          else
-             write(6,'("BR(r=0)",E17.10)') F%B_2D%R(F%dims(1)/2,F%dims(3)/2)
-             write(6,'("BPHI(r=0)",E17.10)') F%B_2D%PHI(F%dims(1)/2,F%dims(3)/2)
-             write(6,'("BZ(r=0)",E17.10)') F%B_2D%Z(F%dims(1)/2,F%dims(3)/2)
-             write(6,'("EPHI(r=0)",E17.10)') F%E_2D%PHI(F%dims(1)/2,F%dims(3)/2)
+          if (F%axisymmetric_fields) then
+             if (F%Bflux) then
+                write(6,'("PSIp(r=0)",E17.10)') F%PSIp(F%dims(1)/2,F%dims(3)/2)
+                write(6,'("BPHI(r=0)",E17.10)') F%Bo
+                write(6,'("EPHI(r=0)",E17.10)') F%Eo
+             else
+                write(6,'("BR(r=0)",E17.10)') F%B_2D%R(F%dims(1)/2,F%dims(3)/2)
+                write(6,'("BPHI(r=0)",E17.10)') &
+                     F%B_2D%PHI(F%dims(1)/2,F%dims(3)/2)
+                write(6,'("BZ(r=0)",E17.10)') F%B_2D%Z(F%dims(1)/2,F%dims(3)/2)
+                write(6,'("EPHI(r=0)",E17.10)') &
+                     F%E_2D%PHI(F%dims(1)/2,F%dims(3)/2)
+             end if
           end if
-
 
 
        end if
@@ -1804,7 +1819,12 @@ CONTAINS
           if (params%mpi_params%rank.eq.0) then
              write(6,'("Initializing GC fields from external EM fields")')
           end if
-          call initialize_GC_fields(F)             
+
+          if (F%axisymmetric_fields) then
+             call initialize_GC_fields(F)             
+          else             
+             call initialize_GC_fields_3D(F)
+          end if
        end if
 
        !       write(6,'("gradBR",E17.10)') F%gradB_2D%R(F%dims(1)/2,F%dims(3)/2)
@@ -1922,6 +1942,152 @@ CONTAINS
     DEALLOCATE(bhat) 
 
   end subroutine initialize_GC_fields
+  
+  subroutine initialize_GC_fields_3D(F)
+    !! Computes the auxiliary fields \(\nabla|{\bf B}|\) and
+    !! \(\nabla\times\hat{b}\) that are used in the RHS of the
+    !! evolution equations for the GC orbit model.
+    TYPE(FIELDS), INTENT(INOUT)      :: F
+    !! An instance of the KORC derived type FIELDS.
+    INTEGER                        :: ii,jj
+    !! Iterator across F%dim
+    REAL(rp), DIMENSION(:,:,:),ALLOCATABLE :: Bmag
+    !! Magnetic field magnitude
+    REAL(rp), DIMENSION(:,:,:,:),ALLOCATABLE :: bhat
+    !! Magnetic field unit vector
+
+    Bmag=SQRT(F%B_3D%R**2+F%B_3D%PHI**2+F%B_3D%Z**2)
+
+    ALLOCATE(bhat(F%dims(1),F%dims(2),F%dims(3),3))
+
+    bhat(:,:,:,1)=F%B_3D%R/Bmag
+    bhat(:,:,:,2)=F%B_3D%PHI/Bmag
+    bhat(:,:,:,3)=F%B_3D%Z/Bmag
+
+
+    F%gradB_3D%PHI=0.
+    ! No variation in phi direction
+
+    ! Single-sided difference for axiliary fields at edge nodes
+    ! Differential over R on first index, differential over Z
+    ! on second index.
+
+    ! gradB
+    ! edge nodes at minimum R,Z
+    F%gradB_3D%R(1,:,:)=(Bmag(2,:,:)-Bmag(1,:,:))/(F%X%R(2)-F%X%R(1))
+    do ii=1_idef,F%dims(1)
+       F%gradB_3D%PHI(ii,1,:)=(Bmag(ii,2,:)-Bmag(ii,F%dims(2),:))/ &
+            (F%X%R(ii)*(F%X%PHI(2)-F%X%PHI(F%dims(2))))
+    end do
+    F%gradB_3D%Z(:,:,1)=(Bmag(:,:,2)-Bmag(:,:,1))/(F%X%Z(2)-F%X%Z(1))
+
+    ! edge nodes at maximum R,Z
+    F%gradB_3D%R(F%dims(1),:,:)=(Bmag(F%dims(1),:,:)-Bmag(F%dims(1)-1,:,:))/ &
+         (F%X%R(F%dims(1))-F%X%R(F%dims(1)-1))
+    do ii=1_idef,F%dims(1)
+       F%gradB_3D%PHI(ii,F%dims(2),:)=(Bmag(ii,1,:)-Bmag(ii,F%dims(2)-1,:))/ &
+            (F%X%R(ii)*(F%X%PHI(1)-F%X%PHI(F%dims(2)-1)))
+    end do       
+    F%gradB_3D%Z(:,:,F%dims(3))=(Bmag(:,:,F%dims(3))-Bmag(:,:,F%dims(3)-1))/ &
+         (F%X%Z(F%dims(3))-F%X%Z(F%dims(3)-1))
+
+    ! curlb
+    ! edge nodes at minimum R,PHI,Z
+    ! R component has differential over PHI and Z
+    do ii=1_idef,F%dims(1)
+       F%curlb_3D%R(ii,1,:)=(bhat(ii,2,:,3)-bhat(ii,F%dims(2),:,3))/ &
+            (F%X%R(ii)*(F%X%PHI(2)-F%X%PHI(F%dims(2))))
+    end do
+    F%curlb_3D%R(:,:,1)=F%curlb_3D%R(:,:,1)-&
+         (bhat(:,:,2,2)-bhat(:,:,1,2))/(F%X%Z(2)-F%X%Z(1))
+
+    ! PHI component has differentials over R and Z
+    F%curlb_3D%PHI(1,:,:)=-(bhat(2,:,:,3)-bhat(1,:,:,3))/ &
+         (F%X%R(2)-F%X%R(1))         
+
+    F%curlb_3D%PHI(:,:,1)=F%curlb_3D%PHI(:,:,1)+ &
+         ((bhat(:,:,2,1)-bhat(:,:,1,1))/(F%X%Z(2)-F%X%Z(1)))
+
+    ! Z component has differentials over R and PHI
+    F%curlb_3D%Z(1,:,:)=((bhat(2,:,:,2)*F%X%R(2)- &
+         bhat(1,:,:,2)*F%X%R(1))/(F%X%R(2)-F%X%R(1)))/F%X%R(1)
+
+    do ii=1_idef,F%dims(1)
+       F%curlb_3D%Z(ii,1,:)=F%curlb_3D%Z(ii,1,:)-&
+            (bhat(ii,2,:,1)-bhat(ii,F%dims(2),:,1))/ &
+            (F%X%R(ii)*(F%X%PHI(2)-F%X%PHI(F%dims(2))))
+    end do
+
+    ! edge nodes at maximum R,Z
+    ! R component has differential over PHI and Z
+    do ii=1_idef,F%dims(1)
+       F%curlb_3D%R(ii,F%dims(2),:)=(bhat(ii,1,:,3)-bhat(ii,F%dims(2)-1,:,3))/ &
+            (F%X%R(ii)*(F%X%PHI(1)-F%X%PHI(F%dims(2)-1)))
+    end do
+    F%curlb_3D%R(:,:,F%dims(3))=F%curlb_3D%R(:,:,F%dims(3)) &
+         -(bhat(:,:,F%dims(3),2)-bhat(:,:,F%dims(3)-1,2))/ &
+         (F%X%Z(F%dims(3))-F%X%Z(F%dims(3)-1))
+
+    ! PHI component has differentials over R and Z
+    F%curlb_3D%PHI(F%dims(1),:,:)=F%curlb_3D%PHI(F%dims(1),:,:)- &
+         (bhat(F%dims(1),:,:,3)-bhat(F%dims(1)-1,:,:,3))/ &
+         (F%X%R(F%dims(1))-F%X%R(F%dims(1)-1))         
+
+    F%curlb_3D%PHI(:,:,F%dims(3))=F%curlb_3D%PHI(:,:,F%dims(3))+ &
+         ((bhat(:,:,F%dims(3),1)-bhat(:,:,F%dims(3)-1,1))/ &
+         (F%X%Z(F%dims(3))-F%X%Z(F%dims(3)-1)))
+
+    ! Z component has differentials over R and PHI
+    F%curlb_3D%Z(F%dims(1),:,:)=((bhat(F%dims(1),:,:,2)*F%X%R(F%dims(1))- &
+         bhat(F%dims(1)-1,:,:,2)*F%X%R(F%dims(1)-1))/(F%X%R(F%dims(1))- &
+         F%X%R(F%dims(1)-1)))/F%X%R(F%dims(1))
+
+    do ii=1_idef,F%dims(1)
+       F%curlb_3D%Z(ii,F%dims(2),:)=F%curlb_3D%Z(ii,F%dims(2),:)-&
+            (bhat(ii,1,:,1)-bhat(ii,F%dims(2)-1,:,1))/ &
+            (F%X%R(ii)*(F%X%PHI(1)-F%X%PHI(F%dims(2)-1)))
+    end do
+    
+    do ii=2_idef,F%dims(1)-1
+       ! central difference over R for interior nodes
+       F%gradB_3D%R(ii,:,:)=(Bmag(ii+1,:,:)-Bmag(ii-1,:,:))/ &
+            (F%X%R(ii+1)-F%X%R(ii-1))
+       
+       F%curlb_3D%Z(ii,:,:)=((bhat(ii+1,:,:,2)*F%X%R(ii+1)- &
+            bhat(ii-1,:,:,2)*F%X%R(ii-1))/(F%X%R(ii+1)-F%X%R(ii-1)))/ &
+            F%X%R(ii)
+       F%curlb_3D%PHI(ii,:,:)=-(bhat(ii+1,:,:,3)-bhat(ii-1,:,:,3))/ &
+            (F%X%R(ii+1)-F%X%R(ii-1))
+    end do
+    do ii=2_idef,F%dims(2)-1
+       ! central difference over PHI for interior nodes       
+       do jj=1_idef,F%dims(1)
+          F%gradB_3D%PHI(:,ii,:)=(Bmag(:,ii+1,:)-Bmag(:,ii-1,:))/ &
+               (F%X%R(jj)*(F%X%PHI(ii+1)-F%X%PHI(ii-1)))
+          
+          F%curlb_3D%Z(jj,ii,:)=F%curlb_3D%Z(jj,ii,:)-&
+               (bhat(jj,ii+1,:,1)-bhat(jj,ii-1,:,1))/ &
+               (F%X%R(jj)*(F%X%PHI(ii+1)-F%X%PHI(ii-1)))
+          F%curlb_3D%R(jj,ii,:)=(bhat(jj,ii+1,:,3)-bhat(jj,ii-1,:,3))/ &
+            (F%X%R(jj)*(F%X%PHI(ii+1)-F%X%PHI(ii-1)))
+       end do
+    end do
+    do ii=2_idef,F%dims(3)-1
+       ! central difference over Z for interior nodes
+       F%gradB_3D%Z(:,:,ii)=(Bmag(:,:,ii+1)-Bmag(:,:,ii-1))/ &
+            (F%X%Z(ii+1)-F%X%Z(ii-1))
+       
+       F%curlb_3D%R(:,:,ii)=F%curlb_3D%R(:,:,ii)- &
+            (bhat(:,:,ii+1,2)-bhat(:,:,ii-1,2))/ &
+            (F%X%Z(ii+1)-F%X%Z(ii-1))
+       F%curlb_3D%PHI(:,:,ii)=F%curlb_3D%PHI(:,:,ii)+ &
+            ((bhat(:,:,ii+1,1)-bhat(:,:,ii-1,1))/(F%X%Z(ii+1)-F%X%Z(ii-1)))
+    end do
+
+    DEALLOCATE(Bmag)
+    DEALLOCATE(bhat) 
+
+  end subroutine initialize_GC_fields_3D
 
   subroutine define_SC_time_step(params,F)
     TYPE(KORC_PARAMS), INTENT(INOUT) 	:: params
@@ -2247,13 +2413,20 @@ CONTAINS
   !! @param[in,out] F An instance of the KORC derived type FIELDS. In this variable we keep the loaded data.
   !! @param[in] bfield Logical variable that specifies if the variables that keep the magnetic field data is allocated (bfield=T) or not (bfield=F).
   !! @param[in] efield Logical variable that specifies if the variables that keep the electric field data is allocated (efield=T) or not (efield=F).
-  subroutine ALLOCATE_3D_FIELDS_ARRAYS(F,bfield,efield)
+  subroutine ALLOCATE_3D_FIELDS_ARRAYS(params,F,bfield,efield)
+    TYPE (KORC_PARAMS), INTENT(IN) 	:: params
     TYPE(FIELDS), INTENT(INOUT)    :: F
     LOGICAL, INTENT(IN)            :: bfield
     LOGICAL, INTENT(IN)            :: efield
 
     if (bfield) then
        call ALLOCATE_V_FIELD_3D(F%B_3D,F%dims)
+
+       if(params%orbit_model(3:5).EQ.'pre') then
+          call ALLOCATE_V_FIELD_3D(F%curlb_3D,F%dims)
+          call ALLOCATE_V_FIELD_3D(F%gradB_3D,F%dims)
+       end if
+       
     end if
 
     if (efield) then

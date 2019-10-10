@@ -1,4 +1,4 @@
-module korc_rnd_numbers
+odule korc_rnd_numbers
   !! @note Module with subrotuines for generating integer 
   !! and real random numbers.@endnote
   !! This subroutines were taken from Numerical Recipes in Fortran 90, 
@@ -157,9 +157,6 @@ subroutine init_random_seed()
   end if
 #ifdef PARALLEL_RANDOM
   call initialize_random(seed(1))
-  call initialize_random_U(seed(1))
-  call initialize_random_N(seed(1))
-
 !  call initialize_random_mkl(seed(1))
 #else
   call random_seed(put=seed)

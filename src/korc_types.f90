@@ -499,13 +499,16 @@ module korc_types
      !! KORC 2-D vector field of the pre-computed electric field.
      TYPE(V_FIELD_2D) 				:: B_2D 
      !! KORC 3-D vector field of the pre-computed magnetic field.
-     TYPE(V_FIELD_2D) 				:: gradB_2D 
+     TYPE(V_FIELD_2D) 				:: gradB_2D
+     TYPE(V_FIELD_3D) 				:: gradB_3D 
      !! KORC 3-D vector field of the gradient of the magnitude of the
      !! pre-computed magnetic field.
-     TYPE(V_FIELD_2D) 				:: curlb_2D 
+     TYPE(V_FIELD_2D) 				:: curlb_2D
+     TYPE(V_FIELD_3D) 				:: curlb_3D 
      !! KORC 3-D vector field of the curl of the unit vector in the
      !! direction of the pre-computed magnetic field.
      TYPE(V_FIELD_1D) 				:: E_SC_1D
+     TYPE(V_FIELD_1D) 				:: J0_SC_1D
      TYPE(V_FIELD_1D) 				:: J1_SC_1D
      TYPE(V_FIELD_1D) 				:: J2_SC_1D
      TYPE(V_FIELD_1D) 				:: J3_SC_1D

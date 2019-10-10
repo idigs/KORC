@@ -5,6 +5,8 @@ MODULE korc_experimental_pdf
   USE korc_hpc
   USE special_functions
   use korc_coords
+  use korc_rnd_numbers
+  use korc_random
 
   IMPLICIT NONE
 
@@ -898,7 +900,8 @@ CONTAINS
     INTEGER 						:: ppp
     INTEGER 						:: nsamples
     INTEGER 						:: mpierr
-
+    INTEGER,DIMENSION(33) :: seed=(/1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1/)
+    
     nsamples = spp%ppp*params%mpi_params%nmpi
 
     index_i = MINLOC(ABS(h_params%g - h_params%min_sampling_g),1)
@@ -960,34 +963,44 @@ CONTAINS
 
 
        !Transient!
-       call RANDOM_SEED()
+
+       if (.not.params%SameRandSeed) then
+          call init_random_seed()
+       else
+          call random_seed(put=seed)
+       end if
 
        call RANDOM_NUMBER(rand_unif)
+!       rand_unif=get_random_U()
        eta_buffer = h_params%min_pitch_angle + (h_params%max_pitch_angle &
             - h_params%min_pitch_angle)*rand_unif
 
        call RANDOM_NUMBER(rand_unif)
+!       rand_unif=get_random_U()
        g_buffer = h_params%min_sampling_g + (h_params%max_sampling_g - &
             h_params%min_sampling_g)*rand_unif
 
        ii=2_idef
        do while (ii .LE. 1000_idef)
           eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
+!          eta_test = eta_buffer + get_random_N()*spp%dth
           do while ((ABS(eta_test) .GT. h_params%max_pitch_angle).OR. &
                (ABS(eta_test) .LT. h_params%min_pitch_angle))
              eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
+!             eta_test = eta_buffer + get_random_N()*spp%dth
           end do
 
           g_test = g_buffer + random_norm(0.0_rp,spp%dgam)
+!          g_test = g_buffer + get_random_N()*spp%dgam
           do while ((g_test.LT.h_params%min_sampling_g).OR. &
                (g_test.GT.h_params%max_sampling_g))
              g_test = g_buffer + random_norm(0.0_rp,spp%dgam)
+!             g_test = g_buffer + get_random_N()*spp%dgam
           end do
 
-          ratio = fRE_H(eta_test,g_test)*sin(deg2rad(eta_test))* &
-                  g_test*sqrt(g_test**2-1)/(fRE_H(eta_buffer,g_buffer)* &
-                  sin(deg2rad(eta_buffer))*g_buffer* &
-                  sqrt(g_buffer**2-1))
+          ratio = fRE_H(eta_test,g_test)*sin(deg2rad(eta_test))/ &
+               (fRE_H(eta_buffer,g_buffer)* &
+                  sin(deg2rad(eta_buffer)))
           !ratio = fRE_H(eta_test,g_test)/fRE_H(eta_buffer,g_buffer)
           !ratio = fRE_HxPR(eta_test,g_test)/fRE_HxPR(eta_buffer,g_buffer)
 
@@ -997,6 +1010,7 @@ CONTAINS
              ii = ii + 1_idef
           else
              call RANDOM_NUMBER(rand_unif)
+!             rand_unif=get_random_U()
              if (rand_unif .LT. ratio) then
                 g_buffer = g_test
                 eta_buffer = eta_test
@@ -1021,26 +1035,30 @@ CONTAINS
              
 !             write(6,'("iisample",I16)') ii
              eta_test = eta_tmp(ii-1) + random_norm(0.0_rp,spp%dth)
+             !eta_test = eta_tmp(ii-1) + get_random_N()*spp%dth
 !             write(6,'("max_pitch_angle: ",E17.10)') max_pitch_angle
 !             write(6,'("min_pitch_angle: ",E17.10)') min_pitch_angle
              do while ((ABS(eta_test) .GT. max_pitch_angle).OR. &
                   (ABS(eta_test) .LT. min_pitch_angle))
                 eta_test = eta_tmp(ii-1) + random_norm(0.0_rp,spp%dth)
+!                eta_test = eta_tmp(ii-1) + get_random_N()*spp%dth
 !                write(6,'("eta_test: ",E17.10)') eta_test
              end do
 
              g_test = g_tmp(ii-1) + random_norm(0.0_rp,spp%dgam)
+             !g_test = g_tmp(ii-1) + get_random_N()*spp%dgam
+
 !             write(6,'("max_g: ",E17.10)') max_g
 !             write(6,'("min_g: ",E17.10)') min_g
              do while ((g_test.LT.min_g).OR.(g_test.GT.max_g))
                 g_test = g_tmp(ii-1) + random_norm(0.0_rp,spp%dgam)
+!                g_test = g_tmp(ii-1) + get_random_N()*spp%dgam
 !                write(6,'("g_test: ",E17.10)') g_test
              end do
 
-             ratio = fRE_H(eta_test,g_test)*sin(deg2rad(eta_test))* &
-                  g_test*sqrt(g_test**2-1)/(fRE_H(eta_tmp(ii-1),g_tmp(ii-1))* &
-                  sin(deg2rad(eta_tmp(ii-1)))*g_tmp(ii-1)* &
-                  sqrt(g_tmp(ii-1)**2-1))
+             ratio = fRE_H(eta_test,g_test)*sin(deg2rad(eta_test))/ &
+                  (fRE_H(eta_tmp(ii-1),g_tmp(ii-1))* &
+                  sin(deg2rad(eta_tmp(ii-1))))
 !             ratio = fRE_H(eta_test,g_test)/fRE_H(eta_tmp(ii-1),g_tmp(ii-1))
              !ratio = fRE_HxPR(eta_test,g_test)/fRE_HxPR(eta_tmp(ii-1),g_tmp(ii-1))
 !             write(6,'("ratio: ",E17.10)') ratio
@@ -1051,6 +1069,7 @@ CONTAINS
                 ii = ii + 1_idef
              else
                 call RANDOM_NUMBER(rand_unif)
+!                rand_unif=get_random_U()
                 if (rand_unif .LT. ratio) then
                    g_tmp(ii) = g_test
                    eta_tmp(ii) = eta_test
@@ -1065,7 +1084,9 @@ CONTAINS
           do while ( (ii.LT.nsamples).AND.(num_accepted.LT.nsamples) )
 !             write(6,'("iiaccept",I16)') ii
              lp = (g_tmp(ii).LE.h_params%max_sampling_g).AND. &
-                  (g_tmp(ii).GE.h_params%min_sampling_g)
+                  (g_tmp(ii).GE.h_params%min_sampling_g).AND. &
+                  (eta_tmp(ii).LE.h_params%max_pitch_angle).AND. &
+                  (eta_tmp(ii).GE.h_params%min_pitch_angle)             
              if (lp) then
                 num_accepted = num_accepted + 1_idef
                 g_samples(num_accepted) = g_tmp(ii)
@@ -1222,6 +1243,7 @@ END FUNCTION indicator_exp
   LOGICAL :: accepted
   INTEGER,DIMENSION(33) :: seed=(/1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1/)
   
+  
   nsamples = spp%ppp*params%mpi_params%nmpi
 
   psi_max_buff = spp%psi_max*1.1_rp
@@ -1287,39 +1309,66 @@ END FUNCTION indicator_exp
 
 
      if (.not.params%SameRandSeed) then
-        call RANDOM_SEED()
+        call init_random_seed()
      else
         call random_seed(put=seed)
      end if
      
-     call RANDOM_NUMBER(rand_unif)
+!     call RANDOM_NUMBER(rand_unif)
+!     eta_buffer = min_pitch_angle + (max_pitch_angle &
+!          - min_pitch_angle)*rand_unif
+!     eta_buffer = min_pitch_angle + (max_pitch_angle &
+!          - min_pitch_angle)*get_random_mkl_U()
      eta_buffer = min_pitch_angle + (max_pitch_angle &
-          - min_pitch_angle)*rand_unif
-
-     call RANDOM_NUMBER(rand_unif)
-     G_buffer = min_g + (max_g - min_g)*rand_unif
+          - min_pitch_angle)*get_random_U()
      
-!     write(6,'("length norm: ",E17.10)') params%cpp%length
+!     call RANDOM_NUMBER(rand_unif)
+!     G_buffer = min_g + (max_g - min_g)*rand_unif
+!     G_buffer = min_g + (max_g - min_g)*get_random_mkl_U()
+     G_buffer = min_g + (max_g - min_g)*get_random_U()
      
+!     write(6,*) 'R_buffer',R_buffer
+!     write(6,*) 'Z_buffer',Z_buffer
+!     write(6,*) 'eta_buffer',eta_buffer
+!     write(6,*) 'G_buffer',G_buffer
+     
+     !     write(6,'("length norm: ",E17.10)') params%cpp%length
+     
+     accepted=.false.
      ii=1_idef
      do while (ii .LE. 1000_idef)
 
 !        write(6,'("burn:",I15)') ii
         
-        R_test = R_buffer + random_norm(0.0_rp,spp%dR)
-        Z_test = Z_buffer + random_norm(0.0_rp,spp%dZ)
-        eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
-        G_test = G_buffer + random_norm(0.0_rp,spp%dgam)
+        !R_test = R_buffer + random_norm(0.0_rp,spp%dR)
+        !R_test = R_buffer + get_random_mkl_N(0.0_rp,spp%dR)
+        R_test = R_buffer + get_random_N()*spp%dR
+        
+        !Z_test = Z_buffer + random_norm(0.0_rp,spp%dZ)
+        !Z_test = Z_buffer + get_random_mkl_N(0.0_rp,spp%dZ)
+        Z_test = Z_buffer + get_random_N()*spp%dZ
+        
+        !eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
+        !eta_test = eta_buffer + get_random_mkl_N(0.0_rp,spp%dth)
+        eta_test = eta_buffer + get_random_N()*spp%dth
+        
+        !G_test = G_buffer + random_norm(0.0_rp,spp%dgam)
+        !G_test = G_buffer + get_random_mkl_N(0.0_rp,spp%dgam)
+        G_test = G_buffer + get_random_N()*spp%dgam
 
 
         ! Test that pitch angle and momentum are within chosen boundary
         do while ((ABS(eta_test) .GT. max_pitch_angle).OR. &
              (ABS(eta_test) .LT. min_pitch_angle))
-           eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
+           !eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
+           !eta_test = eta_buffer + get_random_mkl_N(0.0_rp,spp%dth)
+           eta_test = eta_buffer + get_random_N()*spp%dth
         end do
 
         do while ((G_test.LT.min_g).OR.(G_test.GT.max_g))
-           G_test = G_buffer + random_norm(0.0_rp,spp%dgam)
+           !G_test = G_buffer + random_norm(0.0_rp,spp%dgam)
+           !G_test = G_buffer + get_random_mkl_N(0.0_rp,spp%dgam)
+           G_test = G_buffer + get_random_N()*spp%dgam
         end do
         
         ! initialize 2D gaussian argument and distribution function, or
@@ -1329,7 +1378,10 @@ END FUNCTION indicator_exp
                 spp%sigmaZ,theta_rad)
            
            f0=fRE_H_3D(eta_buffer,G_buffer,R_buffer,Z_buffer,spp%Ro,spp%Zo)
-        else
+!           f0=fRE_H(eta_buffer,G_buffer)
+        end if
+
+        if (accepted) then
            psi0=psi1
            f0=f1
         end if
@@ -1339,7 +1391,8 @@ END FUNCTION indicator_exp
         
                 
         f1=fRE_H_3D(eta_test,G_test,R_test,Z_test,spp%Ro,spp%Zo)    
-
+!        f1=fRE_H(eta_test,G_test)
+        
 !        write(6,'("psi0: ",E17.10)') psi0
 !        write(6,'("psi1: ",E17.10)') psi1
 
@@ -1353,20 +1406,25 @@ END FUNCTION indicator_exp
         ! phase space and cylindrical coordinate Jacobian R for spatial
         ! phase space incorporated here.
         ratio = indicator_exp(psi1,spp%psi_max)* &
-             R_test*EXP(-psi1)*f1*sin(deg2rad(eta_test))* &
-             G_test*sqrt(G_test**2-1)/ &
-             (R_buffer*EXP(-psi0)*f0*sin(deg2rad(eta_buffer))* &
-             G_buffer*sqrt(G_buffer**2-1))
+             R_test*EXP(-psi1)*f1*sin(deg2rad(eta_test))/ &
+             (R_buffer*EXP(-psi0)*f0*sin(deg2rad(eta_buffer)))
 
+!        ratio = f1*sin(deg2rad(eta_test))/(f0*sin(deg2rad(eta_buffer)))
+
+        accepted=.false.
         if (ratio .GE. 1.0_rp) then
+           accepted=.true.
            R_buffer = R_test
            Z_buffer = Z_test
            eta_buffer = eta_test
            G_buffer = G_test
            ii = ii + 1_idef
         else
-           call RANDOM_NUMBER(rand_unif)
-           if (rand_unif .LT. ratio) then
+!           call RANDOM_NUMBER(rand_unif)
+!           if (rand_unif .LT. ratio) then
+           !if (get_random_mkl_U() .LT. ratio) then
+           if (get_random_U() .LT. ratio) then
+              accepted=.true.
               R_buffer = R_test
               Z_buffer = Z_test
               eta_buffer = eta_test
@@ -1382,32 +1440,45 @@ END FUNCTION indicator_exp
 
 !        write(6,'("sample:",I15)') ii
         
-!       if (modulo(ii,nsamples/10).eq.0) then
-!           write(6,'("Sample: ",I10)') ii
-!        end if
+       if (modulo(ii,nsamples/10).eq.0) then
+           write(6,'("Sample: ",I10)') ii
+        end if
         
-        R_test = R_buffer + random_norm(0.0_rp,spp%dR)
-        Z_test = Z_buffer + random_norm(0.0_rp,spp%dZ)
-        eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
-        G_test = G_buffer + random_norm(0.0_rp,spp%dgam)
+        !R_test = R_buffer + random_norm(0.0_rp,spp%dR)
+        !R_test = R_buffer + get_random_mkl_N(0.0_rp,spp%dR)
+        R_test = R_buffer + get_random_N()*spp%dR
+        
+        !Z_test = Z_buffer + random_norm(0.0_rp,spp%dZ)
+        !Z_test = Z_buffer + get_random_mkl_N(0.0_rp,spp%dZ)
+        Z_test = Z_buffer + get_random_N()*spp%dZ
+        
+        !eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
+        !eta_test = eta_buffer + get_random_mkl_N(0.0_rp,spp%dth)
+        eta_test = eta_buffer + get_random_N()*spp%dth
+        
+        !G_test = G_buffer + random_norm(0.0_rp,spp%dgam)
+        !G_test = G_buffer + get_random_mkl_N(0.0_rp,spp%dgam)
+        G_test = G_buffer + get_random_N()*spp%dgam
 
-        ! Selection boundary is set with buffer region
 
+        ! Test that pitch angle and momentum are within chosen boundary
         do while ((ABS(eta_test) .GT. max_pitch_angle).OR. &
              (ABS(eta_test) .LT. min_pitch_angle))
-           if (eta_test.lt.0) then
-              eta_test=abs(eta_test)
-              exit
-           end if
-           eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
-        end do
-        
-        do while ((G_test.LT.min_g).OR.(G_test.GT.max_g))
-           G_test = G_buffer + random_norm(0.0_rp,spp%dgam)
+           !eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
+           !eta_test = eta_buffer + get_random_mkl_N(0.0_rp,spp%dth)
+           eta_test = eta_buffer + get_random_N()*spp%dth
         end do
 
-        psi0=psi1
-        f0=f1
+        do while ((G_test.LT.min_g).OR.(G_test.GT.max_g))
+           !G_test = G_buffer + random_norm(0.0_rp,spp%dgam)
+           !G_test = G_buffer + get_random_mkl_N(0.0_rp,spp%dgam)
+           G_test = G_buffer + get_random_N()*spp%dgam
+        end do
+
+        if (accepted) then
+           psi0=psi1
+           f0=f1
+        end if
         
         psi1=PSI_ROT_exp(R_test,spp%Ro,spp%sigmaR,Z_test,spp%Zo, &
              spp%sigmaZ,theta_rad)
@@ -1424,13 +1495,14 @@ END FUNCTION indicator_exp
 !        write(6,'("N_dR: ",Z17.10)') random_norm(0.0_rp,spp%dZ)
         
         f1=fRE_H_3D(eta_test,G_test,R_test,Z_test,spp%Ro,spp%Zo)            
-
+!        f1=fRE_H(eta_test,G_test)
+        
         ratio = indicator_exp(psi1,psi_max_buff)* &
-             R_test*EXP(-psi1)*f1*sin(deg2rad(eta_test))* &
-             G_test*sqrt(G_test**2-1)/ &
-             (R_buffer*EXP(-psi0)*f0*sin(deg2rad(eta_buffer))* &
-             G_buffer*sqrt(G_buffer**2-1))
+             R_test*EXP(-psi1)*f1*sin(deg2rad(eta_test))/ &
+             (R_buffer*EXP(-psi0)*f0*sin(deg2rad(eta_buffer)))
 
+!        ratio = f1*sin(deg2rad(eta_test))/(f0*sin(deg2rad(eta_buffer)))
+        
         accepted=.false.
         if (ratio .GE. 1.0_rp) then
            accepted=.true.
@@ -1439,8 +1511,10 @@ END FUNCTION indicator_exp
            eta_buffer = eta_test
            G_buffer = G_test
         else
-           call RANDOM_NUMBER(rand_unif)
-           if (rand_unif .LT. ratio) then
+           !call RANDOM_NUMBER(rand_unif)
+           !if (rand_unif .LT. ratio) then
+           !if (get_random_mkl_U() .LT. ratio) then
+           if (get_random_U() .LT. ratio) then
               accepted=.true.
               R_buffer = R_test
               Z_buffer = Z_test
@@ -1469,8 +1543,10 @@ END FUNCTION indicator_exp
 !           write(6,*) 'RS',R_buffer
            
            ! Sample phi location uniformly
-           call RANDOM_NUMBER(rand_unif)
-           PHI_samples(ii) = 2.0_rp*C_PI*rand_unif
+           !call RANDOM_NUMBER(rand_unif)
+           !PHI_samples(ii) = 2.0_rp*C_PI*rand_unif
+           !PHI_samples(ii) = 2.0_rp*C_PI*get_random_mkl_U()
+           PHI_samples(ii) = 2.0_rp*C_PI*get_random_U()
            ii = ii + 1_idef 
         END IF
         
@@ -1482,8 +1558,11 @@ END FUNCTION indicator_exp
      X_samples=R_samples*cos(PHI_samples)
      Y_samples=R_samples*sin(PHI_samples)
 
-!     write(6,*) params%mpi_params%rank,'R_samples',R_samples
-!     write(6,*) params%mpi_params%rank,'PHI_samples',PHI_samples
+!     write(6,*) 'R_samples',R_samples
+!     write(6,*) 'PHI_samples',PHI_samples
+!     write(6,*) 'Z_samples',Z_samples
+!     write(6,*) 'G_samples',G_samples
+!     write(6,*) 'eta_samples',eta_samples
      
   end if
 
@@ -1518,7 +1597,10 @@ END FUNCTION indicator_exp
 !  write(6,*) params%mpi_params%rank,'varX',spp%vars%X(:,1)
 !  write(6,*) params%mpi_params%rank,'varR',spp%vars%Y(:,1)
   
+
 !  write(6,'("Y_R: ",E17.10)') spp%vars%Y(:,1)*params%cpp%length
+!  write(6,'("Y_PHI: ",E17.10)') spp%vars%Y(:,1)*params%cpp%length
+!  write(6,'("Y_Z: ",E17.10)') spp%vars%Y(:,3)*params%cpp%length
   
 !  if (minval(spp%vars%Y(:,1)).lt.1._rp/params%cpp%length) stop 'error with avalanche'
   
@@ -1660,14 +1742,30 @@ end subroutine sample_Hollmann_distribution_3D
        attr = "Maximum momentum in PDF (me*c)"
        call save_to_hdf5(h5file_id,dset,h_params%min_g,attr)
 
+       dset = TRIM(gname) // "/max_sampling_g"
+       attr = "Maximum momentum in PDF (me*c)"
+       call save_to_hdf5(h5file_id,dset,h_params%max_sampling_g,attr)
+
+       dset = TRIM(gname) // "/min_sampling_g"
+       attr = "Maximum momentum in PDF (me*c)"
+       call save_to_hdf5(h5file_id,dset,h_params%min_sampling_g,attr)
+       
        dset = TRIM(gname) // "/Zeff"
        attr = "Effective atomic number of ions."
        call save_to_hdf5(h5file_id,dset,h_params%Zeff,attr)
 
+       dset = TRIM(gname) // "/sigmaZeff"
+       attr = "Effective atomic number of ions."
+       call save_to_hdf5(h5file_id,dset,h_params%sigma_Z,attr)
+       
        dset = TRIM(gname) // "/E"
        attr = "Parallel electric field in (Ec)"
        call save_to_hdf5(h5file_id,dset,h_params%E,attr)
 
+       dset = TRIM(gname) // "/sigmaE"
+       attr = "Parallel electric field in (Ec)"
+       call save_to_hdf5(h5file_id,dset,h_params%sigma_E,attr)
+       
        dset = TRIM(gname) // "/lambda"
        attr = "Wavelength used when PDF is weighted with the distribution of synchrotron radiation."
        call save_to_hdf5(h5file_id,dset,h_params%lambda,attr)

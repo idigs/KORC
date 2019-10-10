@@ -78,19 +78,7 @@ then
 #	  -DCMAKE_CXX_COMPILER=/opt/local/bin/mpic++-mpich-gcc8
 
     
-elif [ $MACHINE_ID == "edison01" ] || \
-     [ $MACHINE_ID == "edison02" ] || \
-     [ $MACHINE_ID == "edison03" ] || \
-     [ $MACHINE_ID == "edison04" ] || \
-     [ $MACHINE_ID == "edison05" ] || \
-     [ $MACHINE_ID == "edison06" ] || \
-     [ $MACHINE_ID == "edison07" ] || \
-     [ $MACHINE_ID == "edison08" ] || \
-     [ $MACHINE_ID == "edison09" ] || \
-     [ $MACHINE_ID == "edison10" ] || \
-     [ $MACHINE_ID == "edison11" ] || \
-     [ $MACHINE_ID == "edison12" ] || \
-     [ $MACHINE_ID == "cori01"   ] || \
+elif [ $MACHINE_ID == "cori01"   ] || \
      [ $MACHINE_ID == "cori02"   ] || \
      [ $MACHINE_ID == "cori03"   ] || \
      [ $MACHINE_ID == "cori04"   ] || \
@@ -108,19 +96,41 @@ then
     module load cmake
     module load cray-hdf5
     module unload darshan/3.1.4
+#    module swap PrgEnv-intel PrgEnv-gnu
     cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE                                          \
-          -DEZSpline_INCLUDE_PATH=/repo/trunk/build/modules/stell                        \
           -DCMAKE_PREFIX_PATH=$MPICH_DIR                                                 \
-          -DEZSpline_INCLUDE_PATH=/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX/mod \
-          -DEZSpline_LINK_FLAGS="-L/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX/lib -lpspline" \
-          -DEZSpline_LIBRARIES=/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX/lib/libpspline.a   \
-          -DCMAKE_Fortran_FLAGS="-O3 -mkl -axMIC-AVX512,AVX -DHDF5_DOUBLE_PRESICION -vec-threshold0 -simd -qopenmp-simd -align array64byte -assume contiguous_assumed_shape -vecabi=cmdtarget"  \
-          -DCMAKE_C_FLAGS="-O3 -mkl -axMIC-AVX512,AVX -vec-threshold0 -simd -qopenmp"   \
-          -DCMAKE_CXX_FLAGS="-O3 -mkl -std=c++11 -axMIC-AVX512,AVX -vec-threshold0 -simd -qopenmp" \
-          -DCMAKE_CXX_FLAGS_DEBUG="-g -Bdynamic -qopt-report=5 -qopt-report-phase=vec" \
-          -DCMAKE_C_FLAGS_DEBUG="-g -Bdynamic -qopt-report=5 -qopt-report-phase=vec " \
-          -DCMAKE_Fortran_FLAGS_DEBUG="-g -Bdynamic -debug inline-debug-info -qopt-report=5 -qopt-report-phase=vec -qoverride-limits"
+          -DEZSpline_INCLUDE_PATH=/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX_GNU/mod \
+          -DEZSpline_LINK_FLAGS="-L/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX_GNU/lib -lpspline" \
+          -DEZSpline_LIBRARIES=/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX_GNU/lib/libpspline.a   \
+          -DCMAKE_Fortran_FLAGS="-O3 -mavx512f -mavx512cd -mavx512er -mavx512pf -ffast-math -DHDF5_DOUBLE_PRESICION -fopenmp-simd -malign-double" \
+          -DCMAKE_C_FLAGS="-O3 -mavx512f -mavx512cd -mavx512er -mavx512pf -ffast-math -fopenmp-simd -malign-double"  \
+          -DCMAKE_CXX_FLAGS="-O3 -mavx512f -mavx512cd -mavx512er -mavx512pf -ffast-math -fopenmp-simd -malign-double" \
+          -DCMAKE_Fortran_FLAGS_DEBUG="-g -ffpe-trap=invalid,zero,overflow -fimplicit-none -fbacktrace -ftree-vectorizer-verbose=6 -fopt-info-vec-all=vecf.out" \
+          -DCMAKE_C_FLAGS_DEBUG="-g -ftree-vectorizer-verbose=6 -fopt-info-vec-all=vecc.out" \
+  	  -DCMAKE_CXX_FLAGS_DEBUG="-g -ftree-vectorizer-verbose=6 -fopt-info-vec-all=veccpp.out"
 
+    #Intel Compiler
+#          -DEZSpline_INCLUDE_PATH=/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX_INTEL/mod \
+#          -DEZSpline_LINK_FLAGS="-L/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX_INTEL/lib -lpspline" \
+#          -DEZSpline_LIBRARIES=/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX_INTEL/lib/libpspline.a   \
+#	   -DCMAKE_Fortran_FLAGS="-O3 -mkl -axMIC-AVX512,AVX -DHDF5_DOUBLE_PRESICION -vec-threshold0 -simd -qopenmp-simd -align array64byte -assume contiguous_assumed_shape -vecabi=cmdtarget"  \
+#          -DCMAKE_C_FLAGS="-O3 -mkl -axMIC-AVX512,AVX -vec-threshold0 -simd -qopenmp"   \
+#          -DCMAKE_CXX_FLAGS="-O3 -mkl -std=c++11 -axMIC-AVX512,AVX -vec-threshold0 -simd -qopenmp" \
+#          -DCMAKE_CXX_FLAGS_DEBUG="-g -Bdynamic -qopt-report=5 -qopt-report-phase=vec" \
+#          -DCMAKE_C_FLAGS_DEBUG="-g -Bdynamic -qopt-report=5 -qopt-report-phase=vec " \
+#          -DCMAKE_Fortran_FLAGS_DEBUG="-g -Bdynamic -debug inline-debug-info -qopt-report=5 -qopt-report-phase=vec -qoverride-limits"
+
+    #GNU Compiler
+#          -DEZSpline_INCLUDE_PATH=/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX_GNU/mod \
+#          -DEZSpline_LINK_FLAGS="-L/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX_GNU/lib -lpspline" \
+#          -DEZSpline_LIBRARIES=/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX_GNU/lib/libpspline.a   \
+#          -DCMAKE_Fortran_FLAGS="-O3 -mavx512f -mavx512cd -mavx512er -mavx512pf -DHDF5_DOUBLE_PRESICION -fopenmp-simd -malign-double" \
+#          -DCMAKE_C_FLAGS="-O3 -mavx512f -mavx512cd -mavx512er -mavx512pf -fopenmp-simd -malign-double"  \
+#          -DCMAKE_CXX_FLAGS="-O3 -mavx512f -mavx512cd -mavx512er -mavx512pf -fopenmp-simd -malign-double" \
+#	   -DCMAKE_Fortran_FLAGS_DEBUG="-g -ffpe-trap=invalid,zero,overflow -fimplicit-none -fbacktrace" \
+#          -DCMAKE_C_FLAGS_DEBUG="-g" \
+#    	   -DCMAKE_CXX_FLAGS_DEBUG="-g"
+    
 else
 # MACHINE_ID is new and unknown. Inform the user how to add support for this new machine.
     echo $MACHINE_ID not suported by this script.

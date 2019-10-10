@@ -87,6 +87,8 @@ src/CMakeFiles/xkorc.dir/korc_experimental_pdf.f90.o: src/CMakeFiles/xkorc.dir/k
 src/CMakeFiles/xkorc.dir/korc_experimental_pdf.f90.o: src/CMakeFiles/xkorc.dir/korc_coords.mod.stamp
 src/CMakeFiles/xkorc.dir/korc_experimental_pdf.f90.o: src/CMakeFiles/xkorc.dir/korc_hdf5.mod.stamp
 src/CMakeFiles/xkorc.dir/korc_experimental_pdf.f90.o: src/CMakeFiles/xkorc.dir/korc_hpc.mod.stamp
+src/CMakeFiles/xkorc.dir/korc_experimental_pdf.f90.o: src/CMakeFiles/xkorc.dir/korc_random.mod.stamp
+src/CMakeFiles/xkorc.dir/korc_experimental_pdf.f90.o: src/CMakeFiles/xkorc.dir/korc_rnd_numbers.mod.stamp
 src/CMakeFiles/xkorc.dir/korc_experimental_pdf.f90.o: src/CMakeFiles/xkorc.dir/korc_types.mod.stamp
 src/CMakeFiles/xkorc.dir/korc_experimental_pdf.f90.o: src/CMakeFiles/xkorc.dir/special_functions.mod.stamp
 src/CMakeFiles/xkorc.dir/korc_experimental_pdf.f90.o.provides.build: src/CMakeFiles/xkorc.dir/korc_experimental_pdf.mod.stamp

@@ -269,7 +269,10 @@ program main
 
      if (params%SC_E) then
 
-        call reinit_SC_E1D(params,F)
+        if (params%reinit) then
+           call reinit_SC_E1D(params,F)
+        end if
+        
      
      end if
      
@@ -368,9 +371,10 @@ program main
      end do
   end if
 
-  if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp') then
+  if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
+       F%axisymmetric_fields) then
      do it=params%ito,params%t_steps,params%t_skip
-        call adv_GCinterp_top(params,spp,P,F)
+        call adv_GCinterp_psi_top(params,spp,P,F)
         
         params%time = params%init_time &
              +REAL(it-1_ip+params%t_skip,rp)*params%dt        
@@ -383,7 +387,22 @@ program main
      end do
   end if
   
+  if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
+       .not.(F%axisymmetric_fields)) then
+     do it=params%ito,params%t_steps,params%t_skip
+        call adv_GCinterp_B_top(params,spp,P,F)
+        
+        params%time = params%init_time &
+             +REAL(it-1_ip+params%t_skip,rp)*params%dt        
+        params%it = it-1_ip+params%t_skip
 
+        call save_simulation_outputs(params,spp,F)
+        call synthetic_camera(params,spp) ! Synthetic camera
+        call binning_diagnostic(params,spp) ! Binning diagnostic
+        call save_restart_variables(params,spp,F)
+     end do
+  end if
+  
   call timing_KORC(params)
 
   ! * * * FINALIZING SIMULATION * * * 

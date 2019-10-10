@@ -344,6 +344,12 @@ module korc_interp
   TYPE(KORC_2D_FIELDS_INTERPOLANT), PRIVATE      :: curlb_2d
   !! An instance of KORC_2D_FIELDS_INTERPOLANT for interpolating
   !! the magnetic field.
+  TYPE(KORC_3D_FIELDS_INTERPOLANT), PRIVATE      :: gradB_3d
+  !! An instance of KORC_2D_FIELDS_INTERPOLANT for interpolating
+  !! the magnetic field.
+  TYPE(KORC_3D_FIELDS_INTERPOLANT), PRIVATE      :: curlb_3d
+  !! An instance of KORC_2D_FIELDS_INTERPOLANT for interpolating
+  !! the magnetic field.
   TYPE(KORC_INTERPOLANT_DOMAIN), PRIVATE         :: fields_domain
   !! An instance of KORC_INTERPOLANT_DOMAIN used for interpolating fields.
   TYPE(KORC_2D_PROFILES_INTERPOLANT), PRIVATE    :: profiles_2d
@@ -361,6 +367,7 @@ module korc_interp
 
   PUBLIC :: interp_fields,&
        interp_fields_p,&
+       interp_fields_3D_p,&
        interp_FOfields_p,&
        interp_FOfields1_p,&
        interp_bmag_p,&
@@ -621,6 +628,95 @@ CONTAINS
              call EZspline_setup(bfield_3d%Z, F%B_3D%Z, ezerr)
              call EZspline_error(ezerr)
 
+             if (params%orbit_model.eq.'GCpre') then
+                gradB_3d%NR = F%dims(1)
+                gradB_3d%NPHI = F%dims(2)
+                gradB_3d%NZ = F%dims(3)
+
+                ! Initializing GRADBR component
+                call EZspline_init(gradB_3d%R,gradB_3d%NR,gradB_3d%NPHI,&
+                     gradB_3d%NZ,gradB_3d%BCSR,gradB_3d%BCSPHI, &
+                     gradB_3d%BCSZ,ezerr)
+                call EZspline_error(ezerr)
+
+                gradB_3d%R%x1 = F%X%R
+                !gradB_3d%R%x2 = F%X%PHI
+                gradB_3d%R%x3 = F%X%Z
+
+                call EZspline_setup(gradB_3d%R, F%gradB_3D%R, ezerr, .TRUE.)
+                call EZspline_error(ezerr)
+
+                ! Initializing GRADBPHI component
+                call EZspline_init(gradB_3d%PHI,gradB_3d%NR,gradB_3d%NPHI,&
+                     gradB_3d%NZ,gradB_3d%BCSR,gradB_3d%BCSPHI, &
+                     gradB_3d%BCSZ,ezerr)
+                call EZspline_error(ezerr)
+
+                gradB_3d%PHI%x1 = F%X%R
+                !gradB_3d%PHI%x2 = F%X%PHI
+                gradB_3d%PHI%x3 = F%X%Z
+
+                call EZspline_setup(gradB_3d%PHI, F%gradB_3D%PHI, ezerr, .TRUE.)
+                call EZspline_error(ezerr)
+
+                ! Initializing GRADBZ component
+                call EZspline_init(gradB_3d%Z,gradB_3d%NR,gradB_3d%NPHI,&
+                     gradB_3d%NZ,gradB_3d%BCSR,gradB_3d%BCSPHI, &
+                     gradB_3d%BCSZ,ezerr)
+                call EZspline_error(ezerr)
+
+                gradB_3d%Z%x1 = F%X%R
+                !gradB_3d%Z%x2 = F%X%PHI
+                gradB_3d%Z%x3 = F%X%Z
+
+                call EZspline_setup(gradB_3d%Z, F%gradB_3D%Z, ezerr, .TRUE.)
+                call EZspline_error(ezerr)
+
+                curlb_3d%NR = F%dims(1)
+                curlb_3d%NPHI = F%dims(2)
+                curlb_3d%NZ = F%dims(3)
+
+                ! Initializing CURLBR component
+                call EZspline_init(curlb_3d%R,curlb_3d%NR,curlb_3d%NPHI,&
+                     curlb_3d%NZ,curlb_3d%BCSR,curlb_3d%BCSPHI, &
+                     curlb_3d%BCSZ,ezerr)
+                call EZspline_error(ezerr)
+
+                curlb_3d%R%x1 = F%X%R
+                !curlb_3d%R%x2 = F%X%PHI
+                curlb_3d%R%x3 = F%X%Z
+
+                call EZspline_setup(curlb_3d%R, F%curlb_3D%R, ezerr, .TRUE.)
+                call EZspline_error(ezerr)
+
+                ! Initializing CURLBPHI component
+                call EZspline_init(curlb_3d%PHI,curlb_3d%NR,curlb_3d%NPHI,&
+                     curlb_3d%NZ,curlb_3d%BCSR,curlb_3d%BCSPHI, &
+                     curlb_3d%BCSZ,ezerr)
+                call EZspline_error(ezerr)
+
+                curlb_3d%PHI%x1 = F%X%R
+                !curlb_3d%PHI%x2 = F%X%PHI
+                curlb_3d%PHI%x3 = F%X%Z
+
+                call EZspline_setup(curlb_3d%PHI, F%curlb_3D%PHI, ezerr, .TRUE.)
+                call EZspline_error(ezerr)
+
+                ! Initializing CURLBZ component
+                call EZspline_init(curlb_3d%Z,curlb_3d%NR,curlb_3d%NPHI,&
+                     curlb_3d%NZ,curlb_3d%BCSR,curlb_3d%BCSPHI, &
+                     curlb_3d%BCSZ,ezerr)
+                call EZspline_error(ezerr)
+
+                curlb_3d%Z%x1 = F%X%R
+                !curlb_3d%Z%x2 = F%X%PHI
+                curlb_3d%Z%x3 = F%X%Z
+
+                call EZspline_setup(curlb_3d%Z, F%curlb_3D%Z, ezerr, .TRUE.)
+                call EZspline_error(ezerr)
+
+             end if
+             
              ALLOCATE(fields_domain%FLAG3D(bfield_3d%NR,bfield_3d%NPHI, &
                   bfield_3d%NZ))
              fields_domain%FLAG3D = F%FLAG3D
@@ -1563,6 +1659,27 @@ subroutine interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
 
 end subroutine interp_fields_p
 
+subroutine interp_fields_3D_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
+     curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,flag_cache)
+  TYPE(FIELDS), INTENT(IN)                               :: F
+  REAL(rp),DIMENSION(8),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
+  REAL(rp),DIMENSION(8),INTENT(OUT)   :: B_R,B_PHI,B_Z
+  REAL(rp),DIMENSION(8),INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
+  REAL(rp),DIMENSION(8),INTENT(OUT)   :: curlB_R,curlB_PHI,curlB_Z
+  REAL(rp),DIMENSION(8),INTENT(OUT)   :: E_R,E_PHI,E_Z
+  INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
+
+  call check_if_in_fields_domain_p(F,Y_R,Y_PHI,Y_Z,flag_cache)
+  
+  call EZspline_interp(bfield_3d%R,bfield_3d%PHI,bfield_3d%Z,efield_3d%R, &
+       efield_3d%PHI,efield_3d%Z,gradB_3d%R,gradB_3d%PHI,gradB_3d%Z, &
+       curlb_3d%R,curlb_3d%PHI,curlb_3d%Z,8,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+       E_R,E_PHI,E_Z,gradB_R,gradB_PHI,gradB_Z,curlb_R,curlb_PHI,curlb_Z, &
+       ezerr)
+  call EZspline_error(ezerr)
+
+end subroutine interp_fields_3D_p
+
 subroutine interp_collision_p(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
      ne,Te,Zeff,flag_cache)
 
@@ -1605,7 +1722,8 @@ end subroutine interp_bmag_p
 !! @param flag Flag that indicates whether particles are followed in the simulation (flag=1), or not (flag=0).
 !! @param pp Particle iterator.
 !! @param ss Species iterator.
-subroutine interp_3D_bfields(Y,B,flag)
+subroutine interp_3D_bfields(params,Y,B,flag)
+  TYPE(KORC_PARAMS), INTENT(IN)      :: params
   REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN)      :: Y
   REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT)   :: B
   REAL(rp), DIMENSION(:,:), ALLOCATABLE                  :: F
@@ -1636,9 +1754,17 @@ subroutine interp_3D_bfields(Y,B,flag)
              F(pp,3), ezerr)
         call EZspline_error(ezerr)
 
-        B(pp,1) = F(pp,1)*COS(Y(pp,2)) - F(pp,2)*SIN(Y(pp,2))
-        B(pp,2) = F(pp,1)*SIN(Y(pp,2)) + F(pp,2)*COS(Y(pp,2))
-        B(pp,3) = F(pp,3)
+        if (.not.params%GC_coords) then
+           B(pp,1) = F(pp,1)*COS(Y(pp,2)) - F(pp,2)*SIN(Y(pp,2))
+           B(pp,2) = F(pp,1)*SIN(Y(pp,2)) + F(pp,2)*COS(Y(pp,2))
+           B(pp,3) = F(pp,3)
+        else
+           B(pp,1) = F(pp,1)
+           B(pp,2) = F(pp,2)
+           B(pp,3) = F(pp,3)
+        end if
+
+        
      end if
   end do
   !$OMP END PARALLEL DO
@@ -2006,7 +2132,8 @@ end subroutine interp_2D_efields
 !! @param flag Flag that indicates whether particles are followed in the simulation (flag=1), or not (flag=0).
 !! @param pp Particle iterator.
 !! @param ss Species iterator.
-subroutine interp_3D_efields(Y,E,flag)
+subroutine interp_3D_efields(params,Y,E,flag)
+  TYPE(KORC_PARAMS), INTENT(IN)      :: params
   REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN)      :: Y
   REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT)   :: E
   REAL(rp), DIMENSION(:,:), ALLOCATABLE                  :: F
@@ -2037,9 +2164,16 @@ subroutine interp_3D_efields(Y,E,flag)
              F(pp,3), ezerr)
         call EZspline_error(ezerr)
 
-        E(pp,1) = F(pp,1)*COS(Y(pp,2)) - F(pp,2)*SIN(Y(pp,2))
-        E(pp,2) = F(pp,1)*SIN(Y(pp,2)) + F(pp,2)*COS(Y(pp,2))
-        E(pp,3) = F(pp,3)
+        if (.not.params%GC_coords) then
+           E(pp,1) = F(pp,1)*COS(Y(pp,2)) - F(pp,2)*SIN(Y(pp,2))
+           E(pp,2) = F(pp,1)*SIN(Y(pp,2)) + F(pp,2)*COS(Y(pp,2))
+           E(pp,3) = F(pp,3)
+        else
+           E(pp,1) = F(pp,1)
+           E(pp,2) = F(pp,2)
+           E(pp,3) = F(pp,3)
+        end if
+        
      end if
   end do
   !$OMP END PARALLEL DO
@@ -2092,7 +2226,7 @@ subroutine interp_fields(params,prtcls,F)
   end if
 
   if (ALLOCATED(F%B_3D%R).and.F%Bfield) then
-     call interp_3D_bfields(prtcls%Y,prtcls%B,prtcls%flag)
+     call interp_3D_bfields(params,prtcls%Y,prtcls%B,prtcls%flag)
   end if
 
   if (ALLOCATED(F%E_2D%R).and.F%Efield) then
@@ -2100,7 +2234,7 @@ subroutine interp_fields(params,prtcls,F)
   end if
 
   if (ALLOCATED(F%E_3D%R).and.F%Efield) then
-     call interp_3D_efields(prtcls%Y,prtcls%E,prtcls%flag)
+     call interp_3D_efields(params,prtcls%Y,prtcls%E,prtcls%flag)
   end if
 
   if (params%GC_coords.and.ALLOCATED(F%gradB_2D%R).and.F%Bfield) then
@@ -2285,8 +2419,18 @@ subroutine finalize_interpolants(params)
      if (EZspline_allocated(curlb_2d%R)) call Ezspline_free(curlb_2d%R, ezerr)
      if (EZspline_allocated(curlb_2d%PHI)) &
           call Ezspline_free(curlb_2d%PHI, ezerr)
+
+     if (EZspline_allocated(gradB_3d%R)) call Ezspline_free(gradB_3d%R, ezerr)
+     if (EZspline_allocated(gradB_3d%PHI)) &
+          call Ezspline_free(gradB_3d%PHI, ezerr)
      
-     if (EZspline_allocated(curlb_2d%Z)) call Ezspline_free(curlb_2d%Z, ezerr)
+     if (EZspline_allocated(gradB_3d%Z)) call Ezspline_free(gradB_3d%Z, ezerr)
+
+     if (EZspline_allocated(curlb_3d%R)) call Ezspline_free(curlb_3d%R, ezerr)
+     if (EZspline_allocated(curlb_3d%PHI)) &
+          call Ezspline_free(curlb_3d%PHI, ezerr)
+     
+     if (EZspline_allocated(curlb_3d%Z)) call Ezspline_free(curlb_3d%Z, ezerr)
 
      if (ALLOCATED(profiles_domain%FLAG2D)) DEALLOCATE(profiles_domain%FLAG2D)
      if (ALLOCATED(profiles_domain%FLAG3D)) DEALLOCATE(profiles_domain%FLAG3D)

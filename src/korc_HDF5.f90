@@ -1369,12 +1369,14 @@ CONTAINS
           dset = TRIM(gname) // "/sigmaR"
           attr_array(1) = "Variance of first dimension of 2D spatial & 
                distribution."
-          call save_1d_array_to_hdf5(h5file_id,dset,spp%sigmaR,attr_array)
+          call save_1d_array_to_hdf5(h5file_id,dset, &
+               spp%sigmaR*params%cpp%length,attr_array)
 
           dset = TRIM(gname) // "/sigmaZ"
           attr_array(1) = "Variance of second dimension of 2D spatial &
                distribution."
-          call save_1d_array_to_hdf5(h5file_id,dset,spp%sigmaZ,attr_array)
+          call save_1d_array_to_hdf5(h5file_id,dset, &
+               spp%sigmaZ*params%cpp%length,attr_array)
 
           dset = TRIM(gname) // "/theta_gauss"
           attr_array(1) = "Angle of rotation of 2D spatial distribution."
@@ -1385,8 +1387,24 @@ CONTAINS
                the 2D gaussian exponential."
           call save_1d_array_to_hdf5(h5file_id,dset,spp%psi_max,attr_array)
 
+          dset = TRIM(gname) // "/dth"
+          attr_array(1) = "Variance of sampling normal variate for pitch angle."
+          call save_1d_array_to_hdf5(h5file_id,dset,spp%dth,attr_array)
 
+          dset = TRIM(gname) // "/dgam"
+          attr_array(1) = "Variance of sampling normal variate for gamma."
+          call save_1d_array_to_hdf5(h5file_id,dset,spp%dgam,attr_array)
 
+          dset = TRIM(gname) // "/dR"
+          attr_array(1) = "Variance of sampling normal variate for R."
+          call save_1d_array_to_hdf5(h5file_id,dset,spp%dR*params%cpp%length, &
+               attr_array)
+
+          dset = TRIM(gname) // "/dZ"
+          attr_array(1) = "Variance of sampling normal variate for Z."
+          call save_1d_array_to_hdf5(h5file_id,dset,spp%dZ*params%cpp%length, &
+               attr_array)
+          
           call h5gclose_f(group_id, h5error)
 
           DEALLOCATE(attr_array)
@@ -1754,6 +1772,12 @@ CONTAINS
                 call rsave_2d_array_to_hdf5(h5file_id, dset, &
                      F%FLAG2D)
              end if
+
+             if (ALLOCATED(F%FLAG3D)) then
+                dset = TRIM(gname) // "/Flag"
+                call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                     F%FLAG3D)
+             end if
              
              if  (F%axisymmetric_fields) then
 
@@ -1805,8 +1829,59 @@ CONTAINS
                         units*F%curlb_2D%Z)
 
                 end if
-             end if
+                
+             else
 
+                dset = TRIM(gname) // "/BR"
+                units = params%cpp%Bo
+                call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                     units*F%B_3D%R)
+
+                dset = TRIM(gname) // "/BPHI"
+                units = params%cpp%Bo
+                call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                     units*F%B_3D%PHI)
+
+                dset = TRIM(gname) // "/BZ"
+                units = params%cpp%Bo
+                call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                     units*F%B_3D%Z)
+
+                if  (params%orbit_model(3:5).EQ.'pre') then
+
+                   dset = TRIM(gname) // "/gradBR"
+                   units = params%cpp%Bo/params%cpp%length
+                   call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                        units*F%gradB_3D%R)
+
+                   dset = TRIM(gname) // "/gradBPHI"
+                   units = params%cpp%Bo/params%cpp%length
+                   call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                        units*F%gradB_3D%PHI)
+
+                   dset = TRIM(gname) // "/gradBZ"
+                   units = params%cpp%Bo/params%cpp%length
+                   call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                        units*F%gradB_3D%Z)
+
+                   dset = TRIM(gname) // "/curlbR"
+                   units = 1./params%cpp%length
+                   call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                        units*F%curlb_3D%R)
+
+                   dset = TRIM(gname) // "/curlbPHI"
+                   units = 1./params%cpp%length
+                   call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                        units*F%curlb_3D%PHI)
+
+                   dset = TRIM(gname) // "/curlbZ"
+                   units = 1./params%cpp%length
+                   call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                        units*F%curlb_3D%Z)
+
+                end if
+             end if
+             
              DEALLOCATE(attr_array)
           else if (params%field_model .EQ. 'UNIFORM') then
              dset = TRIM(gname) // "/Bo"
@@ -2169,6 +2244,7 @@ CONTAINS
     REAL(rp), DIMENSION(:,:), ALLOCATABLE 			:: X
     REAL(rp), DIMENSION(:,:), ALLOCATABLE 			:: V
     REAL(rp), DIMENSION(:), ALLOCATABLE 			:: g
+    REAL(rp), DIMENSION(:), ALLOCATABLE 			:: J0_SC
     REAL(rp), DIMENSION(:), ALLOCATABLE 			:: J1_SC
     REAL(rp), DIMENSION(:), ALLOCATABLE 			:: J2_SC
     REAL(rp), DIMENSION(:), ALLOCATABLE 			:: J3_SC
@@ -2359,15 +2435,19 @@ CONTAINS
 
           if (params%SC_E) then
 
+             ALLOCATE(J0_SC(F%dim_1D))
              ALLOCATE(J1_SC(F%dim_1D))
              ALLOCATE(J2_SC(F%dim_1D))
              ALLOCATE(J3_SC(F%dim_1D))
              ALLOCATE(E_SC(F%dim_1D))
-             J1_SC=F%J1_SC_1D%PHI/F%Ip0
+             J0_SC=F%J1_SC_1D%PHI/F%Ip0
+             J1_SC=F%J1_SC_1D%PHI
              J2_SC=F%J2_SC_1D%PHI
              J3_SC=F%J3_SC_1D%PHI
              E_SC=F%E_SC_1D%PHI
-             
+
+             dset = "J0_SC"
+             call save_1d_array_to_hdf5(group_id,dset,J0_SC)
              dset = "J1_SC"
              call save_1d_array_to_hdf5(group_id,dset,J1_SC)
              dset = "J2_SC"
@@ -2377,6 +2457,7 @@ CONTAINS
              dset = "E_SC"
              call save_1d_array_to_hdf5(group_id,dset,E_SC)
              
+             DEALLOCATE(J0_SC)
              DEALLOCATE(J1_SC)
              DEALLOCATE(J2_SC)
              DEALLOCATE(J3_SC)
@@ -2555,6 +2636,7 @@ CONTAINS
     REAL(rp), DIMENSION(:), ALLOCATABLE 		:: AUX_receive_buffer
     !! Temporary buffer used by MPI to scatter various electrons' variables
     !! among MPI processes.
+    REAL(rp), DIMENSION(:), ALLOCATABLE 		:: JSC0_buffer
     REAL(rp), DIMENSION(:), ALLOCATABLE 		:: JSC1_buffer
     REAL(rp), DIMENSION(:), ALLOCATABLE 		:: JSC2_buffer
     REAL(rp), DIMENSION(:), ALLOCATABLE 		:: JSC3_buffer
@@ -2680,6 +2762,7 @@ CONTAINS
 
        if (params%SC_E) then
           
+          ALLOCATE(JSC0_buffer(F%dim_1D))
           ALLOCATE(JSC1_buffer(F%dim_1D))
           ALLOCATE(JSC2_buffer(F%dim_1D))
           ALLOCATE(JSC3_buffer(F%dim_1D))
@@ -2695,6 +2778,9 @@ CONTAINS
 
           write(tmp_str,'(I18)') ss
 
+          dset = "/spp_" // TRIM(ADJUSTL(tmp_str)) // "/J0_SC"
+          call load_array_from_hdf5(h5file_id,dset,JSC0_buffer)
+          
           dset = "/spp_" // TRIM(ADJUSTL(tmp_str)) // "/J1_SC"
           call load_array_from_hdf5(h5file_id,dset,JSC1_buffer)
 
@@ -2709,11 +2795,13 @@ CONTAINS
           
           call h5fclose_f(h5file_id, h5error)
 
+          F%J0_SC_1D%PHI=JSC0_buffer
           F%J1_SC_1D%PHI=JSC1_buffer
           F%J2_SC_1D%PHI=JSC2_buffer
           F%J3_SC_1D%PHI=JSC3_buffer
-          F%E_SC_1D%PHI=ESC_buffer
+          F%E_SC_1D%PHI=ESC_buffer/params%cpp%Eo
           
+          DEALLOCATE(JSC0_buffer)
           DEALLOCATE(JSC1_buffer)
           DEALLOCATE(JSC2_buffer)
           DEALLOCATE(JSC3_buffer)

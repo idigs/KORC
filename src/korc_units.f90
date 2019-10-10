@@ -268,6 +268,20 @@ subroutine normalize_variables(params,spp,F,P)
              (1./params%cpp%length)
         if (ALLOCATED(F%curlb_2D%Z)) F%curlb_2D%Z = F%curlb_2D%Z/ &
              (1./params%cpp%length)
+
+        if (ALLOCATED(F%gradB_3D%R)) F%gradB_3D%R = F%gradB_3D%R/ &
+             (params%cpp%Bo/params%cpp%length)
+        if (ALLOCATED(F%gradB_3D%PHI)) F%gradB_3D%PHI = F%gradB_3D%PHI/ &
+             (params%cpp%Bo/params%cpp%length)
+        if (ALLOCATED(F%gradB_3D%Z)) F%gradB_3D%Z = F%gradB_3D%Z/ &
+             (params%cpp%Bo/params%cpp%length)
+
+        if (ALLOCATED(F%curlb_3D%R)) F%curlb_3D%R = F%curlb_3D%R/ &
+             (1./params%cpp%length)
+        if (ALLOCATED(F%curlb_3D%PHI)) F%curlb_3D%PHI = F%curlb_3D%PHI/ &
+             (1./params%cpp%length)
+        if (ALLOCATED(F%curlb_3D%Z)) F%curlb_3D%Z = F%curlb_3D%Z/ &
+             (1./params%cpp%length)
      end if
      
      F%X%R = F%X%R/params%cpp%length
