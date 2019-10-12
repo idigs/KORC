@@ -388,7 +388,8 @@ program main
   end if
   
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
-       F%axisymmetric_fields.and.params%field_model(10:12).eq.'2DB') then
+       F%axisymmetric_fields.and.(params%field_model(10:12).eq.'2DB'.or. &
+       params%field_model(12:13).eq.'2D')) then
      do it=params%ito,params%t_steps,params%t_skip
         call adv_GCinterp_B2D_top(params,spp,P,F)
         

@@ -1559,7 +1559,7 @@ CONTAINS
           gname = "fields"
           call h5gcreate_f(h5file_id, TRIM(gname), group_id, h5error)
 
-          if (TRIM(params%field_model) .EQ. 'ANALYTICAL') then
+          if (TRIM(params%field_model(1:10)) .EQ. 'ANALYTICAL') then
              dset = TRIM(gname) // "/Bo"
              attr = "Toroidal field at the magnetic axis in T"
              call save_to_hdf5(h5file_id,dset,F%Bo*params%cpp%Bo,attr)
@@ -1643,68 +1643,128 @@ CONTAINS
                 call save_1d_array_to_hdf5(h5file_id,dset,F%X%Z* &
                      params%cpp%length,attr_array)
 
-                dset = TRIM(gname) // "/BR"
-                units = params%cpp%Bo
-                call rsave_2d_array_to_hdf5(h5file_id, dset, &
-                     units*F%B_2D%R)
-
-                dset = TRIM(gname) // "/BPHI"
-                units = params%cpp%Bo
-                call rsave_2d_array_to_hdf5(h5file_id, dset, &
-                     units*F%B_2D%PHI)
-
-                dset = TRIM(gname) // "/BZ"
-                units = params%cpp%Bo
-                call rsave_2d_array_to_hdf5(h5file_id, dset, &
-                     units*F%B_2D%Z)
-
                 if (ALLOCATED(F%PSIp)) then
                    dset = TRIM(gname) // "/psi_p"
                    units = params%cpp%Bo*params%cpp%length**2
                    call rsave_2d_array_to_hdf5(h5file_id, dset, &
                         units*F%PSIp)
                 end if
-
-                if (ALLOCATED(F%FLAG2D)) then
-                   dset = TRIM(gname) // "/Flag"
-                   call rsave_2d_array_to_hdf5(h5file_id, dset, &
-                        F%FLAG2D)
-                end if
                 
-                if  (params%orbit_model(3:5).EQ.'pre') then
-
-                   dset = TRIM(gname) // "/gradBR"
-                   units = params%cpp%Bo/params%cpp%length
+                if(params%field_model(12:13).eq.'2D') then
+                
+                   dset = TRIM(gname) // "/BR"
+                   units = params%cpp%Bo
                    call rsave_2d_array_to_hdf5(h5file_id, dset, &
-                        units*F%gradB_2D%R)
+                        units*F%B_2D%R)
 
-                   dset = TRIM(gname) // "/gradBPHI"
-                   units = params%cpp%Bo/params%cpp%length
+                   dset = TRIM(gname) // "/BPHI"
+                   units = params%cpp%Bo
                    call rsave_2d_array_to_hdf5(h5file_id, dset, &
-                        units*F%gradB_2D%PHI)
+                        units*F%B_2D%PHI)
 
-                   dset = TRIM(gname) // "/gradBZ"
-                   units = params%cpp%Bo/params%cpp%length
+                   dset = TRIM(gname) // "/BZ"
+                   units = params%cpp%Bo
                    call rsave_2d_array_to_hdf5(h5file_id, dset, &
-                        units*F%gradB_2D%Z)
+                        units*F%B_2D%Z)
+                   
+                   if (ALLOCATED(F%FLAG2D)) then
+                      dset = TRIM(gname) // "/Flag"
+                      call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                           F%FLAG2D)
+                   end if
+                
+                   if  (params%orbit_model(3:5).EQ.'pre') then
 
-                   dset = TRIM(gname) // "/curlbR"
-                   units = 1./params%cpp%length
-                   call rsave_2d_array_to_hdf5(h5file_id, dset, &
-                        units*F%curlb_2D%R)
+                      dset = TRIM(gname) // "/gradBR"
+                      units = params%cpp%Bo/params%cpp%length
+                      call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                           units*F%gradB_2D%R)
 
-                   dset = TRIM(gname) // "/curlbPHI"
-                   units = 1./params%cpp%length
-                   call rsave_2d_array_to_hdf5(h5file_id, dset, &
-                        units*F%curlb_2D%PHI)
+                      dset = TRIM(gname) // "/gradBPHI"
+                      units = params%cpp%Bo/params%cpp%length
+                      call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                           units*F%gradB_2D%PHI)
 
-                   dset = TRIM(gname) // "/curlbZ"
-                   units =1./params%cpp%length
-                   call rsave_2d_array_to_hdf5(h5file_id, dset, &
-                        units*F%curlb_2D%Z)
+                      dset = TRIM(gname) // "/gradBZ"
+                      units = params%cpp%Bo/params%cpp%length
+                      call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                           units*F%gradB_2D%Z)
 
+                      dset = TRIM(gname) // "/curlbR"
+                      units = 1./params%cpp%length
+                      call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                           units*F%curlb_2D%R)
+
+                      dset = TRIM(gname) // "/curlbPHI"
+                      units = 1./params%cpp%length
+                      call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                           units*F%curlb_2D%PHI)
+
+                      dset = TRIM(gname) // "/curlbZ"
+                      units =1./params%cpp%length
+                      call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                           units*F%curlb_2D%Z)
+
+                   end if
+
+                else if(params%field_model(12:13).eq.'3D') then
+                
+                   dset = TRIM(gname) // "/BR"
+                   units = params%cpp%Bo
+                   call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                        units*F%B_3D%R)
+
+                   dset = TRIM(gname) // "/BPHI"
+                   units = params%cpp%Bo
+                   call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                        units*F%B_3D%PHI)
+
+                   dset = TRIM(gname) // "/BZ"
+                   units = params%cpp%Bo
+                   call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                        units*F%B_3D%Z)
+                   
+                   if (ALLOCATED(F%FLAG3D)) then
+                      dset = TRIM(gname) // "/Flag"
+                      call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                           F%FLAG3D)
+                   end if
+                
+                   if  (params%orbit_model(3:5).EQ.'pre') then
+
+                      dset = TRIM(gname) // "/gradBR"
+                      units = params%cpp%Bo/params%cpp%length
+                      call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                           units*F%gradB_3D%R)
+
+                      dset = TRIM(gname) // "/gradBPHI"
+                      units = params%cpp%Bo/params%cpp%length
+                      call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                           units*F%gradB_3D%PHI)
+
+                      dset = TRIM(gname) // "/gradBZ"
+                      units = params%cpp%Bo/params%cpp%length
+                      call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                           units*F%gradB_3D%Z)
+
+                      dset = TRIM(gname) // "/curlbR"
+                      units = 1./params%cpp%length
+                      call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                           units*F%curlb_3D%R)
+
+                      dset = TRIM(gname) // "/curlbPHI"
+                      units = 1./params%cpp%length
+                      call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                           units*F%curlb_3D%PHI)
+
+                      dset = TRIM(gname) // "/curlbZ"
+                      units =1./params%cpp%length
+                      call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                           units*F%curlb_3D%Z)
+
+                   end if
                 end if
-
+                   
                 DEALLOCATE(attr_array)
              end if
 

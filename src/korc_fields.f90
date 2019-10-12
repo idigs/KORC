@@ -840,7 +840,7 @@ CONTAINS
     TYPE(FIELDS), INTENT(IN)           :: F
     !! An instance of the KORC derived type FIELDS.
 
-    if (params%field_model.eq.'ANALYTICAL') then
+    if (params%field_model(1:10).eq.'ANALYTICAL') then
     !SELECT CASE (TRIM(params%field_model))
     !CASE('ANALYTICAL')
        if (params%field_eval.eq.'eqn') then
@@ -1452,7 +1452,7 @@ CONTAINS
     !! Iterators for creating mesh for GC model with analytic fields
     INTEGER                        :: nR
     !! Number of mesh points in R for grid in GC model of analytical field
-    INTEGER                        :: nZ
+    INTEGER                        :: nZ,nPHI
     !! Number of mesh points in Z for grid in GC model of analytical field
     real(rp)                       :: rm
     !! Minor radius at each position in the grid for
@@ -1471,7 +1471,7 @@ CONTAINS
     
 
     NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
-         qa,qo,Eo,current_direction,nR,nZ,dim_1D,dt_E_SC,Ip_exp
+         qa,qo,Eo,current_direction,nR,nZ,nPHI,dim_1D,dt_E_SC,Ip_exp
     NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux, &
          axisymmetric_fields, Eo,E_model,E_dyn,E_pulse,E_width,res_double
 
@@ -1480,7 +1480,7 @@ CONTAINS
     end if
 
 !    SELECT CASE (TRIM(params%field_model))
-    if (params%field_model.eq.'ANALYTICAL') then
+    if (params%field_model(1:10).eq.'ANALYTICAL') then
 !    CASE('ANALYTICAL')
        ! Load the parameters of the analytical magnetic field
        open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
@@ -1525,62 +1525,132 @@ CONTAINS
 
        if (params%field_eval.eq.'interp') then
           F%dims(1) = nR
+          F%dims(2) = nPHI
           F%dims(3) = nZ
 
-          F%Bfield= .TRUE.
-          F%axisymmetric_fields = .TRUE.
-          F%Bflux=.TRUE.
-          F%Efield=.TRUE.
+          if (params%field_model(12:13).eq.'2D') then
 
-          call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield,F%Bflux,F%Efield)
-          
-          do ii=1_idef,F%dims(1)
-             F%X%R(ii)=(F%Ro-F%AB%a)+(ii-1)*2*F%AB%a/(F%dims(1)-1)
-          end do
-          do ii=1_idef,F%dims(3)
-             F%X%Z(ii)=(F%Zo-F%AB%a)+(ii-1)*2*F%AB%a/(F%dims(3)-1)
-          end do
+             F%axisymmetric_fields = .TRUE.
+             F%Bfield=.TRUE.
+             F%Efield=.TRUE.
+             F%Bflux=.TRUE.
+             
+             call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield,F%Bflux,F%Efield)
 
-          do ii=1_idef,F%dims(1)
-             do kk=1_idef,F%dims(3)
-                rm=sqrt((F%X%R(ii)-F%Ro)**2+(F%X%Z(kk)-F%Zo)**2)
-                qr=F%AB%qo*(1+(rm/F%AB%lambda)**2)
-                theta=atan2(F%X%Z(kk)-F%Zo,F%X%R(ii)-F%Ro)
-                F%B_2D%R(ii,kk)=(rm/F%X%R(ii))* &
-                     (F%AB%Bo/qr)*sin(theta)
-                F%B_2D%PHI(ii,kk)=-(F%Ro/F%X%R(ii))*F%AB%Bo
-                F%B_2D%Z(ii,kk)=-(rm/F%X%R(ii))* &
-                     (F%AB%Bo/qr)*cos(theta)
-                F%E_2D%R(ii,kk)=0.0_rp
-                F%E_2D%PHI(ii,kk)=-(F%Ro/F%X%R(ii))*F%Eo
-                F%E_2D%Z(ii,kk)=0.0_rp
-
-                F%PSIp(ii,kk)=F%X%R(ii)*F%AB%lambda**2*F%Bo/ &
-                     (2*F%AB%qo*(F%Ro+rm*cos(theta)))* &
-                     log(1+(rm/F%AB%lambda)**2)
-                
-                !! Sign convention in analytical fields corresponds to
-                !! DIII-D fields with \(B_\phi<0\) and \(B_\theta<0\).
-                F%FLAG2D=1.
+             do ii=1_idef,F%dims(1)
+                F%X%R(ii)=(F%Ro-F%AB%a)+(ii-1)*2*F%AB%a/(F%dims(1)-1)
              end do
-          end do
-          
-          F%FLAG2D(1:2,:)=0.
-          F%FLAG2D(F%dims(1)-1:F%dims(1),:)=0.
-          F%FLAG2D(:,1:2)=0.
-          F%FLAG2D(:,F%dims(3)-1:F%dims(3))=0.
+             do ii=1_idef,F%dims(3)
+                F%X%Z(ii)=(F%Zo-F%AB%a)+(ii-1)*2*F%AB%a/(F%dims(3)-1)
+             end do
+
+!             write(6,*) F%X%R
+             
+             do ii=1_idef,F%dims(1)
+                do kk=1_idef,F%dims(3)
+                   rm=sqrt((F%X%R(ii)-F%Ro)**2+(F%X%Z(kk)-F%Zo)**2)
+                   qr=F%AB%qo*(1+(rm/F%AB%lambda)**2)
+                   theta=atan2(F%X%Z(kk)-F%Zo,F%X%R(ii)-F%Ro)
+                   F%B_2D%R(ii,kk)=(rm/F%X%R(ii))* &
+                        (F%AB%Bo/qr)*sin(theta)
+                   F%B_2D%PHI(ii,kk)=-(F%Ro/F%X%R(ii))*F%AB%Bo
+                   F%B_2D%Z(ii,kk)=-(rm/F%X%R(ii))* &
+                        (F%AB%Bo/qr)*cos(theta)
+                   F%E_2D%R(ii,kk)=0.0_rp
+                   F%E_2D%PHI(ii,kk)=-(F%Ro/F%X%R(ii))*F%Eo
+                   F%E_2D%Z(ii,kk)=0.0_rp
+
+                   F%PSIp(ii,kk)=F%X%R(ii)*F%AB%lambda**2*F%Bo/ &
+                        (2*F%AB%qo*(F%Ro+rm*cos(theta)))* &
+                        log(1+(rm/F%AB%lambda)**2)
+
+                   !! Sign convention in analytical fields corresponds to
+                   !! DIII-D fields with \(B_\phi<0\) and \(B_\theta<0\).
+                   F%FLAG2D=1.
+                end do
+             end do
+
+             F%FLAG2D(1:2,:)=0.
+             F%FLAG2D(F%dims(1)-1:F%dims(1),:)=0.
+             F%FLAG2D(:,1:2)=0.
+             F%FLAG2D(:,F%dims(3)-1:F%dims(3))=0.
+
+             
+          else if (params%field_model(12:13).eq.'3D') then
+             
+             F%axisymmetric_fields = .FALSE.
+             F%Bfield=.TRUE.
+             F%Efield=.TRUE.
+             
+             call ALLOCATE_3D_FIELDS_ARRAYS(params,F,F%Bfield,F%Efield)
+
+             do ii=1_idef,F%dims(1)
+                F%X%R(ii)=(F%Ro-F%AB%a)+(ii-1)*2*F%AB%a/(F%dims(1)-1)
+             end do
+             do ii=1_idef,F%dims(2)
+                F%X%PHI(ii)=0._rp+(ii-1)*2*C_PI/(F%dims(1)-1)
+             end do             
+             do ii=1_idef,F%dims(3)
+                F%X%Z(ii)=(F%Zo-F%AB%a)+(ii-1)*2*F%AB%a/(F%dims(3)-1)
+             end do
+
+             !write(6,*) size(F%B_3D%R)
+             
+             do ii=1_idef,F%dims(1)
+                do kk=1_idef,F%dims(3)
+
+                   !write(6,*) ii,kk
+                   
+                   rm=sqrt((F%X%R(ii)-F%Ro)**2+(F%X%Z(kk)-F%Zo)**2)
+                   qr=F%AB%qo*(1+(rm/F%AB%lambda)**2)
+                   theta=atan2(F%X%Z(kk)-F%Zo,F%X%R(ii)-F%Ro)
+                   F%B_3D%R(ii,:,kk)=(rm/F%X%R(ii))* &
+                        (F%AB%Bo/qr)*sin(theta)
+                   F%B_3D%PHI(ii,:,kk)=-(F%Ro/F%X%R(ii))*F%AB%Bo
+
+                   !write(6,*) F%B_3D%PHI(ii,1,kk)
+                   
+                   F%B_3D%Z(ii,:,kk)=-(rm/F%X%R(ii))* &
+                        (F%AB%Bo/qr)*cos(theta)
+                   F%E_3D%R(ii,:,kk)=0.0_rp
+                   F%E_3D%PHI(ii,:,kk)=-(F%Ro/F%X%R(ii))*F%Eo
+                   F%E_3D%Z(ii,:,kk)=0.0_rp
+
+
+                   !! Sign convention in analytical fields corresponds to
+                   !! DIII-D fields with \(B_\phi<0\) and \(B_\theta<0\).
+                   F%FLAG3D=1.
+                end do
+             end do
+
+             F%FLAG3D(1:2,:,:)=0.
+             F%FLAG3D(F%dims(1)-1:F%dims(1),:,:)=0.
+             F%FLAG3D(:,:,1:2)=0.
+             F%FLAG3D(:,:,F%dims(3)-1:F%dims(3))=0.
+
+
+
+             
+          end if
+         
 
           if (params%orbit_model(3:5).eq.'pre') then
              if (params%mpi_params%rank .EQ. 0) then
                 write(6,'("Initializing GC fields from analytic EM fields")')
              end if
-             call initialize_GC_fields(F)
+
+             if (params%field_model(12:13).eq.'2D') then
+                call initialize_GC_fields(F)
+             else if (params%field_model(12:13).eq.'3D') then
+                call initialize_GC_fields_3D(F)
+             end if             
+
           end if
 
-          F%Bfield= .FALSE.
-          F%axisymmetric_fields = .TRUE.
-          F%Bflux=.TRUE.
-          F%Efield=.FALSE.
+          !F%Bfield= .FALSE.
+          !F%axisymmetric_fields = .TRUE.
+          !F%Bflux=.TRUE.
+          !F%Efield=.FALSE.
           
        end if
 

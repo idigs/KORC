@@ -818,7 +818,7 @@ CONTAINS
        if (params%mpi_params%rank .EQ. 0) then
           write(6,'("* * * * * * INTERPOLANT INITIALIZED * * * * * *",/)')
        end if
-    else if (params%field_model .EQ. 'ANALYTICAL') then
+    else if (params%field_model(1:10) .EQ. 'ANALYTICAL') then
        if (params%mpi_params%rank .EQ. 0) then
           write(6,'("* * * * USING ANALYTICAL MAGNETIC FIELD * * * *",/)')
        end if
@@ -1005,16 +1005,16 @@ CONTAINS
        end do
        !$OMP END SIMD
     else
-       !$OMP SIMD
+!       !$OMP SIMD
 !       !$OMP& aligned(IR,IZ)
        do pp=1_idef,8_idef
           IR = INT(FLOOR((Y_R(pp)  - fields_domain%Ro + &
-               0.5_rp*fields_domain%DR)/fields_domain%DR) + 1.0_rp,idef)/ &
-               2_idef**F%res_double
+               0.5_rp*fields_domain%DR)/fields_domain%DR) + 1.0_rp,idef)
           IZ = INT(FLOOR((Y_Z(pp)  + ABS(fields_domain%Zo) + &
-               0.5_rp*fields_domain%DZ)/fields_domain%DZ) + 1.0_rp,idef)/ &
-               2_idef**F%res_double
+               0.5_rp*fields_domain%DZ)/fields_domain%DZ) + 1.0_rp,idef)
 
+!          write(6,*) pp
+          
 !          write(6,'("IR: ",I16)') IR
 !          write(6,'("IZ: ",I16)') IZ
 !          write(6,'("Size of fields_domain R: ",I16)') &
@@ -1029,7 +1029,7 @@ CONTAINS
 !             write(6,'("Shit''s fucked.")')
           end if
        end do      
-       !$OMP END SIMD
+!       !$OMP END SIMD
 !       write(6,'("Shit''s not fucked.")')
     end if
   end subroutine check_if_in_fields_domain_p
@@ -1170,7 +1170,7 @@ CONTAINS
           if (params%mpi_params%rank .EQ. 0) then
              write(6,'("* * * * * * INTERPOLANT   INITIALIZED * * * * * *",/)')
           end if
-       else if (params%profile_model .EQ. 'ANALYTICAL') then
+       else if (params%profile_model(1:10) .EQ. 'ANALYTICAL') then
           if (params%mpi_params%rank .EQ. 0) then
              write(6,'("* * * * USING ANALYTICAL PROFILES * * * *",/)')
           end if
@@ -1659,6 +1659,8 @@ subroutine interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
   REAL(rp),DIMENSION(8),INTENT(OUT)   :: PSIp
   INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
 
+  !write(6,*) Y_R,Y_Z,flag_cache
+  
   call check_if_in_fields_domain_p(F,Y_R,Y_PHI,Y_Z,flag_cache)
   
   call EZspline_interp(bfield_2d%R,bfield_2d%PHI,bfield_2d%Z,efield_2d%R, &

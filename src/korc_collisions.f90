@@ -1190,7 +1190,7 @@ contains
 
        call cart_to_cyl_p(X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
 
-       if (params%profile_model.eq.'ANALYTICAL') then
+       if (params%profile_model(1:10).eq.'ANALYTICAL') then
           call analytical_profiles_p(time,params,Y_R,Y_Z,P,ne,Te,Zeff)
        else  if (params%profile_model(1:8).eq.'EXTERNAL') then          
           call interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag)
@@ -1389,7 +1389,7 @@ contains
           call add_analytical_E_p(params,tt,F,E_PHI)
        end if
        
-       if (params%profile_model.eq.'ANALYTICAL') then
+       if (params%profile_model(1:10).eq.'ANALYTICAL') then
           call analytical_profiles_p(time,params,Y_R,Y_Z,P,ne,Te,Zeff)          
        else if (params%profile_model(1:8).eq.'EXTERNAL') then      
           call interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag)

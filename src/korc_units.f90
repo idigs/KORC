@@ -192,7 +192,7 @@ subroutine normalize_variables(params,spp,F,P)
 
   end if
   
-  if (params%field_model .EQ. 'ANALYTICAL') then
+  if (params%field_model(1:10) .EQ. 'ANALYTICAL') then
      F%AB%Bo = F%AB%Bo/params%cpp%Bo
      F%AB%a = F%AB%a/params%cpp%length
      F%AB%Ro = F%AB%Ro/params%cpp%length
@@ -207,6 +207,14 @@ subroutine normalize_variables(params,spp,F,P)
         if (ALLOCATED(F%E_2D%R)) F%E_2D%R = F%E_2D%R/params%cpp%Eo
         if (ALLOCATED(F%E_2D%PHI)) F%E_2D%PHI = F%E_2D%PHI/params%cpp%Eo
         if (ALLOCATED(F%E_2D%Z)) F%E_2D%Z = F%E_2D%Z/params%cpp%Eo
+
+        if (ALLOCATED(F%B_3D%R)) F%B_3D%R = F%B_3D%R/params%cpp%Bo
+        if (ALLOCATED(F%B_3D%PHI)) F%B_3D%PHI = F%B_3D%PHI/params%cpp%Bo
+        if (ALLOCATED(F%B_3D%Z)) F%B_3D%Z = F%B_3D%Z/params%cpp%Bo
+
+        if (ALLOCATED(F%E_3D%R)) F%E_3D%R = F%E_3D%R/params%cpp%Eo
+        if (ALLOCATED(F%E_3D%PHI)) F%E_3D%PHI = F%E_3D%PHI/params%cpp%Eo
+        if (ALLOCATED(F%E_3D%Z)) F%E_3D%Z = F%E_3D%Z/params%cpp%Eo
 
         if (ALLOCATED(F%PSIp)) F%PSIp = F%PSIp/ &
              (params%cpp%Bo*params%cpp%length**2)
@@ -229,6 +237,20 @@ subroutine normalize_variables(params,spp,F,P)
            if (ALLOCATED(F%curlb_2D%PHI)) F%curlb_2D%PHI = F%curlb_2D%PHI/ &
                 (1./params%cpp%length)
            if (ALLOCATED(F%curlb_2D%Z)) F%curlb_2D%Z = F%curlb_2D%Z/ &
+                (1./params%cpp%length)
+
+           if (ALLOCATED(F%gradB_3D%R)) F%gradB_3D%R = F%gradB_3D%R/ &
+                (params%cpp%Bo/params%cpp%length)
+           if (ALLOCATED(F%gradB_3D%PHI)) F%gradB_3D%PHI = F%gradB_3D%PHI/ &
+                (params%cpp%Bo/params%cpp%length)
+           if (ALLOCATED(F%gradB_3D%Z)) F%gradB_3D%Z = F%gradB_3D%Z/ &
+                (params%cpp%Bo/params%cpp%length)
+
+           if (ALLOCATED(F%curlb_3D%R)) F%curlb_3D%R = F%curlb_3D%R/ &
+                (1./params%cpp%length)
+           if (ALLOCATED(F%curlb_3D%PHI)) F%curlb_3D%PHI = F%curlb_3D%PHI/ &
+                (1./params%cpp%length)
+           if (ALLOCATED(F%curlb_3D%Z)) F%curlb_3D%Z = F%curlb_3D%Z/ &
                 (1./params%cpp%length)
         end if
         

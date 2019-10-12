@@ -1419,7 +1419,7 @@ contains
 
                 bhat = spp(ii)%vars%B(pp,:)/Bmag1
 
-                if (params%field_model.eq.'ANALYTICAL') then
+                if (params%field_model(1:10).eq.'ANALYTICAL') then
                    rm=sqrt((spp(ii)%vars%Y(pp,1)-F%AB%Ro)**2+ &
                         (spp(ii)%vars%Y(pp,3))**2)
 
@@ -1457,7 +1457,7 @@ contains
           do pp=1_idef,spp(ii)%ppp
              if ( spp(ii)%vars%flag(pp) .EQ. 1_is ) then
 
-                if (params%field_model.eq.'ANALYTICAL') then
+                if (params%field_model(1:10).eq.'ANALYTICAL') then
                    rm=sqrt((spp(ii)%vars%Y(pp,1)-F%AB%Ro)**2+ &
                         (spp(ii)%vars%Y(pp,3))**2)
                    RAphi(pp,2)=-F%AB%lambda**2*F%AB%Bo/(2*F%AB%qo)* &
@@ -2538,6 +2538,8 @@ contains
                 spp(ii)%vars%curlb(pp-1+cc,3) = curlb_Z(cc)
                 
                 spp(ii)%vars%E(pp-1+cc,2) = E_PHI(cc)
+
+                spp(ii)%vars%PSI_P(pp-1+cc) = PSIp(cc)                
              end do
              !$OMP END SIMD
              
