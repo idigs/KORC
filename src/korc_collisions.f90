@@ -1192,7 +1192,7 @@ contains
 
        if (params%profile_model.eq.'ANALYTICAL') then
           call analytical_profiles_p(time,params,Y_R,Y_Z,P,ne,Te,Zeff)
-       else  if (params%profile_model.eq.'EXTERNAL') then          
+       else  if (params%profile_model(1:8).eq.'EXTERNAL') then          
           call interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag)
        end if
           
@@ -1372,10 +1372,14 @@ contains
                Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
                gradB_R,gradB_PHI,gradB_Z,PSIp)          
        else if (params%field_eval.eq.'interp') then
-          if (F%axisymmetric_fields) then
+          if (F%Bflux) then
 !          call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
              call calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                   E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+                  gradB_R,gradB_PHI,gradB_Z,flag,PSIp)
+          else if (.not.(F%Bflux)) then
+             call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
+                  E_Z,curlb_R,curlb_PHI,curlb_Z, &
                   gradB_R,gradB_PHI,gradB_Z,flag,PSIp)
           else
              call interp_fields_3D_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
@@ -1387,7 +1391,7 @@ contains
        
        if (params%profile_model.eq.'ANALYTICAL') then
           call analytical_profiles_p(time,params,Y_R,Y_Z,P,ne,Te,Zeff)          
-       else if (params%profile_model.eq.'EXTERNAL') then      
+       else if (params%profile_model(1:8).eq.'EXTERNAL') then      
           call interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag)
        end if         
 

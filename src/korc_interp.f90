@@ -412,7 +412,7 @@ CONTAINS
     !! See [[korc_types]] and [[korc_fields]].
     integer :: ii,jj
 
-    if ((params%field_model .EQ. 'EXTERNAL').or. &
+    if ((params%field_model(1:8) .EQ. 'EXTERNAL').or. &
          (params%field_eval.eq.'interp')) then
 
        if (params%mpi_params%rank .EQ. 0) then
@@ -437,8 +437,8 @@ CONTAINS
           bfield_2d%A%x1 = F%X%R
           bfield_2d%A%x2 = F%X%Z
 
- !         write(6,'("R",E17.10)') F%X%R
- !         write(6,'("Z",E17.10)') F%X%Z
+          !write(6,'("R",E17.10)') F%X%R
+          !write(6,'("Z",E17.10)') F%X%Z
 
           call EZspline_setup(bfield_2d%A, F%PSIp, ezerr, .TRUE.)
           call EZspline_error(ezerr)
@@ -614,6 +614,9 @@ CONTAINS
 
              call EZspline_setup(bfield_3d%PHI, F%B_3D%PHI, ezerr)
              call EZspline_error(ezerr)
+
+             !write(6,*) bfield_3d%PHI%x2
+             
 
              ! Initializing Z component of interpolant
              call EZspline_init(bfield_3d%Z, bfield_3d%NR, bfield_3d%NPHI, &
@@ -965,7 +968,7 @@ CONTAINS
     !! Particle iterator.
     INTEGER(ip)                                            :: ss
     !! Species iterator.
-    REAL(rp), DIMENSION(8)     :: Y_PHI_mod  
+
 
 !    write(6,'("YR:",E17.10)') Y_R
 !    write(6,'("YPHI:",E17.10)') Y_PHI
@@ -982,12 +985,10 @@ CONTAINS
        !$OMP SIMD
 !       !$OMP&  aligned(IR,IPHI,IZ)
        do pp=1_idef,8_idef
-
-          Y_PHI_mod(pp)=mod(Y_PHI(pp),2._rp*C_PI)
           
           IR = INT(FLOOR((Y_R(pp)  - fields_domain%Ro + &
                0.5_rp*fields_domain%DR)/fields_domain%DR) + 1.0_rp,idef)
-          IPHI = INT(FLOOR((Y_PHI_mod(pp)  + 0.5_rp*fields_domain%DPHI)/ &
+          IPHI = INT(FLOOR((Y_PHI(pp)  + 0.5_rp*fields_domain%DPHI)/ &
                fields_domain%DPHI) + 1.0_rp,idef)
           IZ = INT(FLOOR((Y_Z(pp)  + ABS(fields_domain%Zo) + &
                0.5_rp*fields_domain%DZ)/fields_domain%DZ) + 1.0_rp,idef)
@@ -1046,7 +1047,7 @@ CONTAINS
     !! See [[korc_types]] and [[korc_profiles]].
     
     if (params%collisions) then
-       if (params%profile_model .EQ. 'EXTERNAL') then
+       if (params%profile_model(1:8) .EQ. 'EXTERNAL') then
           
           if (params%mpi_params%rank .EQ. 0) then
              write(6,'("* * * * INITIALIZING PROFILES INTERPOLANT * * * *")')
@@ -1678,12 +1679,17 @@ subroutine interp_fields_3D_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
   REAL(rp),DIMENSION(8),INTENT(OUT)   :: curlB_R,curlB_PHI,curlB_Z
   REAL(rp),DIMENSION(8),INTENT(OUT)   :: E_R,E_PHI,E_Z
   INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
+  REAL(rp), DIMENSION(8)     :: Y_PHI_mod  
 
-  call check_if_in_fields_domain_p(F,Y_R,Y_PHI,Y_Z,flag_cache)
+  Y_PHI_mod=modulo(Y_PHI,2._rp*C_PI)
+!  write(6,*) Y_PHI(1)
+!  write(6,*) Y_PHI_mod(1)
+  
+  call check_if_in_fields_domain_p(F,Y_R,Y_PHI_mod,Y_Z,flag_cache)
   
   call EZspline_interp(bfield_3d%R,bfield_3d%PHI,bfield_3d%Z,efield_3d%R, &
        efield_3d%PHI,efield_3d%Z,gradB_3d%R,gradB_3d%PHI,gradB_3d%Z, &
-       curlb_3d%R,curlb_3d%PHI,curlb_3d%Z,8,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+       curlb_3d%R,curlb_3d%PHI,curlb_3d%Z,8,Y_R,Y_PHI_mod,Y_Z,B_R,B_PHI,B_Z, &
        E_R,E_PHI,E_Z,gradB_R,gradB_PHI,gradB_Z,curlb_R,curlb_PHI,curlb_Z, &
        ezerr)
   call EZspline_error(ezerr)
@@ -2403,7 +2409,7 @@ end subroutine interp_profiles
 subroutine finalize_interpolants(params)
   TYPE(KORC_PARAMS), INTENT(IN) :: params
 
-  if (params%field_model .EQ. 'EXTERNAL') then
+  if (params%field_model(1:8) .EQ. 'EXTERNAL') then
      if (params%mpi_params%rank .EQ. 0) then
         write(6,'("* * * * FINALIZING FIELD INTERPOLANT * * * *")')
      end if
@@ -2450,7 +2456,7 @@ subroutine finalize_interpolants(params)
      end if
   end if
      
-  if (params%profile_model .EQ. 'EXTERNAL') then
+  if (params%profile_model(1:8) .EQ. 'EXTERNAL') then
      if (params%mpi_params%rank .EQ. 0) then
         write(6,'("* * * * FINALIZING PROFILE INTERPOLANT * * * *")')
      end if

@@ -178,7 +178,7 @@ subroutine normalize_variables(params,spp,F,P)
         if (ALLOCATED(P%Te_2D)) P%Te_2D = P%Te_2D/params%cpp%temperature
      end if
 
-  else if (params%profile_model .EQ. 'EXTERNAL') then
+  else if (params%profile_model(1:8) .EQ. 'EXTERNAL') then
 
      
      if (ALLOCATED(P%X%R)) P%X%R = P%X%R/params%cpp%length
@@ -235,7 +235,7 @@ subroutine normalize_variables(params,spp,F,P)
      end if
 
           
-  else if (params%field_model .EQ. 'EXTERNAL') then
+  else if (params%field_model(1:8) .EQ. 'EXTERNAL') then
      if (ALLOCATED(F%B_3D%R)) F%B_3D%R = F%B_3D%R/params%cpp%Bo
      if (ALLOCATED(F%B_3D%PHI)) F%B_3D%PHI = F%B_3D%PHI/params%cpp%Bo
      if (ALLOCATED(F%B_3D%Z)) F%B_3D%Z = F%B_3D%Z/params%cpp%Bo

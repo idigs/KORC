@@ -1506,7 +1506,7 @@ CONTAINS
                    DEALLOCATE(attr_array)
                 end if
                 
-             else if (params%profile_model .EQ. 'EXTERNAL') then
+             else if (params%profile_model(1:8) .EQ. 'EXTERNAL') then
                 ALLOCATE(attr_array(1))
                 dset = TRIM(gname) // "/dims"
                 attr_array(1) = "Mesh dimension of the profiles (NR,NPHI,NZ)"
@@ -1708,7 +1708,7 @@ CONTAINS
                 DEALLOCATE(attr_array)
              end if
 
-          else if (params%field_model .EQ. 'EXTERNAL') then
+          else if (params%field_model(1:8) .EQ. 'EXTERNAL') then
              ALLOCATE(attr_array(1))
              dset = TRIM(gname) // "/dims"
              attr_array(1) = "Mesh dimension of the magnetic  &

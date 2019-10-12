@@ -840,14 +840,15 @@ CONTAINS
     TYPE(FIELDS), INTENT(IN)           :: F
     !! An instance of the KORC derived type FIELDS.
 
-    SELECT CASE (TRIM(params%field_model))
-    CASE('ANALYTICAL')
+    if (params%field_model.eq.'ANALYTICAL') then
+    !SELECT CASE (TRIM(params%field_model))
+    !CASE('ANALYTICAL')
        if (params%field_eval.eq.'eqn') then
           call get_analytical_fields(params,vars, F)
        else
           call interp_fields(params,vars, F)          
        end if
-    CASE('EXTERNAL')
+    else if (params%field_model(1:8).eq.'EXTERNAL') then
 
        !       write(6,'("2 size of PSI_P: ",I16)') size(vars%PSI_P)
 
@@ -861,11 +862,10 @@ CONTAINS
        !if (F%Efield.AND..NOT.F%Efield_in_file) then
        !   call analytical_electric_field_cyl(F,vars%Y,vars%E,vars%flag)
        !end if
-    CASE('UNIFORM')
+    else if (params%field_model.eq.'UNIFORM') then
 
        call uniform_fields(vars, F)
-    CASE DEFAULT
-    END SELECT
+    end if
   end subroutine get_fields
 
   subroutine calculate_SC_E1D(params,F,Vden)
@@ -1479,9 +1479,9 @@ CONTAINS
        write(6,'(/,"* * * * * * * * INITIALIZING FIELDS * * * * * * * *")')
     end if
 
-    SELECT CASE (TRIM(params%field_model))
-
-    CASE('ANALYTICAL')
+!    SELECT CASE (TRIM(params%field_model))
+    if (params%field_model.eq.'ANALYTICAL') then
+!    CASE('ANALYTICAL')
        ! Load the parameters of the analytical magnetic field
        open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
             status='OLD',form='formatted')
@@ -1614,7 +1614,8 @@ CONTAINS
           
        end if
        
-    CASE('EXTERNAL')
+!    CASE('EXTERNAL')
+    else if (params%field_model(1:8).eq.'EXTERNAL') then
        ! Load the magnetic field from an external HDF5 file
        open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
             status='OLD',form='formatted')
@@ -1643,6 +1644,7 @@ CONTAINS
        call which_fields_in_file(params,F%Bfield_in_file,F%Efield_in_file, &
             F%Bflux_in_file)
 
+       
        if (F%Bflux.AND..NOT.F%Bflux_in_file) then
           write(6,'("ERROR: Magnetic flux to be used but no data in file!")')
           call KORC_ABORT()
@@ -1663,9 +1665,13 @@ CONTAINS
 
        if (F%axisymmetric_fields) then
 
+          if (params%field_model(10:12).eq.'2DB') F%Efield_in_file=.TRUE.
+          
           call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
                F%Bflux,F%Efield.AND. &
                F%Efield_in_file)
+
+          if (params%field_model(10:12).eq.'2DB') F%Efield_in_file=.FALSE.
 
        else
           call ALLOCATE_3D_FIELDS_ARRAYS(params,F,F%Bfield,F%Efield)
@@ -1674,10 +1680,14 @@ CONTAINS
        !allocates 2D or 3D data arrays (fields and spatial)
 
        call load_field_data_from_hdf5(params,F)
+
        
        if (F%Bflux) F%Eo = Eo
 
        if (.not.axisymmetric_fields) then
+
+!          F%X%PHI=C_PI*F%X%PHI/180._rp
+          
           if (.not.F%Efield_in_file) then
              F%Eo = Eo
           
@@ -1697,104 +1707,116 @@ CONTAINS
 
        end if
 
-       test=.true.
+!       test=.true.
        
-       if (F%Bflux.and.(.not.test)) then
+!       if (F%Bflux.and.(.not.test)) then
 
-          call initialize_fields_interpolant(params,F)
+!          call initialize_fields_interpolant(params,F)
 
-          F%Bfield=.TRUE.
-          F%Efield=.TRUE.
-          F%Efield_in_file=.TRUE.
+!          F%Bfield=.TRUE.
+!          F%Efield=.TRUE.
+!          F%Efield_in_file=.TRUE.
 
 
-          RMIN=F%X%R(1)
-          RMAX=F%X%R(F%dims(1))
+!          RMIN=F%X%R(1)
+!          RMAX=F%X%R(F%dims(1))
 
-          ZMIN=F%X%Z(1)
-          ZMAX=F%X%Z(F%dims(3))
+!          ZMIN=F%X%Z(1)
+!          ZMAX=F%X%Z(F%dims(3))
 
-          do ii=1_idef,res_double
-             F%dims(1)=2*F%dims(1)-1
-             F%dims(3)=2*F%dims(3)-1
-          end do
+!          do ii=1_idef,res_double
+!             F%dims(1)=2*F%dims(1)-1
+!             F%dims(3)=2*F%dims(3)-1
+!          end do
 
-          if (res_double>0) then
-             DEALLOCATE(F%X%R)
-             DEALLOCATE(F%X%Z)
-             DEALLOCATE(F%PSIp)
-          end if
+!          if (res_double>0) then
+!             DEALLOCATE(F%X%R)
+!             DEALLOCATE(F%X%Z)
+!             DEALLOCATE(F%PSIp)
+!          end if
           
-          call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
-               F%Bflux,F%Efield.AND.F%Efield_in_file)
+!          call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
+!               F%Bflux,F%Efield.AND.F%Efield_in_file)
 
-          do ii=1_idef,F%dims(1)
-             F%X%R(ii)=RMIN+REAL(ii-1)/REAL(F%dims(1)-1)*(RMAX-RMIN)
-          end do
+!          do ii=1_idef,F%dims(1)
+!             F%X%R(ii)=RMIN+REAL(ii-1)/REAL(F%dims(1)-1)*(RMAX-RMIN)
+!          end do
 
-          do ii=1_idef,F%dims(3)
-             F%X%Z(ii)=ZMIN+REAL(ii-1)/REAL(F%dims(3)-1)*(ZMAX-ZMIN)
-          end do            
+!          do ii=1_idef,F%dims(3)
+!             F%X%Z(ii)=ZMIN+REAL(ii-1)/REAL(F%dims(3)-1)*(ZMAX-ZMIN)
+!          end do            
           
-          call calculate_initial_magnetic_field(F)
+!          call calculate_initial_magnetic_field(F)
           
-          F%E_2D%R=0._rp
-          do ii=1_idef,F%dims(1)
-             F%E_2D%PHI(ii,:)=F%Eo*F%Ro/F%X%R(ii)
-          end do
-          F%E_2D%Z=0._rp
+!          F%E_2D%R=0._rp
+!          do ii=1_idef,F%dims(1)
+!             F%E_2D%PHI(ii,:)=F%Eo*F%Ro/F%X%R(ii)
+!          end do
+!          F%E_2D%Z=0._rp
           
-       end if
+!       end if
 
        
-       if (F%Bflux.and.test) then
+!       if (F%Bflux.and.test) then
 
-          F%Bfield=.TRUE.
-          F%Efield=.TRUE.
-          F%Efield_in_file=.TRUE.
+!          F%Bfield=.TRUE.
+!          F%Efield=.TRUE.
+!          F%Efield_in_file=.TRUE.
             
           
-          call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
-               F%Bflux,F%Efield.AND.F%Efield_in_file)
+!          call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
+!               F%Bflux,F%Efield.AND.F%Efield_in_file)
 
           
           ! B
           ! edge nodes at minimum R,Z
-          F%B_2D%Z(1,:)=-(F%PSIp(2,:)-F%PSIp(1,:))/(F%X%R(2)-F%X%R(1))/F%X%R(1)
-          F%B_2D%R(:,1)=(F%PSIp(:,2)-F%PSIp(:,1))/(F%X%Z(2)-F%X%Z(1))/F%X%R(:)
+!          F%B_2D%Z(1,:)=-(F%PSIp(2,:)-F%PSIp(1,:))/(F%X%R(2)-F%X%R(1))/F%X%R(1)
+!          F%B_2D%R(:,1)=(F%PSIp(:,2)-F%PSIp(:,1))/(F%X%Z(2)-F%X%Z(1))/F%X%R(:)
 
           ! edge nodes at maximum R,Z
-          F%B_2D%Z(F%dims(1),:)=-(F%PSIp(F%dims(1),:)-F%PSIp(F%dims(1)-1,:))/ &
-               (F%X%R(F%dims(1))-F%X%R(F%dims(1)-1))/F%X%R(F%dims(1))
-          F%B_2D%R(:,F%dims(3))=(F%PSIp(:,F%dims(3))-F%PSIp(:,F%dims(3)-1))/ &
-               (F%X%Z(F%dims(3))-F%X%Z(F%dims(3)-1))/F%X%R(:)
+!          F%B_2D%Z(F%dims(1),:)=-(F%PSIp(F%dims(1),:)-F%PSIp(F%dims(1)-1,:))/ &
+!               (F%X%R(F%dims(1))-F%X%R(F%dims(1)-1))/F%X%R(F%dims(1))
+!          F%B_2D%R(:,F%dims(3))=(F%PSIp(:,F%dims(3))-F%PSIp(:,F%dims(3)-1))/ &
+!               (F%X%Z(F%dims(3))-F%X%Z(F%dims(3)-1))/F%X%R(:)
 
-          do ii=2_idef,F%dims(1)-1
+!          do ii=2_idef,F%dims(1)-1
              ! central difference over R for interior nodes for BZ
-             F%B_2D%Z(ii,:)=-(F%PSIp(ii+1,:)-F%PSIp(ii-1,:))/ &
-                  (F%X%R(ii+1)-F%X%R(ii-1))/F%X%R(ii)
+!             F%B_2D%Z(ii,:)=-(F%PSIp(ii+1,:)-F%PSIp(ii-1,:))/ &
+!                  (F%X%R(ii+1)-F%X%R(ii-1))/F%X%R(ii)
 
-          end do
-          do ii=2_idef,F%dims(3)-1
+!          end do
+!          do ii=2_idef,F%dims(3)-1
              ! central difference over Z for interior nodes for BR
-             F%B_2D%R(:,ii)=(F%PSIp(:,ii+1)-F%PSIp(:,ii-1))/ &
-                  (F%X%Z(ii+1)-F%X%Z(ii-1))/F%X%R(:)
-          end do
+!             F%B_2D%R(:,ii)=(F%PSIp(:,ii+1)-F%PSIp(:,ii-1))/ &
+!                  (F%X%Z(ii+1)-F%X%Z(ii-1))/F%X%R(:)
+!          end do
 
-          do ii=1_idef,F%dims(1)             
-             F%B_2D%PHI(ii,:)=-F%Bo*F%Ro/F%X%R(ii)
-          end do
+!          do ii=1_idef,F%dims(1)             
+!             F%B_2D%PHI(ii,:)=-F%Bo*F%Ro/F%X%R(ii)
+!          end do
 
+!          F%E_2D%R=0._rp
+!          do ii=1_idef,F%dims(1)
+!             F%E_2D%PHI(ii,:)=F%Eo*F%Ro/F%X%R(ii)
+!          end do
+!          F%E_2D%Z=0._rp
+
+!          F%Bfield=.FALSE.
+          
+!       end if
+
+       if (params%field_model(10:12).eq.'2DB') then
+
+          
           F%E_2D%R=0._rp
           do ii=1_idef,F%dims(1)
              F%E_2D%PHI(ii,:)=F%Eo*F%Ro/F%X%R(ii)
           end do
           F%E_2D%Z=0._rp
-
-          F%Bfield=.FALSE.
+          
           
        end if
-
+       
        if (params%mpi_params%rank.EQ.0) then
 
           if (F%axisymmetric_fields) then
@@ -1831,8 +1853,7 @@ CONTAINS
        !       write(6,'("gradBPHI",E17.10)') F%gradB_2D%PHI(F%dims(1)/2,F%dims(3)/2)
        !       write(6,'("gradBZ",E17.10)') F%gradB_2D%Z(F%dims(1)/2,F%dims(3)/2)
 
-    CASE DEFAULT
-    END SELECT
+    end if
 
     if (params%mpi_params%rank.eq.0) then
        write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * *",/)')
@@ -1964,52 +1985,65 @@ CONTAINS
     bhat(:,:,:,2)=F%B_3D%PHI/Bmag
     bhat(:,:,:,3)=F%B_3D%Z/Bmag
 
-
-    F%gradB_3D%PHI=0.
-    ! No variation in phi direction
-
     ! Single-sided difference for axiliary fields at edge nodes
     ! Differential over R on first index, differential over Z
     ! on second index.
 
+    F%gradB_3D%R=0._rp
+    F%gradB_3D%PHI=0._rp
+    F%gradB_3D%Z=0._rp
+
+    F%curlb_3D%R=0._rp
+    F%curlb_3D%PHI=0._rp
+    F%curlb_3D%Z=0._rp
+    
     ! gradB
     ! edge nodes at minimum R,Z
-    F%gradB_3D%R(1,:,:)=(Bmag(2,:,:)-Bmag(1,:,:))/(F%X%R(2)-F%X%R(1))
+    F%gradB_3D%R(1,:,:)=F%gradB_3D%R(1,:,:)+ &
+         (Bmag(2,:,:)-Bmag(1,:,:))/(F%X%R(2)-F%X%R(1))
     do ii=1_idef,F%dims(1)
-       F%gradB_3D%PHI(ii,1,:)=(Bmag(ii,2,:)-Bmag(ii,F%dims(2),:))/ &
+       F%gradB_3D%PHI(ii,1,:)=F%gradB_3D%PHI(ii,1,:)+ &
+            (Bmag(ii,2,:)-Bmag(ii,F%dims(2),:))/ &
             (F%X%R(ii)*(F%X%PHI(2)-F%X%PHI(F%dims(2))))
     end do
-    F%gradB_3D%Z(:,:,1)=(Bmag(:,:,2)-Bmag(:,:,1))/(F%X%Z(2)-F%X%Z(1))
+    F%gradB_3D%Z(:,:,1)=F%gradB_3D%Z(:,:,1)+ &
+         (Bmag(:,:,2)-Bmag(:,:,1))/(F%X%Z(2)-F%X%Z(1))
 
     ! edge nodes at maximum R,Z
-    F%gradB_3D%R(F%dims(1),:,:)=(Bmag(F%dims(1),:,:)-Bmag(F%dims(1)-1,:,:))/ &
+    F%gradB_3D%R(F%dims(1),:,:)=F%gradB_3D%R(F%dims(1),:,:)+ &
+         (Bmag(F%dims(1),:,:)-Bmag(F%dims(1)-1,:,:))/ &
          (F%X%R(F%dims(1))-F%X%R(F%dims(1)-1))
     do ii=1_idef,F%dims(1)
-       F%gradB_3D%PHI(ii,F%dims(2),:)=(Bmag(ii,1,:)-Bmag(ii,F%dims(2)-1,:))/ &
+       F%gradB_3D%PHI(ii,F%dims(2),:)=F%gradB_3D%PHI(ii,F%dims(2),:)+ &
+            (Bmag(ii,1,:)-Bmag(ii,F%dims(2)-1,:))/ &
             (F%X%R(ii)*(F%X%PHI(1)-F%X%PHI(F%dims(2)-1)))
     end do       
-    F%gradB_3D%Z(:,:,F%dims(3))=(Bmag(:,:,F%dims(3))-Bmag(:,:,F%dims(3)-1))/ &
+    F%gradB_3D%Z(:,:,F%dims(3))=F%gradB_3D%Z(:,:,F%dims(3))+ &
+         (Bmag(:,:,F%dims(3))-Bmag(:,:,F%dims(3)-1))/ &
          (F%X%Z(F%dims(3))-F%X%Z(F%dims(3)-1))
 
     ! curlb
     ! edge nodes at minimum R,PHI,Z
     ! R component has differential over PHI and Z
     do ii=1_idef,F%dims(1)
-       F%curlb_3D%R(ii,1,:)=(bhat(ii,2,:,3)-bhat(ii,F%dims(2),:,3))/ &
+       F%curlb_3D%R(ii,1,:)=F%curlb_3D%R(ii,1,:)+ &
+            (bhat(ii,2,:,3)-bhat(ii,F%dims(2),:,3))/ &
             (F%X%R(ii)*(F%X%PHI(2)-F%X%PHI(F%dims(2))))
     end do
     F%curlb_3D%R(:,:,1)=F%curlb_3D%R(:,:,1)-&
          (bhat(:,:,2,2)-bhat(:,:,1,2))/(F%X%Z(2)-F%X%Z(1))
 
     ! PHI component has differentials over R and Z
-    F%curlb_3D%PHI(1,:,:)=-(bhat(2,:,:,3)-bhat(1,:,:,3))/ &
+    F%curlb_3D%PHI(1,:,:)=F%curlb_3D%PHI(1,:,:)- &
+         (bhat(2,:,:,3)-bhat(1,:,:,3))/ &
          (F%X%R(2)-F%X%R(1))         
 
     F%curlb_3D%PHI(:,:,1)=F%curlb_3D%PHI(:,:,1)+ &
          ((bhat(:,:,2,1)-bhat(:,:,1,1))/(F%X%Z(2)-F%X%Z(1)))
 
     ! Z component has differentials over R and PHI
-    F%curlb_3D%Z(1,:,:)=((bhat(2,:,:,2)*F%X%R(2)- &
+    F%curlb_3D%Z(1,:,:)=F%curlb_3D%Z(1,:,:)+ &
+         ((bhat(2,:,:,2)*F%X%R(2)- &
          bhat(1,:,:,2)*F%X%R(1))/(F%X%R(2)-F%X%R(1)))/F%X%R(1)
 
     do ii=1_idef,F%dims(1)
@@ -2018,10 +2052,11 @@ CONTAINS
             (F%X%R(ii)*(F%X%PHI(2)-F%X%PHI(F%dims(2))))
     end do
 
-    ! edge nodes at maximum R,Z
+    ! edge nodes at maximum R,PHI,Z
     ! R component has differential over PHI and Z
     do ii=1_idef,F%dims(1)
-       F%curlb_3D%R(ii,F%dims(2),:)=(bhat(ii,1,:,3)-bhat(ii,F%dims(2)-1,:,3))/ &
+       F%curlb_3D%R(ii,F%dims(2),:)=F%curlb_3D%R(ii,F%dims(2),:)+ &
+            (bhat(ii,1,:,3)-bhat(ii,F%dims(2)-1,:,3))/ &
             (F%X%R(ii)*(F%X%PHI(1)-F%X%PHI(F%dims(2)-1)))
     end do
     F%curlb_3D%R(:,:,F%dims(3))=F%curlb_3D%R(:,:,F%dims(3)) &
@@ -2038,7 +2073,8 @@ CONTAINS
          (F%X%Z(F%dims(3))-F%X%Z(F%dims(3)-1)))
 
     ! Z component has differentials over R and PHI
-    F%curlb_3D%Z(F%dims(1),:,:)=((bhat(F%dims(1),:,:,2)*F%X%R(F%dims(1))- &
+    F%curlb_3D%Z(F%dims(1),:,:)=F%curlb_3D%Z(F%dims(1),:,:)+ &
+         ((bhat(F%dims(1),:,:,2)*F%X%R(F%dims(1))- &
          bhat(F%dims(1)-1,:,:,2)*F%X%R(F%dims(1)-1))/(F%X%R(F%dims(1))- &
          F%X%R(F%dims(1)-1)))/F%X%R(F%dims(1))
 
@@ -2050,31 +2086,37 @@ CONTAINS
     
     do ii=2_idef,F%dims(1)-1
        ! central difference over R for interior nodes
-       F%gradB_3D%R(ii,:,:)=(Bmag(ii+1,:,:)-Bmag(ii-1,:,:))/ &
+       F%gradB_3D%R(ii,:,:)=F%gradB_3D%R(ii,:,:)+ &
+            (Bmag(ii+1,:,:)-Bmag(ii-1,:,:))/ &
             (F%X%R(ii+1)-F%X%R(ii-1))
        
-       F%curlb_3D%Z(ii,:,:)=((bhat(ii+1,:,:,2)*F%X%R(ii+1)- &
+       F%curlb_3D%Z(ii,:,:)=F%curlb_3D%Z(ii,:,:)+ &
+            ((bhat(ii+1,:,:,2)*F%X%R(ii+1)- &
             bhat(ii-1,:,:,2)*F%X%R(ii-1))/(F%X%R(ii+1)-F%X%R(ii-1)))/ &
             F%X%R(ii)
-       F%curlb_3D%PHI(ii,:,:)=-(bhat(ii+1,:,:,3)-bhat(ii-1,:,:,3))/ &
+       F%curlb_3D%PHI(ii,:,:)=F%curlb_3D%PHI(ii,:,:)- &
+            (bhat(ii+1,:,:,3)-bhat(ii-1,:,:,3))/ &
             (F%X%R(ii+1)-F%X%R(ii-1))
     end do
     do ii=2_idef,F%dims(2)-1
        ! central difference over PHI for interior nodes       
        do jj=1_idef,F%dims(1)
-          F%gradB_3D%PHI(:,ii,:)=(Bmag(:,ii+1,:)-Bmag(:,ii-1,:))/ &
+          F%gradB_3D%PHI(jj,ii,:)=F%gradB_3D%PHI(jj,ii,:)+ &
+               (Bmag(jj,ii+1,:)-Bmag(jj,ii-1,:))/ &
                (F%X%R(jj)*(F%X%PHI(ii+1)-F%X%PHI(ii-1)))
           
           F%curlb_3D%Z(jj,ii,:)=F%curlb_3D%Z(jj,ii,:)-&
                (bhat(jj,ii+1,:,1)-bhat(jj,ii-1,:,1))/ &
                (F%X%R(jj)*(F%X%PHI(ii+1)-F%X%PHI(ii-1)))
-          F%curlb_3D%R(jj,ii,:)=(bhat(jj,ii+1,:,3)-bhat(jj,ii-1,:,3))/ &
+          F%curlb_3D%R(jj,ii,:)=F%curlb_3D%R(jj,ii,:)+ &
+               (bhat(jj,ii+1,:,3)-bhat(jj,ii-1,:,3))/ &
             (F%X%R(jj)*(F%X%PHI(ii+1)-F%X%PHI(ii-1)))
        end do
     end do
     do ii=2_idef,F%dims(3)-1
        ! central difference over Z for interior nodes
-       F%gradB_3D%Z(:,:,ii)=(Bmag(:,:,ii+1)-Bmag(:,:,ii-1))/ &
+       F%gradB_3D%Z(:,:,ii)=F%gradB_3D%Z(:,:,ii)+ &
+            (Bmag(:,:,ii+1)-Bmag(:,:,ii-1))/ &
             (F%X%Z(ii+1)-F%X%Z(ii-1))
        
        F%curlb_3D%R(:,:,ii)=F%curlb_3D%R(:,:,ii)- &
