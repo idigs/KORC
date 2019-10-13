@@ -1649,14 +1649,13 @@ subroutine interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag_cache)
 end subroutine interp_FOcollision_p
 
 subroutine interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
-     curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,flag_cache,PSIp)
+     curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,flag_cache)
   TYPE(FIELDS), INTENT(IN)                               :: F
   REAL(rp),DIMENSION(8),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
   REAL(rp),DIMENSION(8),INTENT(OUT)   :: B_R,B_PHI,B_Z
   REAL(rp),DIMENSION(8),INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
   REAL(rp),DIMENSION(8),INTENT(OUT)   :: curlB_R,curlB_PHI,curlB_Z
   REAL(rp),DIMENSION(8),INTENT(OUT)   :: E_R,E_PHI,E_Z
-  REAL(rp),DIMENSION(8),INTENT(OUT)   :: PSIp
   INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
 
   !write(6,*) Y_R,Y_Z,flag_cache
@@ -1665,8 +1664,8 @@ subroutine interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
   
   call EZspline_interp(bfield_2d%R,bfield_2d%PHI,bfield_2d%Z,efield_2d%R, &
        efield_2d%PHI,efield_2d%Z,gradB_2d%R,gradB_2d%PHI,gradB_2d%Z, &
-       curlb_2d%R,curlb_2d%PHI,curlb_2d%Z,bfield_2d%A,8,Y_R,Y_Z,B_R,B_PHI,B_Z, &
-       E_R,E_PHI,E_Z,gradB_R,gradB_PHI,gradB_Z,curlb_R,curlb_PHI,curlb_Z,PSIp, &
+       curlb_2d%R,curlb_2d%PHI,curlb_2d%Z,8,Y_R,Y_Z,B_R,B_PHI,B_Z, &
+       E_R,E_PHI,E_Z,gradB_R,gradB_PHI,gradB_Z,curlb_R,curlb_PHI,curlb_Z, &
        ezerr)
   call EZspline_error(ezerr)
 

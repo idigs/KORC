@@ -1763,7 +1763,7 @@ CONTAINS
           do ii=1_idef,F%dims(1)
              F%E_2D%PHI(ii,:)=F%Eo*F%Ro/F%X%R(ii)
           end do
-          F%E_2D%Z=0._rp          
+          F%E_2D%Z=0._rp
           
        end if
        

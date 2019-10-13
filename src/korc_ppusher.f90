@@ -2510,7 +2510,7 @@ contains
              do tt=1_ip,params%t_skip
                 call advance_GCinterp_B2D_vars(spp(ii)%vars,pp,tt,params, &
                      Y_R,Y_PHI,Y_Z,V_PLL,V_MU,q_cache,m_cache,flag_cache, &
-                     F,P,B_R,B_PHI,B_Z,E_PHI,PSIp,curlb_R,curlb_PHI,curlb_Z, &
+                     F,P,B_R,B_PHI,B_Z,E_PHI,curlb_R,curlb_PHI,curlb_Z, &
                      gradB_R,gradB_PHI,gradB_Z)
              end do !timestep iterator
 
@@ -2538,8 +2538,6 @@ contains
                 spp(ii)%vars%curlb(pp-1+cc,3) = curlb_Z(cc)
                 
                 spp(ii)%vars%E(pp-1+cc,2) = E_PHI(cc)
-
-                spp(ii)%vars%PSI_P(pp-1+cc) = PSIp(cc)                
              end do
              !$OMP END SIMD
              
@@ -2898,7 +2896,7 @@ contains
   end subroutine advance_GCinterp_psi_vars
   
   subroutine advance_GCinterp_B2D_vars(vars,pp,tt,params,Y_R,Y_PHI,Y_Z, &
-       V_PLL,V_MU,q_cache,m_cache,flag_cache,F,P,B_R,B_PHI,B_Z,E_PHI,PSIp, &
+       V_PLL,V_MU,q_cache,m_cache,flag_cache,F,P,B_R,B_PHI,B_Z,E_PHI, &
        curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z)
     !! @note Subroutine to advance GC variables \(({\bf X},p_\parallel)\)
     !! @endnote
@@ -2938,7 +2936,6 @@ contains
     REAL(rp),DIMENSION(8),INTENT(OUT) :: B_R,B_PHI,B_Z
     REAL(rp),DIMENSION(8) :: E_R,E_Z
     REAL(rp),DIMENSION(8),INTENT(OUT) :: E_PHI
-    REAL(rp),DIMENSION(8),INTENT(OUT) :: PSIp
     REAL(rp),DIMENSION(8),INTENT(OUT) :: curlb_R,curlb_PHI,curlb_Z
     REAL(rp),DIMENSION(8),INTENT(OUT) :: gradB_R,gradB_PHI,gradB_Z
     REAL(rp),DIMENSION(8),INTENT(INOUT) :: V_PLL,V_MU
@@ -2965,7 +2962,7 @@ contains
     
     call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
-         flag_cache,PSIp)
+         flag_cache)
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
@@ -2994,7 +2991,7 @@ contains
     
     call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
-         flag_cache,PSIp)
+         flag_cache)
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
@@ -3023,7 +3020,7 @@ contains
 
     call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
-         flag_cache,PSIp)
+         flag_cache)
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
@@ -3053,7 +3050,7 @@ contains
 
     call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
-         flag_cache,PSIp)
+         flag_cache)
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
@@ -3088,7 +3085,7 @@ contains
 
     call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
-         flag_cache,PSIp)
+         flag_cache)
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
@@ -3122,7 +3119,7 @@ contains
 
     call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
-         flag_cache,PSIp)
+         flag_cache)
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
@@ -3171,7 +3168,7 @@ contains
 
     call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
-         flag_cache,PSIp)
+         flag_cache)
 
     call GCEoM1_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &

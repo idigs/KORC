@@ -1377,10 +1377,10 @@ contains
              call calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                   E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
                   gradB_R,gradB_PHI,gradB_Z,flag,PSIp)
-          else if (.not.(F%Bflux)) then
+          else if (.not.(F%Bflux).and.(F%axisymmetric_fields)) then
              call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
                   E_Z,curlb_R,curlb_PHI,curlb_Z, &
-                  gradB_R,gradB_PHI,gradB_Z,flag,PSIp)
+                  gradB_R,gradB_PHI,gradB_Z,flag)
           else
              call interp_fields_3D_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
                   E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
