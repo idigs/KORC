@@ -1847,7 +1847,8 @@ CONTAINS
                      F%FLAG3D)
              end if
              
-             if  (F%axisymmetric_fields) then
+             if  (F%axisymmetric_fields.and. &
+                  .not.(params%field_model(10:12).eq.'PSI')) then
 
                 dset = TRIM(gname) // "/BR"
                 units = params%cpp%Bo
@@ -1898,7 +1899,8 @@ CONTAINS
 
                 end if
                 
-             else
+             else if ((.not.F%axisymmetric_fields).and. &
+                  .not.(params%field_model(10:12).eq.'PSI')) then
 
                 dset = TRIM(gname) // "/BR"
                 units = params%cpp%Bo

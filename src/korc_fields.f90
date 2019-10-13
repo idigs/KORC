@@ -1735,13 +1735,13 @@ CONTAINS
 
        if (F%axisymmetric_fields) then
 
-          if (params%field_model(10:12).eq.'2DB') F%Efield_in_file=.TRUE.
+          F%Efield_in_file=.TRUE.
           
           call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
                F%Bflux,F%Efield.AND. &
                F%Efield_in_file)
 
-          if (params%field_model(10:12).eq.'2DB') F%Efield_in_file=.FALSE.
+          F%Efield_in_file=.FALSE.
 
        else
           call ALLOCATE_3D_FIELDS_ARRAYS(params,F,F%Bfield,F%Efield)
@@ -1752,8 +1752,21 @@ CONTAINS
        call load_field_data_from_hdf5(params,F)
 
        
+       
        if (F%Bflux) F%Eo = Eo
 
+!       end if
+
+       if (axisymmetric_fields) then
+          
+          F%E_2D%R=0._rp
+          do ii=1_idef,F%dims(1)
+             F%E_2D%PHI(ii,:)=F%Eo*F%Ro/F%X%R(ii)
+          end do
+          F%E_2D%Z=0._rp          
+          
+       end if
+       
        if (.not.axisymmetric_fields) then
 
 !          F%X%PHI=C_PI*F%X%PHI/180._rp
@@ -1873,19 +1886,7 @@ CONTAINS
 
 !          F%Bfield=.FALSE.
           
-!       end if
 
-       if (params%field_model(10:12).eq.'2DB') then
-
-          
-          F%E_2D%R=0._rp
-          do ii=1_idef,F%dims(1)
-             F%E_2D%PHI(ii,:)=F%Eo*F%Ro/F%X%R(ii)
-          end do
-          F%E_2D%Z=0._rp
-          
-          
-       end if
        
        if (params%mpi_params%rank.EQ.0) then
 
@@ -1912,10 +1913,12 @@ CONTAINS
              write(6,'("Initializing GC fields from external EM fields")')
           end if
 
-          if (F%axisymmetric_fields) then
-             call initialize_GC_fields(F)             
-          else             
-             call initialize_GC_fields_3D(F)
+          if (params%field_model(10:12).eq.'2DB') then
+             if (F%axisymmetric_fields) then
+                call initialize_GC_fields(F)             
+             else             
+                call initialize_GC_fields_3D(F)
+             end if
           end if
        end if
 
@@ -2511,6 +2514,7 @@ CONTAINS
 
     if (efield.and.(.not.ALLOCATED(F%E_2D%R))) then
        call ALLOCATE_V_FIELD_2D(F%E_2D,F%dims)
+
     end if
 
     if (.NOT.ALLOCATED(F%FLAG2D)) ALLOCATE(F%FLAG2D(F%dims(1),F%dims(3)))
