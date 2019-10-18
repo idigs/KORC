@@ -2762,6 +2762,8 @@ CONTAINS
           spp(ss)%vars%X = RESHAPE(X_receive_buffer,(/spp(ss)%ppp,3/))
        else if (params%orbit_model(1:2).EQ.'GC') then
           spp(ss)%vars%Y = RESHAPE(X_receive_buffer,(/spp(ss)%ppp,3/))
+
+          spp(ss)%vars%Y(:,2)=modulo(spp(ss)%vars%Y(:,2),2*C_PI)          
        end if
 
        if (params%mpi_params%rank.EQ.0_idef) then
@@ -2780,6 +2782,8 @@ CONTAINS
 
           call h5fclose_f(h5file_id, h5error)
        end if
+
+       
 
        V_receive_buffer = 0.0_rp
        CALL MPI_SCATTER(V_send_buffer,3*spp(ss)%ppp,MPI_REAL8, &

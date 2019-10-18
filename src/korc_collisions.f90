@@ -1372,20 +1372,32 @@ contains
                Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
                gradB_R,gradB_PHI,gradB_Z,PSIp)          
        else if (params%field_eval.eq.'interp') then
-          if (F%Bflux) then
+          if (F%axisymmetric_fields) then
+             if (F%Bflux) then
 !          call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
-             call calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
-                  E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-                  gradB_R,gradB_PHI,gradB_Z,flag,PSIp)
-          else if (.not.(F%Bflux).and.(F%axisymmetric_fields)) then
-             call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
-                  E_Z,curlb_R,curlb_PHI,curlb_Z, &
-                  gradB_R,gradB_PHI,gradB_Z,flag)
+                call calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                     E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+                     gradB_R,gradB_PHI,gradB_Z,flag,PSIp)
+             else if (F%dBfield) then
+                call calculate_2DBdBfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                     E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+                     gradB_R,gradB_PHI,gradB_Z,flag,PSIp)
+             else
+                call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                     E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+                     gradB_R,gradB_PHI,gradB_Z,flag)
+             end if                
           else
-             call interp_fields_3D_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
-                  E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
-                  flag)
-          endif             
+             if (F%dBfield) then
+                call calculate_2DBdBfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                     E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+                     gradB_R,gradB_PHI,gradB_Z,flag,PSIp)
+             else
+                call interp_fields_3D_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                     E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+                     gradB_R,gradB_PHI,gradB_Z,flag)
+             end if
+          endif
           call add_analytical_E_p(params,tt,F,E_PHI)
        end if
        

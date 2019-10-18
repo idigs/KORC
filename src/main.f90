@@ -386,10 +386,26 @@ program main
         call save_restart_variables(params,spp,F)
      end do
   end if
+
+  if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
+       F%axisymmetric_fields.and.F%dBfield) then
+     do it=params%ito,params%t_steps,params%t_skip
+        call adv_GCinterp_2DBdB_top(params,spp,P,F)
+        
+        params%time = params%init_time &
+             +REAL(it-1_ip+params%t_skip,rp)*params%dt        
+        params%it = it-1_ip+params%t_skip
+
+        call save_simulation_outputs(params,spp,F)
+        call synthetic_camera(params,spp) ! Synthetic camera
+        call binning_diagnostic(params,spp) ! Binning diagnostic
+        call save_restart_variables(params,spp,F)
+     end do
+  end if
   
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
        F%axisymmetric_fields.and.(params%field_model(10:12).eq.'2DB'.or. &
-       params%field_model(12:13).eq.'2D')) then
+       params%field_model(12:13).eq.'2D').and..not.(F%dBfield)) then
      do it=params%ito,params%t_steps,params%t_skip
         call adv_GCinterp_B2D_top(params,spp,P,F)
         
@@ -405,7 +421,23 @@ program main
   end if
   
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
-       .not.(F%axisymmetric_fields)) then
+       .not.(F%axisymmetric_fields).and.(F%dBfield)) then
+     do it=params%ito,params%t_steps,params%t_skip
+        call adv_GCinterp_3DBdB_top(params,spp,P,F)
+        
+        params%time = params%init_time &
+             +REAL(it-1_ip+params%t_skip,rp)*params%dt        
+        params%it = it-1_ip+params%t_skip
+
+        call save_simulation_outputs(params,spp,F)
+        call synthetic_camera(params,spp) ! Synthetic camera
+        call binning_diagnostic(params,spp) ! Binning diagnostic
+        call save_restart_variables(params,spp,F)
+     end do
+  end if
+
+  if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
+       .not.(F%axisymmetric_fields).and..not.(F%dBfield)) then
      do it=params%ito,params%t_steps,params%t_skip
         call adv_GCinterp_B_top(params,spp,P,F)
         

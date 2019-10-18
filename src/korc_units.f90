@@ -305,6 +305,48 @@ subroutine normalize_variables(params,spp,F,P)
         if (ALLOCATED(F%curlb_3D%Z)) F%curlb_3D%Z = F%curlb_3D%Z/ &
              (1./params%cpp%length)
      end if
+
+     if (F%dBfield) then
+
+        if (ALLOCATED(F%dBdR_2D%R)) F%dBdR_2D%R = F%dBdR_2D%R/ &
+             (params%cpp%Bo/params%cpp%length)
+        if (ALLOCATED(F%dBdR_2D%PHI)) F%dBdR_2D%PHI = F%dBdR_2D%PHI/ &
+             (params%cpp%Bo/params%cpp%length)
+        if (ALLOCATED(F%dBdR_2D%Z)) F%dBdR_2D%Z = F%dBdR_2D%Z/ &
+             (params%cpp%Bo/params%cpp%length)
+        if (ALLOCATED(F%dBdPHI_2D%R)) F%dBdPHI_2D%R = F%dBdPHI_2D%R/ &
+             (params%cpp%Bo/params%cpp%length)
+        if (ALLOCATED(F%dBdPHI_2D%PHI)) F%dBdPHI_2D%PHI = F%dBdPHI_2D%PHI/ &
+             (params%cpp%Bo/params%cpp%length)
+        if (ALLOCATED(F%dBdPHI_2D%Z)) F%dBdPHI_2D%Z = F%dBdPHI_2D%Z/ &
+             (params%cpp%Bo/params%cpp%length)
+        if (ALLOCATED(F%dBdZ_2D%R)) F%dBdZ_2D%R = F%dBdZ_2D%R/ &
+             (params%cpp%Bo/params%cpp%length)
+        if (ALLOCATED(F%dBdZ_2D%PHI)) F%dBdZ_2D%PHI = F%dBdZ_2D%PHI/ &
+             (params%cpp%Bo/params%cpp%length)
+        if (ALLOCATED(F%dBdZ_2D%Z)) F%dBdZ_2D%Z = F%dBdZ_2D%Z/ &
+             (params%cpp%Bo/params%cpp%length)
+
+        if (ALLOCATED(F%dBdR_3D%R)) F%dBdR_3D%R = F%dBdR_3D%R/ &
+             (params%cpp%Bo/params%cpp%length)
+        if (ALLOCATED(F%dBdR_3D%PHI)) F%dBdR_3D%PHI = F%dBdR_3D%PHI/ &
+             (params%cpp%Bo/params%cpp%length)
+        if (ALLOCATED(F%dBdR_3D%Z)) F%dBdR_3D%Z = F%dBdR_3D%Z/ &
+             (params%cpp%Bo/params%cpp%length)
+        if (ALLOCATED(F%dBdPHI_3D%R)) F%dBdPHI_3D%R = F%dBdPHI_3D%R/ &
+             (params%cpp%Bo/params%cpp%length)
+        if (ALLOCATED(F%dBdPHI_3D%PHI)) F%dBdPHI_3D%PHI = F%dBdPHI_3D%PHI/ &
+             (params%cpp%Bo/params%cpp%length)
+        if (ALLOCATED(F%dBdPHI_3D%Z)) F%dBdPHI_3D%Z = F%dBdPHI_3D%Z/ &
+             (params%cpp%Bo/params%cpp%length)
+        if (ALLOCATED(F%dBdZ_3D%R)) F%dBdZ_3D%R = F%dBdZ_3D%R/ &
+             (params%cpp%Bo/params%cpp%length)
+        if (ALLOCATED(F%dBdZ_3D%PHI)) F%dBdZ_3D%PHI = F%dBdZ_3D%PHI/ &
+             (params%cpp%Bo/params%cpp%length)
+        if (ALLOCATED(F%dBdZ_3D%Z)) F%dBdZ_3D%Z = F%dBdZ_3D%Z/ &
+             (params%cpp%Bo/params%cpp%length)
+        
+     end if
      
      F%X%R = F%X%R/params%cpp%length
      ! Nothing to do for the PHI component

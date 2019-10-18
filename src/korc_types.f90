@@ -493,11 +493,17 @@ module korc_types
      !! An instance of the KORC derived data type A_FIELD.
      TYPE(V_FIELD_3D) 				:: E_3D 
      !! KORC 3-D vector field of the pre-computed electric field.
-     TYPE(V_FIELD_3D) 				:: B_3D 
+     TYPE(V_FIELD_3D) 				:: B_3D
+     TYPE(V_FIELD_3D) 				:: dBdR_3D
+     TYPE(V_FIELD_3D) 				:: dBdPHI_3D
+     TYPE(V_FIELD_3D) 				:: dBdZ_3D 
      !! KORC 3-D vector field of the pre-computed magnetic field.
      TYPE(V_FIELD_2D) 				:: E_2D 
      !! KORC 2-D vector field of the pre-computed electric field.
-     TYPE(V_FIELD_2D) 				:: B_2D 
+     TYPE(V_FIELD_2D) 				:: B_2D
+     TYPE(V_FIELD_2D) 				:: dBdR_2D
+     TYPE(V_FIELD_2D) 				:: dBdPHI_2D
+     TYPE(V_FIELD_2D) 				:: dBdZ_2D 
      !! KORC 3-D vector field of the pre-computed magnetic field.
      TYPE(V_FIELD_2D) 				:: gradB_2D
      TYPE(V_FIELD_3D) 				:: gradB_3D 
@@ -532,7 +538,8 @@ module korc_types
      INTEGER 			:: dim_1D
      INTEGER 			:: subcycle_E_SC
      REAL(rp)  :: dt_E_SC,Ip_exp,Ip0
-     REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: PSIp 
+     REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: PSIp
+     REAL(rp), DIMENSION(:,:,:), ALLOCATABLE 	:: PSIp3D 
      !! 2-D array for storing the data of the poloidal magnetic flux.
      REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: FLAG2D 
      !! 2-D array defining the simulation domain where pre-computed data exist.
@@ -549,13 +556,19 @@ module korc_types
      LOGICAL 					:: Bfield 
      !! Flag to indicate whether a pre-computed magnetic field will be
      !! used (Bfield=T) or not (Bfield=F).
-     LOGICAL 					:: Bflux 
+     LOGICAL 					:: dBfield 
+     !! Flag to indicate whether a pre-computed magnetic field will be
+     !! used (Bfield=T) or not (Bfield=F).
+     LOGICAL 					:: Bflux
+     LOGICAL 					:: Bflux3D 
      !! Flag to indicate whether a pre-computed poloidal magnetic flux will
      !! be used (Bflux=T) or not (Bflux=F).
      LOGICAL 					:: Efield 
      !! Flag to indicate whether a pre-computed electric field will be used
      !! (Efield=T) or not (Efield=F).
      LOGICAL 					:: Bfield_in_file 
+     !! Flag to indicate if a pre-computed magnetic field is in the input file.
+     LOGICAL 					:: dBfield_in_file 
      !! Flag to indicate if a pre-computed magnetic field is in the input file.
      LOGICAL 					:: Bflux_in_file 
      !! Flag to indicate if a pre-computed poloidal magnetic flux is in the
