@@ -805,8 +805,8 @@ subroutine MH_gaussian_elliptic_torus(params,spp)
         IF (INT(indicator(psi1,spp%psi_max)).EQ.1.and.accepted) THEN
            R_samples(ii) = R_buffer
            Z_samples(ii) = Z_buffer
-           call RANDOM_NUMBER(rand_unif)
-           ZETA_samples(ii) = 2.0_rp*C_PI*rand_unif
+!           call RANDOM_NUMBER(rand_unif)
+           ZETA_samples(ii) = 2.0_rp*C_PI!*rand_unif
            ii = ii + 1_idef 
         END IF
         

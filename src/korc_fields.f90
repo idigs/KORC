@@ -2410,6 +2410,7 @@ CONTAINS
     INTEGER(HID_T)                         :: group_id
     INTEGER(HID_T)                         :: subgroup_id
     INTEGER                                :: h5error
+    LOGICAL :: Efield
 
     filename = TRIM(params%magnetic_field_filename)
     call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
@@ -2433,7 +2434,15 @@ CONTAINS
 
     if (F%Efield) then
        dset = '/Eo'
-       call load_from_hdf5(h5file_id,dset,F%Eo)
+       gname = 'Eo'
+
+       call h5lexists_f(h5file_id,TRIM(gname),Efield,h5error)
+
+       if (Efield) then       
+          call load_from_hdf5(h5file_id,dset,F%Eo)
+       else
+          F%Eo = 0.0_rp
+       end if
     else
        F%Eo = 0.0_rp
     end if
@@ -2454,12 +2463,30 @@ CONTAINS
 
     if (F%Bflux) then
        dset = "/PSIp"
-       call load_array_from_hdf5(h5file_id,dset,F%PSIp)
+       gname = 'PSIp'
+
+       call h5lexists_f(h5file_id,TRIM(gname),Efield,h5error)
+
+       if (Efield) then
+          call load_array_from_hdf5(h5file_id,dset,F%PSIp)
+       else
+          F%PSIp = 0.0_rp
+       end if
+       
     end if
 
     if (F%Bflux3D) then
        dset = "/PSIp"
-       call load_array_from_hdf5(h5file_id,dset,F%PSIp3D)
+       gname = 'PSIp'
+
+       call h5lexists_f(h5file_id,TRIM(gname),Efield,h5error)
+
+       if (Efield) then
+          call load_array_from_hdf5(h5file_id,dset,F%PSIp3D)
+       else
+          F%PSIp3D = 0.0_rp
+       end if
+             
     end if
     
     if (F%Bfield) then
