@@ -99,15 +99,15 @@ then
 #    module swap PrgEnv-intel PrgEnv-gnu
     cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE                                          \
           -DCMAKE_PREFIX_PATH=$MPICH_DIR                                                 \
-          -DEZSpline_INCLUDE_PATH=/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX_INTEL/mod \
-          -DEZSpline_LINK_FLAGS="-L/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX_INTEL/lib -lpspline" \
-          -DEZSpline_LIBRARIES=/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX_INTEL/lib/libpspline.a   \
+          -DEZSpline_INCLUDE_PATH=/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX/mod \
+          -DEZSpline_LINK_FLAGS="-L/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX/lib -lpspline" \
+          -DEZSpline_LIBRARIES=/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX/lib/libpspline.a   \
 	   -DCMAKE_Fortran_FLAGS="-O3 -mkl -axMIC-AVX512,AVX -DHDF5_DOUBLE_PRESICION -vec-threshold0 -simd -qopenmp-simd -align array64byte -assume contiguous_assumed_shape -vecabi=cmdtarget"  \
           -DCMAKE_C_FLAGS="-O3 -mkl -axMIC-AVX512,AVX -vec-threshold0 -simd -qopenmp"   \
           -DCMAKE_CXX_FLAGS="-O3 -mkl -std=c++11 -axMIC-AVX512,AVX -vec-threshold0 -simd -qopenmp" \
           -DCMAKE_CXX_FLAGS_DEBUG="-g -Bdynamic -qopt-report=5 -qopt-report-phase=vec" \
           -DCMAKE_C_FLAGS_DEBUG="-g -Bdynamic -qopt-report=5 -qopt-report-phase=vec " \
-          -DCMAKE_Fortran_FLAGS_DEBUG="-g -Bdynamic -debug inline-debug-info -qopt-report=5 -qopt-report-phase=vec -qoverride-limits"
+          -DCMAKE_Fortran_FLAGS_DEBUG="-g -Bdynamic -debug inline-debug-info -qopt-report=5 -qopt-report-phase=vec -qoverride-limits -fsanitize=address "
 
     #Intel Compiler
 #          -DEZSpline_INCLUDE_PATH=/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX_INTEL/mod \
