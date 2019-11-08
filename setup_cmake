@@ -70,7 +70,7 @@ then
           -DCMAKE_Fortran_FLAGS="-O3 -msse2 -DHDF5_DOUBLE_PRESICION -fopenmp-simd -malign-double" \
           -DCMAKE_C_FLAGS="-O3 -msse2 -fopenmp-simd -malign-double"  \
           -DCMAKE_CXX_FLAGS="-O3 -msse2 -fopenmp-simd -malign-double" \
-	  -DCMAKE_Fortran_FLAGS_DEBUG="-g -ffpe-trap=invalid,zero,overflow -fimplicit-none -fbacktrace" \
+	  -DCMAKE_Fortran_FLAGS_DEBUG="-g -ffpe-trap=invalid,zero,overflow -fimplicit-none -fbacktrace  -fsanitize=address"   \
           -DCMAKE_C_FLAGS_DEBUG="-g" \
     	  -DCMAKE_CXX_FLAGS_DEBUG="-g"
 

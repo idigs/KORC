@@ -97,6 +97,11 @@ module korc_interp
      INTEGER, DIMENSION(2) :: BCSrm = (/ 0, 0 /)
      !! Not-a-knot boundary condition for the interpolants at both
      !! ends of the \(R\) direction.
+     INTEGER               :: NPSIP
+     !! Size of mesh containing the field data along the \(R\)-axis.
+     INTEGER, DIMENSION(2) :: BCSPSIP = (/ 0, 0 /)
+     !! Not-a-knot boundary condition for the interpolants at both
+     !! ends of the \(R\) direction.
   END TYPE KORC_1D_FIELDS_INTERPOLANT
 
   TYPE, PRIVATE :: KORC_3D_PROFILES_INTERPOLANT
@@ -316,6 +321,7 @@ module korc_interp
      !! Smaller vertical position of the fields and profiles domain.
 
      REAL(rp)                                          :: Drm
+     REAL(rp)                                          :: DPSIP
      REAL(rp)                                          :: DR
      !! Separation between grid points along the radial direction.
      REAL(rp)                                          :: DPHI  !
@@ -392,10 +398,15 @@ module korc_interp
        calculate_initial_magnetic_field,&
        calculate_magnetic_field_p,&
        calculate_GCfields_p,&
+       calculate_GCfields_p_FS,&
        calculate_2DBdBfields_p,&
+       calculate_3DBdBfields_p,&
+       calculate_3DBdBfields1_p,&
        sample_poloidal_flux,&
        initialize_SC1D_field_interpolant,&
-       add_interp_SCE_p
+       add_interp_SCE_p,&
+       initialize_SC1D_field_interpolant_FS,&
+       add_interp_SCE_p_FS
   PRIVATE :: interp_3D_bfields,&
        interp_2D_bfields,&
        interp_3D_efields,&
@@ -1154,6 +1165,42 @@ CONTAINS
     fields_domain%Drm = ABS(F%r_1D(2) - F%r_1D(1))
 
   end subroutine initialize_SC1D_field_interpolant
+  
+  subroutine initialize_SC1D_field_interpolant_FS(params,F)
+    !! @note Subroutine that initializes fields interpolants. @endnote
+    !! This subroutine initializes either 2-D or 3-D PSPLINE interpolants
+    !! using the data of fields in the KORC-dervied-type variable F.
+    TYPE(KORC_PARAMS), INTENT(IN)  :: params
+    !! Core KORC simulation parameters.
+    TYPE(FIELDS), INTENT(IN)       :: F
+    !! An instance of KORC's derived type FIELDS containing all the information
+    !! about the fields used in the simulation.
+    !! See [[korc_types]] and [[korc_fields]].
+    integer :: ii,jj
+
+     
+!    if (EZspline_allocated(efield_SC1d%PHI)) &
+!         call Ezspline_free(efield_SC1d%PHI, ezerr)
+
+    if (.not.(EZspline_allocated(efield_SC1d%PHI))) then
+       efield_SC1d%NPSIP = F%dim_1D
+
+       call EZspline_init(efield_SC1d%PHI,efield_SC1d%NPSIP, &
+            efield_SC1d%BCSPSIP,ezerr)
+       call EZspline_error(ezerr)
+
+       efield_SC1d%PHI%x1 = F%PSIP_1D/(params%cpp%Bo*params%cpp%length**2)
+    end if
+
+    call EZspline_setup(efield_SC1d%PHI, F%E_SC_1D%PHI, ezerr, .TRUE.)
+    call EZspline_error(ezerr)
+
+    if (.not.ALLOCATED(fields_domain%FLAG1D)) &
+         ALLOCATE(fields_domain%FLAG1D(efield_SC1d%Nrm))
+
+    fields_domain%DPSIP = ABS(F%PSIP_1D(2) - F%PSIP_1D(1))
+
+  end subroutine initialize_SC1D_field_interpolant_FS
   
   subroutine check_if_in_fields_domain(F,Y,flag)
     !! @note Subrotuine that checks if particles in the simulation are within
@@ -2156,6 +2203,8 @@ subroutine calculate_magnetic_field(params,Y,F,B,PSI_P,flag)
         else
 
 !           write(6,'("R*B_R: ",E17.10)') A(pp,1)
+
+           if(params%SC_E) A(pp,1)=A(pp,1)/(2*C_PI)
            
            A(pp,1) = A(pp,1)/Y(pp,1)
 
@@ -2169,6 +2218,8 @@ subroutine calculate_magnetic_field(params,Y,F,B,PSI_P,flag)
 
 !           write(6,'("R*B_Z: ",E17.10)') A(pp,3)
 
+           if(params%SC_E) A(pp,3)=A(pp,3)/(2*C_PI)
+           
            A(pp,3) = -A(pp,3)/Y(pp,1)                    
 
            if (.not.params%GC_coords) then
@@ -2335,6 +2386,74 @@ end subroutine calculate_2DBdBfields_p
 
 subroutine calculate_3DBdBfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
      E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
+     flag_cache)
+  REAL(rp), DIMENSION(8), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
+  real(rp), DIMENSION(8) :: Y_PHI_mod
+  TYPE(FIELDS), INTENT(IN)                               :: F
+  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: B_R,B_PHI,B_Z
+  REAL(rp), DIMENSION(8)   :: dBRdR,dBPHIdR,dBZdR
+  REAL(rp), DIMENSION(8)   :: dBRdPHI,dBPHIdPHI,dBZdPHI
+  REAL(rp), DIMENSION(8)   :: dBRdZ,dBPHIdZ,dBZdZ
+  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
+  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: curlb_R,curlb_PHI,curlb_Z
+  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: E_R,E_PHI,E_Z
+  REAL(rp), DIMENSION(8)   :: Bmag
+  INTEGER                                                :: cc
+  INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
+
+  Y_PHI_mod=modulo(Y_PHI,2._rp*C_PI)
+  
+  call check_if_in_fields_domain_p(F,Y_R,Y_PHI_mod,Y_Z,flag_cache)
+
+  
+  call EZspline_interp(bfield_2d%R,bfield_2d%PHI,bfield_2d%Z, &
+       dbdR_2d%R,dbdR_2d%PHI,dBdR_2d%Z, &
+       dbdPHI_2d%R,dbdPHI_2d%PHI,dbdPHI_2d%Z, &
+       dbdZ_2d%R,dbdZ_2d%PHI,dbdZ_2d%Z, &
+       efield_2d%R,efield_2d%PHI,efield_2d%Z,8,Y_R,Y_Z,B_R,B_PHI,B_Z, &
+       dBRdR,dBPHIdR,dBZdR,dBRdPHI,dBPHIdPHI,dBZdPHI,dBRdZ,dBPHIdZ,dBZdZ, &
+       E_R,E_PHI,E_Z,ezerr)
+  call EZspline_error(ezerr)
+
+  !$OMP SIMD
+!    !$OMP& aligned(PSIp,A,B_R,Y_R,B_PHI,B_Z,Bmag,gradB_R,gradB_PHI,gradB_Z, &
+!    !$OMP& curlb_R,curlb_PHI,curlb_Z,E_R,E_PHI,E_Z)
+  do cc=1_idef,8_idef
+
+     Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
+
+     gradB_R(cc)=(B_R(cc)*dBRdR(cc)+B_PHI(cc)*dBPHIdR(cc)+ &
+          B_Z(cc)*dBZdR(cc))/Bmag(cc)
+     gradB_PHI(cc)=(B_R(cc)*dBRdPHI(cc)+B_PHI(cc)*dBPHIdPHI(cc)+ &
+          B_Z(cc)*dBZdPHI(cc))/(Y_R(cc)*Bmag(cc))
+     gradB_Z(cc)=(B_R(cc)*dBRdZ(cc)+B_PHI(cc)*dBPHIdZ(cc)+ &
+          B_Z(cc)*dBZdZ(cc))/Bmag(cc)
+
+     curlb_R(cc)=(Bmag(cc)*dBZdPHI(cc)/Y_R(cc)-B_Z(cc)*gradB_PHI(cc)- &
+          Bmag(cc)*dBPHIdZ(cc)+B_PHI(cc)*gradB_Z(cc))/(Bmag(cc)*Bmag(cc))
+     curlb_PHI(cc)=(Bmag(cc)*dBRdZ(cc)-B_R(cc)*gradB_Z(cc)- &
+          Bmag(cc)*dBZdR(cc)+B_Z(cc)*gradB_R(cc))/(Bmag(cc)*Bmag(cc))
+     curlb_Z(cc)=(Bmag(cc)*B_PHI(cc)/Y_R(cc)+Bmag(cc)*dBPHIdR(cc)- &
+          B_PHI(cc)*gradB_R(cc)-Bmag(cc)*dBRdPHI(cc)/Y_R(cc)+ &
+          B_R(cc)*gradB_PHI(cc))/(Bmag(cc)*Bmag(cc))
+     
+  end do
+  !$OMP END SIMD
+  
+   
+!  write(6,'("PSIp: ",E17.10)') PSIp
+  
+!  write(6,'("Y_R: ",E17.10)') Y_R
+!  write(6,'("Y_Z: ",E17.10)') Y_Z
+  
+!  write(6,'("B_R: ",E17.10)') B_R
+!  write(6,'("B_PHIinterp: ",E17.10)') B_PHI
+!  write(6,'("B_Z: ",E17.10)') B_Z
+
+end subroutine calculate_3DBdBfields_p
+
+subroutine calculate_3DBdBfields1_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+     E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
      flag_cache,PSIp)
   REAL(rp), DIMENSION(8), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
   real(rp), DIMENSION(8) :: Y_PHI_mod
@@ -2423,7 +2542,7 @@ subroutine calculate_3DBdBfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
 !  write(6,'("B_PHIinterp: ",E17.10)') B_PHI
 !  write(6,'("B_Z: ",E17.10)') B_Z
 
-end subroutine calculate_3DBdBfields_p
+end subroutine calculate_3DBdBfields1_p
 
 subroutine calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
      curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,flag_cache,PSIp)
@@ -2464,6 +2583,8 @@ subroutine calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
      B_Z(cc) = -A(cc,2)/Y_R(cc)
      ! BR = -(dA/dR)/R
 
+
+     
      Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
 
      gradB_R(cc)=(B_R(cc)*A(cc,6)-B_Z(cc)*A(cc,4)-Bmag(cc)*Bmag(cc))/ &
@@ -2483,19 +2604,79 @@ subroutine calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
      E_Z(cc) = 0._rp 
      
   end do
-  !$OMP END SIMD
-  
-   
-!  write(6,'("PSIp: ",E17.10)') PSIp
-  
-!  write(6,'("Y_R: ",E17.10)') Y_R
-!  write(6,'("Y_Z: ",E17.10)') Y_Z
-  
-!  write(6,'("B_R: ",E17.10)') B_R
-!  write(6,'("B_PHIinterp: ",E17.10)') B_PHI
-!  write(6,'("B_Z: ",E17.10)') B_Z
 
 end subroutine calculate_GCfields_p
+
+subroutine calculate_GCfields_p_FS(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+     E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
+     flag_cache,PSIp)
+  REAL(rp), DIMENSION(8), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
+  TYPE(FIELDS), INTENT(IN)                               :: F
+  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: B_R,B_PHI,B_Z
+  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
+  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: curlb_R,curlb_PHI,curlb_Z
+  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: E_R,E_PHI,E_Z
+  REAL(rp), DIMENSION(8)   :: Bmag
+  INTEGER                                                :: cc
+  REAL(rp), DIMENSION(8),INTENT(OUT)  :: PSIp
+  REAL(rp), DIMENSION(8,6)  :: A
+  INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
+
+  call check_if_in_fields_domain_p(F,Y_R,Y_PHI,Y_Z,flag_cache)
+       
+  call EZspline_derivative(bfield_2d%A, 8, Y_R, Y_Z, A, ezerr)
+  call EZspline_error(ezerr)
+
+  !A(:,1) = PSIp
+  !A(:,2) = dPSIp/dR
+  !A(:,3) = dPSIp/dZ
+  !A(:,4) = d^2PSIp/dR^2
+  !A(:,5) = d^2PSIp/dZ^2
+  !A(:,6) = d^2PSIp/dRdZ
+
+  !$OMP SIMD
+!    !$OMP& aligned(PSIp,A,B_R,Y_R,B_PHI,B_Z,Bmag,gradB_R,gradB_PHI,gradB_Z, &
+!    !$OMP& curlb_R,curlb_PHI,curlb_Z,E_R,E_PHI,E_Z)
+  do cc=1_idef,8_idef
+     PSIp(cc)=A(cc,1)
+
+     A(cc,2)=A(cc,2)/(2*C_PI)
+     A(cc,3)=A(cc,3)/(2*C_PI)
+     A(cc,4)=A(cc,4)/(2*C_PI)
+     A(cc,5)=A(cc,5)/(2*C_PI)
+     A(cc,6)=A(cc,6)/(2*C_PI)
+     
+     
+     B_R(cc) = A(cc,3)/Y_R(cc)
+     ! BR = (dA/dZ)/R
+     B_PHI(cc) = -F%Bo*F%Ro/Y_R(cc)
+     ! BPHI = Fo*Ro/R
+     B_Z(cc) = -A(cc,2)/Y_R(cc)
+     ! BR = -(dA/dR)/R
+
+
+     
+     Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
+
+     gradB_R(cc)=(B_R(cc)*A(cc,6)-B_Z(cc)*A(cc,4)-Bmag(cc)*Bmag(cc))/ &
+          (Y_R(cc)*Bmag(cc))
+     gradB_PHI(cc)=0._rp
+     gradB_Z(cc)=(B_R(cc)*A(cc,5)-B_Z(cc)*A(cc,6))/ &
+          (Y_R(cc)*Bmag(cc))
+
+     curlb_R(cc)=B_PHI(cc)*gradB_Z(cc)/(Bmag(cc)*Bmag(cc))
+     curlb_PHI(cc)=(Bmag(cc)/Y_R(cc)*(B_Z(cc)+A(cc,4)+A(cc,5))- &
+          B_R(cc)*gradB_Z(cc)+B_Z(cc)*gradB_R(cc))/ &
+          (Bmag(cc)*Bmag(cc))
+     curlb_Z(cc)=-B_PHI(cc)*gradB_R(cc)/(Bmag(cc)*Bmag(cc))
+
+     E_R(cc) = 0._rp
+     E_PHI(cc) = F%Eo*F%Ro/Y_R(cc)
+     E_Z(cc) = 0._rp 
+     
+  end do
+
+end subroutine calculate_GCfields_p_FS
 
 subroutine add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
   TYPE(KORC_PARAMS), INTENT(IN)                              :: params
@@ -2526,6 +2707,27 @@ subroutine add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
   !$OMP END SIMD  
   
 end subroutine add_interp_SCE_p
+
+subroutine add_interp_SCE_p_FS(params,F,PSIp,E_PHI)
+  TYPE(KORC_PARAMS), INTENT(IN)                              :: params
+  TYPE(FIELDS), INTENT(IN)                               :: F
+  REAL(rp), DIMENSION(8), INTENT(IN)      :: PSIp
+  REAL(rp), DIMENSION(8), INTENT(INOUT)      :: E_PHI
+
+  REAL(rp),DIMENSION(8) :: E_SC_PHI
+  INTEGER :: cc
+
+
+  call EZspline_interp(efield_SC1d%PHI,8, PSIp, E_SC_PHI, ezerr)
+  call EZspline_error(ezerr)
+
+  !$OMP SIMD
+  do cc=1_idef,8_idef
+     E_PHI(cc)=E_PHI(cc)+E_SC_PHI(cc)
+  end do
+  !$OMP END SIMD  
+  
+end subroutine add_interp_SCE_p_FS
 
 subroutine calculate_initial_magnetic_field(F)
 

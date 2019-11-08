@@ -521,7 +521,11 @@ module korc_types
      TYPE(V_FIELD_1D) 				:: A1_SC_1D
      TYPE(V_FIELD_1D) 				:: A2_SC_1D
      TYPE(V_FIELD_1D) 				:: A3_SC_1D
-     REAL(rp), DIMENSION(:), ALLOCATABLE :: r_1D 
+     
+     REAL(rp), DIMENSION(:), ALLOCATABLE :: r_1D
+     REAL(rp), DIMENSION(:), ALLOCATABLE :: PSIP_1D
+     REAL(rp), DIMENSION(:), ALLOCATABLE :: dMagPsiSqdPsiP
+     REAL(rp), DIMENSION(:), ALLOCATABLE :: ddMagPsiSqdPsiPSq
      TYPE(MESH) 		 		:: X 
      !! An instance of the KORC derived type MESH.
      CHARACTER(MAX_STRING_LENGTH) :: E_model
@@ -539,6 +543,7 @@ module korc_types
      INTEGER 			:: subcycle_E_SC
      REAL(rp)  :: dt_E_SC,Ip_exp,Ip0
      REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: PSIp
+     REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: PSIp_FS
      REAL(rp), DIMENSION(:,:,:), ALLOCATABLE 	:: PSIp3D 
      !! 2-D array for storing the data of the poloidal magnetic flux.
      REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: FLAG2D 

@@ -26,6 +26,10 @@ module korc_fields
        calculate_SC_p,&
        init_SC_E1D,&
        reinit_SC_E1D,&
+       calculate_SC_E1D_FS,&
+       calculate_SC_p_FS,&
+       init_SC_E1D_FS,&
+       reinit_SC_E1D_FS,&
        define_SC_time_step
   PRIVATE :: get_analytical_fields,&
        analytical_fields,&
@@ -978,6 +982,104 @@ CONTAINS
     call initialize_SC1D_field_interpolant(params,F)
     
   end subroutine calculate_SC_E1D
+  
+  subroutine calculate_SC_E1D_FS(params,F,dintJphidPSIP)
+
+    TYPE(FIELDS), INTENT(INOUT)                 :: F
+    TYPE(KORC_PARAMS), INTENT(IN) 		:: params
+    real(rp),dimension(F%dim_1D),intent(in) :: dintJphidPSIP
+    real(rp),dimension(F%dim_1D) :: Jsamall,Jexp,dJdt
+    real(rp),dimension(F%dim_1D) :: a,b,c,u,gam,r,alpha,beta,gamma
+    real(rp) :: dPSIP,bet
+    integer :: ii
+    INTEGER 				:: mpierr
+
+!    if (params%mpi_params%rank .EQ. 0) then
+!       write(6,*) 'Calculating SC_E1D'
+!    end if
+
+    !write(6,*) 'dintJphidPSIP',dintJphidPSIP(F%dim_1D)
+    
+    dPSIP=F%PSIP_1D(2)-F%PSIP_1D(1)
+    
+
+    ! Add sampled current densities from all MPI processes Jsamone,
+    ! and output of total sampled current density Jsamall to each
+    ! MPI process.
+    
+    call MPI_ALLREDUCE(dintJphidPSIP,Jsamall,F%dim_1D,MPI_REAL8,MPI_SUM, &
+         MPI_COMM_WORLD,mpierr)
+
+    !write(6,*) 'JSamAll',Jsamall(F%dim_1D)
+    
+    !write(6,*) 'Jsam: ',Jsamall(1:5)
+    
+    Jexp=Jsamall*F%Ip0
+    
+    F%J3_SC_1D%PHI=F%J2_SC_1D%PHI
+    F%J2_SC_1D%PHI=F%J1_SC_1D%PHI
+    F%J1_SC_1D%PHI=Jexp    
+    
+    ! Calculating time-derivative of E_phi
+    
+    dJdt=(3*F%J1_SC_1D%PHI-4*F%J2_SC_1D%PHI+F%J3_SC_1D%PHI)/ &
+         (2*F%dt_E_SC)
+    
+!    write(6,*) params%mpi_params%rank,'J(1)',F%J_SC_1D%PHI(1)
+    
+    ! Solving 1D Poisson equation with tridiagonal matrix solve
+
+    alpha=F%ddMagPsiSqdPsiPSq
+    beta=F%dMagPsiSqdPsiP
+    gamma=C_MU*dJdt
+   
+    
+    a=-alpha*dPSIP/2._rp+beta
+    b=-2._rp*beta
+    c=alpha*dPSIP/2._rp+beta
+    u=0._rp
+    gam=0._rp
+!    r=-2*dr**2*C_MU*Jexp
+    r=dPSIP**2*gamma
+
+    c(2)=c(2)-a(2)*a(1)/c(1)
+    b(2)=b(2)-a(2)*b(1)/c(1)
+    r(2)=r(2)-a(2)*r(1)/c(1)
+    
+    bet=b(2)
+    u(2)=r(2)/bet
+    do ii=3_idef,F%dim_1D-1
+       gam(ii)=c(ii-1)/bet
+       bet=b(ii)-a(ii)*gam(ii)
+       if (bet.eq.0) then
+          stop 'tridiag failed'         
+       end if
+       u(ii)=(r(ii)-a(ii)*u(ii-1))/bet
+    end do
+
+    do ii=F%dim_1D-2,2,-1
+       u(ii)=u(ii)-gam(ii+1)*u(ii+1)
+    end do
+
+    u(1)=2*u(2)-u(3)
+
+    F%E_SC_1D%PHI=u
+
+    if (params%mpi_params%rank.eq.0) then
+       write(6,*) 'J1(1)',F%J1_SC_1D%PHI(1)
+       write(6,*) 'J2(1)',F%J2_SC_1D%PHI(1)
+       write(6,*) 'J3(1)',F%J3_SC_1D%PHI(1)
+       
+       write(6,*) 'E(1)',F%E_SC_1D%PHI(1)
+    end if
+       
+    ! Normalizing inductive E_phi
+    
+    F%E_SC_1D%PHI=F%E_SC_1D%PHI/params%cpp%Eo
+
+    call initialize_SC1D_field_interpolant_FS(params,F)
+    
+  end subroutine calculate_SC_E1D_FS
 
   subroutine calculate_SC_p(params,F,B_R,B_PHI,B_Z,Y_R,Y_Z, &
        V_PLL,V_MU,m_cache,flag_cache,Vden)
@@ -1078,6 +1180,63 @@ CONTAINS
     end do
     
   end subroutine calculate_SC_p
+  
+  subroutine calculate_SC_p_FS(params,F,B_R,B_PHI,B_Z,PSIp, &
+       V_PLL,V_MU,m_cache,flag_cache,dintJphidPSIP)
+
+    TYPE(FIELDS), INTENT(IN)                 :: F
+    TYPE(KORC_PARAMS), INTENT(IN) 		:: params
+    real(rp),dimension(8),intent(in) :: PSIp
+    real(rp),dimension(8),intent(in) :: B_R,B_PHI,B_Z
+    real(rp),dimension(8),intent(in) :: V_PLL,V_MU
+    real(rp),intent(in) :: m_cache
+    integer(is),dimension(8),intent(in) :: flag_cache
+    real(rp),dimension(8) :: Bmag,gam,vpll,PSIp_cache
+    real(rp),dimension(F%dim_1D),intent(out) :: dintJphidPSIP
+    real(rp),dimension(F%dim_1D) :: PSIP_1D
+    real(rp) :: dPSIP,ar,arg,arg1,arg2,arg3
+    integer :: cc,ii,PSIPind
+
+
+    PSIP_1D=F%PSIP_1D
+    dPSIP=PSIP_1D(2)-PSIP_1D(1)
+    PSIp_cache=PSIp*(params%cpp%Bo*params%cpp%length**2)
+
+    dintJphidPSIP=0._rp
+    
+    do cc=1_idef,8_idef
+
+       ! 1D Riemann sum 
+
+       !write (6,*) 'rm',rm(cc)
+
+       Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+ &
+            B_Z(cc)*B_Z(cc))
+       gam(cc)=sqrt(1+V_PLL(cc)**2+ &
+            2*V_MU(cc)*Bmag(cc)*m_cache)
+       vpll(cc)=V_PLL(cc)/gam(cc)    
+
+!       write(6,*) PSIp_cache(cc)
+       
+       if (PSIp_cache(cc).lt.0._rp) PSIp_cache(cc)=0._rp
+       
+       PSIPind=FLOOR(PSIp_cache(cc)/dPSIP)+1_ip
+
+       ! NGP weighting       
+!       dintJphidPSIP(PSIPind)=dintJphidPSIP(PSIPind)+vpll(cc)    
+
+       ! First-order weighting
+       dintJphidPSIP(PSIPind)=dintJphidPSIP(PSIPind)+ &
+            vpll(cc)*(PSIP_1D(PSIPind+1)-PSIP_cache(cc))/dPSIP
+       dintJphidPSIP(PSIPind+1)=dintJphidPSIP(PSIPind+1)+ &
+            vpll(cc)*(PSIP_cache(cc)-PSIP_1D(PSIPind))/dPSIP
+       
+    end do
+    
+    ! First-order weighting
+    dintJphidPSIP(1)=2*dintJphidPSIP(1)
+    
+  end subroutine calculate_SC_p_FS
 
   subroutine init_SC_E1D(params,F,spp)
  
@@ -1282,6 +1441,144 @@ CONTAINS
     
   end subroutine init_SC_E1D
   
+  subroutine init_SC_E1D_FS(params,F,spp)
+ 
+    TYPE(FIELDS), INTENT(INOUT)                 :: F
+    TYPE(KORC_PARAMS), INTENT(IN) 		:: params
+    TYPE(SPECIES), INTENT(IN)    :: spp
+    real(rp),dimension(F%dim_1D) :: dintJphidPSIP,PSIP_1D
+    real(rp),dimension(spp%ppp) :: PSIP,vpll
+    real(rp),dimension(F%dim_1D) :: Jsamall,Jexp,dJdt
+    real(rp),dimension(F%dim_1D) :: a,b,c,u,gam,r,alpha,beta,gamma
+    real(rp) :: dPSIP,Isam,bet
+    integer :: pp,ii,PSIPind
+    INTEGER 				:: mpierr
+
+
+    PSIP_1D=F%PSIP_1D
+    dPSIP=PSIP_1D(2)-PSIP_1D(1)
+    PSIP=spp%vars%PSI_P*(params%cpp%Bo*params%cpp%length**2)
+   
+
+    vpll=spp%vars%V(:,1)/spp%vars%g
+    
+    dintJphidPSIP=0._rp
+
+    do pp=1_idef,spp%ppp
+       if (PSIP(pp).lt.0._rp) PSIP(pp)=0._rp
+       
+       PSIPind=FLOOR(PSIP(pp)/dPSIP)+1_ip
+
+       ! NGP weighting
+!       dintJphidPSIP(PSIPind)=dintJphidPSIP(PSIPind)+vpll(pp)
+
+       ! First-order weighting
+       dintJphidPSIP(PSIPind)=dintJphidPSIP(PSIPind)+ &
+            vpll(pp)*(PSIP_1D(PSIPind+1)-PSIP(pp))/dPSIP
+       dintJphidPSIP(PSIPind+1)=dintJphidPSIP(PSIPind+1)+ &
+            vpll(pp)*(PSIP(pp)-PSIP_1D(PSIPind))/dPSIP
+       
+!       write(6,*) PSIP(pp),PSIP_1D(PSIPind),dPSIP
+       
+    end do
+
+    ! First-order weighting
+    dintJphidPSIP(1)=2*dintJphidPSIP(1)
+    
+    ! Add sampled current densities from all MPI processes Jsamone,
+    ! and output of total sampled current density Jsamall to each
+    ! MPI process.
+    
+    call MPI_ALLREDUCE(dintJphidPSIP,Jsamall,F%dim_1D,MPI_REAL8,MPI_SUM, &
+         MPI_COMM_WORLD,mpierr)
+    
+!    write(6,*) 'Jsam: ',Jsamall(1:10)
+
+    ! Integrating current density to scale total current to
+    ! experimentally determined total current
+
+    Isam=0._rp
+    do ii=1_idef,F%dim_1D
+       if ((ii.eq.1).or.(ii.eq.F%dim_1D)) then
+          Isam=Isam+Jsamall(ii)/2._rp
+       else 
+          Isam=Isam+Jsamall(ii)
+       end if
+    end do
+    Isam=Isam*dPSIP
+!    write(6,*) params%mpi_params%rank,'Isam: ',Isam
+
+    F%Ip0=F%Ip_exp/Isam
+
+    
+    Jexp=Jsamall*F%Ip0
+
+    F%J3_SC_1D%PHI=Jexp 
+    F%J2_SC_1D%PHI=Jexp
+    F%J1_SC_1D%PHI=Jexp        
+    
+    ! Calculating time-derivative of E_phi
+    
+    dJdt=(3._rp*F%J1_SC_1D%PHI-4._rp*F%J2_SC_1D%PHI+F%J3_SC_1D%PHI)/ &
+         (2._rp*F%dt_E_SC)
+    
+!    write(6,*) params%mpi_params%rank,'J(1)',F%J_SC_1D%PHI(1)
+    
+    ! Solving 1D Poisson equation with tridiagonal matrix solve
+
+    alpha=F%ddMagPsiSqdPsiPSq
+    beta=F%dMagPsiSqdPsiP
+    gamma=C_MU*dJdt
+    
+    
+    a=-alpha*dPSIP/2._rp+beta
+    b=-2._rp*beta
+    c=alpha*dPSIP/2._rp+beta
+    u=0._rp
+    gam=0._rp
+!    r=-2*dr**2*C_MU*Jexp
+    r=dPSIP**2*gamma
+
+    c(2)=c(2)-a(2)*a(1)/c(1)
+    b(2)=b(2)-a(2)*b(1)/c(1)
+    r(2)=r(2)-a(2)*r(1)/c(1)
+    
+    bet=b(2)
+    u(2)=r(2)/bet
+    do ii=3_idef,F%dim_1D-1
+       gam(ii)=c(ii-1)/bet
+       bet=b(ii)-a(ii)*gam(ii)
+       if (bet.eq.0) then
+          stop 'tridiag failed'         
+       end if
+       u(ii)=(r(ii)-a(ii)*u(ii-1))/bet
+    end do
+
+    do ii=F%dim_1D-2,2,-1
+       u(ii)=u(ii)-gam(ii+1)*u(ii+1)
+    end do
+
+    u(1)=2*u(2)-u(3)
+
+
+    F%E_SC_1D%PHI=u
+
+    if (params%mpi_params%rank.eq.0) then
+       write(6,*) 'J1(1)',F%J1_SC_1D%PHI(1)
+       write(6,*) 'J2(1)',F%J2_SC_1D%PHI(1)
+       write(6,*) 'J3(1)',F%J3_SC_1D%PHI(1)
+       
+       write(6,*) 'E(1)',F%E_SC_1D%PHI(1)
+    end if
+       
+    ! Normalizing inductive E_phi
+    
+    F%E_SC_1D%PHI=F%E_SC_1D%PHI/params%cpp%Eo
+
+    call initialize_SC1D_field_interpolant_FS(params,F)
+    
+  end subroutine init_SC_E1D_FS
+
   subroutine reinit_SC_E1D(params,F)
  
     TYPE(FIELDS), INTENT(INOUT)                 :: F
@@ -1404,6 +1701,105 @@ CONTAINS
     
   end subroutine reinit_SC_E1D
   
+  subroutine reinit_SC_E1D_FS(params,F)
+ 
+    TYPE(FIELDS), INTENT(INOUT)                 :: F
+    TYPE(KORC_PARAMS), INTENT(IN) 		:: params
+    real(rp),dimension(F%dim_1D) :: Jsamall,Jexp,dJdt,PSIP_1D
+    real(rp),dimension(F%dim_1D) :: a,b,c,u,gam,r,alpha,beta,gamma
+    real(rp) :: dPSIP,Isam,bet
+    integer :: pp,ii,PSIPind
+    INTEGER 				:: mpierr
+
+!    if (params%mpi_params%rank .EQ. 0) then
+!       write(6,*) 'Calculating SC_E1D'
+!    end if
+
+    PSIP_1D=F%PSIP_1D
+    dPSIP=PSIP_1D(2)-PSIP_1D(1)
+    Jsamall=F%J0_SC_1D%PHI
+
+    Isam=0._rp
+    do ii=1_idef,F%dim_1D
+       if ((ii.eq.1).or.(ii.eq.F%dim_1D)) then
+          Isam=Isam+Jsamall(ii)/2._rp
+       else 
+          Isam=Isam+Jsamall(ii)
+       end if
+    end do
+    Isam=Isam*dPSIP
+!    write(6,*) params%mpi_params%rank,'Isam: ',Isam
+
+    F%Ip0=F%Ip_exp/Isam
+    
+    Jexp=Jsamall*F%Ip0
+
+    F%J3_SC_1D%PHI=Jexp 
+    F%J2_SC_1D%PHI=Jexp
+    F%J1_SC_1D%PHI=Jexp        
+    
+    ! Calculating time-derivative of E_phi
+    
+    dJdt=(3._rp*F%J1_SC_1D%PHI-4._rp*F%J2_SC_1D%PHI+F%J3_SC_1D%PHI)/ &
+         (2._rp*F%dt_E_SC)
+    
+!    write(6,*) params%mpi_params%rank,'J(1)',F%J_SC_1D%PHI(1)
+    
+    ! Solving 1D Poisson equation with tridiagonal matrix solve
+
+    alpha=F%ddMagPsiSqdPsiPSq
+    beta=F%dMagPsiSqdPsiP
+    gamma=C_MU*dJdt
+    
+    
+    a=-alpha*dPSIP/2._rp+beta
+    b=-2._rp*beta
+    c=alpha*dPSIP/2._rp+beta
+    u=0._rp
+    gam=0._rp
+!    r=-2*dr**2*C_MU*Jexp
+    r=dPSIP**2*gamma
+
+    c(2)=c(2)-a(2)*a(1)/c(1)
+    b(2)=b(2)-a(2)*b(1)/c(1)
+    r(2)=r(2)-a(2)*r(1)/c(1)
+    
+    bet=b(2)
+    u(2)=r(2)/bet
+    do ii=3_idef,F%dim_1D-1
+       gam(ii)=c(ii-1)/bet
+       bet=b(ii)-a(ii)*gam(ii)
+       if (bet.eq.0) then
+          stop 'tridiag failed'         
+       end if
+       u(ii)=(r(ii)-a(ii)*u(ii-1))/bet
+    end do
+
+    do ii=F%dim_1D-2,2,-1
+       u(ii)=u(ii)-gam(ii+1)*u(ii+1)
+    end do
+
+    u(1)=2*u(2)-u(3)
+
+
+    F%E_SC_1D%PHI=u
+
+    if (params%mpi_params%rank.eq.0) then
+       write(6,*) 'J1(2)',F%J1_SC_1D%PHI(2)
+       write(6,*) 'J2(2)',F%J2_SC_1D%PHI(2)
+       write(6,*) 'J3(2)',F%J3_SC_1D%PHI(2)
+       
+       write(6,*) 'E(1)',F%E_SC_1D%PHI(1)
+    end if
+       
+    ! Normalizing inductive E_phi
+    
+    F%E_SC_1D%PHI=F%E_SC_1D%PHI/params%cpp%Eo
+
+    call initialize_SC1D_field_interpolant_FS(params,F)
+    
+  end subroutine reinit_SC_E1D_FS
+  
   ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
   ! * * *  SUBROUTINES FOR INITIALIZING FIELDS   * * * !
   ! * * * * * * * * * * * *  * * * * * * * * * * * * * !
@@ -1475,7 +1871,8 @@ CONTAINS
     NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
          qa,qo,Eo,current_direction,nR,nZ,nPHI,dim_1D,dt_E_SC,Ip_exp
     NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux,Bflux3D,dBfield, &
-         axisymmetric_fields, Eo,E_model,E_dyn,E_pulse,E_width,res_double
+         axisymmetric_fields, Eo,E_model,E_dyn,E_pulse,E_width,res_double, &
+         dim_1D,dt_E_SC,Ip_exp
 
     if (params%mpi_params%rank .EQ. 0) then
        write(6,'(/,"* * * * * * * * INITIALIZING FIELDS * * * * * * * *")')
@@ -1759,9 +2156,12 @@ CONTAINS
        end if
        !allocates 2D or 3D data arrays (fields and spatial)
 
+       
        call load_field_data_from_hdf5(params,F)
             
+!       write(6,*) F%PSIp
 
+       
 !       end if
 
           
@@ -1820,6 +2220,19 @@ CONTAINS
 
        end if
 
+       if (params%SC_E) then
+
+          F%dim_1D=dim_1D
+          F%dt_E_SC=dt_E_SC
+          F%Ip_exp=Ip_exp
+          
+          call allocate_1D_FS_arrays(params,F)
+          call load_1D_FS_from_hdf5(params,F)
+
+!          write(6,*) F%PSIP_1D
+          
+       end if
+       
 !       test=.true.
        
 !       if (F%Bflux.and.(.not.test)) then
@@ -2237,9 +2650,14 @@ CONTAINS
   subroutine define_SC_time_step(params,F)
     TYPE(KORC_PARAMS), INTENT(INOUT) 	:: params
     TYPE(FIELDS), INTENT(INOUT)         :: F
+    integer :: sub_E_SC
 
     F%subcycle_E_SC = FLOOR(F%dt_E_SC/params%dt,ip)
 
+    sub_E_SC=F%subcycle_E_SC
+
+!    write(6,*) F%dt_E_SC,params%dt,F%subcycle_E_SC
+    
     params%t_it_SC = params%t_skip/F%subcycle_E_SC
     params%t_skip=F%subcycle_E_SC
 
@@ -2310,6 +2728,19 @@ CONTAINS
        dset = "/NZ"
        call load_from_hdf5(h5file_id,dset,rdatum)
        F%dims(3) = INT(rdatum)
+
+       if(params%SC_E) then
+
+          dset = "/OSNR"
+          call load_from_hdf5(h5file_id,dset,rdatum)
+          F%dims(1) = INT(rdatum)
+
+          dset = "/OSNZ"
+          call load_from_hdf5(h5file_id,dset,rdatum)
+          F%dims(3) = INT(rdatum)
+
+       end if
+       
     else
        dset = "/NR"
        call load_from_hdf5(h5file_id,dset,rdatum)
@@ -2418,16 +2849,30 @@ CONTAINS
        write(6,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fopen_f")')
     end if
 
-    dset = "/R"
-    call load_array_from_hdf5(h5file_id,dset,F%X%R)
+
 
     if ((.NOT.F%Bflux).AND.(.NOT.F%axisymmetric_fields)) then
        dset = "/PHI"
        call load_array_from_hdf5(h5file_id,dset,F%X%PHI)
     end if
 
-    dset = "/Z"
-    call load_array_from_hdf5(h5file_id,dset,F%X%Z)
+    if (params%SC_E) then
+
+       dset = "/OSR"
+       call load_array_from_hdf5(h5file_id,dset,F%X%R)
+
+       dset = "/OSZ"
+       call load_array_from_hdf5(h5file_id,dset,F%X%Z)
+
+    else
+
+       dset = "/R"
+       call load_array_from_hdf5(h5file_id,dset,F%X%R)
+
+       dset = "/Z"
+       call load_array_from_hdf5(h5file_id,dset,F%X%Z)
+
+    end if
 
     dset = '/Bo'
     call load_from_hdf5(h5file_id,dset,F%Bo)
@@ -2454,23 +2899,55 @@ CONTAINS
     call load_from_hdf5(h5file_id,dset,F%Zo)
 
     if (F%Bflux.OR.F%axisymmetric_fields) then
-       dset = "/FLAG"
-       call load_array_from_hdf5(h5file_id,dset,F%FLAG2D)
+
+       if (params%SC_E) then
+
+          dset = "/OSFLAG"
+          call load_array_from_hdf5(h5file_id,dset,F%FLAG2D)
+
+       else
+
+          dset = "/FLAG"
+          call load_array_from_hdf5(h5file_id,dset,F%FLAG2D)
+          
+       end if
+
+       
     else
        dset = "/FLAG"
        call load_array_from_hdf5(h5file_id,dset,F%FLAG3D)
     end if
 
     if (F%Bflux) then
-       dset = "/PSIp"
-       gname = 'PSIp'
 
-       call h5lexists_f(h5file_id,TRIM(gname),Efield,h5error)
+       if (params%SC_E) then
 
-       if (Efield) then
-          call load_array_from_hdf5(h5file_id,dset,F%PSIp)
+          dset = "/OSPSIP"
+          gname = 'OSPSIP'
+       
+          call h5lexists_f(h5file_id,TRIM(gname),Efield,h5error)
+
+          if (Efield) then
+             call load_array_from_hdf5(h5file_id,dset,F%PSIp)
+          else
+             F%PSIp = 0.0_rp
+          end if
+
        else
-          F%PSIp = 0.0_rp
+
+          dset = "/PSIp"
+          gname = 'PSIp'
+          
+          call h5lexists_f(h5file_id,TRIM(gname),Efield,h5error)
+
+          if (Efield) then
+             call load_array_from_hdf5(h5file_id,dset,F%PSIp)
+          else
+             F%PSIp = 0.0_rp
+          end if
+
+          F%PSIp=2*C_PI*(F%PSIp-minval(F%PSIp))
+          
        end if
        
     end if
@@ -2486,7 +2963,9 @@ CONTAINS
        else
           F%PSIp3D = 0.0_rp
        end if
-             
+
+       F%PSIp3D=2*C_PI*(F%PSIp3D-minval(F%PSIp3D))
+       
     end if
     
     if (F%Bfield) then
@@ -2585,11 +3064,69 @@ CONTAINS
     end if
   end subroutine load_field_data_from_hdf5
 
+  subroutine load_1D_FS_from_hdf5(params,F)
+    TYPE(KORC_PARAMS), INTENT(IN)          :: params
+    TYPE(FIELDS), INTENT(INOUT)            :: F
+    CHARACTER(MAX_STRING_LENGTH)           :: filename
+    CHARACTER(MAX_STRING_LENGTH)           :: dset
+    INTEGER(HID_T)                         :: h5file_id
+    INTEGER                                :: h5error
 
 
+    filename = TRIM(params%magnetic_field_filename)
+    call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
+    if (h5error .EQ. -1) then
+       write(6,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fopen_f")')
+    end if
+
+    dset = "/PSIP1D"
+    call load_array_from_hdf5(h5file_id,dset,F%PSIP_1D)
+
+    dset = "/dMagPsiSqdPsiP"
+    call load_array_from_hdf5(h5file_id,dset,F%dMagPsiSqdPsiP)
+
+    dset = "/ddMagPsiSqdPsiPSq"
+    call load_array_from_hdf5(h5file_id,dset,F%ddMagPsiSqdPsiPSq)  
+
+    call h5fclose_f(h5file_id, h5error)
+    if (h5error .EQ. -1) then
+       write(6,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fclose_f")')
+    end if
+  end subroutine load_1D_FS_from_hdf5
 
 
+  subroutine allocate_1D_FS_arrays(params,F)
+    !! @note Subroutine that allocates the variables keeping the axisymmetric
+    !! fields data. @endnote
+    TYPE (KORC_PARAMS), INTENT(IN) 	:: params
+    !! Core KORC simulation parameters.
+    TYPE(FIELDS), INTENT(INOUT)    :: F
+    !! An instance of the KORC derived type FIELDS. In this variable we keep
+    !! the loaded data.
+    CHARACTER(MAX_STRING_LENGTH)           :: dset
+    INTEGER(HID_T)                         :: h5file_id
+    INTEGER                                :: h5error
+    CHARACTER(MAX_STRING_LENGTH)           :: filename
 
+    filename = TRIM(params%magnetic_field_filename)
+    call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
+    if (h5error .EQ. -1) then
+       write(6,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fopen_f")')
+    end if
+    
+    dset = "/N1D"
+    call load_from_hdf5(h5file_id,dset,F%dim_1D)
+        
+    ALLOCATE(F%PSIP_1D(F%dim_1D))
+    ALLOCATE(F%dMagPsiSqdPsiP(F%dim_1D))
+    ALLOCATE(F%ddMagPsiSqdPsiPSq(F%dim_1D))
+
+    call h5fclose_f(h5file_id, h5error)
+    if (h5error .EQ. -1) then
+       write(6,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fclose_f")')
+    end if
+    
+  end subroutine ALLOCATE_1D_FS_ARRAYS
 
 
   subroutine ALLOCATE_2D_FIELDS_ARRAYS(params,F,bfield,bflux,dbfield,efield)

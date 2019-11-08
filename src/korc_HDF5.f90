@@ -1770,6 +1770,7 @@ CONTAINS
 
           else if (params%field_model(1:8) .EQ. 'EXTERNAL') then
              ALLOCATE(attr_array(1))
+             
              dset = TRIM(gname) // "/dims"
              attr_array(1) = "Mesh dimension of the magnetic  &
                   field (NR,NPHI,NZ)"
@@ -1845,6 +1846,22 @@ CONTAINS
                 dset = TRIM(gname) // "/Flag"
                 call rsave_3d_array_to_hdf5(h5file_id, dset, &
                      F%FLAG3D)
+             end if
+
+
+             if (params%SC_E) then
+                dset = TRIM(gname) // "/dt_E_SC"
+                attr = "Time step for self-consistent E calculation"
+                call save_to_hdf5(h5file_id,dset,F%dt_E_SC,attr)
+
+                dset = TRIM(gname) // "/Ip_exp"
+                attr = "Scaling for self-consistent current density"
+                call save_to_hdf5(h5file_id,dset,F%Ip_exp,attr)
+
+                dset = TRIM(gname) // "/PSIP_1D"
+                attr_array(1) = "1D minor radial mesh for &
+                     self-consistent fields"
+                call save_1d_array_to_hdf5(h5file_id,dset,F%PSIP_1D,attr_array)
              end if
              
              if  (F%axisymmetric_fields.and. &
@@ -2078,7 +2095,9 @@ CONTAINS
 
     if (params%mpi_params%rank .EQ. 0) then
        write(6,'("Saving snapshot: ",I15)') &
-            params%it/(params%t_skip*params%t_it_SC)
+            params%it/(params%t_skip)
+       !write(6,*) 'it',params%it,'t_skip',params%t_skip,'t_SC',params%t_it_SC
+       
     end if
 
     if (SIZE(params%outputs_list).GT.1_idef) then

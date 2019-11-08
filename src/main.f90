@@ -258,9 +258,13 @@ program main
      end if
 
      if (params%SC_E) then
-     
-        call init_SC_E1D(params,F,spp(1))
-     
+
+        if (params%field_model(1:1).eq.'A') then
+           call init_SC_E1D(params,F,spp(1))
+        else if (params%field_model(1:1).eq.'E') then
+           call init_SC_E1D_FS(params,F,spp(1))
+        end if
+           
      end if
 
   else
@@ -270,7 +274,11 @@ program main
      if (params%SC_E) then
 
         if (params%reinit) then
-           call reinit_SC_E1D(params,F)
+           if (params%field_model(1:1).eq.'A') then
+              call reinit_SC_E1D(params,F)
+           else if (params%field_model(1:1).eq.'E') then
+              call reinit_SC_E1D_FS(params,F)
+           end if
         end if
         
      
@@ -372,7 +380,26 @@ program main
   end if
 
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
-       F%axisymmetric_fields.and.params%field_model(10:12).eq.'PSI') then
+       F%axisymmetric_fields.and.params%field_model(10:12).eq.'PSI'.and. &
+       params%SC_E) then
+     do it=params%ito,params%t_steps,params%t_skip
+        call adv_GCinterp_psi_top_FS(params,spp,P,F)
+        
+        params%time = params%init_time &
+             +REAL(it-1_ip+params%t_skip,rp)*params%dt        
+        params%it = it-1_ip+params%t_skip
+
+        
+        call save_simulation_outputs(params,spp,F)
+        call synthetic_camera(params,spp) ! Synthetic camera
+        call binning_diagnostic(params,spp) ! Binning diagnostic
+        call save_restart_variables(params,spp,F)
+     end do
+  end if
+
+  if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
+       F%axisymmetric_fields.and.params%field_model(10:12).eq.'PSI'.and. &
+       .not.params%SC_E) then
      do it=params%ito,params%t_steps,params%t_skip
         call adv_GCinterp_psi_top(params,spp,P,F)
         
@@ -386,6 +413,7 @@ program main
         call save_restart_variables(params,spp,F)
      end do
   end if
+  
 
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
        F%axisymmetric_fields.and.F%dBfield) then
@@ -420,10 +448,30 @@ program main
      end do
   end if
   
+
+
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
-       .not.(F%axisymmetric_fields).and.(F%dBfield)) then
+         .not.(F%axisymmetric_fields).and.(F%dBfield).and. &
+         (params%field_model(10:14).eq.'3DBdB')) then
      do it=params%ito,params%t_steps,params%t_skip
         call adv_GCinterp_3DBdB_top(params,spp,P,F)
+        
+        params%time = params%init_time &
+             +REAL(it-1_ip+params%t_skip,rp)*params%dt        
+        params%it = it-1_ip+params%t_skip
+
+        call save_simulation_outputs(params,spp,F)
+        call synthetic_camera(params,spp) ! Synthetic camera
+        call binning_diagnostic(params,spp) ! Binning diagnostic
+        call save_restart_variables(params,spp,F)
+     end do
+  end if
+
+  if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
+         .not.(F%axisymmetric_fields).and.(F%dBfield).and. &
+         .not.(params%field_model(10:14).eq.'3DBdB')) then
+     do it=params%ito,params%t_steps,params%t_skip
+        call adv_GCinterp_3DBdB1_top(params,spp,P,F)
         
         params%time = params%init_time &
              +REAL(it-1_ip+params%t_skip,rp)*params%dt        
