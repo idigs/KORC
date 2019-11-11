@@ -1194,7 +1194,7 @@ CONTAINS
     real(rp),dimension(8) :: Bmag,gam,vpll,PSIp_cache
     real(rp),dimension(F%dim_1D),intent(out) :: dintJphidPSIP
     real(rp),dimension(F%dim_1D) :: PSIP_1D
-    real(rp) :: dPSIP,ar,arg,arg1,arg2,arg3
+    real(rp) :: dPSIP,ar,arg,arg1,arg2,arg3,PSIP_lim,sigPSIP
     integer :: cc,ii,PSIPind
 
 
@@ -1202,6 +1202,8 @@ CONTAINS
     dPSIP=PSIP_1D(2)-PSIP_1D(1)
     PSIp_cache=PSIp*(params%cpp%Bo*params%cpp%length**2)
 
+    sigPSIP=dPSIP
+    
     dintJphidPSIP=0._rp
     
     do cc=1_idef,8_idef
@@ -1226,15 +1228,35 @@ CONTAINS
 !       dintJphidPSIP(PSIPind)=dintJphidPSIP(PSIPind)+vpll(cc)    
 
        ! First-order weighting
-       dintJphidPSIP(PSIPind)=dintJphidPSIP(PSIPind)+ &
-            vpll(cc)*(PSIP_1D(PSIPind+1)-PSIP_cache(cc))/dPSIP
-       dintJphidPSIP(PSIPind+1)=dintJphidPSIP(PSIPind+1)+ &
-            vpll(cc)*(PSIP_cache(cc)-PSIP_1D(PSIPind))/dPSIP
+!       dintJphidPSIP(PSIPind)=dintJphidPSIP(PSIPind)+ &
+!            vpll(cc)*(PSIP_1D(PSIPind+1)-PSIP_cache(cc))/dPSIP
+!       dintJphidPSIP(PSIPind+1)=dintJphidPSIP(PSIPind+1)+ &
+!            vpll(cc)*(PSIP_cache(cc)-PSIP_1D(PSIPind))/dPSIP
+
+       ! Gaussian weighting
+       
+       do ii=1_idef,F%dim_1D
+          arg=MIN((PSIP_1D(ii)-PSIP_cache(cc))**2._rp/ &
+               (2._rp*sigPSIP**2._rp),100._rp)
+          dintJphidPSIP(ii)=dintJphidPSIP(ii)+ &
+               exp(-arg)           
+       end do
+
        
     end do
     
     ! First-order weighting
-    dintJphidPSIP(1)=2*dintJphidPSIP(1)
+!    dintJphidPSIP(1)=2*dintJphidPSIP(1)
+
+    ! Gaussian weighting
+    PSIP_lim=PSIP_1D(F%dim_1D)
+    
+    do ii=1_idef,F%dim_1D
+       arg=MIN((PSIP_lim-PSIP_1D(ii))/(sqrt(2._rp)*sigPSIP),10._rp)
+       arg1=MIN(PSIP_1D(ii)/(sqrt(2._rp)*sigPSIP),10._rp)
+       dintJphidPSIP(ii)=dintJphidPSIP(ii)/ &
+            (erf(arg)-erf(-arg1))           
+    end do
     
   end subroutine calculate_SC_p_FS
 
@@ -1450,7 +1472,7 @@ CONTAINS
     real(rp),dimension(spp%ppp) :: PSIP,vpll
     real(rp),dimension(F%dim_1D) :: Jsamall,Jexp,dJdt
     real(rp),dimension(F%dim_1D) :: a,b,c,u,gam,r,alpha,beta,gamma
-    real(rp) :: dPSIP,Isam,bet
+    real(rp) :: dPSIP,Isam,bet,arg,arg1,PSIP_lim,sigPSIP
     integer :: pp,ii,PSIPind
     INTEGER 				:: mpierr
 
@@ -1458,7 +1480,8 @@ CONTAINS
     PSIP_1D=F%PSIP_1D
     dPSIP=PSIP_1D(2)-PSIP_1D(1)
     PSIP=spp%vars%PSI_P*(params%cpp%Bo*params%cpp%length**2)
-   
+
+    sigPSIP=dPSIP
 
     vpll=spp%vars%V(:,1)/spp%vars%g
     
@@ -1473,17 +1496,36 @@ CONTAINS
 !       dintJphidPSIP(PSIPind)=dintJphidPSIP(PSIPind)+vpll(pp)
 
        ! First-order weighting
-       dintJphidPSIP(PSIPind)=dintJphidPSIP(PSIPind)+ &
-            vpll(pp)*(PSIP_1D(PSIPind+1)-PSIP(pp))/dPSIP
-       dintJphidPSIP(PSIPind+1)=dintJphidPSIP(PSIPind+1)+ &
-            vpll(pp)*(PSIP(pp)-PSIP_1D(PSIPind))/dPSIP
+!       dintJphidPSIP(PSIPind)=dintJphidPSIP(PSIPind)+ &
+!            vpll(pp)*(PSIP_1D(PSIPind+1)-PSIP(pp))/dPSIP
+!       dintJphidPSIP(PSIPind+1)=dintJphidPSIP(PSIPind+1)+ &
+!            vpll(pp)*(PSIP(pp)-PSIP_1D(PSIPind))/dPSIP
        
 !       write(6,*) PSIP(pp),PSIP_1D(PSIPind),dPSIP
+
+       ! Gaussian weighting
+       
+       do ii=1_idef,F%dim_1D
+          arg=MIN((PSIP_1D(ii)-PSIP(pp))**2._rp/ &
+               (2._rp*sigPSIP**2._rp),100._rp)
+          dintJphidPSIP(ii)=dintJphidPSIP(ii)+ &
+               exp(-arg)           
+       end do
        
     end do
 
     ! First-order weighting
-    dintJphidPSIP(1)=2*dintJphidPSIP(1)
+!    dintJphidPSIP(1)=2*dintJphidPSIP(1)
+
+    ! Gaussian weighting
+    PSIP_lim=PSIP_1D(F%dim_1D)
+    
+    do ii=1_idef,F%dim_1D
+       arg=MIN((PSIP_lim-PSIP_1D(ii))/(sqrt(2._rp)*sigPSIP),10._rp)
+       arg1=MIN(PSIP_1D(ii)/(sqrt(2._rp)*sigPSIP),10._rp)
+       dintJphidPSIP(ii)=dintJphidPSIP(ii)/ &
+            (erf(arg)-erf(-arg1))           
+    end do
     
     ! Add sampled current densities from all MPI processes Jsamone,
     ! and output of total sampled current density Jsamall to each
