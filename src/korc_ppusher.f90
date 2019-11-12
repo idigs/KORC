@@ -2246,6 +2246,7 @@ contains
              if (.not.params%FokPlan) then
                 Vdenave=0._rp
                 do tt=1_ip,params%t_skip
+                   
                    call advance_GCinterp_psi_vars_FS(spp(ii)%vars,pp,tt, &
                         params, &
                         Y_R,Y_PHI,Y_Z,V_PLL,V_MU,q_cache,m_cache,flag_cache, &
@@ -3262,7 +3263,10 @@ contains
          flag_cache,PSIp)
 
     call add_analytical_E_p(params,tt,F,E_PHI)
-    call add_interp_SCE_p_FS(params,F,PSIp,E_PHI)
+    
+    if (params%SC_E_add) then
+       call add_interp_SCE_p_FS(params,F,PSIp,E_PHI)
+    end if
 
 
     call GCEoM1_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
@@ -3319,7 +3323,9 @@ contains
     call add_analytical_E_p(params,tt,F,E_PHI)
 
 
-    call add_interp_SCE_p_FS(params,F,PSIp,E_PHI)
+    if (params%SC_E_add) then
+       call add_interp_SCE_p_FS(params,F,PSIp,E_PHI)
+    end if
 
     
     call GCEoM1_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
@@ -3353,7 +3359,9 @@ contains
     call add_analytical_E_p(params,tt,F,E_PHI)
 
  
-    call add_interp_SCE_p_FS(params,F,PSIp,E_PHI)
+    if (params%SC_E_add) then
+       call add_interp_SCE_p_FS(params,F,PSIp,E_PHI)
+    end if
 
     
     call GCEoM1_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
@@ -3388,7 +3396,9 @@ contains
     call add_analytical_E_p(params,tt,F,E_PHI)
 
 
-    call add_interp_SCE_p_FS(params,F,PSIp,E_PHI)
+    if (params%SC_E_add) then
+       call add_interp_SCE_p_FS(params,F,PSIp,E_PHI)
+    end if
 
     
     call GCEoM1_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
@@ -3428,7 +3438,9 @@ contains
     call add_analytical_E_p(params,tt,F,E_PHI)
 
 
-    call add_interp_SCE_p_FS(params,F,PSIp,E_PHI)
+    if (params%SC_E_add) then
+       call add_interp_SCE_p_FS(params,F,PSIp,E_PHI)
+    end if
 
     
     call GCEoM1_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
@@ -3467,7 +3479,9 @@ contains
     call add_analytical_E_p(params,tt,F,E_PHI)
 
 
-    call add_interp_SCE_p_FS(params,F,PSIp,E_PHI)
+    if (params%SC_E_add) then
+       call add_interp_SCE_p_FS(params,F,PSIp,E_PHI)
+    end if
 
     
     call GCEoM1_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
@@ -3519,9 +3533,9 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
-
-    call add_interp_SCE_p_FS(params,F,PSIp,E_PHI)
-       
+    if (params%SC_E_add) then
+       call add_interp_SCE_p_FS(params,F,PSIp,E_PHI)
+    end if
     
     call GCEoM1_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &

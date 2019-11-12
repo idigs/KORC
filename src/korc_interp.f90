@@ -445,7 +445,7 @@ CONTAINS
 
        ! * * * * * * * * MAGNETIC FIELD * * * * * * * * !
        if (F%Bflux) then
-
+          
           if (EZspline_allocated(bfield_2d%A)) &
                call Ezspline_free(bfield_2d%A, ezerr)
           
@@ -2627,6 +2627,8 @@ subroutine calculate_GCfields_p_FS(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
   call EZspline_derivative(bfield_2d%A, 8, Y_R, Y_Z, A, ezerr)
   call EZspline_error(ezerr)
 
+  !write (6,*) A(1,1),A(1,2)
+  
   !A(:,1) = PSIp
   !A(:,2) = dPSIp/dR
   !A(:,3) = dPSIp/dZ

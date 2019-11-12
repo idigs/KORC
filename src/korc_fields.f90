@@ -1827,9 +1827,9 @@ CONTAINS
     F%E_SC_1D%PHI=u
 
     if (params%mpi_params%rank.eq.0) then
-       write(6,*) 'J1(2)',F%J1_SC_1D%PHI(2)
-       write(6,*) 'J2(2)',F%J2_SC_1D%PHI(2)
-       write(6,*) 'J3(2)',F%J3_SC_1D%PHI(2)
+       write(6,*) 'J1(1)',F%J1_SC_1D%PHI(1)
+       write(6,*) 'J2(1)',F%J2_SC_1D%PHI(1)
+       write(6,*) 'J3(1)',F%J3_SC_1D%PHI(1)
        
        write(6,*) 'E(1)',F%E_SC_1D%PHI(1)
     end if

@@ -273,13 +273,13 @@ program main
 
      if (params%SC_E) then
 
-        if (params%reinit) then
-           if (params%field_model(1:1).eq.'A') then
-              call reinit_SC_E1D(params,F)
-           else if (params%field_model(1:1).eq.'E') then
-              call reinit_SC_E1D_FS(params,F)
-           end if
+
+        if (params%field_model(1:1).eq.'A') then
+           call reinit_SC_E1D(params,F)
+        else if (params%field_model(1:1).eq.'E') then
+           call reinit_SC_E1D_FS(params,F)
         end if
+
         
      
      end if
