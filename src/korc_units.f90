@@ -162,11 +162,15 @@ subroutine normalize_variables(params,spp,F,P)
   P%Z0_RE = P%Z0_RE/params%cpp%length
   P%neo = P%neo/params%cpp%density
   P%n_ne = P%n_ne/params%cpp%density
+  P%n_shelf = P%n_shelf/params%cpp%density
   P%Teo = P%Teo/params%cpp%temperature
   P%n_REr0=P%n_REr0/params%cpp%length
   P%n_tauion=P%n_tauion/params%cpp%time
+  P%n_taushelf=P%n_taushelf/params%cpp%time
+  P%n_shelfdelay=P%n_shelfdelay/params%cpp%time
   P%n_lamfront=P%n_lamfront/params%cpp%length
   P%n_lamback=P%n_lamback/params%cpp%length
+  P%n_lamshelf=P%n_lamshelf/params%cpp%length
 
   if (params%profile_model .EQ. 'ANALYTICAL') then
 

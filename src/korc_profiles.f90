@@ -98,12 +98,13 @@ CONTAINS
     REAL(rp)  ::  n_REr0
     REAL(rp)  ::  n_tauion
     REAL(rp)  ::  n_lamfront
-    REAL(rp)  ::  n_lamback
+    REAL(rp)  ::  n_lamback,n_lamshelf,n_shelfdelay,n_taushelf,n_shelf
     REAL(rp)  ::  rm,r_a
 
     NAMELIST /plasmaProfiles/ radius_profile,ne_profile,neo,n_ne,a_ne, &
          Te_profile,Teo,n_Te,a_Te,n_REr0,n_tauion,n_lamfront,n_lamback, &
-         Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename,axisymmetric
+         Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename,axisymmetric, &
+         n_lamshelf,n_shelfdelay,n_taushelf,n_shelf
 
     if (params%mpi_params%rank .EQ. 0) then
        write(6,'("* * * * * * * * INITIALIZING PROFILES * * * * * * * *")')
@@ -128,8 +129,12 @@ CONTAINS
 
        P%n_REr0=n_REr0
        P%n_tauion=n_tauion
+       P%n_taushelf=n_taushelf
+       P%n_shelfdelay=n_shelfdelay
        P%n_lamfront=n_lamfront
        P%n_lamback=n_lamback
+       P%n_lamshelf=n_lamshelf
+       P%n_shelf=n_shelf
         
        P%Te_profile = TRIM(Te_profile)
        P%Teo = Teo*C_E ! Converted to Joules
@@ -173,6 +178,9 @@ CONTAINS
                 CASE('SPONG')
                    P%ne_2D(ii,kk) = P%neo*(1._rp-0.2*r_a**8)+P%n_ne
                 CASE('RE-EVO')                   
+                   !flat profile placeholder, updates every timestep
+                   P%ne_2D(ii,kk) = P%neo
+                CASE('RE-EVO1')                   
                    !flat profile placeholder, updates every timestep
                    P%ne_2D(ii,kk) = P%neo
                 CASE DEFAULT
@@ -313,7 +321,8 @@ CONTAINS
     !! Particle iterator.
     REAL(rp) :: R0,Z0,a,ne0,n_ne,Te0,n_Te,Zeff0
     REAL(rp) :: R0_RE,Z0_RE,sigmaR_RE,sigmaZ_RE,psimax_RE
-    REAL(rp) :: n_REr0,n_tauion,n_lamfront,n_lamback
+    REAL(rp) :: n_REr0,n_tauion,n_lamfront,n_lamback,n_lamshelf
+    REAL(rp) :: n_taushelf,n_shelfdelay,n_shelf
     REAL(rp), DIMENSION(8) :: r_a,rm,rm_RE
 
     R0=P%R0
@@ -332,8 +341,13 @@ CONTAINS
     Z0_RE=P%Z0_RE
     n_REr0=P%n_REr0
     n_tauion=P%n_tauion
+    n_taushelf=P%n_taushelf
+    n_shelfdelay=P%n_shelfdelay
     n_lamfront=P%n_lamfront
     n_lamback=P%n_lamback
+    n_lamshelf=P%n_lamshelf
+    n_shelf=P%n_shelf
+    
 
 !    write(6,'("R0_RE: "E17.10)') R0_RE
 !    write(6,'("Z0_RE: "E17.10)') Z0_RE
@@ -356,6 +370,13 @@ CONTAINS
           ne(cc) = (ne0-n_ne)/4._rp*(1+tanh((rm_RE(cc)+ &
                n_REr0*(time/n_tauion-1))/n_lamfront))* &
                (1+tanh(-(rm_RE(cc)-n_REr0)/n_lamback))+n_ne
+       CASE('RE-EVO1')
+          ne(cc) = (ne0-n_ne)/8._rp*(1+tanh((rm_RE(cc)+ &
+               n_REr0*(time/n_tauion-1))/n_lamfront))* &
+               (1+tanh(-(rm_RE(cc)-n_REr0)/n_lamback))* &
+               (2*(n_shelf-n_ne)/(ne0-n_ne)+(ne0-n_shelf)/(ne0-n_ne)* &
+               (1-tanh(rm_RE(cc)+n_REr0*((time-n_shelfdelay)/n_taushelf-1))))+ &
+               n_ne
        CASE DEFAULT
           ne(cc) = ne0
        END SELECT

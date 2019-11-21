@@ -285,13 +285,14 @@ contains
     REAL(rp)  ::  n_REr0
     REAL(rp)  ::  n_tauion
     REAL(rp)  ::  n_lamfront
-    REAL(rp)  ::  n_lamback
+    REAL(rp)  ::  n_lamback,n_lamshelf,n_shelfdelay,n_taushelf,n_shelf
 
     NAMELIST /CollisionParamsSingleSpecies/ Te, Ti, ne, Zeff, dTau
 
     NAMELIST /plasmaProfiles/ radius_profile,ne_profile,neo,n_ne,a_ne,&
          Te_profile,Teo,n_Te,a_Te,n_REr0,n_tauion,n_lamfront,n_lamback, &
-         Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename,axisymmetric
+         Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename,axisymmetric, &
+         n_lamshelf,n_shelfdelay,n_taushelf,n_shelf
 
 
     open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
@@ -1328,7 +1329,7 @@ contains
 
 
   subroutine include_CoulombCollisions_GC_p(tt,params,Y_R,Y_PHI,Y_Z, &
-       Ppll,Pmu,me,flag,F,P,E_PHI)
+       Ppll,Pmu,me,flag,F,P,E_PHI,ne)
 
     TYPE(PROFILES), INTENT(IN)                                 :: P
     TYPE(FIELDS), INTENT(IN)                                   :: F
@@ -1341,11 +1342,11 @@ contains
     REAL(rp), DIMENSION(8) :: gradB_R,gradB_PHI,gradB_Z
     REAL(rp), DIMENSION(8) 	:: E_R,E_Z
     REAL(rp), DIMENSION(8) 	:: PSIp
-    REAL(rp), DIMENSION(8), INTENT(OUT) 	:: E_PHI
+    REAL(rp), DIMENSION(8), INTENT(OUT) 	:: E_PHI,ne
     REAL(rp), DIMENSION(8), INTENT(IN) 			:: Y_R,Y_PHI,Y_Z
     INTEGER(is), DIMENSION(8), INTENT(INOUT) 			:: flag
     REAL(rp), INTENT(IN) 			:: me
-    REAL(rp), DIMENSION(8) 			:: ne,Te,Zeff
+    REAL(rp), DIMENSION(8) 			:: Te,Zeff
     REAL(rp), DIMENSION(8,2) 			:: dW
     REAL(rp), DIMENSION(8,2) 			:: rnd1
     REAL(rp) 					:: dt,time
@@ -1359,6 +1360,8 @@ contains
     REAL(rp) , DIMENSION(8)					:: dCAL
     REAL(rp), DIMENSION(8) 					:: CFL
     REAL(rp), DIMENSION(8) 					:: CBL
+    REAL(rp), DIMENSION(8) 	:: SC_p,SC_mu,BREM_p
+    REAL(rp) 					:: kappa
     integer(ip) :: cc
     integer(ip),INTENT(IN) :: tt
 
@@ -1476,12 +1479,19 @@ contains
           
           if (params%FokPlan.and.params%radiation) then
              if(params%GC_rad_model.eq.'SDE') then
-                dp(cc)=dp(cc)-gam(cc)*pm(cc)*(1-xi(cc)*xi(cc))/ &
-                     (cparams_ss%taur/Bmag(cc)**2)* &
-                     dt*REAL(flag(cc))
-                dxi(cc)=dxi(cc)+xi(cc)*(1-xi(cc)*xi(cc))/ &
-                     ((cparams_ss%taur/Bmag(cc)**2)*gam(cc))* &
-                     dt*REAL(flag(cc))
+
+                SC_p(cc)=-gam(cc)*pm(cc)*(1-xi(cc)*xi(cc))/ &
+                     (cparams_ss%taur/Bmag(cc)**2)
+                SC_mu(cc)=xi(cc)*(1-xi(cc)*xi(cc))/ &
+                     ((cparams_ss%taur/Bmag(cc)**2)*gam(cc))
+
+                kappa=2._rp*C_PI*C_RE**2._rp*C_ME*C_C**2._rp
+                BREM_p(cc)=-2._rp*ne(cc)*kappa*Zeff(cc)*(Zeff(cc)+1._rp)* &
+                     C_a/C_PI*(gam(cc)-1._rp)*(log(2._rp*gam(cc))-1._rp/3._rp)
+                     
+                
+                dp(cc)=dp(cc)+(SC_p(cc)+BREM_p(cc))*dt*REAL(flag(cc))
+                dxi(cc)=dxi(cc)+(SC_mu(cc))*dt*REAL(flag(cc))
                 
              end if
           end if

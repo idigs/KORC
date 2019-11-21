@@ -2988,7 +2988,7 @@ CONTAINS
              F%PSIp = 0.0_rp
           end if
 
-          F%PSIp=2*C_PI*(F%PSIp-minval(F%PSIp))
+!          F%PSIp=2*C_PI*(F%PSIp-minval(F%PSIp))
           
        end if
        
