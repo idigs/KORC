@@ -1265,7 +1265,7 @@ subroutine intitial_spatial_distribution(params,spp,P,F)
      CASE ('SPONG-3D')
         call Spong_3D(params,spp(ss))
      CASE ('HOLLMANN-3D')
-        call get_Hollmann_distribution_3D(params,spp(ss))
+        call get_Hollmann_distribution_3D(params,spp(ss),F)
      CASE DEFAULT
         call torus(params,spp(ss))
      END SELECT

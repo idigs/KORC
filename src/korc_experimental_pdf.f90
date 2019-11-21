@@ -7,6 +7,7 @@ MODULE korc_experimental_pdf
   use korc_coords
   use korc_rnd_numbers
   use korc_random
+  use korc_fields
 
   IMPLICIT NONE
 
@@ -33,6 +34,7 @@ MODULE korc_experimental_pdf
   TYPE, PRIVATE :: HOLLMANN_PARAMS
      CHARACTER(MAX_STRING_LENGTH) :: filename
      REAL(rp) :: E
+     REAL(rp) :: Eo
      REAL(rp) :: sigma_E
      REAL(rp) :: Zeff
      REAL(rp) :: sigma_Z
@@ -595,7 +597,8 @@ CONTAINS
 
   END SUBROUTINE get_Hollmann_distribution
 
-  SUBROUTINE get_Hollmann_distribution_3D(params,spp)
+  SUBROUTINE get_Hollmann_distribution_3D(params,spp,F)
+    TYPE(FIELDS), INTENT(IN)                                   :: F
     TYPE(KORC_PARAMS), INTENT(IN) :: params
     TYPE(SPECIES),  INTENT(INOUT) :: spp
 
@@ -605,7 +608,7 @@ CONTAINS
 
     call normalize_Hollmann_params(params)
 
-    call sample_Hollmann_distribution_3D(params,spp)
+    call sample_Hollmann_distribution_3D(params,spp,F)
 
   END SUBROUTINE get_Hollmann_distribution_3D
 
@@ -613,7 +616,7 @@ CONTAINS
     TYPE(KORC_PARAMS), INTENT(IN) :: params
     CHARACTER(MAX_STRING_LENGTH) :: filename
     CHARACTER(MAX_STRING_LENGTH) :: current_direction
-    REAL(rp) :: E,sigma_E
+    REAL(rp) :: E,sigma_E,Eo
     REAL(rp) :: Zeff,sigma_Z
     REAL(rp) :: max_pitch_angle
     REAL(rp) :: min_pitch_angle
@@ -625,7 +628,7 @@ CONTAINS
 
     NAMELIST /HollmannPDF/ E,Zeff,max_pitch_angle,min_pitch_angle,max_energy, &
          min_energy,filename,Bo,lambda,current_direction,A_fact,sigma_E, &
-         sigma_Z
+         sigma_Z,Eo
 
 
     open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
@@ -636,6 +639,7 @@ CONTAINS
     h_params%filename = TRIM(filename)
 
     h_params%E = E
+    h_params%Eo = Eo
     h_params%sigma_E = sigma_E
     h_params%Zeff = Zeff
     h_params%sigma_Z = sigma_Z
@@ -769,7 +773,8 @@ CONTAINS
     fRE_H = fRE_H*feta
   END FUNCTION fRE_H
 
-    FUNCTION fRE_H_3D(eta,g,R,Z,R0,Z0)
+  FUNCTION fRE_H_3D(F,eta,g,R,Z,R0,Z0)
+    TYPE(FIELDS), INTENT(IN)    :: F
     REAL(rp), INTENT(IN) 	:: eta ! pitch angle in degrees
     REAL(rp), INTENT(IN) 	:: g ! Relativistic gamma factor
     REAL(rp), INTENT(IN)  :: R,Z,R0,Z0
@@ -812,12 +817,15 @@ CONTAINS
     ! distribution PDF at gamma supplied to function
 
     rm=sqrt((R-R0)**2+(Z-Z0)**2)
-    E_G=exp(-(rm/h_params%sigma_E)**2/2)
-    Z_G=exp(-(rm/h_params%sigma_Z)**2/2)
+
+    E_G=F%Ro*h_params%Eo/R
+
+!    E_G=h_params%E*exp(-(rm/h_params%sigma_E)**2/2)
+    Z_G=h_params%Zeff*exp(-(rm/h_params%sigma_Z)**2/2)
 
 !    write(6,'("rm: ",E17.10)') rm
     
-    A = (2.0_rp*h_params%E*E_G/(h_params%Zeff*Z_G + 1.0_rp))*(g**2 - 1.0_rp)/g
+    A = (2.0_rp*E_G/(Z_G + 1.0_rp))*(g**2 - 1.0_rp)/g
     A = A*h_params%A_fact
 
     feta = A*EXP(-A*(1.0_rp - COS(deg2rad(eta))))/(1.0_rp - EXP(-2.0_rp*A))     ! MRC
@@ -1168,7 +1176,7 @@ FUNCTION indicator_exp(psi,psi_max)
   
 END FUNCTION indicator_exp
   
-  subroutine sample_Hollmann_distribution_3D(params,spp)
+  subroutine sample_Hollmann_distribution_3D(params,spp,F)
   !! @note Subroutine that generates a 2D Gaussian distribution in an 
   !! elliptic torus as the initial spatial condition of a given particle 
   !! species in the simulation. @endnote
@@ -1177,7 +1185,7 @@ END FUNCTION indicator_exp
   TYPE(SPECIES), INTENT(INOUT) 		:: spp
   !! An instance of the derived type SPECIES containing all the parameters
   !! and simulation variables of the different species in the simulation.
-
+  TYPE(FIELDS), INTENT(IN)                                   :: F
   !! An instance of the KORC derived type FIELDS.
   REAL(rp), DIMENSION(:), ALLOCATABLE 	:: R_samples,X_samples,Y_samples
   !! Major radial location of all samples
@@ -1246,7 +1254,7 @@ END FUNCTION indicator_exp
   
   nsamples = spp%ppp*params%mpi_params%nmpi
 
-  psi_max_buff = spp%psi_max*1.1_rp
+  psi_max_buff = spp%psi_max*2._rp
 
   theta_rad=C_PI*spp%theta_gauss/180.0_rp
 
@@ -1377,7 +1385,7 @@ END FUNCTION indicator_exp
            psi0=PSI_ROT_exp(R_buffer,spp%Ro,spp%sigmaR,Z_buffer,spp%Zo, &
                 spp%sigmaZ,theta_rad)
            
-           f0=fRE_H_3D(eta_buffer,G_buffer,R_buffer,Z_buffer,spp%Ro,spp%Zo)
+           f0=fRE_H_3D(F,eta_buffer,G_buffer,R_buffer,Z_buffer,spp%Ro,spp%Zo)
 !           f0=fRE_H(eta_buffer,G_buffer)
         end if
 
@@ -1390,7 +1398,7 @@ END FUNCTION indicator_exp
              spp%sigmaZ,theta_rad)       
         
                 
-        f1=fRE_H_3D(eta_test,G_test,R_test,Z_test,spp%Ro,spp%Zo)    
+        f1=fRE_H_3D(F,eta_test,G_test,R_test,Z_test,spp%Ro,spp%Zo)    
 !        f1=fRE_H(eta_test,G_test)
         
 !        write(6,'("psi0: ",E17.10)') psi0
@@ -1406,8 +1414,11 @@ END FUNCTION indicator_exp
         ! phase space and cylindrical coordinate Jacobian R for spatial
         ! phase space incorporated here.
         ratio = indicator_exp(psi1,spp%psi_max)* &
-             R_test*EXP(-psi1)*f1*sin(deg2rad(eta_test))/ &
-             (R_buffer*EXP(-psi0)*f0*sin(deg2rad(eta_buffer)))
+             R_test*f1*sin(deg2rad(eta_test))/ &
+             (R_buffer*f0*sin(deg2rad(eta_buffer)))
+!        ratio = indicator_exp(psi1,spp%psi_max)* &
+!             R_test*EXP(-psi1)*f1*sin(deg2rad(eta_test))/ &
+!             (R_buffer*EXP(-psi0)*f0*sin(deg2rad(eta_buffer)))
 
 !        ratio = f1*sin(deg2rad(eta_test))/(f0*sin(deg2rad(eta_buffer)))
 
@@ -1494,12 +1505,15 @@ END FUNCTION indicator_exp
 !        write(6,'("dZ: ",E17.10)') spp%dZ
 !        write(6,'("N_dR: ",Z17.10)') random_norm(0.0_rp,spp%dZ)
         
-        f1=fRE_H_3D(eta_test,G_test,R_test,Z_test,spp%Ro,spp%Zo)            
+        f1=fRE_H_3D(F,eta_test,G_test,R_test,Z_test,spp%Ro,spp%Zo)            
 !        f1=fRE_H(eta_test,G_test)
         
         ratio = indicator_exp(psi1,psi_max_buff)* &
-             R_test*EXP(-psi1)*f1*sin(deg2rad(eta_test))/ &
-             (R_buffer*EXP(-psi0)*f0*sin(deg2rad(eta_buffer)))
+             R_test*f1*sin(deg2rad(eta_test))/ &
+             (R_buffer*f0*sin(deg2rad(eta_buffer)))
+!        ratio = indicator_exp(psi1,psi_max_buff)* &
+!             R_test*EXP(-psi1)*f1*sin(deg2rad(eta_test))/ &
+!             (R_buffer*EXP(-psi0)*f0*sin(deg2rad(eta_buffer)))
 
 !        ratio = f1*sin(deg2rad(eta_test))/(f0*sin(deg2rad(eta_buffer)))
         

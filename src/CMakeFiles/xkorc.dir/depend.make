@@ -85,6 +85,7 @@ src/CMakeFiles/xkorc.dir/build: src/CMakeFiles/xkorc.dir/korc_energy_pdfs.f90.o.
 
 src/CMakeFiles/xkorc.dir/korc_experimental_pdf.f90.o: src/CMakeFiles/xkorc.dir/korc_constants.mod.stamp
 src/CMakeFiles/xkorc.dir/korc_experimental_pdf.f90.o: src/CMakeFiles/xkorc.dir/korc_coords.mod.stamp
+src/CMakeFiles/xkorc.dir/korc_experimental_pdf.f90.o: src/CMakeFiles/xkorc.dir/korc_fields.mod.stamp
 src/CMakeFiles/xkorc.dir/korc_experimental_pdf.f90.o: src/CMakeFiles/xkorc.dir/korc_hdf5.mod.stamp
 src/CMakeFiles/xkorc.dir/korc_experimental_pdf.f90.o: src/CMakeFiles/xkorc.dir/korc_hpc.mod.stamp
 src/CMakeFiles/xkorc.dir/korc_experimental_pdf.f90.o: src/CMakeFiles/xkorc.dir/korc_random.mod.stamp

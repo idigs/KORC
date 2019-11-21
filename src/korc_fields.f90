@@ -462,7 +462,7 @@ CONTAINS
     !$OMP END SIMD
 
   end subroutine analytical_fields_Bmag_p
-
+  
   subroutine add_analytical_E_p(params,tt,F,E_PHI)
 
     TYPE(KORC_PARAMS), INTENT(INOUT)                              :: params
