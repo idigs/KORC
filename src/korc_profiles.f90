@@ -301,7 +301,7 @@ CONTAINS
     vars%Zeff = P%Zeffo
   end subroutine uniform_profiles
 
-  subroutine analytical_profiles_p(time,params,Y_R,Y_Z,P,ne,Te,Zeff)
+  subroutine analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff)
     !! @note Subroutine that calculates the analytical plasma profiles at
     !! the particles' position. @endnote
     TYPE(KORC_PARAMS), INTENT(IN)                           :: params
@@ -311,6 +311,7 @@ CONTAINS
     !! An instance of KORC's derived type PROFILES containing all the
     !! information about the plasma profiles used in the simulation.
     !! See [[korc_types]] and [[korc_profiles]].
+    TYPE(FIELDS), INTENT(IN)      :: F
     REAL(rp), DIMENSION(8),INTENT(OUT) :: ne
     !! Background electron density seen by simulated particles.
     REAL(rp), DIMENSION(8),INTENT(OUT) :: Te

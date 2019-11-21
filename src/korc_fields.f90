@@ -2206,6 +2206,10 @@ CONTAINS
        
 !       end if
 
+       if (F%Bflux) then
+          F%PSIP_min=minval(F%PSIp)
+       end if
+       
           
        if (.not.F%Efield_in_file) then
           F%Eo = Eo

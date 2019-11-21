@@ -1129,7 +1129,7 @@ contains
 
 
   subroutine include_CoulombCollisions_FO_p(tt,params,X_X,X_Y,X_Z, &
-       U_X,U_Y,U_Z,B_X,B_Y,B_Z,me,P,flag)
+       U_X,U_Y,U_Z,B_X,B_Y,B_Z,me,P,F,flag)
     !! This subroutine performs a Stochastic collision process consistent
     !! with the Fokker-Planck model for relativitic electron colliding with
     !! a thermal (Maxwellian) plasma. The collision operator is in spherical
@@ -1140,6 +1140,7 @@ contains
     !! $$ \sqrt{CB}\gg CB \gg CF \sim \sqrt{CA} \gg CA,$$
     !! and only the dominant terms are kept.
     TYPE(PROFILES), INTENT(IN)                                 :: P
+    TYPE(FIELDS), INTENT(IN)      :: F
     TYPE(KORC_PARAMS), INTENT(IN) 		:: params
     REAL(rp), DIMENSION(8), INTENT(IN) 	:: X_X,X_Y,X_Z
     REAL(rp), DIMENSION(8)  	:: Y_R,Y_PHI,Y_Z
@@ -1192,7 +1193,7 @@ contains
        call cart_to_cyl_p(X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
 
        if (params%profile_model(1:10).eq.'ANALYTICAL') then
-          call analytical_profiles_p(time,params,Y_R,Y_Z,P,ne,Te,Zeff)
+          call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff)
        else  if (params%profile_model(1:8).eq.'EXTERNAL') then          
           call interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag)
        end if
@@ -1410,7 +1411,7 @@ contains
        end if
        
        if (params%profile_model(1:10).eq.'ANALYTICAL') then
-          call analytical_profiles_p(time,params,Y_R,Y_Z,P,ne,Te,Zeff)          
+          call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff)          
        else if (params%profile_model(1:8).eq.'EXTERNAL') then      
           call interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag)
        end if         

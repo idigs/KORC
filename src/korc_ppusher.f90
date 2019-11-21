@@ -426,7 +426,7 @@ contains
        
        !$OMP PARALLEL DO default(none) &
        !$OMP& FIRSTPRIVATE(E0,a,m_cache,q_cache,B0,EF0,lam,R0,q0,ar)&
-       !$OMP& shared(params,ii,spp,P) &
+       !$OMP& shared(params,ii,spp,P,F) &
        !$OMP& PRIVATE(pp,tt,Bmag,cc,X_X,X_Y,X_Z,V_X,V_Y,V_Z,B_X,B_Y,B_Z, &
        !$OMP& E_X,E_Y,E_Z,b_unit_X,b_unit_Y,b_unit_Z,v,vpar,vperp,tmp, &
        !$OMP& cross_X,cross_Y,cross_Z,vec_X,vec_Y,vec_Z,g,flag_cache)
@@ -455,7 +455,7 @@ contains
 
                 call advance_FOeqn_vars(tt,a,q_cache,m_cache,params, &
                      X_X,X_Y,X_Z,V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z, &
-                     P,g,flag_cache)
+                     P,F,g,flag_cache)
              end do !timestep iterator
 
              !$OMP SIMD
@@ -498,7 +498,7 @@ contains
              
              call advance_FP3Deqn_vars(params,X_X,X_Y,X_Z,V_X,V_Y,V_Z, &
                   g,m_cache,B0,lam,R0,q0,EF0,B_X,B_Y,B_Z,E_X,E_Y,E_Z, &
-                  P,flag_cache)
+                  P,F,flag_cache)
 
              !$OMP SIMD
              do cc=1_idef,8_idef
@@ -592,8 +592,9 @@ contains
   end subroutine adv_FOeqn_top
   
   subroutine advance_FOeqn_vars(tt,a,q_cache,m_cache,params,X_X,X_Y,X_Z, &
-       V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,P,g,flag_cache)
+       V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,P,F,g,flag_cache)
     TYPE(PROFILES), INTENT(IN)                                 :: P
+        TYPE(FIELDS), INTENT(IN)      :: F
     TYPE(KORC_PARAMS), INTENT(IN)                              :: params
     !! Core KORC simulation parameters.
 
@@ -771,7 +772,7 @@ contains
     if (params%collisions) then
 
        call include_CoulombCollisions_FO_p(tt,params,X_X,X_Y,X_Z, &
-            U_X,U_Y,U_Z,B_X,B_Y,B_Z,m_cache,P,flag_cache)
+            U_X,U_Y,U_Z,B_X,B_Y,B_Z,m_cache,P,F,flag_cache)
           
     end if
 
@@ -808,8 +809,9 @@ contains
 
   subroutine advance_FP3Deqn_vars(params,X_X,X_Y,X_Z,V_X,V_Y,V_Z,g, &
        m_cache,B0,lam,R0,q0,EF0,B_X,B_Y,B_Z,E_X,E_Y,E_Z, &
-       P,flag_cache)
+       P,F,flag_cache)
     TYPE(PROFILES), INTENT(IN)                                 :: P
+    TYPE(FIELDS), INTENT(IN)      :: F
     TYPE(KORC_PARAMS), INTENT(INOUT)                              :: params
     !! Core KORC simulation parameters.
     INTEGER                                                    :: cc
@@ -842,7 +844,7 @@ contains
     do tt=1_ip,params%t_skip
           
        call include_CoulombCollisions_FO_p(tt,params,X_X,X_Y,X_Z, &
-            U_X,U_Y,U_Z,B_X,B_Y,B_Z,m_cache,P,flag_cache)
+            U_X,U_Y,U_Z,B_X,B_Y,B_Z,m_cache,P,F,flag_cache)
        
     end do
 
@@ -947,7 +949,7 @@ contains
                 
                 call advance_FOinterp_vars(tt,a,q_cache,m_cache,params, &
                      X_X,X_Y,X_Z, &
-                     V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,g,flag_cache,P)
+                     V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,g,flag_cache,P,F)
              end do !timestep iterator
 
              !$OMP SIMD
@@ -989,7 +991,7 @@ contains
              !$OMP END SIMD
              
              call advance_FP3Dinterp_vars(params,X_X,X_Y,X_Z,V_X,V_Y,V_Z, &
-                  g,m_cache,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flag_cache,P)
+                  g,m_cache,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flag_cache,P,F)
 
              !$OMP SIMD
              do cc=1_idef,8_idef
@@ -1082,10 +1084,11 @@ contains
   end subroutine adv_FOinterp_top
   
   subroutine advance_FOinterp_vars(tt,a,q_cache,m_cache,params,X_X,X_Y,X_Z, &
-       V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,g,flag_cache,P)
+       V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,g,flag_cache,P,F)
     TYPE(KORC_PARAMS), INTENT(IN)                              :: params
     !! Core KORC simulation parameters.
     TYPE(PROFILES), INTENT(IN)                                 :: P
+    TYPE(FIELDS), INTENT(IN)      :: F
     INTEGER(ip), INTENT(IN)                                       :: tt
     !! Time step used in the leapfrog step (\(\Delta t\)).
     REAL(rp)                                      :: dt
@@ -1260,7 +1263,7 @@ contains
     if (params%collisions) then
        
        call include_CoulombCollisions_FO_p(tt,params,X_X,X_Y,X_Z, &
-            U_X,U_Y,U_Z,B_X,B_Y,B_Z,m_cache,P,flag_cache)
+            U_X,U_Y,U_Z,B_X,B_Y,B_Z,m_cache,P,F,flag_cache)
        
     end if
 
@@ -1297,10 +1300,11 @@ contains
   end subroutine advance_FOinterp_vars
 
   subroutine advance_FP3Dinterp_vars(params,X_X,X_Y,X_Z,V_X,V_Y,V_Z,g, &
-       m_cache,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flag_cache,P)    
+       m_cache,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flag_cache,P,F)    
     TYPE(KORC_PARAMS), INTENT(INOUT)                              :: params
     !! Core KORC simulation parameters.
     TYPE(PROFILES), INTENT(IN)                                 :: P
+    TYPE(FIELDS), INTENT(IN)      :: F
     INTEGER                                                    :: cc
     !! Chunk iterator.
     INTEGER(ip)                                                    :: tt
@@ -1330,7 +1334,7 @@ contains
     do tt=1_ip,params%t_skip
           
        call include_CoulombCollisions_FO_p(tt,params,X_X,X_Y,X_Z, &
-            U_X,U_Y,U_Z,B_X,B_Y,B_Z,m_cache,P,flag_cache)
+            U_X,U_Y,U_Z,B_X,B_Y,B_Z,m_cache,P,F,flag_cache)
        
     end do
 
@@ -3275,7 +3279,7 @@ contains
     end if
 
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -3334,7 +3338,7 @@ contains
     end if
 
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -3370,7 +3374,7 @@ contains
     end if
 
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)
 
@@ -3407,7 +3411,7 @@ contains
     end if
 
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)     
 
@@ -3449,7 +3453,7 @@ contains
     end if
 
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)   
 
@@ -3490,7 +3494,7 @@ contains
     end if
 
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)         
 
@@ -3543,7 +3547,7 @@ contains
        call add_interp_SCE_p_FS(params,F,PSIp,E_PHI)
     end if
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -3643,7 +3647,7 @@ contains
 
 
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -3700,7 +3704,7 @@ contains
 
 
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -3734,7 +3738,7 @@ contains
 
 
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)
 
@@ -3769,7 +3773,7 @@ contains
 
 
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)     
 
@@ -3809,7 +3813,7 @@ contains
 
 
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)   
 
@@ -3848,7 +3852,7 @@ contains
 
 
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)         
 
@@ -3899,7 +3903,7 @@ contains
     
        
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -3994,7 +3998,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -4023,7 +4027,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -4052,7 +4056,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)
 
@@ -4082,7 +4086,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)     
 
@@ -4117,7 +4121,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)   
 
@@ -4151,7 +4155,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)         
 
@@ -4198,7 +4202,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -4297,7 +4301,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -4350,7 +4354,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -4379,7 +4383,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)
 
@@ -4409,7 +4413,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)     
 
@@ -4444,7 +4448,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)   
 
@@ -4478,7 +4482,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)         
 
@@ -4525,7 +4529,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -4624,7 +4628,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -4677,7 +4681,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -4706,7 +4710,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)
 
@@ -4736,7 +4740,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)     
 
@@ -4771,7 +4775,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)   
 
@@ -4805,7 +4809,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)         
 
@@ -4852,7 +4856,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -4952,7 +4956,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -5005,7 +5009,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -5034,7 +5038,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)
 
@@ -5064,7 +5068,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)     
 
@@ -5099,7 +5103,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)   
 
@@ -5133,7 +5137,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)         
 
@@ -5180,7 +5184,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -5279,7 +5283,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -5308,7 +5312,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -5337,7 +5341,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)
 
@@ -5367,7 +5371,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)     
 
@@ -5402,7 +5406,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)   
 
@@ -5436,7 +5440,7 @@ contains
 
     call add_analytical_E_p(params,tt,F,E_PHI)
     
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)         
 
@@ -5483,7 +5487,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
+    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache) 
 
@@ -5618,12 +5622,12 @@ contains
     
   end subroutine GCEoM_p
 
-  subroutine GCEoM1_p(tt,P,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
-       B_R,B_PHI, &
-       B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI, &
-       gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)
+  subroutine GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+       B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+       gradB_R,gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache)
     TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
     !! Core KORC simulation parameters.
+    TYPE(FIELDS), INTENT(IN)      :: F
     TYPE(PROFILES), INTENT(IN)                                 :: P
     REAL(rp),DIMENSION(8)  :: Bmag,bhat_R,bhat_PHI,bhat_Z,Bst_R,Bst_PHI
     REAL(rp),DIMENSION(8)  :: BstdotE,BstdotgradB,EcrossB_R,EcrossB_PHI,bdotBst
@@ -5708,9 +5712,15 @@ contains
           SR_MU(cc)=-2._rp*V_MU(cc)/tau_R(cc)* &
                (gamgc(cc)*(1-xi(cc)*xi(cc))+xi(cc)*xi(cc)/gamgc(cc))
 
-          time=(params%it+tt)*params%dt
-          call analytical_profiles_p(time,params,Y_R,Y_Z,P,ne,Te,Zeff)          
-
+       end do
+       !$OMP END SIMD
+          
+       time=(params%it+tt)*params%dt
+       call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff)
+       
+       !$OMP SIMD
+!       !$OMP& aligned(tau_R,Bmag,RHS_PLL,V_PLL,xi,gamgc,RHS_MU,V_MU)
+       do cc=1_idef,8
           !Normalizations done here
           BREM_P(cc)=-4._rp*(C_RE/params%cpp%length)**2*ne(cc)* &
                Zeff(cc)*(Zeff(cc)+1._rp)*C_a* &
@@ -5719,9 +5729,9 @@ contains
           BREM_MU(cc)=(1._rp-xi(cc)*xi(cc))*V_PLL(cc)/ &
                (Bmag(cc)*xi(cc))*BREM_P(cc)
           
-          RHS_PLL(cc)=RHS_PLL(cc)+BREM_PLL(cc)+SR_PLL(cc)
-          RHS_MU(cc)=BREM_MU(cc)+SR_MU(cc)
-          
+          RHS_PLL(cc)=RHS_PLL(cc)+SR_PLL(cc)+BREM_PLL(cc)
+          RHS_MU(cc)=SR_MU(cc)+BREM_MU(cc)
+
        end do
        !$OMP END SIMD
        

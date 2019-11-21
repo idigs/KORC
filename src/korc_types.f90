@@ -533,6 +533,7 @@ module korc_types
      REAL(rp)  :: E_dyn
      REAL(rp)  :: E_pulse
      REAL(rp)  :: E_width
+     REAL(rp)  :: PSIP_min
      !! interpolated E field
      INTEGER 			:: res_double
      INTEGER, DIMENSION(3) 			:: dims 
