@@ -288,7 +288,7 @@ program main
 
 
   
-  if (.NOT.params%restart) then
+  if (.NOT.(params%restart.OR.params%proceed)) then
      
      call save_simulation_outputs(params,spp,F) ! Save initial condition
 
