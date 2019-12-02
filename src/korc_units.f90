@@ -224,6 +224,8 @@ subroutine normalize_variables(params,spp,F,P)
              (params%cpp%Bo*params%cpp%length**2)
         F%PSIP_min = F%PSIP_min/ &
              (params%cpp%Bo*params%cpp%length**2)
+        F%PSIp_lim = F%PSIp_lim/ &
+             (params%cpp%Bo*params%cpp%length**2)
         
         F%X%R = F%X%R/params%cpp%length
         ! Nothing to do for the PHI component
@@ -274,6 +276,7 @@ subroutine normalize_variables(params,spp,F,P)
 
      if (ALLOCATED(F%PSIp)) F%PSIp = F%PSIp/(params%cpp%Bo*params%cpp%length**2)
      F%PSIP_min = F%PSIP_min/(params%cpp%Bo*params%cpp%length**2)
+     F%PSIp_lim = F%PSIp_lim/(params%cpp%Bo*params%cpp%length**2)
      
      if (ALLOCATED(F%B_2D%R)) F%B_2D%R = F%B_2D%R/params%cpp%Bo
      if (ALLOCATED(F%B_2D%PHI)) F%B_2D%PHI = F%B_2D%PHI/params%cpp%Bo

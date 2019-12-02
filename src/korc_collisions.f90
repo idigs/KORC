@@ -1129,7 +1129,7 @@ contains
 
 
   subroutine include_CoulombCollisions_FO_p(tt,params,X_X,X_Y,X_Z, &
-       U_X,U_Y,U_Z,B_X,B_Y,B_Z,me,P,F,flag)
+       U_X,U_Y,U_Z,B_X,B_Y,B_Z,me,P,F,flag,PSIp)
     !! This subroutine performs a Stochastic collision process consistent
     !! with the Fokker-Planck model for relativitic electron colliding with
     !! a thermal (Maxwellian) plasma. The collision operator is in spherical
@@ -1142,7 +1142,7 @@ contains
     TYPE(PROFILES), INTENT(IN)                                 :: P
     TYPE(FIELDS), INTENT(IN)      :: F
     TYPE(KORC_PARAMS), INTENT(IN) 		:: params
-    REAL(rp), DIMENSION(8), INTENT(IN) 	:: X_X,X_Y,X_Z
+    REAL(rp), DIMENSION(8), INTENT(IN) 	:: X_X,X_Y,X_Z,PSIp
     REAL(rp), DIMENSION(8)  	:: Y_R,Y_PHI,Y_Z
     REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: U_X,U_Y,U_Z
 
@@ -1193,7 +1193,7 @@ contains
        call cart_to_cyl_p(X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
 
        if (params%profile_model(1:10).eq.'ANALYTICAL') then
-          call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff)
+          call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
        else  if (params%profile_model(1:8).eq.'EXTERNAL') then          
           call interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag)
        end if
@@ -1330,19 +1330,18 @@ contains
 
 
   subroutine include_CoulombCollisions_GC_p(tt,params,Y_R,Y_PHI,Y_Z, &
-       Ppll,Pmu,me,flag,F,P,E_PHI,ne)
+       Ppll,Pmu,me,flag,F,P,E_PHI,ne,PSIp)
 
     TYPE(PROFILES), INTENT(IN)                                 :: P
     TYPE(FIELDS), INTENT(IN)                                   :: F
     TYPE(KORC_PARAMS), INTENT(INOUT) 		:: params
     REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: Ppll
-    REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: Pmu
+    REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: Pmu,PSIp
     REAL(rp), DIMENSION(8) 			:: Bmag
     REAL(rp), DIMENSION(8) 	:: B_R,B_PHI,B_Z
     REAL(rp), DIMENSION(8) :: curlb_R,curlb_PHI,curlb_Z
     REAL(rp), DIMENSION(8) :: gradB_R,gradB_PHI,gradB_Z
     REAL(rp), DIMENSION(8) 	:: E_R,E_Z
-    REAL(rp), DIMENSION(8) 	:: PSIp
     REAL(rp), DIMENSION(8), INTENT(OUT) 	:: E_PHI,ne
     REAL(rp), DIMENSION(8), INTENT(IN) 			:: Y_R,Y_PHI,Y_Z
     INTEGER(is), DIMENSION(8), INTENT(INOUT) 			:: flag
@@ -1411,7 +1410,7 @@ contains
        end if
        
        if (params%profile_model(1:10).eq.'ANALYTICAL') then
-          call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff)          
+          call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
        else if (params%profile_model(1:8).eq.'EXTERNAL') then      
           call interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag)
        end if         

@@ -1907,14 +1907,14 @@ CONTAINS
     integer :: res_double
     real(rp) :: RMAX,RMIN,ZMAX,ZMIN
     integer :: dim_1D
-    real(rp) :: dt_E_SC,Ip_exp
+    real(rp) :: dt_E_SC,Ip_exp,PSIp_lim
     
 
     NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
          qa,qo,Eo,current_direction,nR,nZ,nPHI,dim_1D,dt_E_SC,Ip_exp
     NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux,Bflux3D,dBfield, &
          axisymmetric_fields, Eo,E_model,E_dyn,E_pulse,E_width,res_double, &
-         dim_1D,dt_E_SC,Ip_exp
+         dim_1D,dt_E_SC,Ip_exp,PSIp_lim
 
     if (params%mpi_params%rank .EQ. 0) then
        write(6,'(/,"* * * * * * * * INITIALIZING FIELDS * * * * * * * *")')
@@ -2146,6 +2146,8 @@ CONTAINS
        F%E_pulse = E_pulse
        F%E_width = E_width
 
+       F%PSIp_lim=PSIp_lim
+       
        F%res_double=res_double
 
 !       write(6,'("E_dyn: ",E17.10)') E_dyn

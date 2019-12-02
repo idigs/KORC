@@ -183,6 +183,9 @@ CONTAINS
                 CASE('RE-EVO1')                   
                    !flat profile placeholder, updates every timestep
                    P%ne_2D(ii,kk) = P%neo
+                CASE('RE-EVO-PSI')                   
+                   !flat profile placeholder, updates every timestep
+                   P%ne_2D(ii,kk) = P%neo
                 CASE DEFAULT
                    P%ne_2D(ii,kk) = P%neo
                 END SELECT
@@ -301,11 +304,11 @@ CONTAINS
     vars%Zeff = P%Zeffo
   end subroutine uniform_profiles
 
-  subroutine analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff)
+  subroutine analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
     !! @note Subroutine that calculates the analytical plasma profiles at
     !! the particles' position. @endnote
     TYPE(KORC_PARAMS), INTENT(IN)                           :: params
-    REAL(rp), DIMENSION(8), INTENT(IN)  :: Y_R,Y_Z
+    REAL(rp), DIMENSION(8), INTENT(IN)  :: Y_R,Y_Z,PSIp
     REAL(rp), INTENT(IN)  :: time
     TYPE(PROFILES), INTENT(IN)                         :: P
     !! An instance of KORC's derived type PROFILES containing all the
@@ -323,8 +326,10 @@ CONTAINS
     REAL(rp) :: R0,Z0,a,ne0,n_ne,Te0,n_Te,Zeff0
     REAL(rp) :: R0_RE,Z0_RE,sigmaR_RE,sigmaZ_RE,psimax_RE
     REAL(rp) :: n_REr0,n_tauion,n_lamfront,n_lamback,n_lamshelf
+    REAL(rp) :: n_psifront,n_psiback,n_psishelf
     REAL(rp) :: n_taushelf,n_shelfdelay,n_shelf
-    REAL(rp), DIMENSION(8) :: r_a,rm,rm_RE
+    REAL(rp) :: PSIp0,PSIp_lim
+    REAL(rp), DIMENSION(8) :: r_a,rm,rm_RE,PSIpN
 
     R0=P%R0
     Z0=P%Z0
@@ -347,9 +352,18 @@ CONTAINS
     n_lamfront=P%n_lamfront
     n_lamback=P%n_lamback
     n_lamshelf=P%n_lamshelf
+    n_psifront=P%n_lamfront*params%cpp%length
+    n_psiback=P%n_lamback*params%cpp%length
+    n_psishelf=P%n_lamshelf*params%cpp%length
     n_shelf=P%n_shelf
     
+    PSIp_lim=F%PSIp_lim
+    PSIp0=F%PSIP_min
 
+!    write(6,*) 'PSIp',PSIp(1)*(params%cpp%Bo*params%cpp%length**2)
+!    write(6,*) 'PSIp_lim',PSIp_lim*(params%cpp%Bo*params%cpp%length**2)   
+!    write(6,*) 'PSIp0',PSIp0*(params%cpp%Bo*params%cpp%length**2)
+    
 !    write(6,'("R0_RE: "E17.10)') R0_RE
 !    write(6,'("Z0_RE: "E17.10)') Z0_RE
 !    write(6,'("n_REr0: "E17.10)') n_REr0
@@ -361,6 +375,8 @@ CONTAINS
        rm(cc)=sqrt((Y_R(cc)-R0)**2+(Y_Z(cc)-Z0)**2)
        rm_RE(cc)=sqrt((Y_R(cc)-R0_RE)**2+(Y_Z(cc)-Z0_RE)**2)
        r_a(cc)=rm(cc)/a
+
+       PSIpN(cc)=(PSIp(cc)-PSIp0)/(PSIp_lim-PSIp0)
        
        SELECT CASE (TRIM(P%ne_profile))
        CASE('FLAT')
@@ -376,8 +392,15 @@ CONTAINS
                n_REr0*(time/n_tauion-1))/n_lamfront))* &
                (1+tanh(-(rm_RE(cc)-n_REr0)/n_lamback))* &
                (2*(n_shelf-n_ne)/(ne0-n_ne)+(ne0-n_shelf)/(ne0-n_ne)* &
-               (1-tanh(rm_RE(cc)+n_REr0*((time-n_shelfdelay)/n_taushelf-1))))+ &
-               n_ne
+               (1-tanh((rm_RE(cc)+n_REr0*((time-n_shelfdelay)/n_taushelf-1))/ &
+               n_lamshelf)))+n_ne
+       CASE('RE-EVO-PSI')
+          ne(cc) = (ne0-n_ne)/8._rp*(1+tanh((PSIpN(cc)+ &
+               (time/n_tauion-1))/n_psifront))* &
+               (1+tanh(-(PSIpN(cc)-1)/n_psiback))* &
+               (2*(n_shelf-n_ne)/(ne0-n_ne)+(ne0-n_shelf)/(ne0-n_ne)* &
+               (1-tanh((PSIpN(cc)+((time-n_shelfdelay)/n_taushelf-1))/ &
+               n_psishelf)))+n_ne
        CASE DEFAULT
           ne(cc) = ne0
        END SELECT
@@ -403,6 +426,8 @@ CONTAINS
     end do
     !$OMP END SIMD
 
+    write(6,*) PSIpN(1)
+    
 !    write(6,'("ne: "E17.10)') ne(1)
 !    write(6,'("rm_RE: "E17.10)') rm_RE(1)
     
