@@ -5662,7 +5662,7 @@ contains
     REAL(rp),INTENT(in) :: q_cache,m_cache
     INTEGER(ip)  :: cc
     INTEGER(ip),INTENT(IN)  :: tt
-    REAL(rp)  :: time
+    REAL(rp)  :: time,re_cache,alpha_cache
     REAL(rp), DIMENSION(8) 			:: ne,Te,Zeff
     
     !$OMP SIMD
@@ -5719,6 +5719,12 @@ contains
     if (params%radiation.and.(params%GC_rad_model.eq.'SDE')) then
 
 !       write(6,*) 'RHS_PLL',RHS_PLL(1)
+
+       re_cache=C_RE/params%cpp%length
+       alpha_cache=C_a
+       
+       time=(params%it+tt)*params%dt
+!       call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
        
        !$OMP SIMD
 !       !$OMP& aligned(tau_R,Bmag,RHS_PLL,V_PLL,xi,gamgc,RHS_MU,V_MU)
@@ -5731,28 +5737,20 @@ contains
           SR_MU(cc)=-2._rp*V_MU(cc)/tau_R(cc)* &
                (gamgc(cc)*(1-xi(cc)*xi(cc))+xi(cc)*xi(cc)/gamgc(cc))
 
-       end do
-       !$OMP END SIMD
-          
-       time=(params%it+tt)*params%dt
-       call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
-       
-       !$OMP SIMD
-!       !$OMP& aligned(tau_R,Bmag,RHS_PLL,V_PLL,xi,gamgc,RHS_MU,V_MU)
-       do cc=1_idef,8
           !Normalizations done here
-          BREM_P(cc)=-4._rp*(C_RE/params%cpp%length)**2*ne(cc)* &
-               Zeff(cc)*(Zeff(cc)+1._rp)*C_a* &
-               (gamgc(cc)-1._rp)*(log(2._rp*gamgc(cc))-1._rp/3._rp)
-          BREM_PLL(cc)=xi(cc)*BREM_P(cc)
-          BREM_MU(cc)=(1._rp-xi(cc)*xi(cc))*V_PLL(cc)/ &
-               (Bmag(cc)*xi(cc))*BREM_P(cc)
+!          BREM_P(cc)=-4._rp*re_cache**2*ne(cc)* &
+!               Zeff(cc)*(Zeff(cc)+1._rp)*alpha_cache* &
+!               (gamgc(cc)-1._rp)*(log(2._rp*gamgc(cc))-1._rp/3._rp)
+!          BREM_PLL(cc)=xi(cc)*BREM_P(cc)
+!          BREM_MU(cc)=(1._rp-xi(cc)*xi(cc))*V_PLL(cc)/ &
+!               (Bmag(cc)*xi(cc))*BREM_P(cc)
           
-          RHS_PLL(cc)=RHS_PLL(cc)+SR_PLL(cc)+BREM_PLL(cc)
-          RHS_MU(cc)=SR_MU(cc)+BREM_MU(cc)
-
+          RHS_PLL(cc)=RHS_PLL(cc)+SR_PLL(cc)!+BREM_PLL(cc)
+          RHS_MU(cc)=SR_MU(cc)!+BREM_MU(cc)
+          
        end do
        !$OMP END SIMD
+                
        
     end if
     

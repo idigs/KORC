@@ -367,66 +367,111 @@ CONTAINS
 !    write(6,'("R0_RE: "E17.10)') R0_RE
 !    write(6,'("Z0_RE: "E17.10)') Z0_RE
 !    write(6,'("n_REr0: "E17.10)') n_REr0
+
     
-    !$OMP SIMD
-!    !$OMP& aligned(rm,r_a,ne,Te,Zeff)
-    do cc=1_idef,8_idef
-
-       rm(cc)=sqrt((Y_R(cc)-R0)**2+(Y_Z(cc)-Z0)**2)
-       rm_RE(cc)=sqrt((Y_R(cc)-R0_RE)**2+(Y_Z(cc)-Z0_RE)**2)
-       r_a(cc)=rm(cc)/a
-
-       PSIpN(cc)=(PSIp(cc)-PSIp0)/(PSIp_lim-PSIp0)
-       
-       SELECT CASE (TRIM(P%ne_profile))
-       CASE('FLAT')
+    SELECT CASE (TRIM(P%ne_profile))
+    CASE('FLAT')
+       !$OMP SIMD
+       do cc=1_idef,8_idef
           ne(cc) = ne0
-       CASE('SPONG')
+       end do
+       !$OMP END SIMD
+
+    CASE('SPONG')
+       !$OMP SIMD
+       do cc=1_idef,8_idef
+          rm(cc)=sqrt((Y_R(cc)-R0)**2+(Y_Z(cc)-Z0)**2)
+          r_a(cc)=rm(cc)/a
           ne(cc) = ne0*(1._rp-0.2*r_a(cc)**8)+n_ne
-       CASE('RE-EVO')
+       end do
+       !$OMP END SIMD
+    CASE('RE-EVO')
+       !$OMP SIMD
+       do cc=1_idef,8_idef
+          rm_RE(cc)=sqrt((Y_R(cc)-R0_RE)**2+(Y_Z(cc)-Z0_RE)**2)
           ne(cc) = (ne0-n_ne)/4._rp*(1+tanh((rm_RE(cc)+ &
                n_REr0*(time/n_tauion-1))/n_lamfront))* &
                (1+tanh(-(rm_RE(cc)-n_REr0)/n_lamback))+n_ne
-       CASE('RE-EVO1')
+       end do
+       !$OMP END SIMD
+    CASE('RE-EVO1')
+       !$OMP SIMD
+       do cc=1_idef,8_idef
+          rm_RE(cc)=sqrt((Y_R(cc)-R0_RE)**2+(Y_Z(cc)-Z0_RE)**2)
           ne(cc) = (ne0-n_ne)/8._rp*(1+tanh((rm_RE(cc)+ &
                n_REr0*(time/n_tauion-1))/n_lamfront))* &
                (1+tanh(-(rm_RE(cc)-n_REr0)/n_lamback))* &
                (2*(n_shelf-n_ne)/(ne0-n_ne)+(ne0-n_shelf)/(ne0-n_ne)* &
                (1-tanh((rm_RE(cc)+n_REr0*((time-n_shelfdelay)/n_taushelf-1))/ &
                n_lamshelf)))+n_ne
-       CASE('RE-EVO-PSI')
+       end do
+       !$OMP END SIMD
+    CASE('RE-EVO-PSI')
+       !$OMP SIMD
+       do cc=1_idef,8_idef
+          PSIpN(cc)=(PSIp(cc)-PSIp0)/(PSIp_lim-PSIp0)
           ne(cc) = (ne0-n_ne)/8._rp*(1+tanh((PSIpN(cc)+ &
                (time/n_tauion-1))/n_psifront))* &
                (1+tanh(-(PSIpN(cc)-1)/n_psiback))* &
                (2*(n_shelf-n_ne)/(ne0-n_ne)+(ne0-n_shelf)/(ne0-n_ne)* &
                (1-tanh((PSIpN(cc)+((time-n_shelfdelay)/n_taushelf-1))/ &
                n_psishelf)))+n_ne
-       CASE DEFAULT
+       end do
+       !$OMP END SIMD
+    CASE DEFAULT
+       !$OMP SIMD
+       do cc=1_idef,8_idef
           ne(cc) = ne0
-       END SELECT
-       
-       SELECT CASE (TRIM(P%Te_profile))
-       CASE('FLAT')       
+       end do
+       !$OMP END SIMD
+    END SELECT
+
+    SELECT CASE (TRIM(P%Te_profile))
+    CASE('FLAT')
+       !$OMP SIMD
+       do cc=1_idef,8_idef
           Te(cc) = Te0
-       CASE('SPONG')
+       end do
+       !$OMP END SIMD
+    CASE('SPONG')
+       !$OMP SIMD
+       do cc=1_idef,8_idef
+          rm(cc)=sqrt((Y_R(cc)-R0)**2+(Y_Z(cc)-Z0)**2)
+          r_a(cc)=rm(cc)/a
           Te(cc) = Te0*(1._rp-0.6*r_a(cc)**2)**2+Te0*n_Te
-       CASE DEFAULT
+       end do
+       !$OMP END SIMD
+    CASE DEFAULT
+       !$OMP SIMD
+       do cc=1_idef,8_idef
           Te(cc) = P%Teo
-       END SELECT
+       end do
+       !$OMP END SIMD
+    END SELECT
 
-       SELECT CASE (TRIM(P%Zeff_profile))
-       CASE('FLAT') 
+    SELECT CASE (TRIM(P%Zeff_profile))
+    CASE('FLAT')
+       !$OMP SIMD
+       do cc=1_idef,8_idef
           Zeff(cc) = P%Zeffo
-       CASE('SPONG')
+       end do
+       !$OMP END SIMD
+    CASE('SPONG')
+       !$OMP SIMD
+       do cc=1_idef,8_idef
           Zeff(cc) = P%Zeffo
-       CASE DEFAULT
+       end do
+       !$OMP END SIMD
+    CASE DEFAULT
+       !$OMP SIMD
+       do cc=1_idef,8_idef
           Zeff(cc) = P%Zeffo
-       END SELECT
+       end do
+       !$OMP END SIMD
+    END SELECT
           
-    end do
-    !$OMP END SIMD
 
-    write(6,*) PSIpN(1)
+!    write(6,*) PSIpN(1)
     
 !    write(6,'("ne: "E17.10)') ne(1)
 !    write(6,'("rm_RE: "E17.10)') rm_RE(1)
