@@ -410,11 +410,11 @@ CONTAINS
        !$OMP SIMD
        do cc=1_idef,8_idef
           PSIpN(cc)=(PSIp(cc)-PSIp0)/(PSIp_lim-PSIp0)
-          ne(cc) = (ne0-n_ne)/8._rp*(1+tanh((PSIpN(cc)+ &
+          ne(cc) = (ne0-n_ne)/8._rp*(1+tanh((sqrt(PSIpN(cc))+ &
                (time/n_tauion-1))/n_psifront))* &
-               (1+tanh(-(PSIpN(cc)-1)/n_psiback))* &
+               (1+tanh(-(sqrt(PSIpN(cc))-1)/n_psiback))* &
                (2*(n_shelf-n_ne)/(ne0-n_ne)+(ne0-n_shelf)/(ne0-n_ne)* &
-               (1-tanh((PSIpN(cc)+((time-n_shelfdelay)/n_taushelf-1))/ &
+               (1-tanh((sqrt(PSIpN(cc))+((time-n_shelfdelay)/n_taushelf-1))/ &
                n_psishelf)))+n_ne
        end do
        !$OMP END SIMD
