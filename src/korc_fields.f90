@@ -463,13 +463,14 @@ CONTAINS
 
   end subroutine analytical_fields_Bmag_p
   
-  subroutine add_analytical_E_p(params,tt,F,E_PHI)
+  subroutine add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
     TYPE(KORC_PARAMS), INTENT(INOUT)                              :: params
     TYPE(FIELDS), INTENT(IN)                                   :: F
     INTEGER(ip),INTENT(IN)  :: tt
-    REAL(rp)  :: E_dyn,E_pulse,E_width,time,arg,arg1
+    REAL(rp)  :: E_dyn,E_pulse,E_width,time,arg,arg1,R0
     REAL(rp),DIMENSION(8),INTENT(INOUT) :: E_PHI
+    REAL(rp),DIMENSION(8),INTENT(IN) :: Y_R
     integer(ip) :: cc
 
     time=(params%it+tt)*params%dt
@@ -477,6 +478,7 @@ CONTAINS
     E_dyn=F%E_dyn
     E_pulse=F%E_pulse
     E_width=F%E_width
+    R0=F%Ro
 
 !    write(6,'("E_dyn: ",E17.10)') E_dyn
 !    write(6,'("E_pulse: ",E17.10)') E_pulse
@@ -489,7 +491,7 @@ CONTAINS
        arg=(time-E_pulse)**2/(2._rp*E_width**2)
        arg1=10._rp*(time-E_pulse)/(sqrt(2._rp)*E_width)
        
-       E_PHI(cc)=E_PHI(cc)+E_dyn*exp(-arg)*(1._rp+erf(-arg1))/2._rp
+       E_PHI(cc)=E_PHI(cc)+R0*E_dyn/Y_R(cc)*exp(-arg)*(1._rp+erf(-arg1))/2._rp
     end do
     !$OMP END SIMD
 

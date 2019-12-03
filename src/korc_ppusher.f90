@@ -1529,10 +1529,11 @@ contains
              !$OMP SIMD
              do cc=1_idef,8_idef
                 E_PHI(cc)=spp(ii)%vars%E(pp-1+cc,2)
+                Y_R(cc)=spp(ii)%vars%Y(pp-1+cc,1)                
              end do
              !$OMP END SIMD
              
-             call add_analytical_E_p(params,0_ip,F,E_PHI)
+             call add_analytical_E_p(params,0_ip,F,E_PHI,Y_R)
 
 
              !$OMP SIMD
@@ -1634,12 +1635,12 @@ contains
              !$OMP SIMD
              do cc=1_idef,8_idef
                 E_PHI(cc)=spp(ii)%vars%E(pp-1+cc,2)
-                
+                Y_R(cc)=spp(ii)%vars%Y(pp-1+cc,1)                
              end do
              !$OMP END SIMD
 
              if (params%field_model(1:8).eq.'EXTERNAL') then
-                call add_analytical_E_p(params,0_ip,F,E_PHI)
+                call add_analytical_E_p(params,0_ip,F,E_PHI,Y_R)
              end if
 
              !$OMP SIMD
@@ -3290,7 +3291,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     if (params%SC_E_add) then
        call add_interp_SCE_p_FS(params,F,PSIp,E_PHI)
@@ -3348,7 +3349,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
 
     if (params%SC_E_add) then
@@ -3384,7 +3385,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
  
     if (params%SC_E_add) then
@@ -3421,7 +3422,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
 
     if (params%SC_E_add) then
@@ -3463,7 +3464,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
 
     if (params%SC_E_add) then
@@ -3504,7 +3505,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
 
     if (params%SC_E_add) then
@@ -3559,7 +3560,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     if (params%SC_E_add) then
        call add_interp_SCE_p_FS(params,F,PSIp,E_PHI)
@@ -3661,7 +3662,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
 
 
@@ -3716,7 +3717,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
 
 
@@ -3750,7 +3751,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
  
 
@@ -3785,7 +3786,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
 
 
@@ -3825,7 +3826,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
 
 
@@ -3864,7 +3865,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
 
 
@@ -3917,7 +3918,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
        
     
@@ -4014,7 +4015,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -4043,7 +4044,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -4072,7 +4073,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -4102,7 +4103,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -4137,7 +4138,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -4171,7 +4172,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -4236,7 +4237,7 @@ contains
 
  
     
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     if (params%collisions) then       
        
@@ -4317,7 +4318,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -4370,7 +4371,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -4399,7 +4400,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -4429,7 +4430,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -4464,7 +4465,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -4498,7 +4499,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -4563,7 +4564,7 @@ contains
 
  
     
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     if (params%collisions) then       
        
@@ -4644,7 +4645,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -4697,7 +4698,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -4726,7 +4727,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -4756,7 +4757,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -4791,7 +4792,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -4825,7 +4826,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -4890,7 +4891,7 @@ contains
 
  
     
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     if (params%collisions) then       
        
@@ -4972,7 +4973,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -5025,7 +5026,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -5054,7 +5055,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -5084,7 +5085,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -5119,7 +5120,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -5153,7 +5154,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache,PSIp)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -5218,7 +5219,7 @@ contains
 
  
     
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     if (params%collisions) then       
        
@@ -5299,7 +5300,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -5328,7 +5329,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -5357,7 +5358,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -5387,7 +5388,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -5422,7 +5423,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -5456,7 +5457,7 @@ contains
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flag_cache)
 
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
@@ -5521,7 +5522,7 @@ contains
 
  
     
-    call add_analytical_E_p(params,tt,F,E_PHI)
+    call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     
     if (params%collisions) then       
        
@@ -5724,7 +5725,7 @@ contains
        alpha_cache=C_a
        
        time=(params%it+tt)*params%dt
-!       call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
+       call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
        
        !$OMP SIMD
 !       !$OMP& aligned(tau_R,Bmag,RHS_PLL,V_PLL,xi,gamgc,RHS_MU,V_MU)
@@ -5738,15 +5739,15 @@ contains
                (gamgc(cc)*(1-xi(cc)*xi(cc))+xi(cc)*xi(cc)/gamgc(cc))
 
           !Normalizations done here
-!          BREM_P(cc)=-4._rp*re_cache**2*ne(cc)* &
-!               Zeff(cc)*(Zeff(cc)+1._rp)*alpha_cache* &
-!               (gamgc(cc)-1._rp)*(log(2._rp*gamgc(cc))-1._rp/3._rp)
-!          BREM_PLL(cc)=xi(cc)*BREM_P(cc)
-!          BREM_MU(cc)=(1._rp-xi(cc)*xi(cc))*V_PLL(cc)/ &
-!               (Bmag(cc)*xi(cc))*BREM_P(cc)
+          BREM_P(cc)=-4._rp*re_cache**2*ne(cc)* &
+               Zeff(cc)*(Zeff(cc)+1._rp)*alpha_cache* &
+               (gamgc(cc)-1._rp)*(log(2._rp*gamgc(cc))-1._rp/3._rp)
+          BREM_PLL(cc)=xi(cc)*BREM_P(cc)
+          BREM_MU(cc)=(1._rp-xi(cc)*xi(cc))*V_PLL(cc)/ &
+               (Bmag(cc)*xi(cc))*BREM_P(cc)
           
-          RHS_PLL(cc)=RHS_PLL(cc)+SR_PLL(cc)!+BREM_PLL(cc)
-          RHS_MU(cc)=SR_MU(cc)!+BREM_MU(cc)
+          RHS_PLL(cc)=RHS_PLL(cc)+SR_PLL(cc)+BREM_PLL(cc)
+          RHS_MU(cc)=SR_MU(cc)+BREM_MU(cc)
           
        end do
        !$OMP END SIMD

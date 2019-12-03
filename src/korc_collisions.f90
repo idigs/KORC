@@ -1406,7 +1406,7 @@ contains
                      gradB_R,gradB_PHI,gradB_Z,flag)
              end if
           endif
-          call add_analytical_E_p(params,tt,F,E_PHI)
+          call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
        end if
        
        if (params%profile_model(1:10).eq.'ANALYTICAL') then
