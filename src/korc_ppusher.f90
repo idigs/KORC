@@ -1523,7 +1523,8 @@ contains
           !Preparing Output Data
           call get_fields(params,spp(ii)%vars,F)
 
-          !$OMP PARALLEL DO shared(F,params,spp) PRIVATE(pp,E_PHI)
+          !$OMP PARALLEL DO shared(F,params,spp) &
+          !$OMP& PRIVATE(cc,pp,E_PHI,Y_R)
           do pp=1_idef,spp(ii)%ppp,8
 
              !$OMP SIMD
@@ -1629,7 +1630,7 @@ contains
           !$OMP END PARALLEL DO  
           
           !$OMP PARALLEL DO shared(F,params,spp) &
-          !$OMP& PRIVATE(pp,cc,E_PHI) 
+          !$OMP& PRIVATE(pp,cc,E_PHI,Y_R) 
           do pp=1_idef,spp(ii)%ppp,8
 
              !$OMP SIMD

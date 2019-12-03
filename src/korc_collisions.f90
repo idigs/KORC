@@ -1476,9 +1476,15 @@ contains
 
 !          write(6,'("dp: ",E17.10)') dp(cc)
 !          write(6,'("dxi: ",E17.10)') dxi(cc)
+
+       end do
+       !$OMP END SIMD
           
-          if (params%FokPlan.and.params%radiation) then
-             if(params%GC_rad_model.eq.'SDE') then
+       if (params%FokPlan.and.params%radiation) then
+          if(params%GC_rad_model.eq.'SDE') then
+
+             !$OMP SIMD
+             do cc=1_idef,8_idef
 
                 SC_p(cc)=-gam(cc)*pm(cc)*(1-xi(cc)*xi(cc))/ &
                      (cparams_ss%taur/Bmag(cc)**2)
@@ -1488,15 +1494,20 @@ contains
                 kappa=2._rp*C_PI*C_RE**2._rp*C_ME*C_C**2._rp
                 BREM_p(cc)=-2._rp*ne(cc)*kappa*Zeff(cc)*(Zeff(cc)+1._rp)* &
                      C_a/C_PI*(gam(cc)-1._rp)*(log(2._rp*gam(cc))-1._rp/3._rp)
-                     
-                
+
+
                 dp(cc)=dp(cc)+(SC_p(cc)+BREM_p(cc))*dt*REAL(flag(cc))
                 dxi(cc)=dxi(cc)+(SC_mu(cc))*dt*REAL(flag(cc))
-                
-             end if
-          end if
 
-       
+             end do
+             !$OMP END SIMD
+
+          end if
+       end if
+
+       !$OMP SIMD
+       do cc=1_idef,8_idef    
+
           pm(cc)=pm(cc)+dp(cc)
           xi(cc)=xi(cc)+dxi(cc)
 
