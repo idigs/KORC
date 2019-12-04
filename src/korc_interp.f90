@@ -1369,8 +1369,8 @@ CONTAINS
 !               size(fields_domain%FLAG2D,2)   
           
 !          if ((IR.lt.0).or.(IZ.lt.0)) then
-!             write(6,'("YR:",E17.10)') Y_R
-!             write(6,'("YZ:",E17.10)') Y_Z
+!             write(6,'("YR:",E17.10)') Y_R(pp)
+!             write(6,'("YZ:",E17.10)') Y_Z(pp)
 !             write(6,'("IR: ",I16)') IR
 !             write(6,'("IZ: ",I16)') IZ
 !          end if

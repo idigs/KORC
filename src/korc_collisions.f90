@@ -1336,13 +1336,13 @@ contains
     TYPE(FIELDS), INTENT(IN)                                   :: F
     TYPE(KORC_PARAMS), INTENT(INOUT) 		:: params
     REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: Ppll
-    REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: Pmu,PSIp
+    REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: Pmu
     REAL(rp), DIMENSION(8) 			:: Bmag
     REAL(rp), DIMENSION(8) 	:: B_R,B_PHI,B_Z
     REAL(rp), DIMENSION(8) :: curlb_R,curlb_PHI,curlb_Z
     REAL(rp), DIMENSION(8) :: gradB_R,gradB_PHI,gradB_Z
     REAL(rp), DIMENSION(8) 	:: E_R,E_Z
-    REAL(rp), DIMENSION(8), INTENT(OUT) 	:: E_PHI,ne
+    REAL(rp), DIMENSION(8), INTENT(OUT) 	:: E_PHI,ne,PSIp
     REAL(rp), DIMENSION(8), INTENT(IN) 			:: Y_R,Y_PHI,Y_Z
     INTEGER(is), DIMENSION(8), INTENT(INOUT) 			:: flag
     REAL(rp), INTENT(IN) 			:: me

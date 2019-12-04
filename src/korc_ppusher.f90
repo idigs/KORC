@@ -3301,7 +3301,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
 !    write(6,*) 'R',Y_R(1)
 !    write(6,*) 'PHI',Y_PHI(1)
@@ -3360,7 +3360,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -3396,7 +3396,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -3433,7 +3433,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)     
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)     
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -3475,7 +3475,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)   
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)   
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -3516,7 +3516,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)         
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)         
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -3569,7 +3569,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
     !$OMP SIMD
     do cc=1_idef,8
@@ -3675,13 +3675,13 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
-!    write(6,*) 'R',Y_R(1)
-!    write(6,*) 'PHI',Y_PHI(1)
-!    write(6,*) 'Z',Y_Z(1)
-!    write(6,*) 'PPLL',V_PLL(1)
-!    write(6,*) 'MU',V_MU(1)
+!    write(6,*) 'R0',Y_R(1)
+!    write(6,*) 'PHI0',Y_PHI(1)
+!    write(6,*) 'Z0',Y_Z(1)
+!    write(6,*) 'PPLL0',V_PLL(1)
+!    write(6,*) 'MU0',V_MU(1)
     
 !    write(6,*) 'BR',B_R(1)
 !    write(6,*) 'BPHI',B_PHI(1)
@@ -3694,11 +3694,13 @@ contains
 !    write(6,*) 'curlBR',curlB_R(1)
 !    write(6,*) 'curlBPHI',curlB_PHI(1)
 !    write(6,*) 'curlBZ',curlB_Z(1)
-    
+
+!    write(6,*) 'dt',params%dt
 !    write(6,*) 'RHS_R',RHS_R(1)
 !    write(6,*) 'RHS_PHI',RHS_PHI(1)
 !    write(6,*) 'RHS_Z',RHS_Z(1)
 !    write(6,*) 'RHS_PLL',RHS_PLL(1)
+!    write(6,*) 'RHS_MU',RHS_MU(1)
     
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -3716,11 +3718,15 @@ contains
        Y_Z(cc)=Y0_Z(cc)+a1*k1_Z(cc)
        V_PLL(cc)=V0_PLL(cc)   +a1*k1_PLL(cc)
        V_MU(cc)=V0_MU(cc)   +a1*k1_MU(cc)
-
-
        
     end do
     !$OMP END SIMD
+
+!    write(6,*) 'R1',Y_R(1)
+!    write(6,*) 'PHI1',Y_PHI(1)
+!!    write(6,*) 'Z1',Y_Z(1)
+ !   write(6,*) 'PPLL1',V_PLL(1)
+ !   write(6,*) 'MU1',V_MU(1)
     
 !    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
     call calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
@@ -3735,7 +3741,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -3771,7 +3777,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -3808,7 +3814,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)     
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)     
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -3850,7 +3856,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)   
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)   
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -3888,7 +3894,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)         
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)         
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -3941,7 +3947,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
     !$OMP SIMD
     do cc=1_idef,8
@@ -4036,7 +4042,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -4065,7 +4071,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -4094,7 +4100,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -4124,7 +4130,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)     
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)     
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -4159,7 +4165,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)   
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)   
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -4193,7 +4199,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)         
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)         
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -4240,7 +4246,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
     !$OMP SIMD
     do cc=1_idef,8
@@ -4339,7 +4345,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
     !write(6,*) 'R',Y_R(1)
     !write(6,*) 'PHI',Y_PHI(1)
@@ -4392,7 +4398,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -4421,7 +4427,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -4451,7 +4457,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)     
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)     
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -4486,7 +4492,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)   
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)   
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -4520,7 +4526,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)         
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)         
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -4567,7 +4573,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
     !$OMP SIMD
     do cc=1_idef,8
@@ -4666,7 +4672,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
     !write(6,*) 'R',Y_R(1)
     !write(6,*) 'PHI',Y_PHI(1)
@@ -4719,7 +4725,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -4748,7 +4754,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -4778,7 +4784,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)     
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)     
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -4813,7 +4819,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)   
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)   
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -4847,7 +4853,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)         
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)         
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -4894,7 +4900,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
     !$OMP SIMD
     do cc=1_idef,8
@@ -4994,7 +5000,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
     !write(6,*) 'R',Y_R(1)
     !write(6,*) 'PHI',Y_PHI(1)
@@ -5047,7 +5053,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5076,7 +5082,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5106,7 +5112,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)     
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)     
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5141,7 +5147,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)   
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)   
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5175,7 +5181,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)         
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)         
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5222,7 +5228,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
     !$OMP SIMD
     do cc=1_idef,8
@@ -5321,7 +5327,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5350,7 +5356,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5379,7 +5385,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5409,7 +5415,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)     
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)     
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5444,7 +5450,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)   
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)   
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5478,7 +5484,7 @@ contains
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)         
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)         
 
     !$OMP SIMD
 !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5525,7 +5531,7 @@ contains
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp) 
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
     !$OMP SIMD
     do cc=1_idef,8
@@ -5660,7 +5666,7 @@ contains
 
   subroutine GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
        B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-       gradB_R,gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp)
+       gradB_R,gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)
     TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
     !! Core KORC simulation parameters.
     TYPE(FIELDS), INTENT(IN)      :: F
@@ -5676,12 +5682,13 @@ contains
     REAL(rp),DIMENSION(8),INTENT(OUT) :: RHS_R,RHS_PHI,RHS_Z
     REAL(rp),DIMENSION(8),INTENT(OUT) :: RHS_PLL,RHS_MU
     REAL(rp),DIMENSION(8),INTENT(IN) :: V_PLL,V_MU,Y_R,Y_Z,curlb_PHI
-    REAL(rp),DIMENSION(8),INTENT(INOUT) :: PSIp
+    REAL(rp),DIMENSION(8),INTENT(IN) :: PSIp
     REAL(rp),INTENT(in) :: q_cache,m_cache
     INTEGER(ip)  :: cc
     INTEGER(ip),INTENT(IN)  :: tt
     REAL(rp)  :: time,re_cache,alpha_cache
-    REAL(rp), DIMENSION(8) 			:: ne,Te,Zeff
+    REAL(rp), DIMENSION(8) 			:: Te,Zeff
+    REAL(rp), DIMENSION(8),INTENT(OUT) 		:: ne
     
     !$OMP SIMD
 !    !$OMP& aligned(gradB_R,gradB_PHI,gradB_Z,curlb_R,curlb_Z, &
