@@ -3655,8 +3655,14 @@ contains
        Y0_Z(cc)=Y_Z(cc)
        V0_PLL(cc)=V_PLL(cc)
        V0_MU(cc)=V_MU(cc)
+
+
+
     end do
     !$OMP END SIMD
+
+
+    
     
 !    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
     call calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
@@ -3710,6 +3716,9 @@ contains
        Y_Z(cc)=Y0_Z(cc)+a1*k1_Z(cc)
        V_PLL(cc)=V0_PLL(cc)   +a1*k1_PLL(cc)
        V_MU(cc)=V0_MU(cc)   +a1*k1_MU(cc)
+
+
+       
     end do
     !$OMP END SIMD
     
@@ -3744,6 +3753,8 @@ contains
        Y_Z(cc)=Y0_Z(cc)+a21*k1_Z(cc)+a22*k2_Z(cc)
        V_PLL(cc)=V0_PLL(cc)   +a21*k1_PLL(cc)+a22*k2_PLL(cc)
        V_MU(cc)=V0_MU(cc)   +a21*k1_MU(cc)+a22*k2_MU(cc)
+
+
     end do
     !$OMP END SIMD
 
@@ -3779,6 +3790,8 @@ contains
        Y_Z(cc)=Y0_Z(cc)+a31*k1_Z(cc)+a32*k2_Z(cc)+a33*k3_Z(cc)
        V_PLL(cc)=V0_PLL(cc)   +a31*k1_PLL(cc)+a32*k2_PLL(cc)+a33*k3_PLL(cc)
        V_MU(cc)=V0_MU(cc)   +a31*k1_MU(cc)+a32*k2_MU(cc)+a33*k3_MU(cc)
+
+ 
     end do
     !$OMP END SIMD
 
@@ -3818,6 +3831,8 @@ contains
             a43*k3_PLL(cc)+a44*k4_PLL(cc)
        V_MU(cc)=V0_MU(cc)   +a41*k1_MU(cc)+a42*k2_MU(cc)+ &
             a43*k3_MU(cc)+a44*k4_MU(cc)
+
+     
     end do
     !$OMP END SIMD
 
@@ -3858,6 +3873,8 @@ contains
             a53*k3_PLL(cc)+a54*k4_PLL(cc)+a55*k5_PLL(cc)
        V_MU(cc)=V0_MU(cc)   +a51*k1_MU(cc)+a52*k2_MU(cc)+ &
             a53*k3_MU(cc)+a54*k4_MU(cc)+a55*k5_MU(cc)
+
+     
     end do
     !$OMP END SIMD
 
@@ -3867,9 +3884,6 @@ contains
          flag_cache,PSIp)
 
     call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
-
-
-
 
     
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
@@ -3897,6 +3911,8 @@ contains
             b3*k3_PLL(cc)+b4*k4_PLL(cc)+b5*k5_PLL(cc)+b6*k6_PLL(cc)
        V_MU(cc)=V0_MU(cc)+b1*k1_MU(cc)+b2*k2_MU(cc)+ &
             b3*k3_MU(cc)+b4*k4_MU(cc)+b5*k5_MU(cc)+b6*k6_MU(cc)
+
+     
     end do
     !$OMP END SIMD
 
@@ -5718,6 +5734,16 @@ contains
     end do
     !$OMP END SIMD
 
+!    !$OMP SIMD
+!    do cc=1_idef,8
+!       if(isnan(RHS_R(cc))) stop 'RHS_R0 is a NaN'
+!       if(isnan(RHS_PHI(cc))) stop 'RHS_PHI0 is a NaN'
+!       if(isnan(RHS_Z(cc))) stop 'RHS_Z0 is a NaN'
+!       if(isnan(RHS_PLL(cc))) stop 'RHS_PL0L is a NaN'
+!       if(isnan(RHS_MU(cc))) stop 'RHS_MU0 is a NaN'
+!    end do
+!    !$OMP END SIMD
+    
     if (params%radiation.and.(params%GC_rad_model.eq.'SDE')) then
 
 !       write(6,*) 'RHS_PLL',RHS_PLL(1)
@@ -5755,8 +5781,27 @@ contains
                 
        
     end if
-    
 
+!    !$OMP SIMD
+!    do cc=1_idef,8
+!       if(isnan(ne(cc))) stop 'ne is a NaN'
+!       if(isnan(Zeff(cc))) stop 'Zeff is a NaN'
+!       if(isnan(gamgc(cc))) stop 'gamgc is a NaN'
+!       if(isnan(BREM_P(cc))) stop 'BREM_P is a NaN'
+!       if(isnan(BREM_PLL(cc))) stop 'BREM_PLL is a NaN'
+!       if(isnan(BREM_MU(cc))) stop 'BREM_MU is a NaN'
+!       if(isnan(SR_PLL(cc))) stop 'SR_PLL is a NaN'
+!       if(isnan(SR_MU(cc))) stop 'SR_MU is a NaN'
+!       if(isnan(RHS_R(cc))) stop 'RHS_R1 is a NaN'
+!       if(isnan(RHS_PHI(cc))) stop 'RHS_PHI1 is a NaN'
+!       if(isnan(RHS_Z(cc))) stop 'RHS_Z1 is a NaN'
+!       if(isnan(RHS_PLL(cc))) stop 'RHS_PLL1 is a NaN'
+!       if(isnan(RHS_MU(cc))) stop 'RHS_MU1 is a NaN'
+
+!    end do
+!    !$OMP END SIMD
+
+       
 !    write(6,*) 'RHS_R: ',RHS_R(1)
 !    write(6,*) 'RHS_PHI: ',RHS_PHI(1)
 !    write(6,*) 'RHS_Z: ',RHS_Z(1)

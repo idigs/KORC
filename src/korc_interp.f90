@@ -1306,7 +1306,7 @@ CONTAINS
     INTEGER(ip)                                            :: ss
     !! Species iterator.
 
-
+    
 !    write(6,'("YR:",E17.10)') Y_R
 !    write(6,'("YPHI:",E17.10)') Y_PHI
 !    write(6,'("YZ:",E17.10)') Y_Z
@@ -1353,7 +1353,7 @@ CONTAINS
        end do
        !$OMP END SIMD
     else
-!       !$OMP SIMD
+       !$OMP SIMD
 !       !$OMP& aligned(IR,IZ)
        do pp=1_idef,8_idef
           IR = INT(FLOOR((Y_R(pp)  - fields_domain%Ro + &
@@ -1362,13 +1362,18 @@ CONTAINS
                0.5_rp*fields_domain%DZ)/fields_domain%DZ) + 1.0_rp,idef)
 
 !          write(6,*) pp
-          
-!          write(6,'("IR: ",I16)') IR
-!          write(6,'("IZ: ",I16)') IZ
+
 !          write(6,'("Size of fields_domain R: ",I16)') &
 !               size(fields_domain%FLAG2D,1)
 !          write(6,'("Size of fields_domain Z: ",I16)') &
 !               size(fields_domain%FLAG2D,2)   
+          
+!          if ((IR.lt.0).or.(IZ.lt.0)) then
+!             write(6,'("YR:",E17.10)') Y_R
+!             write(6,'("YZ:",E17.10)') Y_Z
+!             write(6,'("IR: ",I16)') IR
+!             write(6,'("IZ: ",I16)') IZ
+!          end if
           
           if ((fields_domain%FLAG2D(IR,IZ).NE.1_is).OR. &
                ((IR.GT.bfield_2d%NR).OR.(IZ.GT.bfield_2d%NZ))) then
@@ -1377,7 +1382,7 @@ CONTAINS
 !             write(6,'("Shit''s fucked.")')
           end if
        end do      
-!       !$OMP END SIMD
+       !$OMP END SIMD
 !       write(6,'("Shit''s not fucked.")')
     end if
   end subroutine check_if_in_fields_domain_p
