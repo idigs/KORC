@@ -186,6 +186,9 @@ CONTAINS
                 CASE('RE-EVO-PSI')                   
                    !flat profile placeholder, updates every timestep
                    P%ne_2D(ii,kk) = P%neo
+                CASE('RE-EVO-PSI_SG')                   
+                   !flat profile placeholder, updates every timestep
+                   P%ne_2D(ii,kk) = P%neo
                 CASE DEFAULT
                    P%ne_2D(ii,kk) = P%neo
                 END SELECT
@@ -328,6 +331,7 @@ CONTAINS
     REAL(rp) :: n_REr0,n_tauion,n_lamfront,n_lamback,n_lamshelf
     REAL(rp) :: n_psifront,n_psiback,n_psishelf
     REAL(rp) :: n_taushelf,n_shelfdelay,n_shelf
+    REAL(rp) :: n0t,n_taut
     REAL(rp) :: PSIp0,PSIp_lim
     REAL(rp), DIMENSION(8) :: r_a,rm,rm_RE,PSIpN
 
@@ -435,7 +439,23 @@ CONTAINS
 !             stop 'ne_eval is a NaN'
 !          end if
 !       end do
-!       !$OMP END SIMD
+       !       !$OMP END SIMD
+
+    CASE('RE-EVO-PSI-SG')
+
+       n0t=(ne0-n_ne)/2._rp*(tanh(time/n_taushelf)- &
+            tanh((time-n_shelfdelay)/n_taushelf))
+       n_taut=n_psishelf*erf(time/n_tauion)
+       
+       !$OMP SIMD
+       do cc=1_idef,8_idef
+          PSIpN(cc)=(PSIp(cc)-PSIp0)/(PSIp_lim-PSIp0)
+          ne(cc) = n0t*exp(-(sqrt(abs(PSIpN(cc)))-1._rp)**2._rp/ &
+               (2._rp*n_taut**2._rp))*(1._rp+erf(-10._rp* &
+               (sqrt(abs(PSIpN(cc)))-1._rp)/(sqrt(2._rp)*n_taut)))/2._rp+n_ne
+       end do
+       !$OMP END SIMD
+       
     CASE DEFAULT
        !$OMP SIMD
        do cc=1_idef,8_idef
