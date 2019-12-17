@@ -290,6 +290,10 @@ CONTAINS
           spp(ii)%go = (spp(ii)%Eo + spp(ii)%m*C_C**2)/(spp(ii)%m*C_C**2)
           spp(ii)%vars%g = spp(ii)%go
           ! Monoenergy from input file until sampled in Hollmann_3D
+       CASE ('HOLLMANN-3D-PSI')
+          spp(ii)%go = (spp(ii)%Eo + spp(ii)%m*C_C**2)/(spp(ii)%m*C_C**2)
+          spp(ii)%vars%g = spp(ii)%go
+          ! Monoenergy from input file until sampled in Hollmann_3D
        CASE DEFAULT
           ! Something to be done
        END SELECT
@@ -332,6 +336,9 @@ CONTAINS
           spp(ii)%vars%eta = spp(ii)%etao
           !Monopitch from input file until sampled in Avalanche_4D
        CASE ('HOLLMANN-3D')
+          spp(ii)%vars%eta = spp(ii)%etao
+          !Monopitch from input file until sampled in Hollmann_3D
+       CASE ('HOLLMANN-3D-PSI')
           spp(ii)%vars%eta = spp(ii)%etao
           !Monopitch from input file until sampled in Hollmann_3D
        CASE ('SPONG-3D')

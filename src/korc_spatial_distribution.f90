@@ -1221,7 +1221,7 @@ subroutine intitial_spatial_distribution(params,spp,P,F)
   !! @note Subroutine that contains calls to the different subroutines 
   !! for initializing the simulated particles with various
   !! spatial distribution functions. @endnote
-  TYPE(KORC_PARAMS), INTENT(IN) 			  :: params
+  TYPE(KORC_PARAMS), INTENT(INOUT) 			  :: params
   !! Core KORC simulation parameters.
   TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
   !! An instance of the derived type SPECIES containing all the parameters and 
@@ -1266,6 +1266,8 @@ subroutine intitial_spatial_distribution(params,spp,P,F)
         call Spong_3D(params,spp(ss))
      CASE ('HOLLMANN-3D')
         call get_Hollmann_distribution_3D(params,spp(ss),F)
+     CASE ('HOLLMANN-3D-PSI')
+        call get_Hollmann_distribution_3D_psi(params,spp(ss),F)
      CASE DEFAULT
         call torus(params,spp(ss))
      END SELECT

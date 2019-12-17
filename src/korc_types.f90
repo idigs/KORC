@@ -642,6 +642,7 @@ module korc_types
      REAL(rp)  ::  n_lamback=0._rp
      REAL(rp)  ::  n_lamshelf=0._rp
      REAL(rp)  ::  n_shelf=0._rp
+     REAL(rp)  ::  psiN_0=1._rp
 
      
      REAL(rp), DIMENSION(4) 			:: a_ne 

@@ -75,6 +75,7 @@ MODULE korc_experimental_pdf
   PUBLIC :: get_experimentalG_distribution,&
        get_Hollmann_distribution,&
        get_Hollmann_distribution_3D,&
+       get_Hollmann_distribution_3D_psi,&
        initialize_Hollmann_params,&
        sample_Hollmann_distribution
   PRIVATE :: initialize_params,&
@@ -611,6 +612,21 @@ CONTAINS
     call sample_Hollmann_distribution_3D(params,spp,F)
 
   END SUBROUTINE get_Hollmann_distribution_3D
+  
+  SUBROUTINE get_Hollmann_distribution_3D_psi(params,spp,F)
+    TYPE(FIELDS), INTENT(IN)                                   :: F
+    TYPE(KORC_PARAMS), INTENT(INOUT) :: params
+    TYPE(SPECIES),  INTENT(INOUT) :: spp
+
+    call initialize_Hollmann_params(params)
+
+    call save_Hollmann_params(params)
+
+    call normalize_Hollmann_params(params)
+
+    call sample_Hollmann_distribution_3D_psi(params,spp,F)
+
+  END SUBROUTINE get_Hollmann_distribution_3D_psi
 
   SUBROUTINE initialize_Hollmann_params(params)
     TYPE(KORC_PARAMS), INTENT(IN) :: params
@@ -1176,7 +1192,7 @@ FUNCTION indicator_exp(psi,psi_max)
   
 END FUNCTION indicator_exp
   
-  subroutine sample_Hollmann_distribution_3D(params,spp,F)
+subroutine sample_Hollmann_distribution_3D(params,spp,F)
   !! @note Subroutine that generates a 2D Gaussian distribution in an 
   !! elliptic torus as the initial spatial condition of a given particle 
   !! species in the simulation. @endnote
@@ -1630,6 +1646,495 @@ END FUNCTION indicator_exp
   
   
 end subroutine sample_Hollmann_distribution_3D
+
+subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
+  !! @note Subroutine that generates a 2D Gaussian distribution in an 
+  !! elliptic torus as the initial spatial condition of a given particle 
+  !! species in the simulation. @endnote
+  TYPE(KORC_PARAMS), INTENT(INOUT) 	:: params
+  !! Core KORC simulation parameters.
+  TYPE(SPECIES), INTENT(INOUT) 		:: spp
+  !! An instance of the derived type SPECIES containing all the parameters
+  !! and simulation variables of the different species in the simulation.
+  TYPE(FIELDS), INTENT(IN)                                   :: F
+  !! An instance of the KORC derived type FIELDS.
+  REAL(rp), DIMENSION(:), ALLOCATABLE 	:: R_samples,X_samples,Y_samples
+  !! Major radial location of all samples
+  REAL(rp), DIMENSION(:), ALLOCATABLE 	:: PHI_samples
+  !! Azimuithal angle of all samples
+  REAL(rp), DIMENSION(:), ALLOCATABLE 	:: Z_samples
+  !! Vertical location of all samples
+
+  REAL(rp), DIMENSION(:), ALLOCATABLE 	:: G_samples
+  !! Gamma of all samples
+  REAL(rp), DIMENSION(:), ALLOCATABLE 	:: eta_samples
+  !! Pitch angle of all samples
+
+  REAL(rp) 				:: psi_max_buff
+  !! Value of buffer above desired maximum argument of 2D Gaussian spatial
+  !! profile
+  REAL(rp) 				:: minmax
+  !! Temporary variable used for setting buffers
+
+  !! Minimum domain for momentum sampling including buffer
+  REAL(rp) 				:: max_pitch_angle
+  !! Maximum domain for pitch angle sampling including buffer
+  REAL(rp) 				:: min_pitch_angle
+  !! Minimum domain for pitch angle sampling including buffer
+  REAL(rp) 				:: min_g,max_g
+  REAL(rp) 				:: theta_rad
+  !! Angle of rotation of 2D Gaussian spatial distribution in radians
+  REAL(rp) 				:: R_buffer
+  !! Previous sample of R location
+  REAL(rp) 				:: Z_buffer
+  !! Previous sample of Z location
+ 
+  REAL(rp) 				:: eta_buffer
+  !! Previous sample of pitch
+  REAL(rp) 				:: G_buffer
+  REAL(rp) 				:: R_test
+  !! Present sample of R location
+  REAL(rp) 				:: Z_test
+  !! Present sample of Z location
+
+  REAL(rp) 				:: eta_test
+  !! Present sample of pitch angle
+  REAL(rp) 				:: G_test
+  REAL(rp) 				:: psi0
+  !! Previous value of 2D Gaussian argument based on R_buffer, Z_buffer
+  REAL(rp) 				:: psi1
+  !! Present value of 2D Gaussian argument based on R_test, Z_test
+  REAL(rp)  :: PSIp_lim,PSIP0,PSIN
+  REAL(rp) 				:: f0
+  !! Evaluation of Avalanche distribution with previous sample
+  REAL(rp) 				:: f1
+  !! Evaluation of Avalanche distribution with present sample
+  REAL(rp) 				:: rand_unif
+  !! Uniform random variable [0,1]
+  REAL(rp) 				:: ratio
+  !! MH selection criteria
+  INTEGER				:: nsamples
+  !! Total number of samples to be distributed over all mpi processes
+  INTEGER 				:: ii
+  !! Sample iterator.
+  INTEGER 				:: mpierr
+  !! mpi error indicator
+  REAL(rp) 						:: dg,deta
+  LOGICAL :: accepted
+  INTEGER,DIMENSION(33) :: seed=(/1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1/)
+  
+  
+  nsamples = spp%ppp*params%mpi_params%nmpi
+
+  psi_max_buff = spp%psi_max*1.25_rp
+
+  theta_rad=C_PI*spp%theta_gauss/180.0_rp
+
+  params%GC_coords=.TRUE.
+  PSIp_lim=F%PSIp_lim
+  PSIp0=F%PSIP_min
+
+  deta = (h_params%max_pitch_angle - h_params%min_pitch_angle)/100.0_rp
+  dg = (h_params%max_sampling_g - h_params%min_sampling_g)/100.0_rp
+  
+  ! buffer at minimum gamma boundary  
+  do ii=1_idef,INT(minmax_buffer_size,idef)
+     minmax = h_params%min_sampling_g - REAL(ii,rp)*dg
+     if (minmax.GT.h_params%min_g) then
+        min_g = minmax
+     end if
+     ! buffer at maximum gamma boundary  
+     minmax = h_params%max_sampling_g + REAL(ii,rp)*dg
+     if (minmax.LT.h_params%max_g) then
+        max_g = minmax
+     end if
+  end do
+
+  ! buffer at minimum pitch angle boundary  
+  if (h_params%min_pitch_angle.GE.korc_zero) then
+     do ii=1_idef,INT(minmax_buffer_size,idef)
+        minmax = h_params%min_pitch_angle -  REAL(ii,rp)*deta
+        if (minmax.GT.0.0_rp) then
+           min_pitch_angle = minmax
+        end if
+     end do
+  else
+     min_pitch_angle = h_params%min_pitch_angle 
+  end if
+
+  ! buffer at maximum pitch angle boundary  
+  do ii=1_idef,INT(minmax_buffer_size,idef)
+     minmax = h_params%max_pitch_angle + REAL(ii,rp)*deta
+     if (minmax.LE.180.0_rp) then
+        max_pitch_angle = minmax
+     end if
+  end do
+
+  
+  if (params%mpi_params%rank.EQ.0_idef) then
+     ALLOCATE(R_samples(nsamples))
+     ALLOCATE(X_samples(nsamples))
+     ALLOCATE(Y_samples(nsamples))
+     ! Number of samples to distribute among all MPI processes
+     ALLOCATE(PHI_samples(nsamples))
+     ! Number of samples to distribute among all MPI processes
+     ALLOCATE(Z_samples(nsamples))
+     ! Number of samples to distribute among all MPI processes
+     ALLOCATE(eta_samples(nsamples))
+     ! Number of samples to distribute among all MPI processes
+     ALLOCATE(G_samples(nsamples))
+     ! Number of samples to distribute among all MPI processes
+     
+     ! Transient !
+
+     R_buffer = spp%Ro
+     Z_buffer = spp%Zo
+
+
+     if (.not.params%SameRandSeed) then
+        call init_random_seed()
+     else
+        call random_seed(put=seed)
+     end if
+     
+!     call RANDOM_NUMBER(rand_unif)
+!     eta_buffer = min_pitch_angle + (max_pitch_angle &
+!          - min_pitch_angle)*rand_unif
+!     eta_buffer = min_pitch_angle + (max_pitch_angle &
+!          - min_pitch_angle)*get_random_mkl_U()
+     eta_buffer = min_pitch_angle + (max_pitch_angle &
+          - min_pitch_angle)*get_random_U()
+     
+!     call RANDOM_NUMBER(rand_unif)
+!     G_buffer = min_g + (max_g - min_g)*rand_unif
+!     G_buffer = min_g + (max_g - min_g)*get_random_mkl_U()
+     G_buffer = min_g + (max_g - min_g)*get_random_U()
+     
+!     write(6,*) 'R_buffer',R_buffer
+!     write(6,*) 'Z_buffer',Z_buffer
+!     write(6,*) 'eta_buffer',eta_buffer
+!     write(6,*) 'G_buffer',G_buffer
+     
+     !     write(6,'("length norm: ",E17.10)') params%cpp%length
+     
+     accepted=.false.
+     ii=1_idef
+     do while (ii .LE. 1000_idef)
+
+        if (modulo(ii,100).eq.0) then
+           write(6,'("Burn: ",I10)') ii
+        end if
+        
+        !R_test = R_buffer + random_norm(0.0_rp,spp%dR)
+        !R_test = R_buffer + get_random_mkl_N(0.0_rp,spp%dR)
+        R_test = R_buffer + get_random_N()*spp%dR
+        
+        !Z_test = Z_buffer + random_norm(0.0_rp,spp%dZ)
+        !Z_test = Z_buffer + get_random_mkl_N(0.0_rp,spp%dZ)
+        Z_test = Z_buffer + get_random_N()*spp%dZ
+        
+        !eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
+        !eta_test = eta_buffer + get_random_mkl_N(0.0_rp,spp%dth)
+        eta_test = eta_buffer + get_random_N()*spp%dth
+        
+        !G_test = G_buffer + random_norm(0.0_rp,spp%dgam)
+        !G_test = G_buffer + get_random_mkl_N(0.0_rp,spp%dgam)
+        G_test = G_buffer + get_random_N()*spp%dgam
+
+
+        ! Test that pitch angle and momentum are within chosen boundary
+        do while ((ABS(eta_test) .GT. max_pitch_angle).OR. &
+             (ABS(eta_test) .LT. min_pitch_angle))
+           !eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
+           !eta_test = eta_buffer + get_random_mkl_N(0.0_rp,spp%dth)
+           eta_test = eta_buffer + get_random_N()*spp%dth
+        end do
+
+        do while ((G_test.LT.min_g).OR.(G_test.GT.max_g))
+           !G_test = G_buffer + random_norm(0.0_rp,spp%dgam)
+           !G_test = G_buffer + get_random_mkl_N(0.0_rp,spp%dgam)
+           G_test = G_buffer + get_random_N()*spp%dgam
+        end do
+        
+        ! initialize 2D gaussian argument and distribution function, or
+        ! copy from previous sample
+        if (ii==1) then
+!           psi0=PSI_ROT_exp(R_buffer,spp%Ro,spp%sigmaR,Z_buffer,spp%Zo, &
+!                spp%sigmaZ,theta_rad)
+
+ !          spp%vars%Y(1,1)=R_buffer
+ !          spp%vars%Y(1,2)=0
+ !          spp%vars%Y(1,3)=Z_buffer
+
+           !write(6,*) 'R',R_buffer
+           !write(6,*) 'Z',Z_buffer
+           
+ !          call get_fields(params,spp%vars,F)
+ !          psi0=spp%vars%PSI_P(1)
+ !          PSIN=(psi0-PSIP0)/(PSIp_lim-PSIP0)
+           
+           f0=fRE_H_3D(F,eta_buffer,G_buffer,R_buffer,Z_buffer,spp%Ro,spp%Zo)
+!           f0=fRE_H(eta_buffer,G_buffer)
+        end if
+
+        if (accepted) then
+           !psi0=psi1
+           f0=f1
+        end if
+        
+!        psi1=PSI_ROT_exp(R_test,spp%Ro,spp%sigmaR,Z_test,spp%Zo, &
+        !             spp%sigmaZ,theta_rad)
+        spp%vars%Y(1,1)=R_test
+        spp%vars%Y(1,2)=0._rp
+        spp%vars%Y(1,3)=Z_test
+
+        call get_fields(params,spp%vars,F)
+        psi1=spp%vars%PSI_P(1)
+        PSIN=(psi1-PSIP0)/(PSIp_lim-PSIP0)
+
+!        write(6,*) 'R',R_test
+!        write(6,*) 'Z',Z_test
+!        write(6,*) 'PSI',psi1
+!        write(6,*) 'PSIN',PSIN
+                
+        f1=fRE_H_3D(F,eta_test,G_test,R_test,Z_test,spp%Ro,spp%Zo)    
+!        f1=fRE_H(eta_test,G_test)
+        
+!        write(6,'("psi0: ",E17.10)') psi0
+!        write(6,'("psi1: ",E17.10)') psi1
+
+!        write(6,'("f0: ",E17.10)') f0
+!        write(6,'("f1: ",E17.10)') f1
+
+        
+        ! Calculate acceptance ratio for MH algorithm. fRE function
+        ! incorporates p^2 factor of spherical coordinate Jacobian
+        ! for velocity phase space, factors of sin(pitch angle) for velocity
+        ! phase space and cylindrical coordinate Jacobian R for spatial
+        ! phase space incorporated here.
+        ratio = indicator_exp(PSIN,spp%psi_max)* &
+             R_test*f1*sin(deg2rad(eta_test))/ &
+             (R_buffer*f0*sin(deg2rad(eta_buffer)))
+!        ratio = indicator_exp(psi1,spp%psi_max)* &
+!             R_test*EXP(-psi1)*f1*sin(deg2rad(eta_test))/ &
+!             (R_buffer*EXP(-psi0)*f0*sin(deg2rad(eta_buffer)))
+
+!        ratio = f1*sin(deg2rad(eta_test))/(f0*sin(deg2rad(eta_buffer)))
+
+        accepted=.false.
+        if (ratio .GE. 1.0_rp) then
+           accepted=.true.
+           R_buffer = R_test
+           Z_buffer = Z_test
+           eta_buffer = eta_test
+           G_buffer = G_test
+           ii = ii + 1_idef
+        else
+!           call RANDOM_NUMBER(rand_unif)
+!           if (rand_unif .LT. ratio) then
+           !if (get_random_mkl_U() .LT. ratio) then
+           if (get_random_U() .LT. ratio) then
+              accepted=.true.
+              R_buffer = R_test
+              Z_buffer = Z_test
+              eta_buffer = eta_test
+              G_buffer = G_test
+              ii = ii + 1_idef
+           end if
+        end if
+     end do
+     ! Transient !
+
+     ii=1_idef
+     do while (ii .LE. nsamples)
+
+!        write(6,'("sample:",I15)') ii
+        
+       if (modulo(ii,nsamples/10).eq.0) then
+           write(6,'("Sample: ",I10)') ii
+        end if
+        
+        !R_test = R_buffer + random_norm(0.0_rp,spp%dR)
+        !R_test = R_buffer + get_random_mkl_N(0.0_rp,spp%dR)
+        R_test = R_buffer + get_random_N()*spp%dR
+        
+        !Z_test = Z_buffer + random_norm(0.0_rp,spp%dZ)
+        !Z_test = Z_buffer + get_random_mkl_N(0.0_rp,spp%dZ)
+        Z_test = Z_buffer + get_random_N()*spp%dZ
+        
+        !eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
+        !eta_test = eta_buffer + get_random_mkl_N(0.0_rp,spp%dth)
+        eta_test = eta_buffer + get_random_N()*spp%dth
+        
+        !G_test = G_buffer + random_norm(0.0_rp,spp%dgam)
+        !G_test = G_buffer + get_random_mkl_N(0.0_rp,spp%dgam)
+        G_test = G_buffer + get_random_N()*spp%dgam
+
+
+        ! Test that pitch angle and momentum are within chosen boundary
+        do while ((ABS(eta_test) .GT. max_pitch_angle).OR. &
+             (ABS(eta_test) .LT. min_pitch_angle))
+           !eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
+           !eta_test = eta_buffer + get_random_mkl_N(0.0_rp,spp%dth)
+           eta_test = eta_buffer + get_random_N()*spp%dth
+        end do
+
+        do while ((G_test.LT.min_g).OR.(G_test.GT.max_g))
+           !G_test = G_buffer + random_norm(0.0_rp,spp%dgam)
+           !G_test = G_buffer + get_random_mkl_N(0.0_rp,spp%dgam)
+           G_test = G_buffer + get_random_N()*spp%dgam
+        end do
+
+        if (accepted) then
+           psi0=psi1
+           f0=f1
+        end if
+        
+!        psi1=PSI_ROT_exp(R_test,spp%Ro,spp%sigmaR,Z_test,spp%Zo, &
+!             spp%sigmaZ,theta_rad)
+        spp%vars%Y(1,1)=R_test
+        spp%vars%Y(1,2)=0
+        spp%vars%Y(1,3)=Z_test
+
+        call get_fields(params,spp%vars,F)
+        psi1=spp%vars%PSI_P(1)
+        PSIN=(psi1-PSIP0)/(PSIp_lim-PSIP0)
+
+!        write(6,'("R: ",E17.10)') R_test
+!        write(6,'("R0: ",E17.10)') spp%Ro
+!        write(6,'("sigma_R: ",E17.10)') spp%sigmaR
+!        write(6,'("dR: ",E17.10)') spp%dR
+!        write(6,'("N_dR: ",E17.10)') random_norm(0.0_rp,spp%dR)
+!        write(6,'("Z: ",E17.10)') Z_test
+!        write(6,'("Z0: ",E17.10)') spp%Zo
+!        write(6,'("sigma_Z: ",E17.10)') spp%sigmaZ
+!        write(6,'("dZ: ",E17.10)') spp%dZ
+!        write(6,'("N_dR: ",Z17.10)') random_norm(0.0_rp,spp%dZ)
+        
+        f1=fRE_H_3D(F,eta_test,G_test,R_test,Z_test,spp%Ro,spp%Zo)            
+!        f1=fRE_H(eta_test,G_test)
+        
+        ratio = indicator_exp(PSIN,psi_max_buff)* &
+             R_test*f1*sin(deg2rad(eta_test))/ &
+             (R_buffer*f0*sin(deg2rad(eta_buffer)))
+!        ratio = indicator_exp(psi1,psi_max_buff)* &
+!             R_test*EXP(-psi1)*f1*sin(deg2rad(eta_test))/ &
+!             (R_buffer*EXP(-psi0)*f0*sin(deg2rad(eta_buffer)))
+
+!        ratio = f1*sin(deg2rad(eta_test))/(f0*sin(deg2rad(eta_buffer)))
+        
+        accepted=.false.
+        if (ratio .GE. 1.0_rp) then
+           accepted=.true.
+           R_buffer = R_test
+           Z_buffer = Z_test
+           eta_buffer = eta_test
+           G_buffer = G_test
+        else
+           !call RANDOM_NUMBER(rand_unif)
+           !if (rand_unif .LT. ratio) then
+           !if (get_random_mkl_U() .LT. ratio) then
+           if (get_random_U() .LT. ratio) then
+              accepted=.true.
+              R_buffer = R_test
+              Z_buffer = Z_test
+              eta_buffer = eta_test
+              G_buffer = G_test
+           end if
+        end if
+
+!        write(6,'("R: ",E17.10)') R_buffer
+!        write(6,'("Z: ",E17.10)') Z_buffer
+        
+        ! Only accept sample if it is within desired boundary, but
+        ! add to MC above if within buffer. This helps make the boundary
+        ! more defined.
+        IF ((INT(indicator_exp(PSIN,spp%psi_max)).EQ.1).AND. &
+             (G_buffer.LE.h_params%max_sampling_g).AND. &
+             (G_buffer.GE.h_params%min_sampling_g).AND. &
+             (eta_buffer.LE.h_params%max_pitch_angle).AND. &
+             (eta_buffer.GE.h_params%min_pitch_angle).AND. &
+             ACCEPTED) THEN
+           R_samples(ii) = R_buffer
+           Z_samples(ii) = Z_buffer
+           eta_samples(ii) = eta_buffer
+           G_samples(ii) = G_buffer
+
+!           write(6,*) 'RS',R_buffer
+           
+           ! Sample phi location uniformly
+           !call RANDOM_NUMBER(rand_unif)
+           !PHI_samples(ii) = 2.0_rp*C_PI*rand_unif
+           !PHI_samples(ii) = 2.0_rp*C_PI*get_random_mkl_U()
+           PHI_samples(ii) = 2.0_rp*C_PI*get_random_U()
+           ii = ii + 1_idef 
+        END IF
+        
+     end do
+
+!  if (minval(R_samples(:)).lt.1._rp/params%cpp%length) stop 'error with sample'
+!  write(6,'("R_sample: ",E17.10)') R_samples(:)*params%cpp%length
+
+     X_samples=R_samples*cos(PHI_samples)
+     Y_samples=R_samples*sin(PHI_samples)
+
+!     write(6,*) 'R_samples',R_samples
+!     write(6,*) 'PHI_samples',PHI_samples
+!     write(6,*) 'Z_samples',Z_samples
+!     write(6,*) 'G_samples',G_samples
+!     write(6,*) 'eta_samples',eta_samples
+     
+  end if
+
+  params%GC_coords=.FALSE.
+  
+  call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+
+
+  CALL MPI_SCATTER(X_samples,spp%ppp,MPI_REAL8, &
+       spp%vars%X(:,1),spp%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+  CALL MPI_SCATTER(Y_samples,spp%ppp,MPI_REAL8, &
+       spp%vars%X(:,2),spp%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+  CALL MPI_SCATTER(Z_samples,spp%ppp,MPI_REAL8, &
+       spp%vars%X(:,3),spp%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+  CALL MPI_SCATTER(eta_samples,spp%ppp,MPI_REAL8, &
+       spp%vars%eta,spp%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+  CALL MPI_SCATTER(G_samples,spp%ppp,MPI_REAL8, &
+       spp%vars%g,spp%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+
+  
+  call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+
+!  write(6,*) params%mpi_params%rank,'varX',spp%vars%X(:,1)
+!  write(6,*) params%mpi_params%rank,'varY',spp%vars%X(:,2)
+  
+!  write(6,'("X_X: ",E17.10)') spp%vars%X(:,1)*params%cpp%length
+  
+  ! gamma is kept for each particle, not the momentum
+
+  if (params%orbit_model(1:2).eq.'GC') call cart_to_cyl(spp%vars%X,spp%vars%Y)
+
+!  write(6,*) params%mpi_params%rank,'varX',spp%vars%X(:,1)
+!  write(6,*) params%mpi_params%rank,'varR',spp%vars%Y(:,1)
+  
+
+!  write(6,'("Y_R: ",E17.10)') spp%vars%Y(:,1)*params%cpp%length
+!  write(6,'("Y_PHI: ",E17.10)') spp%vars%Y(:,1)*params%cpp%length
+!  write(6,'("Y_Z: ",E17.10)') spp%vars%Y(:,3)*params%cpp%length
+  
+!  if (minval(spp%vars%Y(:,1)).lt.1._rp/params%cpp%length) stop 'error with avalanche'
+  
+  if (params%mpi_params%rank.EQ.0_idef) then
+     DEALLOCATE(R_samples)
+     DEALLOCATE(X_samples)
+     DEALLOCATE(Y_samples)
+     DEALLOCATE(Z_samples)
+     DEALLOCATE(PHI_samples)
+     DEALLOCATE(eta_samples)
+     DEALLOCATE(G_samples)
+  end if
+  
+end subroutine sample_Hollmann_distribution_3D_psi
 
   SUBROUTINE save_params(params)
     TYPE(KORC_PARAMS), INTENT(IN) :: params

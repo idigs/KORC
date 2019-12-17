@@ -398,8 +398,12 @@ program main
   end if
 
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
-       F%axisymmetric_fields.and.params%field_model(10:12).eq.'PSI'.and. &
+       F%axisymmetric_fields.and.(params%field_model(10:12).eq.'PSI'.OR. &
+       params%field_model(12:14).eq.'PSI').and. &
        .not.params%SC_E) then
+
+     write(6,*) 'GC, interp, PSI'
+     
      do it=params%ito,params%t_steps,params%t_skip
         call adv_GCinterp_psi_top(params,spp,P,F)
         

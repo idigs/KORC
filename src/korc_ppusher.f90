@@ -3661,7 +3661,11 @@ contains
     end do
     !$OMP END SIMD
 
-
+!    write(6,*) 'R0',Y_R(1)
+!    write(6,*) 'PHI0',Y_PHI(1)
+!    write(6,*) 'Z0',Y_Z(1)
+!    write(6,*) 'PPLL0',V_PLL(1)
+!    write(6,*) 'MU0',V_MU(1)
     
     
 !    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
@@ -5746,7 +5750,7 @@ contains
 !       if(isnan(RHS_R(cc))) stop 'RHS_R0 is a NaN'
 !       if(isnan(RHS_PHI(cc))) stop 'RHS_PHI0 is a NaN'
 !       if(isnan(RHS_Z(cc))) stop 'RHS_Z0 is a NaN'
-!       if(isnan(RHS_PLL(cc))) stop 'RHS_PL0L is a NaN'
+!       if(isnan(RHS_PLL(cc))) stop 'RHS_PLL0 is a NaN'
 !       if(isnan(RHS_MU(cc))) stop 'RHS_MU0 is a NaN'
 !    end do
 !    !$OMP END SIMD

@@ -284,7 +284,7 @@ contains
     LOGICAL 				:: axisymmetric
     REAL(rp)  ::  n_REr0
     REAL(rp)  ::  n_tauion
-    REAL(rp)  ::  n_lamfront
+    REAL(rp)  ::  n_lamfront,psiN_0
     REAL(rp)  ::  n_lamback,n_lamshelf,n_shelfdelay,n_taushelf,n_shelf
 
     NAMELIST /CollisionParamsSingleSpecies/ Te, Ti, ne, Zeff, dTau
@@ -292,7 +292,7 @@ contains
     NAMELIST /plasmaProfiles/ radius_profile,ne_profile,neo,n_ne,a_ne,&
          Te_profile,Teo,n_Te,a_Te,n_REr0,n_tauion,n_lamfront,n_lamback, &
          Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename,axisymmetric, &
-         n_lamshelf,n_shelfdelay,n_taushelf,n_shelf
+         n_lamshelf,n_shelfdelay,n_taushelf,n_shelf,psiN_0
 
 
     open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &

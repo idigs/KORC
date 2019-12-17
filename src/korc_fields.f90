@@ -1913,9 +1913,10 @@ CONTAINS
     
 
     NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
-         qa,qo,Eo,current_direction,nR,nZ,nPHI,dim_1D,dt_E_SC,Ip_exp
+         qa,qo,Eo,current_direction,nR,nZ,nPHI,dim_1D,dt_E_SC,Ip_exp, &
+         E_dyn,E_pulse,E_width
     NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux,Bflux3D,dBfield, &
-         axisymmetric_fields, Eo,E_model,E_dyn,E_pulse,E_width,res_double, &
+         axisymmetric_fields, Eo,E_dyn,E_pulse,E_width,res_double, &
          dim_1D,dt_E_SC,Ip_exp,PSIp_lim
 
     if (params%mpi_params%rank .EQ. 0) then
@@ -1951,7 +1952,6 @@ CONTAINS
        F%Eo = Eo
        F%Bo = F%AB%Bo
 
-       F%E_model=E_model
        F%E_dyn = E_dyn
        F%E_pulse = E_pulse
        F%E_width = E_width
@@ -1971,7 +1971,7 @@ CONTAINS
           F%dims(2) = nPHI
           F%dims(3) = nZ
 
-          if (params%field_model(12:13).eq.'2D') then
+          if (params%field_model(12:14).eq.'PSI') then
 
              F%axisymmetric_fields = .TRUE.
              F%Bfield=.TRUE.
@@ -2143,7 +2143,6 @@ CONTAINS
        F%Efield = Efield
        F%axisymmetric_fields = axisymmetric_fields
 
-       F%E_model=E_model
        F%E_dyn = E_dyn
        F%E_pulse = E_pulse
        F%E_width = E_width

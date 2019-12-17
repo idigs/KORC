@@ -1035,8 +1035,7 @@ CONTAINS
        fields_domain%Zo = F%X%Z(1)
 
        ! * * * * * * * * ELECTRIC FIELD * * * * * * * * !
-       if (F%Efield.AND.(F%Efield_in_file.OR. &
-            params%field_eval.eq.'interp')) then
+       if (F%Efield.AND.(params%field_eval.eq.'interp')) then
           if (F%axisymmetric_fields) then
              efield_2d%NR = F%dims(1)
              efield_2d%NZ = F%dims(3)
@@ -1233,7 +1232,11 @@ CONTAINS
     INTEGER(ip)                                            :: ss
     !! Species iterator.
     
-    ss = SIZE(Y,1)
+    if (Y(2,1).eq.0) then
+       ss=1_idef
+    else
+       ss = size(Y,1)
+    end if
 
 !    write(6,'("R: ",E15.10)') Y(1,1)
 !    write(6,'("PHI: ",E15.10)') Y(2,1)
@@ -1265,8 +1268,13 @@ CONTAINS
           IZ = INT(FLOOR((Y(pp,3)  + ABS(fields_domain%Zo) + 0.5_rp* &
                fields_domain%DZ)/fields_domain%DZ) + 1.0_rp,idef)
 
-!          write(6,'("IR: ",I10)') IR
-!          write(6,'("IZ: ",I10)') IZ
+          if ((IR.lt.0).or.(IZ.lt.0).or.(IR.GT. &
+               bfield_2d%NR).OR.(IZ.GT.bfield_2d%NZ)) then
+             write(6,'("YR:",E17.10)') Y(1,1)
+             write(6,'("YZ:",E17.10)') Y(3,1)
+             write(6,'("IR: ",I16)') IR
+             write(6,'("IZ: ",I16)') IZ
+          end if
           
           if ((fields_domain%FLAG2D(IR,IZ).NE.1_is).OR.((IR.GT. &
                bfield_2d%NR).OR.(IZ.GT.bfield_2d%NZ))) then
@@ -1567,7 +1575,11 @@ CONTAINS
     INTEGER(ip)                                            :: ss
     !! @param ss Species iterator.
     
-    ss = SIZE(Y,1)
+    if (Y(2,1).eq.0) then
+       ss=1_idef
+    else
+       ss = size(Y,1)
+    end if
 
     if (ALLOCATED(profiles_domain%FLAG3D)) then
        !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,IR,IPHI,IZ) &
@@ -2177,26 +2189,31 @@ subroutine calculate_magnetic_field(params,Y,F,B,PSI_P,flag)
   INTEGER                                                :: ss
 
 
-  
-  ss = size(Y,1)
+  if (Y(2,1).eq.0) then
+     ss=1_idef
+  else
+     ss = size(Y,1)
+  end if
 
   ALLOCATE(A(ss,3))
   A=0._rp
   !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,ezerr) &
   !$OMP& SHARED(F,Y,A,B,flag,bfield_2d,PSI_P)
   do pp=1_idef,ss
-     if ( flag(pp) .EQ. 1_is ) then
+
 
 !        write(6,'("pp: ",I16)') pp
         
 !        write(6,'("Y_R: ",E17.10)') Y(:,1)
-!        write(6,'("Y_PHI: ",E17.10)') Y(:,2)
-!        write(6,'("Y_Z: ",E17.10)') Y(:,3)
-!        write(6,'("PSI_P: ",E17.10)') PSI_P
+  !      write(6,'("Y_PHI: ",E17.10)') Y(:,2)
+  !      write(6,'("Y_Z: ",E17.10)') Y(:,3)
+
         
         call EZspline_interp(bfield_2d%A, Y(pp,1), Y(pp,3), &
              PSI_P(pp), ezerr)
         call EZspline_error(ezerr)
+
+!        write(6,'("PSI_P: ",E17.10)') PSI_P(1)
         
         ! FR = (dA/dZ)/R
         call EZspline_derivative(bfield_2d%A, 0, 1, Y(pp,1), Y(pp,3), &
@@ -2237,7 +2254,7 @@ subroutine calculate_magnetic_field(params,Y,F,B,PSI_P,flag)
               B(pp,3) = A(pp,3)
            end if
            
-        end if
+
      end if
   end do
   !$OMP END PARALLEL DO
@@ -2937,9 +2954,9 @@ subroutine interp_fields(params,prtcls,F)
      call interp_3D_bfields(params,prtcls%Y,prtcls%B,prtcls%flag)
   end if
 
-  if (ALLOCATED(F%E_2D%R).and.F%Efield) then
-     call interp_2D_efields(params,prtcls%Y,prtcls%E,prtcls%flag)
-  end if
+!  if (ALLOCATED(F%E_2D%R).and.F%Efield) then
+!     call interp_2D_efields(params,prtcls%Y,prtcls%E,prtcls%flag)
+!  end if
 
   if (ALLOCATED(F%E_3D%R).and.F%Efield) then
      call interp_3D_efields(params,prtcls%Y,prtcls%E,prtcls%flag)
@@ -3101,7 +3118,8 @@ end subroutine interp_profiles
 subroutine finalize_interpolants(params)
   TYPE(KORC_PARAMS), INTENT(IN) :: params
 
-  if (params%field_model(1:8) .EQ. 'EXTERNAL') then
+  if ((params%field_model(1:8) .EQ. 'EXTERNAL').or. &
+       (params%field_eval.eq.'interp')) then
      if (params%mpi_params%rank .EQ. 0) then
         write(6,'("* * * * FINALIZING FIELD INTERPOLANT * * * *")')
      end if

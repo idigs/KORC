@@ -99,12 +99,12 @@ CONTAINS
     REAL(rp)  ::  n_tauion
     REAL(rp)  ::  n_lamfront
     REAL(rp)  ::  n_lamback,n_lamshelf,n_shelfdelay,n_taushelf,n_shelf
-    REAL(rp)  ::  rm,r_a
+    REAL(rp)  ::  rm,r_a,psiN_0
 
     NAMELIST /plasmaProfiles/ radius_profile,ne_profile,neo,n_ne,a_ne, &
          Te_profile,Teo,n_Te,a_Te,n_REr0,n_tauion,n_lamfront,n_lamback, &
          Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename,axisymmetric, &
-         n_lamshelf,n_shelfdelay,n_taushelf,n_shelf
+         n_lamshelf,n_shelfdelay,n_taushelf,n_shelf,psiN_0
 
     if (params%mpi_params%rank .EQ. 0) then
        write(6,'("* * * * * * * * INITIALIZING PROFILES * * * * * * * *")')
@@ -135,6 +135,7 @@ CONTAINS
        P%n_lamback=n_lamback
        P%n_lamshelf=n_lamshelf
        P%n_shelf=n_shelf
+       P%psiN_0=psiN_0
         
        P%Te_profile = TRIM(Te_profile)
        P%Teo = Teo*C_E ! Converted to Joules
@@ -332,7 +333,7 @@ CONTAINS
     REAL(rp) :: n_psifront,n_psiback,n_psishelf
     REAL(rp) :: n_taushelf,n_shelfdelay,n_shelf
     REAL(rp) :: n0t,n_taut
-    REAL(rp) :: PSIp0,PSIp_lim
+    REAL(rp) :: PSIp0,PSIp_lim,psiN_0
     REAL(rp), DIMENSION(8) :: r_a,rm,rm_RE,PSIpN
 
     R0=P%R0
@@ -363,6 +364,8 @@ CONTAINS
     
     PSIp_lim=F%PSIp_lim
     PSIp0=F%PSIP_min
+    psiN_0=P%psiN_0
+    
 
 !    write(6,*) 'PSIp',PSIp(1)*(params%cpp%Bo*params%cpp%length**2)
 !    write(6,*) 'PSIp_lim',PSIp_lim*(params%cpp%Bo*params%cpp%length**2)   
@@ -417,10 +420,10 @@ CONTAINS
        do cc=1_idef,8_idef
           PSIpN(cc)=(PSIp(cc)-PSIp0)/(PSIp_lim-PSIp0)
           ne(cc) = (ne0-n_ne)/8._rp*(1+tanh((sqrt(abs(PSIpN(cc)))+ &
-               (time/n_tauion-1))/n_psifront))* &
-               (1+tanh(-(sqrt(abs(PSIpN(cc)))-1)/n_psiback))* &
+               sqrt(abs(psiN_0))*(time/n_tauion-1))/n_psifront))* &
+               (1+tanh(-(sqrt(abs(PSIpN(cc)))-sqrt(abs(psiN_0)))/n_psiback))* &
                (2*(n_shelf-n_ne)/(ne0-n_ne)+(ne0-n_shelf)/(ne0-n_ne)* &
-               (1-tanh((sqrt(abs(PSIpN(cc)))+ &
+               (1-tanh((sqrt(abs(PSIpN(cc)))+ sqrt(abs(psiN_0))* &
                ((time-n_shelfdelay)/n_taushelf-1))/n_psishelf)))+n_ne
        end do
        !$OMP END SIMD
@@ -450,9 +453,10 @@ CONTAINS
        !$OMP SIMD
        do cc=1_idef,8_idef
           PSIpN(cc)=(PSIp(cc)-PSIp0)/(PSIp_lim-PSIp0)
-          ne(cc) = n0t*exp(-(sqrt(abs(PSIpN(cc)))-1._rp)**2._rp/ &
+          ne(cc) = n0t*exp(-(sqrt(abs(PSIpN(cc)))-sqrt(abs(psiN_0)))**2._rp/ &
                (2._rp*n_taut**2._rp))*(1._rp+erf(-10._rp* &
-               (sqrt(abs(PSIpN(cc)))-1._rp)/(sqrt(2._rp)*n_taut)))/2._rp+n_ne
+               (sqrt(abs(PSIpN(cc)))-sqrt(abs(psiN_0)))/ &
+               (sqrt(2._rp)*n_taut)))/2._rp+n_ne
        end do
        !$OMP END SIMD
        
