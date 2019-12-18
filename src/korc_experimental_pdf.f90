@@ -1682,6 +1682,8 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
   REAL(rp) 				:: min_pitch_angle
   !! Minimum domain for pitch angle sampling including buffer
   REAL(rp) 				:: min_g,max_g
+  REAL(rp) 				:: min_R,max_R
+  REAL(rp) 				:: min_Z,max_Z
   REAL(rp) 				:: theta_rad
   !! Angle of rotation of 2D Gaussian spatial distribution in radians
   REAL(rp) 				:: R_buffer
@@ -1734,6 +1736,14 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
   PSIp_lim=F%PSIp_lim
   PSIp0=F%PSIP_min
 
+  min_R=minval(F%X%R)
+  max_R=maxval(F%X%R)
+  min_Z=minval(F%X%Z)
+  max_Z=maxval(F%X%Z)
+
+  !write(6,*) min_R,max_R
+  !write(6,*) min_Z,max_Z
+  
   deta = (h_params%max_pitch_angle - h_params%min_pitch_angle)/100.0_rp
   dg = (h_params%max_sampling_g - h_params%min_sampling_g)/100.0_rp
   
@@ -1850,6 +1860,18 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
            eta_test = eta_buffer + get_random_N()*spp%dth
         end do
 
+        do while ((R_test.GT.max_R).OR.(R_test .LT. min_R))
+           !eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
+           !eta_test = eta_buffer + get_random_mkl_N(0.0_rp,spp%dth)
+           R_test = R_buffer + get_random_N()*spp%dR
+        end do
+
+        do while ((Z_test.GT.max_Z).OR.(Z_test .LT. min_Z))
+           !eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
+           !eta_test = eta_buffer + get_random_mkl_N(0.0_rp,spp%dth)
+           Z_test = Z_buffer + get_random_N()*spp%dZ
+        end do
+        
         do while ((G_test.LT.min_g).OR.(G_test.GT.max_g))
            !G_test = G_buffer + random_norm(0.0_rp,spp%dgam)
            !G_test = G_buffer + get_random_mkl_N(0.0_rp,spp%dgam)
@@ -1985,6 +2007,18 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
            G_test = G_buffer + get_random_N()*spp%dgam
         end do
 
+        do while ((R_test.GT.max_R).OR.(R_test .LT. min_R))
+           !eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
+           !eta_test = eta_buffer + get_random_mkl_N(0.0_rp,spp%dth)
+           R_test = R_buffer + get_random_N()*spp%dR
+        end do
+
+        do while ((Z_test.GT.max_Z).OR.(Z_test .LT. min_Z))
+           !eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
+           !eta_test = eta_buffer + get_random_mkl_N(0.0_rp,spp%dth)
+           Z_test = Z_buffer + get_random_N()*spp%dZ
+        end do
+        
         if (accepted) then
            psi0=psi1
            f0=f1
