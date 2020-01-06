@@ -448,7 +448,7 @@ CONTAINS
 
        n0t=(ne0-n_ne)/2._rp*(tanh(time/n_taushelf)- &
             tanh((time-n_shelfdelay)/n_taushelf))
-       n_taut=n_psishelf*erf(time/n_tauion)
+       n_taut=n_psishelf*erf((time+params%dt/100._rp)/n_tauion)
        
        !$OMP SIMD
        do cc=1_idef,8_idef

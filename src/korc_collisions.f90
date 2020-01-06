@@ -1186,7 +1186,7 @@ contains
 
     if (MODULO(params%it+tt,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
        dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt
-       time=(params%it+tt)*params%dt
+       time=params%init_time+(params%it-1+tt)*params%dt
        ! subcylcling iterations a fraction of fastest collision frequency,
        ! where fraction set by dTau in namelist &CollisionParamsSingleSpecies
 
@@ -1368,7 +1368,7 @@ contains
     
     if (MODULO(params%it+tt,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
        dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt       
-       time=(params%it+tt)*params%dt
+       time=params%init_time+(params%it-1+tt)*params%dt
 
        if (params%field_eval.eq.'eqn') then
           call analytical_fields_GC_p(F,Y_R,Y_PHI, &

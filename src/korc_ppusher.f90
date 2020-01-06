@@ -3798,6 +3798,7 @@ contains
        Y_PHI(cc)=Y0_PHI(cc)+a31*k1_PHI(cc)+a32*k2_PHI(cc)+ &
             a33*k3_PHI(cc)
        Y_Z(cc)=Y0_Z(cc)+a31*k1_Z(cc)+a32*k2_Z(cc)+a33*k3_Z(cc)
+
        V_PLL(cc)=V0_PLL(cc)   +a31*k1_PLL(cc)+a32*k2_PLL(cc)+a33*k3_PLL(cc)
        V_MU(cc)=V0_MU(cc)   +a31*k1_MU(cc)+a32*k2_MU(cc)+a33*k3_MU(cc)
 
@@ -5762,7 +5763,7 @@ contains
        re_cache=C_RE/params%cpp%length
        alpha_cache=C_a
        
-       time=(params%it+tt)*params%dt
+       time=params%init_time+(params%it-1+tt)*params%dt
        call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
        
        !$OMP SIMD

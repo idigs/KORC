@@ -401,8 +401,6 @@ program main
        F%axisymmetric_fields.and.(params%field_model(10:12).eq.'PSI'.OR. &
        params%field_model(12:14).eq.'PSI').and. &
        .not.params%SC_E) then
-
-     write(6,*) 'GC, interp, PSI'
      
      do it=params%ito,params%t_steps,params%t_skip
         call adv_GCinterp_psi_top(params,spp,P,F)
@@ -410,7 +408,7 @@ program main
         params%time = params%init_time &
              +REAL(it-1_ip+params%t_skip,rp)*params%dt        
         params%it = it-1_ip+params%t_skip
-
+        
         call save_simulation_outputs(params,spp,F)
         call synthetic_camera(params,spp) ! Synthetic camera
         call binning_diagnostic(params,spp) ! Binning diagnostic
