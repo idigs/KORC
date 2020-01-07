@@ -1706,7 +1706,7 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
   !! Previous value of 2D Gaussian argument based on R_buffer, Z_buffer
   REAL(rp) 				:: psi1
   !! Present value of 2D Gaussian argument based on R_test, Z_test
-  REAL(rp)  :: PSIp_lim,PSIP0,PSIN
+  REAL(rp)  :: PSIp_lim,PSIP0,PSIN,PSIN0,PSIN1,sigma
   REAL(rp) 				:: f0
   !! Evaluation of Avalanche distribution with previous sample
   REAL(rp) 				:: f1
@@ -1741,6 +1741,8 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
   min_Z=minval(F%X%Z)
   max_Z=maxval(F%X%Z)
 
+  sigma=spp%sigmaR*params%cpp%length
+  
   !write(6,*) min_R,max_R
   !write(6,*) min_Z,max_Z
   
@@ -1884,16 +1886,16 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
 !           psi0=PSI_ROT_exp(R_buffer,spp%Ro,spp%sigmaR,Z_buffer,spp%Zo, &
 !                spp%sigmaZ,theta_rad)
 
- !          spp%vars%Y(1,1)=R_buffer
- !          spp%vars%Y(1,2)=0
- !          spp%vars%Y(1,3)=Z_buffer
+           spp%vars%Y(1,1)=R_buffer
+           spp%vars%Y(1,2)=0
+           spp%vars%Y(1,3)=Z_buffer
 
            !write(6,*) 'R',R_buffer
            !write(6,*) 'Z',Z_buffer
            
- !          call get_fields(params,spp%vars,F)
- !          psi0=spp%vars%PSI_P(1)
- !          PSIN=(psi0-PSIP0)/(PSIp_lim-PSIP0)
+           call get_fields(params,spp%vars,F)
+           psi0=spp%vars%PSI_P(1)
+           PSIN0=(psi0-PSIP0)/(PSIp_lim-PSIP0)
            
            f0=fRE_H_3D(F,eta_buffer,G_buffer,R_buffer,Z_buffer,spp%Ro,spp%Zo)
 !           f0=fRE_H(eta_buffer,G_buffer)
@@ -1901,6 +1903,7 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
 
         if (accepted) then
            !psi0=psi1
+           PSIN0=PSIN1
            f0=f1
         end if
         
@@ -1912,7 +1915,7 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
 
         call get_fields(params,spp%vars,F)
         psi1=spp%vars%PSI_P(1)
-        PSIN=(psi1-PSIP0)/(PSIp_lim-PSIP0)
+        PSIN1=(psi1-PSIP0)/(PSIp_lim-PSIP0)
 
 !        write(6,*) 'R',R_test
 !        write(6,*) 'Z',Z_test
@@ -1934,12 +1937,12 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
         ! for velocity phase space, factors of sin(pitch angle) for velocity
         ! phase space and cylindrical coordinate Jacobian R for spatial
         ! phase space incorporated here.
-        ratio = indicator_exp(PSIN,spp%psi_max)* &
-             R_test*f1*sin(deg2rad(eta_test))/ &
-             (R_buffer*f0*sin(deg2rad(eta_buffer)))
-!        ratio = indicator_exp(psi1,spp%psi_max)* &
-!             R_test*EXP(-psi1)*f1*sin(deg2rad(eta_test))/ &
-!             (R_buffer*EXP(-psi0)*f0*sin(deg2rad(eta_buffer)))
+!        ratio = indicator_exp(PSIN,spp%psi_max)* &
+!             R_test*f1*sin(deg2rad(eta_test))/ &
+!             (R_buffer*f0*sin(deg2rad(eta_buffer)))
+        ratio = indicator_exp(PSIN1,spp%psi_max)* &
+             R_test*EXP(-PSIN1/sigma)*f1*sin(deg2rad(eta_test))/ &
+             (R_buffer*EXP(-PSIN0/sigma)*f0*sin(deg2rad(eta_buffer)))
 
 !        ratio = f1*sin(deg2rad(eta_test))/(f0*sin(deg2rad(eta_buffer)))
 
@@ -2020,7 +2023,7 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
         end do
         
         if (accepted) then
-           psi0=psi1
+           PSIN0=PSIN1
            f0=f1
         end if
         
@@ -2032,7 +2035,7 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
 
         call get_fields(params,spp%vars,F)
         psi1=spp%vars%PSI_P(1)
-        PSIN=(psi1-PSIP0)/(PSIp_lim-PSIP0)
+        PSIN1=(psi1-PSIP0)/(PSIp_lim-PSIP0)
 
 !        write(6,'("R: ",E17.10)') R_test
 !        write(6,'("R0: ",E17.10)') spp%Ro
@@ -2048,12 +2051,12 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
         f1=fRE_H_3D(F,eta_test,G_test,R_test,Z_test,spp%Ro,spp%Zo)            
 !        f1=fRE_H(eta_test,G_test)
         
-        ratio = indicator_exp(PSIN,psi_max_buff)* &
-             R_test*f1*sin(deg2rad(eta_test))/ &
-             (R_buffer*f0*sin(deg2rad(eta_buffer)))
-!        ratio = indicator_exp(psi1,psi_max_buff)* &
-!             R_test*EXP(-psi1)*f1*sin(deg2rad(eta_test))/ &
-!             (R_buffer*EXP(-psi0)*f0*sin(deg2rad(eta_buffer)))
+!        ratio = indicator_exp(PSIN,psi_max_buff)* &
+!             R_test*f1*sin(deg2rad(eta_test))/ &
+!             (R_buffer*f0*sin(deg2rad(eta_buffer)))
+        ratio = indicator_exp(PSIN1,psi_max_buff)* &
+             R_test*EXP(-PSIN1/sigma)*f1*sin(deg2rad(eta_test))/ &
+             (R_buffer*EXP(-PSIN0/sigma)*f0*sin(deg2rad(eta_buffer)))
 
 !        ratio = f1*sin(deg2rad(eta_test))/(f0*sin(deg2rad(eta_buffer)))
         
