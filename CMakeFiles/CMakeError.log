@@ -36,7 +36,7 @@ Configured with: /opt/local/var/macports/build/_opt_bblocal_var_buildworker_port
 Thread model: posix
 gcc version 8.3.0 (MacPorts gcc8 8.3.0_4) 
 COLLECT_GCC_OPTIONS='-O3' '-msse2' '-D' 'HDF5_DOUBLE_PRESICION' '-fopenmp-simd' '-malign-double' '-v' '-mmacosx-version-min=10.14.0' '-asm_macosx_version_min=10.14' '-shared-libgcc' '-mtune=core2'
- /opt/local/libexec/gcc/x86_64-apple-darwin18/8.3.0/f951 CMakeFortranCompilerId.F -ffixed-form -cpp=/var/folders/zb/jt42d3355lz4z5ws9sywtlqdxf78h9/T//cc92IDRs.f90 -quiet -v -D__DYNAMIC__ -D HDF5_DOUBLE_PRESICION CMakeFortranCompilerId.F -fPIC -quiet -dumpbase CMakeFortranCompilerId.F -msse2 -malign-double -mmacosx-version-min=10.14.0 -mtune=core2 -auxbase CMakeFortranCompilerId -O3 -version -fopenmp-simd -fintrinsic-modules-path /opt/local/lib/gcc8/gcc/x86_64-apple-darwin18/8.3.0/finclude -o /var/folders/zb/jt42d3355lz4z5ws9sywtlqdxf78h9/T//ccmyq4cy.s
+ /opt/local/libexec/gcc/x86_64-apple-darwin18/8.3.0/f951 CMakeFortranCompilerId.F -ffixed-form -cpp=/var/folders/zb/jt42d3355lz4z5ws9sywtlqdxf78h9/T//ccNdkdJ9.f90 -quiet -v -D__DYNAMIC__ -D HDF5_DOUBLE_PRESICION CMakeFortranCompilerId.F -fPIC -quiet -dumpbase CMakeFortranCompilerId.F -msse2 -malign-double -mmacosx-version-min=10.14.0 -mtune=core2 -auxbase CMakeFortranCompilerId -O3 -version -fopenmp-simd -fintrinsic-modules-path /opt/local/lib/gcc8/gcc/x86_64-apple-darwin18/8.3.0/finclude -o /var/folders/zb/jt42d3355lz4z5ws9sywtlqdxf78h9/T//cckjykcs.s
 GNU Fortran (MacPorts gcc8 8.3.0_4) version 8.3.0 (x86_64-apple-darwin18)
 	compiled by GNU C version 8.3.0, GMP version 6.1.2, MPFR version 4.0.2, MPC version 1.1.0, isl version isl-0.21-GMP
 
@@ -55,23 +55,23 @@ GNU Fortran2008 (MacPorts gcc8 8.3.0_4) version 8.3.0 (x86_64-apple-darwin18)
 
 GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
 COLLECT_GCC_OPTIONS='-O3' '-msse2' '-D' 'HDF5_DOUBLE_PRESICION' '-fopenmp-simd' '-malign-double' '-v' '-mmacosx-version-min=10.14.0'  '-shared-libgcc' '-mtune=core2'
- /opt/local/bin/as -arch x86_64 -v -force_cpusubtype_ALL -mmacosx-version-min=10.14 -o /var/folders/zb/jt42d3355lz4z5ws9sywtlqdxf78h9/T//ccfKkba6.o /var/folders/zb/jt42d3355lz4z5ws9sywtlqdxf78h9/T//ccmyq4cy.s
-Apple clang version 11.0.0 (clang-1100.0.33.12)
+ /opt/local/bin/as -arch x86_64 -v -force_cpusubtype_ALL -mmacosx-version-min=10.14 -o /var/folders/zb/jt42d3355lz4z5ws9sywtlqdxf78h9/T//ccor7A7y.o /var/folders/zb/jt42d3355lz4z5ws9sywtlqdxf78h9/T//cckjykcs.s
+Apple clang version 11.0.0 (clang-1100.0.33.17)
 Target: x86_64-apple-darwin18.7.0
 Thread model: posix
 InstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin
- "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1as -triple x86_64-apple-macosx10.14.0 -filetype obj -main-file-name ccmyq4cy.s -target-cpu penryn -fdebug-compilation-dir /Users/21b/Desktop/KORC/CMakeFiles/3.14.0/CompilerIdFortran -dwarf-debug-producer Apple clang version 11.0.0 (clang-1100.0.33.12) -dwarf-version=4 -mrelocation-model pic -o /var/folders/zb/jt42d3355lz4z5ws9sywtlqdxf78h9/T//ccfKkba6.o /var/folders/zb/jt42d3355lz4z5ws9sywtlqdxf78h9/T//ccmyq4cy.s
+ "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang" -cc1as -triple x86_64-apple-macosx10.14.0 -filetype obj -main-file-name cckjykcs.s -target-cpu penryn -fdebug-compilation-dir /Users/21b/Desktop/KORC/CMakeFiles/3.14.0/CompilerIdFortran -dwarf-debug-producer Apple clang version 11.0.0 (clang-1100.0.33.17) -dwarf-version=4 -mrelocation-model pic -o /var/folders/zb/jt42d3355lz4z5ws9sywtlqdxf78h9/T//ccor7A7y.o /var/folders/zb/jt42d3355lz4z5ws9sywtlqdxf78h9/T//cckjykcs.s
 Reading specs from /opt/local/lib/gcc8/gcc/x86_64-apple-darwin18/8.3.0/../../../libgfortran.spec
 rename spec lib to liborig
 COLLECT_GCC_OPTIONS='-O3' '-msse2' '-D' 'HDF5_DOUBLE_PRESICION' '-fopenmp-simd' '-malign-double' '-v' '-mmacosx-version-min=10.14.0'  '-shared-libgcc' '-mtune=core2'
 COMPILER_PATH=/opt/local/libexec/gcc/x86_64-apple-darwin18/8.3.0/:/opt/local/libexec/gcc/x86_64-apple-darwin18/8.3.0/:/opt/local/libexec/gcc/x86_64-apple-darwin18/:/opt/local/lib/gcc8/gcc/x86_64-apple-darwin18/8.3.0/:/opt/local/lib/gcc8/gcc/x86_64-apple-darwin18/
 LIBRARY_PATH=/opt/local/lib/gcc8/gcc/x86_64-apple-darwin18/8.3.0/:/opt/local/lib/gcc8/gcc/x86_64-apple-darwin18/8.3.0/../../../
 COLLECT_GCC_OPTIONS='-O3' '-msse2' '-D' 'HDF5_DOUBLE_PRESICION' '-fopenmp-simd' '-malign-double' '-v' '-mmacosx-version-min=10.14.0'  '-shared-libgcc' '-mtune=core2'
- /opt/local/libexec/gcc/x86_64-apple-darwin18/8.3.0/collect2 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/ -dynamic -arch x86_64 -macosx_version_min 10.14.0 -weak_reference_mismatches non-weak -o a.out -L/opt/local/lib/gcc8/gcc/x86_64-apple-darwin18/8.3.0 -L/opt/local/lib/gcc8/gcc/x86_64-apple-darwin18/8.3.0/../../.. /var/folders/zb/jt42d3355lz4z5ws9sywtlqdxf78h9/T//ccfKkba6.o -lgfortran -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lquadmath -lm -lgcc_ext.10.5 -lgcc -lSystem -v
+ /opt/local/libexec/gcc/x86_64-apple-darwin18/8.3.0/collect2 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/ -dynamic -arch x86_64 -macosx_version_min 10.14.0 -weak_reference_mismatches non-weak -o a.out -L/opt/local/lib/gcc8/gcc/x86_64-apple-darwin18/8.3.0 -L/opt/local/lib/gcc8/gcc/x86_64-apple-darwin18/8.3.0/../../.. /var/folders/zb/jt42d3355lz4z5ws9sywtlqdxf78h9/T//ccor7A7y.o -lgfortran -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lquadmath -lm -lgcc_ext.10.5 -lgcc -lSystem -v
 collect2 version 8.3.0
-/opt/local/bin/ld -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/ -dynamic -arch x86_64 -macosx_version_min 10.14.0 -weak_reference_mismatches non-weak -o a.out -L/opt/local/lib/gcc8/gcc/x86_64-apple-darwin18/8.3.0 -L/opt/local/lib/gcc8/gcc/x86_64-apple-darwin18/8.3.0/../../.. /var/folders/zb/jt42d3355lz4z5ws9sywtlqdxf78h9/T//ccfKkba6.o -lgfortran -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lquadmath -lm -lgcc_ext.10.5 -lgcc -lSystem -v
-@(#)PROGRAM:ld  PROJECT:ld64-520
-BUILD 18:38:01 Oct 11 2019
+/opt/local/bin/ld -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk/ -dynamic -arch x86_64 -macosx_version_min 10.14.0 -weak_reference_mismatches non-weak -o a.out -L/opt/local/lib/gcc8/gcc/x86_64-apple-darwin18/8.3.0 -L/opt/local/lib/gcc8/gcc/x86_64-apple-darwin18/8.3.0/../../.. /var/folders/zb/jt42d3355lz4z5ws9sywtlqdxf78h9/T//ccor7A7y.o -lgfortran -no_compact_unwind -lSystem -lgcc_ext.10.5 -lgcc -lquadmath -lm -lgcc_ext.10.5 -lgcc -lSystem -v
+@(#)PROGRAM:ld  PROJECT:ld64-530
+BUILD 18:57:17 Dec 13 2019
 configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em
 Library search paths:
 	/opt/local/lib/gcc8/gcc/x86_64-apple-darwin18/8.3.0

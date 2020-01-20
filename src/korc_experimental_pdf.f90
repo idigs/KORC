@@ -2086,7 +2086,7 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
         ! Only accept sample if it is within desired boundary, but
         ! add to MC above if within buffer. This helps make the boundary
         ! more defined.
-        IF ((INT(indicator_exp(PSIN,spp%psi_max)).EQ.1).AND. &
+        IF ((INT(indicator_exp(PSIN1,spp%psi_max)).EQ.1).AND. &
              (G_buffer.LE.h_params%max_sampling_g).AND. &
              (G_buffer.GE.h_params%min_sampling_g).AND. &
              (eta_buffer.LE.h_params%max_pitch_angle).AND. &
