@@ -473,7 +473,7 @@ CONTAINS
     REAL(rp),DIMENSION(8),INTENT(IN) :: Y_R
     integer(ip) :: cc
 
-    time=(params%it+tt)*params%dt
+    time=params%init_time+(params%it-1+tt)*params%dt
     
     E_dyn=F%E_dyn
     E_pulse=F%E_pulse

@@ -711,6 +711,8 @@ contains
     
     CLogee = CLog0(ne,Te)+ &
          log(1+(2*(gam-1)/VTe(Te)**2)**(k/2._rp))/k
+
+!    write(6,*) gam,CLogee
   end function CLogee
 
   function CLogei(v,ne,Te)
@@ -963,7 +965,7 @@ contains
     REAL(rp) 				:: p
     
     p = v/SQRT(1.0_rp - v**2)
-    nu_S = 2.0_rp*CF(params,v)/p
+    nu_S = CF(params,v)/p
         
   end function nu_S
 
