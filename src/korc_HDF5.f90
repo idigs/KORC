@@ -1782,10 +1782,18 @@ CONTAINS
                   F%X%R*params%cpp%length,attr_array)
 
              if (ALLOCATED(F%X%PHI)) then
-                dset = TRIM(gname) // "/PHI"
-                attr_array(1) = "Azimuthal angle of the magnetic &
-                     field grid nodes"
-                call save_1d_array_to_hdf5(h5file_id,dset,F%X%PHI,attr_array)
+                if (F%Dim2x1t) then
+                   dset = TRIM(gname) // "/PHI"
+                   attr_array(1) = "Azimuthal angle of the magnetic &
+                        field grid nodes"
+                   call save_1d_array_to_hdf5(h5file_id,dset, &
+                        F%X%PHI*params%cpp%time,attr_array)
+                else
+                   dset = TRIM(gname) // "/PHI"
+                   attr_array(1) = "Azimuthal angle of the magnetic &
+                        field grid nodes"
+                   call save_1d_array_to_hdf5(h5file_id,dset,F%X%PHI,attr_array)
+                end if
              end if
 
              dset = TRIM(gname) // "/Z"
@@ -1836,14 +1844,21 @@ CONTAINS
                      units*F%PSIp)
              end if
 
+             if (ALLOCATED(F%PSIp3D)) then
+                dset = TRIM(gname) // "/psi_p3D"
+                units = params%cpp%Bo*params%cpp%length**2
+                call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                     units*F%PSIp3D)
+             end if
+
              if (ALLOCATED(F%FLAG2D)) then
-                dset = TRIM(gname) // "/Flag"
+                dset = TRIM(gname) // "/Flag2D"
                 call rsave_2d_array_to_hdf5(h5file_id, dset, &
                      F%FLAG2D)
              end if
 
              if (ALLOCATED(F%FLAG3D)) then
-                dset = TRIM(gname) // "/Flag"
+                dset = TRIM(gname) // "/Flag3D"
                 call rsave_3d_array_to_hdf5(h5file_id, dset, &
                      F%FLAG3D)
              end if

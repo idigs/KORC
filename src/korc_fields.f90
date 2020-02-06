@@ -1884,6 +1884,7 @@ CONTAINS
     !! going to be used on in a given simulation.
     LOGICAL                        :: Bflux
     LOGICAL                        :: Bflux3D
+    LOGICAL                        :: Dim2x1t
     !! Logical variable that specifies if the poloidal magnetic 
     !! flux is going to be used on in a given simulation.
     LOGICAL                        :: axisymmetric_fields
@@ -1910,6 +1911,7 @@ CONTAINS
     real(rp) :: RMAX,RMIN,ZMAX,ZMIN
     integer :: dim_1D
     real(rp) :: dt_E_SC,Ip_exp,PSIp_lim
+    real(rp) :: t0_2x1t
     
 
     NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
@@ -1917,7 +1919,7 @@ CONTAINS
          E_dyn,E_pulse,E_width
     NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux,Bflux3D,dBfield, &
          axisymmetric_fields, Eo,E_dyn,E_pulse,E_width,res_double, &
-         dim_1D,dt_E_SC,Ip_exp,PSIp_lim
+         dim_1D,dt_E_SC,Ip_exp,PSIp_lim,Dim2x1t,t0_2x1t
 
     if (params%mpi_params%rank .EQ. 0) then
        write(6,'(/,"* * * * * * * * INITIALIZING FIELDS * * * * * * * *")')
@@ -2142,7 +2144,9 @@ CONTAINS
        F%Bflux3D = Bflux3D
        F%Efield = Efield
        F%axisymmetric_fields = axisymmetric_fields
-
+       F%Dim2x1t = Dim2x1t
+       F%t0_2x1t = t0_2x1t
+       
        F%E_dyn = E_dyn
        F%E_pulse = E_pulse
        F%E_width = E_width
@@ -2158,6 +2162,8 @@ CONTAINS
        call load_dim_data_from_hdf5(params,F)
        !sets F%dims for 2D or 3D data
 
+       !write(6,*) F%dims
+       
        call which_fields_in_file(params,F%Bfield_in_file,F%Efield_in_file, &
             F%Bflux_in_file,F%dBfield_in_file)
 
@@ -2195,6 +2201,13 @@ CONTAINS
 
           F%Efield_in_file=.FALSE.
 
+          if (F%Dim2x1t) then
+
+             call ALLOCATE_3D_FIELDS_ARRAYS(params,F,F%Bfield, &
+                  F%Efield,F%dBfield)
+             
+          end if
+
        else
           call ALLOCATE_3D_FIELDS_ARRAYS(params,F,F%Bfield,F%Efield,F%dBfield)
           
@@ -2210,11 +2223,14 @@ CONTAINS
 !       end if
 
        if (F%Bflux) then
-          F%PSIP_min=minval(F%PSIp)
+          F%PSIP_min=minval(F%PSIp)         
+
+       else if(F%Bflux3D) then
+          F%PSIP_min=minval(F%PSIp3D(:,1,:))
        end if
-       
+
           
-       if (.not.F%Efield_in_file) then
+       if ((.not.F%Efield_in_file).and.(.not.F%Dim2x1t)) then
           F%Eo = Eo
 
           if (F%axisymmetric_fields) then
@@ -2387,6 +2403,8 @@ CONTAINS
                 write(6,'("PSIp(r=0)",E17.10)') F%PSIp(F%dims(1)/2,F%dims(3)/2)
                 write(6,'("BPHI(r=0)",E17.10)') F%Bo
                 write(6,'("EPHI(r=0)",E17.10)') F%Eo
+             else if (F%Bflux3D) then
+                write(6,'("PSIp(r=0)",E17.10)') F%PSIp3D(F%dims(1)/2,1,F%dims(3)/2)
              else
                 write(6,'("BR(r=0)",E17.10)') F%B_2D%R(F%dims(1)/2,F%dims(3)/2)
                 write(6,'("BPHI(r=0)",E17.10)') &
@@ -2789,6 +2807,14 @@ CONTAINS
           F%dims(3) = INT(rdatum)
 
        end if
+
+       if(F%Dim2x1t) then
+
+          dset = "/NPHI"
+          call load_from_hdf5(h5file_id,dset,rdatum)
+          F%dims(2) = INT(rdatum)
+
+       end if
        
     else
        dset = "/NR"
@@ -2900,7 +2926,8 @@ CONTAINS
 
 
 
-    if ((.NOT.F%Bflux).AND.(.NOT.F%axisymmetric_fields)) then
+    if (((.NOT.F%Bflux).AND.(.NOT.F%axisymmetric_fields)).OR. &
+         F%Dim2x1t) then
        dset = "/PHI"
        call load_array_from_hdf5(h5file_id,dset,F%X%PHI)
     end if
@@ -2947,7 +2974,7 @@ CONTAINS
     dset = '/Zo'
     call load_from_hdf5(h5file_id,dset,F%Zo)
 
-    if (F%Bflux.OR.F%axisymmetric_fields) then
+    if ((F%Bflux.OR.F%axisymmetric_fields).AND.(.NOT.F%Dim2x1t)) then
 
        if (params%SC_E) then
 
@@ -3013,7 +3040,7 @@ CONTAINS
           F%PSIp3D = 0.0_rp
        end if
 
-       F%PSIp3D=2*C_PI*(F%PSIp3D-minval(F%PSIp3D))
+!       F%PSIp3D=2*C_PI*(F%PSIp3D-minval(F%PSIp3D))
        
     end if
     

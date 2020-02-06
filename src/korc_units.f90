@@ -154,6 +154,7 @@ subroutine normalize_variables(params,spp,F,P)
   F%E_dyn = F%E_dyn/params%cpp%Eo
   F%E_pulse=F%E_pulse/params%cpp%time
   F%E_width=F%E_width/params%cpp%time
+  F%t0_2x1t=F%t0_2x1t/params%cpp%time
 
   P%a = P%a/params%cpp%length
   P%R0 = P%R0/params%cpp%length
@@ -275,6 +276,8 @@ subroutine normalize_variables(params,spp,F,P)
      if (ALLOCATED(F%E_3D%Z)) F%E_3D%Z = F%E_3D%Z/params%cpp%Eo
 
      if (ALLOCATED(F%PSIp)) F%PSIp = F%PSIp/(params%cpp%Bo*params%cpp%length**2)
+     if (ALLOCATED(F%PSIp3D)) F%PSIp3D = F%PSIp3D/ &
+          (params%cpp%Bo*params%cpp%length**2)
      F%PSIP_min = F%PSIP_min/(params%cpp%Bo*params%cpp%length**2)
      F%PSIp_lim = F%PSIp_lim/(params%cpp%Bo*params%cpp%length**2)
      
@@ -361,6 +364,10 @@ subroutine normalize_variables(params,spp,F,P)
      F%X%R = F%X%R/params%cpp%length
      ! Nothing to do for the PHI component
      F%X%Z = F%X%Z/params%cpp%length
+
+     if (F%Dim2x1t) then
+        F%X%PHI=F%X%PHI/params%cpp%time
+     end if
 
 !     end if
   end if
