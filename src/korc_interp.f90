@@ -24,8 +24,7 @@ module korc_interp
      !! cylindrical components of vector fields
      !! \(\mathbf{F}(R,\phi,Z) = F_R\hat{e}_R + F_\phi\hat{e}_phi + 
      !! F_Z\hat{e}_Z\). Real precision of 8 bytes. @endnote
-     TYPE(EZspline3_r8)    :: A
-     !! Interpolant of a scalar field \(A(R,Z)\).
+     TYPE(EZspline3_r8)    :: A     !! Interpolant of a scalar field \(A(R,Z)\).
      TYPE(EZspline3_r8)    :: R		
      !! Interpolant of \(F_R(R,\phi,Z)\).
      TYPE(EZspline3_r8)    :: PHI	
@@ -2917,9 +2916,15 @@ subroutine calculate_GCfields_2x1t_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
           (Bmag(cc)*Bmag(cc))
      curlb_Z(cc)=-B_PHI(cc)*gradB_R(cc)/(Bmag(cc)*Bmag(cc))
 
-     E_R(cc) = 0._rp
-     E_PHI(cc) = A(cc,3)/(2*C_PI*Y_R(cc))
-     E_Z(cc) = 0._rp 
+     if (F%E_2x1t) then
+        E_R(cc) = 0._rp
+        E_PHI(cc) = A(cc,3)/(2._rp*C_PI*Y_R(cc))
+        E_Z(cc) = 0._rp
+     else
+        E_R(cc) = 0._rp
+        E_PHI(cc) = 0._rp
+        E_Z(cc) = 0._rp
+     end if
      
   end do
   !$OMP END SIMD

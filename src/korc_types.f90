@@ -585,6 +585,7 @@ module korc_types
      LOGICAL 					:: axisymmetric_fields 
      !! Flag to indicate if the pre-computed fields are axisymmetric.
      LOGICAL 					:: Dim2x1t
+     LOGICAL 					:: E_2x1t
      REAL(rp)  :: t0_2x1t
   END TYPE FIELDS
 

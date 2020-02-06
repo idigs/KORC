@@ -1885,6 +1885,7 @@ CONTAINS
     LOGICAL                        :: Bflux
     LOGICAL                        :: Bflux3D
     LOGICAL                        :: Dim2x1t
+    LOGICAL                        :: E_2x1t
     !! Logical variable that specifies if the poloidal magnetic 
     !! flux is going to be used on in a given simulation.
     LOGICAL                        :: axisymmetric_fields
@@ -1919,7 +1920,7 @@ CONTAINS
          E_dyn,E_pulse,E_width
     NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux,Bflux3D,dBfield, &
          axisymmetric_fields, Eo,E_dyn,E_pulse,E_width,res_double, &
-         dim_1D,dt_E_SC,Ip_exp,PSIp_lim,Dim2x1t,t0_2x1t
+         dim_1D,dt_E_SC,Ip_exp,PSIp_lim,Dim2x1t,t0_2x1t,E_2x1t
 
     if (params%mpi_params%rank .EQ. 0) then
        write(6,'(/,"* * * * * * * * INITIALIZING FIELDS * * * * * * * *")')
@@ -2146,6 +2147,7 @@ CONTAINS
        F%axisymmetric_fields = axisymmetric_fields
        F%Dim2x1t = Dim2x1t
        F%t0_2x1t = t0_2x1t
+       F%E_2x1t = E_2x1t
        
        F%E_dyn = E_dyn
        F%E_pulse = E_pulse
