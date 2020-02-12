@@ -375,8 +375,9 @@ module korc_interp
      REAL(rp)                                          :: Ro
      !! Smaller radial position of the fields and profiles domain.
      REAL(rp)                                          :: Zo
-     !! Smaller vertical position of the fields and profiles domain.
-
+     !! Smaller vertical position of the fields and profiles domain
+     REAL(rp)                                          :: To
+     
      REAL(rp)                                          :: Drm
      REAL(rp)                                          :: DPSIP
      REAL(rp)                                          :: DR
@@ -554,6 +555,8 @@ CONTAINS
              bfield_2X1T%A%x2 = F%X%PHI
              bfield_2X1T%A%x3 = F%X%Z
 
+             !write(6,*) F%X%PHI
+
              call EZspline_setup(bfield_2X1T%A, F%PSIp3D, ezerr, .TRUE.)
              call EZspline_error(ezerr)
 
@@ -565,6 +568,8 @@ CONTAINS
              fields_domain%DR = ABS(F%X%R(2) - F%X%R(1))
              fields_domain%DT = ABS(F%X%PHI(2) - F%X%PHI(1))
              fields_domain%DZ = ABS(F%X%Z(2) - F%X%Z(1))
+
+             fields_domain%To = F%X%PHI(1)
              
           else
              bfield_3d%NR = F%dims(1)
@@ -1429,7 +1434,8 @@ CONTAINS
 !    write(6,'("Ro:",E17.10)') fields_domain%Ro
 !    write(6,'("Zo:",E17.10)') fields_domain%Zo
 !    write(6,'("DR:",E17.10)') fields_domain%DR
-!    write(6,'("DZ:",E17.10)') fields_domain%DZ
+    !    write(6,'("DZ:",E17.10)') fields_domain%DZ
+!    write(6,'("DT:",E17.10)') fields_domain%DT
 
 
     
@@ -1441,8 +1447,8 @@ CONTAINS
 
              IR = INT(FLOOR((Y_R(pp)  - fields_domain%Ro + &
                   0.5_rp*fields_domain%DR)/fields_domain%DR) + 1.0_rp,idef)
-             IPHI = INT(FLOOR((Y_PHI(pp)  + 0.5_rp*fields_domain%DT)/ &
-                  fields_domain%DT) + 1.0_rp,idef)
+             IPHI = INT(FLOOR((Y_PHI(pp)  - fields_domain%To &
+                  + 0.5_rp*fields_domain%DT)/fields_domain%DT) + 1.0_rp,idef)
              IZ = INT(FLOOR((Y_Z(pp)  + ABS(fields_domain%Zo) + &
                   0.5_rp*fields_domain%DZ)/fields_domain%DZ) + 1.0_rp,idef)
 
@@ -1454,9 +1460,9 @@ CONTAINS
                   ((IR.GT.bfield_2X1T%NR).OR.(IZ.GT.bfield_2X1T%NZ))) then
                 flag(pp) = 0_is
 
-                !write(6,'("YR:",E17.10)') Y_R
-                !write(6,'("YPHI:",E17.10)') Y_PHI
-                !write(6,'("YZ:",E17.10)') Y_Z
+                !write(6,'("YR:",E17.10)') Y_R(pp)
+                !write(6,'("YPHI:",E17.10)') Y_PHI(pp)
+                !write(6,'("YZ:",E17.10)') Y_Z(pp)
 
                 !write(6,'("IR: ",I16)') IR
                 !write(6,'("IPHI: ",I16)') IPHI
@@ -2874,6 +2880,8 @@ subroutine calculate_GCfields_2x1t_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
      Y_T(cc)=F%t0_2x1t+time
   end do
   !$OMP END SIMD
+
+  !write(6,*) 't0',F%t0_2x1t,'time',time,'Y_T',Y_T(1)
   
   call check_if_in_fields_domain_p(F,Y_R,Y_T,Y_Z,flag_cache)
        
