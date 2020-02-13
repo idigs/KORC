@@ -1885,7 +1885,7 @@ CONTAINS
     LOGICAL                        :: Bflux
     LOGICAL                        :: Bflux3D
     LOGICAL                        :: Dim2x1t
-    LOGICAL                        :: E_2x1t
+    LOGICAL                        :: E_2x1t,ReInterp_2x1t
     !! Logical variable that specifies if the poloidal magnetic 
     !! flux is going to be used on in a given simulation.
     LOGICAL                        :: axisymmetric_fields
@@ -1910,7 +1910,7 @@ CONTAINS
     logical :: test
     integer :: res_double
     real(rp) :: RMAX,RMIN,ZMAX,ZMIN
-    integer :: dim_1D
+    integer :: dim_1D,ind0_2x1t
     real(rp) :: dt_E_SC,Ip_exp,PSIp_lim
     real(rp) :: t0_2x1t
     
@@ -1920,7 +1920,8 @@ CONTAINS
          E_dyn,E_pulse,E_width
     NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux,Bflux3D,dBfield, &
          axisymmetric_fields, Eo,E_dyn,E_pulse,E_width,res_double, &
-         dim_1D,dt_E_SC,Ip_exp,PSIp_lim,Dim2x1t,t0_2x1t,E_2x1t
+         dim_1D,dt_E_SC,Ip_exp,PSIp_lim,Dim2x1t,t0_2x1t,E_2x1t,ReInterp_2x1t, &
+         ind0_2x1t
 
     if (params%mpi_params%rank .EQ. 0) then
        write(6,'(/,"* * * * * * * * INITIALIZING FIELDS * * * * * * * *")')
@@ -2146,7 +2147,10 @@ CONTAINS
        F%Efield = Efield
        F%axisymmetric_fields = axisymmetric_fields
        F%Dim2x1t = Dim2x1t
+       F%ReInterp_2x1t = ReInterp_2x1t
        F%t0_2x1t = t0_2x1t
+       F%ind0_2x1t = ind0_2x1t
+       F%ind_2x1t=F%ind0_2x1t
        F%E_2x1t = E_2x1t
        
        F%E_dyn = E_dyn
@@ -2196,17 +2200,24 @@ CONTAINS
 
        if (F%axisymmetric_fields) then
 
-          F%Efield_in_file=.TRUE.
-          
-          call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
-               F%Bflux,F%dBfield,F%Efield.AND.F%Efield_in_file)
 
-          F%Efield_in_file=.FALSE.
 
           if (F%Dim2x1t) then
 
+             call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
+                  F%Bflux,F%dBfield,F%Efield.AND.F%Efield_in_file)
+             
              call ALLOCATE_3D_FIELDS_ARRAYS(params,F,F%Bfield, &
                   F%Efield,F%dBfield)
+
+          else
+
+             F%Efield_in_file=.TRUE.
+
+             call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
+                  F%Bflux,F%dBfield,F%Efield.AND.F%Efield_in_file)
+
+             F%Efield_in_file=.FALSE.
              
           end if
 
@@ -2219,7 +2230,9 @@ CONTAINS
        
        call load_field_data_from_hdf5(params,F)
             
-!       write(6,*) F%PSIp
+       !       write(6,*) F%PSIp
+
+       !write(6,*) F%E_3D%PHI(:,F%ind0_2x1t,:)
 
        
 !       end if
@@ -3114,8 +3127,8 @@ CONTAINS
        end if
     end if
     
-    if (F%Efield.AND.F%Efield_in_file) then
-       if (F%axisymmetric_fields) then
+    if (F%Efield.AND.F%Efield_in_file) then       
+       if (F%axisymmetric_fields.and.(.not.F%ReInterp_2x1t)) then
           dset = "/ER"
           call load_array_from_hdf5(h5file_id,dset,F%E_2D%R)
 
@@ -3125,6 +3138,7 @@ CONTAINS
           dset = "/EZ"
           call load_array_from_hdf5(h5file_id,dset,F%E_2D%Z)
        else
+          
           dset = "/ER"
           call load_array_from_hdf5(h5file_id,dset,F%E_3D%R)
 

@@ -510,21 +510,22 @@ CONTAINS
        if (F%Bflux.or.F%ReInterp_2x1t) then
 
           if(F%ReInterp_2x1t) then
-             if (EZspline_allocated(bfield_2d%A)) &
-                  call Ezspline_free(bfield_2d%A, ezerr)
 
-             bfield_2d%NR = F%dims(1)
-             bfield_2d%NZ = F%dims(3)
+             if (.not.(EZspline_allocated(bfield_2d%A))) then     
 
-             ! Initializing poloidal flux interpolant
-             call EZspline_init(bfield_2d%A,bfield_2d%NR,bfield_2d%NZ, &
-                  bfield_2d%BCSR,bfield_2d%BCSZ,ezerr)
+                bfield_2d%NR = F%dims(1)
+                bfield_2d%NZ = F%dims(3)
 
-             call EZspline_error(ezerr)
+                ! Initializing poloidal flux interpolant
+                call EZspline_init(bfield_2d%A,bfield_2d%NR,bfield_2d%NZ, &
+                     bfield_2d%BCSR,bfield_2d%BCSZ,ezerr)
 
-             bfield_2d%A%x1 = F%X%R
-             bfield_2d%A%x2 = F%X%Z
+                call EZspline_error(ezerr)
 
+                bfield_2d%A%x1 = F%X%R
+                bfield_2d%A%x2 = F%X%Z
+             end if
+                
              !write(6,'("R",E17.10)') F%X%R
              !write(6,'("Z",E17.10)') F%X%Z
 

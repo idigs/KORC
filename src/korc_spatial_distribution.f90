@@ -1267,7 +1267,10 @@ subroutine MH_psi(params,spp,F)
 
   LOGICAL :: accepted
   INTEGER,DIMENSION(33) :: seed=(/1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1/)
-  
+
+  if (params%mpi_params%rank.EQ.0_idef) then
+     write(6,*) '*** START SAMPLING ***'
+  end if
   
   nsamples = spp%ppp*params%mpi_params%nmpi
 
@@ -1363,6 +1366,8 @@ subroutine MH_psi(params,spp,F)
            
         end if
 
+
+        
         if (accepted) then
            PSIN0=PSIN1
         end if

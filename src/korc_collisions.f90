@@ -1388,6 +1388,11 @@ contains
                         E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
                         gradB_R,gradB_PHI,gradB_Z,flag,PSIp)
                 end if
+
+             else if (F%ReInterp_2x1t) then
+                call calculate_GCfieldswE_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                        E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+                        gradB_R,gradB_PHI,gradB_Z,flag,PSIp)
              else if (F%Bflux3D) then
                 call calculate_GCfields_2x1t_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                         E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
