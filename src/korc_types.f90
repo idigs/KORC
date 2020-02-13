@@ -192,7 +192,8 @@ module korc_types
      !! in case is a restarting simulation.
      REAL(rp)  :: init_time = 0.0_rp
      !! Time at the beginning of a run with proceed=T     
-     INTEGER(ip) 			:: t_steps 
+     INTEGER(ip) 			:: t_steps
+     INTEGER(ip) 			:: prev_iter_2x1t 
      !! Number of time steps needed for evolving the electrons up to
      !! "simulation_time".
      INTEGER(ip) 			:: t_skip
@@ -601,7 +602,7 @@ module korc_types
      !! interpolated 
      !! to electrons' position in [[korc_profiles]].
      !!
-     !! There are two types of analytical plasma profiles that can be used
+     !! There are two types of analytical plsama profiles that can be used
      !! in KORC: 
      !! 3rd degree polynomial radial plasma profiles,
      !! $$f(r) = a_3r^3 + a_2r^2 +a_1r + a_0,$$

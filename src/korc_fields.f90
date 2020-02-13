@@ -1854,7 +1854,7 @@ CONTAINS
     !! In this subroutine we load the parameters of the electric and
     !! magnetic fields from the namelists 'analytical_fields_params' and
     !! 'externalPlasmaModel' in the input file.
-    TYPE(KORC_PARAMS), INTENT(IN)  :: params
+    TYPE(KORC_PARAMS), INTENT(INOUT)  :: params
     !! Core KORC simulation parameters.
     TYPE(FIELDS), INTENT(OUT)      :: F
     !! An instance of the KORC derived type FIELDS.
@@ -2150,7 +2150,15 @@ CONTAINS
        F%ReInterp_2x1t = ReInterp_2x1t
        F%t0_2x1t = t0_2x1t
        F%ind0_2x1t = ind0_2x1t
-       F%ind_2x1t=F%ind0_2x1t
+
+       if (params%proceed) then
+          call load_prev_iter(params)
+          F%ind_2x1t=params%prev_iter_2x1t
+       else
+          F%ind_2x1t=F%ind0_2x1t
+       end if
+          
+
        F%E_2x1t = E_2x1t
        
        F%E_dyn = E_dyn

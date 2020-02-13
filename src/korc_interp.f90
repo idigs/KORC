@@ -510,21 +510,22 @@ CONTAINS
        if (F%Bflux.or.F%ReInterp_2x1t) then
 
           if(F%ReInterp_2x1t) then
-             if (EZspline_allocated(bfield_2d%A)) &
-                  call Ezspline_free(bfield_2d%A, ezerr)
 
-             bfield_2d%NR = F%dims(1)
-             bfield_2d%NZ = F%dims(3)
+             if (.not.(EZspline_allocated(bfield_2d%A))) then     
 
-             ! Initializing poloidal flux interpolant
-             call EZspline_init(bfield_2d%A,bfield_2d%NR,bfield_2d%NZ, &
-                  bfield_2d%BCSR,bfield_2d%BCSZ,ezerr)
+                bfield_2d%NR = F%dims(1)
+                bfield_2d%NZ = F%dims(3)
 
-             call EZspline_error(ezerr)
+                ! Initializing poloidal flux interpolant
+                call EZspline_init(bfield_2d%A,bfield_2d%NR,bfield_2d%NZ, &
+                     bfield_2d%BCSR,bfield_2d%BCSZ,ezerr)
 
-             bfield_2d%A%x1 = F%X%R
-             bfield_2d%A%x2 = F%X%Z
+                call EZspline_error(ezerr)
 
+                bfield_2d%A%x1 = F%X%R
+                bfield_2d%A%x2 = F%X%Z
+             end if
+                
              !write(6,'("R",E17.10)') F%X%R
              !write(6,'("Z",E17.10)') F%X%Z
 
@@ -1441,10 +1442,10 @@ CONTAINS
              if ((fields_domain%FLAG3D(IR,1,IZ).NE.1_is).OR. &
                   ((IR.GT.bfield_2X1T%NR).OR.(IZ.GT.bfield_2X1T%NZ))) then
                 flag(pp) = 0_is
-                write(6,'("YR:",E17.10)') Y(1,1)
-                write(6,'("YZ:",E17.10)') Y(3,1)
-                write(6,'("IR: ",I16)') IR
-                write(6,'("IZ: ",I16)') IZ
+                !write(6,'("YR:",E17.10)') Y(1,1)
+                !write(6,'("YZ:",E17.10)') Y(1,3)
+                !write(6,'("IR: ",I16)') IR
+                !write(6,'("IZ: ",I16)') IZ
              end if
           end do
           !$OMP END PARALLEL DO
@@ -1462,10 +1463,10 @@ CONTAINS
              if ((fields_domain%FLAG3D(IR,IPHI,IZ).NE.1_is).OR. &
                   ((IR.GT.bfield_3d%NR).OR.(IZ.GT.bfield_3d%NZ))) then
                 flag(pp) = 0_is
-                write(6,'("YR:",E17.10)') Y(1,1)
-                write(6,'("YZ:",E17.10)') Y(3,1)
-                write(6,'("IR: ",I16)') IR
-                write(6,'("IZ: ",I16)') IZ
+                !write(6,'("YR:",E17.10)') Y(1,1)
+                !write(6,'("YZ:",E17.10)') Y(1,3)
+                !write(6,'("IR: ",I16)') IR
+                !write(6,'("IZ: ",I16)') IZ
              end if
           end do
           !$OMP END PARALLEL DO
@@ -1483,10 +1484,10 @@ CONTAINS
 
              if ((IR.lt.0).or.(IZ.lt.0).or.(IR.GT. &
                   bfield_2d%NR).OR.(IZ.GT.bfield_2d%NZ)) then
-                write(6,'("YR:",E17.10)') Y(1,1)
-                write(6,'("YZ:",E17.10)') Y(3,1)
-                write(6,'("IR: ",I16)') IR
-                write(6,'("IZ: ",I16)') IZ
+                !write(6,'("YR:",E17.10)') Y(1,1)
+                !write(6,'("YZ:",E17.10)') Y(1,3)
+                !write(6,'("IR: ",I16)') IR
+                !write(6,'("IZ: ",I16)') IZ
              end if
 
              !write(6,'("IR: ",I16)') IR
@@ -1512,10 +1513,10 @@ CONTAINS
 
              if ((IR.lt.0).or.(IZ.lt.0).or.(IR.GT. &
                   bfield_2d%NR).OR.(IZ.GT.bfield_2d%NZ)) then
-                write(6,'("YR:",E17.10)') Y(1,1)
-                write(6,'("YZ:",E17.10)') Y(3,1)
-                write(6,'("IR: ",I16)') IR
-                write(6,'("IZ: ",I16)') IZ
+                !write(6,'("YR:",E17.10)') Y(1,1)
+                !write(6,'("YZ:",E17.10)') Y(1,3)
+                !write(6,'("IR: ",I16)') IR
+                !write(6,'("IZ: ",I16)') IZ
              end if
 
              if ((fields_domain%FLAG2D(IR,IZ).NE.1_is).OR.((IR.GT. &

@@ -441,7 +441,7 @@ program main
        params%field_model(12:14).eq.'PSI').and. &
        (.not.params%SC_E).and.F%Dim2x1t.and.F%ReInterp_2x1t) then
 
-     write(6,*) 'time',F%X%PHI(F%ind0_2x1t)*params%cpp%time
+     write(6,*) 'time',F%X%PHI(F%ind_2x1t)*params%cpp%time
      
      do it=params%ito,params%t_steps,params%t_skip
         call adv_GCinterp_psiwE_top(params,spp,P,F)
@@ -453,11 +453,12 @@ program main
         call save_simulation_outputs(params,spp,F)
         call synthetic_camera(params,spp) ! Synthetic camera
         call binning_diagnostic(params,spp) ! Binning diagnostic
-        call save_restart_variables(params,spp,F)
 
         F%ind_2x1t=F%ind_2x1t+1_ip
         write(6,*) 'time',F%X%PHI(F%ind_2x1t)*params%cpp%time
         call initialize_fields_interpolant(params,F)
+
+        call save_restart_variables(params,spp,F)
         
      end do
   end if

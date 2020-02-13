@@ -86,6 +86,7 @@ module korc_HDF5
        save_string_parameter,&
        load_time_stepping_params,&
        load_prev_time,&
+       load_prev_iter,&
        save_restart_variables,&
        load_particles_ic
 
@@ -2458,6 +2459,12 @@ CONTAINS
        dset = "num_snapshots"
        attr = "Number of snapshots in time for saving simulation variables"
        call save_to_hdf5(h5file_id,dset,params%num_snapshots,attr)
+
+       if (F%ReInterp_2x1t) then
+          dset = "ind_2x1t"
+          attr = "ReInterp_2x1t iteration"
+          call save_to_hdf5(h5file_id,dset,F%ind_2x1t,attr)
+       end if
        
     end if
 
@@ -2725,6 +2732,47 @@ CONTAINS
     CALL MPI_BCAST(params%init_time,1,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
 
   end subroutine load_prev_time
+
+    subroutine load_prev_iter(params)
+    !! @note Subroutine that loads KORC parameters that control the time
+    !! stepping in [[main]].    
+    TYPE(KORC_PARAMS), INTENT(INOUT) 	:: params
+    !! Core KORC simulation parameters.
+    CHARACTER(MAX_STRING_LENGTH) 		:: filename
+    !! String containing the name of the HDF5 file.
+    CHARACTER(MAX_STRING_LENGTH) 		:: dset
+    !! Name of data set to be read from file.
+    INTEGER(HID_T) 						:: h5file_id
+    !! HDF5 file identifier.
+    REAL(KIND=8) 						:: real_number
+    !! A temporary real number.
+    CHARACTER(19) 						:: tmp_str
+    !! Temporary string used to manipulate various strings.
+    INTEGER 							:: h5error
+    !! HDF5 error status.
+    INTEGER 							:: mpierr
+    !!  MPI error status.
+    INTEGER 							:: ss
+    !! Electron species iterator.
+
+    if (params%mpi_params%rank.EQ.0_idef) then
+       filename = TRIM(params%path_to_outputs) // "restart_file.h5"
+       call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
+       if (h5error .EQ. -1) then
+          write(6,'("KORC ERROR: Something went wrong in: &
+               &load_particles_ic --> h5fopen_f")')
+       end if
+
+       dset = "/ind_2x1t"
+       call load_from_hdf5(h5file_id,dset,real_number)
+       params%prev_iter_2x1t = INT(real_number,ip)
+
+       call h5fclose_f(h5file_id, h5error)
+    end if
+
+    CALL MPI_BCAST(params%prev_iter_2x1t,1,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+
+  end subroutine load_prev_iter
 
 
   subroutine load_particles_ic(params,spp,F)
