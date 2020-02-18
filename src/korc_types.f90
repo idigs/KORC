@@ -641,7 +641,8 @@ module korc_types
 
      REAL(rp)  ::  n_REr0=0._rp
      REAL(rp)  ::  n_tauion=0._rp
-     REAL(rp)  ::  n_taushelf=0._rp
+     REAL(rp)  ::  n_tauin=0._rp
+     REAL(rp)  ::  n_tauout=0._rp
      REAL(rp)  ::  n_shelfdelay=0._rp
      REAL(rp)  ::  n_lamfront=0._rp
      REAL(rp)  ::  n_lamback=0._rp

@@ -167,7 +167,8 @@ subroutine normalize_variables(params,spp,F,P)
   P%Teo = P%Teo/params%cpp%temperature
   P%n_REr0=P%n_REr0/params%cpp%length
   P%n_tauion=P%n_tauion/params%cpp%time
-  P%n_taushelf=P%n_taushelf/params%cpp%time
+  P%n_tauin=P%n_tauin/params%cpp%time
+  P%n_tauout=P%n_tauout/params%cpp%time
   P%n_shelfdelay=P%n_shelfdelay/params%cpp%time
   P%n_lamfront=P%n_lamfront/params%cpp%length
   P%n_lamback=P%n_lamback/params%cpp%length
