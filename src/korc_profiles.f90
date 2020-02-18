@@ -338,7 +338,7 @@ CONTAINS
     REAL(rp) :: n_tauin,n_tauout,n_shelfdelay,n_shelf
     REAL(rp) :: n0t,n_taut
     REAL(rp) :: PSIp0,PSIp_lim,psiN_0
-    REAL(rp), DIMENSION(8) :: r_a,rm,rm_RE,PSIpN
+    REAL(rp), DIMENSION(8) :: r_a,rm,rm_RE,PSIpN,PSIp_temp
 
     R0=P%R0
     Z0=P%Z0
@@ -467,13 +467,16 @@ CONTAINS
        
     CASE('RE-EVO-PSIP-G')
 
+!       write(6,*) 'time: ',time*params%cpp%time
+       
        n0t=(ne0-n_ne)/2._rp*(tanh((time-n_tauin)/n_tauin)- &
             tanh((time-n_shelfdelay)/n_tauout))
        n_taut=n_psishelf*erf((time+params%dt/100._rp)/n_tauion)
        
        !$OMP SIMD
        do cc=1_idef,8_idef
-          ne(cc) = n0t*exp(-(sqrt(abs(PSIp(cc)))-sqrt(abs(psiN_0)))**2._rp/ &
+          PSIp_temp(cc)=PSIp(cc)*(params%cpp%Bo*params%cpp%length**2)
+          ne(cc) = n0t*exp(-(sqrt(abs(PSIp_temp(cc)))-sqrt(abs(psiN_0)))**2._rp/ &
                (2._rp*n_taut**2._rp))+n_ne
        end do
        !$OMP END SIMD
@@ -533,7 +536,7 @@ CONTAINS
 
 !    write(6,*) PSIpN(1)
     
-!    write(6,'("ne: "E17.10)') ne(1)
+!    write(6,'("ne: "E17.10)') ne(1)/params%cpp%length**3
 !    write(6,'("rm_RE: "E17.10)') rm_RE(1)
     
   end subroutine analytical_profiles_p
