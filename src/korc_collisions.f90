@@ -1131,7 +1131,7 @@ contains
 
 
   subroutine include_CoulombCollisions_FO_p(tt,params,X_X,X_Y,X_Z, &
-       U_X,U_Y,U_Z,B_X,B_Y,B_Z,me,P,F,flag,PSIp)
+       U_X,U_Y,U_Z,B_X,B_Y,B_Z,me,P,F,flagCon,flagCol,PSIp)
     !! This subroutine performs a Stochastic collision process consistent
     !! with the Fokker-Planck model for relativitic electron colliding with
     !! a thermal (Maxwellian) plasma. The collision operator is in spherical
@@ -1149,7 +1149,8 @@ contains
     REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: U_X,U_Y,U_Z
 
     REAL(rp), DIMENSION(8) 			:: ne,Te,Zeff
-    INTEGER(is), DIMENSION(8), INTENT(INOUT) 			:: flag
+    INTEGER(is), DIMENSION(8), INTENT(INOUT) 			:: flagCol
+    INTEGER(is), DIMENSION(8), INTENT(INOUT) 			:: flagCon
     REAL(rp), INTENT(IN)  :: me
 
     INTEGER(ip), INTENT(IN) 			:: tt
@@ -1197,7 +1198,7 @@ contains
        if (params%profile_model(1:10).eq.'ANALYTICAL') then
           call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
        else  if (params%profile_model(1:8).eq.'EXTERNAL') then          
-          call interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag)
+          call interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flagCon)
        end if
           
        !$OMP SIMD
@@ -1244,7 +1245,7 @@ contains
        
        !$OMP SIMD
 !       !$OMP& aligned(rnd1,dW,CAL,dCAL,CFL,CBL,vm,ne,Te,Zeff,dpm, &
-!       !$OMP& flag,dxi,xi,pm,dphi,um,Ub_X,Ub_Y,Ub_Z,U_X,U_Y,U_Z, &
+!       !$OMP& flagCon,flagCol,dxi,xi,pm,dphi,um,Ub_X,Ub_Y,Ub_Z,U_X,U_Y,U_Z, &
 !       !$OMP& b1_X,b1_Y,b1_Z,b2_X,b2_Y,b2_Z,b3_X,b3_Y,b3_Z)
        do cc=1_idef,8_idef
           
@@ -1271,11 +1272,14 @@ contains
                CB_ei_SD(params,vm(cc),ne(cc),Te(cc),Zeff(cc)))
 
 
-          dpm(cc)=REAL(flag(cc))*((-CFL(cc)+dCAL(cc))*dt+ &
+          dpm(cc)=REAL(flagCol(cc))*REAL(flagCon(cc))* &
+               ((-CFL(cc)+dCAL(cc))*dt+ &
                sqrt(2.0_rp*CAL(cc))*dW(cc,1))
-          dxi(cc)=REAL(flag(cc))*(-2*xi(cc)*CBL(cc)/(pm(cc)*pm(cc))*dt- &
+          dxi(cc)=REAL(flagCol(cc))*REAL(flagCon(cc))* &
+               (-2*xi(cc)*CBL(cc)/(pm(cc)*pm(cc))*dt- &
                sqrt(2.0_rp*CBL(cc)*(1-xi(cc)*xi(cc)))/pm(cc)*dW(cc,2))
-          dphi(cc)=REAL(flag(cc))*(sqrt(2*CBL(cc))/(pm(cc)* &
+          dphi(cc)=REAL(flagCol(cc))*REAL(flagCon(cc))* &
+               (sqrt(2*CBL(cc))/(pm(cc)* &
                sqrt(1-xi(cc)*xi(cc)))*dW(cc,3))
 
           pm(cc)=pm(cc)+dpm(cc)
@@ -1332,7 +1336,7 @@ contains
 
 
   subroutine include_CoulombCollisions_GC_p(tt,params,Y_R,Y_PHI,Y_Z, &
-       Ppll,Pmu,me,flag,F,P,E_PHI,ne,PSIp)
+       Ppll,Pmu,me,flagCon,flagCol,F,P,E_PHI,ne,PSIp)
 
     TYPE(PROFILES), INTENT(IN)                                 :: P
     TYPE(FIELDS), INTENT(IN)                                   :: F
@@ -1346,7 +1350,8 @@ contains
     REAL(rp), DIMENSION(8) 	:: E_R,E_Z
     REAL(rp), DIMENSION(8), INTENT(OUT) 	:: E_PHI,ne,PSIp
     REAL(rp), DIMENSION(8), INTENT(IN) 			:: Y_R,Y_PHI,Y_Z
-    INTEGER(is), DIMENSION(8), INTENT(INOUT) 			:: flag
+    INTEGER(is), DIMENSION(8), INTENT(INOUT) 			:: flagCol
+    INTEGER(is), DIMENSION(8), INTENT(INOUT) 			:: flagCon
     REAL(rp), INTENT(IN) 			:: me
     REAL(rp), DIMENSION(8) 			:: Te,Zeff
     REAL(rp), DIMENSION(8,2) 			:: dW
@@ -1382,39 +1387,39 @@ contains
                 if (.not.params%SC_E) then
                    call calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                         E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-                        gradB_R,gradB_PHI,gradB_Z,flag,PSIp)
+                        gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp)
                 else
                    call calculate_GCfields_p_FS(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                         E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-                        gradB_R,gradB_PHI,gradB_Z,flag,PSIp)
+                        gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp)
                 end if
 
              else if (F%ReInterp_2x1t) then
                 call calculate_GCfieldswE_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                         E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-                        gradB_R,gradB_PHI,gradB_Z,flag,PSIp)
+                        gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp)
              else if (F%Bflux3D) then
                 call calculate_GCfields_2x1t_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                         E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-                        gradB_R,gradB_PHI,gradB_Z,flag,PSIp,time)
+                        gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp,time)
              else if (F%dBfield) then
                 call calculate_2DBdBfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                      E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-                     gradB_R,gradB_PHI,gradB_Z,flag,PSIp)
+                     gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp)
              else
                 call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                      E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-                     gradB_R,gradB_PHI,gradB_Z,flag)
+                     gradB_R,gradB_PHI,gradB_Z,flagCon)
              end if                
           else
              if (F%dBfield) then
                 call calculate_2DBdBfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                      E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-                     gradB_R,gradB_PHI,gradB_Z,flag,PSIp)
+                     gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp)
              else
                 call interp_fields_3D_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                      E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-                     gradB_R,gradB_PHI,gradB_Z,flag)
+                     gradB_R,gradB_PHI,gradB_Z,flagCon)
              end if
           endif
           call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
@@ -1423,7 +1428,7 @@ contains
        if (params%profile_model(1:10).eq.'ANALYTICAL') then
           call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
        else if (params%profile_model(1:8).eq.'EXTERNAL') then      
-          call interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag)
+          call interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flagCon)
        end if         
 
        if (.not.params%FokPlan) E_PHI=0._rp
@@ -1453,7 +1458,7 @@ contains
 
        !$OMP SIMD
 !       !$OMP& aligned(rnd1,dW,CAL,dCAL,CFL,CBL,v,ne,Te,Zeff,dp, &
-!       !$OMP& flag,dxi,xi,pm,Ppll,Pmu,Bmag)
+!       !$OMP& flagCon,flagCol,dxi,xi,pm,Ppll,Pmu,Bmag)
        do cc=1_idef,8_idef
        
 #ifdef PARALLEL_RANDOM
@@ -1478,10 +1483,12 @@ contains
                CB_ei_SD(params,v(cc),ne(cc),Te(cc),Zeff(cc)))
           
           
-          dp(cc)=REAL(flag(cc))*((-CFL(cc)+dCAL(cc)+E_PHI(cc)*xi(cc))*dt+ &
+          dp(cc)=REAL(flagCol(cc))*REAL(flagCon(cc))* &
+               ((-CFL(cc)+dCAL(cc)+E_PHI(cc)*xi(cc))*dt+ &
                sqrt(2.0_rp*CAL(cc))*dW(cc,1))
 
-          dxi(cc)=REAL(flag(cc))*((-2*xi(cc)*CBL(cc)/(pm(cc)*pm(cc))+ &
+          dxi(cc)=REAL(flagCol(cc))*REAL(flagCon(cc))* &
+               ((-2*xi(cc)*CBL(cc)/(pm(cc)*pm(cc))+ &
                E_PHI(cc)*(1-xi(cc)*xi(cc))/pm(cc))*dt- &
                sqrt(2.0_rp*CBL(cc)*(1-xi(cc)*xi(cc)))/pm(cc)*dW(cc,2))
 
@@ -1507,8 +1514,10 @@ contains
                      C_a/C_PI*(gam(cc)-1._rp)*(log(2._rp*gam(cc))-1._rp/3._rp)
 
 
-                dp(cc)=dp(cc)+(SC_p(cc)+BREM_p(cc))*dt*REAL(flag(cc))
-                dxi(cc)=dxi(cc)+(SC_mu(cc))*dt*REAL(flag(cc))
+                dp(cc)=dp(cc)+(SC_p(cc)+BREM_p(cc))*dt* &
+                     REAL(flagCol(cc))*REAL(flagCon(cc))
+                dxi(cc)=dxi(cc)+(SC_mu(cc))*dt* &
+                     REAL(flagCol(cc))*REAL(flagCon(cc))
 
              end do
              !$OMP END SIMD
@@ -1554,12 +1563,12 @@ contains
 !       write(6,'("E_PHI_COL: ",E17.10)') E_PHI
        
        do cc=1_idef,8_idef
-          if ((pm(cc).lt.1._rp).and.flag(cc).eq.1_ip) then
+          if ((pm(cc).lt.1._rp).and.flagCol(cc).eq.1_ip) then
 !             write(6,'("Momentum less than zero")')
              !             stop
 !             write(6,'("Particle not tracked at: ",E17.10," &
 !                  & with xi: ",E17.10)') time*params%cpp%time, xi(cc)
-             flag(cc)=0_ip
+             flagCol(cc)=0_ip
           end if
        end do
 

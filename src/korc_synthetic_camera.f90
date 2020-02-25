@@ -957,7 +957,7 @@ CONTAINS
        !$OMP& SHARED(params,spp,ss,Psyn_angular_pixel,np_angular_pixel, &
        !$OMP& np_lambda_pixel,Psyn_lambda_pixel)
        do pp=1_idef,spp(ss)%ppp
-          if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
+          if ( spp(ss)%vars%flagCon(pp) .EQ. 1_idef ) then
              V = spp(ss)%vars%V(pp,:)*params%cpp%velocity
              X = spp(ss)%vars%X(pp,:)*params%cpp%length
              g = spp(ss)%vars%g(pp)
@@ -1327,7 +1327,7 @@ CONTAINS
        !$OMP& SHARED(params,spp,ss,Psyn_angular_pixel,np_angular_pixel, &
        !$OMP& np_lambda_pixel,Psyn_lambda_pixel,P_l_pixel,P_a_pixel,np_pixel)
        do pp=1_idef,spp(ss)%ppp
-          if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
+          if ( spp(ss)%vars%flagCon(pp) .EQ. 1_idef ) then
              V = spp(ss)%vars%V(pp,:)*params%cpp%velocity
              X = spp(ss)%vars%X(pp,:)*params%cpp%length
              g = spp(ss)%vars%g(pp)
@@ -1755,7 +1755,7 @@ CONTAINS
        !$OMP& SHARED(params,spp,ss,Psyn_angular_pixel,np_angular_pixel, &
        !$OMP& np_lambda_pixel,Psyn_lambda_pixel,P_l_pixel,P_a_pixel,np_pixel)
        do pp=1_idef,spp(ss)%ppp
-          if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
+          if ( spp(ss)%vars%flagCon(pp) .EQ. 1_idef ) then
              V = spp(ss)%vars%V(pp,:)*params%cpp%velocity
              X = spp(ss)%vars%X(pp,:)*params%cpp%length
              g = spp(ss)%vars%g(pp)
@@ -2152,7 +2152,7 @@ CONTAINS
        !$OMP& PRIVATE(binorm,X,V,B,E,k,u,g,lc,ii,jj,ll,pp,zeta,P,Rpol,Zpol) &
        !$OMP& SHARED(params,spp,ss,Psyn_lambda,PTot,np)
        do pp=1_idef,spp(ss)%ppp
-          if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
+          if ( spp(ss)%vars%flagCon(pp) .EQ. 1_idef ) then
              V = spp(ss)%vars%V(pp,:)*params%cpp%velocity
              X = spp(ss)%vars%X(pp,:)*params%cpp%length
              g = spp(ss)%vars%g(pp)
@@ -2339,7 +2339,7 @@ CONTAINS
        !$OMP& SHARED(params,spp,ss,Psyn_lambda_p,PTot_p,Psyn_lambda_t, &
        !$OMP& PTot_t,np_p,np_t,P_lambda_p,np_lambda_p,P_lambda_t,np_lambda_t)
        do pp=1_idef,spp(ss)%ppp
-          if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
+          if ( spp(ss)%vars%flagCon(pp) .EQ. 1_idef ) then
              V = spp(ss)%vars%V(pp,:)*params%cpp%velocity
              X = spp(ss)%vars%X(pp,:)*params%cpp%length
              g = spp(ss)%vars%g(pp)

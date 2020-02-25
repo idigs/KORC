@@ -188,7 +188,7 @@ CONTAINS
        !$OMP PARALLEL DO FIRSTPRIVATE(q,m,Dtor) PRIVATE(X,ii,jj,kk,pp)&
        !$OMP& SHARED(params,spp,ss,eta,g,N)
        do pp=1_idef,spp(ss)%ppp
-          if ( spp(ss)%vars%flag(pp) .EQ. 1_idef ) then
+          if ( spp(ss)%vars%flagCon(pp) .EQ. 1_idef ) then
              X = spp(ss)%vars%X(pp,:)*params%cpp%length
 
              R = SQRT(SUM(X(1:2)**2))

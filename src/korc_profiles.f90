@@ -664,12 +664,12 @@ CONTAINS
 
 !       write(6,'("X getprof: ",E17.10)') vars%X(1,:)
        
-       call cart_to_tor_check_if_confined(vars%X,F,vars%Y,vars%flag)
+       call cart_to_tor_check_if_confined(vars%X,F,vars%Y,vars%flagCon)
 
-!       write(6,'("flag: ",I15)') vars%flag(1) 
+!       write(6,'("flag: ",I15)') vars%flagCon(1) 
 
        call get_analytical_profiles(P,vars%Y,vars%ne,vars%Te, &
-            vars%Zeff,vars%flag)
+            vars%Zeff,vars%flagCon)
 
        call cart_to_cyl(vars%X, vars%Y)
 

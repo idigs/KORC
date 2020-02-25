@@ -694,9 +694,9 @@ CONTAINS
 
     if (params%orbit_model(1:2).eq.'FO') then
 
-       call cart_to_tor_check_if_confined(vars%X,F,vars%Y,vars%flag)
+       call cart_to_tor_check_if_confined(vars%X,F,vars%Y,vars%flagCon)
 
-       call analytical_fields(F,vars%Y, vars%E, vars%B, vars%flag)
+       call analytical_fields(F,vars%Y, vars%E, vars%B, vars%flagCon)
 
        !       call cart_to_cyl(vars%X,vars%Y)
 
@@ -706,17 +706,17 @@ CONTAINS
 
           call cart_to_cyl(vars%X,vars%Y)
 
-          call cyl_check_if_confined(F,vars%Y,vars%flag)
+          call cyl_check_if_confined(F,vars%Y,vars%flagCon)
 
           call analytical_fields_GC_init(params,F,vars%Y, vars%E, vars%B, &
-               vars%gradB,vars%curlb, vars%flag, vars%PSI_P)
+               vars%gradB,vars%curlb, vars%flagCon, vars%PSI_P)
 
        else
           
-          call cyl_check_if_confined(F,vars%Y,vars%flag)
+          call cyl_check_if_confined(F,vars%Y,vars%flagCon)
 
           call analytical_fields_GC(params,F,vars%Y, vars%E, vars%B, &
-               vars%gradB,vars%curlb, vars%flag,vars%PSI_P)
+               vars%gradB,vars%curlb, vars%flagCon,vars%PSI_P)
 
        end if
 
@@ -790,10 +790,10 @@ CONTAINS
     ALLOCATE( vars%curlb(ppp,3) )
     ALLOCATE( vars%PSI_P(ppp) )
     ALLOCATE( vars%E(ppp,3) )
-    ALLOCATE( vars%flag(ppp) )
+    ALLOCATE( vars%flagCon(ppp) )
 
     vars%X = Xo
-    vars%flag = 1_idef
+    vars%flagCon = 1_idef
     vars%B=0._rp
     vars%PSI_P=0._rp
 
@@ -807,7 +807,7 @@ CONTAINS
     !    write(6,'("Bz: ",E17.10)') vars%B(:,3)
 
     do ii=1_idef,ppp
-       if ( vars%flag(ii) .EQ. 1_idef ) then
+       if ( vars%flagCon(ii) .EQ. 1_idef ) then
           b1(ii,:) = vars%B(ii,:)/sqrt(vars%B(ii,1)*vars%B(ii,1)+ &
                vars%B(ii,2)*vars%B(ii,2)+vars%B(ii,3)*vars%B(ii,3))
 
@@ -822,7 +822,7 @@ CONTAINS
     end do
 
     if (PRESENT(flag)) then
-       flag = vars%flag
+       flag = vars%flagCon
     end if
 
     DEALLOCATE( vars%X )
@@ -832,7 +832,7 @@ CONTAINS
     DEALLOCATE( vars%gradB )
     DEALLOCATE( vars%curlb )
     DEALLOCATE( vars%E )
-    DEALLOCATE( vars%flag )
+    DEALLOCATE( vars%flagCon )
   end subroutine unitVectors
 
 
@@ -866,7 +866,7 @@ CONTAINS
 !       write(6,'("B_Y: ",E17.10)') vars%B(:,3)
        
        !if (F%Efield.AND..NOT.F%Efield_in_file) then
-       !   call analytical_electric_field_cyl(F,vars%Y,vars%E,vars%flag)
+       !   call analytical_electric_field_cyl(F,vars%Y,vars%E,vars%flagCon)
        !end if
     else if (params%field_model.eq.'UNIFORM') then
 
@@ -1084,7 +1084,7 @@ CONTAINS
   end subroutine calculate_SC_E1D_FS
 
   subroutine calculate_SC_p(params,F,B_R,B_PHI,B_Z,Y_R,Y_Z, &
-       V_PLL,V_MU,m_cache,flag_cache,Vden)
+       V_PLL,V_MU,m_cache,flagCon,flagCol,Vden)
 
     TYPE(FIELDS), INTENT(IN)                 :: F
     TYPE(KORC_PARAMS), INTENT(IN) 		:: params
@@ -1092,7 +1092,7 @@ CONTAINS
     real(rp),dimension(8),intent(in) :: B_R,B_PHI,B_Z
     real(rp),dimension(8),intent(in) :: V_PLL,V_MU
     real(rp),intent(in) :: m_cache
-    integer(is),dimension(8),intent(in) :: flag_cache
+    integer(is),dimension(8),intent(in) :: flagCon,flagCol
     real(rp),dimension(8) :: rm,Bmag,gam,vpll
     real(rp),dimension(F%dim_1D),intent(out) :: Vden
     real(rp),dimension(F%dim_1D) :: Vpart,Ai
@@ -1133,7 +1133,7 @@ CONTAINS
        !   do pp=1_idef,spp%ppp
        ! NGP weighting
        rind=FLOOR((rm(cc)-dr/2)/dr)+2_ip
-       Vpart(rind)=Vpart(rind)+real(flag_cache(cc))*vpll(cc)
+       Vpart(rind)=Vpart(rind)+real(flagCon(cc))*real(flagCol(cc))*vpll(cc)
 
        ! First-order weighting
 !       rind=FLOOR(rm(cc)/dr)+1_ip
@@ -1147,7 +1147,7 @@ CONTAINS
 !       do ii=1_idef,F%dim_1D
 !          arg=MIN((r_1D(ii)-rm(cc))**2._rp/(2._rp*sigr**2._rp),100._rp)
 !          Vpart(ii)=Vpart(ii)+1/sqrt(2._rp*C_PI*sigr**2._rp)* &
-!               exp(-arg)           
+!               exp(-arg)*vpll(cc)           
 !       end do
 
     end do
@@ -1184,7 +1184,7 @@ CONTAINS
   end subroutine calculate_SC_p
   
   subroutine calculate_SC_p_FS(params,F,B_R,B_PHI,B_Z,PSIp, &
-       V_PLL,V_MU,m_cache,flag_cache,dintJphidPSIP)
+       V_PLL,V_MU,m_cache,flagCon,flagCol,dintJphidPSIP)
 
     TYPE(FIELDS), INTENT(IN)                 :: F
     TYPE(KORC_PARAMS), INTENT(IN) 		:: params
@@ -1192,7 +1192,7 @@ CONTAINS
     real(rp),dimension(8),intent(in) :: B_R,B_PHI,B_Z
     real(rp),dimension(8),intent(in) :: V_PLL,V_MU
     real(rp),intent(in) :: m_cache
-    integer(is),dimension(8),intent(in) :: flag_cache
+    integer(is),dimension(8),intent(in) :: flagCon,flagCol
     real(rp),dimension(8) :: Bmag,gam,vpll,PSIp_cache
     real(rp),dimension(F%dim_1D),intent(out) :: dintJphidPSIP
     real(rp),dimension(F%dim_1D) :: PSIP_1D
@@ -1241,7 +1241,7 @@ CONTAINS
           arg=MIN((PSIP_1D(ii)-PSIP_cache(cc))**2._rp/ &
                (2._rp*sigPSIP**2._rp),100._rp)
           dintJphidPSIP(ii)=dintJphidPSIP(ii)+ &
-               exp(-arg)           
+               exp(-arg)*vpll(cc)*real(flagCon(cc))*real(flagCol(cc))         
        end do
 
        

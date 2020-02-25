@@ -2240,10 +2240,14 @@ CONTAINS
                         params%cpp%length
                    call save_1d_array_to_hdf5(subgroup_id, dset, &
                         units*spp(ss)%vars%Pin)
-                CASE('flag')
-                   dset = "flag"
+                CASE('flagCon')
+                   dset = "flagCon"
                    call save_1d_array_to_hdf5(subgroup_id,dset, &
-                        INT(spp(ss)%vars%flag,idef))
+                        INT(spp(ss)%vars%flagCon,idef))
+                CASE('flagCol')
+                   dset = "flagCol"
+                   call save_1d_array_to_hdf5(subgroup_id,dset, &
+                        INT(spp(ss)%vars%flagCol,idef))
                 CASE('B')
                    dset = "B"
                    units = params%cpp%Bo
@@ -2368,7 +2372,7 @@ CONTAINS
     REAL(rp), DIMENSION(:), ALLOCATABLE 			:: J2_SC
     REAL(rp), DIMENSION(:), ALLOCATABLE 			:: J3_SC
     REAL(rp), DIMENSION(:), ALLOCATABLE 			:: E_SC
-    INTEGER(is), DIMENSION(:), ALLOCATABLE 			:: flag
+    INTEGER(is), DIMENSION(:), ALLOCATABLE 			:: flagCon,flagCol
     CHARACTER(MAX_STRING_LENGTH) 				:: filename
     !! String containing the name of the HDF5 file.
     CHARACTER(MAX_STRING_LENGTH) 				:: gname
@@ -2476,7 +2480,8 @@ CONTAINS
           ALLOCATE(X(spp(ss)%ppp*params%mpi_params%nmpi,3))
           ALLOCATE(V(spp(ss)%ppp*params%mpi_params%nmpi,3))
           ALLOCATE(g(spp(ss)%ppp*params%mpi_params%nmpi))
-          ALLOCATE(flag(spp(ss)%ppp*params%mpi_params%nmpi))
+          ALLOCATE(flagCon(spp(ss)%ppp*params%mpi_params%nmpi))
+          ALLOCATE(flagCol(spp(ss)%ppp*params%mpi_params%nmpi))
        end if
 
        ALLOCATE(send_buffer_rp(numel_send))
@@ -2514,15 +2519,24 @@ CONTAINS
        ALLOCATE(send_buffer_is(numel_send))
        ALLOCATE(receive_buffer_is(numel_receive))
 
-       send_buffer_is = spp(ss)%vars%flag
+       send_buffer_is = spp(ss)%vars%flagCon
        receive_buffer_is = 0_is
        CALL MPI_GATHER(send_buffer_is,numel_send,MPI_INTEGER1, &
             receive_buffer_is,numel_send,&
             MPI_INTEGER1,0,MPI_COMM_WORLD,mpierr)
        if (params%mpi_params%rank.EQ.0_idef) then
-          flag = receive_buffer_is
+          flagCon = receive_buffer_is
        end if
 
+       send_buffer_is = spp(ss)%vars%flagCol
+       receive_buffer_is = 0_is
+       CALL MPI_GATHER(send_buffer_is,numel_send,MPI_INTEGER1, &
+            receive_buffer_is,numel_send,&
+            MPI_INTEGER1,0,MPI_COMM_WORLD,mpierr)
+       if (params%mpi_params%rank.EQ.0_idef) then
+          flagCol = receive_buffer_is
+       end if
+       
        DEALLOCATE(send_buffer_is)
        DEALLOCATE(receive_buffer_is)
 
@@ -2552,8 +2566,11 @@ CONTAINS
           dset = "V"
           call rsave_2d_array_to_hdf5(group_id, dset, V)
 
-          dset = "flag"
-          call save_1d_array_to_hdf5(group_id,dset, INT(flag,idef))
+          dset = "flagCon"
+          call save_1d_array_to_hdf5(group_id,dset, INT(flagCon,idef))
+
+          dset = "flagCol"
+          call save_1d_array_to_hdf5(group_id,dset, INT(flagCol,idef))
 
           dset = "g"
           call save_1d_array_to_hdf5(group_id,dset, g)
@@ -2596,7 +2613,8 @@ CONTAINS
           DEALLOCATE(X)
           DEALLOCATE(V)
           DEALLOCATE(g)
-          DEALLOCATE(flag)
+          DEALLOCATE(flagCon)
+          DEALLOCATE(flagCol)
        end if
     end do
 
@@ -2897,7 +2915,7 @@ CONTAINS
 
           write(tmp_str,'(I18)') ss
 
-          dset = "/spp_" // TRIM(ADJUSTL(tmp_str)) // "/flag"
+          dset = "/spp_" // TRIM(ADJUSTL(tmp_str)) // "/flagCon"
           call load_array_from_hdf5(h5file_id,dset,AUX_send_buffer)
 
           call h5fclose_f(h5file_id, h5error)
@@ -2906,8 +2924,30 @@ CONTAINS
        AUX_receive_buffer = 0.0_rp
        CALL MPI_SCATTER(AUX_send_buffer,spp(ss)%ppp,MPI_REAL8, &
             AUX_receive_buffer,spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
-       spp(ss)%vars%flag = INT(AUX_receive_buffer,is)
+       spp(ss)%vars%flagCon = INT(AUX_receive_buffer,is)
 
+       if (params%mpi_params%rank.EQ.0_idef) then
+          filename = TRIM(params%path_to_outputs) // "restart_file.h5"
+          call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
+          if (h5error .EQ. -1) then
+             write(6,'("KORC ERROR: Something went wrong in: &
+                  &load_particles_ic --> h5fopen_f")')
+             call KORC_ABORT()
+          end if
+
+          write(tmp_str,'(I18)') ss
+
+          dset = "/spp_" // TRIM(ADJUSTL(tmp_str)) // "/flagCol"
+          call load_array_from_hdf5(h5file_id,dset,AUX_send_buffer)
+
+          call h5fclose_f(h5file_id, h5error)
+       end if
+
+       AUX_receive_buffer = 0.0_rp
+       CALL MPI_SCATTER(AUX_send_buffer,spp(ss)%ppp,MPI_REAL8, &
+            AUX_receive_buffer,spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+       spp(ss)%vars%flagCol = INT(AUX_receive_buffer,is)
+       
        if (params%mpi_params%rank.EQ.0_idef) then
           filename = TRIM(params%path_to_outputs) // "restart_file.h5"
           call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)

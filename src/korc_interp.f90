@@ -3449,7 +3449,7 @@ subroutine interp_fields(params,prtcls,F)
 !  write(6,'("Y: ",E17.10)') prtcls%X(2,1)
 !  write(6,'("Z: ",E17.10)') prtcls%X(3,1)
   
-  call check_if_in_fields_domain(F,prtcls%Y, prtcls%flag)
+  call check_if_in_fields_domain(F,prtcls%Y, prtcls%flagCon)
 
   !write(6,*) 'checked domain'
 
@@ -3463,7 +3463,7 @@ subroutine interp_fields(params,prtcls,F)
 !     write(6,'("PSI_P: ",E17.10)') prtcls%PSI_P
      
      call calculate_magnetic_field(params,prtcls%Y,F,prtcls%B,prtcls%E, &
-          prtcls%PSI_P,prtcls%flag)
+          prtcls%PSI_P,prtcls%flagCon)
 
      !write(6,*) 'interp PSIp'
      
@@ -3484,7 +3484,7 @@ subroutine interp_fields(params,prtcls,F)
 !     write(6,'("PSI_P: ",E17.10)') prtcls%PSI_P
      
      call calculate_magnetic_field(params,prtcls%Y,F,prtcls%B,prtcls%E, &
-          prtcls%PSI_P,prtcls%flag)
+          prtcls%PSI_P,prtcls%flagCon)
 
 !     write(6,'("interp_fields")')
 !     write(6,'("B_X: ",E17.10)') prtcls%B(:,1)
@@ -3494,41 +3494,41 @@ subroutine interp_fields(params,prtcls,F)
   end if
   
   if (ALLOCATED(F%B_2D%R).and.F%Bfield) then
-     call interp_2D_bfields(params,prtcls%Y,prtcls%B,prtcls%flag)
+     call interp_2D_bfields(params,prtcls%Y,prtcls%B,prtcls%flagCon)
   end if
 
   if (ALLOCATED(F%B_3D%R).and.F%Bfield) then
-     call interp_3D_bfields(params,prtcls%Y,prtcls%B,prtcls%flag)
+     call interp_3D_bfields(params,prtcls%Y,prtcls%B,prtcls%flagCon)
   end if
 
 !  if (ALLOCATED(F%E_2D%R).and.F%Efield) then
-!     call interp_2D_efields(params,prtcls%Y,prtcls%E,prtcls%flag)
+!     call interp_2D_efields(params,prtcls%Y,prtcls%E,prtcls%flagCon)
 !  end if
 
   if (ALLOCATED(F%E_3D%R).and.F%Efield.and.(.not.F%ReInterp_2x1t)) then
-     call interp_3D_efields(params,prtcls%Y,prtcls%E,prtcls%flag)
+     call interp_3D_efields(params,prtcls%Y,prtcls%E,prtcls%flagCon)
      
   end if
 
   if (ALLOCATED(F%E_3D%R).and.F%Efield.and.F%ReInterp_2x1t) then
-     call interp_2D_efields(params,prtcls%Y,prtcls%E,prtcls%flag)
+     call interp_2D_efields(params,prtcls%Y,prtcls%E,prtcls%flagCon)
 
 !     write(6,*) 'interpolated efield'
      
   end if
   
   if (params%GC_coords.and.ALLOCATED(F%gradB_2D%R).and.F%Bfield) then
-     call interp_2D_gradBfields(prtcls%Y,prtcls%gradB,prtcls%flag)
+     call interp_2D_gradBfields(prtcls%Y,prtcls%gradB,prtcls%flagCon)
 
   end if
 
   if (params%GC_coords.and.ALLOCATED(F%gradB_2D%R).and.F%Bfield) then
-     call interp_2D_curlbfields(prtcls%Y,prtcls%curlb,prtcls%flag)
+     call interp_2D_curlbfields(prtcls%Y,prtcls%curlb,prtcls%flagCon)
   end if
 
   if(params%GC_coords.and.params%orbit_model(3:6)=='grad') then
      call gradient_2D_bfields(prtcls%Y,prtcls%BR,prtcls%BPHI, &
-          prtcls%BZ,prtcls%flag)
+          prtcls%BZ,prtcls%flagCon)
   end if
   
 end subroutine interp_fields
@@ -3651,15 +3651,15 @@ subroutine interp_profiles(params,prtcls,P)
   
   !write(6,'("Also R_buffer: ",E17.10)') prtcls%Y(1,1)  
 
-  call check_if_in_profiles_domain(prtcls%Y, prtcls%flag)
+  call check_if_in_profiles_domain(prtcls%Y, prtcls%flagCon)
 
   if (ALLOCATED(P%ne_2D)) then
 !     write(6,'("Also R_buffer: ",E17.10)') prtcls%X(1,1)
      call interp_2D_profiles(prtcls%Y,prtcls%ne,prtcls%Te,prtcls%Zeff, &
-          prtcls%flag)
+          prtcls%flagCon)
   else if (ALLOCATED(P%ne_3D)) then
      call interp_3D_profiles(prtcls%Y,prtcls%ne,prtcls%Te,prtcls%Zeff, &
-          prtcls%flag)
+          prtcls%flagCon)
   else
      write(6,'("Error: NO PROFILES ALLOCATED")')
      call KORC_ABORT()

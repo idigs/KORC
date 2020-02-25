@@ -331,7 +331,8 @@ module korc_types
      REAL(rp), DIMENSION(:), ALLOCATABLE 	:: Pin 
      !! Instantaneous input power of each electron due to the electric
      !! field acceleration.
-     INTEGER(is), DIMENSION(:), ALLOCATABLE 	:: flag 
+     INTEGER(is), DIMENSION(:), ALLOCATABLE 	:: flagCon
+     INTEGER(is), DIMENSION(:), ALLOCATABLE 	:: flagCol 
      !! Flag for each particle to decide whether it is being followed
      !! (flag=T) or not (flag=F).
      REAL(rp), DIMENSION(:), ALLOCATABLE 	:: AUX 

@@ -420,7 +420,7 @@ CONTAINS
     V2 = Vo*SIN(C_PI*spp%vars%eta/180.0_rp)*COS(theta)
     V3 = Vo*SIN(C_PI*spp%vars%eta/180.0_rp)*SIN(theta)
 
-    call unitVectors(params,spp%vars%X,F,b1,b2,b3,spp%vars%flag)
+    call unitVectors(params,spp%vars%X,F,b1,b2,b3,spp%vars%flagCon)
     !! Call to subroutine [[unitVectors]] in [[korc_fields]].
 
 !    write(6,'("bhat x-component: ",E17.10)') b1(:,1)
@@ -429,7 +429,7 @@ CONTAINS
 
     
     do jj=1_idef,spp%ppp
-       if ( spp%vars%flag(jj) .EQ. 1_idef ) then    
+       if ( spp%vars%flagCon(jj) .EQ. 1_idef ) then    
           spp%vars%V(jj,1) = V1(jj)*b1(jj,1) + V2(jj)*b2(jj,1) + V3(jj)*b3(jj,1)
           spp%vars%V(jj,2) = V1(jj)*b1(jj,2) + V2(jj)*b2(jj,2) + V3(jj)*b3(jj,2)
           spp%vars%V(jj,3) = V1(jj)*b1(jj,3) + V2(jj)*b2(jj,3) + V3(jj)*b3(jj,3)
