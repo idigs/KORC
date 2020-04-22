@@ -7,5 +7,14 @@
 # ignore all CmakeCache.txt files
 #CMakeCache.txt
 
-# ignnore cmake_install.cmake file
+# ignore all cmake_install.cmake files
 #cmake_install.cmake
+
+# ignore all Makefile files
+#cmake_install.cmake
+
+# ignore all previous version files
+#*~
+
+# ignore all unsaved files
+#*#
