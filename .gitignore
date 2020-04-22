@@ -1,1 +1,11 @@
-**/*.mod
+# ignore build directory
+#/build
+
+# ignore all CMakeFile directories
+#**/CMakeFiles
+
+# ignore all CmakeCache.txt files
+#CMakeCache.txt
+
+# ignnore cmake_install.cmake file
+#cmake_install.cmake
