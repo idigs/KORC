@@ -27,6 +27,7 @@ file(REMOVE_RECURSE
   "CMakeFiles/xkorc.dir/korc_velocity_distribution.f90.o"
   "CMakeFiles/xkorc.dir/korc_c_random.cpp.o"
   "CMakeFiles/xkorc.dir/korc_random.f90.o"
+  "CMakeFiles/xkorc.dir/korc_m3d_c1_interface.f90.o"
   "CMakeFiles/xkorc.dir/main.f90.o"
   "../build/bin/xkorc.pdb"
   "../build/bin/xkorc"

@@ -56,6 +56,10 @@ FILE(REMOVE
   "../build/modules/KORC_INTERP.mod"
   "CMakeFiles/xkorc.dir/korc_interp.mod.stamp"
 
+  "../build/modules/korc_m3d_c1.mod"
+  "../build/modules/KORC_M3D_C1.mod"
+  "CMakeFiles/xkorc.dir/korc_m3d_c1.mod.stamp"
+
   "../build/modules/korc_ppusher.mod"
   "../build/modules/KORC_PPUSHER.mod"
   "CMakeFiles/xkorc.dir/korc_ppusher.mod.stamp"

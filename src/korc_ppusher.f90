@@ -219,9 +219,8 @@ contains
     REAL(rp),DIMENSION(8) :: B_X,B_Y,B_Z
     REAL(rp),DIMENSION(8) :: E_X,E_Y,E_Z
     REAL(rp),DIMENSION(8) :: PSIp
+    TYPE(C_PTR),DIMENSION(8) :: hint
     INTEGER(is) ,DIMENSION(8) :: flagCon,flagCol
-
-    
 
     do ii = 1_idef,params%num_species
 
@@ -230,7 +229,7 @@ contains
           !$OMP PARALLEL DO default(none) &
           !$OMP& shared(params,ii,spp,F) &
           !$OMP& PRIVATE(pp,cc,X_X,X_Y,X_Z,B_X,B_Y,B_Z, &
-          !$OMP& E_X,E_Y,E_Z,Y_R,Y_PHI,Y_Z,flagCon,flagCol,PSIp)
+          !$OMP& E_X,E_Y,E_Z,Y_R,Y_PHI,Y_Z,flagCon,flagCol,PSIp,hint)
           do pp=1_idef,spp(ii)%ppp,8
 
              !$OMP SIMD
@@ -241,6 +240,8 @@ contains
 
                 flagCon(cc)=spp(ii)%vars%flagCon(pp-1+cc)
                 flagCol(cc)=spp(ii)%vars%flagCol(pp-1+cc)
+
+                hint(cc)=spp(ii)%vars%hint(pp-1+cc)
              end do
              !$OMP END SIMD
 
@@ -253,7 +254,15 @@ contains
              else if (params%orbit_model(3:5).eq.'old') then
                 call interp_FOfields1_p(F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
                      E_X,E_Y,E_Z,PSIp,flagCon)
+             else if (params%field_model.eq.'M3D_C1') then
+                call get_m3d_c1_FOmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+                     B_X,B_Y,B_Z,flagCon,hint)
+                if (F%M3D_C1_E .ge. 0) &
+                     call get_m3d_c1_FOelectric_fields_p(params,F, &
+                     Y_R,Y_PHI,Y_Z,E_X,E_Y,E_Z,flagCon,hint)
              end if
+
+             
 
              !$OMP SIMD
              do cc=1_idef,8_idef
@@ -266,6 +275,8 @@ contains
                 spp(ii)%vars%E(pp-1+cc,3) = E_Z(cc)
 
                 spp(ii)%vars%PSI_P(pp-1+cc) = PSIp(cc)
+
+                spp(ii)%vars%hint(pp-1+cc) = hint(cc)
              end do
              !$OMP END SIMD
              
@@ -869,6 +880,234 @@ contains
     !$OMP END SIMD
 
   end subroutine advance_FP3Deqn_vars
+
+  subroutine adv_FOm3dc1_top(params,F,P,spp)  
+    TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
+    !! Core KORC simulation parameters.
+    TYPE(FIELDS), INTENT(IN)                                   :: F
+    !! An instance of the KORC derived type FIELDS.
+    TYPE(PROFILES), INTENT(IN)                                 :: P
+    !! An instance of the KORC derived type PROFILES.
+    TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)    :: spp
+    !! An instance of the derived type SPECIES containing all the parameters
+    !! and simulation variables of the different species in the simulation.
+    REAL(rp), DIMENSION(8)               :: Bmag
+    REAL(rp), DIMENSION(8)               :: b_unit_X,b_unit_Y,b_unit_Z
+    REAL(rp), DIMENSION(8)               :: v,vpar,vperp
+    REAL(rp), DIMENSION(8)               :: tmp
+    REAL(rp), DIMENSION(8)               :: g
+    REAL(rp), DIMENSION(8)               :: cross_X,cross_Y,cross_Z
+    REAL(rp), DIMENSION(8)               :: vec_X,vec_Y,vec_Z
+    REAL(rp),DIMENSION(8) :: X_X,X_Y,X_Z
+    REAL(rp),DIMENSION(8) :: Y_R,Y_PHI,Y_Z
+    REAL(rp),DIMENSION(8) :: V_X,V_Y,V_Z
+    REAL(rp),DIMENSION(8) :: B_X,B_Y,B_Z
+    REAL(rp),DIMENSION(8) :: E_X,E_Y,E_Z
+    REAL(rp),DIMENSION(8) :: PSIp
+    TYPE(C_PTR),DIMENSION(8) :: hint
+    INTEGER(is),DIMENSION(8) :: flagCon,flagCol
+    REAL(rp) :: a,m_cache,q_cache    
+    INTEGER                                                    :: ii
+    !! Species iterator.
+    INTEGER                                                    :: pp
+    !! Particles iterator.
+    INTEGER                                                    :: cc
+    !! Chunk iterator.
+    INTEGER(ip)                                                    :: tt
+    !! time iterator.
+ 
+
+    do ii = 1_idef,params%num_species      
+
+       m_cache=spp(ii)%m
+       q_cache=spp(ii)%q
+       a = q_cache*params%dt/m_cache
+
+
+       !$OMP PARALLEL DO default(none) &
+       !$OMP& FIRSTPRIVATE(a,m_cache,q_cache) &
+       !$OMP& shared(params,ii,spp,P,F) &
+       !$OMP& PRIVATE(E0,pp,tt,Bmag,cc,X_X,X_Y,X_Z,V_X,V_Y,V_Z,B_X,B_Y,B_Z, &
+       !$OMP& E_X,E_Y,E_Z,b_unit_X,b_unit_Y,b_unit_Z,v,vpar,vperp,tmp, &
+       !$OMP& cross_X,cross_Y,cross_Z,vec_X,vec_Y,vec_Z,g, &
+       !$OMP& Y_R,Y_PHI,Y_Z,flagCon,flagCol,PSIp,hint)
+       do pp=1_idef,spp(ii)%ppp,8
+
+          !$OMP SIMD
+          do cc=1_idef,8_idef
+             X_X(cc)=spp(ii)%vars%X(pp-1+cc,1)
+             X_Y(cc)=spp(ii)%vars%X(pp-1+cc,2)
+             X_Z(cc)=spp(ii)%vars%X(pp-1+cc,3)
+
+             V_X(cc)=spp(ii)%vars%V(pp-1+cc,1)
+             V_Y(cc)=spp(ii)%vars%V(pp-1+cc,2)
+             V_Z(cc)=spp(ii)%vars%V(pp-1+cc,3)
+
+             PSIp(cc)=spp(ii)%vars%PSI_P(pp-1+cc)
+
+             hint(cc)=spp(ii)%vars%hint(pp-1+cc)
+
+             g(cc)=spp(ii)%vars%g(pp-1+cc)
+             
+             flagCon(cc)=spp(ii)%vars%flagCon(pp-1+cc)
+             flagCol(cc)=spp(ii)%vars%flagCol(pp-1+cc)
+          end do
+          !$OMP END SIMD
+
+          if (.not.params%FokPlan) then
+             do tt=1_ip,params%t_skip
+
+                call cart_to_cyl_p(X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
+
+                call get_m3d_c1_FOmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+                     B_X,B_Y,B_Z,flagCon,hint)
+                call get_m3d_c1_FOelectric_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+                     E_X,E_Y,E_Z,flagCon,hint)
+
+                
+ !               write(6,'("B_X: ",E17.10)') B_X(1)
+ !               write(6,'("B_Y: ",E17.10)') B_Y(1)
+ !               write(6,'("B_Z: ",E17.10)') B_Z(1)
+                
+                call advance_FOm3dc1_vars(tt,a,q_cache,m_cache,params, &
+                     X_X,X_Y,X_Z,V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z, &
+                     g,flagCon,flagCol,P,F,PSIp)
+             end do !timestep iterator
+
+             !$OMP SIMD
+             do cc=1_idef,8_idef
+                spp(ii)%vars%X(pp-1+cc,1)=X_X(cc)
+                spp(ii)%vars%X(pp-1+cc,2)=X_Y(cc)
+                spp(ii)%vars%X(pp-1+cc,3)=X_Z(cc)
+
+                spp(ii)%vars%V(pp-1+cc,1)=V_X(cc)
+                spp(ii)%vars%V(pp-1+cc,2)=V_Y(cc)
+                spp(ii)%vars%V(pp-1+cc,3)=V_Z(cc)
+
+                spp(ii)%vars%g(pp-1+cc) = g(cc)
+                spp(ii)%vars%flagCon(pp-1+cc) = flagCon(cc)
+                spp(ii)%vars%flagCol(pp-1+cc) = flagCol(cc)
+
+                spp(ii)%vars%B(pp-1+cc,1) = B_X(cc)
+                spp(ii)%vars%B(pp-1+cc,2) = B_Y(cc)
+                spp(ii)%vars%B(pp-1+cc,3) = B_Z(cc)
+
+                spp(ii)%vars%E(pp-1+cc,1) = E_X(cc)
+                spp(ii)%vars%E(pp-1+cc,2) = E_Y(cc)
+                spp(ii)%vars%E(pp-1+cc,3) = E_Z(cc)
+
+                spp(ii)%vars%PSI_P(pp-1+cc) = PSIp(cc)
+
+                spp(ii)%vars%hint(pp-1+cc) = hint(cc)
+             end do
+             !$OMP END SIMD
+
+          else
+             !$OMP SIMD
+             do cc=1_idef,8_idef
+                B_X(cc)=spp(ii)%vars%B(pp-1+cc,1)
+                B_Y(cc)=spp(ii)%vars%B(pp-1+cc,2)
+                B_Z(cc)=spp(ii)%vars%B(pp-1+cc,3)
+
+                E_X(cc)=spp(ii)%vars%E(pp-1+cc,1)
+                E_Y(cc)=spp(ii)%vars%E(pp-1+cc,2)
+                E_Z(cc)=spp(ii)%vars%E(pp-1+cc,3)
+             end do
+             !$OMP END SIMD
+             
+             call advance_FP3Dinterp_vars(params,X_X,X_Y,X_Z,V_X,V_Y,V_Z, &
+                  g,m_cache,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flagCon,flagCol,P,F,PSIp)
+
+             !$OMP SIMD
+             do cc=1_idef,8_idef
+
+                spp(ii)%vars%V(pp-1+cc,1)=V_X(cc)
+                spp(ii)%vars%V(pp-1+cc,2)=V_Y(cc)
+                spp(ii)%vars%V(pp-1+cc,3)=V_Z(cc)
+
+                spp(ii)%vars%g(pp-1+cc) = g(cc)
+                spp(ii)%vars%flagCol(pp-1+cc) = flagCol(cc)
+                
+             end do
+             !$OMP END SIMD
+          end if
+
+          !$OMP SIMD
+          !          !$OMP& aligned(Bmag,B_X,B_Y,B_Z, &
+          !          !$OMP& b_unit_X,b_unit_Y,b_unit_Z,v,V_X,V_Y,V_Z,vpar, &
+          !          !$OMP& vperp,tmp,cross_X,cross_Y,cross_Z, &
+          !          !$OMP& vec_X,vec_Y,vec_Z,E_X,E_Y,E_Z)
+          do cc=1_idef,8_idef
+             !Derived output data
+             Bmag(cc) = SQRT(B_X(cc)*B_X(cc)+B_Y(cc)*B_Y(cc)+B_Z(cc)*B_Z(cc))
+
+             ! Parallel unit vector
+             b_unit_X(cc) = B_X(cc)/Bmag(cc)
+             b_unit_Y(cc) = B_Y(cc)/Bmag(cc)
+             b_unit_Z(cc) = B_Z(cc)/Bmag(cc)
+
+             v(cc) = SQRT(V_X(cc)*V_X(cc)+V_Y(cc)*V_Y(cc)+V_Z(cc)*V_Z(cc))
+             if (v(cc).GT.korc_zero) then
+                ! Parallel and perpendicular components of velocity
+                vpar(cc) = (V_X(cc)*b_unit_X(cc)+V_Y(cc)*b_unit_Y(cc)+ &
+                     V_Z(cc)*b_unit_Z(cc))
+                
+                vperp(cc) =  v(cc)**2 - vpar(cc)**2
+                if ( vperp(cc) .GE. korc_zero ) then
+                   vperp(cc) = SQRT( vperp(cc) )
+                else
+                   vperp(cc) = 0.0_rp
+                end if
+
+                ! Pitch angle
+                spp(ii)%vars%eta(pp-1+cc) = 180.0_rp* &
+                     MODULO(ATAN2(vperp(cc),vpar(cc)),2.0_rp*C_PI)/C_PI
+
+                ! Magnetic moment
+                spp(ii)%vars%mu(pp-1+cc) = 0.5_rp*m_cache* &
+                     g(cc)**2*vperp(cc)**2/Bmag(cc)
+                ! See Northrop's book (The adiabatic motion of charged
+                ! particles)
+
+                ! Radiated power
+                tmp(cc) = q_cache**4/(6.0_rp*C_PI*E0*m_cache**2)
+
+                cross_X(cc) = V_Y(cc)*B_Z(cc)-V_Z(cc)*B_Y(cc)
+                cross_Y(cc) = V_Z(cc)*B_X(cc)-V_X(cc)*B_Z(cc)
+                cross_Z(cc) = V_X(cc)*B_Y(cc)-V_Y(cc)*B_X(cc)
+                
+                vec_X(cc) = E_X(cc) + cross_X(cc)
+                vec_Y(cc) = E_Y(cc) + cross_Y(cc)
+                vec_Z(cc) = E_Z(cc) + cross_Z(cc)
+
+                spp(ii)%vars%Prad(pp-1+cc) = tmp(cc)* &
+                     ( E_X(cc)*E_X(cc)+E_Y(cc)*E_Y(cc)+E_Z(cc)*E_Z(cc) + &
+                     cross_X(cc)*E_X(cc)+cross_Y(cc)*E_Y(cc)+ &
+                     cross_Z(cc)*E_Z(cc) + g(cc)**2* &
+                     ((E_X(cc)*V_X(cc)+E_Y(cc)*V_Y(cc)+E_Z(cc)*V_Z(cc))**2 &
+                     - vec_X(cc)*vec_X(cc)+vec_Y(cc)*vec_Y(cc)+ &
+                     vec_Z(cc)*vec_Z(cc)) )
+
+                ! Input power due to electric field
+                spp(ii)%vars%Pin(pp-1+cc) = q_cache*(E_X(cc)*V_X(cc)+ &
+                     E_Y(cc)*V_Y(cc)+E_Z(cc)*V_Z(cc))
+             else
+                spp(ii)%vars%eta(pp-1+cc) = 0.0_rp
+                spp(ii)%vars%mu(pp-1+cc) = 0.0_rp
+                spp(ii)%vars%Prad(pp-1+cc) = 0.0_rp
+                spp(ii)%vars%Pin(pp-1+cc) = 0.0_rp
+             end if
+
+          end do
+          !$OMP END SIMD
+
+             
+       end do !particle chunk iterator
+       !$OMP END PARALLEL DO
+       
+    end do !species iterator
+    
+  end subroutine adv_FOm3dc1_top
   
   subroutine adv_FOinterp_top(params,F,P,spp)  
     TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
@@ -1310,6 +1549,220 @@ contains
     
   end subroutine advance_FOinterp_vars
 
+  subroutine advance_FOm3dc1_vars(tt,a,q_cache,m_cache,params,X_X,X_Y,X_Z, &
+       V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,g,flagCon,flagCol,P,F,PSIp)
+    TYPE(KORC_PARAMS), INTENT(IN)                              :: params
+    !! Core KORC simulation parameters.
+    TYPE(PROFILES), INTENT(IN)                                 :: P
+    TYPE(FIELDS), INTENT(IN)      :: F
+    INTEGER(ip), INTENT(IN)                                       :: tt
+    !! Time step used in the leapfrog step (\(\Delta t\)).
+    REAL(rp)                                      :: dt
+    !! Time step used in the leapfrog step (\(\Delta t\)).
+    REAL(rp), INTENT(IN)                                       :: m_cache,q_cache
+    !! Time step used in the leapfrog step (\(\Delta t\)).
+
+    REAL(rp),DIMENSION(8)                                  :: Bmag
+
+    REAL(rp),INTENT(in)                                       :: a
+    !! This variable is used to simplify notation in the code, and
+    !! is given by \(a=q\Delta t/m\),
+    REAL(rp),DIMENSION(8)                                    :: sigma
+    !! This variable is \(\sigma = \gamma'^2 - \tau^2\) in the above equations.
+    REAL(rp),DIMENSION(8)                               :: us
+    !! This variable is \(u^{*} = p^{*}/m\) where \( p^{*} =
+    !! \mathbf{p}'\cdot \mathbf{\tau}/mc\).
+    !! Variable 'u^*' in Vay, J.-L. PoP (2008).
+    REAL(rp),DIMENSION(8),INTENT(INOUT)                 :: g
+    REAL(rp),DIMENSION(8) :: gp,g0
+    !! Relativistic factor \(\gamma\).
+    REAL(rp),DIMENSION(8)                                 :: s
+    !! This variable is \(s = 1/(1+t^2)\) in the equations above.
+    !! Variable 's' in Vay, J.-L. PoP (2008).
+    REAL(rp),DIMENSION(8)                            :: U_hs_X,U_hs_Y,U_hs_Z
+    !! Is \(\mathbf{u}=\mathbf{p}/m\) at half-time step (\(i+1/2\)) in
+    !! the absence of radiation losses or collisions. \(\mathbf{u}^{i+1/2} =
+    !! \mathbf{u}^i + \frac{q\Delta t}{2m}\left( \mathbf{E}^{i+1/2} +
+    !! \mathbf{v}^i\times \mathbf{B}^{i+1/2} \right)\).
+    REAL(rp),DIMENSION(8)                           :: tau_X,tau_Y,tau_Z
+    !! This variable is \(\mathbf{\tau} = (q\Delta t/2)\mathbf{B}^{i+1/2}\).
+    REAL(rp),DIMENSION(8)                            :: up_X,up_Y,up_Z
+    !! This variable is \(\mathbf{u}'= \mathbf{p}'/m\), where \(\mathbf{p}'
+    !! = \mathbf{p}^i + q\Delta t \left( \mathbf{E}^{i+1/2} +
+    !! \frac{\mathbf{v}^i}{2} \times \mathbf{B}^{i+1/2} \right)\).
+    REAL(rp),DIMENSION(8)                                     :: t_X,t_Y,t_Z
+    !! This variable is \(\mathbf{t} = {\mathbf \tau}/\gamma^{i+1}\).
+    REAL(rp),DIMENSION(8),INTENT(INOUT)                     :: X_X,X_Y,X_Z
+    REAL(rp),DIMENSION(8)                    :: Y_R,Y_PHI,Y_Z
+    REAL(rp),DIMENSION(8),INTENT(INOUT)                      :: V_X,V_Y,V_Z
+    REAL(rp),DIMENSION(8),INTENT(IN)                      :: B_X,B_Y,B_Z
+    REAL(rp),DIMENSION(8),INTENT(IN)                     :: E_X,E_Y,E_Z,PSIp
+    REAL(rp),DIMENSION(8)                     :: U_L_X,U_L_Y,U_L_Z
+    REAL(rp),DIMENSION(8)                     :: U_X,U_Y,U_Z
+    REAL(rp),DIMENSION(8)                     :: U_RC_X,U_RC_Y,U_RC_Z
+    REAL(rp),DIMENSION(8)                     :: U_os_X,U_os_Y,U_os_Z
+    !! This variable is \(\mathbf{u}^{i+1}= \mathbf{p}^{i+1}/m\).
+    REAL(rp),DIMENSION(8)                          :: cross_X,cross_Y,cross_Z
+
+    REAL(rp), DIMENSION(8)                       :: Frad_X,Frad_Y,Frad_Z
+    !! Synchrotron radiation reaction force of each particle.
+
+    REAL(rp),DIMENSION(8) :: ne,Te,Zeff
+
+    INTEGER                                      :: cc
+    !! Chunk iterator.
+
+    INTEGER(is) ,DIMENSION(8),intent(inout)                   :: flagCon,flagCol
+
+    dt=params%dt
+    
+    
+    !$OMP SIMD
+    !    !$OMP& aligned(g0,g,U_X,U_Y,U_Z,V_X,V_Y,V_Z,Bmag,B_X,B_Y,B_Z, &
+    !    !$OMP& U_L_X,U_L_Y,U_L_Z,U_RC_X,U_RC_Y,U_RC_Z, &
+    !    !$OMP& cross_X,cross_Y,cross_Z,U_hs_X,U_hs_Y,U_hs_Z,E_X,E_Y,E_Z, &
+    !    !$OMP& tau_X,tau_Y,tau_Z,up_X,up_Y,up_Z,gp,sigma,us,t_X,t_Y,t_Z,s, &
+    !    !$OMP& U_os_X,U_os_Y,U_os_Z,Frad_X,Frad_Y,Frad_Z)
+    do cc=1_idef,8
+
+       g0(cc)=g(cc)
+       
+       U_X(cc) = g(cc)*V_X(cc)
+       U_Y(cc) = g(cc)*V_Y(cc)
+       U_Z(cc) = g(cc)*V_Z(cc)
+       
+
+       ! Magnitude of magnetic field
+       Bmag(cc) = SQRT(B_X(cc)*B_X(cc)+B_Y(cc)*B_Y(cc)+B_Z(cc)*B_Z(cc))
+
+       U_L_X(cc)=U_X(cc)
+       U_L_Y(cc)=U_Y(cc)
+       U_L_Z(cc)=U_Z(cc)
+
+       U_RC_X(cc)=U_X(cc)
+       U_RC_Y(cc)=U_Y(cc)
+       U_RC_Z(cc)=U_Z(cc)
+
+       ! LEAP-FROG SCHEME FOR LORENTZ FORCE !
+
+       cross_X(cc)=V_Y(cc)*B_Z(cc)-V_Z(cc)*B_Y(cc)
+       cross_Y(cc)=V_Z(cc)*B_X(cc)-V_X(cc)*B_Z(cc)
+       cross_Z(cc)=V_X(cc)*B_Y(cc)-V_Y(cc)*B_X(cc)
+
+
+       
+       U_hs_X(cc) = U_L_X(cc) + 0.5_rp*a*(E_X(cc) +cross_X(cc))
+       U_hs_Y(cc) = U_L_Y(cc) + 0.5_rp*a*(E_Y(cc) +cross_Y(cc))
+       U_hs_Z(cc) = U_L_Z(cc) + 0.5_rp*a*(E_Z(cc) +cross_Z(cc))
+
+
+       
+       tau_X(cc) = 0.5_rp*a*B_X(cc)
+       tau_Y(cc) = 0.5_rp*a*B_Y(cc)
+       tau_Z(cc) = 0.5_rp*a*B_Z(cc)
+
+
+       
+       up_X(cc) = U_hs_X(cc) + 0.5_rp*a*E_X(cc)
+       up_Y(cc) = U_hs_Y(cc) + 0.5_rp*a*E_Y(cc)
+       up_Z(cc) = U_hs_Z(cc) + 0.5_rp*a*E_Z(cc)
+
+       gp(cc) = SQRT( 1.0_rp + up_X(cc)*up_X(cc)+up_Y(cc)*up_Y(cc)+ &
+            up_Z(cc)*up_Z(cc) )
+
+       sigma(cc) = gp(cc)*gp(cc) - (tau_X(cc)*tau_X(cc)+ &
+            tau_Y(cc)*tau_Y(cc)+tau_Z(cc)*tau_Z(cc))
+
+       us(cc) = up_X(cc)*tau_X(cc)+up_Y(cc)*tau_Y(cc)+ &
+            up_Z(cc)*tau_Z(cc)
+
+       ! variable 'u^*' in Vay, J.-L. PoP (2008)
+       g(cc) = SQRT( 0.5_rp*(sigma(cc) + SQRT(sigma(cc)*sigma(cc) + &
+            4.0_rp*(tau_X(cc)*tau_X(cc)+tau_Y(cc)*tau_Y(cc)+ &
+            tau_Z(cc)*tau_Z(cc) + us(cc)*us(cc)))) )
+
+       t_X(cc) = tau_X(cc)/g(cc)
+       t_Y(cc) = tau_Y(cc)/g(cc)
+       t_Z(cc) = tau_Z(cc)/g(cc)
+
+       
+       s(cc) = 1.0_rp/(1.0_rp + t_X(cc)*t_X(cc)+t_Y(cc)*t_Y(cc)+ &
+            t_Z(cc)*t_Z(cc))
+       ! variable 's' in Vay, J.-L. PoP (2008)
+
+       cross_X(cc)=up_Y(cc)*t_Z(cc)-up_Z(cc)*t_Y(cc)
+       cross_Y(cc)=up_Z(cc)*t_X(cc)-up_X(cc)*t_Z(cc)
+       cross_Z(cc)=up_X(cc)*t_Y(cc)-up_Y(cc)*t_X(cc)
+
+       U_L_X(cc) = s(cc)*(up_X(cc) + (up_X(cc)*t_X(cc)+ &
+            up_Y(cc)*t_Y(cc)+up_Z(cc)*t_Z(cc))*t_X(cc) + cross_X(cc))
+       U_L_Y(cc) = s(cc)*(up_Y(cc) + (up_X(cc)*t_X(cc)+ &
+            up_Y(cc)*t_Y(cc)+up_Z(cc)*t_Z(cc))*t_Y(cc) + cross_Y(cc))
+       U_L_Z(cc) = s(cc)*(up_Z(cc) + (up_X(cc)*t_X(cc)+ &
+            up_Y(cc)*t_Y(cc)+up_Z(cc)*t_Z(cc))*t_Z(cc) + cross_Z(cc))
+       ! LEAP-FROG SCHEME FOR LORENTZ FORCE !
+
+       U_os_X(cc) = 0.5_rp*(U_L_X(cc) + U_X(cc))
+       U_os_Y(cc) = 0.5_rp*(U_L_Y(cc) + U_Y(cc))
+       U_os_Z(cc) = 0.5_rp*(U_L_Z(cc) + U_Z(cc))
+       ! Splitting operator for including radiation
+
+       if (params%radiation) then
+          !! Calls [[radiation_force]] in [[korc_ppusher]].
+          call radiation_force_p(q_cache,m_cache,U_os_X,U_os_Y,U_os_Z, &
+               E_X,E_Y,E_Z,B_Z,B_Y,B_Z,Frad_X,Frad_Y,Frad_Z)
+          U_RC_X(cc) = U_RC_X(cc) + a*Frad_X(cc)/q_cache
+          U_RC_Y(cc) = U_RC_Y(cc) + a*Frad_Y(cc)/q_cache
+          U_RC_Z(cc) = U_RC_Z(cc) + a*Frad_Z(cc)/q_cache
+       end if
+       ! Splitting operator for including radiation
+
+       U_X(cc) = U_L_X(cc) + U_RC_X(cc) - U_X(cc)
+       U_Y(cc) = U_L_Y(cc) + U_RC_Y(cc) - U_Y(cc)
+       U_Z(cc) = U_L_Z(cc) + U_RC_Z(cc) - U_Z(cc)
+       
+    end do
+    !$OMP END SIMD
+   
+    if (params%collisions) then
+       
+       call include_CoulombCollisions_FO_p(tt,params,X_X,X_Y,X_Z, &
+            U_X,U_Y,U_Z,B_X,B_Y,B_Z,m_cache,P,F,flagCon,flagCol,PSIp)
+       
+    end if
+
+    if (params%radiation.or.params%collisions) then
+
+       !$OMP SIMD
+       !       !$OMP& aligned(g,U_X,U_Y,U_Z)
+       do cc=1_idef,8_idef
+          g(cc)=sqrt(1._rp+U_X(cc)*U_X(cc)+U_Y(cc)*U_Y(cc)+U_Z(cc)*U_Z(cc))
+       end do
+       !$OMP END SIMD
+       
+    end if
+    
+    !$OMP SIMD
+    !    !$OMP& aligned(g,g0,V_X,V_Y,V_Z,U_X,U_Y,U_Z,X_X,X_Y,X_Z,flagCon,flagCol)
+    do cc=1_idef,8_idef
+       
+       if ((flagCon(cc).eq.0_is).or.(flagCol(cc).eq.0_is)) then
+          g(cc)=g0(cc)
+       else
+          V_X(cc) = U_X(cc)/g(cc)
+          V_Y(cc) = U_Y(cc)/g(cc)
+          V_Z(cc) = U_Z(cc)/g(cc)
+       end if
+
+       X_X(cc) = X_X(cc) + dt*V_X(cc)*REAL(flagCon(cc))*REAL(flagCol(cc))
+       X_Y(cc) = X_Y(cc) + dt*V_Y(cc)*REAL(flagCon(cc))*REAL(flagCol(cc))
+       X_Z(cc) = X_Z(cc) + dt*V_Z(cc)*REAL(flagCon(cc))*REAL(flagCol(cc))
+       
+    end do
+    !$OMP END SIMD
+    
+  end subroutine advance_FOm3dc1_vars
+  
   subroutine advance_FP3Dinterp_vars(params,X_X,X_Y,X_Z,V_X,V_Y,V_Z,g, &
        m_cache,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flagCon,flagCol,P,F,PSIp)    
     TYPE(KORC_PARAMS), INTENT(INOUT)                              :: params

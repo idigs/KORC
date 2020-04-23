@@ -107,8 +107,21 @@ program main
 !  write(6,'("init eta: ",E17.10)') spp(1)%vars%eta
   
 
+#ifdef M3D_C1
+  if (TRIM(params%field_model) .eq. 'M3D_C1') then
 
+     if (params%mpi_params%rank .EQ. 0) then
+        write(6,*) "* * * * INITIALIZING M3D-C1 INTERFACE * * * *"
+     endif
+     
+     call initialize_m3d_c1(params, F, P, spp)
 
+     if (params%mpi_params%rank .EQ. 0) then
+        write(6,*) "* * * * * * * * * * * * * * * * * * * * * * *"
+     endif
+        
+  endif
+#endif
   
   call initialize_synthetic_camera(params,F)
   !! <h4>7\. Initialize Synthetic Cameras</h4>
@@ -143,7 +156,7 @@ program main
   
   call initialize_particle_pusher(params)
   !! <h4>11\. Initialize Particle Pusher</h4>    
-
+  
   if (params%SC_E) then
      call define_SC_time_step(params,F)
   end if
@@ -231,18 +244,7 @@ program main
   
   ! * * * INITIALIZATION STAGE * * *
 
-  ! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !
 
-
-  
-  call save_simulation_parameters(params,spp,F,P)
-
-  call save_collision_params(params)
-  !! <h4>18\. Save Simulation and Collision Parameters</h4>  
-  !!
-  !! Subroutines [[save_simulation_parameters]] in [[korc_HDF5]] and
-  !! [[save_collision_params]] in [[korc_collisions]] call
-  !! subroutines to save simulation and collision parameters.
 
 !  write(6,'("GC init eta: ",E17.10)') spp(1)%vars%eta
 
@@ -286,7 +288,19 @@ program main
      
   end if
 
+  ! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !
 
+
+  
+  call save_simulation_parameters(params,spp,F,P)
+
+  call save_collision_params(params)
+  !! <h4>18\. Save Simulation and Collision Parameters</h4>  
+  !!
+  !! Subroutines [[save_simulation_parameters]] in [[korc_HDF5]] and
+  !! [[save_collision_params]] in [[korc_collisions]] call
+  !! subroutines to save simulation and collision parameters.
+  
   
   if (.NOT.(params%restart.OR.params%proceed)) then
      

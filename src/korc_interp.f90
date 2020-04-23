@@ -11,6 +11,10 @@ module korc_interp
   use EZspline_obj	! psplines module
   use EZspline		! psplines module
 
+#ifdef M3D_C1
+  use korc_m3d_c1
+#endif
+  
   !$ use OMP_LIB
 
   IMPLICIT NONE
@@ -499,8 +503,9 @@ CONTAINS
     !! See [[korc_types]] and [[korc_fields]].
     integer :: ii,jj
 
-    if ((params%field_model(1:8) .EQ. 'EXTERNAL').or. &
-         (params%field_eval.eq.'interp')) then
+    if (((params%field_model(1:8) .EQ. 'EXTERNAL').or. &
+         (params%field_eval.eq.'interp')).and. &
+         (.not.params%field_model.eq.'M3D_C1')) then
 
        if (params%mpi_params%rank .EQ. 0) then
           write(6,'("* * * * INITIALIZING FIELDS INTERPOLANT * * * *")')
@@ -1471,7 +1476,7 @@ CONTAINS
           end do
           !$OMP END PARALLEL DO
        end if
-    else
+    else if (ALLOCATED(fields_domain%FLAG2D)) then
        if (F%Dim2x1t) then
           !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,IR,IZ) &
           !$OMP& SHARED(Y,flag,fields_domain,bfield_2d)
@@ -1645,7 +1650,7 @@ CONTAINS
           end do
           !$OMP END SIMD
        end if
-    else
+    else if (ALLOCATED(fields_domain%FLAG2D)) then
        !$OMP SIMD
 !       !$OMP& aligned(IR,IZ)
        do pp=1_idef,8_idef
@@ -1691,6 +1696,12 @@ CONTAINS
     !! An instance of KORC's derived type PROFILES containing
     !! all the information about the plasma profiles used in the simulation.
     !! See [[korc_types]] and [[korc_profiles]].
+
+#ifdef M3D_C1
+    P%M3D_C1_ne = -1
+    P%M3D_C1_te = -1
+    P%M3D_C1_zeff = -1
+#endif
     
     if (params%collisions) then
        if (params%profile_model(1:8) .EQ. 'EXTERNAL') then
@@ -2514,7 +2525,7 @@ subroutine calculate_magnetic_field(params,Y,F,B,E,PSI_P,flag)
 
            !           write(6,'("R*B_R: ",E17.10)') A(pp,1)
 
-           if(params%SC_E) A(pp,1)=A(pp,1)/(2*C_PI)
+           !if(params%SC_E) A(pp,1)=A(pp,1)/(2*C_PI)
 
            A(pp,1) = A(pp,1)/Y(pp,1)
 
@@ -2528,7 +2539,7 @@ subroutine calculate_magnetic_field(params,Y,F,B,E,PSI_P,flag)
 
            !           write(6,'("R*B_Z: ",E17.10)') A(pp,3)
 
-           if(params%SC_E) A(pp,3)=A(pp,3)/(2*C_PI)
+           !if(params%SC_E) A(pp,3)=A(pp,3)/(2*C_PI)
 
            call EZspline_derivative(bfield_2X1T%A, 0, 1, 0, Y(pp,1), &
                 F%t0_2x1t, Y(pp,3), E(pp,2), ezerr)           
@@ -2586,7 +2597,7 @@ subroutine calculate_magnetic_field(params,Y,F,B,E,PSI_P,flag)
 
            !           write(6,'("R*B_R: ",E17.10)') A(pp,1)
 
-           if(params%SC_E) A(pp,1)=A(pp,1)/(2*C_PI)
+           !if(params%SC_E) A(pp,1)=A(pp,1)/(2*C_PI)
 
            A(pp,1) = A(pp,1)/Y(pp,1)
 
@@ -2600,7 +2611,7 @@ subroutine calculate_magnetic_field(params,Y,F,B,E,PSI_P,flag)
 
            !           write(6,'("R*B_Z: ",E17.10)') A(pp,3)
 
-           if(params%SC_E) A(pp,3)=A(pp,3)/(2*C_PI)
+           !if(params%SC_E) A(pp,3)=A(pp,3)/(2*C_PI)
 
            A(pp,3) = -A(pp,3)/Y(pp,1)                    
 
@@ -3453,6 +3464,23 @@ subroutine interp_fields(params,prtcls,F)
 
   !write(6,*) 'checked domain'
 
+#ifdef M3D_C1
+    if (TRIM(params%field_model) .eq. 'M3D_C1') then
+    
+       if (F%M3D_C1_B .ge. 0) then
+          call get_m3d_c1_magnetic_fields(prtcls, F, params)
+       end if
+
+       if (F%M3D_C1_E .ge. 0) then
+          call get_m3d_c1_electric_fields(prtcls, F, params)
+       end if
+
+       if (F%M3D_C1_A .ge. 0) then
+          call get_m3d_c1_vector_potential(prtcls, F, params)
+       end if
+    end if
+#endif
+  
   if ((ALLOCATED(F%PSIp).and.F%Bflux).or.F%ReInterp_2x1t) then
 
 !     write(6,'("3 size of PSI_P: ",I16)') size(prtcls%PSI_P)
@@ -3660,6 +3688,12 @@ subroutine interp_profiles(params,prtcls,P)
   else if (ALLOCATED(P%ne_3D)) then
      call interp_3D_profiles(prtcls%Y,prtcls%ne,prtcls%Te,prtcls%Zeff, &
           prtcls%flagCon)
+#ifdef M3D_C1
+  else if (P%M3D_C1_ne   .ge. 0 .or.     &
+       P%M3D_C1_te   .ge. 0 .or.         &
+       P%M3D_C1_zeff .ge. 0) then
+     call get_m3d_c1_profile(prtcls, P, params)
+#endif
   else
      write(6,'("Error: NO PROFILES ALLOCATED")')
      call KORC_ABORT()
@@ -3751,4 +3785,363 @@ subroutine finalize_interpolants(params)
      end if
   end if
 end subroutine finalize_interpolants
+
+
+#ifdef M3D_C1
+  !!  @note FIXME Add documentation
+  subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
+    TYPE(PARTICLES), INTENT(INOUT) :: prtcls
+    TYPE(FIELDS), INTENT(IN)       :: F
+    TYPE(KORC_PARAMS), INTENT(IN)  :: params
+    INTEGER (C_INT)                :: status
+    INTEGER                        :: pp
+    REAL(rp), DIMENSION(3)         :: x
+    REAL(rp), DIMENSION(3)         :: Btmp
+    
+    if (prtcls%cart) then
+       !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp,status,x)
+       do pp = 1, SIZE(prtcls%hint)
+          if (prtcls%flagCon(pp) .EQ. 1_is) then
+             x = prtcls%X(pp,:)*params%cpp%length
+             status = fio_eval_field(F%M3D_C1_B, x(1),   &
+                  prtcls%B(pp,1),                        &
+                  prtcls%hint(pp))
+
+             if (status .eq. FIO_NO_DATA) then
+                prtcls%B(pp,:) = 0
+                prtcls%flagCon(pp) = 0_is
+             else if (status .ne. FIO_SUCCESS) then
+                prtcls%flagCon(pp) = 0_is
+             end if
+          end if
+       end do
+       !$OMP END PARALLEL DO
+    else
+       !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp,status,x,Btmp)
+       do pp = 1, SIZE(prtcls%hint)
+          if (prtcls%flagCon(pp) .EQ. 1_is) then
+             x(1) = prtcls%Y(pp,1)*params%cpp%length
+             x(2) = prtcls%Y(pp,2)
+             x(3) = prtcls%Y(pp,3)*params%cpp%length
+
+             !             prtcls%hint(pp)=c_null_ptr
+
+
+             status = fio_eval_field(F%M3D_C1_B, x(1),                      &
+                  Btmp(1),prtcls%hint(pp))
+
+             if (status .eq. FIO_NO_DATA) then
+                prtcls%B(pp,:) = 0
+                prtcls%flagCon(pp) = 0_is
+             else if (status .ne. FIO_SUCCESS) then
+                prtcls%flagCon(pp) = 0_is
+             end if
+
+             if (.not.params%GC_coords) then             
+                prtcls%B(pp,1)=(Btmp(1)*cos(x(2))-Btmp(2)*sin(x(2)))/ &
+                     params%cpp%Bo
+                prtcls%B(pp,1)=(Btmp(1)*sin(x(2))+Btmp(2)*cos(x(2)))/ &
+                     params%cpp%Bo
+                prtcls%B(pp,3)=Btmp(3)/params%cpp%Bo
+             else
+                prtcls%B(pp,1)=Btmp(1)/params%cpp%Bo
+                prtcls%B(pp,2)=Btmp(2)/params%cpp%Bo
+                prtcls%B(pp,3)=Btmp(3)/params%cpp%Bo
+             end if
+                
+          end if
+       end do
+       !$OMP END PARALLEL DO
+    end if
+  end subroutine get_m3d_c1_magnetic_fields
+
+  subroutine get_m3d_c1_FOmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+       B_X,B_Y,B_Z,flag,hint)
+    TYPE(FIELDS), INTENT(IN)       :: F
+    TYPE(KORC_PARAMS), INTENT(IN)  :: params
+    REAL(rp), DIMENSION(8), INTENT(IN)  :: Y_R,Y_PHI,Y_Z
+    REAL(rp), DIMENSION(8), INTENT(OUT)  :: B_X,B_Y,B_Z
+    INTEGER(is), DIMENSION(8), INTENT(INOUT)  :: flag
+    TYPE(C_PTR), DIMENSION(8), INTENT(INOUT)  :: hint
+    INTEGER (C_INT)                :: status
+    INTEGER                        :: pp
+    REAL(rp), DIMENSION(3)         :: x
+    REAL(rp), DIMENSION(3)         :: Btmp
+
+
+    !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp,status,x,Btmp)
+    do pp = 1,8
+       if (flag(pp) .EQ. 1_is) then
+          x(1) = Y_R(pp)*params%cpp%length
+          x(2) = Y_PHI(pp)
+          x(3) = Y_Z(pp)*params%cpp%length
+
+          !             prtcls%hint(pp)=c_null_ptr
+
+
+          status = fio_eval_field(F%M3D_C1_B, x(1),                      &
+               Btmp(1),hint(pp))
+
+          if (status .eq. FIO_NO_DATA) then
+             B_X(pp) = 0
+             B_Y(pp) = 0
+             B_Z(pp) = 0                
+             flag(pp) = 0_is
+          else if (status .ne. FIO_SUCCESS) then
+             flag(pp) = 0_is
+          end if
+
+
+          B_X(pp)=(Btmp(1)*cos(x(2))-Btmp(2)*sin(x(2)))/ &
+               params%cpp%Bo
+          B_Y(pp)=(Btmp(1)*sin(x(2))+Btmp(2)*cos(x(2)))/ &
+               params%cpp%Bo
+          B_Z(pp)=Btmp(3)/params%cpp%Bo
+
+       end if
+    end do
+    !$OMP END PARALLEL DO
+
+  end subroutine get_m3d_c1_FOmagnetic_fields_p
+
+  subroutine get_m3d_c1_vector_potential(prtcls, F, params)
+    TYPE(PARTICLES), INTENT(INOUT) :: prtcls
+    TYPE(FIELDS), INTENT(IN)       :: F
+    TYPE(KORC_PARAMS), INTENT(IN)  :: params
+    INTEGER (C_INT)                :: status
+    INTEGER                        :: pp
+    REAL(rp), DIMENSION(3)         :: x
+    REAL(rp), DIMENSION(3)         :: Atmp
+    integer(ip)  ::  ss
+
+    if (prtcls%Y(2,1).eq.0) then
+       ss=1_idef
+    else
+       ss = size(prtcls%Y,1)
+    end if
+    
+    !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp,status,x,Atmp)
+    do pp = 1,ss
+       if (prtcls%flagCon(pp) .EQ. 1_is) then
+          x(1) = prtcls%Y(pp,1)*params%cpp%length
+          x(2) = prtcls%Y(pp,2)
+          x(3) = prtcls%Y(pp,3)*params%cpp%length
+
+          !             prtcls%hint(pp)=c_null_ptr
+
+
+          status = fio_eval_field(F%M3D_C1_A, x(1),                      &
+               Atmp(1),prtcls%hint(pp))
+
+          if (status .eq. FIO_NO_DATA) then
+             prtcls%PSI_P(pp) = 0
+             prtcls%flagCon(pp) = 0_is
+          else if (status .ne. FIO_SUCCESS) then
+             prtcls%flagCon(pp) = 0_is
+          end if
+
+          if (.not.params%GC_coords) then             
+             prtcls%PSI_P(pp)=Atmp(3)*x(1)
+          end if
+
+       end if
+    end do
+    !$OMP END PARALLEL DO
+
+  end subroutine get_m3d_c1_vector_potential
+  
+  !!  @note FIXME Add documentation
+  subroutine get_m3d_c1_electric_fields(prtcls, F, params)
+    TYPE(PARTICLES), INTENT(INOUT) :: prtcls
+    TYPE(FIELDS), INTENT(IN)       :: F
+    TYPE(KORC_PARAMS), INTENT(IN)  :: params
+    INTEGER (C_INT)                :: status
+    INTEGER                        :: pp
+    REAL(rp), DIMENSION(3)         :: x
+    REAL(rp), DIMENSION(3)         :: Etmp
+
+    if (prtcls%cart) then
+       !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp,status,x)
+       do pp = 1, SIZE(prtcls%hint)
+          if (prtcls%flagCon(pp) .EQ. 1_is) then
+             x = prtcls%X(pp,:)*params%cpp%length
+             status = fio_eval_field(F%M3D_C1_E, x(1),                      &
+                  prtcls%E(pp,1),                        &
+                  prtcls%hint(pp))
+
+             if (status .eq. FIO_NO_DATA) then
+                prtcls%E(pp,:) = 0
+             else if (status .ne. FIO_SUCCESS) then
+                prtcls%flagCon(pp) = 0_is
+             end if
+          end if
+       end do
+       !$OMP END PARALLEL DO
+    else
+       !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp,status,x)
+       do pp = 1, SIZE(prtcls%hint)
+          if (prtcls%flagCon(pp) .EQ. 1_is) then
+             x(1) = prtcls%Y(pp,1)*params%cpp%length
+             x(2) = prtcls%Y(pp,2)
+             x(3) = prtcls%Y(pp,3)*params%cpp%length
+             status = fio_eval_field(F%M3D_C1_E, x(1),                      &
+                  Etmp(1),prtcls%hint(pp))
+
+             if (status .eq. FIO_NO_DATA) then
+                prtcls%E(pp,:) = 0
+                prtcls%flagCon(pp) = 0_is
+             else if (status .ne. FIO_SUCCESS) then
+                prtcls%flagCon(pp) = 0_is
+             end if
+
+             if (.not.params%GC_coords) then             
+                prtcls%E(pp,1)=(Etmp(1)*cos(x(2))-Etmp(2)*sin(x(2)))/ &
+                     params%cpp%Eo
+                prtcls%E(pp,2)=(Etmp(1)*sin(x(2))+Etmp(2)*cos(x(2)))/ &
+                     params%cpp%Eo
+                prtcls%E(pp,3)=Etmp(3)/params%cpp%Eo
+             else
+                prtcls%E(pp,1)=Etmp(1)/params%cpp%Eo
+                prtcls%E(pp,2)=Etmp(2)/params%cpp%Eo
+                prtcls%E(pp,3)=Etmp(3)/params%cpp%Eo
+             end if
+             
+          end if
+       end do
+       !$OMP END PARALLEL DO
+    end if
+  end subroutine get_m3d_c1_electric_fields
+
+  subroutine get_m3d_c1_FOelectric_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+       E_X,E_Y,E_Z,flag,hint)
+    TYPE(FIELDS), INTENT(IN)       :: F
+    TYPE(KORC_PARAMS), INTENT(IN)  :: params
+    REAL(rp), DIMENSION(8), INTENT(IN)  :: Y_R,Y_PHI,Y_Z
+    REAL(rp), DIMENSION(8), INTENT(OUT)  :: E_X,E_Y,E_Z
+    INTEGER(is), DIMENSION(8), INTENT(INOUT)  :: flag
+    TYPE(C_PTR), DIMENSION(8), INTENT(INOUT)  :: hint
+    INTEGER (C_INT)                :: status
+    INTEGER                        :: pp
+    REAL(rp), DIMENSION(3)         :: x
+    REAL(rp), DIMENSION(3)         :: Etmp
+
+
+    !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp,status,x,Etmp)
+    do pp = 1,8
+       if (flag(pp) .EQ. 1_is) then
+          x(1) = Y_R(pp)*params%cpp%length
+          x(2) = Y_PHI(pp)
+          x(3) = Y_Z(pp)*params%cpp%length
+
+          !             prtcls%hint(pp)=c_null_ptr
+
+
+          status = fio_eval_field(F%M3D_C1_E, x(1),                      &
+               Etmp(1),hint(pp))
+
+          if (status .eq. FIO_NO_DATA) then
+             E_X(pp) = 0
+             E_Y(pp) = 0
+             E_Z(pp) = 0                
+             flag(pp) = 0_is
+          else if (status .ne. FIO_SUCCESS) then
+             flag(pp) = 0_is
+          end if
+
+
+          E_X(pp)=(Etmp(1)*cos(x(2))-Etmp(2)*sin(x(2)))/ &
+               params%cpp%Eo
+          E_Y(pp)=(Etmp(1)*sin(x(2))+Etmp(2)*cos(x(2)))/ &
+               params%cpp%Eo
+          E_Z(pp)=Etmp(3)/params%cpp%Eo
+
+       end if
+    end do
+    !$OMP END PARALLEL DO
+
+  end subroutine get_m3d_c1_FOelectric_fields_p
+  
+  subroutine get_m3d_c1_profile(prtcls, P, params)
+    TYPE(PARTICLES), INTENT(INOUT) :: prtcls
+    TYPE(PROFILES), INTENT(IN)     :: P
+    TYPE(KORC_PARAMS), INTENT(IN)  :: params
+    INTEGER (C_INT)                :: status
+    INTEGER                        :: pp
+    REAL(rp), DIMENSION(3)         :: x
+
+    if (prtcls%cart) then
+       !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp,status,x)
+       do pp = 1, SIZE(prtcls%hint)
+          if (prtcls%flagCon(pp) .EQ. 1_is) then
+             x = prtcls%X(pp,:)*params%cpp%length
+             status = fio_eval_field(P%M3D_C1_ne, x(1),                     &
+                  prtcls%ne(pp),                         &
+                  prtcls%hint(pp))
+
+             if (status .eq. FIO_NO_DATA) then
+                prtcls%ne(pp) = 0
+             else if (status .ne. FIO_SUCCESS) then
+                prtcls%flagCon(pp) = 0_is
+                CYCLE
+             end if
+
+             status = fio_eval_field(P%M3D_C1_te, x(1),                     &
+                  prtcls%te(pp),                         &
+                  prtcls%hint(pp))
+
+             if (status .eq. FIO_NO_DATA) then
+                prtcls%te(pp) = 0
+             end if
+
+             status = fio_eval_field(P%M3D_C1_zeff, x(1),                   &
+                  prtcls%Zeff(pp),                       &
+                  prtcls%hint(pp))
+
+             if (status .eq. FIO_NO_DATA) then
+                prtcls%Zeff(pp) = 1
+             end if
+          end if
+       end do
+       !$OMP END PARALLEL DO
+    else
+       !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp,status,x)
+       do pp = 1, SIZE(prtcls%hint)
+          if (prtcls%flagCon(pp) .EQ. 1_is) then
+             x(1) = prtcls%Y(1,pp)*params%cpp%length
+             x(2) = prtcls%Y(2,pp)
+             x(3) = prtcls%Y(3,pp)*params%cpp%length
+             status = fio_eval_field(P%M3D_C1_ne, x(1),                     &
+                  prtcls%ne(pp),                         &
+                  prtcls%hint(pp))
+
+             if (status .eq. FIO_NO_DATA) then
+                prtcls%ne(pp) = 0
+             else if (status .ne. FIO_SUCCESS) then
+                prtcls%flagCon(pp) = 0_is
+                CYCLE
+             end if
+
+             status = fio_eval_field(P%M3D_C1_te, x(1),                     &
+                  prtcls%te(pp),                         &
+                  prtcls%hint(pp))
+
+             if (status .eq. FIO_NO_DATA) then
+                prtcls%te(pp) = 0
+             end if
+
+             status = fio_eval_field(P%M3D_C1_zeff, x(1),                   &
+                  prtcls%Zeff(pp),                       &
+                  prtcls%hint(pp))
+
+             if (status .eq. FIO_NO_DATA) then
+                prtcls%Zeff(pp) = 1
+             end if
+          end if
+       end do
+       !$OMP END PARALLEL DO
+    end if
+  end subroutine get_m3d_c1_profile
+#endif
+
+
 end module korc_interp

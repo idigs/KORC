@@ -1611,6 +1611,10 @@ CONTAINS
                 attr = "Scaling for self-consistent current density"
                 call save_to_hdf5(h5file_id,dset,F%Ip_exp,attr)
 
+                dset = TRIM(gname) // "/Ip0"
+                attr = "Total RE current normalization"
+                call save_to_hdf5(h5file_id,dset,F%Ip0,attr)
+                
                 ALLOCATE(attr_array(1))
                 dset = TRIM(gname) // "/r_1D"
                 attr_array(1) = "1D minor radial mesh for &
@@ -1888,6 +1892,10 @@ CONTAINS
                 attr = "Scaling for self-consistent current density"
                 call save_to_hdf5(h5file_id,dset,F%Ip_exp,attr)
 
+                dset = TRIM(gname) // "/Ip0"
+                attr = "Total RE current normalization"
+                call save_to_hdf5(h5file_id,dset,F%Ip0,attr)
+                
                 dset = TRIM(gname) // "/PSIP_1D"
                 attr_array(1) = "1D minor radial mesh for &
                      self-consistent fields"

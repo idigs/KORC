@@ -31,6 +31,8 @@ src/CMakeFiles/xkorc.dir/korc_initialize.f90.o
  /Users/21b/Desktop/KORC/src/korc_initialize.f90
 src/CMakeFiles/xkorc.dir/korc_interp.f90.o
  /Users/21b/Desktop/KORC/src/korc_interp.f90
+src/CMakeFiles/xkorc.dir/korc_m3d_c1_interface.f90.o
+ /Users/21b/Desktop/KORC/src/korc_m3d_c1_interface.f90
 src/CMakeFiles/xkorc.dir/korc_ppusher.f90.o
  /Users/21b/Desktop/KORC/src/korc_ppusher.f90
 src/CMakeFiles/xkorc.dir/korc_profiles.f90.o

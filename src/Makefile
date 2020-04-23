@@ -530,6 +530,33 @@ korc_interp.f90.s:
 	cd /Users/21b/Desktop/KORC && $(MAKE) -f src/CMakeFiles/xkorc.dir/build.make src/CMakeFiles/xkorc.dir/korc_interp.f90.s
 .PHONY : korc_interp.f90.s
 
+korc_m3d_c1_interface.o: korc_m3d_c1_interface.f90.o
+
+.PHONY : korc_m3d_c1_interface.o
+
+# target to build an object file
+korc_m3d_c1_interface.f90.o:
+	cd /Users/21b/Desktop/KORC && $(MAKE) -f src/CMakeFiles/xkorc.dir/build.make src/CMakeFiles/xkorc.dir/korc_m3d_c1_interface.f90.o
+.PHONY : korc_m3d_c1_interface.f90.o
+
+korc_m3d_c1_interface.i: korc_m3d_c1_interface.f90.i
+
+.PHONY : korc_m3d_c1_interface.i
+
+# target to preprocess a source file
+korc_m3d_c1_interface.f90.i:
+	cd /Users/21b/Desktop/KORC && $(MAKE) -f src/CMakeFiles/xkorc.dir/build.make src/CMakeFiles/xkorc.dir/korc_m3d_c1_interface.f90.i
+.PHONY : korc_m3d_c1_interface.f90.i
+
+korc_m3d_c1_interface.s: korc_m3d_c1_interface.f90.s
+
+.PHONY : korc_m3d_c1_interface.s
+
+# target to generate assembly for a file
+korc_m3d_c1_interface.f90.s:
+	cd /Users/21b/Desktop/KORC && $(MAKE) -f src/CMakeFiles/xkorc.dir/build.make src/CMakeFiles/xkorc.dir/korc_m3d_c1_interface.f90.s
+.PHONY : korc_m3d_c1_interface.f90.s
+
 korc_ppusher.o: korc_ppusher.f90.o
 
 .PHONY : korc_ppusher.o
@@ -962,6 +989,9 @@ help:
 	@echo "... korc_interp.o"
 	@echo "... korc_interp.i"
 	@echo "... korc_interp.s"
+	@echo "... korc_m3d_c1_interface.o"
+	@echo "... korc_m3d_c1_interface.i"
+	@echo "... korc_m3d_c1_interface.s"
 	@echo "... korc_ppusher.o"
 	@echo "... korc_ppusher.i"
 	@echo "... korc_ppusher.s"

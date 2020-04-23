@@ -419,8 +419,8 @@ CONTAINS
     V1 = Vo*COS(C_PI*spp%vars%eta/180.0_rp)
     V2 = Vo*SIN(C_PI*spp%vars%eta/180.0_rp)*COS(theta)
     V3 = Vo*SIN(C_PI*spp%vars%eta/180.0_rp)*SIN(theta)
-
-    call unitVectors(params,spp%vars%X,F,b1,b2,b3,spp%vars%flagCon)
+    
+    call unitVectors(params,spp%vars,F,b1,b2,b3)
     !! Call to subroutine [[unitVectors]] in [[korc_fields]].
 
 !    write(6,'("bhat x-component: ",E17.10)') b1(:,1)

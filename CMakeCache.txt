@@ -251,6 +251,9 @@ EZSpline_LIBRARIES:UNINITIALIZED=/Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/ps
 //No help, variable specified on the command line.
 EZSpline_LINK_FLAGS:UNINITIALIZED=-L/Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/lib -lpspline
 
+//No help, variable specified on the command line.
+FIO_LIBRARIES:UNINITIALIZED=/usr/local/lib/libfusionio.a
+
 //HDF5 file differencing tool.
 HDF5_DIFF_EXECUTABLE:FILEPATH=/opt/local/bin/h5diff
 
@@ -275,6 +278,15 @@ HDF5_Fortran_LIBRARY_m:FILEPATH=/usr/lib/libm.dylib
 
 //Path to a library.
 HDF5_Fortran_LIBRARY_z:FILEPATH=/opt/local/lib/libz.dylib
+
+//No help, variable specified on the command line.
+M3DC1_LIBRARIES:UNINITIALIZED=/usr/local/lib/libm3dc1.a
+
+//No help, variable specified on the command line.
+M3D_C1_INCLUDE_PATH:UNINITIALIZED=/usr/local/include
+
+//No help, variable specified on the command line.
+M3D_C1_LINK_FLAGS:UNINITIALIZED=-L/usr/local/lib -lfusionio -lm3dc1
 
 //Executable for running MPI programs.
 MPIEXEC_EXECUTABLE:FILEPATH=/opt/local/bin/mpiexec
@@ -397,6 +409,9 @@ OpenMP_Fortran_LIB_NAMES:STRING=gomp
 
 //Path to the gomp library for OpenMP
 OpenMP_gomp_LIBRARY:FILEPATH=/opt/local/lib/gcc8/libgomp.dylib
+
+//Use M3D_C1 interpolation support
+USE_M3D_C1:BOOL=ON
 
 //Value Computed by CMake
 korc_proj_BINARY_DIR:STATIC=/Users/21b/Desktop/KORC

@@ -158,6 +158,7 @@ src/CMakeFiles/xkorc.dir/korc_interp.f90.o: /Users/21b/Desktop/KORC_PERIPHERALS/
 src/CMakeFiles/xkorc.dir/korc_interp.f90.o: /Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/mod/ezspline_obj.mod
 src/CMakeFiles/xkorc.dir/korc_interp.f90.o: src/CMakeFiles/xkorc.dir/korc_coords.mod.stamp
 src/CMakeFiles/xkorc.dir/korc_interp.f90.o: src/CMakeFiles/xkorc.dir/korc_hpc.mod.stamp
+src/CMakeFiles/xkorc.dir/korc_interp.f90.o: src/CMakeFiles/xkorc.dir/korc_m3d_c1.mod.stamp
 src/CMakeFiles/xkorc.dir/korc_interp.f90.o: src/CMakeFiles/xkorc.dir/korc_rnd_numbers.mod.stamp
 src/CMakeFiles/xkorc.dir/korc_interp.f90.o: src/CMakeFiles/xkorc.dir/korc_types.mod.stamp
 src/CMakeFiles/xkorc.dir/korc_interp.f90.o.provides.build: src/CMakeFiles/xkorc.dir/korc_interp.mod.stamp
@@ -166,6 +167,14 @@ src/CMakeFiles/xkorc.dir/korc_interp.mod.stamp: src/CMakeFiles/xkorc.dir/korc_in
 src/CMakeFiles/xkorc.dir/korc_interp.f90.o.provides.build:
 	$(CMAKE_COMMAND) -E touch src/CMakeFiles/xkorc.dir/korc_interp.f90.o.provides.build
 src/CMakeFiles/xkorc.dir/build: src/CMakeFiles/xkorc.dir/korc_interp.f90.o.provides.build
+
+src/CMakeFiles/xkorc.dir/korc_m3d_c1_interface.f90.o: src/CMakeFiles/xkorc.dir/korc_types.mod.stamp
+src/CMakeFiles/xkorc.dir/korc_m3d_c1_interface.f90.o.provides.build: src/CMakeFiles/xkorc.dir/korc_m3d_c1.mod.stamp
+src/CMakeFiles/xkorc.dir/korc_m3d_c1.mod.stamp: src/CMakeFiles/xkorc.dir/korc_m3d_c1_interface.f90.o
+	$(CMAKE_COMMAND) -E cmake_copy_f90_mod build/modules/korc_m3d_c1.mod src/CMakeFiles/xkorc.dir/korc_m3d_c1.mod.stamp GNU
+src/CMakeFiles/xkorc.dir/korc_m3d_c1_interface.f90.o.provides.build:
+	$(CMAKE_COMMAND) -E touch src/CMakeFiles/xkorc.dir/korc_m3d_c1_interface.f90.o.provides.build
+src/CMakeFiles/xkorc.dir/build: src/CMakeFiles/xkorc.dir/korc_m3d_c1_interface.f90.o.provides.build
 
 src/CMakeFiles/xkorc.dir/korc_ppusher.f90.o: src/CMakeFiles/xkorc.dir/korc_collisions.mod.stamp
 src/CMakeFiles/xkorc.dir/korc_ppusher.f90.o: src/CMakeFiles/xkorc.dir/korc_constants.mod.stamp

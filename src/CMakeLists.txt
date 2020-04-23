@@ -30,6 +30,7 @@ list (APPEND korc_sources
     korc_velocity_distribution.f90
     korc_c_random.cpp
     korc_random.f90
+    korc_m3d_c1_interface.f90    
     main.f90
 )
 
@@ -39,3 +40,4 @@ set_property(TARGET xkorc PROPERTY LINKER_LANGUAGE Fortran)
 target_link_libraries (xkorc ${MPI_Fortran_LIBRARIES})
 target_link_libraries (xkorc ${HDF5_LIBRARIES})
 target_link_libraries (xkorc ${EZSpline_LIBRARIES})
+target_link_libraries (xkorc ${FIO_LIBRARIES} ${M3DC1_LIBRARIES})

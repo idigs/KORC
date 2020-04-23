@@ -12,6 +12,7 @@ set(CMAKE_CXX_COMPILER_ID "GNU")
 # Preprocessor definitions for this target.
 set(CMAKE_TARGET_DEFINITIONS_CXX
   "DOUBLE_PRECISION"
+  "M3D_C1"
   "PARALLEL_RANDOM"
   )
 
@@ -21,6 +22,7 @@ set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "/opt/local/lib/openmpi-gcc8"
   "/opt/local/include"
   "/Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/mod"
+  "/usr/local/include"
   )
 set(CMAKE_DEPENDS_CHECK_Fortran
   "/Users/21b/Desktop/KORC/src/korc_HDF5.f90" "/Users/21b/Desktop/KORC/src/CMakeFiles/xkorc.dir/korc_HDF5.f90.o"
@@ -37,6 +39,7 @@ set(CMAKE_DEPENDS_CHECK_Fortran
   "/Users/21b/Desktop/KORC/src/korc_hpc.f90" "/Users/21b/Desktop/KORC/src/CMakeFiles/xkorc.dir/korc_hpc.f90.o"
   "/Users/21b/Desktop/KORC/src/korc_initialize.f90" "/Users/21b/Desktop/KORC/src/CMakeFiles/xkorc.dir/korc_initialize.f90.o"
   "/Users/21b/Desktop/KORC/src/korc_interp.f90" "/Users/21b/Desktop/KORC/src/CMakeFiles/xkorc.dir/korc_interp.f90.o"
+  "/Users/21b/Desktop/KORC/src/korc_m3d_c1_interface.f90" "/Users/21b/Desktop/KORC/src/CMakeFiles/xkorc.dir/korc_m3d_c1_interface.f90.o"
   "/Users/21b/Desktop/KORC/src/korc_ppusher.f90" "/Users/21b/Desktop/KORC/src/CMakeFiles/xkorc.dir/korc_ppusher.f90.o"
   "/Users/21b/Desktop/KORC/src/korc_profiles.f90" "/Users/21b/Desktop/KORC/src/CMakeFiles/xkorc.dir/korc_profiles.f90.o"
   "/Users/21b/Desktop/KORC/src/korc_random.f90" "/Users/21b/Desktop/KORC/src/CMakeFiles/xkorc.dir/korc_random.f90.o"
@@ -59,6 +62,7 @@ set(CMAKE_Fortran_SUBMODULE_EXT ".smod")
 # Preprocessor definitions for this target.
 set(CMAKE_TARGET_DEFINITIONS_Fortran
   "DOUBLE_PRECISION"
+  "M3D_C1"
   "PARALLEL_RANDOM"
   )
 
@@ -68,6 +72,7 @@ set(CMAKE_Fortran_TARGET_INCLUDE_PATH
   "/opt/local/lib/openmpi-gcc8"
   "/opt/local/include"
   "/Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/mod"
+  "/usr/local/include"
   )
 
 # Targets to which this target links.

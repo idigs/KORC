@@ -125,13 +125,16 @@ subroutine load_korc_params(params)
   LOGICAL :: SameRandSeed
   LOGICAL :: SC_E
   LOGICAL :: SC_E_add
+  INTEGER                           :: time_slice
+  REAL(rp)                          :: rmax,rmin,zmax,zmin
 
   NAMELIST /input_parameters/ restart,field_model,magnetic_field_filename, &
        simulation_time,snapshot_frequency,dt,num_species,radiation, &
        collisions,collisions_model,outputs_list,minimum_particle_energy, &
        HDF5_error_handling,orbit_model,field_eval,proceed,profile_model, &
        restart_overwrite_frequency,FokPlan,GC_rad_model,bound_electron_model, &
-       FO_GC_compare,SameRandSeed,SC_E,reinit,SC_E_add
+       FO_GC_compare,SameRandSeed,SC_E,reinit,SC_E_add,time_slice,rmax, &
+       rmin,zmax,zmin
 
   open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
        status='OLD',form='formatted')
@@ -151,6 +154,11 @@ subroutine load_korc_params(params)
   params%profile_model = TRIM(profile_model)
   params%field_model = TRIM(field_model)
   params%magnetic_field_filename = TRIM(magnetic_field_filename)
+  params%time_slice = time_slice
+  params%rmax = rmax
+  params%rmin = rmin
+  params%zmax = zmax
+  params%zmin = zmin
   params%minimum_particle_energy = minimum_particle_energy*C_E
   params%minimum_particle_g = 1.0_rp + params%minimum_particle_energy/ &
        (C_ME*C_C**2) ! Minimum value of relativistic gamma factor
@@ -311,6 +319,8 @@ subroutine define_time_step(params)
      
   end if
 
+!    write(6,*) 'dt',params%dt,'t_skip',params%t_skip
+  
   if (params%mpi_params%rank .EQ. 0) then
      write(6,'(/,"* * * * * TIME STEPPING PARAMETERS * * * * *")')
      write(6,'("Simulation time: ",E17.10," s")') params%simulation_time

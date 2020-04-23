@@ -755,13 +755,12 @@ CONTAINS
   end function cross
 
 
-  subroutine unitVectors(params,Xo,F,b1,b2,b3,flag)
+  subroutine unitVectors(params,vars,F,b1,b2,b3)
     !! @note Subrotuine that calculates an orthonormal basis using information 
     !! of the (local) magnetic field at position \(\mathbf{X}_0\). @endnote
     TYPE(KORC_PARAMS), INTENT(IN)                                      :: params
     !! Core KORC simulation parameters.
-    REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN)                  :: Xo
-    !! Array with the position of the simulated particles.
+    TYPE(PARTICLES), INTENT(INOUT)          :: vars
     TYPE(FIELDS), INTENT(IN)                                           :: F
     !! F An instance of the KORC derived type FIELDS.
     REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT)               :: b1
@@ -771,32 +770,13 @@ CONTAINS
     !!  Basis vector perpendicular to b1
     REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT)               :: b3
     !! Basis vector perpendicular to b1 and b2.
-    INTEGER(is), DIMENSION(:), ALLOCATABLE, OPTIONAL, INTENT(INOUT)    :: flag
-    !! Flag for each particle to decide whether it is being 
-    !! followed (flag=T) or not (flag=F).
-    TYPE(PARTICLES)                                                    :: vars
-    !! A temporary instance of the KORC derived type PARTICLES.
+
     INTEGER                                                            :: ii
     !! Iterator.
     INTEGER                                                            :: ppp
     !! Number of particles.
 
-    ppp = SIZE(Xo,1) ! Number of particles
-
-    ALLOCATE( vars%X(ppp,3) )
-    ALLOCATE( vars%Y(ppp,3) )
-    ALLOCATE( vars%B(ppp,3) )
-    ALLOCATE( vars%gradB(ppp,3) )
-    ALLOCATE( vars%curlb(ppp,3) )
-    ALLOCATE( vars%PSI_P(ppp) )
-    ALLOCATE( vars%E(ppp,3) )
-    ALLOCATE( vars%flagCon(ppp) )
-
-    vars%X = Xo
-    vars%flagCon = 1_idef
-    vars%B=0._rp
-    vars%PSI_P=0._rp
-
+    ppp = SIZE(vars%X,1) ! Number of particles
 
     call init_random_seed()
 
@@ -821,18 +801,6 @@ CONTAINS
        end if
     end do
 
-    if (PRESENT(flag)) then
-       flag = vars%flagCon
-    end if
-
-    DEALLOCATE( vars%X )
-    DEALLOCATE( vars%Y )
-    DEALLOCATE( vars%B )
-    DEALLOCATE( vars%PSI_P )
-    DEALLOCATE( vars%gradB )
-    DEALLOCATE( vars%curlb )
-    DEALLOCATE( vars%E )
-    DEALLOCATE( vars%flagCon )
   end subroutine unitVectors
 
 
@@ -868,6 +836,8 @@ CONTAINS
        !if (F%Efield.AND..NOT.F%Efield_in_file) then
        !   call analytical_electric_field_cyl(F,vars%Y,vars%E,vars%flagCon)
        !end if
+    else if (params%field_model.eq.'M3D_C1') then
+       call interp_fields(params,vars, F)
     else if (params%field_model.eq.'UNIFORM') then
 
        call uniform_fields(vars, F)
@@ -1511,7 +1481,7 @@ CONTAINS
           arg=MIN((PSIP_1D(ii)-PSIP(pp))**2._rp/ &
                (2._rp*sigPSIP**2._rp),100._rp)
           dintJphidPSIP(ii)=dintJphidPSIP(ii)+ &
-               exp(-arg)           
+               vpll(pp)*exp(-arg)           
        end do
        
     end do
@@ -1923,6 +1893,11 @@ CONTAINS
          dim_1D,dt_E_SC,Ip_exp,PSIp_lim,Dim2x1t,t0_2x1t,E_2x1t,ReInterp_2x1t, &
          ind0_2x1t
 
+#ifdef M3D_C1
+    F%M3D_C1_B = -1
+    F%M3D_C1_E = -1
+#endif
+    
     if (params%mpi_params%rank .EQ. 0) then
        write(6,'(/,"* * * * * * * * INITIALIZING FIELDS * * * * * * * *")')
     end if
@@ -2313,6 +2288,8 @@ CONTAINS
           F%dim_1D=dim_1D
           F%dt_E_SC=dt_E_SC
           F%Ip_exp=Ip_exp
+
+          write(6,*) 'dt_E_SC',F%dt_E_SC,'Ip_exp',Ip_exp
           
           call allocate_1D_FS_arrays(params,F)
           call load_1D_FS_from_hdf5(params,F)
@@ -2745,14 +2722,16 @@ CONTAINS
     F%subcycle_E_SC = FLOOR(F%dt_E_SC/params%dt,ip)
 
     sub_E_SC=F%subcycle_E_SC
-
-!    write(6,*) F%dt_E_SC,params%dt,F%subcycle_E_SC
     
     params%t_it_SC = params%t_skip/F%subcycle_E_SC
     params%t_skip=F%subcycle_E_SC
 
     F%dt_E_SC=params%t_skip*params%dt
 
+!    write(6,*) 'dt_E_SC',F%dt_E_SC,'dt',params%dt,'subcycle_E_SC', &
+!         F%subcycle_E_SC,'t_skip',params%t_skip, &
+!         't_it_SC',params%t_it_SC
+    
     if (params%mpi_params%rank.EQ.0) then
 
      write(6,'(/,"* * * * * SC_E1D SUBCYCLING * * * * *")')
@@ -3021,8 +3000,8 @@ CONTAINS
 
        if (params%SC_E) then
 
-          dset = "/OSPSIP"
-          gname = 'OSPSIP'
+          dset = "/OSPSIp"
+          gname = 'OSPSIp'
        
           call h5lexists_f(h5file_id,TRIM(gname),Efield,h5error)
 

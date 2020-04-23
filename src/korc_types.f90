@@ -1,6 +1,9 @@
 module korc_types
   !! @note Module containing the definition of KORC derived types and
   !! KORC variables, the building blocks of the code. @endnote
+#ifdef M3D_C1
+  USE, INTRINSIC :: iso_c_binding
+#endif
   implicit none
 
   ! * * * * * * * * * * * * * * * * * * * * !
@@ -253,7 +256,11 @@ module korc_types
      LOGICAL :: SameRandSeed
      LOGICAL :: SC_E
      LOGICAL :: SC_E_add
-     
+     INTEGER                      :: time_slice !< M3D-C1 time slice to use.
+     REAL(rp)                     :: rmax !< Maximum r for M3D-C1 fields.
+     REAL(rp)                     :: rmin !< Minimum r for M3D-C1 fields.
+     REAL(rp)                     :: zmax !< Maximum z for M3D-C1 fields.
+     REAL(rp)                     :: zmin !< Minimum z for M3D-C1 fields.
   END TYPE KORC_PARAMS
 
 
@@ -340,6 +347,11 @@ module korc_types
      REAL(rp), DIMENSION(:), ALLOCATABLE 	:: wt 
      !! Weight of each electron. This is used when sampling weighted
      !! PDFs and in the synthetic camera diagnostic.
+#ifdef M3D_C1
+     TYPE(C_PTR), DIMENSION(:), ALLOCATABLE :: hint
+     !! Hint for M3D_C1 interpolation.
+     LOGICAL                                :: cart
+#endif
   END TYPE PARTICLES
 
 
@@ -590,6 +602,14 @@ module korc_types
      LOGICAL 					:: E_2x1t,ReInterp_2x1t
      REAL(rp)  :: t0_2x1t
      INTEGER  :: ind0_2x1t,ind_2x1t
+#ifdef M3D_C1
+     INTEGER (C_INT)                         :: M3D_C1_B
+     !! An M3D-C1 magnetic field.
+     INTEGER (C_INT)                         :: M3D_C1_E
+     !! An M3D-C1 Electric field.
+     INTEGER (C_INT)                         :: M3D_C1_A
+     !! An M3D-C1 vector potential.
+#endif
   END TYPE FIELDS
 
 
@@ -696,6 +716,11 @@ module korc_types
      !! Full path to the HDF5 file containing the pre-computed plasma profiles.
      LOGICAL 					:: axisymmetric 
      !! Flag to indicate if the plasma profiles are axisymmetric.
+#ifdef M3D_C1
+     INTEGER (C_INT)                         :: M3D_C1_ne
+     INTEGER (C_INT)                         :: M3D_C1_te
+     INTEGER (C_INT)                         :: M3D_C1_zeff
+#endif
   END TYPE PROFILES
 
 end module korc_types

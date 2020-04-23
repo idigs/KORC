@@ -1736,10 +1736,17 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
   PSIp_lim=F%PSIp_lim
   PSIp0=F%PSIP_min
 
-  min_R=minval(F%X%R)
-  max_R=maxval(F%X%R)
-  min_Z=minval(F%X%Z)
-  max_Z=maxval(F%X%Z)
+  if (params%field_model.eq.'M3D_C1') then
+     min_R=params%rmin/params%cpp%length
+     max_R=params%rmax/params%cpp%length
+     min_Z=params%zmin/params%cpp%length
+     max_Z=params%zmax/params%cpp%length
+  else
+     min_R=minval(F%X%R)
+     max_R=maxval(F%X%R)
+     min_Z=minval(F%X%Z)
+     max_Z=maxval(F%X%Z)
+  end if
 
   sigma=spp%sigmaR*params%cpp%length
   
@@ -1890,8 +1897,8 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
            spp%vars%Y(1,2)=0
            spp%vars%Y(1,3)=Z_buffer
 
-           !write(6,*) 'R',R_buffer
-           !write(6,*) 'Z',Z_buffer
+           write(6,*) 'R',R_buffer
+           write(6,*) 'Z',Z_buffer
            
            call get_fields(params,spp%vars,F)
            psi0=spp%vars%PSI_P(1)
@@ -1917,10 +1924,10 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
         psi1=spp%vars%PSI_P(1)
         PSIN1=(psi1-PSIP0)/(PSIp_lim-PSIP0)
 
-!        write(6,*) 'R',R_test
-!        write(6,*) 'Z',Z_test
-!        write(6,*) 'PSI',psi1
-!        write(6,*) 'PSIN',PSIN
+        write(6,*) 'R',R_test
+        write(6,*) 'Z',Z_test
+        write(6,*) 'PSI',psi1
+        write(6,*) 'PSIN',PSIN
                 
         f1=fRE_H_3D(F,eta_test,G_test,R_test,Z_test,spp%Ro,spp%Zo)    
 !        f1=fRE_H(eta_test,G_test)
