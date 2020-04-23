@@ -16,9 +16,6 @@ program main
   use korc_finalize
   use korc_profiles
 
-  use korc_synthetic_camera
-  use korc_binning_diagnostic
-
   implicit none
 
   TYPE(KORC_PARAMS) :: params
@@ -121,13 +118,7 @@ program main
      endif
         
   endif
-#endif
-  
-  call initialize_synthetic_camera(params,F)
-  !! <h4>7\. Initialize Synthetic Cameras</h4>
-
-  call initialize_binning_diagnostic(params)
-  !! <h4>8\. Initialize Binning Diagnostic</h4>
+#endif  
 
   call compute_charcs_plasma_params(params,spp,F)
   !! <h4>9\. Compute Characteristic Plasma Parameters</h4>
@@ -306,10 +297,6 @@ program main
      
      call save_simulation_outputs(params,spp,F) ! Save initial condition
 
-     call synthetic_camera(params,spp) 
-
-     call binning_diagnostic(params,spp) 
-
   end if
   
 
@@ -331,8 +318,6 @@ program main
         params%it = it-1_ip+params%t_skip
 
         call save_simulation_outputs(params,spp,F)
-        call synthetic_camera(params,spp) ! Synthetic camera
-        call binning_diagnostic(params,spp) ! Binning diagnostic
         call save_restart_variables(params,spp,F)
      end do
   end if
@@ -349,33 +334,9 @@ program main
         params%it = it-1_ip+params%t_skip
 
         call save_simulation_outputs(params,spp,F)
-        call synthetic_camera(params,spp) ! Synthetic camera
-        call binning_diagnostic(params,spp) ! Binning diagnostic
         call save_restart_variables(params,spp,F)
      end do
   end if
-
-!  if (params%orbit_model.eq.'FO'.and.params%field_eval.eq.'interp') then
-!     do it=params%ito,params%t_steps
-!        params%time = params%init_time+REAL(it,rp)*params%dt
-!        params%it = it
-!        if ( modulo(it,params%output_cadence) .EQ. 0_ip ) then
-
-!           call advance_FOinterp_vars(params,spp,params%dt, &
-!                .TRUE.,.FALSE.)             
-
-!           call save_simulation_outputs(params,spp)
-!           call synthetic_camera(params,spp) ! Synthetic camera
-!           call binning_diagnostic(params,spp) ! Binning diagnostic
-!           call save_restart_variables(params,spp)
-!        else
-           
-!           call advance_FOinterp_vars(params,spp,params%dt, &
-!                .FALSE.,.FALSE.)
-
-!        end if
-!     end do
-!  end if
 
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'eqn') then
      do it=params%ito,params%t_steps,params%t_skip*params%t_it_SC
@@ -386,8 +347,6 @@ program main
         params%it = it-1_ip+params%t_skip*params%t_it_SC
 
         call save_simulation_outputs(params,spp,F)
-        call synthetic_camera(params,spp) ! Synthetic camera
-        call binning_diagnostic(params,spp) ! Binning diagnostic
         call save_restart_variables(params,spp,F)
         
      end do
@@ -405,8 +364,6 @@ program main
 
         
         call save_simulation_outputs(params,spp,F)
-        call synthetic_camera(params,spp) ! Synthetic camera
-        call binning_diagnostic(params,spp) ! Binning diagnostic
         call save_restart_variables(params,spp,F)
      end do
   end if
@@ -424,8 +381,6 @@ program main
         params%it = it-1_ip+params%t_skip
         
         call save_simulation_outputs(params,spp,F)
-        call synthetic_camera(params,spp) ! Synthetic camera
-        call binning_diagnostic(params,spp) ! Binning diagnostic
         call save_restart_variables(params,spp,F)
      end do
   end if
@@ -443,8 +398,6 @@ program main
         params%it = it-1_ip+params%t_skip
 
         call save_simulation_outputs(params,spp,F)
-        call synthetic_camera(params,spp) ! Synthetic camera
-        call binning_diagnostic(params,spp) ! Binning diagnostic
         call save_restart_variables(params,spp,F)
         
      end do
@@ -467,8 +420,6 @@ program main
         params%it = it-1_ip+params%t_skip
 
         call save_simulation_outputs(params,spp,F)
-        call synthetic_camera(params,spp) ! Synthetic camera
-        call binning_diagnostic(params,spp) ! Binning diagnostic
 
         F%ind_2x1t=F%ind_2x1t+1_ip
         if (params%mpi_params%rank .EQ. 0) then
@@ -492,8 +443,6 @@ program main
         params%it = it-1_ip+params%t_skip
 
         call save_simulation_outputs(params,spp,F)
-        call synthetic_camera(params,spp) ! Synthetic camera
-        call binning_diagnostic(params,spp) ! Binning diagnostic
         call save_restart_variables(params,spp,F)
      end do
   end if
@@ -509,8 +458,6 @@ program main
         params%it = it-1_ip+params%t_skip
 
         call save_simulation_outputs(params,spp,F)
-        call synthetic_camera(params,spp) ! Synthetic camera
-        call binning_diagnostic(params,spp) ! Binning diagnostic
         call save_restart_variables(params,spp,F)
      end do
   end if
@@ -528,8 +475,6 @@ program main
         params%it = it-1_ip+params%t_skip
 
         call save_simulation_outputs(params,spp,F)
-        call synthetic_camera(params,spp) ! Synthetic camera
-        call binning_diagnostic(params,spp) ! Binning diagnostic
         call save_restart_variables(params,spp,F)
      end do
   end if
@@ -545,8 +490,6 @@ program main
         params%it = it-1_ip+params%t_skip
 
         call save_simulation_outputs(params,spp,F)
-        call synthetic_camera(params,spp) ! Synthetic camera
-        call binning_diagnostic(params,spp) ! Binning diagnostic
         call save_restart_variables(params,spp,F)
      end do
   end if
@@ -561,8 +504,6 @@ program main
         params%it = it-1_ip+params%t_skip
 
         call save_simulation_outputs(params,spp,F)
-        call synthetic_camera(params,spp) ! Synthetic camera
-        call binning_diagnostic(params,spp) ! Binning diagnostic
         call save_restart_variables(params,spp,F)
      end do
   end if

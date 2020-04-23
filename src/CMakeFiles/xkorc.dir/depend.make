@@ -30,17 +30,6 @@ src/CMakeFiles/xkorc.dir/korc_avalanche.f90.o.provides.build:
 	$(CMAKE_COMMAND) -E touch src/CMakeFiles/xkorc.dir/korc_avalanche.f90.o.provides.build
 src/CMakeFiles/xkorc.dir/build: src/CMakeFiles/xkorc.dir/korc_avalanche.f90.o.provides.build
 
-src/CMakeFiles/xkorc.dir/korc_binning_diagnostic.f90.o: src/CMakeFiles/xkorc.dir/korc_constants.mod.stamp
-src/CMakeFiles/xkorc.dir/korc_binning_diagnostic.f90.o: src/CMakeFiles/xkorc.dir/korc_hdf5.mod.stamp
-src/CMakeFiles/xkorc.dir/korc_binning_diagnostic.f90.o: src/CMakeFiles/xkorc.dir/korc_hpc.mod.stamp
-src/CMakeFiles/xkorc.dir/korc_binning_diagnostic.f90.o: src/CMakeFiles/xkorc.dir/korc_types.mod.stamp
-src/CMakeFiles/xkorc.dir/korc_binning_diagnostic.f90.o.provides.build: src/CMakeFiles/xkorc.dir/korc_binning_diagnostic.mod.stamp
-src/CMakeFiles/xkorc.dir/korc_binning_diagnostic.mod.stamp: src/CMakeFiles/xkorc.dir/korc_binning_diagnostic.f90.o
-	$(CMAKE_COMMAND) -E cmake_copy_f90_mod build/modules/korc_binning_diagnostic.mod src/CMakeFiles/xkorc.dir/korc_binning_diagnostic.mod.stamp GNU
-src/CMakeFiles/xkorc.dir/korc_binning_diagnostic.f90.o.provides.build:
-	$(CMAKE_COMMAND) -E touch src/CMakeFiles/xkorc.dir/korc_binning_diagnostic.f90.o.provides.build
-src/CMakeFiles/xkorc.dir/build: src/CMakeFiles/xkorc.dir/korc_binning_diagnostic.f90.o.provides.build
-
 src/CMakeFiles/xkorc.dir/korc_collisions.f90.o: src/CMakeFiles/xkorc.dir/korc_constants.mod.stamp
 src/CMakeFiles/xkorc.dir/korc_collisions.f90.o: src/CMakeFiles/xkorc.dir/korc_fields.mod.stamp
 src/CMakeFiles/xkorc.dir/korc_collisions.f90.o: src/CMakeFiles/xkorc.dir/korc_hdf5.mod.stamp
@@ -249,18 +238,6 @@ src/CMakeFiles/xkorc.dir/korc_spatial_distribution.f90.o.provides.build:
 	$(CMAKE_COMMAND) -E touch src/CMakeFiles/xkorc.dir/korc_spatial_distribution.f90.o.provides.build
 src/CMakeFiles/xkorc.dir/build: src/CMakeFiles/xkorc.dir/korc_spatial_distribution.f90.o.provides.build
 
-src/CMakeFiles/xkorc.dir/korc_synthetic_camera.f90.o: src/CMakeFiles/xkorc.dir/korc_constants.mod.stamp
-src/CMakeFiles/xkorc.dir/korc_synthetic_camera.f90.o: src/CMakeFiles/xkorc.dir/korc_hdf5.mod.stamp
-src/CMakeFiles/xkorc.dir/korc_synthetic_camera.f90.o: src/CMakeFiles/xkorc.dir/korc_hpc.mod.stamp
-src/CMakeFiles/xkorc.dir/korc_synthetic_camera.f90.o: src/CMakeFiles/xkorc.dir/korc_types.mod.stamp
-src/CMakeFiles/xkorc.dir/korc_synthetic_camera.f90.o: src/CMakeFiles/xkorc.dir/special_functions.mod.stamp
-src/CMakeFiles/xkorc.dir/korc_synthetic_camera.f90.o.provides.build: src/CMakeFiles/xkorc.dir/korc_synthetic_camera.mod.stamp
-src/CMakeFiles/xkorc.dir/korc_synthetic_camera.mod.stamp: src/CMakeFiles/xkorc.dir/korc_synthetic_camera.f90.o
-	$(CMAKE_COMMAND) -E cmake_copy_f90_mod build/modules/korc_synthetic_camera.mod src/CMakeFiles/xkorc.dir/korc_synthetic_camera.mod.stamp GNU
-src/CMakeFiles/xkorc.dir/korc_synthetic_camera.f90.o.provides.build:
-	$(CMAKE_COMMAND) -E touch src/CMakeFiles/xkorc.dir/korc_synthetic_camera.f90.o.provides.build
-src/CMakeFiles/xkorc.dir/build: src/CMakeFiles/xkorc.dir/korc_synthetic_camera.f90.o.provides.build
-
 src/CMakeFiles/xkorc.dir/korc_types.f90.o.provides.build: src/CMakeFiles/xkorc.dir/korc_types.mod.stamp
 src/CMakeFiles/xkorc.dir/korc_types.mod.stamp: src/CMakeFiles/xkorc.dir/korc_types.f90.o
 	$(CMAKE_COMMAND) -E cmake_copy_f90_mod build/modules/korc_types.mod src/CMakeFiles/xkorc.dir/korc_types.mod.stamp GNU
@@ -295,7 +272,6 @@ src/CMakeFiles/xkorc.dir/korc_velocity_distribution.f90.o.provides.build:
 	$(CMAKE_COMMAND) -E touch src/CMakeFiles/xkorc.dir/korc_velocity_distribution.f90.o.provides.build
 src/CMakeFiles/xkorc.dir/build: src/CMakeFiles/xkorc.dir/korc_velocity_distribution.f90.o.provides.build
 
-src/CMakeFiles/xkorc.dir/main.f90.o: src/CMakeFiles/xkorc.dir/korc_binning_diagnostic.mod.stamp
 src/CMakeFiles/xkorc.dir/main.f90.o: src/CMakeFiles/xkorc.dir/korc_collisions.mod.stamp
 src/CMakeFiles/xkorc.dir/main.f90.o: src/CMakeFiles/xkorc.dir/korc_fields.mod.stamp
 src/CMakeFiles/xkorc.dir/main.f90.o: src/CMakeFiles/xkorc.dir/korc_finalize.mod.stamp
@@ -305,7 +281,6 @@ src/CMakeFiles/xkorc.dir/main.f90.o: src/CMakeFiles/xkorc.dir/korc_initialize.mo
 src/CMakeFiles/xkorc.dir/main.f90.o: src/CMakeFiles/xkorc.dir/korc_interp.mod.stamp
 src/CMakeFiles/xkorc.dir/main.f90.o: src/CMakeFiles/xkorc.dir/korc_ppusher.mod.stamp
 src/CMakeFiles/xkorc.dir/main.f90.o: src/CMakeFiles/xkorc.dir/korc_profiles.mod.stamp
-src/CMakeFiles/xkorc.dir/main.f90.o: src/CMakeFiles/xkorc.dir/korc_synthetic_camera.mod.stamp
 src/CMakeFiles/xkorc.dir/main.f90.o: src/CMakeFiles/xkorc.dir/korc_types.mod.stamp
 src/CMakeFiles/xkorc.dir/main.f90.o: src/CMakeFiles/xkorc.dir/korc_units.mod.stamp
 

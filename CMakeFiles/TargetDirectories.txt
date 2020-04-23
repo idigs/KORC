@@ -1,5 +1,0 @@
-/Users/21b/Desktop/KORC/CMakeFiles/rebuild_cache.dir
-/Users/21b/Desktop/KORC/CMakeFiles/edit_cache.dir
-/Users/21b/Desktop/KORC/src/CMakeFiles/rebuild_cache.dir
-/Users/21b/Desktop/KORC/src/CMakeFiles/edit_cache.dir
-/Users/21b/Desktop/KORC/src/CMakeFiles/xkorc.dir

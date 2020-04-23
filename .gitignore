@@ -1,0 +1,20 @@
+# ignore build directory
+/build
+
+# ignore all CMakeFile directories
+**/CMakeFiles
+
+# ignore all CmakeCache.txt files
+CMakeCache.txt
+
+# ignore all cmake_install.cmake files
+cmake_install.cmake
+
+# ignore all Makefile files
+Makefile
+
+# ignore all previous version files
+*~
+
+# ignore all unsaved files
+*#

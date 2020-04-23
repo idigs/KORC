@@ -1,4 +1,4 @@
-#!/bin/bash
+xs#!/bin/bash
 #
 #  setup_cmake Chooses the correct cmake build command for a machine.
 #

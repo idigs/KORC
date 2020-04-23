@@ -9,7 +9,6 @@ list (APPEND korc_sources
     korc_constants.f90
     korc_finalize.f90
     korc_ppusher.f90
-    korc_synthetic_camera.f90
     main_documentation_page.f90
     korc_HDF5.f90
     korc_coords.f90
@@ -23,7 +22,6 @@ list (APPEND korc_sources
     korc_rnd_numbers.f90
     korc_units.f90
     special_fun_subroutines.f90
-    korc_binning_diagnostic.f90
     korc_experimental_pdf.f90
     korc_initialize.f90
     korc_simple_equilibrium_pdf.f90

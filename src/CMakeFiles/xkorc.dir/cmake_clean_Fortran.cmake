@@ -4,10 +4,6 @@ FILE(REMOVE
   "../build/modules/KORC_AVALANCHE.mod"
   "CMakeFiles/xkorc.dir/korc_avalanche.mod.stamp"
 
-  "../build/modules/korc_binning_diagnostic.mod"
-  "../build/modules/KORC_BINNING_DIAGNOSTIC.mod"
-  "CMakeFiles/xkorc.dir/korc_binning_diagnostic.mod.stamp"
-
   "../build/modules/korc_collisions.mod"
   "../build/modules/KORC_COLLISIONS.mod"
   "CMakeFiles/xkorc.dir/korc_collisions.mod.stamp"
@@ -83,10 +79,6 @@ FILE(REMOVE
   "../build/modules/korc_spatial_distribution.mod"
   "../build/modules/KORC_SPATIAL_DISTRIBUTION.mod"
   "CMakeFiles/xkorc.dir/korc_spatial_distribution.mod.stamp"
-
-  "../build/modules/korc_synthetic_camera.mod"
-  "../build/modules/KORC_SYNTHETIC_CAMERA.mod"
-  "CMakeFiles/xkorc.dir/korc_synthetic_camera.mod.stamp"
 
   "../build/modules/korc_types.mod"
   "../build/modules/KORC_TYPES.mod"
