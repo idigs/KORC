@@ -1534,16 +1534,17 @@ CONTAINS
     end if
   end subroutine check_if_in_fields_domain
   
-  subroutine check_if_in_fields_domain_p(F,Y_R,Y_PHI,Y_Z,flag)
+  subroutine check_if_in_fields_domain_p(pchunk,F,Y_R,Y_PHI,Y_Z,flag)
     !! @note Subrotuine that checks if particles in the simulation are within
     !! the spatial domain where interpolants and fields are known. @endnote
     !! External fields and interpolants can have different spatial domains where
     !! they are defined. Therefore, it is necessary to
     !! check if a given particle has left these spatial domains to
     !! stop following it, otherwise this will cause an error in the simulation.
+    INTEGER, INTENT(IN)  :: pchunk
     TYPE(FIELDS), INTENT(IN)                                   :: F
-    REAL(rp), DIMENSION(8),  INTENT(IN)      :: Y_R,Y_PHI,Y_Z    
-    INTEGER(is), DIMENSION(8), INTENT(INOUT)  :: flag
+    REAL(rp), DIMENSION(pchunk),  INTENT(IN)      :: Y_R,Y_PHI,Y_Z    
+    INTEGER(is), DIMENSION(pchunk), INTENT(INOUT)  :: flag
     !! Flag that determines whether particles are followed in the
     !! simulation (flag=1), or not (flag=0).
     INTEGER                                                :: IR
@@ -1580,7 +1581,7 @@ CONTAINS
        if (F%Dim2x1t) then
           !$OMP SIMD
           !       !$OMP&  aligned(IR,IPHI,IZ)
-          do pp=1_idef,8_idef
+          do pp=1_idef,pchunk
 
              IR = INT(FLOOR((Y_R(pp)  - fields_domain%Ro + &
                   0.5_rp*fields_domain%DR)/fields_domain%DR) + 1.0_rp,idef)
@@ -1618,7 +1619,7 @@ CONTAINS
        else
           !$OMP SIMD
           !       !$OMP&  aligned(IR,IPHI,IZ)
-          do pp=1_idef,8_idef
+          do pp=1_idef,pchunk
 
              IR = INT(FLOOR((Y_R(pp)  - fields_domain%Ro + &
                   0.5_rp*fields_domain%DR)/fields_domain%DR) + 1.0_rp,idef)
@@ -1653,7 +1654,7 @@ CONTAINS
     else if (ALLOCATED(fields_domain%FLAG2D)) then
        !$OMP SIMD
 !       !$OMP& aligned(IR,IZ)
-       do pp=1_idef,8_idef
+       do pp=1_idef,pchunk
           IR = INT(FLOOR((Y_R(pp)  - fields_domain%Ro + &
                0.5_rp*fields_domain%DR)/fields_domain%DR) + 1.0_rp,idef)
           IZ = INT(FLOOR((Y_Z(pp)  + ABS(fields_domain%Zo) + &
@@ -1912,9 +1913,9 @@ CONTAINS
     end if
   end subroutine check_if_in_profiles_domain
 
-  subroutine check_if_in_profiles_domain_p(Y_R,Y_PHI,Y_Z,flag)
+  subroutine check_if_in_profiles_domain_p(pchunk,Y_R,Y_PHI,Y_Z,flag)
+    INTEGER, INTENT(IN)  :: pchunk
     REAL(rp), DIMENSION(8),  INTENT(IN)      :: Y_R,Y_PHI,Y_Z
-
     INTEGER(is), DIMENSION(8), INTENT(INOUT)  :: flag
     !! Flag that determines whether particles are followed
     !! in the simulation (flag=1), or not (flag=0).
@@ -1939,7 +1940,7 @@ CONTAINS
     if (ALLOCATED(profiles_domain%FLAG3D)) then
        !$OMP SIMD
 !       !$OMP& aligned(IR,IPHI,IZ)
-       do pp=1_idef,8_idef
+       do pp=1_idef,pchunk
           IR = INT(FLOOR((Y_R(pp)  - profiles_domain%Ro + &
                0.5_rp*profiles_domain%DR)/profiles_domain%DR) + 1.0_rp,idef)
           IPHI = INT(FLOOR((Y_PHI(pp)  + 0.5_rp*profiles_domain%DPHI)/ &
@@ -1956,7 +1957,7 @@ CONTAINS
     else
        !$OMP SIMD
 !       !$OMP& aligned(IR,IZ)
-       do pp=1_idef,8_idef
+       do pp=1_idef,pchunk
           IR = INT(FLOOR((Y_R(pp)  - profiles_domain%Ro + &
                0.5_rp*profiles_domain%DR)/profiles_domain%DR) + 1.0_rp,idef)
           IZ = INT(FLOOR((Y_Z(pp)  + ABS(profiles_domain%Zo) + &
@@ -2201,34 +2202,35 @@ subroutine interp_2D_curlbfields(Y,curlb,flag)
   DEALLOCATE(F)
 end subroutine interp_2D_curlbfields
 
-subroutine interp_FOfields_p(F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,PSIp, &
-     flag_cache)
+subroutine interp_FOfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
+     E_X,E_Y,E_Z,PSIp, flag_cache)
+  INTEGER, INTENT(IN)  :: pchunk
   TYPE(FIELDS), INTENT(IN)                               :: F
-  REAL(rp),DIMENSION(8),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
-  REAL(rp),DIMENSION(8),INTENT(OUT)   :: B_X,B_Y,B_Z
-  REAL(rp),DIMENSION(8)   :: B_R,B_PHI  
-  REAL(rp),DIMENSION(8),INTENT(OUT)   :: E_X,E_Y,E_Z
-  REAL(rp),DIMENSION(8),INTENT(OUT)   :: PSIp
-  REAL(rp),DIMENSION(8)   :: E_R,E_PHI
-  REAL(rp),DIMENSION(8)   :: cP,sP  
+  REAL(rp),DIMENSION(pchunk),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: B_X,B_Y,B_Z
+  REAL(rp),DIMENSION(pchunk)   :: B_R,B_PHI  
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: E_X,E_Y,E_Z
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: PSIp
+  REAL(rp),DIMENSION(pchunk)   :: E_R,E_PHI
+  REAL(rp),DIMENSION(pchunk)   :: cP,sP  
   !  INTEGER(ip) :: ezerr
   INTEGER                                      :: cc
   !! Particle chunk iterator.
-  INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
+  INTEGER(is),DIMENSION(pchunk),INTENT(INOUT)   :: flag_cache
 
-  call check_if_in_fields_domain_p(F,Y_R,Y_PHI,Y_Z,flag_cache)
+  call check_if_in_fields_domain_p(pchunk,F,Y_R,Y_PHI,Y_Z,flag_cache)
 
-  call EZspline_interp(bfield_2d%A,8,Y_R, Y_Z,PSIp, ezerr)
+  call EZspline_interp(bfield_2d%A,pchunk,Y_R, Y_Z,PSIp, ezerr)
   call EZspline_error(ezerr)
 
   call EZspline_interp(bfield_2d%R,bfield_2d%PHI,bfield_2d%Z,efield_2d%R, &
-       efield_2d%PHI,efield_2d%Z,8,Y_R,Y_Z,B_R,B_PHI,B_Z, &
+       efield_2d%PHI,efield_2d%Z,pchunk,Y_R,Y_Z,B_R,B_PHI,B_Z, &
        E_R,E_PHI,E_Z,ezerr)
   call EZspline_error(ezerr)
  
   !$OMP SIMD
 !  !$OMP& aligned (cP,sP,B_X,B_Y,E_X,E_Y,Y_PHI,B_R,B_PHI,E_R,E_PHI)
-  do cc=1_idef,8_idef
+  do cc=1_idef,pchunk
      cP(cc)=cos(Y_PHI(cc))
      sP(cc)=sin(Y_PHI(cc))
      
@@ -2243,35 +2245,36 @@ subroutine interp_FOfields_p(F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,PSIp, &
   
 end subroutine interp_FOfields_p
 
-subroutine interp_FOfields1_p(F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,PSIp, &
+subroutine interp_FOfields1_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,PSIp, &
      flag_cache)
+  INTEGER, INTENT(IN)  :: pchunk
   TYPE(FIELDS), INTENT(IN)                               :: F
-  REAL(rp),DIMENSION(8),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
-  REAL(rp),DIMENSION(8),INTENT(OUT)   :: B_X,B_Y,B_Z
-  REAL(rp),DIMENSION(8)   :: B_R,B_PHI  
-  REAL(rp),DIMENSION(8),INTENT(OUT)   :: E_X,E_Y,E_Z
-  REAL(rp),DIMENSION(8),INTENT(OUT)   :: PSIp
-  REAL(rp),DIMENSION(8)   :: E_R,E_PHI
-  REAL(rp),DIMENSION(8)   :: cP,sP  
+  REAL(rp),DIMENSION(pchunk),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: B_X,B_Y,B_Z
+  REAL(rp),DIMENSION(pchunk)   :: B_R,B_PHI  
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: E_X,E_Y,E_Z
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: PSIp
+  REAL(rp),DIMENSION(pchunk)   :: E_R,E_PHI
+  REAL(rp),DIMENSION(pchunk)   :: cP,sP  
   !  INTEGER(ip) :: ezerr
   INTEGER                                      :: cc
   !! Particle chunk iterator.
-  INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
+  INTEGER(is),DIMENSION(pchunk),INTENT(INOUT)   :: flag_cache
 
-  call check_if_in_fields_domain_p(F,Y_R,Y_PHI,Y_Z,flag_cache)
+  call check_if_in_fields_domain_p(pchunk,F,Y_R,Y_PHI,Y_Z,flag_cache)
 
-  call EZspline_interp(bfield_2d%A,8,Y_R, Y_Z,PSIp, ezerr)
+  call EZspline_interp(bfield_2d%A,pchunk,Y_R, Y_Z,PSIp, ezerr)
   call EZspline_error(ezerr)
   
-  call calculate_magnetic_field_p(F,Y_R,Y_Z,B_R,B_PHI,B_Z)
+  call calculate_magnetic_field_p(pchunk,F,Y_R,Y_Z,B_R,B_PHI,B_Z)
   
-  call EZspline_interp(efield_2d%R,efield_2d%PHI,efield_2d%Z,8,Y_R,Y_Z, &
+  call EZspline_interp(efield_2d%R,efield_2d%PHI,efield_2d%Z,pchunk,Y_R,Y_Z, &
        E_R,E_PHI,E_Z,ezerr)
   call EZspline_error(ezerr)
  
   !$OMP SIMD
 !  !$OMP& aligned (cP,sP,B_X,B_Y,E_X,E_Y,Y_PHI,B_R,B_PHI,E_R,E_PHI)
-  do cc=1_idef,8_idef
+  do cc=1_idef,pchunk
      cP(cc)=cos(Y_PHI(cc))
      sP(cc)=sin(Y_PHI(cc))
      
@@ -2286,13 +2289,13 @@ subroutine interp_FOfields1_p(F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,PSIp, &
   
 end subroutine interp_FOfields1_p
 
-subroutine interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag_cache)
+subroutine interp_FOcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag_cache)
+  INTEGER, INTENT(IN)  :: pchunk
+  REAL(rp),DIMENSION(pchunk),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: ne,Te,Zeff
+  INTEGER(is),DIMENSION(pchunk),INTENT(INOUT)   :: flag_cache
 
-  REAL(rp),DIMENSION(8),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
-  REAL(rp),DIMENSION(8),INTENT(OUT)   :: ne,Te,Zeff
-  INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
-
-  call check_if_in_profiles_domain_p(Y_R,Y_PHI,Y_Z,flag_cache)
+  call check_if_in_profiles_domain_p(pchunk,Y_R,Y_PHI,Y_Z,flag_cache)
 !  write(6,'("YR: ",E17.10)') Y_R(1)
 !  write(6,'("YPHI: ",E17.10)') Y_PHI(1)
 !  write(6,'("YZ: ",E17.10)') Y_Z(1)
@@ -2301,7 +2304,7 @@ subroutine interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag_cache)
 !  write(6,'("Te_interp_Z",E17.10)') profiles_2d%Te%x2
   
   call EZspline_interp(profiles_2d%ne,profiles_2d%Te, &
-       profiles_2d%Zeff,8,Y_R,Y_Z,ne,Te,Zeff,ezerr)
+       profiles_2d%Zeff,pchunk,Y_R,Y_Z,ne,Te,Zeff,ezerr)
   ! this will call PSPLINE routine EZspline_interp2_bmag_cloud_r8 as there
   ! is the same number of entries
   call EZspline_error(ezerr)
@@ -2309,84 +2312,86 @@ subroutine interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag_cache)
   
 end subroutine interp_FOcollision_p
 
-subroutine interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
+subroutine interp_fields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
      curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,flag_cache)
+  INTEGER, INTENT(IN)  :: pchunk
   TYPE(FIELDS), INTENT(IN)                               :: F
-  REAL(rp),DIMENSION(8),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
-  REAL(rp),DIMENSION(8),INTENT(OUT)   :: B_R,B_PHI,B_Z
-  REAL(rp),DIMENSION(8),INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
-  REAL(rp),DIMENSION(8),INTENT(OUT)   :: curlB_R,curlB_PHI,curlB_Z
-  REAL(rp),DIMENSION(8),INTENT(OUT)   :: E_R,E_PHI,E_Z
-  INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
+  REAL(rp),DIMENSION(pchunk),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: B_R,B_PHI,B_Z
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: curlB_R,curlB_PHI,curlB_Z
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: E_R,E_PHI,E_Z
+  INTEGER(is),DIMENSION(pchunk),INTENT(INOUT)   :: flag_cache
 
   !write(6,*) Y_R,Y_Z,flag_cache
   
-  call check_if_in_fields_domain_p(F,Y_R,Y_PHI,Y_Z,flag_cache)
+  call check_if_in_fields_domain_p(pchunk,F,Y_R,Y_PHI,Y_Z,flag_cache)
   
   call EZspline_interp(bfield_2d%R,bfield_2d%PHI,bfield_2d%Z,efield_2d%R, &
        efield_2d%PHI,efield_2d%Z,gradB_2d%R,gradB_2d%PHI,gradB_2d%Z, &
-       curlb_2d%R,curlb_2d%PHI,curlb_2d%Z,8,Y_R,Y_Z,B_R,B_PHI,B_Z, &
+       curlb_2d%R,curlb_2d%PHI,curlb_2d%Z,pchunk,Y_R,Y_Z,B_R,B_PHI,B_Z, &
        E_R,E_PHI,E_Z,gradB_R,gradB_PHI,gradB_Z,curlb_R,curlb_PHI,curlb_Z, &
        ezerr)
   call EZspline_error(ezerr)
 
 end subroutine interp_fields_p
 
-subroutine interp_fields_3D_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
+subroutine interp_fields_3D_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
      curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,flag_cache)
+  INTEGER, INTENT(IN)  :: pchunk
   TYPE(FIELDS), INTENT(IN)                               :: F
-  REAL(rp),DIMENSION(8),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
-  REAL(rp),DIMENSION(8),INTENT(OUT)   :: B_R,B_PHI,B_Z
-  REAL(rp),DIMENSION(8),INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
-  REAL(rp),DIMENSION(8),INTENT(OUT)   :: curlB_R,curlB_PHI,curlB_Z
-  REAL(rp),DIMENSION(8),INTENT(OUT)   :: E_R,E_PHI,E_Z
-  INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
-  REAL(rp), DIMENSION(8)     :: Y_PHI_mod  
+  REAL(rp),DIMENSION(pchunk),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: B_R,B_PHI,B_Z
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: curlB_R,curlB_PHI,curlB_Z
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: E_R,E_PHI,E_Z
+  INTEGER(is),DIMENSION(pchunk),INTENT(INOUT)   :: flag_cache
+  REAL(rp), DIMENSION(pchunk)     :: Y_PHI_mod  
 
   Y_PHI_mod=modulo(Y_PHI,2._rp*C_PI)
 !  write(6,*) Y_PHI(1)
 !  write(6,*) Y_PHI_mod(1)
   
-  call check_if_in_fields_domain_p(F,Y_R,Y_PHI_mod,Y_Z,flag_cache)
+  call check_if_in_fields_domain_p(pchunk,F,Y_R,Y_PHI_mod,Y_Z,flag_cache)
   
   call EZspline_interp(bfield_3d%R,bfield_3d%PHI,bfield_3d%Z,efield_3d%R, &
        efield_3d%PHI,efield_3d%Z,gradB_3d%R,gradB_3d%PHI,gradB_3d%Z, &
-       curlb_3d%R,curlb_3d%PHI,curlb_3d%Z,8,Y_R,Y_PHI_mod,Y_Z,B_R,B_PHI,B_Z, &
+       curlb_3d%R,curlb_3d%PHI,curlb_3d%Z,pchunk,Y_R,Y_PHI_mod,Y_Z,B_R,B_PHI,B_Z, &
        E_R,E_PHI,E_Z,gradB_R,gradB_PHI,gradB_Z,curlb_R,curlb_PHI,curlb_Z, &
        ezerr)
   call EZspline_error(ezerr)
 
 end subroutine interp_fields_3D_p
 
-subroutine interp_collision_p(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
+subroutine interp_collision_p(pchunk,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
      ne,Te,Zeff,flag_cache)
-
-  REAL(rp),DIMENSION(8),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
-  REAL(rp),DIMENSION(8),INTENT(OUT)   :: B_R,B_PHI,B_Z
-  REAL(rp),DIMENSION(8),INTENT(OUT)   :: E_R,E_PHI,E_Z
-  REAL(rp),DIMENSION(8),INTENT(OUT)   :: ne,Te,Zeff
-  INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
+  INTEGER, INTENT(IN)  :: pchunk
+  REAL(rp),DIMENSION(pchunk),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: B_R,B_PHI,B_Z
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: E_R,E_PHI,E_Z
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: ne,Te,Zeff
+  INTEGER(is),DIMENSION(pchunk),INTENT(INOUT)   :: flag_cache
 !  INTEGER(ip) :: ezerr
 
-  call check_if_in_profiles_domain_p(Y_R,Y_PHI,Y_Z,flag_cache)
+  call check_if_in_profiles_domain_p(pchunk,Y_R,Y_PHI,Y_Z,flag_cache)
   
   call EZspline_interp(bfield_2d%R,bfield_2d%PHI,bfield_2d%Z,efield_2d%R, &
        efield_2d%PHI,efield_2d%Z,profiles_2d%ne,profiles_2d%Te, &
-       profiles_2d%Zeff,8,Y_R,Y_Z,B_R,B_PHI,B_Z, &
+       profiles_2d%Zeff,pchunk,Y_R,Y_Z,B_R,B_PHI,B_Z, &
        E_R,E_PHI,E_Z,ne,Te,Zeff,ezerr)
   call EZspline_error(ezerr)
  
 
 end subroutine interp_collision_p
 
-subroutine interp_bmag_p(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z)
-
-  REAL(rp),DIMENSION(8),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
-  REAL(rp),DIMENSION(8),INTENT(OUT)   :: B_R,B_PHI,B_Z
+subroutine interp_bmag_p(pchunk,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z)
+  INTEGER, INTENT(IN)  :: pchunk
+  REAL(rp),DIMENSION(pchunk),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: B_R,B_PHI,B_Z
 !  INTEGER(ip) :: ezerr
 
   call EZspline_interp(bfield_2d%R,bfield_2d%PHI,bfield_2d%Z, &
-       8,Y_R,Y_Z,B_R,B_PHI,B_Z,ezerr)
+       pchunk,Y_R,Y_Z,B_R,B_PHI,B_Z,ezerr)
   call EZspline_error(ezerr)
  
 
@@ -2645,20 +2650,21 @@ subroutine calculate_magnetic_field(params,Y,F,B,E,PSI_P,flag)
 end subroutine calculate_magnetic_field
 
 
-subroutine calculate_magnetic_field_p(F,Y_R,Y_Z,B_R,B_PHI,B_Z)
-  REAL(rp), DIMENSION(8), INTENT(IN)      :: Y_R,Y_Z
+subroutine calculate_magnetic_field_p(pchunk,F,Y_R,Y_Z,B_R,B_PHI,B_Z)
+  INTEGER, INTENT(IN)  :: pchunk
+  REAL(rp), DIMENSION(pchunk), INTENT(IN)      :: Y_R,Y_Z
   TYPE(FIELDS), INTENT(IN)                               :: F
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: B_R,B_PHI,B_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: B_R,B_PHI,B_Z
   INTEGER                                                :: pp
-  REAL(rp), DIMENSION(8)  :: PSIp
-  REAL(rp), DIMENSION(8,2)  :: A
+  REAL(rp), DIMENSION(pchunk)  :: PSIp
+  REAL(rp), DIMENSION(pchunk,2)  :: A
   
-  call EZspline_interp(bfield_2d%A, 8, Y_R, Y_Z, &
+  call EZspline_interp(bfield_2d%A, pchunk, Y_R, Y_Z, &
        PSIp, ezerr)
   call EZspline_error(ezerr)
      
   ! FR = (dA/dZ)/R
-  call EZspline_gradient(bfield_2d%A, 8, Y_R, Y_Z, &
+  call EZspline_gradient(bfield_2d%A, pchunk, Y_R, Y_Z, &
        A, ezerr)
   call EZspline_error(ezerr)
 
@@ -2689,30 +2695,31 @@ subroutine calculate_magnetic_field_p(F,Y_R,Y_Z,B_R,B_PHI,B_Z)
 
 end subroutine calculate_magnetic_field_p
 
-subroutine calculate_2DBdBfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+subroutine calculate_2DBdBfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
      E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
      flag_cache,PSIp)
-  REAL(rp), DIMENSION(8), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
+  INTEGER, INTENT(IN)  :: pchunk 
+  REAL(rp), DIMENSION(pchunk), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
   TYPE(FIELDS), INTENT(IN)                               :: F
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: B_R,B_PHI,B_Z
-  REAL(rp), DIMENSION(8,3)   :: BR,BPHI,BZ
-  REAL(rp), DIMENSION(8)   :: dBRdR,dBPHIdR,dBZdR
-  REAL(rp), DIMENSION(8)   :: dBRdPHI,dBPHIdPHI,dBZdPHI
-  REAL(rp), DIMENSION(8)   :: dBRdZ,dBPHIdZ,dBZdZ
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: curlb_R,curlb_PHI,curlb_Z
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: E_R,E_PHI,E_Z
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: PSIp
-  REAL(rp), DIMENSION(8)   :: Bmag
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: B_R,B_PHI,B_Z
+  REAL(rp), DIMENSION(pchunk,3)   :: BR,BPHI,BZ
+  REAL(rp), DIMENSION(pchunk)   :: dBRdR,dBPHIdR,dBZdR
+  REAL(rp), DIMENSION(pchunk)   :: dBRdPHI,dBPHIdPHI,dBZdPHI
+  REAL(rp), DIMENSION(pchunk)   :: dBRdZ,dBPHIdZ,dBZdZ
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: curlb_R,curlb_PHI,curlb_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: E_R,E_PHI,E_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: PSIp
+  REAL(rp), DIMENSION(pchunk)   :: Bmag
   INTEGER                                                :: cc
-  REAL(rp), DIMENSION(8,6)  :: A
-  INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
+  REAL(rp), DIMENSION(pchunk,6)  :: A
+  INTEGER(is),DIMENSION(pchunk),INTENT(INOUT)   :: flag_cache
 
-  call check_if_in_fields_domain_p(F,Y_R,Y_PHI,Y_Z,flag_cache)
+  call check_if_in_fields_domain_p(pchunk,F,Y_R,Y_PHI,Y_Z,flag_cache)
 
   call EZspline_interp(bfield_2d%R,bfield_2d%PHI,bfield_2d%Z, &
        efield_2d%R,efield_2d%PHI,efield_2d%Z,bfield_2d%A, &
-       8,Y_R,Y_Z,BR,BPHI,BZ,E_R,E_PHI,E_Z,PSIp,ezerr)
+       pchunk,Y_R,Y_Z,BR,BPHI,BZ,E_R,E_PHI,E_Z,PSIp,ezerr)
   call EZspline_error(ezerr)
 
   
@@ -2728,7 +2735,7 @@ subroutine calculate_2DBdBfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
   !$OMP SIMD
 !    !$OMP& aligned(PSIp,A,B_R,Y_R,B_PHI,B_Z,Bmag,gradB_R,gradB_PHI,gradB_Z, &
 !    !$OMP& curlb_R,curlb_PHI,curlb_Z,E_R,E_PHI,E_Z)
-  do cc=1_idef,8_idef
+  do cc=1_idef,pchunk
 
      B_R(cc)=BR(cc,1)
      B_PHI(cc)=BPHI(cc,1)
@@ -2778,33 +2785,34 @@ subroutine calculate_2DBdBfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
 
 end subroutine calculate_2DBdBfields_p
 
-subroutine calculate_3DBdBfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+subroutine calculate_3DBdBfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
      E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
      flag_cache)
-  REAL(rp), DIMENSION(8), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
-  real(rp), DIMENSION(8) :: Y_PHI_mod
+  INTEGER, INTENT(IN)  :: pchunk
+  REAL(rp), DIMENSION(pchunk), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
+  real(rp), DIMENSION(pchunk) :: Y_PHI_mod
   TYPE(FIELDS), INTENT(IN)                               :: F
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: B_R,B_PHI,B_Z
-  REAL(rp), DIMENSION(8)   :: dBRdR,dBPHIdR,dBZdR
-  REAL(rp), DIMENSION(8)   :: dBRdPHI,dBPHIdPHI,dBZdPHI
-  REAL(rp), DIMENSION(8)   :: dBRdZ,dBPHIdZ,dBZdZ
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: curlb_R,curlb_PHI,curlb_Z
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: E_R,E_PHI,E_Z
-  REAL(rp), DIMENSION(8)   :: Bmag
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: B_R,B_PHI,B_Z
+  REAL(rp), DIMENSION(pchunk)   :: dBRdR,dBPHIdR,dBZdR
+  REAL(rp), DIMENSION(pchunk)   :: dBRdPHI,dBPHIdPHI,dBZdPHI
+  REAL(rp), DIMENSION(pchunk)   :: dBRdZ,dBPHIdZ,dBZdZ
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: curlb_R,curlb_PHI,curlb_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: E_R,E_PHI,E_Z
+  REAL(rp), DIMENSION(pchunk)   :: Bmag
   INTEGER                                                :: cc
-  INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
+  INTEGER(is),DIMENSION(pchunk),INTENT(INOUT)   :: flag_cache
 
   Y_PHI_mod=modulo(Y_PHI,2._rp*C_PI)
   
-  call check_if_in_fields_domain_p(F,Y_R,Y_PHI_mod,Y_Z,flag_cache)
+  call check_if_in_fields_domain_p(pchunk,F,Y_R,Y_PHI_mod,Y_Z,flag_cache)
 
   
   call EZspline_interp(bfield_2d%R,bfield_2d%PHI,bfield_2d%Z, &
        dbdR_2d%R,dbdR_2d%PHI,dBdR_2d%Z, &
        dbdPHI_2d%R,dbdPHI_2d%PHI,dbdPHI_2d%Z, &
        dbdZ_2d%R,dbdZ_2d%PHI,dbdZ_2d%Z, &
-       efield_2d%R,efield_2d%PHI,efield_2d%Z,8,Y_R,Y_Z,B_R,B_PHI,B_Z, &
+       efield_2d%R,efield_2d%PHI,efield_2d%Z,pchunk,Y_R,Y_Z,B_R,B_PHI,B_Z, &
        dBRdR,dBPHIdR,dBZdR,dBRdPHI,dBPHIdPHI,dBZdPHI,dBRdZ,dBPHIdZ,dBZdZ, &
        E_R,E_PHI,E_Z,ezerr)
   call EZspline_error(ezerr)
@@ -2812,7 +2820,7 @@ subroutine calculate_3DBdBfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
   !$OMP SIMD
 !    !$OMP& aligned(PSIp,A,B_R,Y_R,B_PHI,B_Z,Bmag,gradB_R,gradB_PHI,gradB_Z, &
 !    !$OMP& curlb_R,curlb_PHI,curlb_Z,E_R,E_PHI,E_Z)
-  do cc=1_idef,8_idef
+  do cc=1_idef,pchunk
 
      Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
 
@@ -2846,33 +2854,34 @@ subroutine calculate_3DBdBfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
 
 end subroutine calculate_3DBdBfields_p
 
-subroutine calculate_3DBdBfields1_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+subroutine calculate_3DBdBfields1_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
      E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
      flag_cache,PSIp)
-  REAL(rp), DIMENSION(8), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
-  real(rp), DIMENSION(8) :: Y_PHI_mod
+  INTEGER, INTENT(IN)  :: pchunk
+  REAL(rp), DIMENSION(pchunk), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
+  real(rp), DIMENSION(pchunk) :: Y_PHI_mod
   TYPE(FIELDS), INTENT(IN)                               :: F
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: B_R,B_PHI,B_Z
-  REAL(rp), DIMENSION(8,4)   :: BR,BPHI,BZ
-  REAL(rp), DIMENSION(8)   :: dBRdR,dBPHIdR,dBZdR
-  REAL(rp), DIMENSION(8)   :: dBRdPHI,dBPHIdPHI,dBZdPHI
-  REAL(rp), DIMENSION(8)   :: dBRdZ,dBPHIdZ,dBZdZ
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: curlb_R,curlb_PHI,curlb_Z
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: E_R,E_PHI,E_Z
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: PSIp
-  REAL(rp), DIMENSION(8)   :: Bmag
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: B_R,B_PHI,B_Z
+  REAL(rp), DIMENSION(pchunk,4)   :: BR,BPHI,BZ
+  REAL(rp), DIMENSION(pchunk)   :: dBRdR,dBPHIdR,dBZdR
+  REAL(rp), DIMENSION(pchunk)   :: dBRdPHI,dBPHIdPHI,dBZdPHI
+  REAL(rp), DIMENSION(pchunk)   :: dBRdZ,dBPHIdZ,dBZdZ
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: curlb_R,curlb_PHI,curlb_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: E_R,E_PHI,E_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: PSIp
+  REAL(rp), DIMENSION(pchunk)   :: Bmag
   INTEGER                                                :: cc
-  REAL(rp), DIMENSION(8,6)  :: A
-  INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
+  REAL(rp), DIMENSION(pchunk,6)  :: A
+  INTEGER(is),DIMENSION(pchunk),INTENT(INOUT)   :: flag_cache
 
   Y_PHI_mod=modulo(Y_PHI,2._rp*C_PI)
   
-  call check_if_in_fields_domain_p(F,Y_R,Y_PHI_mod,Y_Z,flag_cache)
+  call check_if_in_fields_domain_p(pchunk,F,Y_R,Y_PHI_mod,Y_Z,flag_cache)
 
   call EZspline_interp(bfield_3d%R,bfield_3d%PHI,bfield_3d%Z, &
        efield_3d%R,efield_3d%PHI,efield_3d%Z,bfield_3d%A, &
-       8,Y_R,Y_PHI_mod,Y_Z,BR,BPHI,BZ,E_R,E_PHI,E_Z,PSIp,ezerr)
+       pchunk,Y_R,Y_PHI_mod,Y_Z,BR,BPHI,BZ,E_R,E_PHI,E_Z,PSIp,ezerr)
   call EZspline_error(ezerr)
 
   
@@ -2888,7 +2897,7 @@ subroutine calculate_3DBdBfields1_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
   !$OMP SIMD
 !    !$OMP& aligned(PSIp,A,B_R,Y_R,B_PHI,B_Z,Bmag,gradB_R,gradB_PHI,gradB_Z, &
 !    !$OMP& curlb_R,curlb_PHI,curlb_Z,E_R,E_PHI,E_Z)
-  do cc=1_idef,8_idef
+  do cc=1_idef,pchunk
 
      B_R(cc)=BR(cc,1)
      B_PHI(cc)=BPHI(cc,1)
@@ -2938,23 +2947,24 @@ subroutine calculate_3DBdBfields1_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
 
 end subroutine calculate_3DBdBfields1_p
 
-subroutine calculate_GCfieldswE_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
+subroutine calculate_GCfieldswE_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
      curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,flag_cache,PSIp)
-  REAL(rp), DIMENSION(8), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
+  INTEGER, INTENT(IN)  :: pchunk
+  REAL(rp), DIMENSION(pchunk), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
   TYPE(FIELDS), INTENT(IN)                               :: F
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: B_R,B_PHI,B_Z
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: curlb_R,curlb_PHI,curlb_Z
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: E_R,E_PHI,E_Z
-  REAL(rp), DIMENSION(8)   :: Bmag,EPHI
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: B_R,B_PHI,B_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: curlb_R,curlb_PHI,curlb_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: E_R,E_PHI,E_Z
+  REAL(rp), DIMENSION(pchunk)   :: Bmag,EPHI
   INTEGER                                                :: cc
-  REAL(rp), DIMENSION(8),INTENT(OUT)  :: PSIp
-  REAL(rp), DIMENSION(8,6)  :: A
-  INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
+  REAL(rp), DIMENSION(pchunk),INTENT(OUT)  :: PSIp
+  REAL(rp), DIMENSION(pchunk,6)  :: A
+  INTEGER(is),DIMENSION(pchunk),INTENT(INOUT)   :: flag_cache
 
-  call check_if_in_fields_domain_p(F,Y_R,Y_PHI,Y_Z,flag_cache)
+  call check_if_in_fields_domain_p(pchunk,F,Y_R,Y_PHI,Y_Z,flag_cache)
        
-  call EZspline_derivative(bfield_2d%A, efield_2d%PHI, 8, Y_R, Y_Z, A, &
+  call EZspline_derivative(bfield_2d%A, efield_2d%PHI, pchunk, Y_R, Y_Z, A, &
        EPHI, ezerr)
   call EZspline_error(ezerr)
 
@@ -2968,7 +2978,7 @@ subroutine calculate_GCfieldswE_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
   !$OMP SIMD
 !    !$OMP& aligned(PSIp,A,B_R,Y_R,B_PHI,B_Z,Bmag,gradB_R,gradB_PHI,gradB_Z, &
 !    !$OMP& curlb_R,curlb_PHI,curlb_Z,E_R,E_PHI,E_Z)
-  do cc=1_idef,8_idef
+  do cc=1_idef,pchunk
      PSIp(cc)=A(cc,1)
 
      B_R(cc) = A(cc,3)/Y_R(cc)
@@ -3009,23 +3019,24 @@ subroutine calculate_GCfieldswE_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
 
 end subroutine calculate_GCfieldswE_p
 
-subroutine calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
+subroutine calculate_GCfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
      curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,flag_cache,PSIp)
-  REAL(rp), DIMENSION(8), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
+  INTEGER, INTENT(IN)  :: pchunk
+  REAL(rp), DIMENSION(pchunk), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
   TYPE(FIELDS), INTENT(IN)                               :: F
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: B_R,B_PHI,B_Z
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: curlb_R,curlb_PHI,curlb_Z
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: E_R,E_PHI,E_Z
-  REAL(rp), DIMENSION(8)   :: Bmag
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: B_R,B_PHI,B_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: curlb_R,curlb_PHI,curlb_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: E_R,E_PHI,E_Z
+  REAL(rp), DIMENSION(pchunk)   :: Bmag
   INTEGER                                                :: cc
-  REAL(rp), DIMENSION(8),INTENT(OUT)  :: PSIp
-  REAL(rp), DIMENSION(8,6)  :: A
-  INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
+  REAL(rp), DIMENSION(pchunk),INTENT(OUT)  :: PSIp
+  REAL(rp), DIMENSION(pchunk,6)  :: A
+  INTEGER(is),DIMENSION(pchunk),INTENT(INOUT)   :: flag_cache
 
-  call check_if_in_fields_domain_p(F,Y_R,Y_PHI,Y_Z,flag_cache)
+  call check_if_in_fields_domain_p(pchunk,F,Y_R,Y_PHI,Y_Z,flag_cache)
        
-  call EZspline_derivative(bfield_2d%A, 8, Y_R, Y_Z, A, ezerr)
+  call EZspline_derivative(bfield_2d%A, pchunk, Y_R, Y_Z, A, ezerr)
   call EZspline_error(ezerr)
 
   !A(:,1) = PSIp
@@ -3038,7 +3049,7 @@ subroutine calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
   !$OMP SIMD
 !    !$OMP& aligned(PSIp,A,B_R,Y_R,B_PHI,B_Z,Bmag,gradB_R,gradB_PHI,gradB_Z, &
 !    !$OMP& curlb_R,curlb_PHI,curlb_Z,E_R,E_PHI,E_Z)
-  do cc=1_idef,8_idef
+  do cc=1_idef,pchunk
      PSIp(cc)=A(cc,1)
 
      B_R(cc) = A(cc,3)/Y_R(cc)
@@ -3074,32 +3085,33 @@ subroutine calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z, &
 
 end subroutine calculate_GCfields_p
 
-subroutine calculate_GCfields_2x1t_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+subroutine calculate_GCfields_2x1t_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
      E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
      flag_cache,PSIp,time)
-  REAL(rp), DIMENSION(8), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
+  INTEGER, INTENT(IN)  :: pchunk
+  REAL(rp), DIMENSION(pchunk), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
   TYPE(FIELDS), INTENT(IN)                               :: F
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: B_R,B_PHI,B_Z
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: curlb_R,curlb_PHI,curlb_Z
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: E_R,E_PHI,E_Z
-  REAL(rp), DIMENSION(8)   :: Bmag
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: B_R,B_PHI,B_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: curlb_R,curlb_PHI,curlb_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: E_R,E_PHI,E_Z
+  REAL(rp), DIMENSION(pchunk)   :: Bmag
   INTEGER                                                :: cc
-  REAL(rp), DIMENSION(8),INTENT(OUT)  :: PSIp
-  REAL(rp), DIMENSION(8,7)  :: A
-  INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
+  REAL(rp), DIMENSION(pchunk),INTENT(OUT)  :: PSIp
+  REAL(rp), DIMENSION(pchunk,7)  :: A
+  INTEGER(is),DIMENSION(pchunk),INTENT(INOUT)   :: flag_cache
   REAL(rp), INTENT(IN) :: time
-  REAL(rp), DIMENSION(8) :: Y_T
+  REAL(rp), DIMENSION(pchunk) :: Y_T
 
   !$OMP SIMD
-  do cc=1_idef,8_idef
+  do cc=1_idef,pchunk
      Y_T(cc)=F%t0_2x1t+time
   end do
   !$OMP END SIMD
 
   !write(6,*) 't0',F%t0_2x1t,'time',time,'Y_T',Y_T(1)
   
-  call check_if_in_fields_domain_p(F,Y_R,Y_T,Y_Z,flag_cache)
+  call check_if_in_fields_domain_p(pchunk,F,Y_R,Y_T,Y_Z,flag_cache)
        
   call EZspline_derivative(bfield_2X1T%A, 8, Y_R, Y_T, Y_Z, A, ezerr)
   call EZspline_error(ezerr)
@@ -3115,7 +3127,7 @@ subroutine calculate_GCfields_2x1t_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
   !$OMP SIMD
 !    !$OMP& aligned(PSIp,A,B_R,Y_R,B_PHI,B_Z,Bmag,gradB_R,gradB_PHI,gradB_Z, &
 !    !$OMP& curlb_R,curlb_PHI,curlb_Z,E_R,E_PHI,E_Z)
-  do cc=1_idef,8_idef
+  do cc=1_idef,pchunk
      PSIp(cc)=A(cc,1)
 
      B_R(cc) = A(cc,4)/Y_R(cc)
@@ -3155,24 +3167,25 @@ subroutine calculate_GCfields_2x1t_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
 
 end subroutine calculate_GCfields_2x1t_p
 
-subroutine calculate_GCfields_p_FS(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+subroutine calculate_GCfields_p_FS(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
      E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
      flag_cache,PSIp)
-  REAL(rp), DIMENSION(8), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
+  INTEGER, INTENT(IN)  :: pchunk
+  REAL(rp), DIMENSION(pchunk), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
   TYPE(FIELDS), INTENT(IN)                               :: F
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: B_R,B_PHI,B_Z
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: curlb_R,curlb_PHI,curlb_Z
-  REAL(rp), DIMENSION(8),  INTENT(OUT)   :: E_R,E_PHI,E_Z
-  REAL(rp), DIMENSION(8)   :: Bmag
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: B_R,B_PHI,B_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: gradB_R,gradB_PHI,gradB_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: curlb_R,curlb_PHI,curlb_Z
+  REAL(rp), DIMENSION(pchunk),  INTENT(OUT)   :: E_R,E_PHI,E_Z
+  REAL(rp), DIMENSION(pchunk)   :: Bmag
   INTEGER                                                :: cc
-  REAL(rp), DIMENSION(8),INTENT(OUT)  :: PSIp
-  REAL(rp), DIMENSION(8,6)  :: A
-  INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag_cache
+  REAL(rp), DIMENSION(pchunk),INTENT(OUT)  :: PSIp
+  REAL(rp), DIMENSION(pchunk,6)  :: A
+  INTEGER(is),DIMENSION(pchunk),INTENT(INOUT)   :: flag_cache
 
-  call check_if_in_fields_domain_p(F,Y_R,Y_PHI,Y_Z,flag_cache)
+  call check_if_in_fields_domain_p(pchunk,F,Y_R,Y_PHI,Y_Z,flag_cache)
        
-  call EZspline_derivative(bfield_2d%A, 8, Y_R, Y_Z, A, ezerr)
+  call EZspline_derivative(bfield_2d%A, pchunk, Y_R, Y_Z, A, ezerr)
   call EZspline_error(ezerr)
 
   !write (6,*) A(1,1),A(1,2)
@@ -3187,7 +3200,7 @@ subroutine calculate_GCfields_p_FS(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
   !$OMP SIMD
 !    !$OMP& aligned(PSIp,A,B_R,Y_R,B_PHI,B_Z,Bmag,gradB_R,gradB_PHI,gradB_Z, &
 !    !$OMP& curlb_R,curlb_PHI,curlb_Z,E_R,E_PHI,E_Z)
-  do cc=1_idef,8_idef
+  do cc=1_idef,pchunk
      PSIp(cc)=A(cc,1)
 
      A(cc,2)=A(cc,2)/(2*C_PI)
@@ -3231,27 +3244,28 @@ end subroutine calculate_GCfields_p_FS
 subroutine add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
   TYPE(KORC_PARAMS), INTENT(IN)                              :: params
   TYPE(FIELDS), INTENT(IN)                               :: F
-  REAL(rp), DIMENSION(8), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
-  REAL(rp), DIMENSION(8), INTENT(INOUT)      :: E_PHI
+  REAL(rp), DIMENSION(params%pchunk), INTENT(IN)      :: Y_R,Y_PHI,Y_Z
+  REAL(rp), DIMENSION(params%pchunk), INTENT(INOUT)      :: E_PHI
 
-  REAL(rp),DIMENSION(8) :: rm,E_SC_PHI
+  REAL(rp),DIMENSION(params%pchunk) :: rm,E_SC_PHI
   REAL(rp) :: R0,Z0
-  INTEGER :: cc
+  INTEGER :: cc,pchunk
 
+  pchunk=params%pchunk
   R0=F%Ro
   Z0=F%Zo
   
   !$OMP SIMD
-  do cc=1_idef,8_idef
+  do cc=1_idef,pchunk
      rm(cc)=sqrt((Y_R(cc)-R0)*(Y_R(cc)-R0)+(Y_Z(cc)-Z0)*(Y_Z(cc)-Z0))     
   end do
   !$OMP END SIMD
 
-  call EZspline_interp(efield_SC1d%PHI,8, rm, E_SC_PHI, ezerr)
+  call EZspline_interp(efield_SC1d%PHI,pchunk, rm, E_SC_PHI, ezerr)
   call EZspline_error(ezerr)
 
   !$OMP SIMD
-  do cc=1_idef,8_idef
+  do cc=1_idef,pchunk
      E_PHI(cc)=E_PHI(cc)+E_SC_PHI(cc)
   end do
   !$OMP END SIMD  
@@ -3261,18 +3275,19 @@ end subroutine add_interp_SCE_p
 subroutine add_interp_SCE_p_FS(params,F,PSIp,E_PHI)
   TYPE(KORC_PARAMS), INTENT(IN)                              :: params
   TYPE(FIELDS), INTENT(IN)                               :: F
-  REAL(rp), DIMENSION(8), INTENT(IN)      :: PSIp
-  REAL(rp), DIMENSION(8), INTENT(INOUT)      :: E_PHI
+  REAL(rp), DIMENSION(params%pchunk), INTENT(IN)      :: PSIp
+  REAL(rp), DIMENSION(params%pchunk), INTENT(INOUT)      :: E_PHI
 
-  REAL(rp),DIMENSION(8) :: E_SC_PHI
-  INTEGER :: cc
+  REAL(rp),DIMENSION(params%pchunk) :: E_SC_PHI
+  INTEGER :: cc,pchunk
 
+  pchunk=params%pchunk
 
-  call EZspline_interp(efield_SC1d%PHI,8, PSIp, E_SC_PHI, ezerr)
+  call EZspline_interp(efield_SC1d%PHI,pchunk, PSIp, E_SC_PHI, ezerr)
   call EZspline_error(ezerr)
 
   !$OMP SIMD
-  do cc=1_idef,8_idef
+  do cc=1_idef,pchunk
      E_PHI(cc)=E_PHI(cc)+E_SC_PHI(cc)
   end do
   !$OMP END SIMD  
@@ -3859,18 +3874,20 @@ end subroutine finalize_interpolants
        B_X,B_Y,B_Z,flag,hint)
     TYPE(FIELDS), INTENT(IN)       :: F
     TYPE(KORC_PARAMS), INTENT(IN)  :: params
-    REAL(rp), DIMENSION(8), INTENT(IN)  :: Y_R,Y_PHI,Y_Z
-    REAL(rp), DIMENSION(8), INTENT(OUT)  :: B_X,B_Y,B_Z
-    INTEGER(is), DIMENSION(8), INTENT(INOUT)  :: flag
-    TYPE(C_PTR), DIMENSION(8), INTENT(INOUT)  :: hint
+    REAL(rp), DIMENSION(params%pchunk), INTENT(IN)  :: Y_R,Y_PHI,Y_Z
+    REAL(rp), DIMENSION(params%pchunk), INTENT(OUT)  :: B_X,B_Y,B_Z
+    INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT)  :: flag
+    TYPE(C_PTR), DIMENSION(params%pchunk), INTENT(INOUT)  :: hint
     INTEGER (C_INT)                :: status
-    INTEGER                        :: pp
+    INTEGER                        :: pp,pchunk
     REAL(rp), DIMENSION(3)         :: x
     REAL(rp), DIMENSION(3)         :: Btmp
 
+    pchunk=params%pchunk
 
-    !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp,status,x,Btmp)
-    do pp = 1,8
+    !$OMP PARALLEL DO DEFAULT(SHARED) firstprivate(pchunk) &
+    !$OMP& PRIVATE(pp,status,x,Btmp)
+    do pp = 1,pchunk
        if (flag(pp) .EQ. 1_is) then
           x(1) = Y_R(pp)*params%cpp%length
           x(2) = Y_PHI(pp)
@@ -3950,6 +3967,51 @@ end subroutine finalize_interpolants
 
   end subroutine get_m3d_c1_vector_potential
   
+  subroutine get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
+       PSIp,flag,hint)
+    TYPE(FIELDS), INTENT(IN)       :: F
+    TYPE(KORC_PARAMS), INTENT(IN)  :: params
+    REAL(rp), DIMENSION(params%pchunk), INTENT(IN)  :: Y_R,Y_PHI,Y_Z
+    REAL(rp), DIMENSION(params%pchunk), INTENT(OUT)  :: PSIp
+    INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT)  :: flag
+    TYPE(C_PTR), DIMENSION(params%pchunk), INTENT(INOUT)  :: hint
+    INTEGER (C_INT)                :: status
+    INTEGER                        :: pp,pchunk
+    REAL(rp), DIMENSION(3)         :: x
+    REAL(rp), DIMENSION(3)         :: Atmp
+    integer(ip)  ::  ss
+
+    pchunk=params%pchunk
+    
+    !$OMP PARALLEL DO DEFAULT(SHARED) firstprivate(pchunk) &
+    !$OMP& PRIVATE(pp,status,x,Atmp)
+    do pp = 1,pchunk
+       if (flag(pp) .EQ. 1_is) then
+          x(1) = Y_R(pp)*params%cpp%length
+          x(2) = Y_PHI(pp)
+          x(3) = Y_Z(pp)*params%cpp%length
+
+          !             prtcls%hint(pp)=c_null_ptr
+
+
+          status = fio_eval_field(F%M3D_C1_A, x(1),                      &
+               Atmp(1),hint(pp))
+
+          if (status .eq. FIO_NO_DATA) then
+             PSIp(pp) = 0
+             flag(pp) = 0_is
+          else if (status .ne. FIO_SUCCESS) then
+             flag(pp) = 0_is
+          end if
+
+          PSIp(pp)=-Atmp(2)*x(1)
+
+       end if
+    end do
+    !$OMP END PARALLEL DO
+
+  end subroutine get_m3d_c1_vector_potential_p
+  
   !!  @note FIXME Add documentation
   subroutine get_m3d_c1_electric_fields(prtcls, F, params)
     TYPE(PARTICLES), INTENT(INOUT) :: prtcls
@@ -4016,18 +4078,20 @@ end subroutine finalize_interpolants
        E_X,E_Y,E_Z,flag,hint)
     TYPE(FIELDS), INTENT(IN)       :: F
     TYPE(KORC_PARAMS), INTENT(IN)  :: params
-    REAL(rp), DIMENSION(8), INTENT(IN)  :: Y_R,Y_PHI,Y_Z
-    REAL(rp), DIMENSION(8), INTENT(OUT)  :: E_X,E_Y,E_Z
-    INTEGER(is), DIMENSION(8), INTENT(INOUT)  :: flag
-    TYPE(C_PTR), DIMENSION(8), INTENT(INOUT)  :: hint
+    REAL(rp), DIMENSION(params%pchunk), INTENT(IN)  :: Y_R,Y_PHI,Y_Z
+    REAL(rp), DIMENSION(params%pchunk), INTENT(OUT)  :: E_X,E_Y,E_Z
+    INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT)  :: flag
+    TYPE(C_PTR), DIMENSION(params%pchunk), INTENT(INOUT)  :: hint
     INTEGER (C_INT)                :: status
-    INTEGER                        :: pp
+    INTEGER                        :: pp,pchunk
     REAL(rp), DIMENSION(3)         :: x
     REAL(rp), DIMENSION(3)         :: Etmp
 
+    pchunk=params%pchunk
 
-    !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp,status,x,Etmp)
-    do pp = 1,8
+    !$OMP PARALLEL DO DEFAULT(SHARED) firstprivate(pchunk)&
+    !$OMP& PRIVATE(pp,status,x,Etmp)
+    do pp = 1,pchunk
        if (flag(pp) .EQ. 1_is) then
           x(1) = Y_R(pp)*params%cpp%length
           x(2) = Y_PHI(pp)

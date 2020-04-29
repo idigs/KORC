@@ -261,6 +261,8 @@ module korc_types
      REAL(rp)                     :: rmin !< Minimum r for M3D-C1 fields.
      REAL(rp)                     :: zmax !< Maximum z for M3D-C1 fields.
      REAL(rp)                     :: zmin !< Minimum z for M3D-C1 fields.
+     INTEGER  :: pchunk
+     !! number of particles per vectorized chunk
   END TYPE KORC_PARAMS
 
 

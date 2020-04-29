@@ -1063,19 +1063,20 @@ contains
     b3 = b3/SQRT(DOT_PRODUCT(b3,b3))
   end subroutine unitVectorsC
 
-  subroutine unitVectors_p(b_unit_X,b_unit_Y,b_unit_Z,b1_X,b1_Y,b1_Z, &
-            b2_X,b2_Y,b2_Z,b3_X,b3_Y,b3_Z)
-    REAL(rp), DIMENSION(8), INTENT(IN) 	:: b_unit_X,b_unit_Y,b_unit_Z
-    REAL(rp), DIMENSION(8), INTENT(OUT) :: b1_X,b1_Y,b1_Z
-    REAL(rp), DIMENSION(8), INTENT(OUT) :: b2_X,b2_Y,b2_Z
-    REAL(rp), DIMENSION(8), INTENT(OUT) :: b3_X,b3_Y,b3_Z
-    REAL(rp), DIMENSION(8) :: b2mag,b3mag
+  subroutine unitVectors_p(pchunk,b_unit_X,b_unit_Y,b_unit_Z,b1_X,b1_Y,b1_Z, &
+       b2_X,b2_Y,b2_Z,b3_X,b3_Y,b3_Z)
+    INTEGER, INTENT(IN)  :: pchunk
+    REAL(rp), DIMENSION(pchunk), INTENT(IN) 	:: b_unit_X,b_unit_Y,b_unit_Z
+    REAL(rp), DIMENSION(pchunk), INTENT(OUT) :: b1_X,b1_Y,b1_Z
+    REAL(rp), DIMENSION(pchunk), INTENT(OUT) :: b2_X,b2_Y,b2_Z
+    REAL(rp), DIMENSION(pchunk), INTENT(OUT) :: b3_X,b3_Y,b3_Z
+    REAL(rp), DIMENSION(pchunk) :: b2mag,b3mag
     integer(ip) :: cc
 
     !$OMP SIMD 
 !    !$OMP& aligned(b1_X,b1_Y,b1_Z,b_unit_X,b_unit_Y,b_unit_Z, &
 !    !$OMP& b2_X,b2_Y,b2_Z,b2mag,b3_X,b3_Y,b3_Z,b3mag)
-    do cc=1_idef,8_idef
+    do cc=1_idef,pchunk
        b1_X(cc) = b_unit_X(cc)
        b1_Y(cc) = b_unit_Y(cc)
        b1_Z(cc) = b_unit_Z(cc)
@@ -1144,67 +1145,69 @@ contains
     TYPE(PROFILES), INTENT(IN)                                 :: P
     TYPE(FIELDS), INTENT(IN)      :: F
     TYPE(KORC_PARAMS), INTENT(IN) 		:: params
-    REAL(rp), DIMENSION(8), INTENT(IN) 	:: X_X,X_Y,X_Z,PSIp
-    REAL(rp), DIMENSION(8)  	:: Y_R,Y_PHI,Y_Z
-    REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: U_X,U_Y,U_Z
+    REAL(rp), DIMENSION(params%pchunk), INTENT(IN) 	:: X_X,X_Y,X_Z,PSIp
+    REAL(rp), DIMENSION(params%pchunk)  	:: Y_R,Y_PHI,Y_Z
+    REAL(rp), DIMENSION(params%pchunk), INTENT(INOUT) 	:: U_X,U_Y,U_Z
 
-    REAL(rp), DIMENSION(8) 			:: ne,Te,Zeff
-    INTEGER(is), DIMENSION(8), INTENT(INOUT) 			:: flagCol
-    INTEGER(is), DIMENSION(8), INTENT(INOUT) 			:: flagCon
+    REAL(rp), DIMENSION(params%pchunk) 			:: ne,Te,Zeff
+    INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT) 			:: flagCol
+    INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT) 			:: flagCon
     REAL(rp), INTENT(IN)  :: me
 
     INTEGER(ip), INTENT(IN) 			:: tt
 
-    REAL(rp), DIMENSION(8), INTENT(IN) 		:: B_X,B_Y,B_Z
+    REAL(rp), DIMENSION(params%pchunk), INTENT(IN) 		:: B_X,B_Y,B_Z
 
-    REAL(rp), DIMENSION(8) 		:: b_unit_X,b_unit_Y,b_unit_Z
-    REAL(rp), DIMENSION(8) 		:: b1_X,b1_Y,b1_Z
-    REAL(rp), DIMENSION(8) 		:: b2_X,b2_Y,b2_Z
-    REAL(rp), DIMENSION(8) 		:: b3_X,b3_Y,b3_Z
-    REAL(rp), DIMENSION(8) 		:: Bmag
+    REAL(rp), DIMENSION(params%pchunk) 		:: b_unit_X,b_unit_Y,b_unit_Z
+    REAL(rp), DIMENSION(params%pchunk) 		:: b1_X,b1_Y,b1_Z
+    REAL(rp), DIMENSION(params%pchunk) 		:: b2_X,b2_Y,b2_Z
+    REAL(rp), DIMENSION(params%pchunk) 		:: b3_X,b3_Y,b3_Z
+    REAL(rp), DIMENSION(params%pchunk) 		:: Bmag
 
     
-    REAL(rp), DIMENSION(8,3) 			:: dW
+    REAL(rp), DIMENSION(params%pchunk,3) 			:: dW
     !! 3D Weiner process
-    REAL(rp), DIMENSION(8,3) 			:: rnd1
+    REAL(rp), DIMENSION(params%pchunk,3) 			:: rnd1
 
     REAL(rp) 					:: dt,time
-    REAL(rp), DIMENSION(8) 					:: um
-    REAL(rp), DIMENSION(8) 					:: dpm
-    REAL(rp), DIMENSION(8) 					:: vm
-    REAL(rp), DIMENSION(8) 					:: pm
+    REAL(rp), DIMENSION(params%pchunk) 					:: um
+    REAL(rp), DIMENSION(params%pchunk) 					:: dpm
+    REAL(rp), DIMENSION(params%pchunk) 					:: vm
+    REAL(rp), DIMENSION(params%pchunk) 					:: pm
 
-    REAL(rp),DIMENSION(8) 			:: Ub_X,Ub_Y,Ub_Z
-    REAL(rp), DIMENSION(8) 			:: xi
-    REAL(rp), DIMENSION(8) 			:: dxi
-    REAL(rp), DIMENSION(8)  			:: phi
-    REAL(rp), DIMENSION(8)  			:: dphi
+    REAL(rp),DIMENSION(params%pchunk) 			:: Ub_X,Ub_Y,Ub_Z
+    REAL(rp), DIMENSION(params%pchunk) 			:: xi
+    REAL(rp), DIMENSION(params%pchunk) 			:: dxi
+    REAL(rp), DIMENSION(params%pchunk)  			:: phi
+    REAL(rp), DIMENSION(params%pchunk)  			:: dphi
     !! speed of particle
-    REAL(rp),DIMENSION(8) 					:: CAL
-    REAL(rp),DIMENSION(8) 					:: dCAL
-    REAL(rp),DIMENSION(8) 					:: CFL
-    REAL(rp),DIMENSION(8) 					:: CBL
+    REAL(rp),DIMENSION(params%pchunk) 					:: CAL
+    REAL(rp),DIMENSION(params%pchunk) 					:: dCAL
+    REAL(rp),DIMENSION(params%pchunk) 					:: CFL
+    REAL(rp),DIMENSION(params%pchunk) 					:: CBL
 
-    integer(ip) :: cc
+    integer :: cc,pchunk
 
+    pchunk=params%pchunk
+    
     if (MODULO(params%it+tt,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
        dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt
        time=params%init_time+(params%it-1+tt)*params%dt
        ! subcylcling iterations a fraction of fastest collision frequency,
        ! where fraction set by dTau in namelist &CollisionParamsSingleSpecies
 
-       call cart_to_cyl_p(X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
+       call cart_to_cyl_p(pchunk,X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
 
        if (params%profile_model(1:10).eq.'ANALYTICAL') then
           call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
        else  if (params%profile_model(1:8).eq.'EXTERNAL') then          
-          call interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flagCon)
+          call interp_FOcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flagCon)
        end if
           
        !$OMP SIMD
 !       !$OMP& aligned(um,pm,vm,U_X,U_Y,U_Z,Bmag,B_X,B_Y,B_Z, &
 !       !$OMP& b_unit_X,b_unit_Y,b_unit_Z,xi)
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
 
           um(cc) = SQRT(U_X(cc)*U_X(cc)+U_Y(cc)*U_Y(cc)+U_Z(cc)*U_Z(cc))
           pm(cc)=me*um(cc)
@@ -1227,13 +1230,13 @@ contains
 !       write(6,'("vm: ",E17.10)') vm
 !       write(6,'("xi: ",E17.10)') xi
        
-       call unitVectors_p(b_unit_X,b_unit_Y,b_unit_Z,b1_X,b1_Y,b1_Z, &
+       call unitVectors_p(pchunk,b_unit_X,b_unit_Y,b_unit_Z,b1_X,b1_Y,b1_Z, &
             b2_X,b2_Y,b2_Z,b3_X,b3_Y,b3_Z)
           ! b1=b_unit, (b1,b2,b3) is right-handed
 
        !$OMP SIMD
 !       !$OMP& aligned(phi,U_X,U_Y,U_Z,b3_X,b3_Y,b3_Z,b2_X,b2_Y,b2_Z)
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
           phi(cc) = atan2((U_X(cc)*b3_X(cc)+U_Y(cc)*b3_Y(cc)+ &
                U_Z(cc)*b3_Z(cc)), &
                (U_X(cc)*b2_X(cc)+U_Y(cc)*b2_Y(cc)+U_Z(cc)*b2_Z(cc)))
@@ -1247,7 +1250,7 @@ contains
 !       !$OMP& aligned(rnd1,dW,CAL,dCAL,CFL,CBL,vm,ne,Te,Zeff,dpm, &
 !       !$OMP& flagCon,flagCol,dxi,xi,pm,dphi,um,Ub_X,Ub_Y,Ub_Z,U_X,U_Y,U_Z, &
 !       !$OMP& b1_X,b1_Y,b1_Z,b2_X,b2_Y,b2_Z,b3_X,b3_Y,b3_Z)
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
           
 #ifdef PARALLEL_RANDOM
           ! uses C library to generate normal_distribution random variables,
@@ -1323,7 +1326,7 @@ contains
 !       end if
 
        
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
           if (pm(cc).lt.0) then
              write(6,'("Momentum less than zero")')
              stop
@@ -1341,83 +1344,84 @@ contains
     TYPE(PROFILES), INTENT(IN)                                 :: P
     TYPE(FIELDS), INTENT(IN)                                   :: F
     TYPE(KORC_PARAMS), INTENT(INOUT) 		:: params
-    REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: Ppll
-    REAL(rp), DIMENSION(8), INTENT(INOUT) 	:: Pmu
-    REAL(rp), DIMENSION(8) 			:: Bmag
-    REAL(rp), DIMENSION(8) 	:: B_R,B_PHI,B_Z
-    REAL(rp), DIMENSION(8) :: curlb_R,curlb_PHI,curlb_Z
-    REAL(rp), DIMENSION(8) :: gradB_R,gradB_PHI,gradB_Z
-    REAL(rp), DIMENSION(8) 	:: E_R,E_Z
-    REAL(rp), DIMENSION(8), INTENT(OUT) 	:: E_PHI,ne,PSIp
-    REAL(rp), DIMENSION(8), INTENT(IN) 			:: Y_R,Y_PHI,Y_Z
-    INTEGER(is), DIMENSION(8), INTENT(INOUT) 			:: flagCol
-    INTEGER(is), DIMENSION(8), INTENT(INOUT) 			:: flagCon
+    REAL(rp), DIMENSION(params%pchunk), INTENT(INOUT) 	:: Ppll
+    REAL(rp), DIMENSION(params%pchunk), INTENT(INOUT) 	:: Pmu
+    REAL(rp), DIMENSION(params%pchunk) 			:: Bmag
+    REAL(rp), DIMENSION(params%pchunk) 	:: B_R,B_PHI,B_Z
+    REAL(rp), DIMENSION(params%pchunk) :: curlb_R,curlb_PHI,curlb_Z
+    REAL(rp), DIMENSION(params%pchunk) :: gradB_R,gradB_PHI,gradB_Z
+    REAL(rp), DIMENSION(params%pchunk) 	:: E_R,E_Z
+    REAL(rp), DIMENSION(params%pchunk), INTENT(OUT) 	:: E_PHI,ne,PSIp
+    REAL(rp), DIMENSION(params%pchunk), INTENT(IN) 			:: Y_R,Y_PHI,Y_Z
+    INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT) 			:: flagCol
+    INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT) 			:: flagCon
     REAL(rp), INTENT(IN) 			:: me
-    REAL(rp), DIMENSION(8) 			:: Te,Zeff
-    REAL(rp), DIMENSION(8,2) 			:: dW
-    REAL(rp), DIMENSION(8,2) 			:: rnd1
+    REAL(rp), DIMENSION(params%pchunk) 			:: Te,Zeff
+    REAL(rp), DIMENSION(params%pchunk,2) 			:: dW
+    REAL(rp), DIMENSION(params%pchunk,2) 			:: rnd1
     REAL(rp) 					:: dt,time
-    REAL(rp), DIMENSION(8) 					:: pm
-    REAL(rp), DIMENSION(8)  					:: dp
-    REAL(rp), DIMENSION(8)  					:: xi
-    REAL(rp), DIMENSION(8)  					:: dxi
-    REAL(rp), DIMENSION(8)  					:: v,gam
+    REAL(rp), DIMENSION(params%pchunk) 					:: pm
+    REAL(rp), DIMENSION(params%pchunk)  					:: dp
+    REAL(rp), DIMENSION(params%pchunk)  					:: xi
+    REAL(rp), DIMENSION(params%pchunk)  					:: dxi
+    REAL(rp), DIMENSION(params%pchunk)  					:: v,gam
     !! speed of particle
-    REAL(rp), DIMENSION(8) 					:: CAL
-    REAL(rp) , DIMENSION(8)					:: dCAL
-    REAL(rp), DIMENSION(8) 					:: CFL
-    REAL(rp), DIMENSION(8) 					:: CBL
-    REAL(rp), DIMENSION(8) 	:: SC_p,SC_mu,BREM_p
+    REAL(rp), DIMENSION(params%pchunk) 					:: CAL
+    REAL(rp) , DIMENSION(params%pchunk)					:: dCAL
+    REAL(rp), DIMENSION(params%pchunk) 					:: CFL
+    REAL(rp), DIMENSION(params%pchunk) 					:: CBL
+    REAL(rp), DIMENSION(params%pchunk) 	:: SC_p,SC_mu,BREM_p
     REAL(rp) 					:: kappa
-    integer(ip) :: cc
+    integer :: cc,pchunk
     integer(ip),INTENT(IN) :: tt
 
+    pchunk=params%pchunk
     
     if (MODULO(params%it+tt,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
        dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt       
        time=params%init_time+(params%it-1+tt)*params%dt
 
        if (params%field_eval.eq.'eqn') then
-          call analytical_fields_GC_p(F,Y_R,Y_PHI, &
+          call analytical_fields_GC_p(pchunk,F,Y_R,Y_PHI, &
                Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
                gradB_R,gradB_PHI,gradB_Z,PSIp)          
        else if (params%field_eval.eq.'interp') then
           if (F%axisymmetric_fields) then
              if (F%Bflux) then
                 if (.not.params%SC_E) then
-                   call calculate_GCfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                   call calculate_GCfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                         E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
                         gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp)
                 else
-                   call calculate_GCfields_p_FS(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                   call calculate_GCfields_p_FS(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                         E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
                         gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp)
                 end if
 
              else if (F%ReInterp_2x1t) then
-                call calculate_GCfieldswE_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                call calculate_GCfieldswE_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                         E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
                         gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp)
              else if (F%Bflux3D) then
-                call calculate_GCfields_2x1t_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                call calculate_GCfields_2x1t_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                         E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
                         gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp,time)
              else if (F%dBfield) then
-                call calculate_2DBdBfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                call calculate_2DBdBfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                      E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
                      gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp)
              else
-                call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                call interp_fields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                      E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
                      gradB_R,gradB_PHI,gradB_Z,flagCon)
              end if                
           else
              if (F%dBfield) then
-                call calculate_2DBdBfields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                call calculate_2DBdBfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                      E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
                      gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp)
              else
-                call interp_fields_3D_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                call interp_fields_3D_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                      E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
                      gradB_R,gradB_PHI,gradB_Z,flagCon)
              end if
@@ -1428,14 +1432,14 @@ contains
        if (params%profile_model(1:10).eq.'ANALYTICAL') then
           call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
        else if (params%profile_model(1:8).eq.'EXTERNAL') then      
-          call interp_FOcollision_p(Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flagCon)
+          call interp_FOcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flagCon)
        end if         
 
        if (.not.params%FokPlan) E_PHI=0._rp
        
        !$OMP SIMD
 !       !$OMP& aligned (pm,xi,v,Ppll,Bmag,Pmu)
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
           Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
           ! Transform p_pll,mu to P,eta
           pm(cc) = SQRT(Ppll(cc)*Ppll(cc)+2*me*Bmag(cc)*Pmu(cc))
@@ -1459,7 +1463,7 @@ contains
        !$OMP SIMD
 !       !$OMP& aligned(rnd1,dW,CAL,dCAL,CFL,CBL,v,ne,Te,Zeff,dp, &
 !       !$OMP& flagCon,flagCol,dxi,xi,pm,Ppll,Pmu,Bmag)
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
        
 #ifdef PARALLEL_RANDOM
           rnd1(cc,1) = get_random()
@@ -1502,7 +1506,7 @@ contains
           if(params%GC_rad_model.eq.'SDE') then
 
              !$OMP SIMD
-             do cc=1_idef,8_idef
+             do cc=1_idef,pchunk
 
                 SC_p(cc)=-gam(cc)*pm(cc)*(1-xi(cc)*xi(cc))/ &
                      (cparams_ss%taur/Bmag(cc)**2)
@@ -1526,7 +1530,7 @@ contains
        end if
 
        !$OMP SIMD
-       do cc=1_idef,8_idef    
+       do cc=1_idef,pchunk  
 
           pm(cc)=pm(cc)+dp(cc)
           xi(cc)=xi(cc)+dxi(cc)
@@ -1562,7 +1566,7 @@ contains
 !      write(6,'("Pmu: ",E17.10)') Pmu
 !       write(6,'("E_PHI_COL: ",E17.10)') E_PHI
        
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
           if ((pm(cc).lt.1._rp).and.flagCol(cc).eq.1_ip) then
 !             write(6,'("Momentum less than zero")')
              !             stop

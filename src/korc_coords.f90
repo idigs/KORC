@@ -72,22 +72,23 @@ CONTAINS
     
   end subroutine cart_to_cyl
 
-  subroutine cart_to_cyl_p(X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
+  subroutine cart_to_cyl_p(pchunk,X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
     implicit none
-    REAL(rp), DIMENSION(8), INTENT(IN)      :: X_X
-    REAL(rp), DIMENSION(8), INTENT(IN)      :: X_Y
-    REAL(rp), DIMENSION(8), INTENT(IN)      :: X_Z
+    INTEGER, INTENT(IN)  :: pchunk
+    REAL(rp), DIMENSION(pchunk), INTENT(IN)      :: X_X
+    REAL(rp), DIMENSION(pchunk), INTENT(IN)      :: X_Y
+    REAL(rp), DIMENSION(pchunk), INTENT(IN)      :: X_Z
 
-    REAL(rp), DIMENSION(8), INTENT(OUT)   :: Y_R
-    REAL(rp), DIMENSION(8), INTENT(OUT)   :: Y_PHI
-    REAL(rp), DIMENSION(8), INTENT(OUT)   :: Y_Z
+    REAL(rp), DIMENSION(pchunk), INTENT(OUT)   :: Y_R
+    REAL(rp), DIMENSION(pchunk), INTENT(OUT)   :: Y_PHI
+    REAL(rp), DIMENSION(pchunk), INTENT(OUT)   :: Y_Z
 
     INTEGER                                                :: pp
     !! Iterator.
 
     !$OMP SIMD
 !    !$OMP& aligned(Y_R,Y_PHI,Y_Z,X_X,X_Y,X_Z)
-    do pp=1_idef,8_idef
+    do pp=1_idef,pchunk
        Y_R(pp) = SQRT(X_X(pp)*X_X(pp) + X_Y(pp)*X_Y(pp))
        Y_PHI(pp) = ATAN2(X_Y(pp), X_X(pp))
        Y_PHI(pp) = MODULO(Y_PHI(pp), 2.0_rp*C_PI)
@@ -170,19 +171,19 @@ CONTAINS
     !$OMP END PARALLEL DO
   end subroutine cyl_check_if_confined
 
-  subroutine cyl_check_if_confined_p(a,R0,Xcyl_R,Xcyl_Z,flag)
+  subroutine cyl_check_if_confined_p(pchunk,a,R0,Xcyl_R,Xcyl_Z,flag)
     implicit none
-
-    REAL(rp),DIMENSION(8),  INTENT(IN)      :: Xcyl_R
-    REAL(rp),DIMENSION(8),  INTENT(IN)      :: Xcyl_Z
-    INTEGER(is),DIMENSION(8),INTENT(INOUT)   :: flag
+    INTEGER, INTENT(IN)  :: pchunk
+    REAL(rp),DIMENSION(pchunk),  INTENT(IN)      :: Xcyl_R
+    REAL(rp),DIMENSION(pchunk),  INTENT(IN)      :: Xcyl_Z
+    INTEGER(is),DIMENSION(pchunk),INTENT(INOUT)   :: flag
     REAL(rp),  INTENT(IN)                            :: a,R0
     !! Distance to plasma edge as measured from the magnetic axis.
     INTEGER                                  :: cc
     
     !$OMP SIMD
 !    !$OMP& aligned(Xcyl_R,Xcyl_Z,flag)
-    do cc=1_idef,8_idef
+    do cc=1_idef,pchunk
        if (sqrt((Xcyl_R(cc)-R0)**2+Xcyl_Z(cc)**2) .gt. a) flag(cc)=0_is
     end do
     !$OMP END SIMD
@@ -260,17 +261,18 @@ CONTAINS
     !$OMP END PARALLEL DO
   end subroutine cart_to_tor_check_if_confined
 
-  subroutine cart_to_tor_p(R0,X_X,X_Y,X_Z,T_R,T_T,T_Z)
+  subroutine cart_to_tor_p(pchunk,R0,X_X,X_Y,X_Z,T_R,T_T,T_Z)
+    INTEGER, INTENT(IN)  :: pchunk
     REAL(rp),  INTENT(IN)      :: R0
-    REAL(rp),  INTENT(IN),DIMENSION(8)      :: X_X,X_Y,X_Z
-    REAL(rp),  INTENT(OUT),DIMENSION(8)      :: T_R,T_T,T_Z
-    REAL(rp),DIMENSION(8)   :: RR
+    REAL(rp),  INTENT(IN),DIMENSION(pchunk)      :: X_X,X_Y,X_Z
+    REAL(rp),  INTENT(OUT),DIMENSION(pchunk)      :: T_R,T_T,T_Z
+    REAL(rp),DIMENSION(pchunk)   :: RR
     INTEGER                                      :: cc
     !! Particle chunk iterator.
 
     !$OMP SIMD
 !    !$OMP& aligned(RR,X_X,X_Y,T_R,T_T,T_Z,X_Z)
-    do cc=1_idef,8
+    do cc=1_idef,pchunk
        RR(cc)=SQRT(X_X(cc)*X_X(cc) + X_Y(cc)*X_Y(cc)) - R0
 
 
@@ -284,19 +286,20 @@ CONTAINS
 
   end subroutine cart_to_tor_p
 
-  subroutine cart_to_tor_check_if_confined_p(ar,R0,X_X,X_Y,X_Z, &
+  subroutine cart_to_tor_check_if_confined_p(pchunk,ar,R0,X_X,X_Y,X_Z, &
        T_R,T_T,T_Z,flag_cache)
+    INTEGER, INTENT(IN)  :: pchunk
     REAL(rp),  INTENT(IN)      :: R0,ar
-    REAL(rp),  INTENT(IN),DIMENSION(8)      :: X_X,X_Y,X_Z
-    REAL(rp),  INTENT(OUT),DIMENSION(8)      :: T_R,T_T,T_Z
-    INTEGER(is),  INTENT(INOUT),DIMENSION(8)      :: flag_cache
-    REAL(rp),DIMENSION(8)   :: RR
+    REAL(rp),  INTENT(IN),DIMENSION(pchunk)      :: X_X,X_Y,X_Z
+    REAL(rp),  INTENT(OUT),DIMENSION(pchunk)      :: T_R,T_T,T_Z
+    INTEGER(is),  INTENT(INOUT),DIMENSION(pchunk)      :: flag_cache
+    REAL(rp),DIMENSION(pchunk)   :: RR
     INTEGER                                      :: cc
     !! Particle chunk iterator.
 
     !$OMP SIMD
 !    !$OMP& aligned(RR,X_X,X_Y,T_R,T_T,T_Z,X_Z)
-    do cc=1_idef,8
+    do cc=1_idef,pchunk
        RR(cc)=SQRT(X_X(cc)*X_X(cc) + X_Y(cc)*X_Y(cc)) - R0
 
 
@@ -309,7 +312,7 @@ CONTAINS
     !$OMP END SIMD
 
     !$OMP SIMD
-    do cc=1_idef,8
+    do cc=1_idef,pchunk
        if (T_R(cc) .GT. ar) then
           flag_cache(cc) = 0_is
        end if

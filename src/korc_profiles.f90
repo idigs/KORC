@@ -316,20 +316,20 @@ CONTAINS
     !! @note Subroutine that calculates the analytical plasma profiles at
     !! the particles' position. @endnote
     TYPE(KORC_PARAMS), INTENT(IN)                           :: params
-    REAL(rp), DIMENSION(8), INTENT(IN)  :: Y_R,Y_Z,PSIp
+    REAL(rp), DIMENSION(params%pchunk), INTENT(IN)  :: Y_R,Y_Z,PSIp
     REAL(rp), INTENT(IN)  :: time
     TYPE(PROFILES), INTENT(IN)                         :: P
     !! An instance of KORC's derived type PROFILES containing all the
     !! information about the plasma profiles used in the simulation.
     !! See [[korc_types]] and [[korc_profiles]].
     TYPE(FIELDS), INTENT(IN)      :: F
-    REAL(rp), DIMENSION(8),INTENT(OUT) :: ne
+    REAL(rp), DIMENSION(params%pchunk),INTENT(OUT) :: ne
     !! Background electron density seen by simulated particles.
-    REAL(rp), DIMENSION(8),INTENT(OUT) :: Te
+    REAL(rp), DIMENSION(params%pchunk),INTENT(OUT) :: Te
     !! Backgroun temperature density seen by simulated particles.
-    REAL(rp), DIMENSION(8),INTENT(OUT) :: Zeff
+    REAL(rp), DIMENSION(params%pchunk),INTENT(OUT) :: Zeff
     !! Effective atomic charge seen by simulated particles.
-    INTEGER(ip)                                        :: cc
+    INTEGER(ip)                                        :: cc,pchunk
     !! Particle iterator.
     REAL(rp) :: R0,Z0,a,ne0,n_ne,Te0,n_Te,Zeff0
     REAL(rp) :: R0_RE,Z0_RE,sigmaR_RE,sigmaZ_RE,psimax_RE
@@ -338,8 +338,10 @@ CONTAINS
     REAL(rp) :: n_tauin,n_tauout,n_shelfdelay,n_shelf
     REAL(rp) :: n0t,n_taut
     REAL(rp) :: PSIp0,PSIp_lim,psiN_0
-    REAL(rp), DIMENSION(8) :: r_a,rm,rm_RE,PSIpN,PSIp_temp
+    REAL(rp), DIMENSION(params%pchunk) :: r_a,rm,rm_RE,PSIpN,PSIp_temp
 
+    pchunk=params%pchunk
+    
     R0=P%R0
     Z0=P%Z0
     a=P%a
@@ -384,14 +386,14 @@ CONTAINS
     SELECT CASE (TRIM(P%ne_profile))
     CASE('FLAT')
        !$OMP SIMD
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
           ne(cc) = ne0
        end do
        !$OMP END SIMD
 
     CASE('SPONG')
        !$OMP SIMD
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
           rm(cc)=sqrt((Y_R(cc)-R0)**2+(Y_Z(cc)-Z0)**2)
           r_a(cc)=rm(cc)/a
           ne(cc) = ne0*(1._rp-0.2*r_a(cc)**8)+n_ne
@@ -399,7 +401,7 @@ CONTAINS
        !$OMP END SIMD
     CASE('RE-EVO')
        !$OMP SIMD
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
           rm_RE(cc)=sqrt((Y_R(cc)-R0_RE)**2+(Y_Z(cc)-Z0_RE)**2)
           ne(cc) = (ne0-n_ne)/4._rp*(1+tanh((rm_RE(cc)+ &
                n_REr0*(time/n_tauion-1))/n_lamfront))* &
@@ -408,7 +410,7 @@ CONTAINS
        !$OMP END SIMD
     CASE('RE-EVO1')
        !$OMP SIMD
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
           rm_RE(cc)=sqrt((Y_R(cc)-R0_RE)**2+(Y_Z(cc)-Z0_RE)**2)
           ne(cc) = (ne0-n_ne)/8._rp*(1+tanh((rm_RE(cc)+ &
                n_REr0*(time/n_tauion-1))/n_lamfront))* &
@@ -422,7 +424,7 @@ CONTAINS
        
     CASE('RE-EVO-PSI')
        !$OMP SIMD
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
           PSIpN(cc)=(PSIp(cc)-PSIp0)/(PSIp_lim-PSIp0)
           ne(cc) = (ne0-n_ne)/8._rp*(1+tanh((sqrt(abs(PSIpN(cc)))+ &
                sqrt(abs(psiN_0))*(time/n_tauion-1))/n_psifront))* &
@@ -456,7 +458,7 @@ CONTAINS
        n_taut=n_psishelf*erf((time+params%dt/100._rp)/n_tauion)
        
        !$OMP SIMD
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
           PSIpN(cc)=(PSIp(cc)-PSIp0)/(PSIp_lim-PSIp0)
           ne(cc) = n0t*exp(-(sqrt(abs(PSIpN(cc)))-sqrt(abs(psiN_0)))**2._rp/ &
                (2._rp*n_taut**2._rp))*(1._rp+erf(-10._rp* &
@@ -474,7 +476,7 @@ CONTAINS
        n_taut=n_psishelf*erf((time+params%dt/100._rp)/n_tauion)
        
        !$OMP SIMD
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
           PSIp_temp(cc)=PSIp(cc)*(params%cpp%Bo*params%cpp%length**2)
           ne(cc) = n0t*exp(-(sqrt(abs(PSIp_temp(cc)))-sqrt(abs(psiN_0)))**2._rp/ &
                (2._rp*n_taut**2._rp))+n_ne
@@ -483,7 +485,7 @@ CONTAINS
        
     CASE DEFAULT
        !$OMP SIMD
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
           ne(cc) = ne0
        end do
        !$OMP END SIMD
@@ -492,13 +494,13 @@ CONTAINS
     SELECT CASE (TRIM(P%Te_profile))
     CASE('FLAT')
        !$OMP SIMD
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
           Te(cc) = Te0
        end do
        !$OMP END SIMD
     CASE('SPONG')
        !$OMP SIMD
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
           rm(cc)=sqrt((Y_R(cc)-R0)**2+(Y_Z(cc)-Z0)**2)
           r_a(cc)=rm(cc)/a
           Te(cc) = Te0*(1._rp-0.6*r_a(cc)**2)**2+Te0*n_Te
@@ -506,7 +508,7 @@ CONTAINS
        !$OMP END SIMD
     CASE DEFAULT
        !$OMP SIMD
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
           Te(cc) = P%Teo
        end do
        !$OMP END SIMD
@@ -515,19 +517,19 @@ CONTAINS
     SELECT CASE (TRIM(P%Zeff_profile))
     CASE('FLAT')
        !$OMP SIMD
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
           Zeff(cc) = P%Zeffo
        end do
        !$OMP END SIMD
     CASE('SPONG')
        !$OMP SIMD
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
           Zeff(cc) = P%Zeffo
        end do
        !$OMP END SIMD
     CASE DEFAULT
        !$OMP SIMD
-       do cc=1_idef,8_idef
+       do cc=1_idef,pchunk
           Zeff(cc) = P%Zeffo
        end do
        !$OMP END SIMD

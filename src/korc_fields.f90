@@ -126,35 +126,36 @@ CONTAINS
     !$OMP END PARALLEL DO
   end subroutine analytical_fields
 
-  subroutine analytical_fields_p(B0,E0,R0,q0,lam,ar,X_X,X_Y,X_Z, &
+  subroutine analytical_fields_p(pchunk,B0,E0,R0,q0,lam,ar,X_X,X_Y,X_Z, &
        B_X,B_Y,B_Z,E_X,E_Y,E_Z,flag_cache)
+    INTEGER, INTENT(IN)  :: pchunk
     REAL(rp),  INTENT(IN)      :: R0,B0,lam,q0,E0,ar
-    REAL(rp),  INTENT(IN),DIMENSION(8)      :: X_X,X_Y,X_Z
-    REAL(rp),  INTENT(OUT),DIMENSION(8)     :: B_X,B_Y,B_Z
-    REAL(rp),  INTENT(OUT),DIMENSION(8)     :: E_X,E_Y,E_Z
-    INTEGER(is),  INTENT(INOUT),DIMENSION(8)     :: flag_cache
-    REAL(rp),DIMENSION(8)     :: T_R,T_T,T_Z
-    REAL(rp),DIMENSION(8)                               :: Ezeta
+    REAL(rp),  INTENT(IN),DIMENSION(pchunk)      :: X_X,X_Y,X_Z
+    REAL(rp),  INTENT(OUT),DIMENSION(pchunk)     :: B_X,B_Y,B_Z
+    REAL(rp),  INTENT(OUT),DIMENSION(pchunk)     :: E_X,E_Y,E_Z
+    INTEGER(is),  INTENT(INOUT),DIMENSION(pchunk)     :: flag_cache
+    REAL(rp),DIMENSION(pchunk)     :: T_R,T_T,T_Z
+    REAL(rp),DIMENSION(pchunk)                               :: Ezeta
     !! Toroidal electric field \(E_\zeta\).
-    REAL(rp),DIMENSION(8)                               :: Bzeta
+    REAL(rp),DIMENSION(pchunk)                               :: Bzeta
     !! Toroidal magnetic field \(B_\zeta\).
-    REAL(rp),DIMENSION(8)                              :: Bp
+    REAL(rp),DIMENSION(pchunk)                              :: Bp
     !! Poloidal magnetic field \(B_\theta(r)\).
-    REAL(rp),DIMENSION(8)                               :: eta
+    REAL(rp),DIMENSION(pchunk)                               :: eta
     !! Aspect ratio \(\eta\).
-    REAL(rp),DIMENSION(8)                                :: q
+    REAL(rp),DIMENSION(pchunk)                                :: q
     !! Safety profile \(q(r)\).
-    REAL(rp),DIMENSION(8)                             :: cT,sT,cZ,sZ
+    REAL(rp),DIMENSION(pchunk)                             :: cT,sT,cZ,sZ
     INTEGER                                      :: cc
     !! Particle chunk iterator.
 
-    call cart_to_tor_check_if_confined_p(ar,R0,X_X,X_Y,X_Z, &
+    call cart_to_tor_check_if_confined_p(pchunk,ar,R0,X_X,X_Y,X_Z, &
          T_R,T_T,T_Z,flag_cache)
 
     !$OMP SIMD
     !    !$OMP& aligned(cT,sT,cZ,sZ,eta,q,Bp,Bzeta,B_X,B_Y,B_Z, &
     !    !$OMP& Ezeta,E_X,E_Y,E_Z,T_T,T_Z,T_R)
-    do cc=1_idef,8
+    do cc=1_idef,pchunk
        cT(cc)=cos(T_T(cc))
        sT(cc)=sin(T_T(cc))
        cZ(cc)=cos(T_Z(cc))
@@ -430,13 +431,13 @@ CONTAINS
     
   end subroutine analytical_fields_GC
 
-  subroutine analytical_fields_Bmag_p(F,Y_R,Y_PHI,Y_Z,Bmag,E_PHI)
-
+  subroutine analytical_fields_Bmag_p(pchunk,F,Y_R,Y_PHI,Y_Z,Bmag,E_PHI)
+    INTEGER, INTENT(IN)  :: pchunk
     TYPE(FIELDS), INTENT(IN)                                   :: F
     REAL(rp)  :: R0,B0,lam,q0,EF0
-    REAL(rp),DIMENSION(8),INTENT(IN)  :: Y_R,Y_PHI,Y_Z
-    REAL(rp),DIMENSION(8) :: B_R,B_PHI,B_Z,rm,qprof
-    REAL(rp),DIMENSION(8),INTENT(OUT) :: Bmag,E_PHI
+    REAL(rp),DIMENSION(pchunk),INTENT(IN)  :: Y_R,Y_PHI,Y_Z
+    REAL(rp),DIMENSION(pchunk) :: B_R,B_PHI,B_Z,rm,qprof
+    REAL(rp),DIMENSION(pchunk),INTENT(OUT) :: Bmag,E_PHI
     integer(ip) :: cc
 
     B0=F%Bo
@@ -447,7 +448,7 @@ CONTAINS
 
     !$OMP SIMD
     !    !$OMP& aligned(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,rm,qprof,Bmag)
-    do cc=1_idef,8_idef
+    do cc=1_idef,pchunk
        rm(cc)=sqrt((Y_R(cc)-R0)*(Y_R(cc)-R0)+Y_Z(cc)*Y_Z(cc))
        qprof(cc) = 1.0_rp + (rm(cc)*rm(cc)/(lam*lam))
 
@@ -469,10 +470,12 @@ CONTAINS
     TYPE(FIELDS), INTENT(IN)                                   :: F
     INTEGER(ip),INTENT(IN)  :: tt
     REAL(rp)  :: E_dyn,E_pulse,E_width,time,arg,arg1,R0
-    REAL(rp),DIMENSION(8),INTENT(INOUT) :: E_PHI
-    REAL(rp),DIMENSION(8),INTENT(IN) :: Y_R
-    integer(ip) :: cc
+    REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: E_PHI
+    REAL(rp),DIMENSION(params%pchunk),INTENT(IN) :: Y_R
+    integer(ip) :: cc,pchunk
 
+    pchunk=params%pchunk
+    
     time=params%init_time+(params%it-1+tt)*params%dt
     
     E_dyn=F%E_dyn
@@ -486,7 +489,7 @@ CONTAINS
     
     !$OMP SIMD
     !    !$OMP& aligned(E_PHI)
-    do cc=1_idef,8_idef
+    do cc=1_idef,pchunk
 
        arg=(time-E_pulse)**2/(2._rp*E_width**2)
        arg1=10._rp*(time-E_pulse)/(sqrt(2._rp)*E_width)
@@ -497,19 +500,19 @@ CONTAINS
 
   end subroutine add_analytical_E_p
 
-  subroutine analytical_fields_GC_p(F,Y_R,Y_PHI, &
+  subroutine analytical_fields_GC_p(pchunk,F,Y_R,Y_PHI, &
        Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
        gradB_PHI,gradB_Z,PSIp)
-
+    INTEGER, INTENT(IN) :: pchunk
     TYPE(FIELDS), INTENT(IN)                                   :: F
-    REAL(rp),DIMENSION(8),INTENT(IN)  :: Y_R,Y_PHI,Y_Z
-    REAL(rp),DIMENSION(8),INTENT(OUT) :: B_R,B_PHI,B_Z
-    REAL(rp),DIMENSION(8),INTENT(OUT) :: gradB_R,gradB_PHI,gradB_Z
-    REAL(rp),DIMENSION(8),INTENT(OUT) :: curlB_R,curlB_PHI,curlB_Z
-    REAL(rp),DIMENSION(8),INTENT(OUT) :: E_R,E_PHI,E_Z
-    REAL(rp),DIMENSION(8),INTENT(OUT) :: PSIp
-    REAL(rp),DIMENSION(8)  :: dRBR,dRBPHI,dRBZ,dZBR,dZBPHI,dZBZ,Bmag,dRbhatPHI
-    REAL(rp),DIMENSION(8)  :: dRbhatZ,dZbhatR,dZbhatPHI,qprof,rm,theta
+    REAL(rp),DIMENSION(pchunk),INTENT(IN)  :: Y_R,Y_PHI,Y_Z
+    REAL(rp),DIMENSION(pchunk),INTENT(OUT) :: B_R,B_PHI,B_Z
+    REAL(rp),DIMENSION(pchunk),INTENT(OUT) :: gradB_R,gradB_PHI,gradB_Z
+    REAL(rp),DIMENSION(pchunk),INTENT(OUT) :: curlB_R,curlB_PHI,curlB_Z
+    REAL(rp),DIMENSION(pchunk),INTENT(OUT) :: E_R,E_PHI,E_Z
+    REAL(rp),DIMENSION(pchunk),INTENT(OUT) :: PSIp
+    REAL(rp),DIMENSION(pchunk)  :: dRBR,dRBPHI,dRBZ,dZBR,dZBPHI,dZBZ,Bmag,dRbhatPHI
+    REAL(rp),DIMENSION(pchunk)  :: dRbhatZ,dZbhatR,dZbhatPHI,qprof,rm,theta
     REAL(rp)  :: B0,E0,lam,R0,q0
     integer(ip) :: cc
 
@@ -522,7 +525,7 @@ CONTAINS
     !$OMP SIMD
 !    !$OMP& aligned(Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z, &
 !    !$OMP& curlB_R,curlB_PHI,curlB_Z,E_R,E_PHI,E_Z,PSIp)
-    do cc=1_idef,8_idef
+    do cc=1_idef,pchunk
        rm(cc)=sqrt((Y_R(cc)-R0)*(Y_R(cc)-R0)+Y_Z(cc)*Y_Z(cc))
        theta(cc)=atan2(Y_Z(cc),(Y_R(cc)-R0))
        qprof(cc) = 1.0_rp + (rm(cc)*rm(cc)/(lam*lam))
@@ -1058,25 +1061,26 @@ CONTAINS
 
     TYPE(FIELDS), INTENT(IN)                 :: F
     TYPE(KORC_PARAMS), INTENT(IN) 		:: params
-    real(rp),dimension(8),intent(in) :: Y_R,Y_Z
-    real(rp),dimension(8),intent(in) :: B_R,B_PHI,B_Z
-    real(rp),dimension(8),intent(in) :: V_PLL,V_MU
+    real(rp),dimension(params%pchunk),intent(in) :: Y_R,Y_Z
+    real(rp),dimension(params%pchunk),intent(in) :: B_R,B_PHI,B_Z
+    real(rp),dimension(params%pchunk),intent(in) :: V_PLL,V_MU
     real(rp),intent(in) :: m_cache
-    integer(is),dimension(8),intent(in) :: flagCon,flagCol
-    real(rp),dimension(8) :: rm,Bmag,gam,vpll
+    integer(is),dimension(params%pchunk),intent(in) :: flagCon,flagCol
+    real(rp),dimension(params%pchunk) :: rm,Bmag,gam,vpll
     real(rp),dimension(F%dim_1D),intent(out) :: Vden
     real(rp),dimension(F%dim_1D) :: Vpart,Ai
     real(rp),dimension(F%dim_1D) :: r_1D
     real(rp) :: dr,sigr,ar,arg,arg1,arg2,arg3
-    integer :: cc,ii,rind
+    integer :: cc,ii,rind,pchunk
 
+    pchunk=params%pchunk
 
     dr=F%r_1D(2)-F%r_1D(1)
     r_1D=F%r_1D
     sigr=dr
 
     Vpart=0._rp
-    do cc=1_idef,8_idef
+    do cc=1_idef,pchunk
 
        ! 1D nearest grid point weighting in minor radius
 
@@ -1158,17 +1162,18 @@ CONTAINS
 
     TYPE(FIELDS), INTENT(IN)                 :: F
     TYPE(KORC_PARAMS), INTENT(IN) 		:: params
-    real(rp),dimension(8),intent(in) :: PSIp
-    real(rp),dimension(8),intent(in) :: B_R,B_PHI,B_Z
-    real(rp),dimension(8),intent(in) :: V_PLL,V_MU
+    real(rp),dimension(params%pchunk),intent(in) :: PSIp
+    real(rp),dimension(params%pchunk),intent(in) :: B_R,B_PHI,B_Z
+    real(rp),dimension(params%pchunk),intent(in) :: V_PLL,V_MU
     real(rp),intent(in) :: m_cache
-    integer(is),dimension(8),intent(in) :: flagCon,flagCol
-    real(rp),dimension(8) :: Bmag,gam,vpll,PSIp_cache
+    integer(is),dimension(params%pchunk),intent(in) :: flagCon,flagCol
+    real(rp),dimension(params%pchunk) :: Bmag,gam,vpll,PSIp_cache
     real(rp),dimension(F%dim_1D),intent(out) :: dintJphidPSIP
     real(rp),dimension(F%dim_1D) :: PSIP_1D
     real(rp) :: dPSIP,ar,arg,arg1,arg2,arg3,PSIP_lim,sigPSIP
-    integer :: cc,ii,PSIPind
+    integer :: cc,ii,PSIPind,pchunk
 
+    pchunk=params%pchunk
 
     PSIP_1D=F%PSIP_1D
     dPSIP=PSIP_1D(2)-PSIP_1D(1)
@@ -1178,7 +1183,7 @@ CONTAINS
     
     dintJphidPSIP=0._rp
     
-    do cc=1_idef,8_idef
+    do cc=1_idef,pchunk
 
        ! 1D Riemann sum 
 

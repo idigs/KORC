@@ -127,14 +127,15 @@ subroutine load_korc_params(params)
   LOGICAL :: SC_E_add
   INTEGER                           :: time_slice
   REAL(rp)                          :: rmax,rmin,zmax,zmin
-
+  INTEGER                           :: pchunk
+  
   NAMELIST /input_parameters/ restart,field_model,magnetic_field_filename, &
        simulation_time,snapshot_frequency,dt,num_species,radiation, &
        collisions,collisions_model,outputs_list,minimum_particle_energy, &
        HDF5_error_handling,orbit_model,field_eval,proceed,profile_model, &
        restart_overwrite_frequency,FokPlan,GC_rad_model,bound_electron_model, &
        FO_GC_compare,SameRandSeed,SC_E,reinit,SC_E_add,time_slice,rmax, &
-       rmin,zmax,zmin
+       rmin,zmax,zmin,pchunk
 
   open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
        status='OLD',form='formatted')
@@ -186,6 +187,8 @@ subroutine load_korc_params(params)
 
   params%SC_E=SC_E
   params%SC_E_add=SC_E_add
+
+  params%pchunk=pchunk
 
   ! Loading list of output parameters (parsing)
   imin = SCAN(outputs_list,'{')

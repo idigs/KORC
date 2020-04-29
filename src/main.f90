@@ -308,8 +308,10 @@ program main
   call timing_KORC(params)
 
 
-  if (params%orbit_model(1:2).eq.'FO'.and.params%field_eval.eq.'eqn') then
-
+  if (params%orbit_model(1:2).eq.'FO'.and.params%field_model(1:3).eq.'ANA') then
+     call FO_init(params,F,spp,.false.,.true.)
+     ! Initial half-time particle push
+     
      do it=params%ito,params%t_steps,params%t_skip
         call adv_FOeqn_top(params,F,P,spp)
 
@@ -322,7 +324,7 @@ program main
      end do
   end if
 
-  if (params%orbit_model(1:2).eq.'FO'.and.params%field_eval.eq.'interp') then
+  if (params%orbit_model(1:2).eq.'FO'.and.params%field_model(1:3).eq.'EXT') then
      call FO_init(params,F,spp,.false.,.true.)
      ! Initial half-time particle push
      
@@ -338,6 +340,22 @@ program main
      end do
   end if
 
+  if (params%orbit_model(1:2).eq.'FO'.and.params%field_model.eq.'M3D_C1') then
+     call FO_init(params,F,spp,.false.,.true.)
+     ! Initial half-time particle push
+     
+     do it=params%ito,params%t_steps,params%t_skip
+        call adv_FOm3dc1_top(params,F,P,spp)
+        
+        params%time = params%init_time &
+             +REAL(it-1_ip+params%t_skip,rp)*params%dt        
+        params%it = it-1_ip+params%t_skip
+
+        call save_simulation_outputs(params,spp,F)
+        call save_restart_variables(params,spp,F)
+     end do
+  end if
+  
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'eqn') then
      do it=params%ito,params%t_steps,params%t_skip*params%t_it_SC
         call adv_GCeqn_top(params,F,P,spp)

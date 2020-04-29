@@ -2284,7 +2284,11 @@ CONTAINS
                 CASE('PSIp')
                    
                    dset = "PSIp"
-                   units = params%cpp%Bo*params%cpp%length**2
+                   if (.not.params%field_model.eq.'M3D_C1') then
+                      units = params%cpp%Bo*params%cpp%length**2
+                   else
+                      units = 1._rp
+                   end if
                    call save_1d_array_to_hdf5(subgroup_id, dset, &
                         units*spp(ss)%vars%PSI_P)
 
