@@ -569,7 +569,7 @@ subroutine initialize_particles(params,F,P,spp)
         ALLOCATE( spp(ii)%vars%k4(spp(ii)%ppp,4) )
         ALLOCATE( spp(ii)%vars%k5(spp(ii)%ppp,4) )
         ALLOCATE( spp(ii)%vars%k6(spp(ii)%ppp,4) )
-        if (params%orbit_model(3:5)=='pre') then
+        if (params%orbit_model(3:5)=='pre'.or.params%field_model=='M3D_C1') then
            ALLOCATE( spp(ii)%vars%gradB(spp(ii)%ppp,3) )
            ALLOCATE( spp(ii)%vars%curlb(spp(ii)%ppp,3) )
 

@@ -5,14 +5,14 @@
     ! Append simulation results after previous simulation_time reached
   reinit = F
     ! Begin a new simulation, reinitializing from restart file state
-  simulation_time = 1.E-7
+  simulation_time = 1.E-3
     ! Total aimed simulation time in seconds   
     ! Run 10 mu s If transients exist put 5 extra mu s.
-  snapshot_frequency = 0.1616E-10
+  snapshot_frequency = 1.E-5
     ! Time between snapshots in seconds
   restart_overwrite_frequency = 1.E-1	
     ! Time between overwritting of restart file in seconds
-  dt = 1.E-2
+  dt = 1.E0
     ! Time step as fraction of relativistic gyro-period
   num_species = 1
   minimum_particle_energy = 1.0E5 
@@ -45,7 +45,7 @@
     !'{X,Y,V,E,B,g,mu,eta,Prad,Pin,flagCon,flagCol,gradB,curlb,ne,Te,Zeff,PSIp}'
   HDF5_error_handling = T
   FO_GC_compare = F
-  orbit_model = 'FO'
+  orbit_model = 'GC'
     ! 'FO' for full orbit, 'GCpre' for guiding center with pre-computed
     ! auxiliary fields, 'GCgrad' for guiding center with auxiliary
     ! fields computed with PSPLINE.
@@ -57,23 +57,23 @@
   SameRandSeed = F
   SC_E = F
   SC_E_add = F
-  pchunk = 8
+  pchunk = 1
 /
 
 &plasma_species
   runaway = F 
-  ppp =8E0
+  ppp =1E0
     ! Number of particles per process (mpi)
   q = -1.0 
     ! Electric charge
   m = 1.0 
     ! In units of electron mass
-  spatial_distribution = 'TORUS'
+  spatial_distribution = 'TRACER'
     ! Options are: 'UNIFORM', 'DISK', 'TORUS', 'EXPONENTIAL-TORUS',
     ! 'GAUSSIAN-TORUS', 'ELLIPTIC-TORUS', 'EXPONENTIAL-ELLIPTIC-TORUS',
     ! 'GAUSSIAN-ELLIPTICAL-TORUS', '2D-GAUSSIAN-ELLIPTIC-TORUS-MH',
     ! 'AVALANCHE-4D','TRACER','SPONG-3D','HOLLMANN-3D'
-  Ro = 0.8 
+  Ro = 1.1 
   PHIo = 0.0 
     ! In degrees
   Zo = -0.05
@@ -93,13 +93,13 @@
     ! Options are: 'MONOPITCH', 'AVALANCHE', 'EXPERIMENTAL', and 'UNIFORM'.
   Eo = 10.0E6 
     ! Initial energy in eV
-  etao = 10.0  
+  etao = 1.0  
     ! Initial pitch angle
   Eo_lims = 1.0E6,50.0E6 
     ! Lower and upper limit of simulated energy range, in eV.
   etao_lims = 0.0,20.0 
     ! Lower and upper limit of simulated pitch-angle range, in degrees.
-  Xtrace = 2.05,0.0,0.0
+  Xtrace = 1.1,0.0,0.0
     ! Initial position of tracer particle for debugging with
     ! spatial_distribution='TRACER'
   Spong_b = 0.2
@@ -137,6 +137,10 @@
   dim_1D=50
   dt_E_SC=1.E-9
   Ip_exp=2E5
+  E_dyn = 0.
+!  E_dyn = 1.5926	
+  E_pulse = 5.E-2
+  E_width = 2.5E-2
 /
 
 &externalPlasmaModel

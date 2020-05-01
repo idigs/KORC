@@ -483,9 +483,7 @@ CONTAINS
     E_width=F%E_width
     R0=F%Ro
 
-!    write(6,'("E_dyn: ",E17.10)') E_dyn
-!    write(6,'("E_pulse: ",E17.10)') E_pulse
-!    write(6,'("E_width: ",E17.10)') E_width
+    !write(6,*) E_dyn,E_pulse,E_width,R0
     
     !$OMP SIMD
     !    !$OMP& aligned(E_PHI)
@@ -497,6 +495,8 @@ CONTAINS
        E_PHI(cc)=E_PHI(cc)+R0*E_dyn/Y_R(cc)*exp(-arg)*(1._rp+erf(-arg1))/2._rp
     end do
     !$OMP END SIMD
+
+    !write(6,*) arg,arg1
 
   end subroutine add_analytical_E_p
 
@@ -1939,6 +1939,8 @@ CONTAINS
        F%E_dyn = E_dyn
        F%E_pulse = E_pulse
        F%E_width = E_width
+
+       !write(6,*) E_dyn,E_pulse,E_width
 
        F%res_double=res_double
        

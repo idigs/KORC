@@ -423,9 +423,8 @@ CONTAINS
     call unitVectors(params,spp%vars,F,b1,b2,b3)
     !! Call to subroutine [[unitVectors]] in [[korc_fields]].
 
-!    write(6,'("bhat x-component: ",E17.10)') b1(:,1)
-!    write(6,'("bhat y-component: ",E17.10)') b1(:,2)
-!    write(6,'("bhat z-component: ",E17.10)') b1(:,3)
+    !write(6,*) 'X',spp%vars%X
+    !write(6,*) 'b-hat',b1
 
     
     do jj=1_idef,spp%ppp

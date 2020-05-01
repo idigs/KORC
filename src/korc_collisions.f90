@@ -1381,6 +1381,7 @@ contains
        dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt       
        time=params%init_time+(params%it-1+tt)*params%dt
 
+
        if (params%field_eval.eq.'eqn') then
           call analytical_fields_GC_p(pchunk,F,Y_R,Y_PHI, &
                Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
@@ -1400,12 +1401,12 @@ contains
 
              else if (F%ReInterp_2x1t) then
                 call calculate_GCfieldswE_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
-                        E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-                        gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp)
+                     E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+                     gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp)
              else if (F%Bflux3D) then
                 call calculate_GCfields_2x1t_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
-                        E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
-                        gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp,time)
+                     E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+                     gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp,time)
              else if (F%dBfield) then
                 call calculate_2DBdBfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                      E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
@@ -1414,7 +1415,7 @@ contains
                 call interp_fields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
                      E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
                      gradB_R,gradB_PHI,gradB_Z,flagCon)
-             end if                
+             end if
           else
              if (F%dBfield) then
                 call calculate_2DBdBfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
@@ -1428,13 +1429,14 @@ contains
           endif
           call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
        end if
-       
+
+
        if (params%profile_model(1:10).eq.'ANALYTICAL') then
           call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
        else if (params%profile_model(1:8).eq.'EXTERNAL') then      
           call interp_FOcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flagCon)
-       end if         
-
+       end if
+       
        if (.not.params%FokPlan) E_PHI=0._rp
        
        !$OMP SIMD
@@ -1595,6 +1597,226 @@ contains
     end if
     
   end subroutine include_CoulombCollisions_GC_p
+
+  subroutine include_CoulombCollisions_GCm3dc1_p(tt,params,Y_R,Y_PHI,Y_Z, &
+       Ppll,Pmu,me,flagCon,flagCol,F,P,E_PHI,ne,PSIp,hint)
+
+    TYPE(PROFILES), INTENT(IN)                                 :: P
+    TYPE(FIELDS), INTENT(IN)                                   :: F
+    TYPE(KORC_PARAMS), INTENT(INOUT) 		:: params
+    REAL(rp), DIMENSION(params%pchunk), INTENT(INOUT) 	:: Ppll
+    REAL(rp), DIMENSION(params%pchunk), INTENT(INOUT) 	:: Pmu
+    REAL(rp), DIMENSION(params%pchunk) 			:: Bmag
+    REAL(rp), DIMENSION(params%pchunk) 	:: B_R,B_PHI,B_Z
+    REAL(rp), DIMENSION(params%pchunk) :: curlb_R,curlb_PHI,curlb_Z
+    REAL(rp), DIMENSION(params%pchunk) :: gradB_R,gradB_PHI,gradB_Z
+    REAL(rp), DIMENSION(params%pchunk) 	:: E_R,E_Z
+    REAL(rp), DIMENSION(params%pchunk), INTENT(OUT) 	:: E_PHI,ne,PSIp
+    REAL(rp), DIMENSION(params%pchunk), INTENT(IN) 	:: Y_R,Y_PHI,Y_Z
+    INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT)  :: flagCol
+    INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT)  :: flagCon
+    TYPE(C_PTR), DIMENSION(params%pchunk), INTENT(INOUT)  :: hint
+    REAL(rp), INTENT(IN) 			:: me
+    REAL(rp), DIMENSION(params%pchunk) 			:: Te,Zeff
+    REAL(rp), DIMENSION(params%pchunk,2) 			:: dW
+    REAL(rp), DIMENSION(params%pchunk,2) 			:: rnd1
+    REAL(rp) 					:: dt,time
+    REAL(rp), DIMENSION(params%pchunk) 					:: pm
+    REAL(rp), DIMENSION(params%pchunk)  :: dp
+    REAL(rp), DIMENSION(params%pchunk)  :: xi
+    REAL(rp), DIMENSION(params%pchunk)  :: dxi
+    REAL(rp), DIMENSION(params%pchunk)  :: v,gam
+    !! speed of particle
+    REAL(rp), DIMENSION(params%pchunk) 					:: CAL
+    REAL(rp) , DIMENSION(params%pchunk)					:: dCAL
+    REAL(rp), DIMENSION(params%pchunk) 					:: CFL
+    REAL(rp), DIMENSION(params%pchunk) 					:: CBL
+    REAL(rp), DIMENSION(params%pchunk) 	:: SC_p,SC_mu,BREM_p
+    REAL(rp) 					:: kappa
+    integer :: cc,pchunk
+    integer(ip),INTENT(IN) :: tt
+
+    pchunk=params%pchunk
+    
+    if (MODULO(params%it+tt,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
+       dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt       
+       time=params%init_time+(params%it-1+tt)*params%dt
+
+       call get_m3d_c1_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+            B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z, &
+            curlb_R,curlb_PHI,curlb_Z,flagCon,hint)
+       if (F%M3D_C1_E .ge. 0) then
+          call get_m3d_c1_GCelectric_fields_p(params,F, &
+               Y_R,Y_PHI,Y_Z,E_R,E_PHI,E_Z,flagCon,hint)
+       end if
+
+
+       if (params%profile_model(1:10).eq.'ANALYTICAL') then
+          call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
+       else if (params%profile_model(1:8).eq.'EXTERNAL') then      
+          call interp_FOcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flagCon)
+       end if
+       
+       if (.not.params%FokPlan) E_PHI=0._rp
+       
+       !$OMP SIMD
+!       !$OMP& aligned (pm,xi,v,Ppll,Bmag,Pmu)
+       do cc=1_idef,pchunk
+          Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
+          ! Transform p_pll,mu to P,eta
+          pm(cc) = SQRT(Ppll(cc)*Ppll(cc)+2*me*Bmag(cc)*Pmu(cc))
+          xi(cc) = Ppll(cc)/pm(cc)
+
+          gam(cc) = sqrt(1+pm(cc)*pm(cc))
+          
+          v(cc) = pm(cc)/gam(cc)
+          ! normalized speed (v_K=v_P/c)
+       end do
+       !$OMP END SIMD
+
+!       write(6,'("ne: "E17.10)') ne
+!       write(6,'("Te: "E17.10)') Te
+!       write(6,'("Bmag: "E17.10)') Bmag                
+!       write(6,'("v: ",E17.10)') v
+!       write(6,'("xi: ",E17.10)') xi
+       !       write(6,'("size(E_PHI_GC): ",I16)') size(E_PHI)
+
+
+       !$OMP SIMD
+!       !$OMP& aligned(rnd1,dW,CAL,dCAL,CFL,CBL,v,ne,Te,Zeff,dp, &
+!       !$OMP& flagCon,flagCol,dxi,xi,pm,Ppll,Pmu,Bmag)
+       do cc=1_idef,pchunk
+       
+#ifdef PARALLEL_RANDOM
+          rnd1(cc,1) = get_random()
+          rnd1(cc,2) = get_random()
+          !       rnd1(:,1) = get_random_mkl()
+          !       rnd1(:,2) = get_random_mkl()
+#else
+          call RANDOM_NUMBER(rnd1)
+#endif
+          
+          dW(cc,1) = SQRT(3*dt)*(-1+2*rnd1(cc,1))     
+          dW(cc,2) = SQRT(3*dt)*(-1+2*rnd1(cc,2))     
+
+!          write(6,'("dW1: ",E17.10)') dW(cc,1)
+!          write(6,'("dW2: ",E17.10)') dW(cc,2)
+          
+          CAL(cc) = CA_SD(v(cc),ne(cc),Te(cc))
+          dCAL(cc)= dCA_SD(v(cc),me,ne(cc),Te(cc))
+          CFL(cc) = CF_SD(params,v(cc),ne(cc),Te(cc))
+          CBL(cc) = (CB_ee_SD(v(cc),ne(cc),Te(cc),Zeff(cc))+ &
+               CB_ei_SD(params,v(cc),ne(cc),Te(cc),Zeff(cc)))
+          
+          
+          dp(cc)=REAL(flagCol(cc))*REAL(flagCon(cc))* &
+               ((-CFL(cc)+dCAL(cc)+E_PHI(cc)*xi(cc))*dt+ &
+               sqrt(2.0_rp*CAL(cc))*dW(cc,1))
+
+          dxi(cc)=REAL(flagCol(cc))*REAL(flagCon(cc))* &
+               ((-2*xi(cc)*CBL(cc)/(pm(cc)*pm(cc))+ &
+               E_PHI(cc)*(1-xi(cc)*xi(cc))/pm(cc))*dt- &
+               sqrt(2.0_rp*CBL(cc)*(1-xi(cc)*xi(cc)))/pm(cc)*dW(cc,2))
+
+!          write(6,'("dp: ",E17.10)') dp(cc)
+!          write(6,'("dxi: ",E17.10)') dxi(cc)
+
+       end do
+       !$OMP END SIMD
+          
+       if (params%FokPlan.and.params%radiation) then
+          if(params%GC_rad_model.eq.'SDE') then
+
+             !$OMP SIMD
+             do cc=1_idef,pchunk
+
+                SC_p(cc)=-gam(cc)*pm(cc)*(1-xi(cc)*xi(cc))/ &
+                     (cparams_ss%taur/Bmag(cc)**2)
+                SC_mu(cc)=xi(cc)*(1-xi(cc)*xi(cc))/ &
+                     ((cparams_ss%taur/Bmag(cc)**2)*gam(cc))
+
+                kappa=2._rp*C_PI*C_RE**2._rp*C_ME*C_C**2._rp
+                BREM_p(cc)=-2._rp*ne(cc)*kappa*Zeff(cc)*(Zeff(cc)+1._rp)* &
+                     C_a/C_PI*(gam(cc)-1._rp)*(log(2._rp*gam(cc))-1._rp/3._rp)
+
+
+                dp(cc)=dp(cc)+(SC_p(cc)+BREM_p(cc))*dt* &
+                     REAL(flagCol(cc))*REAL(flagCon(cc))
+                dxi(cc)=dxi(cc)+(SC_mu(cc))*dt* &
+                     REAL(flagCol(cc))*REAL(flagCon(cc))
+
+             end do
+             !$OMP END SIMD
+
+          end if
+       end if
+
+       !$OMP SIMD
+       do cc=1_idef,pchunk  
+
+          pm(cc)=pm(cc)+dp(cc)
+          xi(cc)=xi(cc)+dxi(cc)
+
+!          if (pm(cc)<0) pm(cc)=-pm(cc)
+
+          ! Keep xi between [-1,1]
+          if (xi(cc)>1) then
+!             write(6,'("High xi at: ",E17.10," with dxi: ",E17.10)') &
+!                  time*params%cpp%time, dxi(cc)
+             xi(cc)=1-mod(xi(cc),1._rp)
+          else if (xi(cc)<-1) then
+             xi(cc)=-1-mod(xi(cc),-1._rp)
+!             write(6,'("Low xi at: ",E17.10," with dxi: ",E17.10)') &
+!                  time*params%cpp%time, dxi(cc)
+          endif
+
+          ! Transform P,xi to p_pll,mu
+          Ppll(cc)=pm(cc)*xi(cc)
+          Pmu(cc)=(pm(cc)*pm(cc)-Ppll(cc)*Ppll(cc))/(2*me*Bmag(cc))
+       end do
+       !$OMP END SIMD
+
+!       write(6,'("rnd1: ",E17.10)') rnd1
+!       write(6,'("flag: ",I16)') flag
+!       write(6,'("CA: ",E17.10)') CAL
+!       write(6,'("dCA: ",E17.10)') dCAL
+!       write(6,'("CF ",E17.10)') CFL
+!       write(6,'("CB: ",E17.10)') CBL
+!       write(6,'("dp: ",E17.10)') dp
+!       write(6,'("dxi: ",E17.10)') dxi
+!       write(6,'("Ppll: ",E17.10)') Ppll
+!      write(6,'("Pmu: ",E17.10)') Pmu
+!       write(6,'("E_PHI_COL: ",E17.10)') E_PHI
+       
+       do cc=1_idef,pchunk
+          if ((pm(cc).lt.1._rp).and.flagCol(cc).eq.1_ip) then
+!             write(6,'("Momentum less than zero")')
+             !             stop
+!             write(6,'("Particle not tracked at: ",E17.10," &
+!                  & with xi: ",E17.10)') time*params%cpp%time, xi(cc)
+             flagCol(cc)=0_ip
+          end if
+       end do
+
+!       if (tt .EQ. 1_ip) then
+!          write(6,'("dp_rad: ",E17.10)') &
+!               -gam(1)*pm(1)*(1-xi(1)*xi(1))/ &
+!               (cparams_ss%taur/Bmag(1)**2)*dt
+!          write(6,'("dxi_rad: ",E17.10)') &
+!               xi(1)*(1-xi(1)*xi(1))/ &
+!               ((cparams_ss%taur/Bmag(1)**2)*gam(1))*dt
+!       end if
+       
+!       if (tt .EQ. 1_ip) then
+!          write(6,'("CA: ",E17.10)') CAL(1)
+!          write(6,'("dCA: ",E17.10)') dCAL(1)
+!          write(6,'("CF ",E17.10)') CFL(1)
+!          write(6,'("CB: ",E17.10)') CBL(1)
+!       end if
+       
+    end if
+    
+  end subroutine include_CoulombCollisions_GCm3dc1_p
   
   subroutine save_params_ms(params)
     TYPE(KORC_PARAMS), INTENT(IN) 			:: params

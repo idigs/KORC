@@ -102,7 +102,6 @@ program main
   !! angle according to the chosen distribution.
 
 !  write(6,'("init eta: ",E17.10)') spp(1)%vars%eta
-  
 
 #ifdef M3D_C1
   if (TRIM(params%field_model) .eq. 'M3D_C1') then
@@ -219,6 +218,7 @@ program main
   if (params%mpi_params%rank .EQ. 0) then
      write(6,'("* * * * * * * * * * * * * * * * * * * * * * * *",/)')
   end if
+
   
 !  write(6,'("post ic eta: ",E17.10)') spp(1)%vars%eta
   
@@ -280,8 +280,6 @@ program main
   end if
 
   ! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !
-
-
   
   call save_simulation_parameters(params,spp,F,P)
 
@@ -356,7 +354,7 @@ program main
      end do
   end if
   
-  if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'eqn') then
+  if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'eqn'.and..not.params%field_model.eq.'M3D_C1') then
      do it=params%ito,params%t_steps,params%t_skip*params%t_it_SC
         call adv_GCeqn_top(params,F,P,spp)
         
@@ -372,7 +370,7 @@ program main
 
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
        F%axisymmetric_fields.and.params%field_model(10:12).eq.'PSI'.and. &
-       params%SC_E) then
+       params%SC_E.and..not.params%field_model.eq.'M3D_C1') then
      do it=params%ito,params%t_steps,params%t_skip
         call adv_GCinterp_psi_top_FS(params,spp,P,F)
         
@@ -389,7 +387,7 @@ program main
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
        F%axisymmetric_fields.and.(params%field_model(10:12).eq.'PSI'.OR. &
        params%field_model(12:14).eq.'PSI').and. &
-       (.not.params%SC_E).and.(.not.F%Dim2x1t)) then
+       (.not.params%SC_E).and.(.not.F%Dim2x1t).and..not.params%field_model.eq.'M3D_C1') then
      
      do it=params%ito,params%t_steps,params%t_skip
         call adv_GCinterp_psi_top(params,spp,P,F)
@@ -406,7 +404,7 @@ program main
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
        F%axisymmetric_fields.and.(params%field_model(10:12).eq.'PSI'.OR. &
        params%field_model(12:14).eq.'PSI').and. &
-       (.not.params%SC_E).and.F%Dim2x1t.and.(.not.F%ReInterp_2x1t)) then
+       (.not.params%SC_E).and.F%Dim2x1t.and.(.not.F%ReInterp_2x1t).and..not.params%field_model.eq.'M3D_C1') then
      
      do it=params%ito,params%t_steps,params%t_skip
         call adv_GCinterp_psi2x1t_top(params,spp,P,F)
@@ -424,7 +422,7 @@ program main
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
        F%axisymmetric_fields.and.(params%field_model(10:12).eq.'PSI'.OR. &
        params%field_model(12:14).eq.'PSI').and. &
-       (.not.params%SC_E).and.F%Dim2x1t.and.F%ReInterp_2x1t) then
+       (.not.params%SC_E).and.F%Dim2x1t.and.F%ReInterp_2x1t.and..not.params%field_model.eq.'M3D_C1') then
 
      if (params%mpi_params%rank .EQ. 0) then
         write(6,*) 'time',F%X%PHI(F%ind_2x1t)*params%cpp%time
@@ -452,7 +450,7 @@ program main
   
 
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
-       F%axisymmetric_fields.and.F%dBfield) then
+       F%axisymmetric_fields.and.F%dBfield.and..not.params%field_model.eq.'M3D_C1') then
      do it=params%ito,params%t_steps,params%t_skip
         call adv_GCinterp_2DBdB_top(params,spp,P,F)
         
@@ -467,7 +465,7 @@ program main
   
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
        F%axisymmetric_fields.and.(params%field_model(10:12).eq.'2DB'.or. &
-       params%field_model(12:13).eq.'2D').and..not.(F%dBfield)) then
+       params%field_model(12:13).eq.'2D').and..not.(F%dBfield).and..not.params%field_model.eq.'M3D_C1') then
      do it=params%ito,params%t_steps,params%t_skip
         call adv_GCinterp_B2D_top(params,spp,P,F)
         
@@ -484,7 +482,7 @@ program main
 
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
          .not.(F%axisymmetric_fields).and.(F%dBfield).and. &
-         (params%field_model(10:14).eq.'3DBdB')) then
+         (params%field_model(10:14).eq.'3DBdB').and..not.params%field_model.eq.'M3D_C1') then
      do it=params%ito,params%t_steps,params%t_skip
         call adv_GCinterp_3DBdB_top(params,spp,P,F)
         
@@ -499,7 +497,7 @@ program main
 
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
          .not.(F%axisymmetric_fields).and.(F%dBfield).and. &
-         .not.(params%field_model(10:14).eq.'3DBdB')) then
+         .not.(params%field_model(10:14).eq.'3DBdB').and..not.params%field_model.eq.'M3D_C1') then
      do it=params%ito,params%t_steps,params%t_skip
         call adv_GCinterp_3DBdB1_top(params,spp,P,F)
         
@@ -513,7 +511,7 @@ program main
   end if
 
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
-       .not.(F%axisymmetric_fields).and..not.(F%dBfield)) then
+       .not.(F%axisymmetric_fields).and..not.(F%dBfield).and..not.params%field_model.eq.'M3D_C1') then
      do it=params%ito,params%t_steps,params%t_skip
         call adv_GCinterp_B_top(params,spp,P,F)
         
@@ -523,6 +521,20 @@ program main
 
         call save_simulation_outputs(params,spp,F)
         call save_restart_variables(params,spp,F)
+     end do
+  end if
+
+  if (params%orbit_model(1:2).eq.'GC'.and.params%field_model.eq.'M3D_C1') then
+     do it=params%ito,params%t_steps,params%t_skip
+        call adv_GCinterp_m3dc1_top(params,spp,P,F)
+        
+        params%time = params%init_time &
+             +REAL(it-1_ip+params%t_skip*params%t_it_SC,rp)*params%dt        
+        params%it = it-1_ip+params%t_skip*params%t_it_SC
+
+        call save_simulation_outputs(params,spp,F)
+        call save_restart_variables(params,spp,F)
+        
      end do
   end if
   

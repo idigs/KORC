@@ -1655,6 +1655,9 @@ CONTAINS
        !$OMP SIMD
 !       !$OMP& aligned(IR,IZ)
        do pp=1_idef,pchunk
+
+          !write(6,*) Y_R(pp),Y_Z(pp),fields_domain%Ro,fields_domain%DR,fields_domain%Zo,fields_domain%DZ
+          
           IR = INT(FLOOR((Y_R(pp)  - fields_domain%Ro + &
                0.5_rp*fields_domain%DR)/fields_domain%DR) + 1.0_rp,idef)
           IZ = INT(FLOOR((Y_Z(pp)  + ABS(fields_domain%Zo) + &
@@ -3840,8 +3843,7 @@ end subroutine finalize_interpolants
              x(3) = prtcls%Y(pp,3)*params%cpp%length
 
              !             prtcls%hint(pp)=c_null_ptr
-
-
+             
              status = fio_eval_field(F%M3D_C1_B, x(1),                      &
                   Btmp(1),prtcls%hint(pp))
 
@@ -3852,13 +3854,16 @@ end subroutine finalize_interpolants
                 prtcls%flagCon(pp) = 0_is
              end if
 
-             if (.not.params%GC_coords) then             
+             if (.not.params%GC_coords) then
+                
                 prtcls%B(pp,1)=(Btmp(1)*cos(x(2))-Btmp(2)*sin(x(2)))/ &
                      params%cpp%Bo
-                prtcls%B(pp,1)=(Btmp(1)*sin(x(2))+Btmp(2)*cos(x(2)))/ &
+                prtcls%B(pp,2)=(Btmp(1)*sin(x(2))+Btmp(2)*cos(x(2)))/ &
                      params%cpp%Bo
                 prtcls%B(pp,3)=Btmp(3)/params%cpp%Bo
+                
              else
+                
                 prtcls%B(pp,1)=Btmp(1)/params%cpp%Bo
                 prtcls%B(pp,2)=Btmp(2)/params%cpp%Bo
                 prtcls%B(pp,3)=Btmp(3)/params%cpp%Bo
@@ -3875,7 +3880,7 @@ end subroutine finalize_interpolants
     TYPE(FIELDS), INTENT(IN)       :: F
     TYPE(KORC_PARAMS), INTENT(IN)  :: params
     REAL(rp), DIMENSION(params%pchunk), INTENT(IN)  :: Y_R,Y_PHI,Y_Z
-    REAL(rp), DIMENSION(params%pchunk), INTENT(OUT)  :: B_X,B_Y,B_Z
+    REAL(rp), DIMENSION(params%pchunk), INTENT(INOUT)  :: B_X,B_Y,B_Z
     INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT)  :: flag
     TYPE(C_PTR), DIMENSION(params%pchunk), INTENT(INOUT)  :: hint
     INTEGER (C_INT)                :: status
@@ -3885,8 +3890,6 @@ end subroutine finalize_interpolants
 
     pchunk=params%pchunk
 
-    !$OMP PARALLEL DO DEFAULT(SHARED) firstprivate(pchunk) &
-    !$OMP& PRIVATE(pp,status,x,Btmp)
     do pp = 1,pchunk
        if (flag(pp) .EQ. 1_is) then
           x(1) = Y_R(pp)*params%cpp%length
@@ -3895,32 +3898,112 @@ end subroutine finalize_interpolants
 
           !             prtcls%hint(pp)=c_null_ptr
 
-
           status = fio_eval_field(F%M3D_C1_B, x(1),                      &
                Btmp(1),hint(pp))
 
-          if (status .eq. FIO_NO_DATA) then
-             B_X(pp) = 0
-             B_Y(pp) = 0
-             B_Z(pp) = 0                
+          if (status .eq. FIO_SUCCESS) then
+             B_X(pp)=(Btmp(1)*cos(x(2))-Btmp(2)*sin(x(2)))/ &
+                  params%cpp%Bo
+             B_Y(pp)=(Btmp(1)*sin(x(2))+Btmp(2)*cos(x(2)))/ &
+                  params%cpp%Bo
+             B_Z(pp)=Btmp(3)/params%cpp%Bo
+          else if (status .eq. FIO_NO_DATA) then            
              flag(pp) = 0_is
           else if (status .ne. FIO_SUCCESS) then
              flag(pp) = 0_is
           end if
 
-
-          B_X(pp)=(Btmp(1)*cos(x(2))-Btmp(2)*sin(x(2)))/ &
-               params%cpp%Bo
-          B_Y(pp)=(Btmp(1)*sin(x(2))+Btmp(2)*cos(x(2)))/ &
-               params%cpp%Bo
-          B_Z(pp)=Btmp(3)/params%cpp%Bo
-
        end if
     end do
-    !$OMP END PARALLEL DO
 
   end subroutine get_m3d_c1_FOmagnetic_fields_p
 
+  subroutine get_m3d_c1_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+       B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z, &
+       curlb_R,curlb_PHI,curlb_Z,flag,hint)
+    TYPE(FIELDS), INTENT(IN)       :: F
+    TYPE(KORC_PARAMS), INTENT(IN)  :: params
+    REAL(rp), DIMENSION(params%pchunk), INTENT(IN)  :: Y_R,Y_PHI,Y_Z
+    REAL(rp), DIMENSION(params%pchunk), INTENT(INOUT)  :: B_R,B_PHI,B_Z
+    REAL(rp), DIMENSION(params%pchunk), INTENT(INOUT)  :: gradB_R,gradB_PHI,gradB_Z
+    REAL(rp), DIMENSION(params%pchunk), INTENT(INOUT)  :: curlb_R,curlb_PHI,curlb_Z
+    INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT)  :: flag
+    TYPE(C_PTR), DIMENSION(params%pchunk), INTENT(INOUT)  :: hint
+    INTEGER (C_INT)                :: status
+    INTEGER                        :: pp,pchunk
+    REAL(rp), DIMENSION(3)         :: x
+    REAL(rp), DIMENSION(3)         :: Btmp
+    REAL(rp), DIMENSION(9)         :: dBtmp
+    REAL(rp)  :: Bmag,dBRdR,dBPHIdR,dBZdR,dBRdPHI,dBPHIdPHI,dBZdPHI,dBRdZ,dBPHIdZ,dBZdZ
+
+    pchunk=params%pchunk
+
+    do pp = 1,pchunk
+       if (flag(pp) .EQ. 1_is) then
+          x(1) = Y_R(pp)*params%cpp%length
+          x(2) = Y_PHI(pp)
+          x(3) = Y_Z(pp)*params%cpp%length
+
+          !             prtcls%hint(pp)=c_null_ptr
+
+          status = fio_eval_field(F%M3D_C1_B, x(1), &
+               Btmp(1),hint(pp))
+
+          if (status .eq. FIO_SUCCESS) then
+             B_R(pp)=Btmp(1)/params%cpp%Bo
+             B_PHI(pp)=Btmp(2)/params%cpp%Bo
+             B_Z(pp)=Btmp(3)/params%cpp%Bo
+
+             Bmag=sqrt(B_R(pp)*B_R(pp)+B_PHI(pp)*B_PHI(pp)+B_Z(pp)*B_Z(pp))
+             
+             status = fio_eval_field_deriv(F%M3D_C1_B, x(1),dBtmp(1),hint(pp))
+
+             !dBRdR=dBtmp(FIO_DR_R)*(params%cpp%length/params%cpp%Bo)
+             !dBPHIdR=dBtmp(FIO_DR_PHI)*(params%cpp%length/params%cpp%Bo)
+             !dBZdR=dBtmp(FIO_DR_Z)*(params%cpp%length/params%cpp%Bo)
+             !dBRdPHI=dBtmp(FIO_DPHI_R)*(params%cpp%length/params%cpp%Bo)
+             !dBPHIdPHI=dBtmp(FIO_DPHI_PHI)*(params%cpp%length/params%cpp%Bo)
+             !dBZdPHI=dBtmp(FIO_DPHI_Z)*(params%cpp%length/params%cpp%Bo)
+             !dBRdZ=dBtmp(FIO_DZ_R)*(params%cpp%length/params%cpp%Bo)
+             !dBPHIdZ=dBtmp(FIO_DZ_PHI)*(params%cpp%length/params%cpp%Bo)
+             !dBZdZ=dBtmp(FIO_DZ_Z)*(params%cpp%length/params%cpp%Bo)
+
+             dBRdR=dBtmp(1)*(params%cpp%length/params%cpp%Bo)
+             dBPHIdR=dBtmp(2)*(params%cpp%length/params%cpp%Bo)
+             dBZdR=dBtmp(3)*(params%cpp%length/params%cpp%Bo)
+             dBRdPHI=dBtmp(4)*(params%cpp%length/params%cpp%Bo)
+             dBPHIdPHI=dBtmp(5)*(params%cpp%length/params%cpp%Bo)
+             dBZdPHI=dBtmp(6)*(params%cpp%length/params%cpp%Bo)
+             dBRdZ=dBtmp(7)*(params%cpp%length/params%cpp%Bo)
+             dBPHIdZ=dBtmp(8)*(params%cpp%length/params%cpp%Bo)
+             dBZdZ=dBtmp(9)*(params%cpp%length/params%cpp%Bo)
+
+             gradB_R(pp)=(B_R(pp)*dBRdR+B_PHI(pp)*dBPHIdR+B_Z(pp)*dBZdR)/ &
+                  Bmag
+             gradB_PHI(pp)=(B_R(pp)*dBRdPHI+B_PHI(pp)*dBPHIdPHI+ &
+                  B_Z(pp)*dBZdPHI)/(Y_R(pp)*Bmag)
+             gradB_Z(pp)=(B_R(pp)*dBRdZ+B_PHI(pp)*dBPHIdZ+B_Z(pp)*dBZdZ)/ &
+                  Bmag
+
+             curlb_R(pp)=(Bmag/Y_R(pp)*dBZdPHI-B_Z(pp)*gradB_PHI(pp)- &
+                  Bmag*dBPHIdZ+B_PHI(pp)*gradB_Z(pp))/(Bmag*Bmag)
+             curlb_PHI(pp)=(Bmag*dBRdZ-B_R(pp)*gradB_Z(pp)- &
+                  Bmag*dBZdR+B_Z(pp)*gradB_R(pp))/(Bmag*Bmag)
+             curlb_Z(pp)=(Bmag/Y_R(pp)*B_PHI(pp)+Bmag*dBPHIdR- &
+                  B_PHI(pp)*gradB_R(pp)- &
+                  Bmag/Y_R(pp)*dBRdPHI+B_R(pp)*gradB_PHI(pp))/(Bmag*Bmag)
+             
+          else if (status .eq. FIO_NO_DATA) then            
+             flag(pp) = 0_is
+          else if (status .ne. FIO_SUCCESS) then
+             flag(pp) = 0_is
+          end if
+          
+       end if
+    end do
+
+  end subroutine get_m3d_c1_GCmagnetic_fields_p
+  
   subroutine get_m3d_c1_vector_potential(prtcls, F, params)
     TYPE(PARTICLES), INTENT(INOUT) :: prtcls
     TYPE(FIELDS), INTENT(IN)       :: F
@@ -3950,16 +4033,15 @@ end subroutine finalize_interpolants
           status = fio_eval_field(F%M3D_C1_A, x(1),                      &
                Atmp(1),prtcls%hint(pp))
 
-          if (status .eq. FIO_NO_DATA) then
+          if (status .eq. FIO_SUCCESS) then
+             prtcls%PSI_P(pp)=-Atmp(2)*x(1)
+          else if (status .eq. FIO_NO_DATA) then
              prtcls%PSI_P(pp) = 0
              prtcls%flagCon(pp) = 0_is
           else if (status .ne. FIO_SUCCESS) then
              prtcls%flagCon(pp) = 0_is
           end if
 
-          if (.not.params%GC_coords) then             
-             prtcls%PSI_P(pp)=Atmp(3)*x(1)
-          end if
 
        end if
     end do
@@ -3983,8 +4065,6 @@ end subroutine finalize_interpolants
 
     pchunk=params%pchunk
     
-    !$OMP PARALLEL DO DEFAULT(SHARED) firstprivate(pchunk) &
-    !$OMP& PRIVATE(pp,status,x,Atmp)
     do pp = 1,pchunk
        if (flag(pp) .EQ. 1_is) then
           x(1) = Y_R(pp)*params%cpp%length
@@ -3997,18 +4077,17 @@ end subroutine finalize_interpolants
           status = fio_eval_field(F%M3D_C1_A, x(1),                      &
                Atmp(1),hint(pp))
 
-          if (status .eq. FIO_NO_DATA) then
+          if (status .eq. FIO_SUCCESS) then
+             PSIp(pp)=-Atmp(2)*x(1)          
+          else if (status .eq. FIO_NO_DATA) then
              PSIp(pp) = 0
              flag(pp) = 0_is
           else if (status .ne. FIO_SUCCESS) then
              flag(pp) = 0_is
           end if
 
-          PSIp(pp)=-Atmp(2)*x(1)
-
        end if
     end do
-    !$OMP END PARALLEL DO
 
   end subroutine get_m3d_c1_vector_potential_p
   
@@ -4089,8 +4168,6 @@ end subroutine finalize_interpolants
 
     pchunk=params%pchunk
 
-    !$OMP PARALLEL DO DEFAULT(SHARED) firstprivate(pchunk)&
-    !$OMP& PRIVATE(pp,status,x,Etmp)
     do pp = 1,pchunk
        if (flag(pp) .EQ. 1_is) then
           x(1) = Y_R(pp)*params%cpp%length
@@ -4103,7 +4180,13 @@ end subroutine finalize_interpolants
           status = fio_eval_field(F%M3D_C1_E, x(1),                      &
                Etmp(1),hint(pp))
 
-          if (status .eq. FIO_NO_DATA) then
+          if (status .eq. FIO_SUCCESS) then
+             E_X(pp)=(Etmp(1)*cos(x(2))-Etmp(2)*sin(x(2)))/ &
+                  params%cpp%Eo
+             E_Y(pp)=(Etmp(1)*sin(x(2))+Etmp(2)*cos(x(2)))/ &
+                  params%cpp%Eo
+             E_Z(pp)=Etmp(3)/params%cpp%Eo     
+          else if (status .eq. FIO_NO_DATA) then
              E_X(pp) = 0
              E_Y(pp) = 0
              E_Z(pp) = 0                
@@ -4111,19 +4194,53 @@ end subroutine finalize_interpolants
           else if (status .ne. FIO_SUCCESS) then
              flag(pp) = 0_is
           end if
+         
+       end if
+    end do
 
+  end subroutine get_m3d_c1_FOelectric_fields_p
+  
+  subroutine get_m3d_c1_GCelectric_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+       E_R,E_PHI,E_Z,flag,hint)
+    TYPE(FIELDS), INTENT(IN)       :: F
+    TYPE(KORC_PARAMS), INTENT(IN)  :: params
+    REAL(rp), DIMENSION(params%pchunk), INTENT(IN)  :: Y_R,Y_PHI,Y_Z
+    REAL(rp), DIMENSION(params%pchunk), INTENT(OUT)  :: E_R,E_PHI,E_Z
+    INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT)  :: flag
+    TYPE(C_PTR), DIMENSION(params%pchunk), INTENT(INOUT)  :: hint
+    INTEGER (C_INT)                :: status
+    INTEGER                        :: pp,pchunk
+    REAL(rp), DIMENSION(3)         :: x
+    REAL(rp), DIMENSION(3)         :: Etmp
 
-          E_X(pp)=(Etmp(1)*cos(x(2))-Etmp(2)*sin(x(2)))/ &
-               params%cpp%Eo
-          E_Y(pp)=(Etmp(1)*sin(x(2))+Etmp(2)*cos(x(2)))/ &
-               params%cpp%Eo
-          E_Z(pp)=Etmp(3)/params%cpp%Eo
+    pchunk=params%pchunk
+
+    do pp = 1,pchunk
+       if (flag(pp) .EQ. 1_is) then
+          x(1) = Y_R(pp)*params%cpp%length
+          x(2) = Y_PHI(pp)
+          x(3) = Y_Z(pp)*params%cpp%length
+
+          status = fio_eval_field(F%M3D_C1_E, x(1),                      &
+               Etmp(1),hint(pp))
+
+          if (status .eq. FIO_SUCCESS) then
+             E_R(pp)=Etmp(1)/params%cpp%Eo
+             E_PHI(pp)=Etmp(2)/params%cpp%Eo
+             E_Z(pp)=Etmp(3)/params%cpp%Eo              
+          else if (status .eq. FIO_NO_DATA) then
+             E_R(pp) = 0
+             E_PHI(pp) = 0
+             E_Z(pp) = 0                
+             flag(pp) = 0_is
+          else if (status .ne. FIO_SUCCESS) then
+             flag(pp) = 0_is
+          end if
 
        end if
     end do
-    !$OMP END PARALLEL DO
 
-  end subroutine get_m3d_c1_FOelectric_fields_p
+  end subroutine get_m3d_c1_GCelectric_fields_p
   
   subroutine get_m3d_c1_profile(prtcls, P, params)
     TYPE(PARTICLES), INTENT(INOUT) :: prtcls
