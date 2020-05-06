@@ -1886,7 +1886,7 @@ CONTAINS
     integer :: res_double
     real(rp) :: RMAX,RMIN,ZMAX,ZMIN
     integer :: dim_1D,ind0_2x1t
-    real(rp) :: dt_E_SC,Ip_exp,PSIp_lim
+    real(rp) :: dt_E_SC,Ip_exp,PSIp_lim,PSIp_0
     real(rp) :: t0_2x1t
     
 
@@ -1896,7 +1896,7 @@ CONTAINS
     NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux,Bflux3D,dBfield, &
          axisymmetric_fields, Eo,E_dyn,E_pulse,E_width,res_double, &
          dim_1D,dt_E_SC,Ip_exp,PSIp_lim,Dim2x1t,t0_2x1t,E_2x1t,ReInterp_2x1t, &
-         ind0_2x1t
+         ind0_2x1t,PSIp_0
 
 #ifdef M3D_C1
     F%M3D_C1_B = -1

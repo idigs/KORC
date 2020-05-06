@@ -550,7 +550,7 @@ module korc_types
      REAL(rp)  :: E_pulse
      REAL(rp)  :: E_width
      REAL(rp)  :: PSIP_min
-     REAL(rp)  :: PSIp_lim
+     REAL(rp)  :: PSIp_lim,PSIp_0
      !! interpolated E field
      INTEGER 			:: res_double
      INTEGER, DIMENSION(3) 			:: dims 

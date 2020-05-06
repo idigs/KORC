@@ -4029,6 +4029,7 @@ end subroutine finalize_interpolants
 
           !             prtcls%hint(pp)=c_null_ptr
 
+!          write(6,*) x
 
           status = fio_eval_field(F%M3D_C1_A, x(1),                      &
                Atmp(1),prtcls%hint(pp))
@@ -4036,10 +4037,11 @@ end subroutine finalize_interpolants
           if (status .eq. FIO_SUCCESS) then
              prtcls%PSI_P(pp)=-Atmp(2)*x(1)
           else if (status .eq. FIO_NO_DATA) then
-             prtcls%PSI_P(pp) = 0
+             prtcls%PSI_P(pp) = 100._rp
              prtcls%flagCon(pp) = 0_is
           else if (status .ne. FIO_SUCCESS) then
              prtcls%flagCon(pp) = 0_is
+             prtcls%PSI_P(pp) = 100._rp
           end if
 
 
@@ -4080,9 +4082,10 @@ end subroutine finalize_interpolants
           if (status .eq. FIO_SUCCESS) then
              PSIp(pp)=-Atmp(2)*x(1)          
           else if (status .eq. FIO_NO_DATA) then
-             PSIp(pp) = 0
+             PSIp(pp) = 100._rp
              flag(pp) = 0_is
           else if (status .ne. FIO_SUCCESS) then
+             PSIp(pp) = 100._rp
              flag(pp) = 0_is
           end if
 

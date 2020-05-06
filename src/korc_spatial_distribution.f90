@@ -1274,18 +1274,28 @@ subroutine MH_psi(params,spp,F)
   
   nsamples = spp%ppp*params%mpi_params%nmpi
 
-  psi_max = spp%psi_max
-  psi_max_buff = spp%psi_max*2._rp
-
   params%GC_coords=.TRUE.
   PSIp_lim=F%PSIp_lim
-  PSIp0=F%PSIP_min
 
-  
-  min_R=minval(F%X%R)
-  max_R=maxval(F%X%R)
-  min_Z=minval(F%X%Z)
-  max_Z=maxval(F%X%Z)
+  if (params%field_model.eq.'M3D_C1') then
+     min_R=params%rmin/params%cpp%length
+     max_R=params%rmax/params%cpp%length
+     min_Z=params%Zmin/params%cpp%length
+     max_Z=params%Zmax/params%cpp%length
+
+     PSIp0=F%PSIp_0
+     psi_max = spp%psi_max
+     psi_max_buff = spp%psi_max
+  else
+     min_R=minval(F%X%R)
+     max_R=maxval(F%X%R)
+     min_Z=minval(F%X%Z)
+     max_Z=maxval(F%X%Z)
+
+     PSIp0=F%PSIP_min
+     psi_max = spp%psi_max
+     psi_max_buff = spp%psi_max*2._rp
+  end if  
 
   sigma=spp%sigmaR*params%cpp%length
   
@@ -1315,7 +1325,8 @@ subroutine MH_psi(params,spp,F)
      else
         call random_seed(put=seed)
      end if
-     
+
+     write(6,'("Begin burn: ",I10)')
      accepted=.false.
      ii=1_idef
      do while (ii .LE. 1000_idef)
@@ -1360,13 +1371,26 @@ subroutine MH_psi(params,spp,F)
            !write(6,*) 'R',R_buffer
            !write(6,*) 'Z',Z_buffer
            
-           call get_fields(params,spp%vars,F)
+           if (params%field_model.eq.'M3D_C1') then
+              call get_m3d_c1_vector_potential(spp%vars,F,params)
+           else
+              call get_fields(params,spp%vars,F)
+           end if
+           spp%vars%flagCon=1_is
+           
            psi0=spp%vars%PSI_P(1)
            PSIN0=(psi0-PSIp0)/(PSIp_lim-PSIp0)
+
+           !write(6,*) 'R',R_buffer
+           !write(6,*) 'Z',Z_buffer
+           !write(6,*) 'PSIlim',PSIp_lim
+           !write(6,*) 'PSI0',PSIp0
+           !write(6,*) 'PSI1',psi1
+           !write(6,*) 'PSI0',psi0
+           !write(6,*) 'PSIN1',PSIN1
+           !write(6,*) 'PSIN0',PSIN0
            
         end if
-
-
         
         if (accepted) then
            PSIN0=PSIN1
@@ -1378,8 +1402,19 @@ subroutine MH_psi(params,spp,F)
         spp%vars%Y(1,2)=0._rp
         spp%vars%Y(1,3)=Z_test
 
-        call get_fields(params,spp%vars,F)
+        if (params%field_model.eq.'M3D_C1') then
+           call get_m3d_c1_vector_potential(spp%vars,F,params)
+        else
+           call get_fields(params,spp%vars,F)
+        end if
+        spp%vars%flagCon=1_is
+        
         psi1=spp%vars%PSI_P(1)
+
+        !write(6,*) 'PSIlim',PSIp_lim
+        !write(6,*) 'PSI0',PSIp0
+        !write(6,*) 'PSI',psi1
+
         PSIN1=(psi1-PSIp0)/(PSIp_lim-PSIp0)
 
         !write(6,*) 'R',R_test
@@ -1388,7 +1423,7 @@ subroutine MH_psi(params,spp,F)
         !write(6,*) 'PSI0',PSIp0
         !write(6,*) 'PSI1',psi1
         !write(6,*) 'PSI0',psi0
-        !write(6,*) 'PSIN1',PSIN1
+        !write(6,*) 'PSIN',PSIN1
         !write(6,*) 'PSIN0',PSIN0
         
         ! Calculate acceptance ratio for MH algorithm. fRE function
@@ -1409,6 +1444,8 @@ subroutine MH_psi(params,spp,F)
            R_buffer = R_test
            Z_buffer = Z_test
            ii = ii + 1_idef
+
+           !write(6,*) 'PSIN',PSIN1
         else
 !           call RANDOM_NUMBER(rand_unif)
 !           if (rand_unif .LT. ratio) then
@@ -1418,11 +1455,14 @@ subroutine MH_psi(params,spp,F)
               R_buffer = R_test
               Z_buffer = Z_test
               ii = ii + 1_idef
+
+              !write(6,*) 'PSIN',PSIN1
            end if
         end if
      end do
      ! Transient !
 
+     write(6,'("Begin sample: ",I10)')
      ii=1_idef
      do while (ii .LE. nsamples)
 
@@ -1463,8 +1503,19 @@ subroutine MH_psi(params,spp,F)
         spp%vars%Y(1,2)=0
         spp%vars%Y(1,3)=Z_test
 
-        call get_fields(params,spp%vars,F)
+        if (params%field_model.eq.'M3D_C1') then
+           call get_m3d_c1_vector_potential(spp%vars,F,params)
+        else
+           call get_fields(params,spp%vars,F)
+        end if
+        spp%vars%flagCon=1_is
+        
         psi1=spp%vars%PSI_P(1)
+
+        !write(6,*) 'PSIlim',PSIp_lim
+        !write(6,*) 'PSI0',PSIp0
+        !write(6,*) 'PSI',psi1
+        
         PSIN1=(psi1-PSIp0)/(PSIp_lim-PSIp0)
 
 
@@ -1474,7 +1525,7 @@ subroutine MH_psi(params,spp,F)
         !write(6,*) 'PSI0',PSIp0
         !write(6,*) 'PSI1',psi1
         !write(6,*) 'PSI0',psi0
-        !write(6,*) 'PSIN1',PSIN1
+        !write(6,*) 'PSIN',PSIN1
         !write(6,*) 'PSIN0',PSIN0
 
         
@@ -1488,7 +1539,7 @@ subroutine MH_psi(params,spp,F)
         if (ratio .GE. 1.0_rp) then
            accepted=.true.
            R_buffer = R_test
-           Z_buffer = Z_test
+           Z_buffer = Z_test                     
         else
            !call RANDOM_NUMBER(rand_unif)
            !if (rand_unif .LT. ratio) then
@@ -1511,6 +1562,10 @@ subroutine MH_psi(params,spp,F)
            R_samples(ii) = R_buffer
            Z_samples(ii) = Z_buffer
 
+
+           !write(6,*) 'PSIN',PSIN1
+
+           
 !           write(6,*) 'RS',R_buffer
            
            ! Sample phi location uniformly
