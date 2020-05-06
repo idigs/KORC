@@ -1,4 +1,4 @@
-xs#!/bin/bash
+#!/bin/bash
 #
 #  setup_cmake Chooses the correct cmake build command for a machine.
 #
@@ -104,15 +104,20 @@ then
 #    module swap PrgEnv-intel PrgEnv-gnu
     cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE                                          \
           -DCMAKE_PREFIX_PATH=$MPICH_DIR                                                 \
-          -DEZSpline_INCLUDE_PATH=/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX/mod \
-          -DEZSpline_LINK_FLAGS="-L/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX/lib -lpspline" \
-          -DEZSpline_LIBRARIES=/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX/lib/libpspline.a   \
-	   -DCMAKE_Fortran_FLAGS="-O3 -mkl -axMIC-AVX512,AVX -DHDF5_DOUBLE_PRESICION -vec-threshold0 -simd -qopenmp-simd -align array64byte -assume contiguous_assumed_shape -vecabi=cmdtarget"  \
-          -DCMAKE_C_FLAGS="-O3 -mkl -axMIC-AVX512,AVX -vec-threshold0 -simd -qopenmp"   \
-          -DCMAKE_CXX_FLAGS="-O3 -mkl -std=c++11 -axMIC-AVX512,AVX -vec-threshold0 -simd -qopenmp" \
-          -DCMAKE_CXX_FLAGS_DEBUG="-g -Bdynamic -qopt-report=5 -qopt-report-phase=vec" \
-          -DCMAKE_C_FLAGS_DEBUG="-g -Bdynamic -qopt-report=5 -qopt-report-phase=vec " \
-          -DCMAKE_Fortran_FLAGS_DEBUG="-g -Bdynamic -debug inline-debug-info -qopt-report=5 -qopt-report-phase=vec -qoverride-limits -fsanitize=address "
+          -DEZSpline_INCLUDE_PATH=/global/u1/m/mbeidler/LIBS/PSPLINES/LINUX/mod \
+          -DEZSpline_LINK_FLAGS="-L/global/u1/m/mbeidler/LIBS/PSPLINES/LINUX/lib -lpspline" \
+          -DEZSpline_LIBRARIES=/global/u1/m/mbeidler/LIBS/PSPLINES/LINUX/lib/libpspline.a   \
+	  -DCMAKE_Fortran_FLAGS="-O3 -axMIC-AVX512,AVX -DHDF5_DOUBLE_PRESICION -vec-threshold0 -simd -qopenmp-simd -align array64byte -assume contiguous_assumed_shape -vecabi=cmdtarget"  \
+          -DCMAKE_C_FLAGS="-O3 -axMIC-AVX512,AVX -vec-threshold0 -simd -qopenmp"   \
+          -DCMAKE_CXX_FLAGS="-O3 -std=c++11 -axMIC-AVX512,AVX -vec-threshold0 -simd -qopenmp" \
+          -DCMAKE_CXX_FLAGS_DEBUG="-g -traceback -Bdynamic -qopt-report=5 -qopt-report-phase=vec" \
+          -DCMAKE_C_FLAGS_DEBUG="-g -traceback -Bdynamic -qopt-report=5 -qopt-report-phase=vec " \
+          -DCMAKE_Fortran_FLAGS_DEBUG="-g -traceback -check all -Bdynamic -debug inline-debug-info -qopt-report=5 -qopt-report-phase=vec -qoverride-limits" \
+	  -DUSE_M3D_C1=ON           \
+	  -DFIO_LIBRARIES=/global/u1/m/mbeidler/LIBS/FIO/install/lib/libfusionio.a  \
+	  -DM3DC1_LIBRARIES=/\global/u1/m/mbeidler/LIBS/FIO/install/lib/libm3dc1.a	\
+          -DM3D_C1_INCLUDE_PATH=/global/u1/m/mbeidler/LIBS/FIO/install/include  \
+          -DM3D_C1_LINK_FLAGS="-L/global/u1/m/mbeidler/LIBS/FIO/install/lib -lfusionio -lm3dc1" \
 
     #Intel Compiler
 #          -DEZSpline_INCLUDE_PATH=/global/u1/m/mbeidler/KORC_old/PSPLINES/LINUX_INTEL/mod \
