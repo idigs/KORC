@@ -538,6 +538,7 @@ subroutine initialize_particles(params,F,P,spp)
      ALLOCATE( spp(ii)%vars%flagCon(spp(ii)%ppp) )
      ALLOCATE( spp(ii)%vars%flagCol(spp(ii)%ppp) )
      ALLOCATE( spp(ii)%vars%wt(spp(ii)%ppp) )
+     ALLOCATE( spp(ii)%vars%hint(spp(ii)%ppp))
 
 !     write(6,'("0 size of PSI_P: ",I16)') size(spp(ii)%vars%PSI_P)
      

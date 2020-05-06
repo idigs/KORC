@@ -277,7 +277,6 @@ CONTAINS
     F%Zo = 1.0        
 
     do ii = 1, params%num_species
-       ALLOCATE(spp(ii)%vars%hint(spp(ii)%ppp))
 
        do pp = 1, spp(ii)%ppp
           status = fio_allocate_search_hint(isrc, spp(ii)%vars%hint(pp))
@@ -286,10 +285,12 @@ CONTAINS
        spp(ii)%vars%cart = .false.
     end do
 
-    write(6,*) 'Calculate B',F%M3D_C1_B
-    write(6,*) 'Calculate E',F%M3D_C1_E
-    write(6,*) 'Calculate A',F%M3D_C1_A
-
+    if (params%mpi_params%rank .EQ. 0) then
+       write(6,*) 'Calculate B',F%M3D_C1_B
+       write(6,*) 'Calculate E',F%M3D_C1_E
+       write(6,*) 'Calculate A',F%M3D_C1_A
+    end if
+       
   END SUBROUTINE initialize_m3d_c1
 
 END MODULE korc_m3d_c1

@@ -420,7 +420,8 @@ CONTAINS
     V2 = Vo*SIN(C_PI*spp%vars%eta/180.0_rp)*COS(theta)
     V3 = Vo*SIN(C_PI*spp%vars%eta/180.0_rp)*SIN(theta)
     
-    call unitVectors(params,spp%vars,F,b1,b2,b3)
+    call unitVectors(params,spp%vars%X,F,b1,b2,b3,spp%vars%flagCon, &
+         spp%vars%cart,spp%vars%hint)
     !! Call to subroutine [[unitVectors]] in [[korc_fields]].
 
     !write(6,*) 'X',spp%vars%X

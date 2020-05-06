@@ -758,12 +758,13 @@ CONTAINS
   end function cross
 
 
-  subroutine unitVectors(params,vars,F,b1,b2,b3)
+  subroutine unitVectors(params,Xo,F,b1,b2,b3,flag,cart,hint)
     !! @note Subrotuine that calculates an orthonormal basis using information 
     !! of the (local) magnetic field at position \(\mathbf{X}_0\). @endnote
     TYPE(KORC_PARAMS), INTENT(IN)                                      :: params
     !! Core KORC simulation parameters.
-    TYPE(PARTICLES), INTENT(INOUT)          :: vars
+    REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(IN)                  :: Xo
+    !! Array with the position of the simulated particles.
     TYPE(FIELDS), INTENT(IN)                                           :: F
     !! F An instance of the KORC derived type FIELDS.
     REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT)               :: b1
@@ -773,13 +774,38 @@ CONTAINS
     !!  Basis vector perpendicular to b1
     REAL(rp), DIMENSION(:,:), ALLOCATABLE, INTENT(INOUT)               :: b3
     !! Basis vector perpendicular to b1 and b2.
-
+    INTEGER(is), DIMENSION(:), ALLOCATABLE, OPTIONAL, INTENT(INOUT)    :: flag
+    !! Flag for each particle to decide whether it is being 
+    !! followed (flag=T) or not (flag=F).
+    TYPE(C_PTR), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)    :: hint
+    !! Flag for each particle to decide whether it is being 
+    !! followed (flag=T) or not (flag=F).
+    TYPE(PARTICLES)                                                    :: vars
+    !! A temporary instance of the KORC derived type PARTICLES.
     INTEGER                                                            :: ii
     !! Iterator.
     INTEGER                                                            :: ppp
     !! Number of particles.
+    LOGICAL :: cart
+    
+    ppp = SIZE(Xo,1) ! Number of particles
 
-    ppp = SIZE(vars%X,1) ! Number of particles
+    ALLOCATE( vars%X(ppp,3) )
+    ALLOCATE( vars%Y(ppp,3) )
+    ALLOCATE( vars%B(ppp,3) )
+    ALLOCATE( vars%gradB(ppp,3) )
+    ALLOCATE( vars%curlb(ppp,3) )
+    ALLOCATE( vars%PSI_P(ppp) )
+    ALLOCATE( vars%E(ppp,3) )
+    ALLOCATE( vars%flagCon(ppp) )
+    ALLOCATE( vars%hint(ppp) )
+
+    vars%X = Xo
+    vars%hint = hint
+    vars%flagCon = 1_idef
+    vars%B=0._rp
+    vars%PSI_P=0._rp
+    vars%cart=.false.
 
     call init_random_seed()
 
@@ -804,6 +830,22 @@ CONTAINS
        end if
     end do
 
+    hint = vars%hint
+    
+    if (PRESENT(flag)) then
+       flag = vars%flagCon
+    end if
+
+    DEALLOCATE( vars%X )
+    DEALLOCATE( vars%Y )
+    DEALLOCATE( vars%B )
+    DEALLOCATE( vars%PSI_P )
+    DEALLOCATE( vars%gradB )
+    DEALLOCATE( vars%curlb )
+    DEALLOCATE( vars%E )
+    DEALLOCATE( vars%flagCon )
+    DEALLOCATE( vars%hint)
+    
   end subroutine unitVectors
 
 
