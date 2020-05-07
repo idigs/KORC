@@ -3116,7 +3116,7 @@ subroutine calculate_GCfields_2x1t_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
   
   call check_if_in_fields_domain_p(pchunk,F,Y_R,Y_T,Y_Z,flag_cache)
        
-  call EZspline_derivative(bfield_2X1T%A, 8, Y_R, Y_T, Y_Z, A, ezerr)
+  call EZspline_derivative(bfield_2X1T%A, pchunk, Y_R, Y_T, Y_Z, A, ezerr)
   call EZspline_error(ezerr)
 
   !A(:,1) = PSIp
@@ -3807,7 +3807,10 @@ end subroutine finalize_interpolants
 
 #ifdef M3D_C1
   !!  @note FIXME Add documentation
-  subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
+subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
+  USE omp_lib
+  IMPLICIT NONE
+  
     TYPE(PARTICLES), INTENT(INOUT) :: prtcls
     TYPE(FIELDS), INTENT(IN)       :: F
     TYPE(KORC_PARAMS), INTENT(IN)  :: params
@@ -3815,6 +3818,10 @@ end subroutine finalize_interpolants
     INTEGER                        :: pp
     REAL(rp), DIMENSION(3)         :: x
     REAL(rp), DIMENSION(3)         :: Btmp
+    TYPE(C_PTR), DIMENSION(size(prtcls%hint)) :: hint
+    INTEGER             :: thread_num
+
+!    write(6,*) 'in m3dc1 B'
     
     if (prtcls%cart) then
        !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp,status,x)
@@ -3835,25 +3842,47 @@ end subroutine finalize_interpolants
        end do
        !$OMP END PARALLEL DO
     else
-       !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp,status,x,Btmp)
+
+!       write(6,*) 'in cart false'
+       !hint=prtcls%hint
+       !write(6,*) 'hint: ',hint
+
+       Btmp=0._rp
+       
+       !$OMP PARALLEL DO DEFAULT(none) &
+       !$OMP& SHARED(prtcls,params,F) &
+       !$OMP& PRIVATE(pp,status,x,thread_num) &
+       !$OMP& FIRSTPRIVATE(Btmp)
        do pp = 1, SIZE(prtcls%hint)
+
+          thread_num = OMP_GET_THREAD_NUM()
+          
           if (prtcls%flagCon(pp) .EQ. 1_is) then
              x(1) = prtcls%Y(pp,1)*params%cpp%length
              x(2) = prtcls%Y(pp,2)
              x(3) = prtcls%Y(pp,3)*params%cpp%length
 
+             !prtcls%hint(pp)=c_null_ptr
+             
+             !write(6,*) 'thread',thread_num,'X',x
+             
              !             prtcls%hint(pp)=c_null_ptr
+
+             !write(6,*) 'thread',thread_num,'before interpolating B'
              
              status = fio_eval_field(F%M3D_C1_B, x(1),                      &
                   Btmp(1),prtcls%hint(pp))
 
+             !write(6,*) 'thread',thread_num,'interpolated B'
+             
              if (status .eq. FIO_NO_DATA) then
                 prtcls%B(pp,:) = 0
                 prtcls%flagCon(pp) = 0_is
              else if (status .ne. FIO_SUCCESS) then
                 prtcls%flagCon(pp) = 0_is
              end if
-
+            
+             
              if (.not.params%GC_coords) then
                 
                 prtcls%B(pp,1)=(Btmp(1)*cos(x(2))-Btmp(2)*sin(x(2)))/ &
@@ -3868,10 +3897,12 @@ end subroutine finalize_interpolants
                 prtcls%B(pp,2)=Btmp(2)/params%cpp%Bo
                 prtcls%B(pp,3)=Btmp(3)/params%cpp%Bo
              end if
-                
+             
+             
           end if
        end do
        !$OMP END PARALLEL DO
+
     end if
   end subroutine get_m3d_c1_magnetic_fields
 
@@ -3890,6 +3921,7 @@ end subroutine finalize_interpolants
 
     pchunk=params%pchunk
 
+    !$OMP SIMD
     do pp = 1,pchunk
        if (flag(pp) .EQ. 1_is) then
           x(1) = Y_R(pp)*params%cpp%length
@@ -3915,6 +3947,7 @@ end subroutine finalize_interpolants
 
        end if
     end do
+    !$OMP END SIMD
 
   end subroutine get_m3d_c1_FOmagnetic_fields_p
 
@@ -3938,6 +3971,7 @@ end subroutine finalize_interpolants
 
     pchunk=params%pchunk
 
+    !$OMP SIMD
     do pp = 1,pchunk
        if (flag(pp) .EQ. 1_is) then
           x(1) = Y_R(pp)*params%cpp%length
@@ -4001,6 +4035,7 @@ end subroutine finalize_interpolants
           
        end if
     end do
+    !$OMP END SIMD
 
   end subroutine get_m3d_c1_GCmagnetic_fields_p
   
@@ -4019,17 +4054,21 @@ end subroutine finalize_interpolants
     else
        ss = size(prtcls%Y,1)
     end if
+
+    Atmp=0._rp
     
-    !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp,status,x,Atmp)
+    !$OMP PARALLEL DO DEFAULT(SHARED) &
+    !$OMP& PRIVATE(pp,status,x) &
+    !$OMP& FIRSTPRIVATE(Atmp)
     do pp = 1,ss
        if (prtcls%flagCon(pp) .EQ. 1_is) then
           x(1) = prtcls%Y(pp,1)*params%cpp%length
           x(2) = prtcls%Y(pp,2)
           x(3) = prtcls%Y(pp,3)*params%cpp%length
 
-          !             prtcls%hint(pp)=c_null_ptr
+          !prtcls%hint(pp)=c_null_ptr
 
-!          write(6,*) x
+          !write(6,*) F%M3D_C1_A,x,Atmp
 
           status = fio_eval_field(F%M3D_C1_A, x(1),                      &
                Atmp(1),prtcls%hint(pp))
@@ -4066,7 +4105,8 @@ end subroutine finalize_interpolants
     integer(ip)  ::  ss
 
     pchunk=params%pchunk
-    
+
+    !$OMP SIMD
     do pp = 1,pchunk
        if (flag(pp) .EQ. 1_is) then
           x(1) = Y_R(pp)*params%cpp%length
@@ -4091,6 +4131,7 @@ end subroutine finalize_interpolants
 
        end if
     end do
+    !$OMP END SIMD
 
   end subroutine get_m3d_c1_vector_potential_p
   
@@ -4171,6 +4212,7 @@ end subroutine finalize_interpolants
 
     pchunk=params%pchunk
 
+    !$OMP SIMD
     do pp = 1,pchunk
        if (flag(pp) .EQ. 1_is) then
           x(1) = Y_R(pp)*params%cpp%length
@@ -4200,6 +4242,7 @@ end subroutine finalize_interpolants
          
        end if
     end do
+    !$OMP END SIMD
 
   end subroutine get_m3d_c1_FOelectric_fields_p
   
@@ -4217,7 +4260,8 @@ end subroutine finalize_interpolants
     REAL(rp), DIMENSION(3)         :: Etmp
 
     pchunk=params%pchunk
-
+    
+    !$OMP SIMD
     do pp = 1,pchunk
        if (flag(pp) .EQ. 1_is) then
           x(1) = Y_R(pp)*params%cpp%length
@@ -4242,6 +4286,7 @@ end subroutine finalize_interpolants
 
        end if
     end do
+    !$OMP END SIMD
 
   end subroutine get_m3d_c1_GCelectric_fields_p
   

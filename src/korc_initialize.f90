@@ -665,18 +665,24 @@ subroutine set_up_particles_ic(params,F,spp,P)
      call load_particles_ic(params,spp,F)
 
      call init_random_seed()
-     
+
   else
 
      if (params%mpi_params%rank .EQ. 0) then
         write(6,'("* * * * INITIALIZING SPATIAL DISTRIBUTION * * * *")')
      end if
      call intitial_spatial_distribution(params,spp,P,F)
+     if (params%mpi_params%rank .EQ. 0) then
+        write(6,'("* * * * * * * * * * * * * * * * * * * * * * * *",/)')
+     end if
 
      if (params%mpi_params%rank .EQ. 0) then
         write(6,'("* * * * INITIALIZING VELOCITY COMPONENTS * * * *")')
      end if
      call initial_gyro_distribution(params,F,spp)
+     if (params%mpi_params%rank .EQ. 0) then
+        write(6,'("* * * * * * * * * * * * * * * * * * * * * * * *",/)')
+     end if
   end if
   
 end subroutine set_up_particles_ic

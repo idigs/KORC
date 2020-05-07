@@ -787,6 +787,8 @@ CONTAINS
     INTEGER                                                            :: ppp
     !! Number of particles.
     LOGICAL :: cart
+
+!    write(6,*) 'in unitVector'
     
     ppp = SIZE(Xo,1) ! Number of particles
 
@@ -806,15 +808,21 @@ CONTAINS
     vars%B=0._rp
     vars%PSI_P=0._rp
     vars%cart=.false.
-
+    
+    !write(6,*) 'before init_random_seed'
+    
     call init_random_seed()
 
+   ! write(6,*) 'before get_fields'
+    
     call get_fields(params,vars,F)
 
     !    write(6,'("Bx: ",E17.10)') vars%B(:,1)
     !    write(6,'("By: ",E17.10)') vars%B(:,2)
     !    write(6,'("Bz: ",E17.10)') vars%B(:,3)
 
+    !write(6,*) 'before b1,b2,b3 calculation'
+    
     do ii=1_idef,ppp
        if ( vars%flagCon(ii) .EQ. 1_idef ) then
           b1(ii,:) = vars%B(ii,:)/sqrt(vars%B(ii,1)*vars%B(ii,1)+ &
@@ -830,6 +838,8 @@ CONTAINS
        end if
     end do
 
+    !write(6,*) 'before copying hint and flag'
+    
     hint = vars%hint
     
     if (PRESENT(flag)) then
@@ -845,6 +855,8 @@ CONTAINS
     DEALLOCATE( vars%E )
     DEALLOCATE( vars%flagCon )
     DEALLOCATE( vars%hint)
+
+    !write(6,*) 'out unitVectors'
     
   end subroutine unitVectors
 

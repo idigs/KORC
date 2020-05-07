@@ -280,6 +280,7 @@ CONTAINS
 
        do pp = 1, spp(ii)%ppp
           status = fio_allocate_search_hint(isrc, spp(ii)%vars%hint(pp))
+          spp(ii)%vars%hint(pp)=c_null_ptr
        end do
 
        spp(ii)%vars%cart = .false.
