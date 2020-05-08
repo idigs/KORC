@@ -3160,6 +3160,8 @@ contains
              B_PHI(cc)=spp(ii)%vars%B(pp-1+cc,2)
              B_Z(cc)=spp(ii)%vars%B(pp-1+cc,3)
 
+             E_PHI(cc)=spp(ii)%vars%E(pp-1+cc,2)
+
              gradB_R(cc)=spp(ii)%vars%gradB(pp-1+cc,1)
              gradB_PHI(cc)=spp(ii)%vars%gradB(pp-1+cc,2)
              gradB_Z(cc)=spp(ii)%vars%gradB(pp-1+cc,3)
@@ -5094,7 +5096,9 @@ contains
        V_PLL,V_MU,q_cache,m_cache,flagCon,flagCol,F,P,B_R,B_PHI,B_Z,E_PHI,PSIp,&
        curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,ne,hint)
 
-
+    USE omp_lib
+    IMPLICIT NONE
+    
     !! @note Subroutine to advance GC variables \(({\bf X},p_\parallel)\)
     !! @endnote
     !! Comment this section further with evolution equations, numerical
@@ -5130,13 +5134,13 @@ contains
     REAL(rp),DIMENSION(params%pchunk) :: k6_R,k6_PHI,k6_Z,k6_PLL,k6_MU
     REAL(rp),DIMENSION(params%pchunk) :: Y0_R,Y0_PHI,Y0_Z
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: Y_R,Y_PHI,Y_Z
-    REAL(rp),DIMENSION(params%pchunk),INTENT(OUT) :: B_R,B_PHI,B_Z
+    REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: B_R,B_PHI,B_Z
     REAL(rp),DIMENSION(params%pchunk) :: E_R,E_Z
-    REAL(rp),DIMENSION(params%pchunk),INTENT(OUT) :: E_PHI
-    REAL(rp),DIMENSION(params%pchunk),INTENT(OUT) :: PSIp
+    REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: E_PHI
+    REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: PSIp
     REAL(rp),DIMENSION(params%pchunk),INTENT(OUT) :: ne
-    REAL(rp),DIMENSION(params%pchunk),INTENT(OUT) :: curlb_R,curlb_PHI,curlb_Z
-    REAL(rp),DIMENSION(params%pchunk),INTENT(OUT) :: gradB_R,gradB_PHI,gradB_Z
+    REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: curlb_R,curlb_PHI,curlb_Z
+    REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: gradB_R,gradB_PHI,gradB_Z
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: V_PLL,V_MU
     REAL(rp),DIMENSION(params%pchunk) :: RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU
     REAL(rp),DIMENSION(params%pchunk) :: V0_PLL,V0_MU
@@ -5145,8 +5149,10 @@ contains
     INTEGER(is),DIMENSION(params%pchunk),intent(INOUT) :: flagCon,flagCol
     REAL(rp),intent(IN)  :: q_cache,m_cache
     TYPE(C_PTR), DIMENSION(params%pchunk), INTENT(INOUT)  :: hint
+    INTEGER             :: thread_num
 
 
+    thread_num = OMP_GET_THREAD_NUM()
 
     
     dt=params%dt
@@ -5162,30 +5168,17 @@ contains
        V0_PLL(cc)=V_PLL(cc)
        V0_MU(cc)=V_MU(cc)
 
-       B_R(cc)=0._rp
-       B_PHI(cc)=0._rp
-       B_Z(cc)=0._rp
-       
        E_R(cc)=0._rp
-       E_PHI(cc)=0._rp
        E_Z(cc)=0._rp
-
-       curlb_R(cc)=0._rp
-       curlb_PHI(cc)=0._rp
-       curlb_Z(cc)=0._rp
-
-       gradB_R(cc)=0._rp
-       gradB_PHI(cc)=0._rp
-       gradB_Z(cc)=0._rp
 
     end do
     !$OMP END SIMD
 
-    !write(6,*) 'R0',Y_R(1)
-    !write(6,*) 'PHI0',Y_PHI(1)
-    !write(6,*) 'Z0',Y_Z(1)
-    !write(6,*) 'PPLL0',V_PLL(1)
-    !write(6,*) 'MU0',V_MU(1)
+    !write(6,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'R0',Y_R(1)
+    !write(6,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'PHI0',Y_PHI(1)
+    !write(6,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'Z0',Y_Z(1)
+    !write(6,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'PPLL0',V_PLL(1)
+    !write(6,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'MU0',V_MU(1)
 
 
     call get_m3d_c1_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
@@ -5198,9 +5191,9 @@ contains
     call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
          PSIp,flagCon,hint)
 
-    !write(6,*) 'B',B_R(1),B_PHI(1),B_Z(1)
-    !write(6,*) 'gradB',gradB_R(1),gradB_PHI(1)
-    !write(6,*) 'curlB',curlB_R(1),curlB_PHI(1),curlB_Z(1)
+    !write(6,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'B',B_R(1),B_PHI(1),B_Z(1)
+    !write(6,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'gradB',gradB_R(1),gradB_PHI(1)
+    !write(6,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'curlB',curlB_R(1),curlB_PHI(1),curlB_Z(1)
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
