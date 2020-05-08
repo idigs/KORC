@@ -5093,6 +5093,8 @@ contains
   subroutine advance_GCinterp_m3dc1_vars(vars,pp,tt,params,Y_R,Y_PHI,Y_Z, &
        V_PLL,V_MU,q_cache,m_cache,flagCon,flagCol,F,P,B_R,B_PHI,B_Z,E_PHI,PSIp,&
        curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,ne,hint)
+
+
     !! @note Subroutine to advance GC variables \(({\bf X},p_\parallel)\)
     !! @endnote
     !! Comment this section further with evolution equations, numerical
@@ -5128,13 +5130,13 @@ contains
     REAL(rp),DIMENSION(params%pchunk) :: k6_R,k6_PHI,k6_Z,k6_PLL,k6_MU
     REAL(rp),DIMENSION(params%pchunk) :: Y0_R,Y0_PHI,Y0_Z
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: Y_R,Y_PHI,Y_Z
-    REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: B_R,B_PHI,B_Z
+    REAL(rp),DIMENSION(params%pchunk),INTENT(OUT) :: B_R,B_PHI,B_Z
     REAL(rp),DIMENSION(params%pchunk) :: E_R,E_Z
     REAL(rp),DIMENSION(params%pchunk),INTENT(OUT) :: E_PHI
     REAL(rp),DIMENSION(params%pchunk),INTENT(OUT) :: PSIp
     REAL(rp),DIMENSION(params%pchunk),INTENT(OUT) :: ne
-    REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: curlb_R,curlb_PHI,curlb_Z
-    REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: gradB_R,gradB_PHI,gradB_Z
+    REAL(rp),DIMENSION(params%pchunk),INTENT(OUT) :: curlb_R,curlb_PHI,curlb_Z
+    REAL(rp),DIMENSION(params%pchunk),INTENT(OUT) :: gradB_R,gradB_PHI,gradB_Z
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: V_PLL,V_MU
     REAL(rp),DIMENSION(params%pchunk) :: RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU
     REAL(rp),DIMENSION(params%pchunk) :: V0_PLL,V0_MU
@@ -5144,6 +5146,9 @@ contains
     REAL(rp),intent(IN)  :: q_cache,m_cache
     TYPE(C_PTR), DIMENSION(params%pchunk), INTENT(INOUT)  :: hint
 
+
+
+    
     dt=params%dt
     pchunk=params%pchunk
 
@@ -5157,16 +5162,30 @@ contains
        V0_PLL(cc)=V_PLL(cc)
        V0_MU(cc)=V_MU(cc)
 
+       B_R(cc)=0._rp
+       B_PHI(cc)=0._rp
+       B_Z(cc)=0._rp
+       
+       E_R(cc)=0._rp
+       E_PHI(cc)=0._rp
+       E_Z(cc)=0._rp
 
+       curlb_R(cc)=0._rp
+       curlb_PHI(cc)=0._rp
+       curlb_Z(cc)=0._rp
+
+       gradB_R(cc)=0._rp
+       gradB_PHI(cc)=0._rp
+       gradB_Z(cc)=0._rp
 
     end do
     !$OMP END SIMD
 
-    !    write(6,*) 'R0',Y_R(1)
-    !    write(6,*) 'PHI0',Y_PHI(1)
-    !    write(6,*) 'Z0',Y_Z(1)
-    !    write(6,*) 'PPLL0',V_PLL(1)
-    !    write(6,*) 'MU0',V_MU(1)
+    !write(6,*) 'R0',Y_R(1)
+    !write(6,*) 'PHI0',Y_PHI(1)
+    !write(6,*) 'Z0',Y_Z(1)
+    !write(6,*) 'PPLL0',V_PLL(1)
+    !write(6,*) 'MU0',V_MU(1)
 
 
     call get_m3d_c1_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
@@ -5179,19 +5198,23 @@ contains
     call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
          PSIp,flagCon,hint)
 
+    !write(6,*) 'B',B_R(1),B_PHI(1),B_Z(1)
+    !write(6,*) 'gradB',gradB_R(1),gradB_PHI(1)
+    !write(6,*) 'curlB',curlB_R(1),curlB_PHI(1),curlB_Z(1)
+
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
-    !    write(6,*) 'R0',Y_R(1)
-    !    write(6,*) 'PHI0',Y_PHI(1)
-    !    write(6,*) 'Z0',Y_Z(1)
-    !    write(6,*) 'PPLL0',V_PLL(1)
-    !    write(6,*) 'MU0',V_MU(1)
+    !write(6,*) 'R',Y_R(1)
+    !write(6,*) 'PHI',Y_PHI(1)
+    !write(6,*) 'Z',Y_Z(1)
+    !write(6,*) 'PPLL',V_PLL(1)
+    !write(6,*) 'MU',V_MU(1)
 
-    !    write(6,*) 'BR',B_R(1)
-    !    write(6,*) 'BPHI',B_PHI(1)
-    !    write(6,*) 'BZ',B_Z(1)
+    !write(6,*) 'BR',B_R(1)
+    !write(6,*) 'BPHI',B_PHI(1)
+    !write(6,*) 'BZ',B_Z(1)
 
     !    write(6,*) 'gradBR',gradB_R(1)
     !    write(6,*) 'gradBPHI',gradB_PHI(1)
@@ -5202,11 +5225,12 @@ contains
     !    write(6,*) 'curlBZ',curlB_Z(1)
 
     !    write(6,*) 'dt',params%dt
-    !    write(6,*) 'RHS_R',RHS_R(1)
-    !    write(6,*) 'RHS_PHI',RHS_PHI(1)
-    !    write(6,*) 'RHS_Z',RHS_Z(1)
-    !    write(6,*) 'RHS_PLL',RHS_PLL(1)
-    !    write(6,*) 'RHS_MU',RHS_MU(1)
+    !write(6,*) 'RHS_R',RHS_R(1)
+    !write(6,*) 'RHS_PHI',RHS_PHI(1)
+    !write(6,*) 'RHS_Z',RHS_Z(1)
+    !write(6,*) 'RHS_PLL',RHS_PLL(1)
+    !write(6,*) 'RHS_MU',RHS_MU(1)
+
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5228,11 +5252,11 @@ contains
     end do
     !$OMP END SIMD
 
-    !    write(6,*) 'R1',Y_R(1)
-    !    write(6,*) 'PHI1',Y_PHI(1)
-    !!    write(6,*) 'Z1',Y_Z(1)
-    !   write(6,*) 'PPLL1',V_PLL(1)
-    !   write(6,*) 'MU1',V_MU(1)
+    !write(6,*) 'R1',Y_R(1)
+    !write(6,*) 'PHI1',Y_PHI(1)
+    !write(6,*) 'Z1',Y_Z(1)
+    !write(6,*) 'PPLL1',V_PLL(1)
+    !write(6,*) 'MU1',V_MU(1)
 
     !    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
     call get_m3d_c1_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
@@ -7983,6 +8007,11 @@ contains
     !    !$OMP& B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
     !    !$OMP& V_PLL,V_MU,Y_R,curlb_PHI,tau_R)
     do cc=1_idef,pchunk
+
+       ne(cc)=0._rp
+       Te(cc)=0._rp
+       Zeff(cc)=0._rp
+       
        Bmag(cc) = SQRT(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
        
        bhat_R(cc) = B_R(cc)/Bmag(cc)
@@ -7993,7 +8022,7 @@ contains
        Bst_PHI(cc)=q_cache*B_PHI(cc)+V_PLL(cc)*curlb_PHI(cc)
        Bst_Z(cc)=q_cache*B_Z(cc)+V_PLL(cc)*curlb_Z(cc)
 
-       !write(6,*) Bmag(cc),bhat_R(cc),bhat_PHI(cc),bhat_Z(cc),Bst_R(cc),Bst_PHI(cc),Bst_Z(cc)
+      ! write(6,*) 'bmag',Bmag(cc),'bhat',bhat_R(cc),bhat_PHI(cc),bhat_Z(cc),'Bst',Bst_R(cc),Bst_PHI(cc),Bst_Z(cc)
        
        bdotBst(cc)=bhat_R(cc)*Bst_R(cc)+bhat_PHI(cc)*Bst_PHI(cc)+ &
             bhat_Z(cc)*Bst_Z(cc)
@@ -8001,19 +8030,19 @@ contains
        BstdotgradB(cc)=Bst_R(cc)*gradB_R(cc)+Bst_PHI(cc)*gradB_PHI(cc)+ &
             Bst_Z(cc)*gradB_Z(cc)
 
-       !write(6,*) bdotBst(cc),BstdotE(cc),BstdotgradB(cc)
+       !write(6,*) 'bdotBst',bdotBst(cc),BstdotE(cc),BstdotgradB(cc)
        
        Ecrossb_R(cc)=E_PHI(cc)*bhat_Z(cc)-E_Z(cc)*bhat_PHI(cc)
        Ecrossb_PHI(cc)=E_Z(cc)*bhat_R(cc)-E_R(cc)*bhat_Z(cc)
        Ecrossb_Z(cc)=E_R(cc)*bhat_PHI(cc)-E_PHI(cc)*bhat_R(cc)
 
-       !write(6,*) Ecrossb_R(cc),Ecrossb_PHI(cc),Ecrossb_Z(cc)
+       !write(6,*) 'Ecrossb',Ecrossb_R(cc),Ecrossb_PHI(cc),Ecrossb_Z(cc)
        
        bcrossgradB_R(cc)=bhat_PHI(cc)*gradB_Z(cc)-bhat_Z(cc)*gradB_PHI(cc)
        bcrossgradB_PHI(cc)=bhat_Z(cc)*gradB_R(cc)-bhat_R(cc)*gradB_Z(cc)
        bcrossgradB_Z(cc)=bhat_R(cc)*gradB_PHI(cc)-bhat_PHI(cc)*gradB_R(cc)
 
-       !write(6,*) bcrossgradB_R(cc),bcrossgradB_PHI(cc),bcrossgradB_Z(cc)
+      ! write(6,*) 'bcrossgradB',bcrossgradB_R(cc),bcrossgradB_PHI(cc),bcrossgradB_Z(cc)
        
        gamgc(cc)=sqrt(1+V_PLL(cc)*V_PLL(cc)+2*V_MU(cc)*Bmag(cc))
        
@@ -8035,6 +8064,11 @@ contains
 
     end do
     !$OMP END SIMD
+
+    !write(6,*) 'bmag',Bmag(1),'bhat',bhat_R(1),bhat_PHI(1),bhat_Z(1),'Bst',Bst_R(1),Bst_PHI(1),Bst_Z(1)
+    !write(6,*) 'bdotBst',bdotBst(1),BstdotE(1),BstdotgradB(1)
+    !write(6,*) 'Ecrossb',Ecrossb_R(1),Ecrossb_PHI(1),Ecrossb_Z(1)
+    !write(6,*) 'bcrossgradB',bcrossgradB_R(1),bcrossgradB_PHI(1),bcrossgradB_Z(1)
 
     !    !$OMP SIMD
     !    do cc=1_idef,8
@@ -8084,24 +8118,33 @@ contains
 
     end if
 
-        !$OMP SIMD
-        do cc=1_idef,pchunk
-           if(isnan(ne(cc))) stop 'ne is a NaN'
-           if(isnan(Zeff(cc))) stop 'Zeff is a NaN'
-           if(isnan(gamgc(cc))) stop 'gamgc is a NaN'
-           if(isnan(BREM_P(cc))) stop 'BREM_P is a NaN'
-           if(isnan(BREM_PLL(cc))) stop 'BREM_PLL is a NaN'
-           if(isnan(BREM_MU(cc))) stop 'BREM_MU is a NaN'
-           if(isnan(SR_PLL(cc))) stop 'SR_PLL is a NaN'
-           if(isnan(SR_MU(cc))) stop 'SR_MU is a NaN'
-           if(isnan(RHS_R(cc))) stop 'RHS_R1 is a NaN'
-           if(isnan(RHS_PHI(cc))) stop 'RHS_PHI1 is a NaN'
-           if(isnan(RHS_Z(cc))) stop 'RHS_Z1 is a NaN'
-           if(isnan(RHS_PLL(cc))) stop 'RHS_PLL1 is a NaN'
-           if(isnan(RHS_MU(cc))) stop 'RHS_MU1 is a NaN'
 
-        end do
-        !$OMP END SIMD
+
+    if (params%radiation.and.(params%GC_rad_model.eq.'SDE')) then
+       !$OMP SIMD
+       do cc=1_idef,pchunk
+          if(isnan(ne(cc))) stop 'ne is a NaN'
+          if(isnan(Zeff(cc))) stop 'Zeff is a NaN'
+          if(isnan(BREM_P(cc))) stop 'BREM_P is a NaN'
+          if(isnan(BREM_PLL(cc))) stop 'BREM_PLL is a NaN'
+          if(isnan(BREM_MU(cc))) stop 'BREM_MU is a NaN'
+          if(isnan(SR_PLL(cc))) stop 'SR_PLL is a NaN'
+          if(isnan(SR_MU(cc))) stop 'SR_MU is a NaN'
+       end do
+       !$OMP END SIMD
+    end if
+
+    !$OMP SIMD
+    do cc=1_idef,pchunk 
+       if(isnan(gamgc(cc))) stop 'gamgc is a NaN'
+       if(isnan(RHS_R(cc))) stop 'RHS_R1 is a NaN'
+       if(isnan(RHS_PHI(cc))) stop 'RHS_PHI1 is a NaN'
+       if(isnan(RHS_Z(cc))) stop 'RHS_Z1 is a NaN'
+       if(isnan(RHS_PLL(cc))) stop 'RHS_PLL1 is a NaN'
+       if(isnan(RHS_MU(cc))) stop 'RHS_MU1 is a NaN'
+
+    end do
+    !$OMP END SIMD
 
 
     !    write(6,*) 'RHS_R: ',RHS_R(1)

@@ -3971,7 +3971,6 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
 
     pchunk=params%pchunk
 
-    !$OMP SIMD
     do pp = 1,pchunk
        if (flag(pp) .EQ. 1_is) then
           x(1) = Y_R(pp)*params%cpp%length
@@ -3980,10 +3979,15 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
 
           !             prtcls%hint(pp)=c_null_ptr
 
+          !if (pp.eq.1) write(6,*) 'Yinterp',x
+
           status = fio_eval_field(F%M3D_C1_B, x(1), &
                Btmp(1),hint(pp))
 
           if (status .eq. FIO_SUCCESS) then
+
+             !if (pp.eq.1) write(6,*) 'interp success!'
+             
              B_R(pp)=Btmp(1)/params%cpp%Bo
              B_PHI(pp)=Btmp(2)/params%cpp%Bo
              B_Z(pp)=Btmp(3)/params%cpp%Bo
@@ -4035,7 +4039,6 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
           
        end if
     end do
-    !$OMP END SIMD
 
   end subroutine get_m3d_c1_GCmagnetic_fields_p
   
