@@ -1301,21 +1301,22 @@ subroutine MH_psi(params,spp,F)
   
   !write(6,*) min_R,max_R
   !write(6,*) min_Z,max_Z
+ 
   
 
-  
+  ALLOCATE(R_samples(nsamples))
+  ALLOCATE(X_samples(nsamples))
+  ALLOCATE(Y_samples(nsamples))
+  ! Number of samples to distribute among all MPI processes
+  ALLOCATE(PHI_samples(nsamples))
+  ! Number of samples to distribute among all MPI processes
+  ALLOCATE(Z_samples(nsamples))
+  ! Number of samples to distribute among all MPI processes
+
   if (params%mpi_params%rank.EQ.0_idef) then
-     ALLOCATE(R_samples(nsamples))
-     ALLOCATE(X_samples(nsamples))
-     ALLOCATE(Y_samples(nsamples))
-     ! Number of samples to distribute among all MPI processes
-     ALLOCATE(PHI_samples(nsamples))
-     ! Number of samples to distribute among all MPI processes
-     ALLOCATE(Z_samples(nsamples))
-     ! Number of samples to distribute among all MPI processes
+        ! Transient !
 
-     ! Transient !
-
+     
      R_buffer = spp%Ro
      Z_buffer = spp%Zo
 
@@ -1610,13 +1611,13 @@ subroutine MH_psi(params,spp,F)
   if (params%orbit_model(1:2).eq.'GC') call cart_to_cyl(spp%vars%X,spp%vars%Y)
 
   
-  if (params%mpi_params%rank.EQ.0_idef) then
-     DEALLOCATE(R_samples)
-     DEALLOCATE(X_samples)
-     DEALLOCATE(Y_samples)
-     DEALLOCATE(Z_samples)
-     DEALLOCATE(PHI_samples)
-  end if
+  
+  DEALLOCATE(R_samples)
+  DEALLOCATE(X_samples)
+  DEALLOCATE(Y_samples)
+  DEALLOCATE(Z_samples)
+  DEALLOCATE(PHI_samples)
+  
   
 end subroutine MH_psi
 

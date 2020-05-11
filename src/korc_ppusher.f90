@@ -229,9 +229,6 @@ contains
 
     pchunk=params%pchunk
 
-    m_cache=spp(ii)%m
-    q_cache=spp(ii)%q
-
     B0=F%Bo
     EF0=F%Eo
     lam=F%AB%lambda
@@ -241,6 +238,9 @@ contains
 
     do ii = 1_idef,params%num_species
 
+       m_cache=spp(ii)%m
+       q_cache=spp(ii)%q
+       
        if(output) then
 
           !$OMP PARALLEL DO default(none) &
@@ -264,6 +264,8 @@ contains
                 E_Y(cc)=0._rp
                 E_Z(cc)=0._rp
 
+                PSIp(cc)=100._rp
+                
                 flagCon(cc)=spp(ii)%vars%flagCon(pp-1+cc)
                 flagCol(cc)=spp(ii)%vars%flagCol(pp-1+cc)
              end do
@@ -301,7 +303,6 @@ contains
 
 
              end if
-
 
 
              !$OMP SIMD

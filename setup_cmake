@@ -112,7 +112,7 @@ then
           -DCMAKE_CXX_FLAGS="-O3 -std=c++11 -axMIC-AVX512,AVX -vec-threshold0 -simd -qopenmp" \
           -DCMAKE_CXX_FLAGS_DEBUG="-g -traceback -Bdynamic -qopt-report=5 -qopt-report-phase=vec" \
           -DCMAKE_C_FLAGS_DEBUG="-g -traceback -Bdynamic -qopt-report=5 -qopt-report-phase=vec " \
-          -DCMAKE_Fortran_FLAGS_DEBUG="-g -traceback -check all -Bdynamic -debug inline-debug-info -qopt-report=5 -qopt-report-phase=vec -qoverride-limits" \
+          -DCMAKE_Fortran_FLAGS_DEBUG="-g -traceback -check all -nowarn -Bdynamic -debug inline-debug-info -qopt-report=5 -qopt-report-phase=vec -qoverride-limits" \
           -DUSE_M3D_C1=ON           \
 	  -DFIO_LIBRARIES=/global/u1/m/mbeidler/LIBS/FIO/install/lib/libfusionio.a  \
 	  -DM3DC1_LIBRARIES=/\global/u1/m/mbeidler/LIBS/FIO/install/lib/libm3dc1.a	\

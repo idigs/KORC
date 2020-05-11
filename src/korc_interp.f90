@@ -3921,7 +3921,6 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
 
     pchunk=params%pchunk
 
-    !$OMP SIMD
     do pp = 1,pchunk
        if (flag(pp) .EQ. 1_is) then
           x(1) = Y_R(pp)*params%cpp%length
@@ -3947,7 +3946,6 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
 
        end if
     end do
-    !$OMP END SIMD
 
   end subroutine get_m3d_c1_FOmagnetic_fields_p
 
@@ -4098,7 +4096,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
     TYPE(FIELDS), INTENT(IN)       :: F
     TYPE(KORC_PARAMS), INTENT(IN)  :: params
     REAL(rp), DIMENSION(params%pchunk), INTENT(IN)  :: Y_R,Y_PHI,Y_Z
-    REAL(rp), DIMENSION(params%pchunk), INTENT(OUT)  :: PSIp
+    REAL(rp), DIMENSION(params%pchunk), INTENT(INOUT)  :: PSIp
     INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT)  :: flag
     TYPE(C_PTR), DIMENSION(params%pchunk), INTENT(INOUT)  :: hint
     INTEGER (C_INT)                :: status
@@ -4109,7 +4107,6 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
 
     pchunk=params%pchunk
 
-    !$OMP SIMD
     do pp = 1,pchunk
        if (flag(pp) .EQ. 1_is) then
           x(1) = Y_R(pp)*params%cpp%length
@@ -4134,7 +4131,6 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
 
        end if
     end do
-    !$OMP END SIMD
 
   end subroutine get_m3d_c1_vector_potential_p
   
