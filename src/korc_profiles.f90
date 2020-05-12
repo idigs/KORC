@@ -7,6 +7,7 @@ module korc_profiles
   use korc_coords
   use korc_interp
   use korc_HDF5
+  use korc_input
 
   IMPLICIT NONE
 
@@ -53,69 +54,69 @@ CONTAINS
     !! the information about the plasma profiles used in the
     !! simulation. See [[korc_types]] and [[korc_profiles]].
     TYPE(FIELDS), INTENT(IN)     :: F
-    CHARACTER(MAX_STRING_LENGTH)    :: ne_profile
+    !CHARACTER(MAX_STRING_LENGTH)    :: ne_profile
     !! String containing the type of electron density profile 
     !! to be used in the simulation.
-    CHARACTER(MAX_STRING_LENGTH)    :: Te_profile
+    !CHARACTER(MAX_STRING_LENGTH)    :: Te_profile
     !! String containing the type of electron temperature profile 
     !! to be used in the simulation.
-    CHARACTER(MAX_STRING_LENGTH)    :: Zeff_profile  
+    !CHARACTER(MAX_STRING_LENGTH)    :: Zeff_profile  
     !! String containing the type of \(Z_{eff}\) profile to be used
     !! in the simulation.
-    CHARACTER(MAX_STRING_LENGTH)    :: filename
+    !CHARACTER(MAX_STRING_LENGTH)    :: filename
     !! Full path to the HDF5 file containing the pre-computed
     !! plasma profiles.
-    REAL(rp)                        :: radius_profile
+    !REAL(rp)                        :: radius_profile
     !! Plasma radius \(a\) as measured from the magnetic axis.
-    REAL(rp)                        :: neo
+    !REAL(rp)                        :: neo
     !! Electron density at the magnetic axis \(f_0 = n_{e,0}\).
-    REAL(rp)                        :: Teo
+    !REAL(rp)                        :: Teo
     !! Electron temperature at the magnetic axis \(f_0 = T_{e,0}\).
-    REAL(rp)                        :: Zeffo
+    !REAL(rp)                        :: Zeffo
     !! \(Z_{eff}\) at the magnetic axis \(f_0 = Z_{eff,0}\).
-    REAL(rp)                        :: n_ne
+    !REAL(rp)                        :: n_ne
     !! Exponent \(n\) used in \(\tanh^n(r)\) of the electron
     !! density profile.
-    REAL(rp)                        :: n_Te
+    !REAL(rp)                        :: n_Te
     !! Exponent \(n\) used in \(\tanh^n(r)\) of the electron
     !! temperature profile.
-    REAL(rp)                        :: n_Zeff
+    !REAL(rp)                        :: n_Zeff
     !! Exponent \(n\) used in \(\tanh^n(r)\) of the \(Z_{eff}\) profile.
-    REAL(rp), DIMENSION(4)          :: a_ne
+    !REAL(rp), DIMENSION(4)          :: a_ne
     !! Coefficients of the polynomial electron density profile. 
     !! See detailed description above,
     !! a_ne=(\(a_{0}\),\(a_{2}\),\(a_{3}\),\(a_{4}\)).
-    REAL(rp), DIMENSION(4)          :: a_Te
+    !REAL(rp), DIMENSION(4)          :: a_Te
     !! Coefficients of the polynomial electron temperature profile. 
     !! See detailed description above,
     !! a_Te=(\(a_{0}\),\(a_{2}\),\(a_{3}\),\(a_{4}\)).
-    REAL(rp), DIMENSION(4)          :: a_Zeff
+    !REAL(rp), DIMENSION(4)          :: a_Zeff
     !! Coefficients of the \(Z_{eff}\) profile. See detailed
     !! description above, a_Zeff=(\(a_{0}\),\(a_{2}\),\(a_{3}\),\(a_{4}\)).
-    LOGICAL                         :: axisymmetric
+    !LOGICAL                         :: axisymmetric
     !! Flag to indicate if the plasma profiles are axisymmetric.
     INTEGER  :: ii,kk
-    REAL(rp)  ::  n_REr0
-    REAL(rp)  ::  n_tauion
-    REAL(rp)  ::  n_lamfront
-    REAL(rp)  ::  n_lamback,n_lamshelf,n_shelfdelay,n_tauin,n_tauout,n_shelf
-    REAL(rp)  ::  rm,r_a,psiN_0
+    !REAL(rp)  ::  n_REr0
+    !REAL(rp)  ::  n_tauion
+    !REAL(rp)  ::  n_lamfront
+    !REAL(rp)  ::  n_lamback,n_lamshelf,n_shelfdelay,n_tauin,n_tauout,n_shelf
+    REAL(rp)  ::  rm,r_a!,psiN_0
 
-    NAMELIST /plasmaProfiles/ radius_profile,ne_profile,neo,n_ne,a_ne, &
-         Te_profile,Teo,n_Te,a_Te,n_REr0,n_tauion,n_lamfront,n_lamback, &
-         Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename,axisymmetric, &
-         n_lamshelf,n_shelfdelay,n_tauin,n_tauout,n_shelf,psiN_0
+    !NAMELIST /plasmaProfiles/ radius_profile,ne_profile,neo,n_ne,a_ne, &
+    !     Te_profile,Teo,n_Te,a_Te,n_REr0,n_tauion,n_lamfront,n_lamback, &
+    !     Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename,axisymmetric, &
+    !     n_lamshelf,n_shelfdelay,n_tauin,n_tauout,n_shelf,psiN_0
 
     if (params%mpi_params%rank .EQ. 0) then
-       write(6,'("* * * * * * * * INITIALIZING PROFILES * * * * * * * *")')
+       write(output_unit_write,'("* * * * * * * * INITIALIZING PROFILES * * * * * * * *")')
     end if
     
     SELECT CASE (TRIM(params%profile_model))
     CASE('ANALYTICAL')
-       open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
-            status='OLD',form='formatted')
-       read(default_unit_open,nml=plasmaProfiles)
-       close(default_unit_open)
+       !open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
+       !     status='OLD',form='formatted')
+       !read(default_unit_open,nml=plasmaProfiles)
+       !close(default_unit_open)
 
        P%a = radius_profile
        P%R0=F%Ro
@@ -150,10 +151,10 @@ CONTAINS
 
 
        if (params%mpi_params%rank .EQ. 0) then
-          write(6,'("ANALYTICAL")')
-          write(6,'("ne profile: ",A20)') P%ne_profile
-          write(6,'("Te profile: ",A20)') P%Te_profile
-          write(6,'("Zeff profile: ",A20)') P%Zeff_profile
+          write(output_unit_write,'("ANALYTICAL")')
+          write(output_unit_write,'("ne profile: ",A20)') P%ne_profile
+          write(output_unit_write,'("Te profile: ",A20)') P%Te_profile
+          write(output_unit_write,'("Zeff profile: ",A20)') P%Zeff_profile
        end if
        
        if (params%field_eval.eq.'interp') then
@@ -225,10 +226,10 @@ CONTAINS
        end if
        
     CASE('EXTERNAL')
-       open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
-            status='OLD',form='formatted')
-       read(default_unit_open,nml=plasmaProfiles)
-       close(default_unit_open)
+       !open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
+       !     status='OLD',form='formatted')
+       !read(default_unit_open,nml=plasmaProfiles)
+       !close(default_unit_open)
 
        P%a = radius_profile
        P%R0=F%Ro
@@ -242,10 +243,10 @@ CONTAINS
        P%Zeffo = Zeffo
 
        if (params%mpi_params%rank .EQ. 0) then
-          write(6,'("EXTERNAL")')
-          write(6,'("ne profile:",A20)') P%ne_profile
-          write(6,'("Te profile: ",A20)') P%Te_profile
-          write(6,'("Zeff profile: ",A20)') P%Zeff_profile
+          write(output_unit_write,'("EXTERNAL")')
+          write(output_unit_write,'("ne profile:",A20)') P%ne_profile
+          write(output_unit_write,'("Te profile: ",A20)') P%Te_profile
+          write(output_unit_write,'("Zeff profile: ",A20)') P%Zeff_profile
        end if
        
        P%filename = TRIM(filename)
@@ -253,10 +254,10 @@ CONTAINS
 
        call load_profiles_data_from_hdf5(params,P)
     CASE('UNIFORM')
-       open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
-            status='OLD',form='formatted')
-       read(default_unit_open,nml=plasmaProfiles)
-       close(default_unit_open)
+       !open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
+       !     status='OLD',form='formatted')
+       !read(default_unit_open,nml=plasmaProfiles)
+       !close(default_unit_open)
 
        P%a = radius_profile
        P%R0=F%Ro
@@ -278,17 +279,17 @@ CONTAINS
        P%a_Zeff = (/0.0_rp,0.0_rp,0.0_rp,0.0_rp/)
 
        if (params%mpi_params%rank .EQ. 0) then
-          write(6,'("UNIFORM")')
-          write(6,'("ne profile: ",A20)') P%ne_profile
-          write(6,'("Te profile: ",A20)') P%Te_profile
-          write(6,'("Zeff profile: ",A20)') P%Zeff_profile
+          write(output_unit_write,'("UNIFORM")')
+          write(output_unit_write,'("ne profile: ",A20)') P%ne_profile
+          write(output_unit_write,'("Te profile: ",A20)') P%Te_profile
+          write(output_unit_write,'("Zeff profile: ",A20)') P%Zeff_profile
        end if
        
     CASE DEFAULT
     END SELECT
 
     if (params%mpi_params%rank .EQ. 0) then
-       write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * *")')
+       write(output_unit_write,'("* * * * * * * * * * * * * * * * * * * * * * * * *")')
     end if
     
   end subroutine initialize_profiles
@@ -374,13 +375,13 @@ CONTAINS
     psiN_0=P%psiN_0
     
 
-!    write(6,*) 'PSIp',PSIp(1)*(params%cpp%Bo*params%cpp%length**2)
-!    write(6,*) 'PSIp_lim',PSIp_lim*(params%cpp%Bo*params%cpp%length**2)   
-!    write(6,*) 'PSIp0',PSIp0*(params%cpp%Bo*params%cpp%length**2)
+!    write(output_unit_write,*) 'PSIp',PSIp(1)*(params%cpp%Bo*params%cpp%length**2)
+!    write(output_unit_write,*) 'PSIp_lim',PSIp_lim*(params%cpp%Bo*params%cpp%length**2)   
+!    write(output_unit_write,*) 'PSIp0',PSIp0*(params%cpp%Bo*params%cpp%length**2)
     
-!    write(6,'("R0_RE: "E17.10)') R0_RE
-!    write(6,'("Z0_RE: "E17.10)') Z0_RE
-!    write(6,'("n_REr0: "E17.10)') n_REr0
+!    write(output_unit_write,'("R0_RE: "E17.10)') R0_RE
+!    write(output_unit_write,'("Z0_RE: "E17.10)') Z0_RE
+!    write(output_unit_write,'("n_REr0: "E17.10)') n_REr0
 
     
     SELECT CASE (TRIM(P%ne_profile))
@@ -435,16 +436,16 @@ CONTAINS
        end do
        !$OMP END SIMD
 
-       !       write(6,*) 'at time ',time*params%cpp%time, &
+       !       write(output_unit_write,*) 'at time ',time*params%cpp%time, &
        !' ne: ',ne(1)/params%cpp%length**3
       
 !       !$OMP SIMD
 !       do cc=1_idef,8
 !          if(isnan(ne(cc))) then
-!             write(6,*) 'PSIp: ',PSIp(cc)
-!             write(6,*) 'PSIp0: ',PSIp0
-!             write(6,*) 'PSIp_lim: ',PSIp_lim
-!             write(6,*) 'PSIpN: ',PSIpN(cc)
+!             write(output_unit_write,*) 'PSIp: ',PSIp(cc)
+!             write(output_unit_write,*) 'PSIp0: ',PSIp0
+!             write(output_unit_write,*) 'PSIp_lim: ',PSIp_lim
+!             write(output_unit_write,*) 'PSIpN: ',PSIpN(cc)
 
 !             stop 'ne_eval is a NaN'
 !          end if
@@ -469,7 +470,7 @@ CONTAINS
        
     CASE('RE-EVO-PSIP-G')
 
-!       write(6,*) 'time: ',time*params%cpp%time
+!       write(output_unit_write,*) 'time: ',time*params%cpp%time
        
        n0t=(ne0-n_ne)/2._rp*(tanh((time-n_tauin)/n_tauin)- &
             tanh((time-n_shelfdelay)/n_tauout))
@@ -536,10 +537,10 @@ CONTAINS
     END SELECT
           
 
-!    write(6,*) PSIpN(1)
+!    write(output_unit_write,*) PSIpN(1)
     
-!    write(6,'("ne: "E17.10)') ne(1)/params%cpp%length**3
-!    write(6,'("rm_RE: "E17.10)') rm_RE(1)
+!    write(output_unit_write,'("ne: "E17.10)') ne(1)/params%cpp%length**3
+!    write(output_unit_write,'("rm_RE: "E17.10)') rm_RE(1)
     
   end subroutine analytical_profiles_p
 
@@ -586,7 +587,7 @@ CONTAINS
 
           r_a = Y(pp,1)/P%a
 
-!          write(6,'("r: ",E17.10)') r_a
+!          write(output_unit_write,'("r: ",E17.10)') r_a
           
           SELECT CASE (TRIM(P%ne_profile))
           CASE('TANH')
@@ -660,22 +661,22 @@ CONTAINS
     SELECT CASE (TRIM(params%profile_model))
     CASE('ANALYTICAL')
 
-!       write(6,'("Y in: ",E17.10)') vars%Y(1,:)
+!       write(output_unit_write,'("Y in: ",E17.10)') vars%Y(1,:)
        
        call cyl_to_cart(vars%Y, vars%X)
 
-!       write(6,'("X getprof: ",E17.10)') vars%X(1,:)
+!       write(output_unit_write,'("X getprof: ",E17.10)') vars%X(1,:)
        
        call cart_to_tor_check_if_confined(vars%X,F,vars%Y,vars%flagCon)
 
-!       write(6,'("flag: ",I15)') vars%flagCon(1) 
+!       write(output_unit_write,'("flag: ",I15)') vars%flagCon(1) 
 
        call get_analytical_profiles(P,vars%Y,vars%ne,vars%Te, &
             vars%Zeff,vars%flagCon)
 
        call cart_to_cyl(vars%X, vars%Y)
 
-!       write(6,'("Y out: ",E17.10)') vars%Y(1,:)
+!       write(output_unit_write,'("Y out: ",E17.10)') vars%Y(1,:)
     CASE('EXTERNAL')
        call interp_profiles(params,vars,P)
     CASE('UNIFORM')
@@ -722,7 +723,7 @@ CONTAINS
     filename = TRIM(P%filename)
     call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
     if (h5error .EQ. -1) then
-       write(6,'("KORC ERROR: Something went wrong in: load_profiles_data_from_hdf5 --> h5fopen_f")')
+       write(output_unit_write,'("KORC ERROR: Something went wrong in: load_profiles_data_from_hdf5 --> h5fopen_f")')
     end if
 
 
@@ -782,7 +783,7 @@ CONTAINS
        P%Te_3D = P%Te_3D*C_E
     end if
 
-    !write(6,'("Te: ",E17.10)') P%Te_2D(1,1)
+    !write(output_unit_write,'("Te: ",E17.10)') P%Te_2D(1,1)
 
     dset = "/Zeff"
     if (P%axisymmetric) then
@@ -793,7 +794,7 @@ CONTAINS
 
     call h5fclose_f(h5file_id, h5error)
     if (h5error .EQ. -1) then
-       write(6,'("KORC ERROR: Something went wrong in: load_profiles_data_from_hdf5 --> h5fclose_f")')
+       write(output_unit_write,'("KORC ERROR: Something went wrong in: load_profiles_data_from_hdf5 --> h5fclose_f")')
     end if
   end subroutine load_profiles_data_from_hdf5
 

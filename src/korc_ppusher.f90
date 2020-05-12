@@ -334,10 +334,10 @@ contains
           ! Interpolates fields at local particles' position and keeps in
           ! spp%vars. Fields in (R,\(\phi\),Z) coordinates.
 
-          !          write(6,'("korc_ppusher")')
-          !          write(6,'("B_X: ",E17.10)') spp(ii)%vars%B(:,1)
-          !          write(6,'("B_Z: ",E17.10)') spp(ii)%vars%B(:,2)
-          !          write(6,'("B_Y: ",E17.10)') spp(ii)%vars%B(:,3)
+          !          write(output_unit_write,'("korc_ppusher")')
+          !          write(output_unit_write,'("B_X: ",E17.10)') spp(ii)%vars%B(:,1)
+          !          write(output_unit_write,'("B_Z: ",E17.10)') spp(ii)%vars%B(:,2)
+          !          write(output_unit_write,'("B_Y: ",E17.10)') spp(ii)%vars%B(:,3)
 
           !$OMP PARALLEL DO DEFAULT(none) SHARED(ii,spp) &
           !$OMP& FIRSTPRIVATE(E0) &
@@ -350,8 +350,8 @@ contains
              ! Parallel unit vector
              b_unit = spp(ii)%vars%B(pp,:)/Bmag1
 
-             !write(6,*) 'X',spp(1)%vars%X
-             !write(6,*) 'b-hat',b_unit
+             !write(output_unit_write,*) 'X',spp(1)%vars%X
+             !write(output_unit_write,*) 'b-hat',b_unit
 
              v = SQRT(DOT_PRODUCT(spp(ii)%vars%V(pp,:),spp(ii)%vars%V(pp,:)))
              if (v.GT.korc_zero) then
@@ -1015,8 +1015,8 @@ contains
           end do
           !$OMP END SIMD
 
-          !write(6,*) 'Yin: ',Y_R,Y_PHI,Y_Z
-          !write(6,*) 'Bin: ',B_X,B_Y,B_Z
+          !write(output_unit_write,*) 'Yin: ',Y_R,Y_PHI,Y_Z
+          !write(output_unit_write,*) 'Bin: ',B_X,B_Y,B_Z
 
 
           if (.not.params%FokPlan) then
@@ -1044,8 +1044,8 @@ contains
              call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
                   PSIp,flagCon,hint)
 
-             !write(6,*) 'Yout: ',Y_R,Y_PHI,Y_Z
-             !write(6,*) 'Bout: ',B_X,B_Y,B_Z
+             !write(output_unit_write,*) 'Yout: ',Y_R,Y_PHI,Y_Z
+             !write(output_unit_write,*) 'Bout: ',B_X,B_Y,B_Z
 
 
 
@@ -1272,9 +1272,9 @@ contains
                 end if
 
 
-                !               write(6,'("B_X: ",E17.10)') B_X(1)
-                !               write(6,'("B_Y: ",E17.10)') B_Y(1)
-                !               write(6,'("B_Z: ",E17.10)') B_Z(1)
+                !               write(output_unit_write,'("B_X: ",E17.10)') B_X(1)
+                !               write(output_unit_write,'("B_Y: ",E17.10)') B_Y(1)
+                !               write(output_unit_write,'("B_Z: ",E17.10)') B_Z(1)
 
                 call advance_FOinterp_vars(tt,a,q_cache,m_cache,params, &
                      X_X,X_Y,X_Z,V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z, &
@@ -1932,8 +1932,8 @@ contains
     real(rp) :: dr
     integer :: rind
 
-    !    write(6,'("eta",E17.10)') spp(ii)%vars%eta(pp)
-    !    write(6,'("gam",E17.10)') spp(ii)%vars%g(pp)
+    !    write(output_unit_write,'("eta",E17.10)') spp(ii)%vars%eta(pp)
+    !    write(output_unit_write,'("gam",E17.10)') spp(ii)%vars%g(pp)
 
     do ii = 1_idef,params%num_species
 
@@ -1967,8 +1967,8 @@ contains
                      spp(ii)%vars%B(pp,2)*spp(ii)%vars%B(pp,2)+ &
                      spp(ii)%vars%B(pp,3)*spp(ii)%vars%B(pp,3))
 
-                !             write(6,'("pp: ",I16)') pp
-                !             write(6,'("Bmag: ",E17.10)') Bmag
+                !             write(output_unit_write,'("pp: ",I16)') pp
+                !             write(output_unit_write,'("Bmag: ",E17.10)') Bmag
 
 
                 bhat = spp(ii)%vars%B(pp,:)/Bmag1
@@ -1986,8 +1986,8 @@ contains
 
                 end if
 
-                !             write(6,'("bhat: ",E17.10)') bhat 
-                !             write(6,'("V: ",E17.10)') spp(ii)%vars%V(pp,:)
+                !             write(output_unit_write,'("bhat: ",E17.10)') bhat 
+                !             write(output_unit_write,'("V: ",E17.10)') spp(ii)%vars%V(pp,:)
 
 
                 spp(ii)%vars%X(pp,:)=spp(ii)%vars%X(pp,:)- &
@@ -2023,8 +2023,8 @@ contains
 
                 end if
 
-                write(6,'("RAphi1: ",E17.10)') RAphi(pp,1)
-                write(6,'("RAphi2: ",E17.10)') RAphi(pp,2)
+                write(output_unit_write,'("RAphi1: ",E17.10)') RAphi(pp,1)
+                write(output_unit_write,'("RAphi2: ",E17.10)') RAphi(pp,2)
 
                 spp(ii)%vars%V(pp,1)=(spp(ii)%m*spp(ii)%vars%g(pp)* &
                      RVphi(pp)+spp(ii)%q*(RAphi(pp,1)-RAphi(pp,2)))/ &
@@ -2103,23 +2103,23 @@ contains
                 spp(ii)%vars%g(pp)=sqrt(1+(spp(ii)%vars%V(pp,1))**2+ &
                      2*spp(ii)%vars%V(pp,2)*Bmag1)
 
-                !                write(6,'("Bmag:",E17.10)') Bmag1
-                !                write(6,'("PPLL:",E17.10)') spp(ii)%vars%V(pp,1)
-                !                write(6,'("MU:",E17.10)') spp(ii)%vars%V(pp,2)
+                !                write(output_unit_write,'("Bmag:",E17.10)') Bmag1
+                !                write(output_unit_write,'("PPLL:",E17.10)') spp(ii)%vars%V(pp,1)
+                !                write(output_unit_write,'("MU:",E17.10)') spp(ii)%vars%V(pp,2)
 
                 spp(ii)%vars%eta(pp) = atan2(sqrt(2*spp(ii)%m*Bmag1* &
                      spp(ii)%vars%V(pp,2)),spp(ii)%vars%V(pp,1))*180.0_rp/C_PI
 
-                !                             write(6,'("BR",E17.10)') spp(ii)%vars%B(pp,1)
-                !                             write(6,'("BPHI",E17.10)') spp(ii)%vars%B(pp,2)
-                !                             write(6,'("BZ",E17.10)') spp(ii)%vars%B(pp,3)
+                !                             write(output_unit_write,'("BR",E17.10)') spp(ii)%vars%B(pp,1)
+                !                             write(output_unit_write,'("BPHI",E17.10)') spp(ii)%vars%B(pp,2)
+                !                             write(output_unit_write,'("BZ",E17.10)') spp(ii)%vars%B(pp,3)
 
-                !             write(6,'("ppll",E17.10)') spp(ii)%vars%V(pp,1)
-                !             write(6,'("pperp",E17.10)') sqrt(2*spp(ii)%m*Bmag1* &
+                !             write(output_unit_write,'("ppll",E17.10)') spp(ii)%vars%V(pp,1)
+                !             write(output_unit_write,'("pperp",E17.10)') sqrt(2*spp(ii)%m*Bmag1* &
                 !                  spp(ii)%vars%V(pp,2))
 
-                !                             write(6,'("eta GCinit",E17.10)') spp(ii)%vars%eta(pp)
-                !             write(6,'("gam",E17.10)') spp(ii)%vars%g(pp)
+                !                             write(output_unit_write,'("eta GCinit",E17.10)') spp(ii)%vars%eta(pp)
+                !             write(output_unit_write,'("gam",E17.10)') spp(ii)%vars%g(pp)
 
 
              end if ! if particle in domain, i.e. spp%vars%flagCon==1
@@ -2143,16 +2143,16 @@ contains
           
           call get_fields(params,spp(ii)%vars,F)        
 
-          !write(6,*) spp(1)%vars%PSI_P
+          !write(output_unit_write,*) spp(1)%vars%PSI_P
 
           !$OMP PARALLEL DO SHARED(ii,spp) PRIVATE(pp,Bmag1)
 
           do pp=1_idef,spp(ii)%ppp
              !             if ( spp(ii)%vars%flagCon(pp) .EQ. 1_is ) then
 
-             !                write(6,'("BR: ",E17.10)') spp(ii)%vars%B(pp,1)
-             !                write(6,'("BPHI: ",E17.10)') spp(ii)%vars%B(pp,2)
-             !                write(6,'("BZ: ",E17.10)') spp(ii)%vars%B(pp,3)
+             !                write(output_unit_write,'("BR: ",E17.10)') spp(ii)%vars%B(pp,1)
+             !                write(output_unit_write,'("BPHI: ",E17.10)') spp(ii)%vars%B(pp,2)
+             !                write(output_unit_write,'("BZ: ",E17.10)') spp(ii)%vars%B(pp,3)
 
              Bmag1 = SQRT( DOT_PRODUCT(spp(ii)%vars%B(pp,:), &
                   spp(ii)%vars%B(pp,:)))
@@ -2165,15 +2165,15 @@ contains
                   sin(deg2rad(spp(ii)%vars%eta(pp))))**2/ &
                   (2*spp(ii)%m*Bmag1)
 
-             !    write(6,'("BR",E17.10)') spp(ii)%vars%B(pp,1)
-             !    write(6,'("BPHI",E17.10)') spp(ii)%vars%B(pp,2)
-             !    write(6,'("BZ",E17.10)') spp(ii)%vars%B(pp,3)
+             !    write(output_unit_write,'("BR",E17.10)') spp(ii)%vars%B(pp,1)
+             !    write(output_unit_write,'("BPHI",E17.10)') spp(ii)%vars%B(pp,2)
+             !    write(output_unit_write,'("BZ",E17.10)') spp(ii)%vars%B(pp,3)
 
-             !write(6,'("ppll",E17.10)') spp(ii)%vars%V(pp,1)
-             !write(6,'("mu",E17.10)') spp(ii)%vars%V(pp,2)
+             !write(output_unit_write,'("ppll",E17.10)') spp(ii)%vars%V(pp,1)
+             !write(output_unit_write,'("mu",E17.10)') spp(ii)%vars%V(pp,2)
 
-             !     write(6,'("eta",E17.10)') spp(ii)%vars%eta(pp)
-             !     write(6,'("gam",E17.10)') spp(ii)%vars%g(pp)
+             !     write(output_unit_write,'("eta",E17.10)') spp(ii)%vars%eta(pp)
+             !     write(output_unit_write,'("gam",E17.10)') spp(ii)%vars%g(pp)
 
 
              !             end if ! if particle in domain, i.e. spp%vars%flagCon==1
@@ -2302,14 +2302,14 @@ contains
                 Vdenave=0._rp
                 do tt=1_ip,params%t_skip
 
-                   !                   write(6,*) params%mpi_params%rank,'Y_R',Y_R
+                   !                   write(output_unit_write,*) params%mpi_params%rank,'Y_R',Y_R
 
                    call advance_GCeqn_vars(spp(ii)%vars,pp, &
                         tt+params%t_skip*(ttt-1),params, &
                         Y_R,Y_PHI, Y_Z,V_PLL,V_MU,flagCon,flagCol,q_cache,m_cache, &
                         B_R,B_PHI,B_Z,F,P,PSIp,E_PHI)
 
-                   !                   write(6,*) params%mpi_params%rank,'Y_R',Y_R
+                   !                   write(output_unit_write,*) params%mpi_params%rank,'Y_R',Y_R
 
                    if (params%SC_E) then                  
                       call calculate_SC_p(params,F,B_R,B_PHI,B_Z,Y_R,Y_Z, &
@@ -2441,9 +2441,9 @@ contains
     pchunk=params%pchunk
     dt=params%dt
 
-    !    write(6,'("Y_R 0: ",E17.10)') Y_R(1)
-    !    write(6,'("Y_PHI 0: ",E17.10)') Y_PHI(1)
-    !    write(6,'("Y_Z 0: ",E17.10)') Y_Z(1)
+    !    write(output_unit_write,'("Y_R 0: ",E17.10)') Y_R(1)
+    !    write(output_unit_write,'("Y_PHI 0: ",E17.10)') Y_PHI(1)
+    !    write(output_unit_write,'("Y_Z 0: ",E17.10)') Y_Z(1)
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0,Y_R,Y_PHI,Y_Z,V_PLL)
@@ -2463,9 +2463,9 @@ contains
        call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
     end if
 
-    !    write(6,'("ER:",E17.10)') E_R
-    !    write(6,'("EPHI:",E17.10)') E_PHI
-    !    write(6,'("EZ:",E17.10)') E_Z
+    !    write(output_unit_write,'("ER:",E17.10)') E_R
+    !    write(output_unit_write,'("EPHI:",E17.10)') E_PHI
+    !    write(output_unit_write,'("EZ:",E17.10)') E_Z
 
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
@@ -2494,14 +2494,14 @@ contains
     !$OMP END SIMD
 
 
-    !    write(6,'("Y_R 1: ",E17.10)') Y_R(1)
-    !    write(6,'("Y_PHI 1: ",E17.10)') Y_PHI(1)
-    !    write(6,'("Y_Z 1: ",E17.10)') Y_Z(1)
+    !    write(output_unit_write,'("Y_R 1: ",E17.10)') Y_R(1)
+    !    write(output_unit_write,'("Y_PHI 1: ",E17.10)') Y_PHI(1)
+    !    write(output_unit_write,'("Y_Z 1: ",E17.10)') Y_Z(1)
 
-    !    write(6,'("k1R: ",E17.10)') k1_R(1)
-    !    write(6,'("k1PHI: ",E17.10)') k1_PHI(1)
-    !    write(6,'("k1Z: ",E17.10)') k1_Z(1)
-    !    write(6,'("k1PLL: ",E17.10)') k1_PLL(1) 
+    !    write(output_unit_write,'("k1R: ",E17.10)') k1_R(1)
+    !    write(output_unit_write,'("k1PHI: ",E17.10)') k1_PHI(1)
+    !    write(output_unit_write,'("k1Z: ",E17.10)') k1_Z(1)
+    !    write(output_unit_write,'("k1PLL: ",E17.10)') k1_PLL(1) 
 
     call analytical_fields_GC_p(pchunk,F,Y_R,Y_PHI, &
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
@@ -2532,9 +2532,9 @@ contains
     !$OMP END SIMD
 
 
-    !    write(6,'("Y_R 2: ",E17.10)') Y_R(1)
-    !    write(6,'("Y_PHI 2: ",E17.10)') Y_PHI(1)
-    !    write(6,'("Y_Z 2: ",E17.10)') Y_Z(1)
+    !    write(output_unit_write,'("Y_R 2: ",E17.10)') Y_R(1)
+    !    write(output_unit_write,'("Y_PHI 2: ",E17.10)') Y_PHI(1)
+    !    write(output_unit_write,'("Y_Z 2: ",E17.10)') Y_Z(1)
 
     call analytical_fields_GC_p(pchunk,F,Y_R,Y_PHI, &
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
@@ -2565,9 +2565,9 @@ contains
     end do
     !$OMP END SIMD
 
-    !    write(6,'("Y_R 3: ",E17.10)') Y_R(1)
-    !    write(6,'("Y_PHI 3: ",E17.10)') Y_PHI(1)
-    !    write(6,'("Y_Z 3: ",E17.10)') Y_Z(1)
+    !    write(output_unit_write,'("Y_R 3: ",E17.10)') Y_R(1)
+    !    write(output_unit_write,'("Y_PHI 3: ",E17.10)') Y_PHI(1)
+    !    write(output_unit_write,'("Y_Z 3: ",E17.10)') Y_Z(1)
 
     call analytical_fields_GC_p(pchunk,F,Y_R,Y_PHI, &
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
@@ -2601,9 +2601,9 @@ contains
     end do
     !$OMP END SIMD
 
-    !    write(6,'("Y_R 4: ",E17.10)') Y_R(1)
-    !    write(6,'("Y_PHI 4: ",E17.10)') Y_PHI(1)
-    !    write(6,'("Y_Z 4: ",E17.10)') Y_Z(1)
+    !    write(output_unit_write,'("Y_R 4: ",E17.10)') Y_R(1)
+    !    write(output_unit_write,'("Y_PHI 4: ",E17.10)') Y_PHI(1)
+    !    write(output_unit_write,'("Y_Z 4: ",E17.10)') Y_Z(1)
 
     call analytical_fields_GC_p(pchunk,F,Y_R,Y_PHI, &
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
@@ -2637,9 +2637,9 @@ contains
     end do
     !$OMP END SIMD
 
-    !    write(6,'("Y_R 5: ",E17.10)') Y_R(1)
-    !    write(6,'("Y_PHI 5: ",E17.10)') Y_PHI(1)
-    !    write(6,'("Y_Z 5: ",E17.10)') Y_Z(1)
+    !    write(output_unit_write,'("Y_R 5: ",E17.10)') Y_R(1)
+    !    write(output_unit_write,'("Y_PHI 5: ",E17.10)') Y_PHI(1)
+    !    write(output_unit_write,'("Y_Z 5: ",E17.10)') Y_Z(1)
 
     call analytical_fields_GC_p(pchunk,F,Y_R,Y_PHI, &
          Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
@@ -2673,9 +2673,9 @@ contains
     end do
     !$OMP END SIMD
 
-    !    write(6,'("Y_R 6: ",E17.10)') Y_R(1)
-    !    write(6,'("Y_PHI 6: ",E17.10)') Y_PHI(1)
-    !    write(6,'("Y_Z 6: ",E17.10)') Y_Z(1)
+    !    write(output_unit_write,'("Y_R 6: ",E17.10)') Y_R(1)
+    !    write(output_unit_write,'("Y_PHI 6: ",E17.10)') Y_PHI(1)
+    !    write(output_unit_write,'("Y_Z 6: ",E17.10)') Y_Z(1)
 
     call cyl_check_if_confined_p(pchunk,ar,R0,Y_R,Y_Z,flagCon)
 
@@ -2731,7 +2731,7 @@ contains
        call include_CoulombCollisions_GC_p(tt,params,Y_R,Y_PHI,Y_Z, &
             V_PLL,V_MU,m_cache,flagCon,flagCol,F,P,E_PHI,ne,PSIp)
 
-       !       write(6,'("Collision Loop in FP")')
+       !       write(output_unit_write,'("Collision Loop in FP")')
 
     end do
 
@@ -2796,7 +2796,7 @@ contains
           !$OMP& REDUCTION(+:VdenOMP)
           do pp=1_idef,spp(ii)%ppp,pchunk
 
-             !          write(6,'("pp: ",I16)') pp
+             !          write(output_unit_write,'("pp: ",I16)') pp
 
              !$OMP SIMD
              do cc=1_idef,pchunk
@@ -2827,20 +2827,20 @@ contains
                    call calculate_SC_p_FS(params,F,B_R,B_PHI,B_Z,PSIp, &
                         V_PLL,V_MU,m_cache,flagCon,flagCol,Vden)
 
-                   !                   write(6,*) 'pre-Vdenave',Vdenave(F%dim_1D)
+                   !                   write(output_unit_write,*) 'pre-Vdenave',Vdenave(F%dim_1D)
                    Vdenave=(Vdenave*REAL(tt-1_ip)+Vden)/REAL(tt)
 
-                   !                   write(6,*) 'Vden',Vden(F%dim_1D)
-                   !                   write(6,*) 'post-Vdenave',Vdenave(F%dim_1D)
-                   !                   if (pp.eq.9_idef) write(6,*) 'Vdenave',Vdenave(F%dim_1D)
+                   !                   write(output_unit_write,*) 'Vden',Vden(F%dim_1D)
+                   !                   write(output_unit_write,*) 'post-Vdenave',Vdenave(F%dim_1D)
+                   !                   if (pp.eq.9_idef) write(output_unit_write,*) 'Vdenave',Vdenave(F%dim_1D)
 
                 end do !timestep iterator
 
-                !                write(6,*) 'Vdenave',Vdenave(F%dim_1D)
+                !                write(output_unit_write,*) 'Vdenave',Vdenave(F%dim_1D)
 
                 VdenOMP=VdenOMP+Vdenave
 
-                !                write(6,*) 'VdenOMP',VdenOMP(F%dim_1D)
+                !                write(output_unit_write,*) 'VdenOMP',VdenOMP(F%dim_1D)
 
                 !$OMP SIMD
                 do cc=1_idef,pchunk
@@ -2909,7 +2909,7 @@ contains
           end do !particle chunk iterator
           !$OMP END PARALLEL DO
 
-          !write(6,*) 'VdenOMP',VdenOMP(F%dim_1D)
+          !write(output_unit_write,*) 'VdenOMP',VdenOMP(F%dim_1D)
 
 
           call calculate_SC_E1D_FS(params,F,VdenOMP)             
@@ -2971,7 +2971,7 @@ contains
 
        do pp=1_idef,spp(ii)%ppp,pchunk
 
-          !          write(6,'("pp: ",I16)') pp
+          !          write(output_unit_write,'("pp: ",I16)') pp
 
           !$OMP SIMD
           do cc=1_idef,pchunk
@@ -3149,7 +3149,7 @@ contains
 
        do pp=1_idef,spp(ii)%ppp,pchunk
 
-          !          write(6,'("pp: ",I16)') pp
+          !          write(output_unit_write,'("pp: ",I16)') pp
 
           !$OMP SIMD
           do cc=1_idef,pchunk
@@ -3304,7 +3304,7 @@ contains
 
        do pp=1_idef,spp(ii)%ppp,pchunk
 
-          !          write(6,'("pp: ",I16)') pp
+          !          write(output_unit_write,'("pp: ",I16)') pp
 
           !$OMP SIMD
           do cc=1_idef,pchunk
@@ -3481,7 +3481,7 @@ contains
 
        do pp=1_idef,spp(ii)%ppp,pchunk
 
-          !          write(6,'("pp: ",I16)') pp
+          !          write(output_unit_write,'("pp: ",I16)') pp
 
           !$OMP SIMD
           do cc=1_idef,pchunk
@@ -3657,7 +3657,7 @@ contains
        !$OMP& gradB_R,gradB_PHI,gradB_Z,ne)
        do pp=1_idef,spp(ii)%ppp,pchunk
 
-          !          write(6,'("pp: ",I16)') pp
+          !          write(output_unit_write,'("pp: ",I16)') pp
 
           !$OMP SIMD
           do cc=1_idef,pchunk
@@ -3800,7 +3800,7 @@ contains
        !$OMP& gradB_R,gradB_PHI,gradB_Z,ne)
        do pp=1_idef,spp(ii)%ppp,pchunk
 
-          !          write(6,'("pp: ",I16)') pp
+          !          write(output_unit_write,'("pp: ",I16)') pp
 
           !$OMP SIMD
           do cc=1_idef,pchunk
@@ -3943,7 +3943,7 @@ contains
        !$OMP& gradB_R,gradB_PHI,gradB_Z,ne)
        do pp=1_idef,spp(ii)%ppp,pchunk
 
-          !          write(6,'("pp: ",I16)') pp
+          !          write(output_unit_write,'("pp: ",I16)') pp
 
           !$OMP SIMD
           do cc=1_idef,pchunk
@@ -4088,7 +4088,7 @@ contains
        !$OMP& gradB_R,gradB_PHI,gradB_Z,ne)
        do pp=1_idef,spp(ii)%ppp,pchunk
 
-          !          write(6,'("pp: ",I16)') pp
+          !          write(output_unit_write,'("pp: ",I16)') pp
 
           !$OMP SIMD
           do cc=1_idef,pchunk
@@ -4231,7 +4231,7 @@ contains
        !$OMP& gradB_R,gradB_PHI,gradB_Z,ne,PSIp)
        do pp=1_idef,spp(ii)%ppp,pchunk
 
-          !          write(6,'("pp: ",I16)') pp
+          !          write(output_unit_write,'("pp: ",I16)') pp
 
           !$OMP SIMD
           do cc=1_idef,pchunk
@@ -4412,28 +4412,28 @@ contains
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
-    !    write(6,*) 'R',Y_R(1)
-    !    write(6,*) 'PHI',Y_PHI(1)
-    !    write(6,*) 'Z',Y_Z(1)
-    !    write(6,*) 'PPLL',V_PLL(1)
-    !    write(6,*) 'MU',V_MU(1)
+    !    write(output_unit_write,*) 'R',Y_R(1)
+    !    write(output_unit_write,*) 'PHI',Y_PHI(1)
+    !    write(output_unit_write,*) 'Z',Y_Z(1)
+    !    write(output_unit_write,*) 'PPLL',V_PLL(1)
+    !    write(output_unit_write,*) 'MU',V_MU(1)
 
-    !    write(6,*) 'BR',B_R(1)
-    !    write(6,*) 'BPHI',B_PHI(1)
-    !    write(6,*) 'BZ',B_Z(1)
+    !    write(output_unit_write,*) 'BR',B_R(1)
+    !    write(output_unit_write,*) 'BPHI',B_PHI(1)
+    !    write(output_unit_write,*) 'BZ',B_Z(1)
 
-    !    write(6,*) 'gradBR',gradB_R(1)
-    !    write(6,*) 'gradBPHI',gradB_PHI(1)
-    !    write(6,*) 'gradBZ',gradB_Z(1)
+    !    write(output_unit_write,*) 'gradBR',gradB_R(1)
+    !    write(output_unit_write,*) 'gradBPHI',gradB_PHI(1)
+    !    write(output_unit_write,*) 'gradBZ',gradB_Z(1)
 
-    !    write(6,*) 'curlBR',curlB_R(1)
-    !    write(6,*) 'curlBPHI',curlB_PHI(1)
-    !    write(6,*) 'curlBZ',curlB_Z(1)
+    !    write(output_unit_write,*) 'curlBR',curlB_R(1)
+    !    write(output_unit_write,*) 'curlBPHI',curlB_PHI(1)
+    !    write(output_unit_write,*) 'curlBZ',curlB_Z(1)
 
-    !    write(6,*) 'RHS_R',RHS_R(1)
-    !    write(6,*) 'RHS_PHI',RHS_PHI(1)
-    !    write(6,*) 'RHS_Z',RHS_Z(1)
-    !    write(6,*) 'RHS_PLL',RHS_PLL(1)
+    !    write(output_unit_write,*) 'RHS_R',RHS_R(1)
+    !    write(output_unit_write,*) 'RHS_PHI',RHS_PHI(1)
+    !    write(output_unit_write,*) 'RHS_Z',RHS_Z(1)
+    !    write(output_unit_write,*) 'RHS_PLL',RHS_PLL(1)
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -4767,63 +4767,63 @@ contains
     end do
     !$OMP END SIMD
 
-        !write(6,*) 'R0',Y_R(1)
-        !write(6,*) 'PHI0',Y_PHI(1)
-        !write(6,*) 'Z0',Y_Z(1)
-        !write(6,*) 'PPLL0',V_PLL(1)
-        !write(6,*) 'MU0',V_MU(1)
+        !write(output_unit_write,*) 'R0',Y_R(1)
+        !write(output_unit_write,*) 'PHI0',Y_PHI(1)
+        !write(output_unit_write,*) 'Z0',Y_Z(1)
+        !write(output_unit_write,*) 'PPLL0',V_PLL(1)
+        !write(output_unit_write,*) 'MU0',V_MU(1)
 
-    !write(6,*) 'ER',E_R(1)
-    !write(6,*) 'EPHI',E_PHI(1)
-    !write(6,*) 'EZ',E_Z(1)
+    !write(output_unit_write,*) 'ER',E_R(1)
+    !write(output_unit_write,*) 'EPHI',E_PHI(1)
+    !write(output_unit_write,*) 'EZ',E_Z(1)
 
     !    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
     call calculate_GCfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
          E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z, &
          flagCon,PSIp)
 
-    !write(6,*) 'ER',E_R(1)
-    !write(6,*) 'EPHI',E_PHI(1)
-    !write(6,*) 'EZ',E_Z(1)
+    !write(output_unit_write,*) 'ER',E_R(1)
+    !write(output_unit_write,*) 'EPHI',E_PHI(1)
+    !write(output_unit_write,*) 'EZ',E_Z(1)
     
     call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
 
-    !write(6,*) 'ER',E_R(1)
-    !write(6,*) 'EPHI',E_PHI(1)
-    !write(6,*) 'EZ',E_Z(1)
+    !write(output_unit_write,*) 'ER',E_R(1)
+    !write(output_unit_write,*) 'EPHI',E_PHI(1)
+    !write(output_unit_write,*) 'EZ',E_Z(1)
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
-        !write(6,*) 'R0',Y_R(1)
-        !write(6,*) 'PHI0',Y_PHI(1)
-        !write(6,*) 'Z0',Y_Z(1)
-        !write(6,*) 'PPLL0',V_PLL(1)
-        !write(6,*) 'MU0',V_MU(1)
+        !write(output_unit_write,*) 'R0',Y_R(1)
+        !write(output_unit_write,*) 'PHI0',Y_PHI(1)
+        !write(output_unit_write,*) 'Z0',Y_Z(1)
+        !write(output_unit_write,*) 'PPLL0',V_PLL(1)
+        !write(output_unit_write,*) 'MU0',V_MU(1)
 
-    !    write(6,*) 'BR',B_R(1)
-    !    write(6,*) 'BPHI',B_PHI(1)
-    !    write(6,*) 'BZ',B_Z(1)
+    !    write(output_unit_write,*) 'BR',B_R(1)
+    !    write(output_unit_write,*) 'BPHI',B_PHI(1)
+    !    write(output_unit_write,*) 'BZ',B_Z(1)
 
-    !    write(6,*) 'ER',E_R(1)
-    !    write(6,*) 'EPHI',E_PHI(1)
-    !    write(6,*) 'EZ',E_Z(1)
+    !    write(output_unit_write,*) 'ER',E_R(1)
+    !    write(output_unit_write,*) 'EPHI',E_PHI(1)
+    !    write(output_unit_write,*) 'EZ',E_Z(1)
 
-    !    write(6,*) 'gradBR',gradB_R(1)
-    !    write(6,*) 'gradBPHI',gradB_PHI(1)
-    !    write(6,*) 'gradBZ',gradB_Z(1)
+    !    write(output_unit_write,*) 'gradBR',gradB_R(1)
+    !    write(output_unit_write,*) 'gradBPHI',gradB_PHI(1)
+    !    write(output_unit_write,*) 'gradBZ',gradB_Z(1)
 
-    !    write(6,*) 'curlBR',curlB_R(1)
-    !    write(6,*) 'curlBPHI',curlB_PHI(1)
-    !    write(6,*) 'curlBZ',curlB_Z(1)
+    !    write(output_unit_write,*) 'curlBR',curlB_R(1)
+    !    write(output_unit_write,*) 'curlBPHI',curlB_PHI(1)
+    !    write(output_unit_write,*) 'curlBZ',curlB_Z(1)
 
-    !    write(6,*) 'dt',params%dt
-    !    write(6,*) 'RHS_R',RHS_R(1)
-    !    write(6,*) 'RHS_PHI',RHS_PHI(1)
-    !    write(6,*) 'RHS_Z',RHS_Z(1)
-    !    write(6,*) 'RHS_PLL',RHS_PLL(1)
-    !    write(6,*) 'RHS_MU',RHS_MU(1)
+    !    write(output_unit_write,*) 'dt',params%dt
+    !    write(output_unit_write,*) 'RHS_R',RHS_R(1)
+    !    write(output_unit_write,*) 'RHS_PHI',RHS_PHI(1)
+    !    write(output_unit_write,*) 'RHS_Z',RHS_Z(1)
+    !    write(output_unit_write,*) 'RHS_PLL',RHS_PLL(1)
+    !    write(output_unit_write,*) 'RHS_MU',RHS_MU(1)
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -4845,11 +4845,11 @@ contains
     end do
     !$OMP END SIMD
 
-       ! write(6,*) 'R1',Y_R(1)
-       ! write(6,*) 'PHI1',Y_PHI(1)
-       ! write(6,*) 'Z1',Y_Z(1)
-       ! write(6,*) 'PPLL1',V_PLL(1)
-       ! write(6,*) 'MU1',V_MU(1)
+       ! write(output_unit_write,*) 'R1',Y_R(1)
+       ! write(output_unit_write,*) 'PHI1',Y_PHI(1)
+       ! write(output_unit_write,*) 'Z1',Y_Z(1)
+       ! write(output_unit_write,*) 'PPLL1',V_PLL(1)
+       ! write(output_unit_write,*) 'MU1',V_MU(1)
 
     !    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
     call calculate_GCfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
@@ -5175,11 +5175,11 @@ contains
     end do
     !$OMP END SIMD
 
-    !write(6,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'R0',Y_R(1)
-    !write(6,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'PHI0',Y_PHI(1)
-    !write(6,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'Z0',Y_Z(1)
-    !write(6,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'PPLL0',V_PLL(1)
-    !write(6,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'MU0',V_MU(1)
+    !write(output_unit_write,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'R0',Y_R(1)
+    !write(output_unit_write,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'PHI0',Y_PHI(1)
+    !write(output_unit_write,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'Z0',Y_Z(1)
+    !write(output_unit_write,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'PPLL0',V_PLL(1)
+    !write(output_unit_write,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'MU0',V_MU(1)
 
 
     call get_m3d_c1_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
@@ -5192,38 +5192,38 @@ contains
     call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
          PSIp,flagCon,hint)
 
-    !write(6,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'B',B_R(1),B_PHI(1),B_Z(1)
-    !write(6,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'gradB',gradB_R(1),gradB_PHI(1)
-    !write(6,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'curlB',curlB_R(1),curlB_PHI(1),curlB_Z(1)
+    !write(output_unit_write,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'B',B_R(1),B_PHI(1),B_Z(1)
+    !write(output_unit_write,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'gradB',gradB_R(1),gradB_PHI(1)
+    !write(output_unit_write,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'curlB',curlB_R(1),curlB_PHI(1),curlB_Z(1)
 
     call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
-    !write(6,*) 'R',Y_R(1)
-    !write(6,*) 'PHI',Y_PHI(1)
-    !write(6,*) 'Z',Y_Z(1)
-    !write(6,*) 'PPLL',V_PLL(1)
-    !write(6,*) 'MU',V_MU(1)
+    !write(output_unit_write,*) 'R',Y_R(1)
+    !write(output_unit_write,*) 'PHI',Y_PHI(1)
+    !write(output_unit_write,*) 'Z',Y_Z(1)
+    !write(output_unit_write,*) 'PPLL',V_PLL(1)
+    !write(output_unit_write,*) 'MU',V_MU(1)
 
-    !write(6,*) 'BR',B_R(1)
-    !write(6,*) 'BPHI',B_PHI(1)
-    !write(6,*) 'BZ',B_Z(1)
+    !write(output_unit_write,*) 'BR',B_R(1)
+    !write(output_unit_write,*) 'BPHI',B_PHI(1)
+    !write(output_unit_write,*) 'BZ',B_Z(1)
 
-    !    write(6,*) 'gradBR',gradB_R(1)
-    !    write(6,*) 'gradBPHI',gradB_PHI(1)
-    !    write(6,*) 'gradBZ',gradB_Z(1)
+    !    write(output_unit_write,*) 'gradBR',gradB_R(1)
+    !    write(output_unit_write,*) 'gradBPHI',gradB_PHI(1)
+    !    write(output_unit_write,*) 'gradBZ',gradB_Z(1)
 
-    !    write(6,*) 'curlBR',curlB_R(1)
-    !    write(6,*) 'curlBPHI',curlB_PHI(1)
-    !    write(6,*) 'curlBZ',curlB_Z(1)
+    !    write(output_unit_write,*) 'curlBR',curlB_R(1)
+    !    write(output_unit_write,*) 'curlBPHI',curlB_PHI(1)
+    !    write(output_unit_write,*) 'curlBZ',curlB_Z(1)
 
-    !    write(6,*) 'dt',params%dt
-    !write(6,*) 'RHS_R',RHS_R(1)
-    !write(6,*) 'RHS_PHI',RHS_PHI(1)
-    !write(6,*) 'RHS_Z',RHS_Z(1)
-    !write(6,*) 'RHS_PLL',RHS_PLL(1)
-    !write(6,*) 'RHS_MU',RHS_MU(1)
+    !    write(output_unit_write,*) 'dt',params%dt
+    !write(output_unit_write,*) 'RHS_R',RHS_R(1)
+    !write(output_unit_write,*) 'RHS_PHI',RHS_PHI(1)
+    !write(output_unit_write,*) 'RHS_Z',RHS_Z(1)
+    !write(output_unit_write,*) 'RHS_PLL',RHS_PLL(1)
+    !write(output_unit_write,*) 'RHS_MU',RHS_MU(1)
 
 
     !$OMP SIMD
@@ -5246,11 +5246,11 @@ contains
     end do
     !$OMP END SIMD
 
-    !write(6,*) 'R1',Y_R(1)
-    !write(6,*) 'PHI1',Y_PHI(1)
-    !write(6,*) 'Z1',Y_Z(1)
-    !write(6,*) 'PPLL1',V_PLL(1)
-    !write(6,*) 'MU1',V_MU(1)
+    !write(output_unit_write,*) 'R1',Y_R(1)
+    !write(output_unit_write,*) 'PHI1',Y_PHI(1)
+    !write(output_unit_write,*) 'Z1',Y_Z(1)
+    !write(output_unit_write,*) 'PPLL1',V_PLL(1)
+    !write(output_unit_write,*) 'MU1',V_MU(1)
 
     !    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
     call get_m3d_c1_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
@@ -5569,11 +5569,11 @@ contains
     end do
     !$OMP END SIMD
 
-    !    write(6,*) 'R0',Y_R(1)
-    !    write(6,*) 'PHI0',Y_PHI(1)
-    !    write(6,*) 'Z0',Y_Z(1)
-    !    write(6,*) 'PPLL0',V_PLL(1)
-    !    write(6,*) 'MU0',V_MU(1)
+    !    write(output_unit_write,*) 'R0',Y_R(1)
+    !    write(output_unit_write,*) 'PHI0',Y_PHI(1)
+    !    write(output_unit_write,*) 'Z0',Y_Z(1)
+    !    write(output_unit_write,*) 'PPLL0',V_PLL(1)
+    !    write(output_unit_write,*) 'MU0',V_MU(1)
 
 
     !    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
@@ -5589,30 +5589,30 @@ contains
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
-    !    write(6,*) 'R0',Y_R(1)
-    !    write(6,*) 'PHI0',Y_PHI(1)
-    !    write(6,*) 'Z0',Y_Z(1)
-    !    write(6,*) 'PPLL0',V_PLL(1)
-    !    write(6,*) 'MU0',V_MU(1)
+    !    write(output_unit_write,*) 'R0',Y_R(1)
+    !    write(output_unit_write,*) 'PHI0',Y_PHI(1)
+    !    write(output_unit_write,*) 'Z0',Y_Z(1)
+    !    write(output_unit_write,*) 'PPLL0',V_PLL(1)
+    !    write(output_unit_write,*) 'MU0',V_MU(1)
 
-    !    write(6,*) 'BR',B_R(1)
-    !    write(6,*) 'BPHI',B_PHI(1)
-    !    write(6,*) 'BZ',B_Z(1)
+    !    write(output_unit_write,*) 'BR',B_R(1)
+    !    write(output_unit_write,*) 'BPHI',B_PHI(1)
+    !    write(output_unit_write,*) 'BZ',B_Z(1)
 
-    !    write(6,*) 'gradBR',gradB_R(1)
-    !    write(6,*) 'gradBPHI',gradB_PHI(1)
-    !    write(6,*) 'gradBZ',gradB_Z(1)
+    !    write(output_unit_write,*) 'gradBR',gradB_R(1)
+    !    write(output_unit_write,*) 'gradBPHI',gradB_PHI(1)
+    !    write(output_unit_write,*) 'gradBZ',gradB_Z(1)
 
-    !    write(6,*) 'curlBR',curlB_R(1)
-    !    write(6,*) 'curlBPHI',curlB_PHI(1)
-    !    write(6,*) 'curlBZ',curlB_Z(1)
+    !    write(output_unit_write,*) 'curlBR',curlB_R(1)
+    !    write(output_unit_write,*) 'curlBPHI',curlB_PHI(1)
+    !    write(output_unit_write,*) 'curlBZ',curlB_Z(1)
 
-    !    write(6,*) 'dt',params%dt
-    !    write(6,*) 'RHS_R',RHS_R(1)
-    !    write(6,*) 'RHS_PHI',RHS_PHI(1)
-    !    write(6,*) 'RHS_Z',RHS_Z(1)
-    !    write(6,*) 'RHS_PLL',RHS_PLL(1)
-    !    write(6,*) 'RHS_MU',RHS_MU(1)
+    !    write(output_unit_write,*) 'dt',params%dt
+    !    write(output_unit_write,*) 'RHS_R',RHS_R(1)
+    !    write(output_unit_write,*) 'RHS_PHI',RHS_PHI(1)
+    !    write(output_unit_write,*) 'RHS_Z',RHS_Z(1)
+    !    write(output_unit_write,*) 'RHS_PLL',RHS_PLL(1)
+    !    write(output_unit_write,*) 'RHS_MU',RHS_MU(1)
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5634,11 +5634,11 @@ contains
     end do
     !$OMP END SIMD
 
-    !    write(6,*) 'R1',Y_R(1)
-    !    write(6,*) 'PHI1',Y_PHI(1)
-    !!    write(6,*) 'Z1',Y_Z(1)
-    !   write(6,*) 'PPLL1',V_PLL(1)
-    !   write(6,*) 'MU1',V_MU(1)
+    !    write(output_unit_write,*) 'R1',Y_R(1)
+    !    write(output_unit_write,*) 'PHI1',Y_PHI(1)
+    !!    write(output_unit_write,*) 'Z1',Y_Z(1)
+    !   write(output_unit_write,*) 'PPLL1',V_PLL(1)
+    !   write(output_unit_write,*) 'MU1',V_MU(1)
 
     !    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
     call calculate_GCfieldswE_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
@@ -5954,11 +5954,11 @@ contains
     end do
     !$OMP END SIMD
 
-    !    write(6,*) 'R0',Y_R(1)
-    !    write(6,*) 'PHI0',Y_PHI(1)
-    !    write(6,*) 'Z0',Y_Z(1)
-    !    write(6,*) 'PPLL0',V_PLL(1)
-    !    write(6,*) 'MU0',V_MU(1)
+    !    write(output_unit_write,*) 'R0',Y_R(1)
+    !    write(output_unit_write,*) 'PHI0',Y_PHI(1)
+    !    write(output_unit_write,*) 'Z0',Y_Z(1)
+    !    write(output_unit_write,*) 'PPLL0',V_PLL(1)
+    !    write(output_unit_write,*) 'MU0',V_MU(1)
 
 
     !    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
@@ -5973,30 +5973,30 @@ contains
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
-    !    write(6,*) 'R0',Y_R(1)
-    !    write(6,*) 'PHI0',Y_PHI(1)
-    !    write(6,*) 'Z0',Y_Z(1)
-    !    write(6,*) 'PPLL0',V_PLL(1)
-    !    write(6,*) 'MU0',V_MU(1)
+    !    write(output_unit_write,*) 'R0',Y_R(1)
+    !    write(output_unit_write,*) 'PHI0',Y_PHI(1)
+    !    write(output_unit_write,*) 'Z0',Y_Z(1)
+    !    write(output_unit_write,*) 'PPLL0',V_PLL(1)
+    !    write(output_unit_write,*) 'MU0',V_MU(1)
 
-    !    write(6,*) 'BR',B_R(1)
-    !    write(6,*) 'BPHI',B_PHI(1)
-    !    write(6,*) 'BZ',B_Z(1)
+    !    write(output_unit_write,*) 'BR',B_R(1)
+    !    write(output_unit_write,*) 'BPHI',B_PHI(1)
+    !    write(output_unit_write,*) 'BZ',B_Z(1)
 
-    !    write(6,*) 'gradBR',gradB_R(1)
-    !    write(6,*) 'gradBPHI',gradB_PHI(1)
-    !    write(6,*) 'gradBZ',gradB_Z(1)
+    !    write(output_unit_write,*) 'gradBR',gradB_R(1)
+    !    write(output_unit_write,*) 'gradBPHI',gradB_PHI(1)
+    !    write(output_unit_write,*) 'gradBZ',gradB_Z(1)
 
-    !    write(6,*) 'curlBR',curlB_R(1)
-    !    write(6,*) 'curlBPHI',curlB_PHI(1)
-    !    write(6,*) 'curlBZ',curlB_Z(1)
+    !    write(output_unit_write,*) 'curlBR',curlB_R(1)
+    !    write(output_unit_write,*) 'curlBPHI',curlB_PHI(1)
+    !    write(output_unit_write,*) 'curlBZ',curlB_Z(1)
 
-    !    write(6,*) 'dt',params%dt
-    !    write(6,*) 'RHS_R',RHS_R(1)
-    !    write(6,*) 'RHS_PHI',RHS_PHI(1)
-    !    write(6,*) 'RHS_Z',RHS_Z(1)
-    !    write(6,*) 'RHS_PLL',RHS_PLL(1)
-    !    write(6,*) 'RHS_MU',RHS_MU(1)
+    !    write(output_unit_write,*) 'dt',params%dt
+    !    write(output_unit_write,*) 'RHS_R',RHS_R(1)
+    !    write(output_unit_write,*) 'RHS_PHI',RHS_PHI(1)
+    !    write(output_unit_write,*) 'RHS_Z',RHS_Z(1)
+    !    write(output_unit_write,*) 'RHS_PLL',RHS_PLL(1)
+    !    write(output_unit_write,*) 'RHS_MU',RHS_MU(1)
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -6018,11 +6018,11 @@ contains
     end do
     !$OMP END SIMD
 
-    !    write(6,*) 'R1',Y_R(1)
-    !    write(6,*) 'PHI1',Y_PHI(1)
-    !!    write(6,*) 'Z1',Y_Z(1)
-    !   write(6,*) 'PPLL1',V_PLL(1)
-    !   write(6,*) 'MU1',V_MU(1)
+    !    write(output_unit_write,*) 'R1',Y_R(1)
+    !    write(output_unit_write,*) 'PHI1',Y_PHI(1)
+    !!    write(output_unit_write,*) 'Z1',Y_Z(1)
+    !   write(output_unit_write,*) 'PPLL1',V_PLL(1)
+    !   write(output_unit_write,*) 'MU1',V_MU(1)
 
     !    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
     call calculate_GCfields_2x1t_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
@@ -6646,28 +6646,28 @@ contains
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
-    !write(6,*) 'R',Y_R(1)
-    !write(6,*) 'PHI',Y_PHI(1)
-    !write(6,*) 'Z',Y_Z(1)
-    !write(6,*) 'PPLL',V_PLL(1)
-    !write(6,*) 'MU',V_MU(1)
+    !write(output_unit_write,*) 'R',Y_R(1)
+    !write(output_unit_write,*) 'PHI',Y_PHI(1)
+    !write(output_unit_write,*) 'Z',Y_Z(1)
+    !write(output_unit_write,*) 'PPLL',V_PLL(1)
+    !write(output_unit_write,*) 'MU',V_MU(1)
 
-    !write(6,*) 'BR',B_R(1)
-    !write(6,*) 'BPHI',B_PHI(1)
-    !write(6,*) 'BZ',B_Z(1)
+    !write(output_unit_write,*) 'BR',B_R(1)
+    !write(output_unit_write,*) 'BPHI',B_PHI(1)
+    !write(output_unit_write,*) 'BZ',B_Z(1)
 
-    !write(6,*) 'gradBR',gradB_R(1)
-    !write(6,*) 'gradBPHI',gradB_PHI(1)
-    !write(6,*) 'gradBZ',gradB_Z(1)
+    !write(output_unit_write,*) 'gradBR',gradB_R(1)
+    !write(output_unit_write,*) 'gradBPHI',gradB_PHI(1)
+    !write(output_unit_write,*) 'gradBZ',gradB_Z(1)
 
-    !write(6,*) 'curlBR',curlB_R(1)
-    !write(6,*) 'curlBPHI',curlB_PHI(1)
-    !write(6,*) 'curlBZ',curlB_Z(1)
+    !write(output_unit_write,*) 'curlBR',curlB_R(1)
+    !write(output_unit_write,*) 'curlBPHI',curlB_PHI(1)
+    !write(output_unit_write,*) 'curlBZ',curlB_Z(1)
 
-    !write(6,*) 'RHS_R',RHS_R(1)
-    !write(6,*) 'RHS_PHI',RHS_PHI(1)
-    !write(6,*) 'RHS_Z',RHS_Z(1)
-    !write(6,*) 'RHS_PLL',RHS_PLL(1)
+    !write(output_unit_write,*) 'RHS_R',RHS_R(1)
+    !write(output_unit_write,*) 'RHS_PHI',RHS_PHI(1)
+    !write(output_unit_write,*) 'RHS_Z',RHS_Z(1)
+    !write(output_unit_write,*) 'RHS_PLL',RHS_PLL(1)
 
 
     !$OMP SIMD
@@ -6974,28 +6974,28 @@ contains
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
-    !write(6,*) 'R',Y_R(1)
-    !write(6,*) 'PHI',Y_PHI(1)
-    !write(6,*) 'Z',Y_Z(1)
-    !write(6,*) 'PPLL',V_PLL(1)
-    !write(6,*) 'MU',V_MU(1)
+    !write(output_unit_write,*) 'R',Y_R(1)
+    !write(output_unit_write,*) 'PHI',Y_PHI(1)
+    !write(output_unit_write,*) 'Z',Y_Z(1)
+    !write(output_unit_write,*) 'PPLL',V_PLL(1)
+    !write(output_unit_write,*) 'MU',V_MU(1)
 
-    !write(6,*) 'BR',B_R(1)
-    !write(6,*) 'BPHI',B_PHI(1)
-    !write(6,*) 'BZ',B_Z(1)
+    !write(output_unit_write,*) 'BR',B_R(1)
+    !write(output_unit_write,*) 'BPHI',B_PHI(1)
+    !write(output_unit_write,*) 'BZ',B_Z(1)
 
-    !write(6,*) 'gradBR',gradB_R(1)
-    !write(6,*) 'gradBPHI',gradB_PHI(1)
-    !write(6,*) 'gradBZ',gradB_Z(1)
+    !write(output_unit_write,*) 'gradBR',gradB_R(1)
+    !write(output_unit_write,*) 'gradBPHI',gradB_PHI(1)
+    !write(output_unit_write,*) 'gradBZ',gradB_Z(1)
 
-    !write(6,*) 'curlBR',curlB_R(1)
-    !write(6,*) 'curlBPHI',curlB_PHI(1)
-    !write(6,*) 'curlBZ',curlB_Z(1)
+    !write(output_unit_write,*) 'curlBR',curlB_R(1)
+    !write(output_unit_write,*) 'curlBPHI',curlB_PHI(1)
+    !write(output_unit_write,*) 'curlBZ',curlB_Z(1)
 
-    !write(6,*) 'RHS_R',RHS_R(1)
-    !write(6,*) 'RHS_PHI',RHS_PHI(1)
-    !write(6,*) 'RHS_Z',RHS_Z(1)
-    !write(6,*) 'RHS_PLL',RHS_PLL(1)
+    !write(output_unit_write,*) 'RHS_R',RHS_R(1)
+    !write(output_unit_write,*) 'RHS_PHI',RHS_PHI(1)
+    !write(output_unit_write,*) 'RHS_Z',RHS_Z(1)
+    !write(output_unit_write,*) 'RHS_PLL',RHS_PLL(1)
 
 
     !$OMP SIMD
@@ -7303,28 +7303,28 @@ contains
          B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
 
-    !write(6,*) 'R',Y_R(1)
-    !write(6,*) 'PHI',Y_PHI(1)
-    !write(6,*) 'Z',Y_Z(1)
-    !write(6,*) 'PPLL',V_PLL(1)
-    !write(6,*) 'MU',V_MU(1)
+    !write(output_unit_write,*) 'R',Y_R(1)
+    !write(output_unit_write,*) 'PHI',Y_PHI(1)
+    !write(output_unit_write,*) 'Z',Y_Z(1)
+    !write(output_unit_write,*) 'PPLL',V_PLL(1)
+    !write(output_unit_write,*) 'MU',V_MU(1)
 
-    !write(6,*) 'BR',B_R(1)
-    !write(6,*) 'BPHI',B_PHI(1)
-    !write(6,*) 'BZ',B_Z(1)
+    !write(output_unit_write,*) 'BR',B_R(1)
+    !write(output_unit_write,*) 'BPHI',B_PHI(1)
+    !write(output_unit_write,*) 'BZ',B_Z(1)
 
-    !write(6,*) 'gradBR',gradB_R(1)
-    !write(6,*) 'gradBPHI',gradB_PHI(1)
-    !write(6,*) 'gradBZ',gradB_Z(1)
+    !write(output_unit_write,*) 'gradBR',gradB_R(1)
+    !write(output_unit_write,*) 'gradBPHI',gradB_PHI(1)
+    !write(output_unit_write,*) 'gradBZ',gradB_Z(1)
 
-    !write(6,*) 'curlBR',curlB_R(1)
-    !write(6,*) 'curlBPHI',curlB_PHI(1)
-    !write(6,*) 'curlBZ',curlB_Z(1)
+    !write(output_unit_write,*) 'curlBR',curlB_R(1)
+    !write(output_unit_write,*) 'curlBPHI',curlB_PHI(1)
+    !write(output_unit_write,*) 'curlBZ',curlB_Z(1)
 
-    !write(6,*) 'RHS_R',RHS_R(1)
-    !write(6,*) 'RHS_PHI',RHS_PHI(1)
-    !write(6,*) 'RHS_Z',RHS_Z(1)
-    !write(6,*) 'RHS_PLL',RHS_PLL(1)
+    !write(output_unit_write,*) 'RHS_R',RHS_R(1)
+    !write(output_unit_write,*) 'RHS_PHI',RHS_PHI(1)
+    !write(output_unit_write,*) 'RHS_Z',RHS_Z(1)
+    !write(output_unit_write,*) 'RHS_PLL',RHS_PLL(1)
 
 
     !$OMP SIMD
@@ -7874,18 +7874,18 @@ contains
     INTEGER(is),DIMENSION(params%pchunk),intent(INOUT) :: flagCon,flagCol
     REAL(rp),DIMENSION(params%pchunk), INTENT(OUT) :: ne
 
-    !    write(6,'("E_PHI_FP: ",E17.10)') E_PHI
+    !    write(output_unit_write,'("E_PHI_FP: ",E17.10)') E_PHI
 
     do tt=1_ip,params%t_skip
        call include_CoulombCollisions_GC_p(tt,params,Y_R,Y_PHI,Y_Z, &
             V_PLL,V_MU,m_cache,flagCon,flagCol,F,P,E_PHI,ne,PSIp)
 
-       !       write(6,'("Collision Loop in FP")')
+       !       write(output_unit_write,'("Collision Loop in FP")')
 
     end do
 
-    !    write(6,'("V_PLL: ",E17.10)') V_PLL
-    !    write(6,'("V_MU: ",E17.10)') V_MU
+    !    write(output_unit_write,'("V_PLL: ",E17.10)') V_PLL
+    !    write(output_unit_write,'("V_MU: ",E17.10)') V_MU
 
   end subroutine advance_FPinterp_vars
 
@@ -7961,10 +7961,10 @@ contains
     end do
     !$OMP END SIMD
 
-    !    write(6,*) 'RHS_R: ',RHS_R(1)
-    !    write(6,*) 'RHS_PHI: ',RHS_PHI(1)
-    !    write(6,*) 'RHS_Z: ',RHS_Z(1)
-    !    write(6,*) 'RHS_PLL: ',RHS_PLL(1)
+    !    write(output_unit_write,*) 'RHS_R: ',RHS_R(1)
+    !    write(output_unit_write,*) 'RHS_PHI: ',RHS_PHI(1)
+    !    write(output_unit_write,*) 'RHS_Z: ',RHS_Z(1)
+    !    write(output_unit_write,*) 'RHS_PLL: ',RHS_PLL(1)
 
   end subroutine GCEoM_p
 
@@ -8016,7 +8016,7 @@ contains
        Bst_PHI(cc)=q_cache*B_PHI(cc)+V_PLL(cc)*curlb_PHI(cc)
        Bst_Z(cc)=q_cache*B_Z(cc)+V_PLL(cc)*curlb_Z(cc)
 
-      ! write(6,*) 'bmag',Bmag(cc),'bhat',bhat_R(cc),bhat_PHI(cc),bhat_Z(cc),'Bst',Bst_R(cc),Bst_PHI(cc),Bst_Z(cc)
+      ! write(output_unit_write,*) 'bmag',Bmag(cc),'bhat',bhat_R(cc),bhat_PHI(cc),bhat_Z(cc),'Bst',Bst_R(cc),Bst_PHI(cc),Bst_Z(cc)
        
        bdotBst(cc)=bhat_R(cc)*Bst_R(cc)+bhat_PHI(cc)*Bst_PHI(cc)+ &
             bhat_Z(cc)*Bst_Z(cc)
@@ -8024,19 +8024,19 @@ contains
        BstdotgradB(cc)=Bst_R(cc)*gradB_R(cc)+Bst_PHI(cc)*gradB_PHI(cc)+ &
             Bst_Z(cc)*gradB_Z(cc)
 
-       !write(6,*) 'bdotBst',bdotBst(cc),BstdotE(cc),BstdotgradB(cc)
+       !write(output_unit_write,*) 'bdotBst',bdotBst(cc),BstdotE(cc),BstdotgradB(cc)
        
        Ecrossb_R(cc)=E_PHI(cc)*bhat_Z(cc)-E_Z(cc)*bhat_PHI(cc)
        Ecrossb_PHI(cc)=E_Z(cc)*bhat_R(cc)-E_R(cc)*bhat_Z(cc)
        Ecrossb_Z(cc)=E_R(cc)*bhat_PHI(cc)-E_PHI(cc)*bhat_R(cc)
 
-       !write(6,*) 'Ecrossb',Ecrossb_R(cc),Ecrossb_PHI(cc),Ecrossb_Z(cc)
+       !write(output_unit_write,*) 'Ecrossb',Ecrossb_R(cc),Ecrossb_PHI(cc),Ecrossb_Z(cc)
        
        bcrossgradB_R(cc)=bhat_PHI(cc)*gradB_Z(cc)-bhat_Z(cc)*gradB_PHI(cc)
        bcrossgradB_PHI(cc)=bhat_Z(cc)*gradB_R(cc)-bhat_R(cc)*gradB_Z(cc)
        bcrossgradB_Z(cc)=bhat_R(cc)*gradB_PHI(cc)-bhat_PHI(cc)*gradB_R(cc)
 
-      ! write(6,*) 'bcrossgradB',bcrossgradB_R(cc),bcrossgradB_PHI(cc),bcrossgradB_Z(cc)
+      ! write(output_unit_write,*) 'bcrossgradB',bcrossgradB_R(cc),bcrossgradB_PHI(cc),bcrossgradB_Z(cc)
        
        gamgc(cc)=sqrt(1+V_PLL(cc)*V_PLL(cc)+2*V_MU(cc)*Bmag(cc))
        
@@ -8059,10 +8059,10 @@ contains
     end do
     !$OMP END SIMD
 
-    !write(6,*) 'bmag',Bmag(1),'bhat',bhat_R(1),bhat_PHI(1),bhat_Z(1),'Bst',Bst_R(1),Bst_PHI(1),Bst_Z(1)
-    !write(6,*) 'bdotBst',bdotBst(1),BstdotE(1),BstdotgradB(1)
-    !write(6,*) 'Ecrossb',Ecrossb_R(1),Ecrossb_PHI(1),Ecrossb_Z(1)
-    !write(6,*) 'bcrossgradB',bcrossgradB_R(1),bcrossgradB_PHI(1),bcrossgradB_Z(1)
+    !write(output_unit_write,*) 'bmag',Bmag(1),'bhat',bhat_R(1),bhat_PHI(1),bhat_Z(1),'Bst',Bst_R(1),Bst_PHI(1),Bst_Z(1)
+    !write(output_unit_write,*) 'bdotBst',bdotBst(1),BstdotE(1),BstdotgradB(1)
+    !write(output_unit_write,*) 'Ecrossb',Ecrossb_R(1),Ecrossb_PHI(1),Ecrossb_Z(1)
+    !write(output_unit_write,*) 'bcrossgradB',bcrossgradB_R(1),bcrossgradB_PHI(1),bcrossgradB_Z(1)
 
     !    !$OMP SIMD
     !    do cc=1_idef,8
@@ -8076,7 +8076,7 @@ contains
 
     if (params%radiation.and.(params%GC_rad_model.eq.'SDE')) then
 
-       !       write(6,*) 'RHS_PLL',RHS_PLL(1)
+       !       write(output_unit_write,*) 'RHS_PLL',RHS_PLL(1)
 
        re_cache=C_RE/params%cpp%length
        alpha_cache=C_a
@@ -8141,11 +8141,11 @@ contains
     !$OMP END SIMD
 
 
-    !    write(6,*) 'RHS_R: ',RHS_R(1)
-    !    write(6,*) 'RHS_PHI: ',RHS_PHI(1)
-    !    write(6,*) 'RHS_Z: ',RHS_Z(1)
-    !    write(6,*) 'RHS_PLL: ',RHS_PLL(1)
-    !    write(6,*) 'RHS_MU: ',RHS_MU(1)
+    !    write(output_unit_write,*) 'RHS_R: ',RHS_R(1)
+    !    write(output_unit_write,*) 'RHS_PHI: ',RHS_PHI(1)
+    !    write(output_unit_write,*) 'RHS_Z: ',RHS_Z(1)
+    !    write(output_unit_write,*) 'RHS_PLL: ',RHS_PLL(1)
+    !    write(output_unit_write,*) 'RHS_MU: ',RHS_MU(1)
 
   end subroutine GCEoM1_p
 

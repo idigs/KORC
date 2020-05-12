@@ -219,15 +219,15 @@ CONTAINS
     do ii=1_idef,params%num_species
 
        if (params%mpi_params%rank .EQ. 0) then
-          write(6,'(/,"* * * * * SPECIES: ",I2," * * * * * * * * * * *")') ii
-          write(6,'("Particles per MPI process: ",I16)') spp(ii)%ppp
-          write(6,'("Energy distribution is: ",A20)') &
+          write(output_unit_write,'(/,"* * * * * SPECIES: ",I2," * * * * * * * * * * *")') ii
+          write(output_unit_write,'("Particles per MPI process: ",I16)') spp(ii)%ppp
+          write(output_unit_write,'("Energy distribution is: ",A20)') &
                TRIM(spp(ii)%energy_distribution)
-          write(6,'("Pitch-angle distribution is: ",A20)') &
+          write(output_unit_write,'("Pitch-angle distribution is: ",A20)') &
                TRIM(spp(ii)%pitch_distribution)
-          write(6,'("Spatial distribution is: ",A20)') &
+          write(output_unit_write,'("Spatial distribution is: ",A20)') &
                TRIM(spp(ii)%spatial_distribution)
-          write(6,'("* * * * * * * * * * * * * * * * * * * * * *",/)')
+          write(output_unit_write,'("* * * * * * * * * * * * * * * * * * * * * *",/)')
        end if
        
        SELECT CASE (TRIM(spp(ii)%energy_distribution))
@@ -424,8 +424,8 @@ CONTAINS
          spp%vars%cart,spp%vars%hint)
     !! Call to subroutine [[unitVectors]] in [[korc_fields]].
 
-    !write(6,*) 'X',spp%vars%X
-    !write(6,*) 'b-hat',b1
+    !write(output_unit_write,*) 'X',spp%vars%X
+    !write(output_unit_write,*) 'b-hat',b1
 
     
     do jj=1_idef,spp%ppp
@@ -436,9 +436,9 @@ CONTAINS
        end if
     end do
     
-!    write(6,'("Vx: ",E17.10)') spp%vars%V(:,1)
-!    write(6,'("Vy: ",E17.10)') spp%vars%V(:,2)
-!    write(6,'("Vz: ",E17.10)') spp%vars%V(:,3)
+!    write(output_unit_write,'("Vx: ",E17.10)') spp%vars%V(:,1)
+!    write(output_unit_write,'("Vy: ",E17.10)') spp%vars%V(:,2)
+!    write(output_unit_write,'("Vz: ",E17.10)') spp%vars%V(:,3)
     
     DEALLOCATE(theta)
     DEALLOCATE(Vo)

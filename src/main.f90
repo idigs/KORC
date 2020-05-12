@@ -15,6 +15,7 @@ program main
   use korc_initialize
   use korc_finalize
   use korc_profiles
+  use korc_input
 
   implicit none
 
@@ -87,10 +88,7 @@ program main
   !! parameters of the plasma profiles, either analytically or from an
   !! external HDF5
   !! file. Reads in &amp;plasmaProfiles namelist from input file.
-  !! Only initialized if collisions (params%collisions==T) are present.
-
-
-  
+  !! Only initialized if collisions (params%collisions==T) are 
   call initialize_particles(params,F,P,spp) ! Initialize particles
   !! <h4>5\. Initialize Particle Velocity Phase Space</h4>
   !! 
@@ -101,19 +99,19 @@ program main
   !! calls [[initial_energy_pitch_dist]] to assign particles' energy and pitch
   !! angle according to the chosen distribution.
 
-!  write(6,'("init eta: ",E17.10)') spp(1)%vars%eta
+!  write(output_unit_write,'("init eta: ",E17.10)') spp(1)%vars%eta
 
 #ifdef M3D_C1
   if (TRIM(params%field_model) .eq. 'M3D_C1') then
 
      if (params%mpi_params%rank .EQ. 0) then
-        write(6,*) "* * * * INITIALIZING M3D-C1 INTERFACE * * * *"
+        write(output_unit_write,*) "* * * * INITIALIZING M3D-C1 INTERFACE * * * *"
      endif
      
      call initialize_m3d_c1(params, F, P, spp)
 
      if (params%mpi_params%rank .EQ. 0) then
-        write(6,*) "* * * * * * * * * * * * * * * * * * * * * * *"
+        write(output_unit_write,*) "* * * * * * * * * * * * * * * * * * * * * * *"
      endif
         
   endif
@@ -211,16 +209,16 @@ program main
   !! ne, Te, Zeff
   
   if (params%mpi_params%rank .EQ. 0) then
-     write(6,'("* * * * INITIALIZING INITIAL CONDITIONS * * * *")')
+     write(output_unit_write,'("* * * * INITIALIZING INITIAL CONDITIONS * * * *",/)')
   end if
   call set_up_particles_ic(params,F,spp,P)
   
   if (params%mpi_params%rank .EQ. 0) then
-     write(6,'("* * * * * * * * * * * * * * * * * * * * * * * *",/)')
+     write(output_unit_write,'("* * * * * * * * * * * * * * * * * * * * * * * *",/)')
   end if
 
   
-!  write(6,'("post ic eta: ",E17.10)') spp(1)%vars%eta
+!  write(output_unit_write,'("post ic eta: ",E17.10)') spp(1)%vars%eta
   
   !! <h4>17\. Set Particle Initial Conditions</h4>  
   !!
@@ -237,7 +235,7 @@ program main
 
 
 
-!  write(6,'("GC init eta: ",E17.10)') spp(1)%vars%eta
+!  write(output_unit_write,'("GC init eta: ",E17.10)') spp(1)%vars%eta
 
   if (.NOT.(params%restart.OR.params%proceed.or.params%reinit)) then
      if (params%orbit_model(1:2).eq.'FO') then
@@ -301,7 +299,7 @@ program main
   
   ! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !
 
-!  write(6,'("pre ppusher loop eta: ",E17.10)') spp(1)%vars%eta
+!  write(output_unit_write,'("pre ppusher loop eta: ",E17.10)') spp(1)%vars%eta
   
   call timing_KORC(params)
 
@@ -425,7 +423,7 @@ program main
        (.not.params%SC_E).and.F%Dim2x1t.and.F%ReInterp_2x1t.and..not.params%field_model.eq.'M3D_C1') then
 
      if (params%mpi_params%rank .EQ. 0) then
-        write(6,*) 'time',F%X%PHI(F%ind_2x1t)*params%cpp%time
+        write(output_unit_write,*) 'time',F%X%PHI(F%ind_2x1t)*params%cpp%time
      end if
         
      do it=params%ito,params%t_steps,params%t_skip
@@ -439,7 +437,7 @@ program main
 
         F%ind_2x1t=F%ind_2x1t+1_ip
         if (params%mpi_params%rank .EQ. 0) then
-           write(6,*) 'time',F%X%PHI(F%ind_2x1t)*params%cpp%time
+           write(output_unit_write,*) 'time',F%X%PHI(F%ind_2x1t)*params%cpp%time
         end if
         call initialize_fields_interpolant(params,F)
 
@@ -558,7 +556,8 @@ program main
   ! * * * FINALIZING SIMULATION * * *
 
   if (params%mpi_params%rank .EQ. 0) then
-     write(6,'("KORC ran successfully!")')
+     write(output_unit_write,'("KORC ran successfully!")')
+     close(output_unit_write)
   end if
   
 end program main

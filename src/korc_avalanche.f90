@@ -6,6 +6,8 @@ MODULE korc_avalanche
   USE korc_fields
   USE korc_profiles
   USE korc_coords
+  USE korc_input
+  
   IMPLICIT NONE
 
   TYPE, PRIVATE :: AVALANCHE_PDF_PARAMS
@@ -106,37 +108,37 @@ CONTAINS
 
   SUBROUTINE initialize_avalanche_params(params)
     TYPE(KORC_PARAMS), INTENT(IN) :: params
-    REAL(rp) :: max_pitch_angle
-    REAL(rp) :: min_pitch_angle
-    REAL(rp) :: max_energy
-    REAL(rp) :: min_energy
-    REAL(rp) :: ne
-    REAL(rp) :: Zeff
-    REAL(rp) :: Epar
-    REAL(rp) :: Te
-    REAL(rp) :: dth
-    REAL(rp) :: dp
-    REAL(rp) :: dR
-    REAL(rp) :: dZ
-    NAMELIST /AvalancheGenerationPDF/ max_pitch_angle,min_pitch_angle, &
-         max_energy,min_energy,ne,Zeff,Epar,Te,dth,dp,dR,dZ
+    !REAL(rp) :: max_pitch_angle
+    !REAL(rp) :: min_pitch_angle
+    !REAL(rp) :: max_energy
+    !REAL(rp) :: min_energy
+    !REAL(rp) :: ne
+    !REAL(rp) :: Zeff
+    !REAL(rp) :: Epar
+    !REAL(rp) :: Te
+    !REAL(rp) :: dth
+    !REAL(rp) :: dp
+    !REAL(rp) :: dR
+    !REAL(rp) :: dZ
+    !NAMELIST /AvalancheGenerationPDF/ max_pitch_angle,min_pitch_angle, &
+    !     max_energy,min_energy,ne,Zeff,Epar,Te,dth,dp,dR,dZ
 
-    open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
-         status='OLD',form='formatted')
-    read(default_unit_open,nml=AvalancheGenerationPDF)
-    close(default_unit_open)
+    !open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
+    !     status='OLD',form='formatted')
+    !read(default_unit_open,nml=AvalancheGenerationPDF)
+    !close(default_unit_open)
 
-    aval_params%dth = dth
-    aval_params%dp  = dp
-    aval_params%dR  = dR/params%cpp%length
-    aval_params%dZ  = dZ/params%cpp%length
+    aval_params%dth = dth_aval 
+    aval_params%dp  = dp_aval 
+    aval_params%dR  = dR_aval/params%cpp%length
+    aval_params%dZ  = dZ_aval/params%cpp%length
     
-    aval_params%max_pitch_angle = max_pitch_angle
-    aval_params%min_pitch_angle = min_pitch_angle
-    aval_params%max_energy = max_energy*C_E ! In Joules
-    aval_params%ne = ne
-    aval_params%Zeff = Zeff
-    aval_params%Te = Te*C_E ! In Joules
+    aval_params%max_pitch_angle = max_pitch_angle_aval
+    aval_params%min_pitch_angle = min_pitch_angle_aval
+    aval_params%max_energy = max_energy_aval*C_E ! In Joules
+    aval_params%ne = ne_aval
+    aval_params%Zeff = Zeff_aval
+    aval_params%Te = Te_aval*C_E ! In Joules
 
     aval_params%lD = SQRT(C_E0*aval_params%Te/(aval_params%ne*C_E**2))
     aval_params%bmin = aval_params%Zeff/(12.0_rp*C_PI*aval_params%ne* &
@@ -146,10 +148,10 @@ CONTAINS
          aval_params%CoulombLog)
 
     aval_params%Ec = C_ME*C_C/(C_E*aval_params%Tau)
-    aval_params%Epar = Epar
+    aval_params%Epar = Epar_aval
     aval_params%Ebar = aval_params%Epar/aval_params%Ec
 
-    if (min_energy .EQ. 0.0_rp) then
+    if (min_energy_aval .EQ. 0.0_rp) then
        aval_params%max_p = SQRT((aval_params%max_energy/(C_ME*C_C**2))**2 &
             - 1.0_rp)
        ! In units of mec^2
@@ -158,7 +160,7 @@ CONTAINS
 
        aval_params%min_energy = SQRT(1.0_rp + aval_params%min_p**2)*C_ME*C_C**2
     else
-       aval_params%min_energy = min_energy*C_E
+       aval_params%min_energy = min_energy_aval*C_E
        ! In Joules
 
        aval_params%max_p = SQRT((aval_params%max_energy/(C_ME*C_C**2))**2 - 1.0_rp)
@@ -639,12 +641,12 @@ subroutine Avalanche_4D(params,spp,P,F)
      call RANDOM_NUMBER(rand_unif)
      P_buffer = min_p + (max_p - min_p)*rand_unif
 
-!     write(6,'("length norm: ",E17.10)') params%cpp%length
+!     write(output_unit_write,'("length norm: ",E17.10)') params%cpp%length
      
      ii=1_idef
      do while (ii .LE. 1000_idef)
 
-!        write(6,'("burn:",I15)') ii
+!        write(output_unit_write,'("burn:",I15)') ii
         
         R_test = R_buffer + random_norm(0.0_rp,aval_params%dR)
         Z_test = Z_buffer + random_norm(0.0_rp,aval_params%dZ)
@@ -679,9 +681,9 @@ subroutine Avalanche_4D(params,spp,P,F)
 
            call get_profiles(params,spp%vars,P,F)          
 
-!           write(6,'("ne",E17.10)') spp%vars%ne(1)
-!           write(6,'("Te",E17.10)') spp%vars%Te(1)
-!           write(6,'("Zeff",E17.10)') spp%vars%Zeff(1)
+!           write(output_unit_write,'("ne",E17.10)') spp%vars%ne(1)
+!           write(output_unit_write,'("Te",E17.10)') spp%vars%Te(1)
+!           write(output_unit_write,'("Zeff",E17.10)') spp%vars%Zeff(1)
            
            ! Update avalanche parameters with interpolated fields to be used
            ! in call to avalanche distribution function
@@ -706,8 +708,8 @@ subroutine Avalanche_4D(params,spp,P,F)
         
         fRE1=fRE(COS(deg2rad(T_test)),P_test)
 
-!        write(6,'("psi0: ",E17.10)') psi0
-!        write(6,'("psi1: ",E17.10)') psi1
+!        write(output_unit_write,'("psi0: ",E17.10)') psi0
+!        write(output_unit_write,'("psi1: ",E17.10)') psi1
         
         ! Calculate acceptance ratio for MH algorithm. fRE function
         ! incorporates p^2 factor of spherical coordinate Jacobian
@@ -740,10 +742,10 @@ subroutine Avalanche_4D(params,spp,P,F)
      ii=1_idef
      do while (ii .LE. nsamples)
 
-!        write(6,'("sample:",I15)') ii
+!        write(output_unit_write,'("sample:",I15)') ii
         
         if (modulo(ii,10000).eq.0) then
-           write(6,'("Sample: ",I10)') ii
+           write(output_unit_write,'("Sample: ",I10)') ii
         end if
         
         R_test = R_buffer + random_norm(0.0_rp,aval_params%dR)
@@ -826,7 +828,7 @@ subroutine Avalanche_4D(params,spp,P,F)
      end do
 
 !  if (minval(R_samples(:)).lt.1._rp/params%cpp%length) stop 'error with sample'
-!  write(6,'("R_sample: ",E17.10)') R_samples(:)*params%cpp%length
+!  write(output_unit_write,'("R_sample: ",E17.10)') R_samples(:)*params%cpp%length
   
   end if
 
@@ -844,14 +846,14 @@ subroutine Avalanche_4D(params,spp,P,F)
   
   call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
-!  write(6,'("X_X: ",E17.10)') spp%vars%X(:,1)*params%cpp%length
+!  write(output_unit_write,'("X_X: ",E17.10)') spp%vars%X(:,1)*params%cpp%length
   
   ! gamma is kept for each particle, not the momentum
   spp%vars%g = SQRT(1.0_rp + mom**2)
 
   if (params%orbit_model(1:2).eq.'GC') call cart_to_cyl(spp%vars%X,spp%vars%Y)
 
-!  write(6,'("Y_R: ",E17.10)') spp%vars%Y(:,1)*params%cpp%length
+!  write(output_unit_write,'("Y_R: ",E17.10)') spp%vars%Y(:,1)*params%cpp%length
   
 !  if (minval(spp%vars%Y(:,1)).lt.1._rp/params%cpp%length) stop 'error with avalanche'
   

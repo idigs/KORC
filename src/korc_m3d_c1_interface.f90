@@ -7,6 +7,7 @@
 MODULE korc_m3d_c1
   USE, INTRINSIC :: iso_c_binding
   USE korc_types
+  USE korc_input
 
   IMPLICIT NONE
 
@@ -229,24 +230,24 @@ CONTAINS
     INTEGER                                    :: pp
     INTEGER                                    :: status
     INTEGER                                    :: isrc
-    LOGICAL                        :: Efield
-    LOGICAL                        :: Bfield
-    LOGICAL                        :: Bflux,Bflux3D,dBfield
-    LOGICAL                        :: axisymmetric_fields
-    LOGICAL                        :: Dim2x1t,E_2x1t,ReInterp_2x1t
-    integer :: res_double
-    integer :: dim_1D,ind0_2x1t
-    real(rp) :: dt_E_SC,Ip_exp,PSIp_lim,PSIp_0
-    real(rp) :: t0_2x1t,Eo,E_dyn,E_pulse,E_width
+    !LOGICAL                        :: Efield
+    !LOGICAL                        :: Bfield
+    !LOGICAL                        :: Bflux,Bflux3D,dBfield
+    !LOGICAL                        :: axisymmetric_fields
+    !LOGICAL                        :: Dim2x1t,E_2x1t,ReInterp_2x1t
+    !integer :: res_double
+    !integer :: dim_1D,ind0_2x1t
+    !real(rp) :: dt_E_SC,Ip_exp,PSIp_lim,PSIp_0
+    !real(rp) :: t0_2x1t,Eo,E_dyn,E_pulse,E_width
 
-    NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux,Bflux3D,dBfield, &
-         axisymmetric_fields,Eo,E_dyn,E_pulse,E_width,res_double, &
-         dim_1D,dt_E_SC,Ip_exp,PSIp_lim,Dim2x1t,t0_2x1t,E_2x1t,ReInterp_2x1t, &
-         ind0_2x1t,PSIp_0
+    !NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux,Bflux3D,dBfield, &
+    !     axisymmetric_fields,Eo,E_dyn,E_pulse,E_width,res_double, &
+    !     dim_1D,dt_E_SC,Ip_exp,PSIp_lim,Dim2x1t,t0_2x1t,E_2x1t,ReInterp_2x1t, &
+    !     ind0_2x1t,PSIp_0
 
-    open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-    read(default_unit_open,nml=externalPlasmaModel)
-    close(default_unit_open)
+    !open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
+    !read(default_unit_open,nml=externalPlasmaModel)
+    !close(default_unit_open)
 
     F%Efield = Efield
     F%PSIp_lim=PSIp_lim
@@ -287,9 +288,9 @@ CONTAINS
     end do
 
     if (params%mpi_params%rank .EQ. 0) then
-       write(6,*) 'Calculate B',F%M3D_C1_B
-       write(6,*) 'Calculate E',F%M3D_C1_E
-       write(6,*) 'Calculate A',F%M3D_C1_A
+       write(output_unit_write,*) 'Calculate B',F%M3D_C1_B
+       write(output_unit_write,*) 'Calculate E',F%M3D_C1_E
+       write(output_unit_write,*) 'Calculate A',F%M3D_C1_A
     end if
        
   END SUBROUTINE initialize_m3d_c1

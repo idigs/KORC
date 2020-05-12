@@ -32,6 +32,34 @@ CONTAINS
     call MPI_ABORT(MPI_COMM_WORLD, -2000, mpierr)
   end subroutine korc_abort
 
+  subroutine set_paths(params)
+    !! @note Subroutine that sets the input/output paths.@endnote
+    TYPE(KORC_PARAMS), INTENT(INOUT) 	:: params
+    !! Core KORC simulation parameters.
+    INTEGER 				:: argn
+    !! Number of command line inputs. The default value is 
+    !! two: the input files path and the outputs path.
+
+    argn = command_argument_count()
+
+    if (argn .EQ. 2_idef) then
+       call get_command_argument(1,params%path_to_inputs)
+       call get_command_argument(2,params%path_to_outputs)
+    else
+       call korc_abort()
+    end if
+
+    OPEN(UNIT=output_unit_write, &
+         FILE=TRIM(params%path_to_outputs)//"output.korc", STATUS='UNKNOWN', &
+         FORM='FORMATTED',POSITION='REWIND')
+
+    if (params%mpi_params%rank .EQ. 0) then
+       write(output_unit_write,'(/,"* * * * * PATHS * * * * *")')
+       write(output_unit_write,*) 'The input file is: ',TRIM(params%path_to_inputs),'(/)'
+       write(output_unit_write,*) 'The output folder is: ',TRIM(params%path_to_outputs)
+       write(output_unit_write,'("* * * * * * * * * * * * *",/)')
+    end if
+  end subroutine set_paths
 
   subroutine initialize_mpi(params)
     !! @note Subroutine that initialize MPI communications.@endnote
@@ -124,19 +152,26 @@ CONTAINS
     DEALLOCATE(DIMS)
     DEALLOCATE(PERIODS)
 
-    if (params%mpi_params%rank.EQ.0) then
-       if (all_mpis_initialized) then
-          write(6,'(/,"* * * * * COMMUNICATIONS  * * * * *")')
-          write(6,'(/,"  MPI communications initialized!  ")')
-          write(6,'(/,"  Number of MPI processes: ",I5)') params%mpi_params%nmpi
-          write(6,'(/,"* * * * * * * * * * * * * * * * * *")')
-       else
-          write(6,'(/,"* * * * * * * COMMUNICATIONS * * * * * * *")')
-          write(6,'(/," ERROR: MPI not initialized. Aborting... ")')
-          write(6,'(/,"* * * * * * * * * ** * * * * * * * * * * *")')
-          call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
+
+    if (all_mpis_initialized) then
+
+       call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+
+       call set_paths(params)
+       
+       if (params%mpi_params%rank.EQ.0) then
+          write(output_unit_write,'(/,"* * * * * COMMUNICATIONS  * * * * *")')
+          write(output_unit_write,'(/,"  MPI communications initialized!  ")')
+          write(output_unit_write,'(/,"  Number of MPI processes: ",I5)') params%mpi_params%nmpi
+          write(output_unit_write,'(/,"* * * * * * * * * * * * * * * * * *")')
        end if
+    else
+       write(6,'(/,"* * * * * * * COMMUNICATIONS * * * * * * *")')
+       write(6,'(/," ERROR: MPI not initialized. Aborting... ")')
+       write(6,'(/,"* * * * * * * * * ** * * * * * * * * * * *")')
+       call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
     end if
+ 
     !...
   end subroutine initialize_mpi
 
@@ -167,7 +202,7 @@ CONTAINS
             1,MPI_DOUBLE_PRECISION,0_idef, MPI_COMM_WORLD, mpierr)
 
        if (params%mpi_params%rank .EQ. 0_idef) then
-          write(6,'("Timing: ",F30.16," s")') &
+          write(output_unit_write,'("Timing: ",F30.16," s")') &
                SUM(runtime)/REAL(params%mpi_params%nmpi,rp)
        end if
 
@@ -202,9 +237,9 @@ CONTAINS
     call MPI_FINALIZED(mpi_process_finalized,mpierr)
 
     if (.NOT.mpi_process_finalized) then
-       write(6,'(/,"* * * * * * * COMMUNICATIONS * * * * * * *")')
-       write(6,'(/," ERROR: MPI not finalized well. MPI process: ",I5)') params%mpi_params%rank
-       write(6,'(/,"* * * * * * * * * ** * * * * * * * * * * *")')
+       write(output_unit_write,'(/,"* * * * * * * COMMUNICATIONS * * * * * * *")')
+       write(output_unit_write,'(/," ERROR: MPI not finalized well. MPI process: ",I5)') params%mpi_params%rank
+       write(output_unit_write,'(/,"* * * * * * * * * ** * * * * * * * * * * *")')
     end if
   end subroutine finalize_mpi
 
@@ -235,20 +270,20 @@ CONTAINS
     !$OMP END PARALLEL
 
     if (params%mpi_params%rank.EQ.0) then
-       write(6,'(/,"* * * * * * * OMP SET-UP * * * * * * *")')
+       write(output_unit_write,'(/,"* * * * * * * OMP SET-UP * * * * * * *")')
        !$OMP PARALLEL
        !$OMP MASTER
-       write(6,'(/,"OMP threads per MPI process: ",I3)') OMP_GET_NUM_THREADS()
-       write(6,'(/,"Cores available per MPI process: ",I3)') OMP_GET_NUM_PROCS()
+       write(output_unit_write,'(/,"OMP threads per MPI process: ",I3)') OMP_GET_NUM_THREADS()
+       write(output_unit_write,'(/,"Cores available per MPI process: ",I3)') OMP_GET_NUM_PROCS()
        !$OMP END MASTER
        !$OMP END PARALLEL
 #ifdef GNU
        call GET_ENVIRONMENT_VARIABLE("OMP_PLACES",string)
-       write(6,'(/,"OMP places: ",A30)') TRIM(string)
+       write(output_unit_write,'(/,"OMP places: ",A30)') TRIM(string)
        call GET_ENVIRONMENT_VARIABLE("GOMP_CPU_AFFINITY",string)
-       write(6,'(/,"OMP CPU affinity: ",A30)') TRIM(string)
+       write(output_unit_write,'(/,"OMP CPU affinity: ",A30)') TRIM(string)
 #endif
-       write(6,'("* * * * * * * * * * * *  * * * * * * *",/)')
+       write(output_unit_write,'("* * * * * * * * * * * *  * * * * * * *",/)')
     end if
   end subroutine initialize_communications
 

@@ -40,6 +40,8 @@ module korc_types
   !! Default file unit for opening and reading from an external text file.
   INTEGER, PUBLIC, PARAMETER 	:: default_unit_write = 201 
   !! Default file unit for opening and writing to external an external text file.
+  INTEGER, PUBLIC, PARAMETER 	:: output_unit_write = 202 
+  !! Default file unit for opening and writing to external an external text file.
 
   !> @note KORC string type of length MAX_STRING_LENGTH. @endnote
   TYPE, PUBLIC :: KORC_STRING 

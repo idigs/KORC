@@ -1045,12 +1045,12 @@ subroutine Spong_3D(params,spp)
      T_buffer = min_pitch_angle + (max_pitch_angle  &
           - min_pitch_angle)*rand_unif
 
-!     write(6,'("length norm: ",E17.10)') params%cpp%length
+!     write(output_unit_write,'("length norm: ",E17.10)') params%cpp%length
      
      ii=1_idef
      do while (ii .LE. 1000_idef)
 
-!        write(6,'("burn:",I15)') ii
+!        write(output_unit_write,'("burn:",I15)') ii
         
         R_test = R_buffer + random_norm(0.0_rp,spp%dR)
         Z_test = Z_buffer + random_norm(0.0_rp,spp%dZ)
@@ -1083,11 +1083,11 @@ subroutine Spong_3D(params,spp)
         f1=Spong_2D(spp%Ro,spp%Spong_b,spp%Spong_w,spp%Spong_dlam, &
              R_test,Z_test,T_test)    
 
-!        write(6,'("psi0: ",E17.10)') psi0
-!        write(6,'("psi1: ",E17.10)') psi1
+!        write(output_unit_write,'("psi0: ",E17.10)') psi0
+!        write(output_unit_write,'("psi1: ",E17.10)') psi1
 
-!        write(6,'("f0: ",E17.10)') f0
-!        write(6,'("f1: ",E17.10)') f1
+!        write(output_unit_write,'("f0: ",E17.10)') f0
+!        write(output_unit_write,'("f1: ",E17.10)') f1
 
         
         ! Calculate acceptance ratio for MH algorithm. fRE function
@@ -1118,10 +1118,10 @@ subroutine Spong_3D(params,spp)
      ii=1_idef
      do while (ii .LE. nsamples)
 
-!        write(6,'("sample:",I15)') ii
+!        write(output_unit_write,'("sample:",I15)') ii
         
         if (modulo(ii,10000).eq.0) then
-           write(6,'("Sample: ",I10)') ii
+           write(output_unit_write,'("Sample: ",I10)') ii
         end if
         
         R_test = R_buffer + random_norm(0.0_rp,spp%dR)
@@ -1183,7 +1183,7 @@ subroutine Spong_3D(params,spp)
      end do
 
 !  if (minval(R_samples(:)).lt.1._rp/params%cpp%length) stop 'error with sample'
-!  write(6,'("R_sample: ",E17.10)') R_samples(:)*params%cpp%length
+!  write(output_unit_write,'("R_sample: ",E17.10)') R_samples(:)*params%cpp%length
   
   end if
 
@@ -1199,13 +1199,13 @@ subroutine Spong_3D(params,spp)
   
   call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
-!  write(6,'("X_X: ",E17.10)') spp%vars%X(:,1)*params%cpp%length
+!  write(output_unit_write,'("X_X: ",E17.10)') spp%vars%X(:,1)*params%cpp%length
   
   ! gamma is kept for each particle, not the momentum
 
   if (params%orbit_model(1:2).eq.'GC') call cart_to_cyl(spp%vars%X,spp%vars%Y)
 
-!  write(6,'("Y_R: ",E17.10)') spp%vars%Y(:,1)*params%cpp%length
+!  write(output_unit_write,'("Y_R: ",E17.10)') spp%vars%Y(:,1)*params%cpp%length
   
 !  if (minval(spp%vars%Y(:,1)).lt.1._rp/params%cpp%length) stop 'error with avalanche'
   
@@ -1269,7 +1269,7 @@ subroutine MH_psi(params,spp,F)
   INTEGER,DIMENSION(33) :: seed=(/1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1/)
 
   if (params%mpi_params%rank.EQ.0_idef) then
-     write(6,*) '*** START SAMPLING ***'
+     write(output_unit_write,*) '*** START SAMPLING ***'
   end if
   
   nsamples = spp%ppp*params%mpi_params%nmpi
@@ -1299,8 +1299,8 @@ subroutine MH_psi(params,spp,F)
 
   sigma=spp%sigmaR*params%cpp%length
   
-  !write(6,*) min_R,max_R
-  !write(6,*) min_Z,max_Z
+  !write(output_unit_write,*) min_R,max_R
+  !write(output_unit_write,*) min_Z,max_Z
  
   
 
@@ -1327,13 +1327,13 @@ subroutine MH_psi(params,spp,F)
         call random_seed(put=seed)
      end if
 
-     write(6,'("Begin burn: ",I10)')
+     write(output_unit_write,'("Begin burn: ",I10)')
      accepted=.false.
      ii=1_idef
      do while (ii .LE. 1000_idef)
 
         if (modulo(ii,100).eq.0) then
-           write(6,'("Burn: ",I10)') ii
+           write(output_unit_write,'("Burn: ",I10)') ii
         end if
         
         !R_test = R_buffer + random_norm(0.0_rp,spp%dR)
@@ -1369,8 +1369,8 @@ subroutine MH_psi(params,spp,F)
            spp%vars%Y(1,2)=0
            spp%vars%Y(1,3)=Z_buffer
 
-           !write(6,*) 'R',R_buffer
-           !write(6,*) 'Z',Z_buffer
+           !write(output_unit_write,*) 'R',R_buffer
+           !write(output_unit_write,*) 'Z',Z_buffer
            
            if (params%field_model.eq.'M3D_C1') then
               call get_m3d_c1_vector_potential(spp%vars,F,params)
@@ -1382,14 +1382,14 @@ subroutine MH_psi(params,spp,F)
            psi0=spp%vars%PSI_P(1)
            PSIN0=(psi0-PSIp0)/(PSIp_lim-PSIp0)
 
-           !write(6,*) 'R',R_buffer
-           !write(6,*) 'Z',Z_buffer
-           !write(6,*) 'PSIlim',PSIp_lim
-           !write(6,*) 'PSI0',PSIp0
-           !write(6,*) 'PSI1',psi1
-           !write(6,*) 'PSI0',psi0
-           !write(6,*) 'PSIN1',PSIN1
-           !write(6,*) 'PSIN0',PSIN0
+           !write(output_unit_write,*) 'R',R_buffer
+           !write(output_unit_write,*) 'Z',Z_buffer
+           !write(output_unit_write,*) 'PSIlim',PSIp_lim
+           !write(output_unit_write,*) 'PSI0',PSIp0
+           !write(output_unit_write,*) 'PSI1',psi1
+           !write(output_unit_write,*) 'PSI0',psi0
+           !write(output_unit_write,*) 'PSIN1',PSIN1
+           !write(output_unit_write,*) 'PSIN0',PSIN0
            
         end if
         
@@ -1412,20 +1412,20 @@ subroutine MH_psi(params,spp,F)
         
         psi1=spp%vars%PSI_P(1)
 
-        !write(6,*) 'PSIlim',PSIp_lim
-        !write(6,*) 'PSI0',PSIp0
-        !write(6,*) 'PSI',psi1
+        !write(output_unit_write,*) 'PSIlim',PSIp_lim
+        !write(output_unit_write,*) 'PSI0',PSIp0
+        !write(output_unit_write,*) 'PSI',psi1
 
         PSIN1=(psi1-PSIp0)/(PSIp_lim-PSIp0)
 
-        !write(6,*) 'R',R_test
-        !write(6,*) 'Z',Z_test
-        !write(6,*) 'PSIlim',PSIp_lim
-        !write(6,*) 'PSI0',PSIp0
-        !write(6,*) 'PSI1',psi1
-        !write(6,*) 'PSI0',psi0
-        !write(6,*) 'PSIN',PSIN1
-        !write(6,*) 'PSIN0',PSIN0
+        !write(output_unit_write,*) 'R',R_test
+        !write(output_unit_write,*) 'Z',Z_test
+        !write(output_unit_write,*) 'PSIlim',PSIp_lim
+        !write(output_unit_write,*) 'PSI0',PSIp0
+        !write(output_unit_write,*) 'PSI1',psi1
+        !write(output_unit_write,*) 'PSI0',psi0
+        !write(output_unit_write,*) 'PSIN',PSIN1
+        !write(output_unit_write,*) 'PSIN0',PSIN0
         
         ! Calculate acceptance ratio for MH algorithm. fRE function
         ! incorporates p^2 factor of spherical coordinate Jacobian
@@ -1446,7 +1446,7 @@ subroutine MH_psi(params,spp,F)
            Z_buffer = Z_test
            ii = ii + 1_idef
 
-           !write(6,*) 'PSIN',PSIN1
+           !write(output_unit_write,*) 'PSIN',PSIN1
         else
 !           call RANDOM_NUMBER(rand_unif)
 !           if (rand_unif .LT. ratio) then
@@ -1457,20 +1457,20 @@ subroutine MH_psi(params,spp,F)
               Z_buffer = Z_test
               ii = ii + 1_idef
 
-              !write(6,*) 'PSIN',PSIN1
+              !write(output_unit_write,*) 'PSIN',PSIN1
            end if
         end if
      end do
      ! Transient !
 
-     write(6,'("Begin sample: ",I10)')
+     write(output_unit_write,'("Begin sample: ",I10)')
      ii=1_idef
      do while (ii .LE. nsamples)
 
-!        write(6,'("sample:",I15)') ii
+!        write(output_unit_write,'("sample:",I15)') ii
         
        if (modulo(ii,nsamples/10).eq.0) then
-           write(6,'("Sample: ",I10)') ii
+           write(output_unit_write,'("Sample: ",I10)') ii
         end if
         
         !R_test = R_buffer + random_norm(0.0_rp,spp%dR)
@@ -1513,21 +1513,21 @@ subroutine MH_psi(params,spp,F)
         
         psi1=spp%vars%PSI_P(1)
 
-        !write(6,*) 'PSIlim',PSIp_lim
-        !write(6,*) 'PSI0',PSIp0
-        !write(6,*) 'PSI',psi1
+        !write(output_unit_write,*) 'PSIlim',PSIp_lim
+        !write(output_unit_write,*) 'PSI0',PSIp0
+        !write(output_unit_write,*) 'PSI',psi1
         
         PSIN1=(psi1-PSIp0)/(PSIp_lim-PSIp0)
 
 
-        !write(6,*) 'R',R_test
-        !write(6,*) 'Z',Z_test
-        !write(6,*) 'PSIlim',PSIp_lim
-        !write(6,*) 'PSI0',PSIp0
-        !write(6,*) 'PSI1',psi1
-        !write(6,*) 'PSI0',psi0
-        !write(6,*) 'PSIN',PSIN1
-        !write(6,*) 'PSIN0',PSIN0
+        !write(output_unit_write,*) 'R',R_test
+        !write(output_unit_write,*) 'Z',Z_test
+        !write(output_unit_write,*) 'PSIlim',PSIp_lim
+        !write(output_unit_write,*) 'PSI0',PSIp0
+        !write(output_unit_write,*) 'PSI1',psi1
+        !write(output_unit_write,*) 'PSI0',psi0
+        !write(output_unit_write,*) 'PSIN',PSIN1
+        !write(output_unit_write,*) 'PSIN0',PSIN0
 
         
         ratio = indicator(PSIN1,psi_max_buff)* &
@@ -1552,8 +1552,8 @@ subroutine MH_psi(params,spp,F)
            end if
         end if
 
-!        write(6,'("R: ",E17.10)') R_buffer
-!        write(6,'("Z: ",E17.10)') Z_buffer
+!        write(output_unit_write,'("R: ",E17.10)') R_buffer
+!        write(output_unit_write,'("Z: ",E17.10)') Z_buffer
         
         ! Only accept sample if it is within desired boundary, but
         ! add to MC above if within buffer. This helps make the boundary
@@ -1564,10 +1564,10 @@ subroutine MH_psi(params,spp,F)
            Z_samples(ii) = Z_buffer
 
 
-           !write(6,*) 'PSIN',PSIN1
+           !write(output_unit_write,*) 'PSIN',PSIN1
 
            
-!           write(6,*) 'RS',R_buffer
+!           write(output_unit_write,*) 'RS',R_buffer
            
            ! Sample phi location uniformly
            !call RANDOM_NUMBER(rand_unif)
@@ -1580,16 +1580,16 @@ subroutine MH_psi(params,spp,F)
      end do
 
 !  if (minval(R_samples(:)).lt.1._rp/params%cpp%length) stop 'error with sample'
-!  write(6,'("R_sample: ",E17.10)') R_samples(:)*params%cpp%length
+!  write(output_unit_write,'("R_sample: ",E17.10)') R_samples(:)*params%cpp%length
 
      X_samples=R_samples*cos(PHI_samples)
      Y_samples=R_samples*sin(PHI_samples)
 
-!     write(6,*) 'R_samples',R_samples
-!     write(6,*) 'PHI_samples',PHI_samples
-!     write(6,*) 'Z_samples',Z_samples
-!     write(6,*) 'G_samples',G_samples
-!     write(6,*) 'eta_samples',eta_samples
+!     write(output_unit_write,*) 'R_samples',R_samples
+!     write(output_unit_write,*) 'PHI_samples',PHI_samples
+!     write(output_unit_write,*) 'Z_samples',Z_samples
+!     write(output_unit_write,*) 'G_samples',G_samples
+!     write(output_unit_write,*) 'eta_samples',eta_samples
      
   end if
 

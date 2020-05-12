@@ -5,6 +5,7 @@ module korc_collisions
   use korc_interp
   use korc_profiles
   use korc_fields
+  use korc_input
 
 #ifdef PARALLEL_RANDOM
 
@@ -167,30 +168,30 @@ contains
 
   subroutine load_params_ms(params)
     TYPE(KORC_PARAMS), INTENT(IN) 	:: params
-    REAL(rp) 				:: Te
+    !REAL(rp) 				:: Te
     ! Background electron temperature in eV
-    REAL(rp) 				:: ne
+    !REAL(rp) 				:: ne
     ! Background electron density in 1/m^3
-    INTEGER 				:: num_impurity_species
-    REAL(rp), DIMENSION(10) 		:: Zo
+    !INTEGER 				:: num_impurity_species
+    !REAL(rp), DIMENSION(10) 		:: Zo
     ! Full nuclear charge of each impurity: Z=1 for D, Z=10 for Ne
-    REAL(rp), DIMENSION(10) 		:: Zj
+    !REAL(rp), DIMENSION(10) 		:: Zj
     ! Atomic number of each impurity: Z=1 for D, Z=10 for Ne
-    REAL(rp), DIMENSION(10) 		:: nz
+    !REAL(rp), DIMENSION(10) 		:: nz
     ! Impurity densities
-    REAL(rp), DIMENSION(10) 		:: IZj
+    !REAL(rp), DIMENSION(10) 		:: IZj
     ! Ionization energy of impurity in eV
-    REAL(rp), DIMENSION(10) 		:: aZj
+    !REAL(rp), DIMENSION(10) 		:: aZj
     INTEGER :: i
 
-    NAMELIST /CollisionParamsMultipleSpecies/ num_impurity_species,Te,ne, &
-         Zo,Zj,nz,IZj
+    !NAMELIST /CollisionParamsMultipleSpecies/ num_impurity_species,Te,ne, &
+    !     Zo,Zj,nz,IZj
 
 
-    open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
-         status='OLD',form='formatted')
-    read(default_unit_open,nml=CollisionParamsMultipleSpecies)
-    close(default_unit_open)
+    !open(unit=output_unit_write,file=TRIM(params%path_to_inputs), &
+    !     status='OLD',form='formatted')
+    !read(output_unit_write,nml=CollisionParamsMultipleSpecies)
+    !close(output_unit_write)
 
     cparams_ms%num_impurity_species = num_impurity_species
 
@@ -202,13 +203,13 @@ contains
     ALLOCATE(cparams_ms%aZj(cparams_ms%num_impurity_species))
     ALLOCATE(cparams_ms%Ee_IZj(cparams_ms%num_impurity_species))
 
-    cparams_ms%Te = Te*C_E
-    cparams_ms%ne = ne
-    cparams_ms%nH = ne
+    cparams_ms%Te = Te_mult*C_E
+    cparams_ms%ne = ne_mult
+    cparams_ms%nH = ne_mult
 
-    cparams_ms%Zj = Zj(1:cparams_ms%num_impurity_species)
-    cparams_ms%Zo = Zo(1:cparams_ms%num_impurity_species)
-    cparams_ms%nz = nz(1:cparams_ms%num_impurity_species)
+    cparams_ms%Zj = Zj_mult(1:cparams_ms%num_impurity_species)
+    cparams_ms%Zo = Zo_mult(1:cparams_ms%num_impurity_species)
+    cparams_ms%nz = nz_mult(1:cparams_ms%num_impurity_species)
 
     do i=1,cparams_ms%num_impurity_species
        if (int(cparams_ms%Zo(i)).eq.10) then
@@ -219,13 +220,13 @@ contains
           cparams_ms%aZj(i) = cparams_ms%aAr(int(cparams_ms%Zj(i)+1))
        else
           if (params%mpi_params%rank .EQ. 0) then
-             write(6,'("Atomic number not defined!")')
+             write(output_unit_write,'("Atomic number not defined!")')
           end if
           exit             
        end if
     end do
 
-    cparams_ms%nef = ne + sum(cparams_ms%Zj*cparams_ms%nz)
+    cparams_ms%nef = ne_mult + sum(cparams_ms%Zj*cparams_ms%nz)
     cparams_ms%neb = (cparams_ms%Zo-cparams_ms%Zj)*cparams_ms%nz
 
     cparams_ms%rD = SQRT( C_E0*cparams_ms%Te/(cparams_ms%ne*C_E**2) )
@@ -233,20 +234,20 @@ contains
     cparams_ms%Ee_IZj = C_ME*C_C**2/cparams_ms%IZj
     
     if (params%mpi_params%rank .EQ. 0) then
-       write(6,'("Number of impurity species: ",I16)')& 
+       write(output_unit_write,'("Number of impurity species: ",I16)')& 
             cparams_ms%num_impurity_species
        do i=1,cparams_ms%num_impurity_species
           if (cparams_ms%Zo(i).eq.10) then
-             write(6,'("Ne with charge state: ",I16)') int(cparams_ms%Zj(i))
-             write(6,'("Mean excitation energy I (eV)",E17.10)') &
+             write(output_unit_write,'("Ne with charge state: ",I16)') int(cparams_ms%Zj(i))
+             write(output_unit_write,'("Mean excitation energy I (eV)",E17.10)') &
                   cparams_ms%IZj(i)/C_E
-             write(6,'("Effective ion length scale a (a_0)",E17.10)') &
+             write(output_unit_write,'("Effective ion length scale a (a_0)",E17.10)') &
                   cparams_ms%aZj(i)
           else if (cparams_ms%Zo(i).eq.18) then
-             write(6,'("Ar with charge state: ",I16)') int(cparams_ms%Zj(i))
-             write(6,'("Mean excitation energy I (eV)",E17.10)') &
+             write(output_unit_write,'("Ar with charge state: ",I16)') int(cparams_ms%Zj(i))
+             write(output_unit_write,'("Mean excitation energy I (eV)",E17.10)') &
                   cparams_ms%IZj(i)/C_E
-             write(6,'("Effective ion length scale a (a_0)",E17.10)') &
+             write(output_unit_write,'("Effective ion length scale a (a_0)",E17.10)') &
                   cparams_ms%aZj(i)
           end if
        end do
@@ -257,54 +258,54 @@ contains
 
   subroutine load_params_ss(params)
     TYPE(KORC_PARAMS), INTENT(IN) 	:: params
-    REAL(rp) 				:: Te
+    !REAL(rp) 				:: Te
     ! Electron temperature
-    REAL(rp) 				:: Ti
+    !REAL(rp) 				:: Ti
     ! Ion temperature
-    REAL(rp) 				:: ne
+    !REAL(rp) 				:: ne
     ! Background electron density
-    REAL(rp) 				:: Zeff
+    !REAL(rp) 				:: Zeff
     ! Effective atomic number of ions
-    REAL(rp) 				:: dTau
+    !REAL(rp) 				:: dTau
     ! Subcycling time step in collisional time units (Tau)
-    CHARACTER(MAX_STRING_LENGTH) 	:: ne_profile
-    CHARACTER(MAX_STRING_LENGTH) 	:: Te_profile
-    CHARACTER(MAX_STRING_LENGTH) 	:: Zeff_profile
-    CHARACTER(MAX_STRING_LENGTH) 	:: filename
-    REAL(rp) 				:: radius_profile
-    REAL(rp) 				:: neo
-    REAL(rp) 				:: Teo
-    REAL(rp) 				:: Zeffo
-    REAL(rp) 				:: n_ne
-    REAL(rp) 				:: n_Te
-    REAL(rp) 				:: n_Zeff
-    REAL(rp), DIMENSION(4) 		:: a_ne
-    REAL(rp), DIMENSION(4) 		:: a_Te
-    REAL(rp), DIMENSION(4) 		:: a_Zeff
-    LOGICAL 				:: axisymmetric
-    REAL(rp)  ::  n_REr0
-    REAL(rp)  ::  n_tauion
-    REAL(rp)  ::  n_lamfront,psiN_0
-    REAL(rp)  ::  n_lamback,n_lamshelf,n_shelfdelay,n_tauin,n_tauout,n_shelf
+    !CHARACTER(MAX_STRING_LENGTH) 	:: ne_profile
+    !CHARACTER(MAX_STRING_LENGTH) 	:: Te_profile
+    !CHARACTER(MAX_STRING_LENGTH) 	:: Zeff_profile
+    !CHARACTER(MAX_STRING_LENGTH) 	:: filename
+    !REAL(rp) 				:: radius_profile
+    !REAL(rp) 				:: neo
+    !REAL(rp) 				:: Teo
+    !REAL(rp) 				:: Zeffo
+    !REAL(rp) 				:: n_ne
+    !REAL(rp) 				:: n_Te
+    !REAL(rp) 				:: n_Zeff
+    !REAL(rp), DIMENSION(4) 		:: a_ne
+    !REAL(rp), DIMENSION(4) 		:: a_Te
+    !REAL(rp), DIMENSION(4) 		:: a_Zeff
+    !LOGICAL 				:: axisymmetric
+    !REAL(rp)  ::  n_REr0
+    !REAL(rp)  ::  n_tauion
+    !REAL(rp)  ::  n_lamfront,psiN_0
+    !REAL(rp)  ::  n_lamback,n_lamshelf,n_shelfdelay,n_tauin,n_tauout,n_shelf
 
-    NAMELIST /CollisionParamsSingleSpecies/ Te, Ti, ne, Zeff, dTau
+    !NAMELIST /CollisionParamsSingleSpecies/ Te, Ti, ne, Zeff, dTau
 
-    NAMELIST /plasmaProfiles/ radius_profile,ne_profile,neo,n_ne,a_ne,&
-         Te_profile,Teo,n_Te,a_Te,n_REr0,n_tauion,n_lamfront,n_lamback, &
-         Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename,axisymmetric, &
-         n_lamshelf,n_shelfdelay,n_tauin,n_tauout,n_shelf,psiN_0
+    !NAMELIST /plasmaProfiles/ radius_profile,ne_profile,neo,n_ne,a_ne,&
+    !     Te_profile,Teo,n_Te,a_Te,n_REr0,n_tauion,n_lamfront,n_lamback, &
+    !     Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename,axisymmetric, &
+    !     n_lamshelf,n_shelfdelay,n_tauin,n_tauout,n_shelf,psiN_0
 
 
-    open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
-         status='OLD',form='formatted')
-    read(default_unit_open,nml=CollisionParamsSingleSpecies)
-    close(default_unit_open)
+    !open(unit=output_unit_write,file=TRIM(params%path_to_inputs), &
+    !     status='OLD',form='formatted')
+    !read(output_unit_write,nml=CollisionParamsSingleSpecies)
+    !close(output_unit_write)
 
-    cparams_ss%Te = Te*C_E
-    cparams_ss%Ti = Ti*C_E
-    cparams_ss%ne = ne
-    cparams_ss%Zeff = Zeff
-    cparams_ss%dTau = dTau
+    cparams_ss%Te = Te_sing*C_E
+    cparams_ss%Ti = Ti_sing*C_E
+    cparams_ss%ne = ne_sing
+    cparams_ss%Zeff = Zeff_sing
+    cparams_ss%dTau = dTau_sing
 
     cparams_ss%rD = SQRT(C_E0*cparams_ss%Te/(cparams_ss%ne*C_E**2*(1.0_rp + &
          cparams_ss%Te/cparams_ss%Ti)))
@@ -333,10 +334,10 @@ contains
     !	call RANDOM_NUMBER(cparams_ss%rnd_num)
     cparams_ss%rnd_num_count = 1_idef
 
-    open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
-         status='OLD',form='formatted')
-    read(default_unit_open,nml=plasmaProfiles)
-    close(default_unit_open)
+    !open(unit=output_unit_write,file=TRIM(params%path_to_inputs), &
+    !     status='OLD',form='formatted')
+    !read(output_unit_write,nml=plasmaProfiles)
+    !close(output_unit_write)
 
     cparams_ss%P%a = radius_profile
     cparams_ss%P%ne_profile = TRIM(ne_profile)
@@ -362,7 +363,7 @@ contains
     if (params%collisions) then
 
        if (params%mpi_params%rank .EQ. 0) then
-          write(6,'(/,"* * * * * * * INITIALIZING COLLISIONS * * * * * * *")')
+          write(output_unit_write,'(/,"* * * * * * * INITIALIZING COLLISIONS * * * * * * *")')
        end if
           
        SELECT CASE (TRIM(params%collisions_model))
@@ -377,17 +378,17 @@ contains
           CASE('ROSENBLUTH')
              call load_params_ms(params)
           CASE DEFAULT
-             write(6,'("Default case")')
+             write(output_unit_write,'("Default case")')
           END SELECT
           
        CASE (MODEL2)
           call load_params_ms(params)
        CASE DEFAULT
-          write(6,'("Default case")')
+          write(output_unit_write,'("Default case")')
        END SELECT
 
        if (params%mpi_params%rank .EQ. 0) then
-          write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * * *",/)')
+          write(output_unit_write,'("* * * * * * * * * * * * * * * * * * * * * * * * * *",/)')
        end if
        
     end if
@@ -464,13 +465,13 @@ contains
           CASE('ROSENBLUTH')
              call normalize_params_ms(params)
           CASE DEFAULT
-             write(6,'("Default case")')
+             write(output_unit_write,'("Default case")')
           END SELECT
              
        CASE (MODEL2)
           call normalize_params_ms(params)
        CASE DEFAULT
-          write(6,'("Default case")')
+          write(output_unit_write,'("Default case")')
        END SELECT
     end if
   end subroutine normalize_collisions_params
@@ -549,7 +550,7 @@ contains
        nu = (/nu_S(params,v),nu_D(params,v),nu_par(v)/)
        Tau = MINVAL( 1.0_rp/nu )
 
-!       write(6,'("collision freqencies ",F25.12)') nu
+!       write(output_unit_write,'("collision freqencies ",F25.12)') nu
        
        cparams_ss%subcycling_iterations = FLOOR(cparams_ss%dTau*Tau/ &
             params%dt,ip) + 1_ip
@@ -557,23 +558,23 @@ contains
        num_collisions_in_simulation = params%simulation_time/Tau
 
        if (params%mpi_params%rank .EQ. 0) then
-          write(6,'("* * * * * * * * * * * SUBCYCLING FOR  &
+          write(output_unit_write,'("* * * * * * * * * * * SUBCYCLING FOR  &
                COLLISIONS * * * * * * * * * * *")')
 
-         write(6,'("Slowing down freqency (CF): ",E17.10)') &
+         write(output_unit_write,'("Slowing down freqency (CF): ",E17.10)') &
                nu(1)/params%cpp%time
-          write(6,'("Pitch angle scattering freqency (CB): ",E17.10)') &
+          write(output_unit_write,'("Pitch angle scattering freqency (CB): ",E17.10)') &
                nu(2)/params%cpp%time
-          write(6,'("Speed diffusion freqency (CA): ",E17.10)') &
+          write(output_unit_write,'("Speed diffusion freqency (CA): ",E17.10)') &
                nu(3)/params%cpp%time
           
-          write(6,'("The shorter collisional time in the simulations  &
+          write(output_unit_write,'("The shorter collisional time in the simulations  &
                is: ",E17.10," s")') Tau*params%cpp%time
-          write(6,'("Number of KORC iterations per collision: ",I16)')  &
+          write(output_unit_write,'("Number of KORC iterations per collision: ",I16)')  &
                cparams_ss%subcycling_iterations
-          write(6,'("Number of collisions in simulated time: ",E17.10)')  &
+          write(output_unit_write,'("Number of collisions in simulated time: ",E17.10)')  &
                num_collisions_in_simulation
-          write(6,'("* * * * * * * * * * * * * * * * * * * * &
+          write(output_unit_write,'("* * * * * * * * * * * * * * * * * * * * &
                * * * * * * * * * * * * * * *",/)')
        end if
     end if
@@ -712,7 +713,7 @@ contains
     CLogee = CLog0(ne,Te)+ &
          log(1+(2*(gam-1)/VTe(Te)**2)**(k/2._rp))/k
 
-!    write(6,*) gam,CLogee
+!    write(output_unit_write,*) gam,CLogee
   end function CLogee
 
   function CLogei(v,ne,Te)
@@ -767,12 +768,12 @@ contains
     x = v/VTe(Te)
     CA_SD  = Gammacee(v,ne,Te)*psi(x)/v
 
-!    write(6,'("ne, "E17.10)') ne
-!    write(6,'("Te, "E17.10)') Te
+!    write(output_unit_write,'("ne, "E17.10)') ne
+!    write(output_unit_write,'("Te, "E17.10)') Te
     
-!    write(6,'("x, "E17.10)') x
-!    write(6,'("psi, "E17.10)') psi(x)
-!    write(6,'("Gammac, "E17.10)') Gammac(ne,Te)
+!    write(output_unit_write,'("x, "E17.10)') x
+!    write(output_unit_write,'("psi, "E17.10)') psi(x)
+!    write(output_unit_write,'("Gammac, "E17.10)') Gammac(ne,Te)
     
   end function CA_SD
   
@@ -999,7 +1000,7 @@ contains
          (p*cparams_ms%aZj(i))**(3._rp/2._rp)/ &
          ((p*cparams_ms%aZj(i))**(3._rp/2._rp)+1))
 
-!    write(6,'("g_j: ",E17.10)') g_j
+!    write(output_unit_write,'("g_j: ",E17.10)') g_j
     
   end function g_j
 
@@ -1227,8 +1228,8 @@ contains
        end do
        !$OMP END SIMD
 
-!       write(6,'("vm: ",E17.10)') vm
-!       write(6,'("xi: ",E17.10)') xi
+!       write(output_unit_write,'("vm: ",E17.10)') vm
+!       write(output_unit_write,'("xi: ",E17.10)') xi
        
        call unitVectors_p(pchunk,b_unit_X,b_unit_Y,b_unit_Z,b1_X,b1_Y,b1_Z, &
             b2_X,b2_Y,b2_Z,b3_X,b3_Y,b3_Z)
@@ -1244,7 +1245,7 @@ contains
        end do
        !$OMP END SIMD
 
-!       write(6,'("phi: ",E17.10)') phi
+!       write(output_unit_write,'("phi: ",E17.10)') phi
        
        !$OMP SIMD
 !       !$OMP& aligned(rnd1,dW,CAL,dCAL,CFL,CBL,vm,ne,Te,Zeff,dpm, &
@@ -1319,16 +1320,16 @@ contains
        !$OMP END SIMD
        
 !       if (tt .EQ. 1_ip) then
-!          write(6,'("CA: ",E17.10)') CAL(1)
-!          write(6,'("dCA: ",E17.10)') dCAL(1)
-!          write(6,'("CF ",E17.10)') CFL(1)
-!          write(6,'("CB: ",E17.10)') CBL(1)
+!          write(output_unit_write,'("CA: ",E17.10)') CAL(1)
+!          write(output_unit_write,'("dCA: ",E17.10)') dCAL(1)
+!          write(output_unit_write,'("CF ",E17.10)') CFL(1)
+!          write(output_unit_write,'("CB: ",E17.10)') CBL(1)
 !       end if
 
        
        do cc=1_idef,pchunk
           if (pm(cc).lt.0) then
-             write(6,'("Momentum less than zero")')
+             write(output_unit_write,'("Momentum less than zero")')
              stop
           end if
        end do
@@ -1454,12 +1455,12 @@ contains
        end do
        !$OMP END SIMD
 
-!       write(6,'("ne: "E17.10)') ne
-!       write(6,'("Te: "E17.10)') Te
-!       write(6,'("Bmag: "E17.10)') Bmag                
-!       write(6,'("v: ",E17.10)') v
-!       write(6,'("xi: ",E17.10)') xi
-       !       write(6,'("size(E_PHI_GC): ",I16)') size(E_PHI)
+!       write(output_unit_write,'("ne: "E17.10)') ne
+!       write(output_unit_write,'("Te: "E17.10)') Te
+!       write(output_unit_write,'("Bmag: "E17.10)') Bmag                
+!       write(output_unit_write,'("v: ",E17.10)') v
+!       write(output_unit_write,'("xi: ",E17.10)') xi
+       !       write(output_unit_write,'("size(E_PHI_GC): ",I16)') size(E_PHI)
 
 
        !$OMP SIMD
@@ -1479,8 +1480,8 @@ contains
           dW(cc,1) = SQRT(3*dt)*(-1+2*rnd1(cc,1))     
           dW(cc,2) = SQRT(3*dt)*(-1+2*rnd1(cc,2))     
 
-!          write(6,'("dW1: ",E17.10)') dW(cc,1)
-!          write(6,'("dW2: ",E17.10)') dW(cc,2)
+!          write(output_unit_write,'("dW1: ",E17.10)') dW(cc,1)
+!          write(output_unit_write,'("dW2: ",E17.10)') dW(cc,2)
           
           CAL(cc) = CA_SD(v(cc),ne(cc),Te(cc))
           dCAL(cc)= dCA_SD(v(cc),me,ne(cc),Te(cc))
@@ -1498,8 +1499,8 @@ contains
                E_PHI(cc)*(1-xi(cc)*xi(cc))/pm(cc))*dt- &
                sqrt(2.0_rp*CBL(cc)*(1-xi(cc)*xi(cc)))/pm(cc)*dW(cc,2))
 
-!          write(6,'("dp: ",E17.10)') dp(cc)
-!          write(6,'("dxi: ",E17.10)') dxi(cc)
+!          write(output_unit_write,'("dp: ",E17.10)') dp(cc)
+!          write(output_unit_write,'("dxi: ",E17.10)') dxi(cc)
 
        end do
        !$OMP END SIMD
@@ -1541,12 +1542,12 @@ contains
 
           ! Keep xi between [-1,1]
           if (xi(cc)>1) then
-!             write(6,'("High xi at: ",E17.10," with dxi: ",E17.10)') &
+!             write(output_unit_write,'("High xi at: ",E17.10," with dxi: ",E17.10)') &
 !                  time*params%cpp%time, dxi(cc)
              xi(cc)=1-mod(xi(cc),1._rp)
           else if (xi(cc)<-1) then
              xi(cc)=-1-mod(xi(cc),-1._rp)
-!             write(6,'("Low xi at: ",E17.10," with dxi: ",E17.10)') &
+!             write(output_unit_write,'("Low xi at: ",E17.10," with dxi: ",E17.10)') &
 !                  time*params%cpp%time, dxi(cc)
           endif
 
@@ -1556,42 +1557,42 @@ contains
        end do
        !$OMP END SIMD
 
-!       write(6,'("rnd1: ",E17.10)') rnd1
-!       write(6,'("flag: ",I16)') flag
-!       write(6,'("CA: ",E17.10)') CAL
-!       write(6,'("dCA: ",E17.10)') dCAL
-!       write(6,'("CF ",E17.10)') CFL
-!       write(6,'("CB: ",E17.10)') CBL
-!       write(6,'("dp: ",E17.10)') dp
-!       write(6,'("dxi: ",E17.10)') dxi
-!       write(6,'("Ppll: ",E17.10)') Ppll
-!      write(6,'("Pmu: ",E17.10)') Pmu
-!       write(6,'("E_PHI_COL: ",E17.10)') E_PHI
+!       write(output_unit_write,'("rnd1: ",E17.10)') rnd1
+!       write(output_unit_write,'("flag: ",I16)') flag
+!       write(output_unit_write,'("CA: ",E17.10)') CAL
+!       write(output_unit_write,'("dCA: ",E17.10)') dCAL
+!       write(output_unit_write,'("CF ",E17.10)') CFL
+!       write(output_unit_write,'("CB: ",E17.10)') CBL
+!       write(output_unit_write,'("dp: ",E17.10)') dp
+!       write(output_unit_write,'("dxi: ",E17.10)') dxi
+!       write(output_unit_write,'("Ppll: ",E17.10)') Ppll
+!      write(output_unit_write,'("Pmu: ",E17.10)') Pmu
+!       write(output_unit_write,'("E_PHI_COL: ",E17.10)') E_PHI
        
        do cc=1_idef,pchunk
           if ((pm(cc).lt.1._rp).and.flagCol(cc).eq.1_ip) then
-!             write(6,'("Momentum less than zero")')
+!             write(output_unit_write,'("Momentum less than zero")')
              !             stop
-!             write(6,'("Particle not tracked at: ",E17.10," &
+!             write(output_unit_write,'("Particle not tracked at: ",E17.10," &
 !                  & with xi: ",E17.10)') time*params%cpp%time, xi(cc)
              flagCol(cc)=0_ip
           end if
        end do
 
 !       if (tt .EQ. 1_ip) then
-!          write(6,'("dp_rad: ",E17.10)') &
+!          write(output_unit_write,'("dp_rad: ",E17.10)') &
 !               -gam(1)*pm(1)*(1-xi(1)*xi(1))/ &
 !               (cparams_ss%taur/Bmag(1)**2)*dt
-!          write(6,'("dxi_rad: ",E17.10)') &
+!          write(output_unit_write,'("dxi_rad: ",E17.10)') &
 !               xi(1)*(1-xi(1)*xi(1))/ &
 !               ((cparams_ss%taur/Bmag(1)**2)*gam(1))*dt
 !       end if
        
 !       if (tt .EQ. 1_ip) then
-!          write(6,'("CA: ",E17.10)') CAL(1)
-!          write(6,'("dCA: ",E17.10)') dCAL(1)
-!          write(6,'("CF ",E17.10)') CFL(1)
-!          write(6,'("CB: ",E17.10)') CBL(1)
+!          write(output_unit_write,'("CA: ",E17.10)') CAL(1)
+!          write(output_unit_write,'("dCA: ",E17.10)') dCAL(1)
+!          write(output_unit_write,'("CF ",E17.10)') CFL(1)
+!          write(output_unit_write,'("CB: ",E17.10)') CBL(1)
 !       end if
        
     end if
@@ -1674,12 +1675,12 @@ contains
        end do
        !$OMP END SIMD
 
-!       write(6,'("ne: "E17.10)') ne
-!       write(6,'("Te: "E17.10)') Te
-!       write(6,'("Bmag: "E17.10)') Bmag                
-!       write(6,'("v: ",E17.10)') v
-!       write(6,'("xi: ",E17.10)') xi
-       !       write(6,'("size(E_PHI_GC): ",I16)') size(E_PHI)
+!       write(output_unit_write,'("ne: "E17.10)') ne
+!       write(output_unit_write,'("Te: "E17.10)') Te
+!       write(output_unit_write,'("Bmag: "E17.10)') Bmag                
+!       write(output_unit_write,'("v: ",E17.10)') v
+!       write(output_unit_write,'("xi: ",E17.10)') xi
+       !       write(output_unit_write,'("size(E_PHI_GC): ",I16)') size(E_PHI)
 
 
        !$OMP SIMD
@@ -1699,8 +1700,8 @@ contains
           dW(cc,1) = SQRT(3*dt)*(-1+2*rnd1(cc,1))     
           dW(cc,2) = SQRT(3*dt)*(-1+2*rnd1(cc,2))     
 
-!          write(6,'("dW1: ",E17.10)') dW(cc,1)
-!          write(6,'("dW2: ",E17.10)') dW(cc,2)
+!          write(output_unit_write,'("dW1: ",E17.10)') dW(cc,1)
+!          write(output_unit_write,'("dW2: ",E17.10)') dW(cc,2)
           
           CAL(cc) = CA_SD(v(cc),ne(cc),Te(cc))
           dCAL(cc)= dCA_SD(v(cc),me,ne(cc),Te(cc))
@@ -1718,8 +1719,8 @@ contains
                E_PHI(cc)*(1-xi(cc)*xi(cc))/pm(cc))*dt- &
                sqrt(2.0_rp*CBL(cc)*(1-xi(cc)*xi(cc)))/pm(cc)*dW(cc,2))
 
-!          write(6,'("dp: ",E17.10)') dp(cc)
-!          write(6,'("dxi: ",E17.10)') dxi(cc)
+!          write(output_unit_write,'("dp: ",E17.10)') dp(cc)
+!          write(output_unit_write,'("dxi: ",E17.10)') dxi(cc)
 
        end do
        !$OMP END SIMD
@@ -1761,12 +1762,12 @@ contains
 
           ! Keep xi between [-1,1]
           if (xi(cc)>1) then
-!             write(6,'("High xi at: ",E17.10," with dxi: ",E17.10)') &
+!             write(output_unit_write,'("High xi at: ",E17.10," with dxi: ",E17.10)') &
 !                  time*params%cpp%time, dxi(cc)
              xi(cc)=1-mod(xi(cc),1._rp)
           else if (xi(cc)<-1) then
              xi(cc)=-1-mod(xi(cc),-1._rp)
-!             write(6,'("Low xi at: ",E17.10," with dxi: ",E17.10)') &
+!             write(output_unit_write,'("Low xi at: ",E17.10," with dxi: ",E17.10)') &
 !                  time*params%cpp%time, dxi(cc)
           endif
 
@@ -1776,42 +1777,42 @@ contains
        end do
        !$OMP END SIMD
 
-!       write(6,'("rnd1: ",E17.10)') rnd1
-!       write(6,'("flag: ",I16)') flag
-!       write(6,'("CA: ",E17.10)') CAL
-!       write(6,'("dCA: ",E17.10)') dCAL
-!       write(6,'("CF ",E17.10)') CFL
-!       write(6,'("CB: ",E17.10)') CBL
-!       write(6,'("dp: ",E17.10)') dp
-!       write(6,'("dxi: ",E17.10)') dxi
-!       write(6,'("Ppll: ",E17.10)') Ppll
-!      write(6,'("Pmu: ",E17.10)') Pmu
-!       write(6,'("E_PHI_COL: ",E17.10)') E_PHI
+!       write(output_unit_write,'("rnd1: ",E17.10)') rnd1
+!       write(output_unit_write,'("flag: ",I16)') flag
+!       write(output_unit_write,'("CA: ",E17.10)') CAL
+!       write(output_unit_write,'("dCA: ",E17.10)') dCAL
+!       write(output_unit_write,'("CF ",E17.10)') CFL
+!       write(output_unit_write,'("CB: ",E17.10)') CBL
+!       write(output_unit_write,'("dp: ",E17.10)') dp
+!       write(output_unit_write,'("dxi: ",E17.10)') dxi
+!       write(output_unit_write,'("Ppll: ",E17.10)') Ppll
+!      write(output_unit_write,'("Pmu: ",E17.10)') Pmu
+!       write(output_unit_write,'("E_PHI_COL: ",E17.10)') E_PHI
        
        do cc=1_idef,pchunk
           if ((pm(cc).lt.1._rp).and.flagCol(cc).eq.1_ip) then
-!             write(6,'("Momentum less than zero")')
+!             write(output_unit_write,'("Momentum less than zero")')
              !             stop
-!             write(6,'("Particle not tracked at: ",E17.10," &
+!             write(output_unit_write,'("Particle not tracked at: ",E17.10," &
 !                  & with xi: ",E17.10)') time*params%cpp%time, xi(cc)
              flagCol(cc)=0_ip
           end if
        end do
 
 !       if (tt .EQ. 1_ip) then
-!          write(6,'("dp_rad: ",E17.10)') &
+!          write(output_unit_write,'("dp_rad: ",E17.10)') &
 !               -gam(1)*pm(1)*(1-xi(1)*xi(1))/ &
 !               (cparams_ss%taur/Bmag(1)**2)*dt
-!          write(6,'("dxi_rad: ",E17.10)') &
+!          write(output_unit_write,'("dxi_rad: ",E17.10)') &
 !               xi(1)*(1-xi(1)*xi(1))/ &
 !               ((cparams_ss%taur/Bmag(1)**2)*gam(1))*dt
 !       end if
        
 !       if (tt .EQ. 1_ip) then
-!          write(6,'("CA: ",E17.10)') CAL(1)
-!          write(6,'("dCA: ",E17.10)') dCAL(1)
-!          write(6,'("CF ",E17.10)') CFL(1)
-!          write(6,'("CB: ",E17.10)') CBL(1)
+!          write(output_unit_write,'("CA: ",E17.10)') CAL(1)
+!          write(output_unit_write,'("dCA: ",E17.10)') dCAL(1)
+!          write(output_unit_write,'("CF ",E17.10)') CFL(1)
+!          write(output_unit_write,'("CB: ",E17.10)') CBL(1)
 !       end if
        
     end if
@@ -2043,13 +2044,13 @@ contains
              CASE('ROSENBLUTH')
                 call save_params_ms(params)
              CASE DEFAULT
-                write(6,'("Default case")')
+                write(output_unit_write,'("Default case")')
              END SELECT
              
           CASE (MODEL2)
              call save_params_ms(params)
           CASE DEFAULT
-             write(6,'("Default case")')
+             write(output_unit_write,'("Default case")')
           END SELECT
        end if
 
@@ -2073,7 +2074,7 @@ contains
     if (params%collisions) then
        SELECT CASE (TRIM(params%collisions_model))
        CASE (MODEL1)
-          !				write(6,'("Something to be done")')
+          !				write(output_unit_write,'("Something to be done")')
 
           SELECT CASE(TRIM(params%bound_electron_model))
           CASE ('NO_BOUND')
@@ -2083,13 +2084,13 @@ contains
           CASE('ROSENBLUTH')
              call deallocate_params_ms()
           CASE DEFAULT
-             write(6,'("Default case")')
+             write(output_unit_write,'("Default case")')
           END SELECT
           
        CASE (MODEL2)
           call deallocate_params_ms()
        CASE DEFAULT
-          write(6,'("Default case")')
+          write(output_unit_write,'("Default case")')
        END SELECT
     end if
   end subroutine deallocate_collisions_params

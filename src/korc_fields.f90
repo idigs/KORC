@@ -7,6 +7,7 @@ module korc_fields
   use korc_coords
   use korc_interp
   use korc_HDF5
+  use korc_input
 
   IMPLICIT NONE
 
@@ -236,7 +237,7 @@ CONTAINS
     REAL(rp)    ::  qprof
     REAL(rp)    ::  rm,theta
 
-    !    write(6,'("Y: ",E17.10)') Y
+    !    write(output_unit_write,'("Y: ",E17.10)') Y
 
     ss = SIZE(Y,1)
 
@@ -372,16 +373,16 @@ CONTAINS
        theta=atan2(Y(pp,3),(Y(pp,1)-F%AB%Ro))
        qprof = 1.0_rp + (rm/F%AB%lambda)**2
 
-!       write(6,*) 'rm: ',rm
-!       write(6,*) 'R0: ',F%AB%Ro
-!       write(6,*) 'Y_R: ',Y(pp,1)
-!       write(6,*) 'theta: ',theta
+!       write(output_unit_write,*) 'rm: ',rm
+!       write(output_unit_write,*) 'R0: ',F%AB%Ro
+!       write(output_unit_write,*) 'Y_R: ',Y(pp,1)
+!       write(output_unit_write,*) 'theta: ',theta
        
        PSIp(pp)=Y(pp,1)*F%AB%lambda**2*F%Bo/ &
             (2*F%AB%qo*(F%AB%Ro+rm*cos(theta)))* &
             log(1+(rm/F%AB%lambda)**2)
 
-!       write(6,*) 'PSIp: ',PSIp(pp)
+!       write(output_unit_write,*) 'PSIp: ',PSIp(pp)
        
        Btmp(1)=F%AB%Bo*Y(pp,3)/(F%AB%qo*qprof*Y(pp,1))
        Btmp(2)=-F%AB%Bo*F%AB%Ro/Y(pp,1)
@@ -426,8 +427,8 @@ CONTAINS
     end do
     !$OMP END PARALLEL DO
 
-!    write(6,*) 'PSIp: ',PSIp(:)
-!    write(6,*) 'B_PHI: ',B(:,2)
+!    write(output_unit_write,*) 'PSIp: ',PSIp(:)
+!    write(output_unit_write,*) 'B_PHI: ',B(:,2)
     
   end subroutine analytical_fields_GC
 
@@ -483,7 +484,7 @@ CONTAINS
     E_width=F%E_width
     R0=F%Ro
 
-    !write(6,*) E_dyn,E_pulse,E_width,R0
+    !write(output_unit_write,*) E_dyn,E_pulse,E_width,R0
     
     !$OMP SIMD
     !    !$OMP& aligned(E_PHI)
@@ -496,7 +497,7 @@ CONTAINS
     end do
     !$OMP END SIMD
 
-    !write(6,*) arg,arg1
+    !write(output_unit_write,*) arg,arg1
 
   end subroutine add_analytical_E_p
 
@@ -679,7 +680,7 @@ CONTAINS
                SIZE(F%E_2D%R)
        end if
     else
-       write(6,'("KORC ERROR: Please enter a valid field: mean_F_field")')
+       write(output_unit_write,'("KORC ERROR: Please enter a valid field: mean_F_field")')
        call korc_abort()
     end if
   end subroutine mean_F_field
@@ -788,7 +789,7 @@ CONTAINS
     !! Number of particles.
     LOGICAL :: cart
 
-!    write(6,*) 'in unitVector'
+!    write(output_unit_write,*) 'in unitVector'
     
     ppp = SIZE(Xo,1) ! Number of particles
 
@@ -809,19 +810,19 @@ CONTAINS
     vars%PSI_P=0._rp
     vars%cart=.false.
     
-    !write(6,*) 'before init_random_seed'
+    !write(output_unit_write,*) 'before init_random_seed'
     
     call init_random_seed()
 
-   ! write(6,*) 'before get_fields'
+   ! write(output_unit_write,*) 'before get_fields'
     
     call get_fields(params,vars,F)
 
-    !    write(6,'("Bx: ",E17.10)') vars%B(:,1)
-    !    write(6,'("By: ",E17.10)') vars%B(:,2)
-    !    write(6,'("Bz: ",E17.10)') vars%B(:,3)
+    !    write(output_unit_write,'("Bx: ",E17.10)') vars%B(:,1)
+    !    write(output_unit_write,'("By: ",E17.10)') vars%B(:,2)
+    !    write(output_unit_write,'("Bz: ",E17.10)') vars%B(:,3)
 
-    !write(6,*) 'before b1,b2,b3 calculation'
+    !write(output_unit_write,*) 'before b1,b2,b3 calculation'
     
     do ii=1_idef,ppp
        if ( vars%flagCon(ii) .EQ. 1_idef ) then
@@ -838,7 +839,7 @@ CONTAINS
        end if
     end do
 
-    !write(6,*) 'before copying hint and flag'
+    !write(output_unit_write,*) 'before copying hint and flag'
     
     hint = vars%hint
     
@@ -856,7 +857,7 @@ CONTAINS
     DEALLOCATE( vars%flagCon )
     DEALLOCATE( vars%hint)
 
-    !write(6,*) 'out unitVectors'
+    !write(output_unit_write,*) 'out unitVectors'
     
   end subroutine unitVectors
 
@@ -881,14 +882,14 @@ CONTAINS
        end if
     else if (params%field_model(1:8).eq.'EXTERNAL') then
 
-       !       write(6,'("2 size of PSI_P: ",I16)') size(vars%PSI_P)
+       !       write(output_unit_write,'("2 size of PSI_P: ",I16)') size(vars%PSI_P)
 
        call interp_fields(params,vars, F)
 
-!       write(6,'("get_fields")')
-!       write(6,'("B_X: ",E17.10)') vars%B(:,1)
-!       write(6,'("B_Z: ",E17.10)') vars%B(:,2)
-!       write(6,'("B_Y: ",E17.10)') vars%B(:,3)
+!       write(output_unit_write,'("get_fields")')
+!       write(output_unit_write,'("B_X: ",E17.10)') vars%B(:,1)
+!       write(output_unit_write,'("B_Z: ",E17.10)') vars%B(:,2)
+!       write(output_unit_write,'("B_Y: ",E17.10)') vars%B(:,3)
        
        !if (F%Efield.AND..NOT.F%Efield_in_file) then
        !   call analytical_electric_field_cyl(F,vars%Y,vars%E,vars%flagCon)
@@ -913,7 +914,7 @@ CONTAINS
     INTEGER 				:: mpierr
 
 !    if (params%mpi_params%rank .EQ. 0) then
-!       write(6,*) 'Calculating SC_E1D'
+!       write(output_unit_write,*) 'Calculating SC_E1D'
 !    end if
     
     dr=F%r_1D(2)-F%r_1D(1)
@@ -927,7 +928,7 @@ CONTAINS
     call MPI_ALLREDUCE(Jsamone,Jsamall,F%dim_1D,MPI_REAL8,MPI_SUM, &
          MPI_COMM_WORLD,mpierr)
 
-    !write(6,*) 'Jsam: ',Jsamall(1:5)
+    !write(output_unit_write,*) 'Jsam: ',Jsamall(1:5)
     
     Jexp=Jsamall*F%Ip0
 
@@ -940,7 +941,7 @@ CONTAINS
     dJdt=(3*F%J1_SC_1D%PHI-4*F%J2_SC_1D%PHI+F%J3_SC_1D%PHI)/ &
          (2*F%dt_E_SC)
     
-!    write(6,*) params%mpi_params%rank,'J(1)',F%J_SC_1D%PHI(1)
+!    write(output_unit_write,*) params%mpi_params%rank,'J(1)',F%J_SC_1D%PHI(1)
     
     ! Solving 1D Poisson equation with tridiagonal matrix solve
 
@@ -985,9 +986,9 @@ CONTAINS
 !       F%A2_SC_1D%PHI=F%A1_SC_1D%PHI 
 !    end if
 
-!    write(6,*) params%mpi_params%rank,'A1(1)',F%A1_SC_1D%PHI(1)
-!    write(6,*) params%mpi_params%rank,'A2(1)',F%A2_SC_1D%PHI(1)
-!    write(6,*) params%mpi_params%rank,'A3(1)',F%A3_SC_1D%PHI(1)
+!    write(output_unit_write,*) params%mpi_params%rank,'A1(1)',F%A1_SC_1D%PHI(1)
+!    write(output_unit_write,*) params%mpi_params%rank,'A2(1)',F%A2_SC_1D%PHI(1)
+!    write(output_unit_write,*) params%mpi_params%rank,'A3(1)',F%A3_SC_1D%PHI(1)
     
     ! Calculating inductive E_phi
 
@@ -997,11 +998,11 @@ CONTAINS
     F%E_SC_1D%PHI=u
 
     if (params%mpi_params%rank.eq.0) then
-       write(6,*) 'J1(2)',F%J1_SC_1D%PHI(2)
-       write(6,*) 'J2(2)',F%J2_SC_1D%PHI(2)
-       write(6,*) 'J3(2)',F%J3_SC_1D%PHI(2)
+       write(output_unit_write,*) 'J1(2)',F%J1_SC_1D%PHI(2)
+       write(output_unit_write,*) 'J2(2)',F%J2_SC_1D%PHI(2)
+       write(output_unit_write,*) 'J3(2)',F%J3_SC_1D%PHI(2)
        
-       write(6,*) 'E(1)',F%E_SC_1D%PHI(1)
+       write(output_unit_write,*) 'E(1)',F%E_SC_1D%PHI(1)
     end if
        
     ! Normalizing inductive E_phi
@@ -1024,10 +1025,10 @@ CONTAINS
     INTEGER 				:: mpierr
 
 !    if (params%mpi_params%rank .EQ. 0) then
-!       write(6,*) 'Calculating SC_E1D'
+!       write(output_unit_write,*) 'Calculating SC_E1D'
 !    end if
 
-    !write(6,*) 'dintJphidPSIP',dintJphidPSIP(F%dim_1D)
+    !write(output_unit_write,*) 'dintJphidPSIP',dintJphidPSIP(F%dim_1D)
     
     dPSIP=F%PSIP_1D(2)-F%PSIP_1D(1)
     
@@ -1039,9 +1040,9 @@ CONTAINS
     call MPI_ALLREDUCE(dintJphidPSIP,Jsamall,F%dim_1D,MPI_REAL8,MPI_SUM, &
          MPI_COMM_WORLD,mpierr)
 
-    !write(6,*) 'JSamAll',Jsamall(F%dim_1D)
+    !write(output_unit_write,*) 'JSamAll',Jsamall(F%dim_1D)
     
-    !write(6,*) 'Jsam: ',Jsamall(1:5)
+    !write(output_unit_write,*) 'Jsam: ',Jsamall(1:5)
     
     Jexp=Jsamall*F%Ip0
     
@@ -1054,7 +1055,7 @@ CONTAINS
     dJdt=(3*F%J1_SC_1D%PHI-4*F%J2_SC_1D%PHI+F%J3_SC_1D%PHI)/ &
          (2*F%dt_E_SC)
     
-!    write(6,*) params%mpi_params%rank,'J(1)',F%J_SC_1D%PHI(1)
+!    write(output_unit_write,*) params%mpi_params%rank,'J(1)',F%J_SC_1D%PHI(1)
     
     ! Solving 1D Poisson equation with tridiagonal matrix solve
 
@@ -1095,11 +1096,11 @@ CONTAINS
     F%E_SC_1D%PHI=u
 
     if (params%mpi_params%rank.eq.0) then
-       write(6,*) 'J1(1)',F%J1_SC_1D%PHI(1)
-       write(6,*) 'J2(1)',F%J2_SC_1D%PHI(1)
-       write(6,*) 'J3(1)',F%J3_SC_1D%PHI(1)
+       write(output_unit_write,*) 'J1(1)',F%J1_SC_1D%PHI(1)
+       write(output_unit_write,*) 'J2(1)',F%J2_SC_1D%PHI(1)
+       write(output_unit_write,*) 'J3(1)',F%J3_SC_1D%PHI(1)
        
-       write(6,*) 'E(1)',F%E_SC_1D%PHI(1)
+       write(output_unit_write,*) 'E(1)',F%E_SC_1D%PHI(1)
     end if
        
     ! Normalizing inductive E_phi
@@ -1143,9 +1144,9 @@ CONTAINS
        rm(cc)=sqrt((Y_R(cc)-F%Ro)**2+(Y_Z(cc)-F%Zo)**2)* &
             params%cpp%length
 
-       !    write (6,*) params%mpi_params%rank,'RR',RR
-       !    write (6,*) params%mpi_params%rank,'ZZ',spp%vars%Y(:,3)
-       write (6,*) 'rm',rm(cc)
+       !    write (output_unit_write,*) params%mpi_params%rank,'RR',RR
+       !    write (output_unit_write,*) params%mpi_params%rank,'ZZ',spp%vars%Y(:,3)
+       write (output_unit_write,*) 'rm',rm(cc)
 
        Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+ &
             B_Z(cc)*B_Z(cc))
@@ -1156,7 +1157,7 @@ CONTAINS
 
        ! Weighting parallel velocity
 
-       !    write (6,*) params%mpi_params%rank,'vpll',vpll
+       !    write (output_unit_write,*) params%mpi_params%rank,'vpll',vpll
 
        !   do pp=1_idef,spp%ppp
        ! NGP weighting
@@ -1241,7 +1242,7 @@ CONTAINS
 
        ! 1D Riemann sum 
 
-       !write (6,*) 'rm',rm(cc)
+       !write (output_unit_write,*) 'rm',rm(cc)
 
        Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+ &
             B_Z(cc)*B_Z(cc))
@@ -1249,7 +1250,7 @@ CONTAINS
             2*V_MU(cc)*Bmag(cc)*m_cache)
        vpll(cc)=V_PLL(cc)/gam(cc)    
 
-!       write(6,*) PSIp_cache(cc)
+!       write(output_unit_write,*) PSIp_cache(cc)
        
        if (PSIp_cache(cc).lt.0._rp) PSIp_cache(cc)=0._rp
        
@@ -1305,7 +1306,7 @@ CONTAINS
     INTEGER 				:: mpierr
 
 !    if (params%mpi_params%rank .EQ. 0) then
-!       write(6,*) 'Calculating SC_E1D'
+!       write(output_unit_write,*) 'Calculating SC_E1D'
 !    end if
 
     ! 1D nearest grid point weighting in minor radius
@@ -1314,9 +1315,9 @@ CONTAINS
     ZZ=spp%vars%Y(:,3)
     rm=sqrt((RR-F%Ro)**2._rp+(ZZ-F%Zo)**2._rp)*params%cpp%length
 
-!    write (6,*) params%mpi_params%rank,'RR',RR
-!    write (6,*) params%mpi_params%rank,'ZZ',spp%vars%Y(:,3)
-    write (6,*) 'rm',rm
+!    write (output_unit_write,*) params%mpi_params%rank,'RR',RR
+!    write (output_unit_write,*) params%mpi_params%rank,'ZZ',spp%vars%Y(:,3)
+    write (output_unit_write,*) 'rm',rm
     
     
     dr=F%r_1D(2)-F%r_1D(1)
@@ -1325,7 +1326,7 @@ CONTAINS
 
     ! Weighting parallel velocity
 
-!    write (6,*) 'vpll',vpll
+!    write (output_unit_write,*) 'vpll',vpll
     
     Vpart=0._rp
     r_1D=F%r_1D
@@ -1391,7 +1392,7 @@ CONTAINS
     call MPI_ALLREDUCE(Jsamone,Jsamall,F%dim_1D,MPI_REAL8,MPI_SUM, &
          MPI_COMM_WORLD,mpierr)
     
-!    write(6,*) 'Jsam: ',Jsamall(1:10)
+!    write(output_unit_write,*) 'Jsam: ',Jsamall(1:10)
 
     ! Integrating current density to scale total current to
     ! experimentally determined total current
@@ -1406,7 +1407,7 @@ CONTAINS
        end if
     end do
     Isam=2._rp*C_PI*Isam*dr
-!    write(6,*) params%mpi_params%rank,'Isam: ',Isam
+!    write(output_unit_write,*) params%mpi_params%rank,'Isam: ',Isam
 
     F%Ip0=F%Ip_exp/Isam
 
@@ -1422,7 +1423,7 @@ CONTAINS
     dJdt=(3._rp*F%J1_SC_1D%PHI-4._rp*F%J2_SC_1D%PHI+F%J3_SC_1D%PHI)/ &
          (2._rp*F%dt_E_SC)
     
-!    write(6,*) params%mpi_params%rank,'J(1)',F%J_SC_1D%PHI(1)
+!    write(output_unit_write,*) params%mpi_params%rank,'J(1)',F%J_SC_1D%PHI(1)
     
     ! Solving 1D Poisson equation with tridiagonal matrix solve
 
@@ -1467,9 +1468,9 @@ CONTAINS
 !       F%A2_SC_1D%PHI=F%A1_SC_1D%PHI 
 !    end if
 
-!    write(6,*) params%mpi_params%rank,'A1(1)',F%A1_SC_1D%PHI(1)
-!    write(6,*) params%mpi_params%rank,'A2(1)',F%A2_SC_1D%PHI(1)
-!    write(6,*) params%mpi_params%rank,'A3(1)',F%A3_SC_1D%PHI(1)
+!    write(output_unit_write,*) params%mpi_params%rank,'A1(1)',F%A1_SC_1D%PHI(1)
+!    write(output_unit_write,*) params%mpi_params%rank,'A2(1)',F%A2_SC_1D%PHI(1)
+!    write(output_unit_write,*) params%mpi_params%rank,'A3(1)',F%A3_SC_1D%PHI(1)
     
     ! Calculating inductive E_phi
 
@@ -1479,11 +1480,11 @@ CONTAINS
     F%E_SC_1D%PHI=u
 
     if (params%mpi_params%rank.eq.0) then
-       write(6,*) 'J1(2)',F%J1_SC_1D%PHI(2)
-       write(6,*) 'J2(2)',F%J2_SC_1D%PHI(2)
-       write(6,*) 'J3(2)',F%J3_SC_1D%PHI(2)
+       write(output_unit_write,*) 'J1(2)',F%J1_SC_1D%PHI(2)
+       write(output_unit_write,*) 'J2(2)',F%J2_SC_1D%PHI(2)
+       write(output_unit_write,*) 'J3(2)',F%J3_SC_1D%PHI(2)
        
-       write(6,*) 'E(1)',F%E_SC_1D%PHI(1)
+       write(output_unit_write,*) 'E(1)',F%E_SC_1D%PHI(1)
     end if
        
     ! Normalizing inductive E_phi
@@ -1532,7 +1533,7 @@ CONTAINS
 !       dintJphidPSIP(PSIPind+1)=dintJphidPSIP(PSIPind+1)+ &
 !            vpll(pp)*(PSIP(pp)-PSIP_1D(PSIPind))/dPSIP
        
-!       write(6,*) PSIP(pp),PSIP_1D(PSIPind),dPSIP
+!       write(output_unit_write,*) PSIP(pp),PSIP_1D(PSIPind),dPSIP
 
        ! Gaussian weighting
        
@@ -1565,7 +1566,7 @@ CONTAINS
     call MPI_ALLREDUCE(dintJphidPSIP,Jsamall,F%dim_1D,MPI_REAL8,MPI_SUM, &
          MPI_COMM_WORLD,mpierr)
     
-!    write(6,*) 'Jsam: ',Jsamall(1:10)
+!    write(output_unit_write,*) 'Jsam: ',Jsamall(1:10)
 
     ! Integrating current density to scale total current to
     ! experimentally determined total current
@@ -1579,7 +1580,7 @@ CONTAINS
        end if
     end do
     Isam=Isam*dPSIP
-!    write(6,*) params%mpi_params%rank,'Isam: ',Isam
+!    write(output_unit_write,*) params%mpi_params%rank,'Isam: ',Isam
 
     F%Ip0=F%Ip_exp/Isam
 
@@ -1595,7 +1596,7 @@ CONTAINS
     dJdt=(3._rp*F%J1_SC_1D%PHI-4._rp*F%J2_SC_1D%PHI+F%J3_SC_1D%PHI)/ &
          (2._rp*F%dt_E_SC)
     
-!    write(6,*) params%mpi_params%rank,'J(1)',F%J_SC_1D%PHI(1)
+!    write(output_unit_write,*) params%mpi_params%rank,'J(1)',F%J_SC_1D%PHI(1)
     
     ! Solving 1D Poisson equation with tridiagonal matrix solve
 
@@ -1637,11 +1638,11 @@ CONTAINS
     F%E_SC_1D%PHI=u
 
     if (params%mpi_params%rank.eq.0) then
-       write(6,*) 'J1(1)',F%J1_SC_1D%PHI(1)
-       write(6,*) 'J2(1)',F%J2_SC_1D%PHI(1)
-       write(6,*) 'J3(1)',F%J3_SC_1D%PHI(1)
+       write(output_unit_write,*) 'J1(1)',F%J1_SC_1D%PHI(1)
+       write(output_unit_write,*) 'J2(1)',F%J2_SC_1D%PHI(1)
+       write(output_unit_write,*) 'J3(1)',F%J3_SC_1D%PHI(1)
        
-       write(6,*) 'E(1)',F%E_SC_1D%PHI(1)
+       write(output_unit_write,*) 'E(1)',F%E_SC_1D%PHI(1)
     end if
        
     ! Normalizing inductive E_phi
@@ -1664,21 +1665,21 @@ CONTAINS
     INTEGER 				:: mpierr
 
 !    if (params%mpi_params%rank .EQ. 0) then
-!       write(6,*) 'Calculating SC_E1D'
+!       write(output_unit_write,*) 'Calculating SC_E1D'
 !    end if
 
     dr=F%r_1D(2)-F%r_1D(1)
     r_1D=F%r_1D
     Jsamall=F%J0_SC_1D%PHI
 
-!    write(6,*) Jsamall
+!    write(output_unit_write,*) Jsamall
     
     Isam=0._rp
     do ii=1_idef,F%dim_1D
-!       write(6,*) Isam
-!       write(6,*) ii
-!       write(6,*) Jsamall(ii)
-!       write(6,*) (ii)
+!       write(output_unit_write,*) Isam
+!       write(output_unit_write,*) ii
+!       write(output_unit_write,*) Jsamall(ii)
+!       write(output_unit_write,*) (ii)
        if ((ii.eq.1_idef).or.(ii.eq.F%dim_1D)) then
           Isam=Isam+Jsamall(ii)*r_1D(ii)/2._rp
        else 
@@ -1686,7 +1687,7 @@ CONTAINS
        end if
     end do
     Isam=2._rp*C_PI*Isam*dr
-!    write(6,*) params%mpi_params%rank,'Isam: ',Isam
+!    write(output_unit_write,*) params%mpi_params%rank,'Isam: ',Isam
 
     F%Ip0=F%Ip_exp/Isam
 
@@ -1702,7 +1703,7 @@ CONTAINS
     dJdt=(3._rp*F%J1_SC_1D%PHI-4._rp*F%J2_SC_1D%PHI+F%J3_SC_1D%PHI)/ &
          (2._rp*F%dt_E_SC)
     
-!    write(6,*) params%mpi_params%rank,'J(1)',F%J_SC_1D%PHI(1)
+!    write(output_unit_write,*) params%mpi_params%rank,'J(1)',F%J_SC_1D%PHI(1)
     
     ! Solving 1D Poisson equation with tridiagonal matrix solve
 
@@ -1747,9 +1748,9 @@ CONTAINS
 !       F%A2_SC_1D%PHI=F%A1_SC_1D%PHI 
 !    end if
 
-!    write(6,*) params%mpi_params%rank,'A1(1)',F%A1_SC_1D%PHI(1)
-!    write(6,*) params%mpi_params%rank,'A2(1)',F%A2_SC_1D%PHI(1)
-!    write(6,*) params%mpi_params%rank,'A3(1)',F%A3_SC_1D%PHI(1)
+!    write(output_unit_write,*) params%mpi_params%rank,'A1(1)',F%A1_SC_1D%PHI(1)
+!    write(output_unit_write,*) params%mpi_params%rank,'A2(1)',F%A2_SC_1D%PHI(1)
+!    write(output_unit_write,*) params%mpi_params%rank,'A3(1)',F%A3_SC_1D%PHI(1)
     
     ! Calculating inductive E_phi
 
@@ -1759,11 +1760,11 @@ CONTAINS
     F%E_SC_1D%PHI=u
 
 !    if (params%mpi_params%rank.eq.0) then
-!       write(6,*) 'J1(1)',F%J1_SC_1D%PHI(1)
-!       write(6,*) 'J2(1)',F%J2_SC_1D%PHI(1)
-!       write(6,*) 'J3(1)',F%J3_SC_1D%PHI(1)
+!       write(output_unit_write,*) 'J1(1)',F%J1_SC_1D%PHI(1)
+!       write(output_unit_write,*) 'J2(1)',F%J2_SC_1D%PHI(1)
+!       write(output_unit_write,*) 'J3(1)',F%J3_SC_1D%PHI(1)
        
-!       write(6,*) 'E(1)',F%E_SC_1D%PHI(1)
+!       write(output_unit_write,*) 'E(1)',F%E_SC_1D%PHI(1)
 !    end if
        
     ! Normalizing inductive E_phi
@@ -1785,7 +1786,7 @@ CONTAINS
     INTEGER 				:: mpierr
 
 !    if (params%mpi_params%rank .EQ. 0) then
-!       write(6,*) 'Calculating SC_E1D'
+!       write(output_unit_write,*) 'Calculating SC_E1D'
 !    end if
 
     PSIP_1D=F%PSIP_1D
@@ -1801,7 +1802,7 @@ CONTAINS
        end if
     end do
     Isam=Isam*dPSIP
-!    write(6,*) params%mpi_params%rank,'Isam: ',Isam
+!    write(output_unit_write,*) params%mpi_params%rank,'Isam: ',Isam
 
     F%Ip0=F%Ip_exp/Isam
     
@@ -1816,7 +1817,7 @@ CONTAINS
     dJdt=(3._rp*F%J1_SC_1D%PHI-4._rp*F%J2_SC_1D%PHI+F%J3_SC_1D%PHI)/ &
          (2._rp*F%dt_E_SC)
     
-!    write(6,*) params%mpi_params%rank,'J(1)',F%J_SC_1D%PHI(1)
+!    write(output_unit_write,*) params%mpi_params%rank,'J(1)',F%J_SC_1D%PHI(1)
     
     ! Solving 1D Poisson equation with tridiagonal matrix solve
 
@@ -1858,11 +1859,11 @@ CONTAINS
     F%E_SC_1D%PHI=u
 
     if (params%mpi_params%rank.eq.0) then
-       write(6,*) 'J1(1)',F%J1_SC_1D%PHI(1)
-       write(6,*) 'J2(1)',F%J2_SC_1D%PHI(1)
-       write(6,*) 'J3(1)',F%J3_SC_1D%PHI(1)
+       write(output_unit_write,*) 'J1(1)',F%J1_SC_1D%PHI(1)
+       write(output_unit_write,*) 'J2(1)',F%J2_SC_1D%PHI(1)
+       write(output_unit_write,*) 'J3(1)',F%J3_SC_1D%PHI(1)
        
-       write(6,*) 'E(1)',F%E_SC_1D%PHI(1)
+       write(output_unit_write,*) 'E(1)',F%E_SC_1D%PHI(1)
     end if
        
     ! Normalizing inductive E_phi
@@ -1887,45 +1888,45 @@ CONTAINS
     !! Core KORC simulation parameters.
     TYPE(FIELDS), INTENT(OUT)      :: F
     !! An instance of the KORC derived type FIELDS.
-    REAL(rp)                       :: Bo
+    !REAL(rp)                       :: Bo
     !! Magnetic field at magnetic axis for an 'ANALYTICAL' magnetic field,
     !! or the magnitude of the magnetic field for a 'UNFIROM' plasma.
-    REAL(rp)                       :: minor_radius
+    !REAL(rp)                       :: minor_radius
     !! Plasma edge \(r_{edge}\) as measured from the magnetic axis.
-    REAL(rp)                       :: major_radius
+    !REAL(rp)                       :: major_radius
     !! Radial position of the magnetic axis \(R_0\)
-    REAL(rp)                       :: qa
+    !REAL(rp)                       :: qa
     !! Safety factor at the plasma edge.
-    REAL(rp)                       :: qo
+    !REAL(rp)                       :: qo
     !! Safety factor at the magnetic axis \(q_0\).
-    CHARACTER(MAX_STRING_LENGTH)   :: current_direction
+    !CHARACTER(MAX_STRING_LENGTH)   :: current_direction
     !! String with information about the direction of the plasma current, 
     !! 'PARALLEL'  or 'ANTI-PARALLEL' to the toroidal magnetic field.
-    CHARACTER(MAX_STRING_LENGTH)   :: E_model
-    REAL(rp)                       :: Eo,E_dyn,E_pulse,E_width   
+    !CHARACTER(MAX_STRING_LENGTH)   :: E_model
+    !REAL(rp)                       :: Eo,E_dyn,E_pulse,E_width   
     !! Electric field at the magnetic axis.
-    LOGICAL                        :: Efield
+    !LOGICAL                        :: Efield
     !! Logical variable that specifies if the electric field is 
     !! going to be used on in a given simulation.
-    LOGICAL                        :: dBfield
-    LOGICAL                        :: Bfield
+    !LOGICAL                        :: dBfield
+    !LOGICAL                        :: Bfield
     !! Logical variable that specifies if the magnetic field is 
     !! going to be used on in a given simulation.
-    LOGICAL                        :: Bflux
-    LOGICAL                        :: Bflux3D
-    LOGICAL                        :: Dim2x1t
-    LOGICAL                        :: E_2x1t,ReInterp_2x1t
+    !LOGICAL                        :: Bflux
+    !LOGICAL                        :: Bflux3D
+    !LOGICAL                        :: Dim2x1t
+    !LOGICAL                        :: E_2x1t,ReInterp_2x1t
     !! Logical variable that specifies if the poloidal magnetic 
     !! flux is going to be used on in a given simulation.
-    LOGICAL                        :: axisymmetric_fields
+    !LOGICAL                        :: axisymmetric_fields
     !! Logical variable that specifies if the plasma is axisymmetric.
     INTEGER                        :: ii
     !! Iterators for creating mesh for GC model with analytic fields
     INTEGER                        :: kk
     !! Iterators for creating mesh for GC model with analytic fields
-    INTEGER                        :: nR
+    !INTEGER                        :: nR
     !! Number of mesh points in R for grid in GC model of analytical field
-    INTEGER                        :: nZ,nPHI
+    !INTEGER                        :: nZ,nPHI
     !! Number of mesh points in Z for grid in GC model of analytical field
     real(rp)                       :: rm
     !! Minor radius at each position in the grid for
@@ -1937,20 +1938,20 @@ CONTAINS
     !! Poloidal angle at each position in the grid for
     !! GC model of analytical field
     logical :: test
-    integer :: res_double
+    !integer :: res_double
     real(rp) :: RMAX,RMIN,ZMAX,ZMIN
-    integer :: dim_1D,ind0_2x1t
-    real(rp) :: dt_E_SC,Ip_exp,PSIp_lim,PSIp_0
-    real(rp) :: t0_2x1t
+    !integer :: dim_1D,ind0_2x1t
+    !real(rp) :: dt_E_SC,Ip_exp,PSIp_lim,PSIp_0
+    !real(rp) :: t0_2x1t
     
 
-    NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
-         qa,qo,Eo,current_direction,nR,nZ,nPHI,dim_1D,dt_E_SC,Ip_exp, &
-         E_dyn,E_pulse,E_width
-    NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux,Bflux3D,dBfield, &
-         axisymmetric_fields, Eo,E_dyn,E_pulse,E_width,res_double, &
-         dim_1D,dt_E_SC,Ip_exp,PSIp_lim,Dim2x1t,t0_2x1t,E_2x1t,ReInterp_2x1t, &
-         ind0_2x1t,PSIp_0
+    !NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
+    !     qa,qo,Eo,current_direction,nR,nZ,nPHI,dim_1D,dt_E_SC,Ip_exp, &
+    !     E_dyn,E_pulse,E_width
+    !NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux,Bflux3D,dBfield, &
+    !     axisymmetric_fields, Eo,E_dyn,E_pulse,E_width,res_double, &
+    !     dim_1D,dt_E_SC,Ip_exp,PSIp_lim,Dim2x1t,t0_2x1t,E_2x1t,ReInterp_2x1t, &
+    !     ind0_2x1t,PSIp_0
 
 #ifdef M3D_C1
     F%M3D_C1_B = -1
@@ -1958,17 +1959,17 @@ CONTAINS
 #endif
     
     if (params%mpi_params%rank .EQ. 0) then
-       write(6,'(/,"* * * * * * * * INITIALIZING FIELDS * * * * * * * *")')
+       write(output_unit_write,'(/,"* * * * * * * * INITIALIZING FIELDS * * * * * * * *")')
     end if
 
 !    SELECT CASE (TRIM(params%field_model))
     if (params%field_model(1:10).eq.'ANALYTICAL') then
 !    CASE('ANALYTICAL')
        ! Load the parameters of the analytical magnetic field
-       open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
-            status='OLD',form='formatted')
-       read(default_unit_open,nml=analytical_fields_params)
-       close(default_unit_open)
+       !open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
+       !     status='OLD',form='formatted')
+       !read(default_unit_open,nml=analytical_fields_params)
+       !close(default_unit_open)
 
        F%AB%Bo = Bo
        F%AB%a = minor_radius
@@ -1994,14 +1995,14 @@ CONTAINS
        F%E_pulse = E_pulse
        F%E_width = E_width
 
-       !write(6,*) E_dyn,E_pulse,E_width
+       !write(output_unit_write,*) E_dyn,E_pulse,E_width
 
        F%res_double=res_double
        
        if (params%mpi_params%rank .EQ. 0) then
-          write(6,'("ANALYTIC")')
-          write(6,'("Magnetic field: ",E17.10)') F%Bo
-          write(6,'("Electric field: ",E17.10)') F%Eo
+          write(output_unit_write,'("ANALYTIC")')
+          write(output_unit_write,'("Magnetic field: ",E17.10)') F%Bo
+          write(output_unit_write,'("Electric field: ",E17.10)') F%Eo
 
        end if
 
@@ -2028,7 +2029,7 @@ CONTAINS
                 F%X%Z(ii)=(F%Zo-F%AB%a)+(ii-1)*2*F%AB%a/(F%dims(3)-1)
              end do
 
-!             write(6,*) F%X%R
+!             write(output_unit_write,*) F%X%R
              
              do ii=1_idef,F%dims(1)
                 do kk=1_idef,F%dims(3)
@@ -2078,12 +2079,12 @@ CONTAINS
                 F%X%Z(ii)=(F%Zo-F%AB%a)+(ii-1)*2*F%AB%a/(F%dims(3)-1)
              end do
 
-             !write(6,*) size(F%B_3D%R)
+             !write(output_unit_write,*) size(F%B_3D%R)
              
              do ii=1_idef,F%dims(1)
                 do kk=1_idef,F%dims(3)
 
-                   !write(6,*) ii,kk
+                   !write(output_unit_write,*) ii,kk
                    
                    rm=sqrt((F%X%R(ii)-F%Ro)**2+(F%X%Z(kk)-F%Zo)**2)
                    qr=F%AB%qo*(1+(rm/F%AB%lambda)**2)
@@ -2092,7 +2093,7 @@ CONTAINS
                         (F%AB%Bo/qr)*sin(theta)
                    F%B_3D%PHI(ii,:,kk)=-(F%Ro/F%X%R(ii))*F%AB%Bo
 
-                   !write(6,*) F%B_3D%PHI(ii,1,kk)
+                   !write(output_unit_write,*) F%B_3D%PHI(ii,1,kk)
                    
                    F%B_3D%Z(ii,:,kk)=-(rm/F%X%R(ii))* &
                         (F%AB%Bo/qr)*cos(theta)
@@ -2120,7 +2121,7 @@ CONTAINS
 
           if (params%orbit_model(3:5).eq.'pre') then
              if (params%mpi_params%rank .EQ. 0) then
-                write(6,'("Initializing GC fields from analytic EM fields")')
+                write(output_unit_write,'("Initializing GC fields from analytic EM fields")')
              end if
 
              if (params%field_model(12:13).eq.'2D') then
@@ -2171,10 +2172,10 @@ CONTAINS
 !    CASE('EXTERNAL')
     else if (params%field_model(1:8).eq.'EXTERNAL') then
        ! Load the magnetic field from an external HDF5 file
-       open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
-            status='OLD',form='formatted')
-       read(default_unit_open,nml=externalPlasmaModel)
-       close(default_unit_open)
+       !open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
+       !     status='OLD',form='formatted')
+       !read(default_unit_open,nml=externalPlasmaModel)
+       !close(default_unit_open)
 
        F%Bfield = Bfield
        F%dBfield = dBfield
@@ -2205,40 +2206,40 @@ CONTAINS
        
        F%res_double=res_double
 
-!       write(6,'("E_dyn: ",E17.10)') E_dyn
-!       write(6,'("E_pulse: ",E17.10)') E_pulse
-!       write(6,'("E_width: ",E17.10)') E_width
+!       write(output_unit_write,'("E_dyn: ",E17.10)') E_dyn
+!       write(output_unit_write,'("E_pulse: ",E17.10)') E_pulse
+!       write(output_unit_write,'("E_width: ",E17.10)') E_width
        
        call load_dim_data_from_hdf5(params,F)
        !sets F%dims for 2D or 3D data
 
-       !write(6,*) F%dims
+       !write(output_unit_write,*) F%dims
        
        call which_fields_in_file(params,F%Bfield_in_file,F%Efield_in_file, &
             F%Bflux_in_file,F%dBfield_in_file)
 
        
        if (F%Bflux.AND..NOT.F%Bflux_in_file) then
-          write(6,'("ERROR: Magnetic flux to be used but no data in file!")')
+          write(output_unit_write,'("ERROR: Magnetic flux to be used but no data in file!")')
           call KORC_ABORT()
        end if
 
        if (F%Bfield.AND..NOT.F%Bfield_in_file) then
-          write(6,'("ERROR: Magnetic field to be used but no data in file!")')
+          write(output_unit_write,'("ERROR: Magnetic field to be used but no data in file!")')
           call KORC_ABORT()
        end if
 
        if (F%dBfield.AND..NOT.F%dBfield_in_file) then
-          write(6,'("ERROR: differential Magnetic field to be used &
+          write(output_unit_write,'("ERROR: differential Magnetic field to be used &
                but no data in file!")')
 !          call KORC_ABORT()
        end if
        
        if (F%Efield.AND..NOT.F%Efield_in_file) then
           if (params%mpi_params%rank.EQ.0_idef) then
-             write(6,'(/,"* * * * * * * * * *  FIELDS  * * * * * * * * * *")')
-             write(6,'("MESSAGE: Analytical electric field will be used.")')
-             write(6,'("* * * * * * * * * * * * ** * * * * * * * * * * *",/)')
+             write(output_unit_write,'(/,"* * * * * * * * * *  FIELDS  * * * * * * * * * *")')
+             write(output_unit_write,'("MESSAGE: Analytical electric field will be used.")')
+             write(output_unit_write,'("* * * * * * * * * * * * ** * * * * * * * * * * *",/)')
           end if
        end if
 
@@ -2274,9 +2275,9 @@ CONTAINS
        
        call load_field_data_from_hdf5(params,F)
             
-       !       write(6,*) F%PSIp
+       !       write(output_unit_write,*) F%PSIp
 
-       !write(6,*) F%E_3D%PHI(:,F%ind0_2x1t,:)
+       !write(output_unit_write,*) F%E_3D%PHI(:,F%ind0_2x1t,:)
 
        
 !       end if
@@ -2338,9 +2339,9 @@ CONTAINS
        
        if (params%mpi_params%rank .EQ. 0) then
 
-          write(6,'("EXTERNAL")')
-          write(6,'("Magnetic field: ",E17.10)') F%Bo
-          write(6,'("Electric field: ",E17.10)') F%Eo
+          write(output_unit_write,'("EXTERNAL")')
+          write(output_unit_write,'("Magnetic field: ",E17.10)') F%Bo
+          write(output_unit_write,'("Electric field: ",E17.10)') F%Eo
 
        end if
 
@@ -2350,12 +2351,12 @@ CONTAINS
           F%dt_E_SC=dt_E_SC
           F%Ip_exp=Ip_exp
 
-          write(6,*) 'dt_E_SC',F%dt_E_SC,'Ip_exp',Ip_exp
+          write(output_unit_write,*) 'dt_E_SC',F%dt_E_SC,'Ip_exp',Ip_exp
           
           call allocate_1D_FS_arrays(params,F)
           call load_1D_FS_from_hdf5(params,F)
 
-!          write(6,*) F%PSIP_1D
+!          write(output_unit_write,*) F%PSIP_1D
           
        end if
        
@@ -2461,17 +2462,17 @@ CONTAINS
 
           if (F%axisymmetric_fields) then
              if (F%Bflux) then
-                write(6,'("PSIp(r=0)",E17.10)') F%PSIp(F%dims(1)/2,F%dims(3)/2)
-                write(6,'("BPHI(r=0)",E17.10)') F%Bo
-                write(6,'("EPHI(r=0)",E17.10)') F%Eo
+                write(output_unit_write,'("PSIp(r=0)",E17.10)') F%PSIp(F%dims(1)/2,F%dims(3)/2)
+                write(output_unit_write,'("BPHI(r=0)",E17.10)') F%Bo
+                write(output_unit_write,'("EPHI(r=0)",E17.10)') F%Eo
              else if (F%Bflux3D) then
-                write(6,'("PSIp(r=0)",E17.10)') F%PSIp3D(F%dims(1)/2,1,F%dims(3)/2)
+                write(output_unit_write,'("PSIp(r=0)",E17.10)') F%PSIp3D(F%dims(1)/2,1,F%dims(3)/2)
              else
-                write(6,'("BR(r=0)",E17.10)') F%B_2D%R(F%dims(1)/2,F%dims(3)/2)
-                write(6,'("BPHI(r=0)",E17.10)') &
+                write(output_unit_write,'("BR(r=0)",E17.10)') F%B_2D%R(F%dims(1)/2,F%dims(3)/2)
+                write(output_unit_write,'("BPHI(r=0)",E17.10)') &
                      F%B_2D%PHI(F%dims(1)/2,F%dims(3)/2)
-                write(6,'("BZ(r=0)",E17.10)') F%B_2D%Z(F%dims(1)/2,F%dims(3)/2)
-                write(6,'("EPHI(r=0)",E17.10)') &
+                write(output_unit_write,'("BZ(r=0)",E17.10)') F%B_2D%Z(F%dims(1)/2,F%dims(3)/2)
+                write(output_unit_write,'("EPHI(r=0)",E17.10)') &
                      F%E_2D%PHI(F%dims(1)/2,F%dims(3)/2)
              end if
           end if
@@ -2481,7 +2482,7 @@ CONTAINS
 
        if (params%orbit_model(3:5).EQ.'pre') then
           if (params%mpi_params%rank.eq.0) then
-             write(6,'("Initializing GC fields from external EM fields")')
+             write(output_unit_write,'("Initializing GC fields from external EM fields")')
           end if
 
           if (params%field_model(10:12).eq.'2DB') then
@@ -2493,14 +2494,14 @@ CONTAINS
           end if
        end if
 
-       !       write(6,'("gradBR",E17.10)') F%gradB_2D%R(F%dims(1)/2,F%dims(3)/2)
-       !       write(6,'("gradBPHI",E17.10)') F%gradB_2D%PHI(F%dims(1)/2,F%dims(3)/2)
-       !       write(6,'("gradBZ",E17.10)') F%gradB_2D%Z(F%dims(1)/2,F%dims(3)/2)
+       !       write(output_unit_write,'("gradBR",E17.10)') F%gradB_2D%R(F%dims(1)/2,F%dims(3)/2)
+       !       write(output_unit_write,'("gradBPHI",E17.10)') F%gradB_2D%PHI(F%dims(1)/2,F%dims(3)/2)
+       !       write(output_unit_write,'("gradBZ",E17.10)') F%gradB_2D%Z(F%dims(1)/2,F%dims(3)/2)
 
     end if
 
     if (params%mpi_params%rank.eq.0) then
-       write(6,'("* * * * * * * * * * * * * * * * * * * * * * * * *",/)')
+       write(output_unit_write,'("* * * * * * * * * * * * * * * * * * * * * * * * *",/)')
     end if
        
   end subroutine initialize_fields
@@ -2789,18 +2790,18 @@ CONTAINS
 
     F%dt_E_SC=params%t_skip*params%dt
 
-!    write(6,*) 'dt_E_SC',F%dt_E_SC,'dt',params%dt,'subcycle_E_SC', &
+!    write(output_unit_write,*) 'dt_E_SC',F%dt_E_SC,'dt',params%dt,'subcycle_E_SC', &
 !         F%subcycle_E_SC,'t_skip',params%t_skip, &
 !         't_it_SC',params%t_it_SC
     
     if (params%mpi_params%rank.EQ.0) then
 
-     write(6,'(/,"* * * * * SC_E1D SUBCYCLING * * * * *")')
-     write(6,*) "SC_E1D sybcycling iterations: ",F%subcycle_E_SC
-     write(6,*) "Updated number of outputs: ", &
+     write(output_unit_write,'(/,"* * * * * SC_E1D SUBCYCLING * * * * *")')
+     write(output_unit_write,*) "SC_E1D sybcycling iterations: ",F%subcycle_E_SC
+     write(output_unit_write,*) "Updated number of outputs: ", &
           params%t_steps/(params%t_skip*params%t_it_SC)
 
-     write(6,'("* * * * * * * * * * * * * * * * * * *",/)')
+     write(output_unit_write,'("* * * * * * * * * * * * * * * * * * *",/)')
     end if
     
 
@@ -2845,7 +2846,7 @@ CONTAINS
     filename = TRIM(params%magnetic_field_filename)
     call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
     if (h5error .EQ. -1) then
-       write(6,'("KORC ERROR: Something went wrong in: load_dim_data_from_hdf5 --> h5fopen_f")')
+       write(output_unit_write,'("KORC ERROR: Something went wrong in: load_dim_data_from_hdf5 --> h5fopen_f")')
     end if
 
     if (F%Bflux.OR.F%axisymmetric_fields) then
@@ -2896,7 +2897,7 @@ CONTAINS
 
     call h5fclose_f(h5file_id, h5error)
     if (h5error .EQ. -1) then
-       write(6,'("KORC ERROR: Something went wrong in: load_dim_data_from_hdf5 --> h5fclose_f")')
+       write(output_unit_write,'("KORC ERROR: Something went wrong in: load_dim_data_from_hdf5 --> h5fclose_f")')
     end if
   end subroutine load_dim_data_from_hdf5
 
@@ -2933,7 +2934,7 @@ CONTAINS
     filename = TRIM(params%magnetic_field_filename)
     call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
     if (h5error .EQ. -1) then
-       write(6,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fopen_f")')
+       write(output_unit_write,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fopen_f")')
     end if
 
     gname = "BR"
@@ -2951,7 +2952,7 @@ CONTAINS
 
     call h5fclose_f(h5file_id, h5error)
     if (h5error .EQ. -1) then
-       write(6,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fclose_f")')
+       write(output_unit_write,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fclose_f")')
     end if
   end subroutine which_fields_in_file
 
@@ -2984,7 +2985,7 @@ CONTAINS
     filename = TRIM(params%magnetic_field_filename)
     call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
     if (h5error .EQ. -1) then
-       write(6,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fopen_f")')
+       write(output_unit_write,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fopen_f")')
     end if
 
 
@@ -3200,7 +3201,7 @@ CONTAINS
 
     call h5fclose_f(h5file_id, h5error)
     if (h5error .EQ. -1) then
-       write(6,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fclose_f")')
+       write(output_unit_write,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fclose_f")')
     end if
   end subroutine load_field_data_from_hdf5
 
@@ -3216,7 +3217,7 @@ CONTAINS
     filename = TRIM(params%magnetic_field_filename)
     call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
     if (h5error .EQ. -1) then
-       write(6,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fopen_f")')
+       write(output_unit_write,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fopen_f")')
     end if
 
     dset = "/PSIP1D"
@@ -3230,7 +3231,7 @@ CONTAINS
 
     call h5fclose_f(h5file_id, h5error)
     if (h5error .EQ. -1) then
-       write(6,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fclose_f")')
+       write(output_unit_write,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fclose_f")')
     end if
   end subroutine load_1D_FS_from_hdf5
 
@@ -3251,7 +3252,7 @@ CONTAINS
     filename = TRIM(params%magnetic_field_filename)
     call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
     if (h5error .EQ. -1) then
-       write(6,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fopen_f")')
+       write(output_unit_write,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fopen_f")')
     end if
     
     dset = "/N1D"
@@ -3263,7 +3264,7 @@ CONTAINS
 
     call h5fclose_f(h5file_id, h5error)
     if (h5error .EQ. -1) then
-       write(6,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fclose_f")')
+       write(output_unit_write,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fclose_f")')
     end if
     
   end subroutine ALLOCATE_1D_FS_ARRAYS

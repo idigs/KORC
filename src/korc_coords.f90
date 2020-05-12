@@ -38,9 +38,9 @@ CONTAINS
     INTEGER                                                :: ss
     !! Iterator.
 
-!    write(6,'("X_X: ",E17.10)') X(1:10,1)
-!    write(6,'("X_Y: ",E17.10)') X(1:10,2)
-!    write(6,'("X_Z: ",E17.10)') X(1:10,3)
+!    write(output_unit_write,'("X_X: ",E17.10)') X(1:10,1)
+!    write(output_unit_write,'("X_Y: ",E17.10)') X(1:10,2)
+!    write(output_unit_write,'("X_Z: ",E17.10)') X(1:10,3)
     
     if (X(2,1).eq.0) then
        ss=1_idef
@@ -48,14 +48,14 @@ CONTAINS
        ss = size(X,1)
     end if
 
-!    write(6,*) 'varX',X(:,1)
-!    write(6,*) 'varY',X(:,2)
-!    write(6,*) 'varR',Xcyl(:,1)
-!    write(6,*) 'varPHI',Xcyl(:,2)
+!    write(output_unit_write,*) 'varX',X(:,1)
+!    write(output_unit_write,*) 'varY',X(:,2)
+!    write(output_unit_write,*) 'varR',Xcyl(:,1)
+!    write(output_unit_write,*) 'varPHI',Xcyl(:,2)
 
 !    !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp) SHARED(X,Xcyl)
     do pp=1_idef,ss
-!       write(6,*) 'pp',pp
+!       write(output_unit_write,*) 'pp',pp
        Xcyl(pp,1) = SQRT(X(pp,1)**2 + X(pp,2)**2)
        Xcyl(pp,2) = ATAN2(X(pp,2), X(pp,1))
        Xcyl(pp,2) = MODULO(Xcyl(pp,2), 2.0_rp*C_PI)
@@ -63,10 +63,10 @@ CONTAINS
     end do
 !    !$OMP END PARALLEL DO
 
-!    write(6,*) 'varX',X(:,1)
-!    write(6,*) 'varY',X(:,2)
-!    write(6,*) 'varR',Xcyl(:,1)
-!    write(6,*) 'varPHI',Xcyl(:,2)
+!    write(output_unit_write,*) 'varX',X(:,1)
+!    write(output_unit_write,*) 'varY',X(:,2)
+!    write(output_unit_write,*) 'varR',Xcyl(:,1)
+!    write(output_unit_write,*) 'varPHI',Xcyl(:,2)
 
 
     
@@ -235,7 +235,7 @@ CONTAINS
     a = F%AB%a
     Ro = F%AB%Ro
 
-!    write(6,'("X c2tor: ",E17.10)') X(1,:)
+!    write(output_unit_write,'("X c2tor: ",E17.10)') X(1,:)
     
     !$OMP PARALLEL DO FIRSTPRIVATE(ss,a,Ro) PRIVATE(pp) SHARED(X,Xtor,flag)
     do pp=1_idef,ss
@@ -247,9 +247,9 @@ CONTAINS
           Xtor(pp,3) = ATAN2(X(pp,1),X(pp,2))
           Xtor(pp,3) = MODULO(Xtor(pp,3),2.0_rp*C_PI)
 
-!          write(6,'("r: ",E17.10)') Xtor(1,1)
-!          write(6,'("a: ",E17.10)') a
-!          write(6,'("Ro: ",E17.10)') Ro
+!          write(output_unit_write,'("r: ",E17.10)') Xtor(1,1)
+!          write(output_unit_write,'("a: ",E17.10)') a
+!          write(output_unit_write,'("Ro: ",E17.10)') Ro
           
           if (Xtor(pp,1) .GT. F%AB%a) then
              flag(pp) = 0_is

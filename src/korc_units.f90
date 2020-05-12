@@ -4,6 +4,7 @@ module korc_units
   !! nondimensionalization of the simulation variables. @endnote
   use korc_types
   use korc_constants
+  use korc_input
 
   IMPLICIT NONE
 
