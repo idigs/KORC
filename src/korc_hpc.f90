@@ -49,13 +49,16 @@ CONTAINS
        call korc_abort()
     end if
 
-    OPEN(UNIT=output_unit_write, &
-         FILE=TRIM(params%path_to_outputs)//"output.korc", STATUS='UNKNOWN', &
-         FORM='FORMATTED',POSITION='REWIND')
-
+    !write(6,*) TRIM(params%path_to_outputs)
+    !write(6,*) TRIM(params%path_to_inputs)
+    
     if (params%mpi_params%rank .EQ. 0) then
+       OPEN(UNIT=output_unit_write, &
+            FILE=TRIM(params%path_to_outputs)//"output.korc", &
+            STATUS='UNKNOWN',FORM='FORMATTED',POSITION='REWIND')
+              
        write(output_unit_write,'(/,"* * * * * PATHS * * * * *")')
-       write(output_unit_write,*) 'The input file is: ',TRIM(params%path_to_inputs),'(/)'
+       write(output_unit_write,*) 'The input file is: ',TRIM(params%path_to_inputs)
        write(output_unit_write,*) 'The output folder is: ',TRIM(params%path_to_outputs)
        write(output_unit_write,'("* * * * * * * * * * * * *",/)')
     end if
@@ -102,6 +105,9 @@ CONTAINS
 
     call MPI_REDUCE(mpi_process_initialized,all_mpis_initialized,1, &
          MPI_LOGICAL,MPI_LAND,0,MPI_COMM_WORLD,mpierr)
+
+    call MPI_BCAST(all_mpis_initialized,1, &
+         MPI_LOGICAL,0,MPI_COMM_WORLD,mpierr)
 
     call MPI_COMM_SIZE(MPI_COMM_WORLD, params%mpi_params%nmpi, mpierr)
     if (mpierr .NE. MPI_SUCCESS) then

@@ -384,6 +384,7 @@ CONTAINS
     CHARACTER(128) :: ctmp
     CHARACTER(128) :: outfile
     LOGICAL :: reading
+    INTEGER :: mpierr
     
     !! Namelist declarations
     NAMELIST /input_parameters/ restart,field_model,magnetic_field_filename, &
@@ -427,39 +428,42 @@ CONTAINS
          min_pitch_angle_simple,Zeff_simple,E_simple, &
          Bo_simple,lambda_simple
     NAMELIST /EnergyGammaPDF/ max_energy_gamma,min_energy_gamma,k_gamma,t_gamma
-       
+
 !!-----------------------------------------------------------------------
 !!     open input file.
 !!     Remove comments from input file and put into temporary file.
 !!-----------------------------------------------------------------------
-      tempfile='tempinput.korc'
-      CALL rmcoment(infile,tempfile)
-      OPEN(UNIT=default_unit_open,FILE=tempfile,STATUS='OLD',POSITION='REWIND')
+    tempfile='tempinput.korc'
+    if (params%mpi_params%rank.eq.0) then
+       CALL rmcoment(infile,tempfile)
+    end if
+    call MPI_BARRIER(MPI_COMM_WORLD,mpierr)   
+    OPEN(UNIT=default_unit_open,FILE=tempfile,STATUS='OLD',POSITION='REWIND')
 !!-----------------------------------------------------------------------
 !!    check namelist file for namelist order and number.
 !!-----------------------------------------------------------------------
-      DO
-        READ(UNIT=default_unit_open,FMT='(a)',IOSTAT=read_stat) ctmp 
-        IF (read_stat/=0) EXIT
-        nc=LEN_TRIM(ctmp)
-        IF (nc<1) CYCLE
-        ctmp=ADJUSTL(ctmp)
-        reading=.false.
-        IF (ctmp(1:1)=='&') THEN
+    DO
+       READ(UNIT=default_unit_open,FMT='(a)',IOSTAT=read_stat) ctmp 
+       IF (read_stat/=0) EXIT
+       nc=LEN_TRIM(ctmp)
+       IF (nc<1) CYCLE
+       ctmp=ADJUSTL(ctmp)
+       reading=.false.
+       IF (ctmp(1:1)=='&') THEN
           number_of_namelists=number_of_namelists+1
 !!-----------------------------------------------------------------------
 !!         trim all but the namelist name.
 !!-----------------------------------------------------------------------
           DO il=2,nc+1
-            IF (ctmp(il:il)/=' ') THEN
-              IF (.NOT.reading) inst=il
-              reading=.true.
-              CYCLE
-            ENDIF
-            IF (ctmp(il:il)==' '.AND.reading) THEN
-              ctmp=ctmp(inst:il-1)
-              EXIT
-            ENDIF
+             IF (ctmp(il:il)/=' ') THEN
+                IF (.NOT.reading) inst=il
+                reading=.true.
+                CYCLE
+             ENDIF
+             IF (ctmp(il:il)==' '.AND.reading) THEN
+                ctmp=ctmp(inst:il-1)
+                EXIT
+             ENDIF
           ENDDO
           BACKSPACE(default_unit_open)
 !!-----------------------------------------------------------------------
@@ -469,7 +473,7 @@ CONTAINS
           CASE('input_parameters')
 
              !write(6,*) 'reading input_parameters namelist'
-             
+
              READ(UNIT=default_unit_open,NML=input_parameters,IOSTAT=read_stat)
           CASE('plasma_species')
 
@@ -579,7 +583,13 @@ CONTAINS
 !!     close input file.
 !!       Delete it since it is the temporary file
 !!-----------------------------------------------------------------------
-    CLOSE(default_unit_open,STATUS='DELETE')
+    if (params%mpi_params%rank.ne.0) then
+       CLOSE(default_unit_open)
+    end if
+    call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+    if (params%mpi_params%rank.eq.0) then
+       CLOSE(default_unit_open,STATUS='DELETE')
+    end if
 !!-----------------------------------------------------------------------
 !!     echo the input parameters to the output file.
 !!-----------------------------------------------------------------------
