@@ -2,6 +2,7 @@ module korc_input
   !! @note Module with subroutines to read in all namelists in supplied
   !! input file and broadcast to all mpi processes.
   USE korc_types
+  USE korc_hpc
   
   IMPLICIT NONE
 
@@ -564,9 +565,13 @@ CONTAINS
           CASE('SimpleEquilibriumPDF')
              READ(UNIT=default_unit_open,NML=SimpleEquilibriumPDF,IOSTAT=read_stat)
           CASE DEFAULT
-             stop (TRIM(ctmp)//' is an unrecognized namelist.')
+             write(output_unit_write,*) (TRIM(ctmp)//' is an unrecognized namelist.')
+             call korc_abort
           END SELECT
-          IF (read_stat/=0) stop ('Error reading namelist '//TRIM(ctmp)//'.')
+          IF (read_stat/=0) then
+             write(output_unit_write,*) ('Error reading namelist '//TRIM(ctmp)//'.')
+             call korc_abort
+          end if
        ENDIF
     ENDDO
 

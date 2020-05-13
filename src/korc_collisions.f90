@@ -1650,6 +1650,8 @@ contains
           call get_m3d_c1_GCelectric_fields_p(params,F, &
                Y_R,Y_PHI,Y_Z,E_R,E_PHI,E_Z,flagCon,hint)
        end if
+       call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
+            PSIp,flagCon,hint)
 
 
        if (params%profile_model(1:10).eq.'ANALYTICAL') then

@@ -166,10 +166,12 @@ CONTAINS
           write(output_unit_write,'(/,"* * * * * * * * * * * * * * * * * *")')
        end if
     else
-       write(6,'(/,"* * * * * * * COMMUNICATIONS * * * * * * *")')
-       write(6,'(/," ERROR: MPI not initialized. Aborting... ")')
-       write(6,'(/,"* * * * * * * * * ** * * * * * * * * * * *")')
-       call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
+       if (params%mpi_params%rank.EQ.0) then
+          write(6,'(/,"* * * * * * * COMMUNICATIONS * * * * * * *")')
+          write(6,'(/," ERROR: MPI not initialized. Aborting... ")')
+          write(6,'(/,"* * * * * * * * * ** * * * * * * * * * * *")')
+          call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
+       end if
     end if
  
     !...
