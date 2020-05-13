@@ -588,8 +588,17 @@ CONTAINS
 !    REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: g
 !    REAL(rp), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: eta
 !    REAL(rp), INTENT(OUT) :: go
-!    REAL(rp), INTENT(OUT) :: etao
+    !    REAL(rp), INTENT(OUT) :: etao
+    INTEGER 				:: mpierr
 
+    if (spp%ppp*params%mpi_params%nmpi.lt.10) then
+       if(params%mpi_params%rank.eq.0) then
+          write(6,*) 'num_samples need to be atleast 10 but is only: ', &
+               spp%ppp*params%mpi_params%nmpi
+       end if
+       call korc_abort
+    end if
+    
     call initialize_Hollmann_params(params)
 
     call save_Hollmann_params(params)
@@ -603,7 +612,16 @@ CONTAINS
     TYPE(FIELDS), INTENT(IN)                                   :: F
     TYPE(KORC_PARAMS), INTENT(IN) :: params
     TYPE(SPECIES),  INTENT(INOUT) :: spp
+    INTEGER 				:: mpierr
 
+    if (spp%ppp*params%mpi_params%nmpi.lt.10) then
+       if(params%mpi_params%rank.eq.0) then
+          write(6,*) 'num_samples need to be atleast 10 but is only: ', &
+               spp%ppp*params%mpi_params%nmpi
+       end if
+       call korc_abort
+    end if
+    
     call initialize_Hollmann_params(params)
 
     call save_Hollmann_params(params)
@@ -618,7 +636,16 @@ CONTAINS
     TYPE(FIELDS), INTENT(IN)                                   :: F
     TYPE(KORC_PARAMS), INTENT(INOUT) :: params
     TYPE(SPECIES),  INTENT(INOUT) :: spp
+    INTEGER 				:: mpierr
 
+    if (spp%ppp*params%mpi_params%nmpi.lt.10) then
+       if(params%mpi_params%rank.eq.0) then
+          write(6,*) 'num_samples need to be atleast 10 but is only: ', &
+               spp%ppp*params%mpi_params%nmpi
+       end if
+       call korc_abort
+    end if
+    
     call initialize_Hollmann_params(params)
 
     call save_Hollmann_params(params)

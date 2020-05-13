@@ -1636,6 +1636,7 @@ subroutine intitial_spatial_distribution(params,spp,P,F)
   !! An instance of the KORC derived type FIELDS.
   INTEGER 						  :: ss
   !! Species iterator.
+  INTEGER 				:: mpierr
 
   do ss=1_idef,params%num_species
      SELECT CASE (TRIM(spp(ss)%spatial_distribution))
@@ -1673,6 +1674,16 @@ subroutine intitial_spatial_distribution(params,spp,P,F)
      CASE ('HOLLMANN-3D-PSI')
         call get_Hollmann_distribution_3D_psi(params,spp(ss),F)
      CASE('MH_psi')
+
+        if (spp(ss)%ppp*params%mpi_params%nmpi.lt.10) then
+           if(params%mpi_params%rank.eq.0) then
+              write(6,*) &
+                   'num_samples need to be atleast 10 but is only: ', &
+                   spp(ss)%ppp*params%mpi_params%nmpi
+           end if
+           call korc_abort
+        end if
+        
         call MH_psi(params,spp(ss),F)
      CASE DEFAULT
         call torus(params,spp(ss))
