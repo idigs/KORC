@@ -765,6 +765,8 @@ contains
     REAL(rp) 				:: CA_SD
     REAL(rp) 				:: x
 
+ !   write(6,*) ne,Te
+    
     x = v/VTe(Te)
     CA_SD  = Gammacee(v,ne,Te)*psi(x)/v
 
@@ -1600,7 +1602,7 @@ contains
   end subroutine include_CoulombCollisions_GC_p
 
   subroutine include_CoulombCollisions_GCm3dc1_p(tt,params,Y_R,Y_PHI,Y_Z, &
-       Ppll,Pmu,me,flagCon,flagCol,F,P,E_PHI,ne,PSIp,hint)
+       Ppll,Pmu,me,flagCon,flagCol,F,P,E_PHI,ne,Te,PSIp,hint)
 
     TYPE(PROFILES), INTENT(IN)                                 :: P
     TYPE(FIELDS), INTENT(IN)                                   :: F
@@ -1612,13 +1614,14 @@ contains
     REAL(rp), DIMENSION(params%pchunk) :: curlb_R,curlb_PHI,curlb_Z
     REAL(rp), DIMENSION(params%pchunk) :: gradB_R,gradB_PHI,gradB_Z
     REAL(rp), DIMENSION(params%pchunk) 	:: E_R,E_Z
-    REAL(rp), DIMENSION(params%pchunk), INTENT(OUT) 	:: E_PHI,ne,PSIp
+    REAL(rp), DIMENSION(params%pchunk) 	:: E_PHI,PSIp,E_PHI0
+    REAL(rp), DIMENSION(params%pchunk), INTENT(INOUT) 	:: ne,Te
     REAL(rp), DIMENSION(params%pchunk), INTENT(IN) 	:: Y_R,Y_PHI,Y_Z
     INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT)  :: flagCol
     INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT)  :: flagCon
     TYPE(C_PTR), DIMENSION(params%pchunk), INTENT(INOUT)  :: hint
     REAL(rp), INTENT(IN) 			:: me
-    REAL(rp), DIMENSION(params%pchunk) 			:: Te,Zeff
+    REAL(rp), DIMENSION(params%pchunk) 			:: Zeff
     REAL(rp), DIMENSION(params%pchunk,2) 			:: dW
     REAL(rp), DIMENSION(params%pchunk,2) 			:: rnd1
     REAL(rp) 					:: dt,time
@@ -1653,14 +1656,10 @@ contains
        call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
             PSIp,flagCon,hint)
 
+       call get_m3d_c1_profile_p(params,P,Y_R,Y_PHI,Y_Z, &
+            ne,Te,flagCon,hint)
 
-       if (params%profile_model(1:10).eq.'ANALYTICAL') then
-          call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
-       else if (params%profile_model(1:8).eq.'EXTERNAL') then      
-          call interp_FOcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flagCon)
-       end if
-       
-       if (.not.params%FokPlan) E_PHI=0._rp
+
        
        !$OMP SIMD
 !       !$OMP& aligned (pm,xi,v,Ppll,Bmag,Pmu)
@@ -1674,8 +1673,13 @@ contains
           
           v(cc) = pm(cc)/gam(cc)
           ! normalized speed (v_K=v_P/c)
+
+          Zeff(cc)=1._rp
+          E_PHI0(cc)=E_PHI(cc)
        end do
        !$OMP END SIMD
+       
+       if (.not.params%FokPlan) E_PHI=0._rp
 
 !       write(output_unit_write,'("ne: "E17.10)') ne
 !       write(output_unit_write,'("Te: "E17.10)') Te
@@ -1816,6 +1820,8 @@ contains
 !          write(output_unit_write,'("CF ",E17.10)') CFL(1)
 !          write(output_unit_write,'("CB: ",E17.10)') CBL(1)
 !       end if
+
+       if (.not.params%FokPlan) E_PHI=E_PHI0
        
     end if
     

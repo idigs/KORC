@@ -52,7 +52,7 @@ module korc_input
   REAL(rp) :: rmin =  0.15
   REAL(rp) :: zmax =  1.65
   REAL(rp) :: zmin = -1.65
-  CHARACTER(30) :: outputs_list = '{X,Y,V,B,E,g,eta,flagCon,flagCol,PSIp,ne}' 
+  CHARACTER(50) :: outputs_list = '{X,Y,V,B,E,g,eta,flagCon,flagCol,PSIp,ne}' 
     ! List of outputs
     !'{X,Y,V,E,B,g,mu,eta,Prad,Pin,flagCon,flagCol,gradB,curlb,ne,Te,Zeff,PSIp}'
   LOGICAL :: HDF5_error_handling = .TRUE.
@@ -385,6 +385,7 @@ CONTAINS
     CHARACTER(128) :: outfile
     LOGICAL :: reading
     INTEGER :: mpierr
+    INTEGER :: tmp
     
     !! Namelist declarations
     NAMELIST /input_parameters/ restart,field_model,magnetic_field_filename, &
@@ -626,6 +627,21 @@ CONTAINS
              
        end if
     end if
+
+!!---------------------------------------------------------
+!!     some tests
+!!---------------------------------------------------------
+
+    !write(6,*) TRIM(outputs_list),len(TRIM(outputs_list))
+    
+    tmp=len(TRIM(outputs_list))
+    if (outputs_list(tmp:tmp).ne.'}') then
+       if(params%mpi_params%rank.eq.0) then
+          write(6,*) &
+               'Check that enough characters are allocated for outputs list!'
+       end if
+       call korc_abort
+    end if    
       
     end subroutine read_namelist
 

@@ -3145,7 +3145,7 @@ contains
        !$OMP& SHARED(params,ii,spp,P,F) &
        !$OMP& PRIVATE(pp,tt,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,B_R,B_PHI,B_Z, &
        !$OMP& flagCon,flagCol,E_PHI,PSIp,curlb_R,curlb_PHI,curlb_Z, &
-       !$OMP& gradB_R,gradB_PHI,gradB_Z,ne,E_R,E_Z,hint)
+       !$OMP& gradB_R,gradB_PHI,gradB_Z,ne,Te,E_R,E_Z,hint)
 
        do pp=1_idef,spp(ii)%ppp,pchunk
 
@@ -3161,7 +3161,9 @@ contains
              B_PHI(cc)=spp(ii)%vars%B(pp-1+cc,2)
              B_Z(cc)=spp(ii)%vars%B(pp-1+cc,3)
 
+             E_R(cc)=spp(ii)%vars%E(pp-1+cc,1)
              E_PHI(cc)=spp(ii)%vars%E(pp-1+cc,2)
+             E_Z(cc)=spp(ii)%vars%E(pp-1+cc,3)
 
              gradB_R(cc)=spp(ii)%vars%gradB(pp-1+cc,1)
              gradB_PHI(cc)=spp(ii)%vars%gradB(pp-1+cc,2)
@@ -3180,6 +3182,9 @@ contains
              flagCol(cc)=spp(ii)%vars%flagCol(pp-1+cc)
 
              hint(cc)=spp(ii)%vars%hint(pp-1+cc)
+
+             ne(cc)=spp(ii)%vars%ne(pp-1+cc)
+             Te(cc)=spp(ii)%vars%Te(pp-1+cc)
           end do
           !$OMP END SIMD
 
@@ -3188,8 +3193,8 @@ contains
              call advance_GCinterp_m3dc1_vars(spp(ii)%vars,pp,tt, &
                   params,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,q_cache,m_cache, &
                   flagCon,flagCol, &
-                  F,P,B_R,B_PHI,B_Z,E_PHI,PSIp,curlb_R,curlb_PHI, &
-                  curlb_Z,gradB_R,gradB_PHI,gradB_Z,ne,hint)
+                  F,P,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,PSIp,curlb_R,curlb_PHI, &
+                  curlb_Z,gradB_R,gradB_PHI,gradB_Z,ne,Te,hint)
           end do !timestep iterator
 
 
@@ -3216,10 +3221,13 @@ contains
              spp(ii)%vars%curlb(pp-1+cc,2) = curlb_PHI(cc)
              spp(ii)%vars%curlb(pp-1+cc,3) = curlb_Z(cc)
 
+             spp(ii)%vars%E(pp-1+cc,1) = E_R(cc)
              spp(ii)%vars%E(pp-1+cc,2) = E_PHI(cc)
+             spp(ii)%vars%E(pp-1+cc,3) = E_Z(cc)
              spp(ii)%vars%PSI_P(pp-1+cc) = PSIp(cc)
 
              spp(ii)%vars%ne(pp-1+cc) = ne(cc)
+             spp(ii)%vars%Te(pp-1+cc) = Te(cc)
 
              spp(ii)%vars%hint(pp-1+cc) = hint(cc)
           end do
@@ -5094,8 +5102,9 @@ contains
   end subroutine advance_GCinterp_psi_vars
 
   subroutine advance_GCinterp_m3dc1_vars(vars,pp,tt,params,Y_R,Y_PHI,Y_Z, &
-       V_PLL,V_MU,q_cache,m_cache,flagCon,flagCol,F,P,B_R,B_PHI,B_Z,E_PHI,PSIp,&
-       curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,ne,hint)
+       V_PLL,V_MU,q_cache,m_cache,flagCon,flagCol,F,P,B_R,B_PHI,B_Z, &
+       E_R,E_PHI,E_Z,PSIp,&
+       curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,ne,Te,hint)
 
     USE omp_lib
     IMPLICIT NONE
@@ -5136,16 +5145,15 @@ contains
     REAL(rp),DIMENSION(params%pchunk) :: Y0_R,Y0_PHI,Y0_Z
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: Y_R,Y_PHI,Y_Z
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: B_R,B_PHI,B_Z
-    REAL(rp),DIMENSION(params%pchunk) :: E_R,E_Z
-    REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: E_PHI
+    REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: E_PHI,E_R,E_Z
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: PSIp
-    REAL(rp),DIMENSION(params%pchunk),INTENT(OUT) :: ne
+    REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: ne,Te
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: curlb_R,curlb_PHI,curlb_Z
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: gradB_R,gradB_PHI,gradB_Z
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: V_PLL,V_MU
     REAL(rp),DIMENSION(params%pchunk) :: RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU
     REAL(rp),DIMENSION(params%pchunk) :: V0_PLL,V0_MU
-    REAL(rp),DIMENSION(params%pchunk) :: Te,Zeff
+    REAL(rp),DIMENSION(params%pchunk) :: Zeff
 
     INTEGER(is),DIMENSION(params%pchunk),intent(INOUT) :: flagCon,flagCol
     REAL(rp),intent(IN)  :: q_cache,m_cache
@@ -5168,9 +5176,6 @@ contains
        Y0_Z(cc)=Y_Z(cc)
        V0_PLL(cc)=V_PLL(cc)
        V0_MU(cc)=V_MU(cc)
-
-       E_R(cc)=0._rp
-       E_Z(cc)=0._rp
 
     end do
     !$OMP END SIMD
@@ -5196,9 +5201,10 @@ contains
     !write(output_unit_write,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'gradB',gradB_R(1),gradB_PHI(1)
     !write(output_unit_write,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'curlB',curlB_R(1),curlB_PHI(1),curlB_Z(1)
 
-    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
-         B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
+    call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+         B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
+         ne,te,flagCon,hint)
 
     !write(output_unit_write,*) 'R',Y_R(1)
     !write(output_unit_write,*) 'PHI',Y_PHI(1)
@@ -5263,9 +5269,10 @@ contains
     call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
          PSIp,flagCon,hint)
 
-    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
-         B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
+    call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+         B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
+         ne,te,flagCon,hint)
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5299,9 +5306,10 @@ contains
     call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
          PSIp,flagCon,hint)
 
-    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
-         B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)
+    call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+         B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
+         ne,te,flagCon,hint) 
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5337,9 +5345,10 @@ contains
     call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
          PSIp,flagCon,hint)
 
-    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
-         B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)     
+    call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+         B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
+         ne,te,flagCon,hint)   
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5379,9 +5388,10 @@ contains
     call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
          PSIp,flagCon,hint)
 
-    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
-         B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)   
+     call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+         B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
+         ne,te,flagCon,hint)
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5419,9 +5429,10 @@ contains
     end if
     call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
          PSIp,flagCon,hint)
-    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
-         B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne)         
+    call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+         B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
+         ne,te,flagCon,hint)         
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5474,9 +5485,10 @@ contains
     call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
          PSIp,flagCon,hint)
 
-    call GCEoM1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU,B_R,B_PHI, &
-         B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
-         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_Z,q_cache,m_cache,PSIp,ne) 
+    call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+         B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
+         gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
+         ne,te,flagCon,hint) 
 
     !$OMP SIMD
     do cc=1_idef,pchunk
@@ -5488,12 +5500,16 @@ contains
     end do
     !$OMP END SIMD       
 
+    !write(6,*) E_PHI
+    
     if (params%collisions) then       
 
        call include_CoulombCollisions_GCm3dc1_p(tt,params,Y_R,Y_PHI,Y_Z, &
-            V_PLL,V_MU,m_cache,flagCon,flagCol,F,P,E_PHI,ne,PSIp,hint)
+            V_PLL,V_MU,m_cache,flagCon,flagCol,F,P,E_PHI,ne,Te,PSIp,hint)
 
     end if
+
+    !write(6,*) E_PHI
 
 
   end subroutine advance_GCinterp_m3dc1_vars
@@ -7991,7 +8007,7 @@ contains
     INTEGER(ip)  :: cc,pchunk
     INTEGER(ip),INTENT(IN)  :: tt
     REAL(rp)  :: time,re_cache,alpha_cache
-    REAL(rp), DIMENSION(params%pchunk) 			:: Te,Zeff
+    REAL(rp), DIMENSION(params%pchunk) 			:: Zeff,Te
     REAL(rp), DIMENSION(params%pchunk),INTENT(OUT) 		:: ne
 
     pchunk=params%pchunk
@@ -8002,9 +8018,9 @@ contains
     !    !$OMP& V_PLL,V_MU,Y_R,curlb_PHI,tau_R)
     do cc=1_idef,pchunk
 
-       ne(cc)=0._rp
-       Te(cc)=0._rp
-       Zeff(cc)=0._rp
+       ne(cc)=-1._rp
+       Te(cc)=-1._rp
+       Zeff(cc)=-1._rp
        
        Bmag(cc) = SQRT(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
        
@@ -8083,7 +8099,7 @@ contains
 
        time=params%init_time+(params%it-1+tt)*params%dt
        call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
-
+          
        !$OMP SIMD
        !       !$OMP& aligned(tau_R,Bmag,RHS_PLL,V_PLL,xi,gamgc,RHS_MU,V_MU)
        do cc=1_idef,pchunk
@@ -8148,6 +8164,190 @@ contains
     !    write(output_unit_write,*) 'RHS_MU: ',RHS_MU(1)
 
   end subroutine GCEoM1_p
+  
+  subroutine GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+       B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+       gradB_R,gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
+       ne,Te,flag,hint)
+    TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
+    !! Core KORC simulation parameters.
+    TYPE(FIELDS), INTENT(IN)      :: F
+    TYPE(PROFILES), INTENT(IN)                                 :: P
+    REAL(rp),DIMENSION(params%pchunk)  :: Bmag,bhat_R,bhat_PHI,bhat_Z,Bst_R,Bst_PHI
+    REAL(rp),DIMENSION(params%pchunk)  :: BstdotE,BstdotgradB,EcrossB_R,EcrossB_PHI,bdotBst
+    REAL(rp),DIMENSION(params%pchunk)  :: bcrossgradB_R,bcrossgradB_PHI,bcrossgradB_Z,gamgc
+    REAL(rp),DIMENSION(params%pchunk)  :: EcrossB_Z,Bst_Z
+    REAL(rp),DIMENSION(params%pchunk)  :: pm,xi,tau_R
+    REAL(rp),DIMENSION(params%pchunk)  :: SR_PLL,SR_MU,BREM_PLL,BREM_MU,BREM_P
+    REAL(rp),DIMENSION(params%pchunk),INTENT(in) :: gradB_R,gradB_PHI,gradB_Z,curlb_R
+    REAL(rp),DIMENSION(params%pchunk),INTENT(in) :: curlb_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z
+    REAL(rp),DIMENSION(params%pchunk),INTENT(OUT) :: RHS_R,RHS_PHI,RHS_Z
+    REAL(rp),DIMENSION(params%pchunk),INTENT(OUT) :: RHS_PLL,RHS_MU
+    REAL(rp),DIMENSION(params%pchunk),INTENT(IN) :: V_PLL,V_MU,Y_R,Y_PHI,Y_Z,curlb_PHI
+    REAL(rp),DIMENSION(params%pchunk),INTENT(IN) :: PSIp
+    REAL(rp),INTENT(in) :: q_cache,m_cache
+    INTEGER(ip)  :: cc,pchunk
+    INTEGER(ip),INTENT(IN)  :: tt
+    REAL(rp)  :: time,re_cache,alpha_cache
+    REAL(rp), DIMENSION(params%pchunk) 			:: Zeff
+    REAL(rp), DIMENSION(params%pchunk),INTENT(OUT) 		:: ne,Te
+    TYPE(C_PTR), DIMENSION(params%pchunk), INTENT(INOUT)  :: hint
+    INTEGER(is),DIMENSION(params%pchunk),intent(INOUT) :: flag
+
+    pchunk=params%pchunk
+
+    !$OMP SIMD
+    !    !$OMP& aligned(gradB_R,gradB_PHI,gradB_Z,curlb_R,curlb_Z, &
+    !    !$OMP& B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+    !    !$OMP& V_PLL,V_MU,Y_R,curlb_PHI,tau_R)
+    do cc=1_idef,pchunk
+
+       ne(cc)=-1._rp
+       Te(cc)=-1._rp
+       Zeff(cc)=-1._rp
+       
+       Bmag(cc) = SQRT(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
+       
+       bhat_R(cc) = B_R(cc)/Bmag(cc)
+       bhat_PHI(cc) = B_PHI(cc)/Bmag(cc)
+       bhat_Z(cc) = B_Z(cc)/Bmag(cc)
+
+       Bst_R(cc)=q_cache*B_R(cc)+V_PLL(cc)*curlb_R(cc)
+       Bst_PHI(cc)=q_cache*B_PHI(cc)+V_PLL(cc)*curlb_PHI(cc)
+       Bst_Z(cc)=q_cache*B_Z(cc)+V_PLL(cc)*curlb_Z(cc)
+
+      ! write(output_unit_write,*) 'bmag',Bmag(cc),'bhat',bhat_R(cc),bhat_PHI(cc),bhat_Z(cc),'Bst',Bst_R(cc),Bst_PHI(cc),Bst_Z(cc)
+       
+       bdotBst(cc)=bhat_R(cc)*Bst_R(cc)+bhat_PHI(cc)*Bst_PHI(cc)+ &
+            bhat_Z(cc)*Bst_Z(cc)
+       BstdotE(cc)=Bst_R(cc)*E_R(cc)+Bst_PHI(cc)*E_PHI(cc)+Bst_Z(cc)*E_Z(cc)   
+       BstdotgradB(cc)=Bst_R(cc)*gradB_R(cc)+Bst_PHI(cc)*gradB_PHI(cc)+ &
+            Bst_Z(cc)*gradB_Z(cc)
+
+       !write(output_unit_write,*) 'bdotBst',bdotBst(cc),BstdotE(cc),BstdotgradB(cc)
+       
+       Ecrossb_R(cc)=E_PHI(cc)*bhat_Z(cc)-E_Z(cc)*bhat_PHI(cc)
+       Ecrossb_PHI(cc)=E_Z(cc)*bhat_R(cc)-E_R(cc)*bhat_Z(cc)
+       Ecrossb_Z(cc)=E_R(cc)*bhat_PHI(cc)-E_PHI(cc)*bhat_R(cc)
+
+       !write(output_unit_write,*) 'Ecrossb',Ecrossb_R(cc),Ecrossb_PHI(cc),Ecrossb_Z(cc)
+       
+       bcrossgradB_R(cc)=bhat_PHI(cc)*gradB_Z(cc)-bhat_Z(cc)*gradB_PHI(cc)
+       bcrossgradB_PHI(cc)=bhat_Z(cc)*gradB_R(cc)-bhat_R(cc)*gradB_Z(cc)
+       bcrossgradB_Z(cc)=bhat_R(cc)*gradB_PHI(cc)-bhat_PHI(cc)*gradB_R(cc)
+
+      ! write(output_unit_write,*) 'bcrossgradB',bcrossgradB_R(cc),bcrossgradB_PHI(cc),bcrossgradB_Z(cc)
+       
+       gamgc(cc)=sqrt(1+V_PLL(cc)*V_PLL(cc)+2*V_MU(cc)*Bmag(cc))
+       
+       pm(cc)=sqrt(gamgc(cc)**2-1)
+       xi(cc)=V_PLL(cc)/pm(cc)
+
+       RHS_R(cc)=(q_cache*Ecrossb_R(cc)+(m_cache*V_MU(cc)* &
+            bcrossgradB_R(cc)+V_PLL(cc)*Bst_R(cc))/(m_cache*gamgc(cc)))/ &
+            bdotBst(cc)
+       RHS_PHI(cc)=(q_cache*Ecrossb_PHI(cc)+(m_cache*V_MU(cc)* &
+            bcrossgradB_PHI(cc)+V_PLL(cc)*Bst_PHI(cc))/(m_cache*gamgc(cc)))/ &
+            (Y_R(cc)*bdotBst(cc))
+       RHS_Z(cc)=(q_cache*Ecrossb_Z(cc)+(m_cache*V_MU(cc)* &
+            bcrossgradB_Z(cc)+V_PLL(cc)*Bst_Z(cc))/(m_cache*gamgc(cc)))/ &
+            bdotBst(cc)
+       RHS_PLL(cc)=(q_cache*BstdotE(cc)-V_MU(cc)*BstdotgradB(cc)/gamgc(cc))/ &
+            bdotBst(cc)
+       RHS_MU(cc)=0._rp
+
+    end do
+    !$OMP END SIMD
+
+    !write(output_unit_write,*) 'bmag',Bmag(1),'bhat',bhat_R(1),bhat_PHI(1),bhat_Z(1),'Bst',Bst_R(1),Bst_PHI(1),Bst_Z(1)
+    !write(output_unit_write,*) 'bdotBst',bdotBst(1),BstdotE(1),BstdotgradB(1)
+    !write(output_unit_write,*) 'Ecrossb',Ecrossb_R(1),Ecrossb_PHI(1),Ecrossb_Z(1)
+    !write(output_unit_write,*) 'bcrossgradB',bcrossgradB_R(1),bcrossgradB_PHI(1),bcrossgradB_Z(1)
+
+    !    !$OMP SIMD
+    !    do cc=1_idef,8
+    !       if(isnan(RHS_R(cc))) stop 'RHS_R0 is a NaN'
+    !       if(isnan(RHS_PHI(cc))) stop 'RHS_PHI0 is a NaN'
+    !       if(isnan(RHS_Z(cc))) stop 'RHS_Z0 is a NaN'
+    !       if(isnan(RHS_PLL(cc))) stop 'RHS_PLL0 is a NaN'
+    !       if(isnan(RHS_MU(cc))) stop 'RHS_MU0 is a NaN'
+    !    end do
+    !    !$OMP END SIMD
+
+    if (params%radiation.and.(params%GC_rad_model.eq.'SDE')) then
+
+       !       write(output_unit_write,*) 'RHS_PLL',RHS_PLL(1)
+
+       re_cache=C_RE/params%cpp%length
+       alpha_cache=C_a
+
+       call get_m3d_c1_profile_p(params,P,Y_R,Y_PHI,Y_Z, &
+            ne,Te,flag,hint)
+          
+       !$OMP SIMD
+       !       !$OMP& aligned(tau_R,Bmag,RHS_PLL,V_PLL,xi,gamgc,RHS_MU,V_MU)
+       do cc=1_idef,pchunk
+
+          tau_R(cc)=6*C_PI*E0/(Bmag(cc)*Bmag(cc))
+
+          SR_PLL(cc)=V_PLL(cc)*(1._rp-xi(cc)*xi(cc))/tau_R(cc)* &
+               (1._rp/gamgc(cc)-gamgc(cc))
+          SR_MU(cc)=-2._rp*V_MU(cc)/tau_R(cc)* &
+               (gamgc(cc)*(1-xi(cc)*xi(cc))+xi(cc)*xi(cc)/gamgc(cc))
+
+          !Normalizations done here
+          BREM_P(cc)=-4._rp*re_cache**2*ne(cc)* &
+               Zeff(cc)*(Zeff(cc)+1._rp)*alpha_cache* &
+               (gamgc(cc)-1._rp)*(log(2._rp*gamgc(cc))-1._rp/3._rp)
+          BREM_PLL(cc)=xi(cc)*BREM_P(cc)
+          BREM_MU(cc)=(1._rp-xi(cc)*xi(cc))*V_PLL(cc)/ &
+               (Bmag(cc)*xi(cc))*BREM_P(cc)
+
+          RHS_PLL(cc)=RHS_PLL(cc)+SR_PLL(cc)+BREM_PLL(cc)
+          RHS_MU(cc)=SR_MU(cc)+BREM_MU(cc)
+
+       end do
+       !$OMP END SIMD
+
+
+    end if
+
+
+
+    if (params%radiation.and.(params%GC_rad_model.eq.'SDE')) then
+       !$OMP SIMD
+       do cc=1_idef,pchunk
+          if(isnan(ne(cc))) stop 'ne is a NaN'
+          if(isnan(Zeff(cc))) stop 'Zeff is a NaN'
+          if(isnan(BREM_P(cc))) stop 'BREM_P is a NaN'
+          if(isnan(BREM_PLL(cc))) stop 'BREM_PLL is a NaN'
+          if(isnan(BREM_MU(cc))) stop 'BREM_MU is a NaN'
+          if(isnan(SR_PLL(cc))) stop 'SR_PLL is a NaN'
+          if(isnan(SR_MU(cc))) stop 'SR_MU is a NaN'
+       end do
+       !$OMP END SIMD
+    end if
+
+    !$OMP SIMD
+    do cc=1_idef,pchunk 
+       if(isnan(gamgc(cc))) stop 'gamgc is a NaN'
+       if(isnan(RHS_R(cc))) stop 'RHS_R1 is a NaN'
+       if(isnan(RHS_PHI(cc))) stop 'RHS_PHI1 is a NaN'
+       if(isnan(RHS_Z(cc))) stop 'RHS_Z1 is a NaN'
+       if(isnan(RHS_PLL(cc))) stop 'RHS_PLL1 is a NaN'
+       if(isnan(RHS_MU(cc))) stop 'RHS_MU1 is a NaN'
+
+    end do
+    !$OMP END SIMD
+
+
+    !    write(output_unit_write,*) 'RHS_R: ',RHS_R(1)
+    !    write(output_unit_write,*) 'RHS_PHI: ',RHS_PHI(1)
+    !    write(output_unit_write,*) 'RHS_Z: ',RHS_Z(1)
+    !    write(output_unit_write,*) 'RHS_PLL: ',RHS_PLL(1)
+    !    write(output_unit_write,*) 'RHS_MU: ',RHS_MU(1)
+
+  end subroutine GCEoM1_m3dc1_p
 
   subroutine aux_fields(pp,spp,gradB,curlb,Bmag)
     TYPE(SPECIES), INTENT(IN)    :: spp

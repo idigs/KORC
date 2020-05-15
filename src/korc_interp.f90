@@ -1701,11 +1701,11 @@ CONTAINS
     !! all the information about the plasma profiles used in the simulation.
     !! See [[korc_types]] and [[korc_profiles]].
 
-#ifdef M3D_C1
-    P%M3D_C1_ne = -1
-    P%M3D_C1_te = -1
-    P%M3D_C1_zeff = -1
-#endif
+!#ifdef M3D_C1
+!    P%M3D_C1_ne = -1
+!    P%M3D_C1_te = -1
+!    P%M3D_C1_zeff = -1
+!#endif
     
     if (params%collisions) then
        if (params%profile_model(1:8) .EQ. 'EXTERNAL') then
@@ -4162,12 +4162,19 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
        end do
        !$OMP END PARALLEL DO
     else
-       !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp,status,x)
+
+       Etmp=0._rp
+       
+       !$OMP PARALLEL DO DEFAULT(none) &
+       !$OMP& SHARED(prtcls,params,F) &
+       !$OMP& PRIVATE(pp,status,x) &
+       !$OMP& FIRSTPRIVATE(Etmp)
        do pp = 1, SIZE(prtcls%hint)
           if (prtcls%flagCon(pp) .EQ. 1_is) then
              x(1) = prtcls%Y(pp,1)*params%cpp%length
              x(2) = prtcls%Y(pp,2)
              x(3) = prtcls%Y(pp,3)*params%cpp%length
+             
              status = fio_eval_field(F%M3D_C1_E, x(1),                      &
                   Etmp(1),prtcls%hint(pp))
 
@@ -4211,7 +4218,6 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
 
     pchunk=params%pchunk
 
-    !$OMP SIMD
     do pp = 1,pchunk
        if (flag(pp) .EQ. 1_is) then
           x(1) = Y_R(pp)*params%cpp%length
@@ -4241,7 +4247,6 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
          
        end if
     end do
-    !$OMP END SIMD
 
   end subroutine get_m3d_c1_FOelectric_fields_p
   
@@ -4260,7 +4265,6 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
 
     pchunk=params%pchunk
     
-    !$OMP SIMD
     do pp = 1,pchunk
        if (flag(pp) .EQ. 1_is) then
           x(1) = Y_R(pp)*params%cpp%length
@@ -4283,9 +4287,10 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
              flag(pp) = 0_is
           end if
 
+!          write(6,*) E_R,E_PHI,E_Z
+          
        end if
     end do
-    !$OMP END SIMD
 
   end subroutine get_m3d_c1_GCelectric_fields_p
   
@@ -4369,6 +4374,56 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
        !$OMP END PARALLEL DO
     end if
   end subroutine get_m3d_c1_profile
+
+  subroutine get_m3d_c1_profile_p(params,P,Y_R,Y_PHI,Y_Z, &
+       n_e,T_e,flag,hint)
+    TYPE(PROFILES), INTENT(IN)       :: P
+    TYPE(KORC_PARAMS), INTENT(IN)  :: params
+    REAL(rp), DIMENSION(params%pchunk), INTENT(IN)  :: Y_R,Y_PHI,Y_Z
+    REAL(rp), DIMENSION(params%pchunk), INTENT(INOUT)  :: n_e,T_e
+    INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT)  :: flag
+    TYPE(C_PTR), DIMENSION(params%pchunk), INTENT(INOUT)  :: hint
+    INTEGER (C_INT)                :: status
+    INTEGER                        :: pp,pchunk
+    REAL(rp), DIMENSION(3)         :: x
+    REAL(rp)        :: netmp=-1._rp,Tetmp=-1._rp
+
+    pchunk=params%pchunk
+    
+    do pp = 1,pchunk
+       if (flag(pp) .EQ. 1_is) then
+          x(1) = Y_R(pp)*params%cpp%length
+          x(2) = Y_PHI(pp)
+          x(3) = Y_Z(pp)*params%cpp%length
+
+          !write(6,*) P%M3D_C1_ne,x
+          
+          status = fio_eval_field(P%M3D_C1_ne, x(1), &
+               netmp,hint(pp))
+          
+          if (status .eq. FIO_SUCCESS) then
+             n_e(pp) = netmp/params%cpp%density
+          else if (status .eq. FIO_NO_DATA) then
+             flag(pp) = 0_is
+          else if (status .ne. FIO_SUCCESS) then
+             flag(pp) = 0_is
+             CYCLE
+          end if
+
+          status = fio_eval_field(P%M3D_C1_te, x(1), &
+               Tetmp,hint(pp))
+
+          if (status .eq. FIO_SUCCESS) then
+             T_e(pp) = Tetmp/(params%cpp%temperature/C_E)
+          end if
+          
+!          write(6,*) E_R,E_PHI,E_Z
+          
+       end if
+    end do
+
+  end subroutine get_m3d_c1_profile_p
+  
 #endif
 
 

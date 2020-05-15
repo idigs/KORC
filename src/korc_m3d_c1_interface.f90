@@ -291,6 +291,8 @@ CONTAINS
        write(output_unit_write,*) 'Calculate B',F%M3D_C1_B
        write(output_unit_write,*) 'Calculate E',F%M3D_C1_E
        write(output_unit_write,*) 'Calculate A',F%M3D_C1_A
+       write(output_unit_write,*) 'Calculate n',P%M3D_C1_ne
+       write(output_unit_write,*) 'Calculate T',P%M3D_C1_te
     end if
        
   END SUBROUTINE initialize_m3d_c1
