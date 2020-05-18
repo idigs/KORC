@@ -1995,6 +1995,8 @@ CONTAINS
        F%E_pulse = E_pulse
        F%E_width = E_width
 
+       F%PSIp_lim=PSIp_lim
+       
        !write(output_unit_write,*) E_dyn,E_pulse,E_width
 
        F%res_double=res_double
@@ -2029,7 +2031,8 @@ CONTAINS
                 F%X%Z(ii)=(F%Zo-F%AB%a)+(ii-1)*2*F%AB%a/(F%dims(3)-1)
              end do
 
-!             write(output_unit_write,*) F%X%R
+             !write(6,*) F%X%R
+             !write(6,*) F%X%Z
              
              do ii=1_idef,F%dims(1)
                 do kk=1_idef,F%dims(3)
@@ -2060,6 +2063,9 @@ CONTAINS
              F%FLAG2D(:,1:2)=0.
              F%FLAG2D(:,F%dims(3)-1:F%dims(3))=0.
 
+             if (F%Bflux) F%PSIP_min=minval(F%PSIp)  
+             
+             F%Bfield=.FALSE.
              
           else if (params%field_model(12:13).eq.'3D') then
              

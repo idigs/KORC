@@ -1369,8 +1369,8 @@ subroutine MH_psi(params,spp,F)
            spp%vars%Y(1,2)=0
            spp%vars%Y(1,3)=Z_buffer
 
-           !write(output_unit_write,*) 'R',R_buffer
-           !write(output_unit_write,*) 'Z',Z_buffer
+           !write(6,*) 'R',R_buffer
+           !write(6,*) 'Z',Z_buffer
            
            if (params%field_model.eq.'M3D_C1') then
               call get_m3d_c1_vector_potential(spp%vars,F,params)
@@ -1378,18 +1378,22 @@ subroutine MH_psi(params,spp,F)
               call get_fields(params,spp%vars,F)
            end if
            spp%vars%flagCon=1_is
+
+           !write(6,*) 'may have crashed'
+
+           !write(6,*) 'R',R_buffer
+           !write(6,*) 'Z',Z_buffer
+           !write(6,*) 'PSIlim',PSIp_lim
+           !write(6,*) 'PSI0',PSIp0
+           !write(output_unit_write,*) 'PSI1',psi1
+           !write(6,*) 'PSI0',psi0
+           !write(output_unit_write,*) 'PSIN1',PSIN1
+           !write(6,*) 'PSIN0',PSIN0
            
            psi0=spp%vars%PSI_P(1)
            PSIN0=(psi0-PSIp0)/(PSIp_lim-PSIp0)
 
-           !write(output_unit_write,*) 'R',R_buffer
-           !write(output_unit_write,*) 'Z',Z_buffer
-           !write(output_unit_write,*) 'PSIlim',PSIp_lim
-           !write(output_unit_write,*) 'PSI0',PSIp0
-           !write(output_unit_write,*) 'PSI1',psi1
-           !write(output_unit_write,*) 'PSI0',psi0
-           !write(output_unit_write,*) 'PSIN1',PSIN1
-           !write(output_unit_write,*) 'PSIN0',PSIN0
+
            
         end if
         
