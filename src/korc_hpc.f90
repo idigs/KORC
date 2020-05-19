@@ -36,9 +36,10 @@ CONTAINS
     !! @note Subroutine that sets the input/output paths.@endnote
     TYPE(KORC_PARAMS), INTENT(INOUT) 	:: params
     !! Core KORC simulation parameters.
-    INTEGER 				:: argn
+    INTEGER 				:: argn,read_stat,exei
     !! Number of command line inputs. The default value is 
     !! two: the input files path and the outputs path.
+    CHARACTER(MAX_STRING_LENGTH) :: ctmp
 
     argn = command_argument_count()
 
@@ -53,14 +54,67 @@ CONTAINS
     !write(6,*) TRIM(params%path_to_inputs)
     
     if (params%mpi_params%rank .EQ. 0) then
+
        OPEN(UNIT=output_unit_write, &
             FILE=TRIM(params%path_to_outputs)//"output.korc", &
             STATUS='UNKNOWN',FORM='FORMATTED',POSITION='REWIND')
-              
+       
        write(output_unit_write,'(/,"* * * * * PATHS * * * * *")')
-       write(output_unit_write,*) 'The input file is: ',TRIM(params%path_to_inputs)
-       write(output_unit_write,*) 'The output folder is: ',TRIM(params%path_to_outputs)
-       write(output_unit_write,'("* * * * * * * * * * * * *",/)')
+       write(output_unit_write,*) 'The input file is: ',&
+            TRIM(params%path_to_inputs)
+       write(output_unit_write,'(/)')      
+       write(output_unit_write,*) 'The output folder is: ',&
+            TRIM(params%path_to_outputs)
+       write(output_unit_write,'("* * * * * * * * * * * * *",/)')      
+
+       write(output_unit_write,'(/,"* * * * * * * GIT INFO * * * * * * *")')
+
+#ifdef MAC
+       call execute_command_line("/Users/21b/Desktop/KORC/src/get_git_details.sh", &
+            exitstat=exei)
+#elif CORI
+       call execute_command_line("/global/u1/m/mbeidler/KORC/src/get_git_details.sh", &
+            exitstat=exei)
+#endif
+
+       IF (exei/=0) then
+          write(6,*) 'Error executing get_git_details.sh'
+          call korc_abort
+       end if
+       
+       OPEN(UNIT=default_unit_open,FILE='git_hash.txt', &
+            STATUS='OLD',POSITION='REWIND')
+       READ(UNIT=default_unit_open,FMT='(a)',IOSTAT=read_stat) ctmp
+       
+       IF (read_stat/=0) then
+          write(6,*) 'Error reading git_hash.txt'
+          call korc_abort
+       end if
+       write(output_unit_write,*) 'Git hash of most recent commit is: ', &
+            TRIM(ctmp)
+       write(output_unit_write,'(/)')      
+       CLOSE(default_unit_open)
+
+       OPEN(UNIT=default_unit_open,FILE='git_diff.txt', &
+            STATUS='OLD',POSITION='REWIND')
+
+       write(output_unit_write,*) 'Git diff of HEAD and most recent commit is:'
+       DO
+          READ(UNIT=default_unit_open,FMT='(a)',IOSTAT=read_stat) ctmp
+          
+          IF (read_stat.gt.0) then
+             write(6,*) 'Error reading git_diff.txt'
+             call korc_abort
+          else if (read_stat.lt.0) then
+             CLOSE(default_unit_open)
+       
+             write(output_unit_write,'("* * * * * * * * * * * * * * * * *",/)')
+             RETURN
+          end if
+          write(output_unit_write,*) TRIM(ctmp)
+       END DO
+
+     
     end if
   end subroutine set_paths
 

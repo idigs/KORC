@@ -40,4 +40,12 @@ if (${USE_M3D_C1})
     add_definitions (-DM3D_C1)
 endif ()
 
+#  Add machine dependent definition for finding included scripts
+option (CORI_DIR "Use Cori directories" OFF)
+if (${CORI_DIR})
+    add_definitions (-DCORI)
+else ()
+    add_definitions (-DMAC)
+endif ()
+
 add_subdirectory (src)

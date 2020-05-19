@@ -118,6 +118,7 @@ then
 	  -DM3DC1_LIBRARIES=/\global/u1/m/mbeidler/LIBS/FIO/install/lib/libm3dc1.a	\
           -DM3D_C1_INCLUDE_PATH=/global/u1/m/mbeidler/LIBS/FIO/install/include  \
           -DM3D_C1_LINK_FLAGS="-L/global/u1/m/mbeidler/LIBS/FIO/install/lib -lfusionio -lm3dc1" \
+	  -DCORI_DIR=ON
 
     #Intel Compiler
 #          -DEZSpline_INCLUDE_PATH=/global/u1/m/mbeidler/LIBS/PSPLINES/LINUX/mod \
