@@ -1,7 +1,7 @@
 Project: KORC-Full Orbit
 creation_date:
 src_dir: ./src 
-output_dir: ./FDdoc 
+output_dir: ./gh-pages
 project_github: https://github.com/ORNL-Fusion/KORC  
 summary: Kinetic Orbit Runaway electrons Code (KORC) - Full Orbit
 author: Matt Beidler
