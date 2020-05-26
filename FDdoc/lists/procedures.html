@@ -1,0 +1,1822 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Kinetic Orbit Runaway electrons Code (KORC) - Full Orbit">
+    
+    <meta name="author" content="Matt Beidler" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>
+All Procedures &ndash; KORC-Full Orbit
+</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">KORC-Full Orbit </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../page/index.html'>README</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+        
+               
+            <li><a href="../lists/types.html">Derived Types</a></li>
+        
+        
+            <li><a href="../program/main.html">Program</a></li>
+      
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../program/main.html">Program</a></li>
+
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+      <div class="row">
+        <div class="col-lg-12" id='text'>
+			 <h1>Procedures</h1>
+			 <table class="table table-striped">
+			 <thead><tr><th>Procedure</th><th>Location</th><th>Procedure Type</th><th>Description</th></tr></thead>
+			 <tbody>
+			 
+			   <tr><td><a href='../proc/add_analytical_e_p.html'>add_analytical_E_p</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/add_interp_sce_p.html'>add_interp_SCE_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/add_interp_sce_p_fs.html'>add_interp_SCE_p_FS</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/adv_foeqn_top.html'>adv_FOeqn_top</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/adv_fointerp_top.html'>adv_FOinterp_top</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/adv_fom3dc1_top.html'>adv_FOm3dc1_top</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/adv_gceqn_top.html'>adv_GCeqn_top</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/adv_gcinterp_2dbdb_top.html'>adv_GCinterp_2DBdB_top</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/adv_gcinterp_3dbdb1_top.html'>adv_GCinterp_3DBdB1_top</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/adv_gcinterp_3dbdb_top.html'>adv_GCinterp_3DBdB_top</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/adv_gcinterp_b2d_top.html'>adv_GCinterp_B2D_top</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/adv_gcinterp_b_top.html'>adv_GCinterp_B_top</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/adv_gcinterp_m3dc1_top.html'>adv_GCinterp_m3dc1_top</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/adv_gcinterp_psi2x1t_top.html'>adv_GCinterp_psi2x1t_top</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/adv_gcinterp_psi_top.html'>adv_GCinterp_psi_top</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/adv_gcinterp_psi_top_fs.html'>adv_GCinterp_psi_top_FS</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/adv_gcinterp_psiwe_top.html'>adv_GCinterp_psiwE_top</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/advance_foeqn_vars.html'>advance_FOeqn_vars</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td><p>Calls <a>radiation_force</a> in <a href="../module/korc_ppusher.html">korc_ppusher</a>.</p></td></tr>
+			 
+			   <tr><td><a href='../proc/advance_fointerp_vars.html'>advance_FOinterp_vars</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td><p>Calls <a>radiation_force</a> in <a href="../module/korc_ppusher.html">korc_ppusher</a>.</p></td></tr>
+			 
+			   <tr><td><a href='../proc/advance_fom3dc1_vars.html'>advance_FOm3dc1_vars</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td><p>Calls <a>radiation_force</a> in <a href="../module/korc_ppusher.html">korc_ppusher</a>.</p></td></tr>
+			 
+			   <tr><td><a href='../proc/advance_fp3deqn_vars.html'>advance_FP3Deqn_vars</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/advance_fp3dinterp_vars.html'>advance_FP3Dinterp_vars</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/advance_fpeqn_vars.html'>advance_FPeqn_vars</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/advance_fpinterp_vars.html'>advance_FPinterp_vars</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/advance_gceqn_vars.html'>advance_GCeqn_vars</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td><p></p><a href="../proc/advance_gceqn_vars.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/advance_gcinterp_2dbdb_vars.html'>advance_GCinterp_2DBdB_vars</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td><p></p><a href="../proc/advance_gcinterp_2dbdb_vars.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/advance_gcinterp_3dbdb1_vars.html'>advance_GCinterp_3DBdB1_vars</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td><p></p><a href="../proc/advance_gcinterp_3dbdb1_vars.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/advance_gcinterp_3dbdb_vars.html'>advance_GCinterp_3DBdB_vars</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td><p></p><a href="../proc/advance_gcinterp_3dbdb_vars.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/advance_gcinterp_b2d_vars.html'>advance_GCinterp_B2D_vars</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td><p></p><a href="../proc/advance_gcinterp_b2d_vars.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/advance_gcinterp_b_vars.html'>advance_GCinterp_B_vars</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td><p></p><a href="../proc/advance_gcinterp_b_vars.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/advance_gcinterp_m3dc1_vars.html'>advance_GCinterp_m3dc1_vars</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td><p></p><a href="../proc/advance_gcinterp_m3dc1_vars.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/advance_gcinterp_psi2x1t_vars.html'>advance_GCinterp_psi2x1t_vars</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td><p></p><a href="../proc/advance_gcinterp_psi2x1t_vars.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/advance_gcinterp_psi_vars.html'>advance_GCinterp_psi_vars</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td><p></p><a href="../proc/advance_gcinterp_psi_vars.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/advance_gcinterp_psi_vars_fs.html'>advance_GCinterp_psi_vars_FS</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td><p></p><a href="../proc/advance_gcinterp_psi_vars_fs.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/advance_gcinterp_psiwe_vars.html'>advance_GCinterp_psiwE_vars</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td><p></p><a href="../proc/advance_gcinterp_psiwe_vars.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/airy.html'>airy</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/allocate_1d_fs_arrays.html'>allocate_1D_FS_arrays</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p></p><a href="../proc/allocate_1d_fs_arrays.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/allocate_2d_fields_arrays.html'>ALLOCATE_2D_FIELDS_ARRAYS</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p></p><a href="../proc/allocate_2d_fields_arrays.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/allocate_2d_profiles_arrays.html'>ALLOCATE_2D_PROFILES_ARRAYS</a></td><td><a href='../module/korc_profiles.html'>korc_profiles</a></td><td>Subroutine</td><td><p>@brief Subroutine that allocates the mesh information and 2-D arrays for keeping the data of pre-computed plasma profiles.</p><a href="../proc/allocate_2d_profiles_arrays.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/allocate_3d_fields_arrays.html'>ALLOCATE_3D_FIELDS_ARRAYS</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p>@brief Subroutine that allocates the variables keeping the 3-D fields data.</p><a href="../proc/allocate_3d_fields_arrays.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/allocate_3d_profiles_arrays.html'>ALLOCATE_3D_PROFILES_ARRAYS</a></td><td><a href='../module/korc_profiles.html'>korc_profiles</a></td><td>Subroutine</td><td><p></p><a href="../proc/allocate_3d_profiles_arrays.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/allocate_v_field_2d.html'>ALLOCATE_V_FIELD_2D</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p>@brief Subroutine that allocates the cylindrical components of an axisymmetric field.</p><a href="../proc/allocate_v_field_2d.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/allocate_v_field_3d.html'>ALLOCATE_V_FIELD_3D</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p>@brief Subroutine that allocates the cylindrical components of a 3-D field.</p><a href="../proc/allocate_v_field_3d.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/amebsa.html'>amebsa</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/amoeba.html'>amoeba</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/analytical_electric_field_cyl.html'>analytical_electric_field_cyl</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p></p><a href="../proc/analytical_electric_field_cyl.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/analytical_fields.html'>analytical_fields</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p></p><a href="../proc/analytical_fields.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/analytical_fields_bmag_p.html'>analytical_fields_Bmag_p</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/analytical_fields_gc.html'>analytical_fields_GC</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/analytical_fields_gc_init.html'>analytical_fields_GC_init</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/analytical_fields_gc_p.html'>analytical_fields_GC_p</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/analytical_fields_p.html'>analytical_fields_p</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/analytical_profiles_p.html'>analytical_profiles_p</a></td><td><a href='../module/korc_profiles.html'>korc_profiles</a></td><td>Subroutine</td><td><p></p><a href="../proc/analytical_profiles_p.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/anneal.html'>anneal</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/array_copy.html'>array_copy</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/array_copy_d.html'>array_copy_d</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/array_copy_i.html'>array_copy_i</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/array_copy_r.html'>array_copy_r</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/arth.html'>arth</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/arth_d.html'>arth_d</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/arth_i.html'>arth_i</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/arth_r.html'>arth_r</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/asolve.html'>asolve</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/assert.html'>assert</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/assert1.html'>assert1</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/assert2.html'>assert2</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/assert3.html'>assert3</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/assert4.html'>assert4</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/assert_eq.html'>assert_eq</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/assert_eq2.html'>assert_eq2</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/assert_eq3.html'>assert_eq3</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/assert_eq4.html'>assert_eq4</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/assert_eqn.html'>assert_eqn</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/assert_v.html'>assert_v</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/atimes.html'>atimes</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/aux_fields.html'>aux_fields</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/avalanche_4d.html'>Avalanche_4D</a></td><td><a href='../module/korc_avalanche.html'>korc_avalanche</a></td><td>Subroutine</td><td><p></p><a href="../proc/avalanche_4d.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/avevar.html'>avevar</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/balanc.html'>balanc</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/banbks.html'>banbks</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/bandec.html'>bandec</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/banmul.html'>banmul</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/bcucof.html'>bcucof</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/bcuint.html'>bcuint</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/beschb.html'>beschb</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/beschb_s.html'>beschb_s</a></td><td><a href='../sourcefile/special_fun_subroutines.f90.html'>special_fun_subroutines.f90</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/beschb_v.html'>beschb_v</a></td><td><a href='../sourcefile/special_fun_subroutines.f90.html'>special_fun_subroutines.f90</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/besselk.html'>besselk</a></td><td><a href='../module/korc_simple_equilibrium_pdf.html'>korc_simple_equilibrium_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/besselk~2.html'>besselk</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/bessi.html'>bessi</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/bessi0.html'>bessi0</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/bessi1.html'>bessi1</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/bessik.html'>bessik</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/bessik.html'>bessik</a></td><td><a href='../module/special_functions.html'>special_functions</a></td><td>Subroutine</td><td><p>@brief Subroutine taken from "Numerical Recipes" that calculates the modified Bessel function of</p></td></tr>
+			 
+			   <tr><td><a href='../interface/bessj.html'>bessj</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/bessj0.html'>bessj0</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/bessj1.html'>bessj1</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/bessjy.html'>bessjy</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/bessk.html'>bessk</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/bessk0.html'>bessk0</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/bessk1.html'>bessk1</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/bessy.html'>bessy</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/bessy0.html'>bessy0</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/bessy1.html'>bessy1</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/beta.html'>beta</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/betacf.html'>betacf</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/betai.html'>betai</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/bico.html'>bico</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/bnldev.html'>bnldev</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/brent.html'>brent</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/broydn.html'>broydn</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/bsstep.html'>bsstep</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/ca.html'>CA</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/ca_sd.html'>CA_SD</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/calculate_2dbdbfields_p.html'>calculate_2DBdBfields_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/calculate_3dbdbfields1_p.html'>calculate_3DBdBfields1_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/calculate_3dbdbfields_p.html'>calculate_3DBdBfields_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/calculate_gcfields_2x1t_p.html'>calculate_GCfields_2x1t_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/calculate_gcfields_p.html'>calculate_GCfields_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/calculate_gcfields_p_fs.html'>calculate_GCfields_p_FS</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/calculate_gcfieldswe_p.html'>calculate_GCfieldswE_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/calculate_initial_magnetic_field.html'>calculate_initial_magnetic_field</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/calculate_magnetic_field.html'>calculate_magnetic_field</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td><p>@brief Subroutine that calculates the axisymmetric magnetic field to the particles' position using the poloidal magnetic flux.
+ @details When the poloidal magnetic flux <script type="math/tex">\Psi(R,Z)</script> is used in a KORC simulation, the magnetic field components are calculated as it follows:</p><a href="../proc/calculate_magnetic_field.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/calculate_magnetic_field_p.html'>calculate_magnetic_field_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/calculate_sc_e1d.html'>calculate_SC_E1D</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/calculate_sc_e1d_fs.html'>calculate_SC_E1D_FS</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/calculate_sc_p.html'>calculate_SC_p</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/calculate_sc_p_fs.html'>calculate_SC_p_FS</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/caldat.html'>caldat</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/cart_to_cyl.html'>cart_to_cyl</a></td><td><a href='../module/korc_coords.html'>korc_coords</a></td><td>Subroutine</td><td><p></p><a href="../proc/cart_to_cyl.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/cart_to_cyl_p.html'>cart_to_cyl_p</a></td><td><a href='../module/korc_coords.html'>korc_coords</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/cart_to_tor_check_if_confined.html'>cart_to_tor_check_if_confined</a></td><td><a href='../module/korc_coords.html'>korc_coords</a></td><td>Subroutine</td><td><p></p><a href="../proc/cart_to_tor_check_if_confined.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/cart_to_tor_check_if_confined_p.html'>cart_to_tor_check_if_confined_p</a></td><td><a href='../module/korc_coords.html'>korc_coords</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/cart_to_tor_p.html'>cart_to_tor_p</a></td><td><a href='../module/korc_coords.html'>korc_coords</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/cb_ee.html'>CB_ee</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/cb_ee_sd.html'>CB_ee_SD</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/cb_ei.html'>CB_ei</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/cb_ei_sd.html'>CB_ei_SD</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/cf.html'>CF</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/cf_sd.html'>CF_SD</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/chder.html'>chder</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/chebev.html'>chebev</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/chebev_s.html'>chebev_s</a></td><td><a href='../sourcefile/special_fun_subroutines.f90.html'>special_fun_subroutines.f90</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/chebev_v.html'>chebev_v</a></td><td><a href='../sourcefile/special_fun_subroutines.f90.html'>special_fun_subroutines.f90</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/chebft.html'>chebft</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/chebpc.html'>chebpc</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/check_collisions_params.html'>check_collisions_params</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/check_if_in_fields_domain.html'>check_if_in_fields_domain</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td><p></p><a href="../proc/check_if_in_fields_domain.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/check_if_in_fields_domain_p.html'>check_if_in_fields_domain_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td><p></p><a href="../proc/check_if_in_fields_domain_p.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/check_if_in_profiles_domain.html'>check_if_in_profiles_domain</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td><p></p><a href="../proc/check_if_in_profiles_domain.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/check_if_in_profiles_domain_p.html'>check_if_in_profiles_domain_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/chint.html'>chint</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/choldc.html'>choldc</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/cholsl.html'>cholsl</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/chsone.html'>chsone</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/chstwo.html'>chstwo</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/cisi.html'>cisi</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/clog.html'>CLog</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/clog0.html'>CLog0</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/clog0_wu.html'>CLog0_wu</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td><p>With units</p></td></tr>
+			 
+			   <tr><td><a href='../proc/clog_wu.html'>CLog_wu</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td><p>With units</p></td></tr>
+			 
+			   <tr><td><a href='../proc/clogee.html'>CLogee</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/clogee_wu.html'>CLogee_wu</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td><p>With units</p></td></tr>
+			 
+			   <tr><td><a href='../proc/clogei.html'>CLogei</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/clogei_wu.html'>CLogei_wu</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td><p>With units</p></td></tr>
+			 
+			   <tr><td><a href='../interface/cntab1.html'>cntab1</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/cntab2.html'>cntab2</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/collision_force.html'>collision_force</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Subroutine</td><td><p>For multiple-species collisions
+ J. R. Martin-Solis et al. PoP 22, 092512 (2015)
+ if (params%collisions .AND. (TRIM(params%collisions_model) .EQ.
+ 'MULTIPLE_SPECIES')) then call collision_force(spp(ii),U_os,Fcoll)
+    U_RC = U_RC + a*Fcoll/spp(ii)%q end if</p></td></tr>
+			 
+			   <tr><td><a href='../proc/compute_charcs_plasma_params.html'>compute_charcs_plasma_params</a></td><td><a href='../module/korc_units.html'>korc_units</a></td><td>Subroutine</td><td><p></p><a href="../proc/compute_charcs_plasma_params.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/convlv.html'>convlv</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/correl.html'>correl</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/cosft1.html'>cosft1</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/cosft2.html'>cosft2</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/covsrt.html'>covsrt</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/cross~3.html'>cross</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/cross.html'>cross</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Function</td><td><p></p><a href="../proc/cross.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/cross~2.html'>cross</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Function</td><td><p></p><a href="../proc/cross~2.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/cumprod.html'>cumprod</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/cumsum.html'>cumsum</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/cumsum_i.html'>cumsum_i</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/cumsum_r.html'>cumsum_r</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/cyclic.html'>cyclic</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/cyl_check_if_confined.html'>cyl_check_if_confined</a></td><td><a href='../module/korc_coords.html'>korc_coords</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/cyl_check_if_confined_p.html'>cyl_check_if_confined_p</a></td><td><a href='../module/korc_coords.html'>korc_coords</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/cyl_to_cart.html'>cyl_to_cart</a></td><td><a href='../module/korc_coords.html'>korc_coords</a></td><td>Subroutine</td><td><p></p><a href="../proc/cyl_to_cart.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/daub4.html'>daub4</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/dawson.html'>dawson</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/dbrent.html'>dbrent</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/dca_sd.html'>dCA_SD</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/ddpoly.html'>ddpoly</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/deallocate_collisions_params.html'>deallocate_collisions_params</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/deallocate_fields_arrays.html'>DEALLOCATE_FIELDS_ARRAYS</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p>@brief Subroutine that deallocates all the variables of the electric and magnetic fields.</p><a href="../proc/deallocate_fields_arrays.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/deallocate_params_ms.html'>deallocate_params_ms</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/deallocate_variables.html'>deallocate_variables</a></td><td><a href='../module/korc_finalize.html'>korc_finalize</a></td><td>Subroutine</td><td><p></p><a href="../proc/deallocate_variables.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/decchk.html'>decchk</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/define_collisions_time_step.html'>define_collisions_time_step</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/define_sc_time_step.html'>define_SC_time_step</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/define_time_step.html'>define_time_step</a></td><td><a href='../module/korc_initialize.html'>korc_initialize</a></td><td>Subroutine</td><td><p></p><a href="../proc/define_time_step.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/deg2rad~2.html'>deg2rad</a></td><td><a href='../module/korc_simple_equilibrium_pdf.html'>korc_simple_equilibrium_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/deg2rad.html'>deg2rad</a></td><td><a href='../module/korc_energy_pdfs.html'>korc_energy_pdfs</a></td><td>Function</td><td><p>@brief Function that converts @f$x@f$ from degrees to radians.</p><a href="../proc/deg2rad.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/deg2rad~3.html'>deg2rad</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/deg2rad~4.html'>deg2rad</a></td><td><a href='../module/korc_avalanche.html'>korc_avalanche</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/deg2rad~5.html'>deg2rad</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/delta.html'>delta</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/dfpmin.html'>dfpmin</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/dfridr.html'>dfridr</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/dftcor.html'>dftcor</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/dftint.html'>dftint</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/diagadd.html'>diagadd</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/diagadd_r.html'>diagadd_r</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/diagadd_rv.html'>diagadd_rv</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/diagmult.html'>diagmult</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/diagmult_r.html'>diagmult_r</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/diagmult_rv.html'>diagmult_rv</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/difeq.html'>difeq</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/disk.html'>disk</a></td><td><a href='../module/korc_spatial_distribution.html'>korc_spatial_distribution</a></td><td>Subroutine</td><td><p></p><a href="../proc/disk.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/eclass.html'>eclass</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/eclazz.html'>eclazz</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/ei.html'>ei</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/eigsrt.html'>eigsrt</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/elle.html'>elle</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/ellf.html'>ellf</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/elliptic_torus.html'>elliptic_torus</a></td><td><a href='../module/korc_spatial_distribution.html'>korc_spatial_distribution</a></td><td>Subroutine</td><td><p></p><a href="../proc/elliptic_torus.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/ellpi.html'>ellpi</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/elmhes.html'>elmhes</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/erf.html'>erf</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/erfc.html'>erfc</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/erfcc.html'>erfcc</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/eulsum.html'>eulsum</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/evlmem.html'>evlmem</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/expdev.html'>expdev</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/expint.html'>expint</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/exponential_elliptic_torus.html'>exponential_elliptic_torus</a></td><td><a href='../module/korc_spatial_distribution.html'>korc_spatial_distribution</a></td><td>Subroutine</td><td><p>@brief Subroutine that generates an exponentially decaying radial distribution in an elliptic torus as the initial spatial
+ condition of a given particle species in the simulation.
+ @details As a first step, we generate an exponentially decaying radial distribution in a circular cross-section torus as in
+ \ref korc_spatial_distribution.exponential_torus. Then we transform this spatial distribution to a one in an torus with an
+ elliptic cross section, this following the same approach as in \ref korc_spatial_distribution.elliptic_torus.</p><a href="../proc/exponential_elliptic_torus.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/exponential_torus.html'>exponential_torus</a></td><td><a href='../module/korc_spatial_distribution.html'>korc_spatial_distribution</a></td><td>Subroutine</td><td><p>@brief Subroutine that generates a exponentially decaying radial distribution of particles in a circular cross-section torus of
+ major and minor radi <script type="math/tex">R_0</script> and <script type="math/tex">r_0</script>, respectively.
+ @details We generate this exponentially decaying radial distribution <script type="math/tex">f(r)</script> following the same approach as in
+ \ref korc_spatial_distribution.disk, but this time, the radial distribution is given by:</p><a href="../proc/exponential_torus.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/factln.html'>factln</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/factrl.html'>factrl</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fasper.html'>fasper</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fdjac.html'>fdjac</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/fgamma.html'>fGamma</a></td><td><a href='../module/korc_energy_pdfs.html'>korc_energy_pdfs</a></td><td>Function</td><td><p>@brief Function that calculates the value of the Gamma distribution @f$f_\Gamma(x,\kappa,\theta) =
+ \frac{1}{\Gamma(\kappa) \theta^\kappa}x^{\kappa-1}\exp{\left(-x/\theta\right)}@f$.</p><a href="../proc/fgamma.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/fgamma~2.html'>fGamma</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fgauss.html'>fgauss</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/finalize_communications.html'>finalize_communications</a></td><td><a href='../module/korc_finalize.html'>korc_finalize</a></td><td>Subroutine</td><td><p></p><a href="../proc/finalize_communications.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/finalize_hdf5.html'>finalize_HDF5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/finalize_interpolants.html'>finalize_interpolants</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td><p>@brief Subroutine that frees memory allocated for PSPLINE interpolants.</p><a href="../proc/finalize_interpolants.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/finalize_mpi.html'>finalize_mpi</a></td><td><a href='../module/korc_hpc.html'>korc_hpc</a></td><td>Subroutine</td><td><p>@brief Subroutine for finalizing MPI communications.
+ @details This subroutine finalizes all the MPI communications and looks for errors durignt this procces.</p><a href="../proc/finalize_mpi.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/fio_add_field.html'>fio_add_field</a></td><td><a href='../module/korc_m3d_c1.html'>korc_m3d_c1</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fio_allocate_search_hint.html'>fio_allocate_search_hint</a></td><td><a href='../module/korc_m3d_c1.html'>korc_m3d_c1</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fio_close_field.html'>fio_close_field</a></td><td><a href='../module/korc_m3d_c1.html'>korc_m3d_c1</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fio_close_series.html'>fio_close_series</a></td><td><a href='../module/korc_m3d_c1.html'>korc_m3d_c1</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fio_close_source.html'>fio_close_source</a></td><td><a href='../module/korc_m3d_c1.html'>korc_m3d_c1</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fio_create_compound_field.html'>fio_create_compound_field</a></td><td><a href='../module/korc_m3d_c1.html'>korc_m3d_c1</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fio_deallocate_search_hint.html'>fio_deallocate_search_hint</a></td><td><a href='../module/korc_m3d_c1.html'>korc_m3d_c1</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fio_eval_field.html'>fio_eval_field</a></td><td><a href='../module/korc_m3d_c1.html'>korc_m3d_c1</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fio_eval_field_deriv.html'>fio_eval_field_deriv</a></td><td><a href='../module/korc_m3d_c1.html'>korc_m3d_c1</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fio_eval_series.html'>fio_eval_series</a></td><td><a href='../module/korc_m3d_c1.html'>korc_m3d_c1</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fio_get_available_fields.html'>fio_get_available_fields</a></td><td><a href='../module/korc_m3d_c1.html'>korc_m3d_c1</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fio_get_field.html'>fio_get_field</a></td><td><a href='../module/korc_m3d_c1.html'>korc_m3d_c1</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fio_get_options.html'>fio_get_options</a></td><td><a href='../module/korc_m3d_c1.html'>korc_m3d_c1</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fio_open_source.html'>fio_open_source</a></td><td><a href='../module/korc_m3d_c1.html'>korc_m3d_c1</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fio_set_int_option.html'>fio_set_int_option</a></td><td><a href='../module/korc_m3d_c1.html'>korc_m3d_c1</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fit.html'>fit</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fitexy.html'>fitexy</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fixrts.html'>fixrts</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fleg.html'>fleg</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/flmoon.html'>flmoon</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/fo_init.html'>FO_init</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td><p>Calls <a href="../proc/get_fields.html">get_fields</a> in <a href="../module/korc_fields.html">korc_fields</a>.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/four1.html'>four1</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/four1_alt.html'>four1_alt</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/four1_gather.html'>four1_gather</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/four2.html'>four2</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/four2_alt.html'>four2_alt</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/four3.html'>four3</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/four3_alt.html'>four3_alt</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fourcol.html'>fourcol</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fourcol_3d.html'>fourcol_3d</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fourn_gather.html'>fourn_gather</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fourrow.html'>fourrow</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fourrow_3d.html'>fourrow_3d</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fpoly.html'>fpoly</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/fre~2.html'>fRE</a></td><td><a href='../module/korc_simple_equilibrium_pdf.html'>korc_simple_equilibrium_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/fre.html'>fRE</a></td><td><a href='../module/korc_energy_pdfs.html'>korc_energy_pdfs</a></td><td>Function</td><td><p>Evaluation of the energy distribution function @f$f_{RE}(\mathcal{E})@f$ of runaway electrons as function of the normalized momentum
+ @f$p' = p/m_ec@f$. Here, @f$p'@f$ is the normalized momentum and @f$m_e@f$ and @f$c@f$ are the electron mass and the speed of light.</p><a href="../proc/fre.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/fre~3.html'>fRE</a></td><td><a href='../module/korc_avalanche.html'>korc_avalanche</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/fre~4.html'>fRE</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/fre_h.html'>fRE_H</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/fre_h_3d.html'>fRE_H_3D</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/fre_hxpr.html'>fRE_HxPR</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/fre_pitch.html'>fRE_pitch</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fred2.html'>fred2</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/fredin.html'>fredin</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/frenel.html'>frenel</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/frexpr.html'>fRExPR</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/frprmn.html'>frprmn</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/ftest.html'>ftest</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/fth_3v.html'>fth_3V</a></td><td><a href='../module/korc_velocity_distribution.html'>korc_velocity_distribution</a></td><td>Function</td><td><p></p><a href="../proc/fth_3v.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/fun.html'>fun</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/fzero.html'>fzero</a></td><td><a href='../module/korc_spatial_distribution.html'>korc_spatial_distribution</a></td><td>Function</td><td><p></p><a href="../proc/fzero.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/g_j.html'>g_j</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/gamdev.html'>gamdev</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/gammac_wu.html'>Gammac_wu</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td><p>With units</p></td></tr>
+			 
+			   <tr><td><a href='../proc/gammacee.html'>Gammacee</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td><p>Dimensionless ne and Te</p></td></tr>
+			 
+			   <tr><td><a href='../interface/gammln.html'>gammln</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/gammp.html'>gammp</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/gammq.html'>gammq</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/gasdev.html'>gasdev</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/gaucof.html'>gaucof</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/gauher.html'>gauher</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/gaujac.html'>gaujac</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/gaulag.html'>gaulag</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/gauleg.html'>gauleg</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/gaussian_elliptic_torus.html'>gaussian_elliptic_torus</a></td><td><a href='../module/korc_spatial_distribution.html'>korc_spatial_distribution</a></td><td>Subroutine</td><td><p>@brief Subroutine that generates a Gaussian radial distribution in an elliptic torus as the initial spatial
+ condition of a given particle species in the simulation.
+ @details As a first step, we generate an Gaussian radial distribution in a circular cross-section torus as in
+ \ref korc_spatial_distribution.gaussian_torus. Then we transform this spatial distribution to a one in an torus with an
+ elliptic cross section, this following the same approach as in \ref korc_spatial_distribution.elliptic_torus.</p><a href="../proc/gaussian_elliptic_torus.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/gaussian_torus.html'>gaussian_torus</a></td><td><a href='../module/korc_spatial_distribution.html'>korc_spatial_distribution</a></td><td>Subroutine</td><td><p>@brief Subroutine that generates a Gaussian radial distribution of particles in a circular cross-section torus of
+ major and minor radi <script type="math/tex">R_0</script> and <script type="math/tex">r_0</script>, respectively.
+ @details We generate this exponentially decaying radial distribution <script type="math/tex">f(r)</script> following the same approach as in
+ \ref korc_spatial_distribution.disk, but this time, the radial distribution is given by:</p><a href="../proc/gaussian_torus.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/gaussj.html'>gaussj</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/gc_init.html'>GC_init</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td><p></p><a href="../proc/gc_init.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/gceom1_m3dc1_p.html'>GCEoM1_m3dc1_p</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/gceom1_p.html'>GCEoM1_p</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/gceom_p.html'>GCEoM_p</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/gcf.html'>gcf</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/generate_2d_hammersley_sequence.html'>generate_2D_hammersley_sequence</a></td><td><a href='../module/korc_hammersley_generator.html'>korc_hammersley_generator</a></td><td>Subroutine</td><td><p>@brief Subroutine for generating a 2-D Hammersley sequence.
+ @details This subroutine uses the algorithm for generating a 1-D Hammersley sequence.
+ Each MPI process in KORC generates a (different) subset of pairs (X,Y) of a 2-D Hammersley sequence. The total number of pairs (X,Y)
+ is NMPIS*N, where NMPIS is the number of MPI processes in the simulation and N is the number of particles followed by each MPI process.
+ Each subset of pairs (X,Y) has N elements.</p><a href="../proc/generate_2d_hammersley_sequence.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/geop.html'>geop</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/geop_c.html'>geop_c</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/geop_d.html'>geop_d</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/geop_dv.html'>geop_dv</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/geop_i.html'>geop_i</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/geop_r.html'>geop_r</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_analytical_fields.html'>get_analytical_fields</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p></p><a href="../proc/get_analytical_fields.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/get_analytical_profiles.html'>get_analytical_profiles</a></td><td><a href='../module/korc_profiles.html'>korc_profiles</a></td><td>Subroutine</td><td><p></p><a href="../proc/get_analytical_profiles.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/get_avalanche_4d.html'>get_Avalanche_4D</a></td><td><a href='../module/korc_avalanche.html'>korc_avalanche</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_avalanche_distribution.html'>get_avalanche_distribution</a></td><td><a href='../module/korc_avalanche.html'>korc_avalanche</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/get_diag.html'>get_diag</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_diag_dv.html'>get_diag_dv</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_diag_rv.html'>get_diag_rv</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_equilibrium_distribution.html'>get_equilibrium_distribution</a></td><td><a href='../module/korc_simple_equilibrium_pdf.html'>korc_simple_equilibrium_pdf</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_experimentalg_distribution.html'>get_experimentalG_distribution</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_fields.html'>get_fields</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p></p><a href="../proc/get_fields.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/get_gamma_distribution.html'>get_gamma_distribution</a></td><td><a href='../module/korc_energy_pdfs.html'>korc_energy_pdfs</a></td><td>Subroutine</td><td><p>@brief Subroutine that contains calls to subroutine to generate a gamma distribution for the energy distribution of a given
+ species in the simulation.</p><a href="../proc/get_gamma_distribution.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/get_hollmann_distribution.html'>get_Hollmann_distribution</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_hollmann_distribution_3d.html'>get_Hollmann_distribution_3D</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_hollmann_distribution_3d_psi.html'>get_Hollmann_distribution_3D_psi</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_m3d_c1_electric_fields.html'>get_m3d_c1_electric_fields</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_m3d_c1_foelectric_fields_p.html'>get_m3d_c1_FOelectric_fields_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_m3d_c1_fomagnetic_fields_p.html'>get_m3d_c1_FOmagnetic_fields_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_m3d_c1_gcelectric_fields_p.html'>get_m3d_c1_GCelectric_fields_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_m3d_c1_gcmagnetic_fields_p.html'>get_m3d_c1_GCmagnetic_fields_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_m3d_c1_magnetic_fields.html'>get_m3d_c1_magnetic_fields</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_m3d_c1_profile.html'>get_m3d_c1_profile</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_m3d_c1_profile_p.html'>get_m3d_c1_profile_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_m3d_c1_vector_potential.html'>get_m3d_c1_vector_potential</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_m3d_c1_vector_potential_p.html'>get_m3d_c1_vector_potential_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_profiles.html'>get_profiles</a></td><td><a href='../module/korc_profiles.html'>korc_profiles</a></td><td>Subroutine</td><td><p></p><a href="../proc/get_profiles.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/get_random.html'>get_random</a></td><td><a href='../module/korc_random.html'>korc_random</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_random_n.html'>get_random_N</a></td><td><a href='../module/korc_random.html'>korc_random</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/get_random_u.html'>get_random_U</a></td><td><a href='../module/korc_random.html'>korc_random</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/golden.html'>golden</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/gradient_2d_bfields.html'>gradient_2D_Bfields</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td><p></p><a href="../proc/gradient_2d_bfields.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/gser.html'>gser</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/gyro_distribution.html'>gyro_distribution</a></td><td><a href='../module/korc_velocity_distribution.html'>korc_velocity_distribution</a></td><td>Subroutine</td><td><p></p><a href="../proc/gyro_distribution.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/h_j.html'>h_j</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/hammersley.html'>hammersley</a></td><td><a href='../module/korc_hammersley_generator.html'>korc_hammersley_generator</a></td><td>Subroutine</td><td><p>@brief For more info please visit "https://people.sc.fsu.edu/~jburkardt/f_src/hammersley/hammersley.html".
+<strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong>*</strong>*80</p><a href="../proc/hammersley.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/hammersley_inverse.html'>hammersley_inverse</a></td><td><a href='../module/korc_hammersley_generator.html'>korc_hammersley_generator</a></td><td>Subroutine</td><td><p>@brief For more info please visit "https://people.sc.fsu.edu/~jburkardt/f_src/hammersley/hammersley.html".</p><a href="../proc/hammersley_inverse.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/hammersley_sequence.html'>hammersley_sequence</a></td><td><a href='../module/korc_hammersley_generator.html'>korc_hammersley_generator</a></td><td>Subroutine</td><td><p>@brief For more info please visit "https://people.sc.fsu.edu/~jburkardt/f_src/hammersley/hammersley.html".
+<strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong>*</strong>*80</p><a href="../proc/hammersley_sequence.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/hqr.html'>hqr</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/hunt.html'>hunt</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/hypdrv.html'>hypdrv</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/hypgeo.html'>hypgeo</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/hypser.html'>hypser</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/i1save_to_hdf5.html'>i1save_to_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/i2save_to_hdf5.html'>i2save_to_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/i4save_to_hdf5.html'>i4save_to_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/i8save_to_hdf5.html'>i8save_to_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/icrc.html'>icrc</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/ifirstloc.html'>ifirstloc</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/igray.html'>igray</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/iload_from_hdf5.html'>iload_from_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/imaxloc.html'>imaxloc</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/imaxloc_i.html'>imaxloc_i</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/imaxloc_r.html'>imaxloc_r</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/iminloc.html'>iminloc</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/include_coulombcollisions_fo_p.html'>include_CoulombCollisions_FO_p</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Subroutine</td><td><p>This subroutine performs a Stochastic collision process consistent
+ with the Fokker-Planck model for relativitic electron colliding with
+ a thermal (Maxwellian) plasma. The collision operator is in spherical
+ coordinates of the form found in Papp et al., NF (2011). CA
+ corresponds to the parallel (speed diffusion) process, CF corresponds
+ to a slowing down (momentum loss) process, and CB corresponds to a
+ perpendicular diffusion process. Ordering of the processes are
+ <script type="math/tex; mode=display"> \sqrt{CB}\gg CB \gg CF \sim \sqrt{CA} \gg CA,</script>
+ and only the dominant terms are kept.</p></td></tr>
+			 
+			   <tr><td><a href='../proc/include_coulombcollisions_gc_p.html'>include_CoulombCollisions_GC_p</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/include_coulombcollisions_gcm3dc1_p.html'>include_CoulombCollisions_GCm3dc1_p</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/index_bypack.html'>index_bypack</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/indexx.html'>indexx</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/indicator.html'>indicator</a></td><td><a href='../module/korc_spatial_distribution.html'>korc_spatial_distribution</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/indicator~2.html'>indicator</a></td><td><a href='../module/korc_avalanche.html'>korc_avalanche</a></td><td>Function</td><td><p>Compares argument psi to chosen psi_max, returning step function.</p></td></tr>
+			 
+			   <tr><td><a href='../proc/indicator_exp.html'>indicator_exp</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/init_random_seed.html'>init_random_seed</a></td><td><a href='../module/korc_rnd_numbers.html'>korc_rnd_numbers</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/init_sc_e1d.html'>init_SC_E1D</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/init_sc_e1d_fs.html'>init_SC_E1D_FS</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/init_u_random.html'>init_u_random</a></td><td><a href='../module/korc_rnd_numbers.html'>korc_rnd_numbers</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/initial_energy_pitch_dist.html'>initial_energy_pitch_dist</a></td><td><a href='../module/korc_velocity_distribution.html'>korc_velocity_distribution</a></td><td>Subroutine</td><td><p></p><a href="../proc/initial_energy_pitch_dist.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/initial_gyro_distribution.html'>initial_gyro_distribution</a></td><td><a href='../module/korc_velocity_distribution.html'>korc_velocity_distribution</a></td><td>Subroutine</td><td><p></p><a href="../proc/initial_gyro_distribution.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_avalanche_params.html'>initialize_avalanche_params</a></td><td><a href='../module/korc_avalanche.html'>korc_avalanche</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_collision_params.html'>initialize_collision_params</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_communications.html'>initialize_communications</a></td><td><a href='../module/korc_hpc.html'>korc_hpc</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_fields.html'>initialize_fields</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p></p><a href="../proc/initialize_fields.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_fields_interpolant.html'>initialize_fields_interpolant</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td><p></p><a href="../proc/initialize_fields_interpolant.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_gamma_params.html'>initialize_gamma_params</a></td><td><a href='../module/korc_energy_pdfs.html'>korc_energy_pdfs</a></td><td>Subroutine</td><td><p>@brief Subroutine that reads from the input file the parameters of the Gamma distribution
+ @f$f_\Gamma(x,\kappa,\theta) = \frac{1}{\Gamma(\kappa) \theta^\kappa}x^{\kappa-1}\exp{\left(-x/\theta\right)}@f$.</p><a href="../proc/initialize_gamma_params.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_gc_fields.html'>initialize_GC_fields</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p>Computes the auxiliary fields <script type="math/tex">\nabla|{\bf B}|</script> and
+ <script type="math/tex">\nabla\times\hat{b}</script> that are used in the RHS of the
+ evolution equations for the GC orbit model.</p></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_gc_fields_3d.html'>initialize_GC_fields_3D</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p>Computes the auxiliary fields <script type="math/tex">\nabla|{\bf B}|</script> and
+ <script type="math/tex">\nabla\times\hat{b}</script> that are used in the RHS of the
+ evolution equations for the GC orbit model.</p></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_hdf5.html'>initialize_HDF5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_hollmann_params.html'>initialize_Hollmann_params</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_korc_parameters.html'>initialize_korc_parameters</a></td><td><a href='../module/korc_initialize.html'>korc_initialize</a></td><td>Subroutine</td><td><p></p><a href="../proc/initialize_korc_parameters.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_m3d_c1.html'>initialize_m3d_c1</a></td><td><a href='../module/korc_m3d_c1.html'>korc_m3d_c1</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_mpi.html'>initialize_mpi</a></td><td><a href='../module/korc_hpc.html'>korc_hpc</a></td><td>Subroutine</td><td><p></p><a href="../proc/initialize_mpi.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_params.html'>initialize_params</a></td><td><a href='../module/korc_simple_equilibrium_pdf.html'>korc_simple_equilibrium_pdf</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_params~2.html'>initialize_params</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_particle_pusher.html'>initialize_particle_pusher</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td><p></p><a href="../proc/initialize_particle_pusher.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_particles.html'>initialize_particles</a></td><td><a href='../module/korc_initialize.html'>korc_initialize</a></td><td>Subroutine</td><td><p></p><a href="../proc/initialize_particles.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_profiles.html'>initialize_profiles</a></td><td><a href='../module/korc_profiles.html'>korc_profiles</a></td><td>Subroutine</td><td><p></p><a href="../proc/initialize_profiles.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_profiles_interpolant.html'>initialize_profiles_interpolant</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td><p></p><a href="../proc/initialize_profiles_interpolant.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_random.html'>initialize_random</a></td><td><a href='../module/korc_random.html'>korc_random</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_random_n.html'>initialize_random_N</a></td><td><a href='../module/korc_random.html'>korc_random</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_random_u.html'>initialize_random_U</a></td><td><a href='../module/korc_random.html'>korc_random</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_sc1d_field_interpolant.html'>initialize_SC1D_field_interpolant</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td><p></p><a href="../proc/initialize_sc1d_field_interpolant.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/initialize_sc1d_field_interpolant_fs.html'>initialize_SC1D_field_interpolant_FS</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td><p></p><a href="../proc/initialize_sc1d_field_interpolant_fs.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/intbesselk.html'>IntBesselK</a></td><td><a href='../module/korc_simple_equilibrium_pdf.html'>korc_simple_equilibrium_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/intbesselk~2.html'>IntBesselK</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Function</td><td><p>@brief Extended trapezoidal rule for integrating the modified Bessel function of second kind. See Sec. 4.2 of Numerical Recipies in Fortran 77.</p></td></tr>
+			 
+			   <tr><td><a href='../interface/interp.html'>interp</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/interp_2d_bfields.html'>interp_2D_bfields</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td><p></p><a href="../proc/interp_2d_bfields.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/interp_2d_curlbfields.html'>interp_2D_curlbfields</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td><p></p><a href="../proc/interp_2d_curlbfields.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/interp_2d_efields.html'>interp_2D_efields</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td><p>@brief Subroutine for interpolating the pre-computed, axisymmetric electric field to the particles' position.</p><a href="../proc/interp_2d_efields.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/interp_2d_gradbfields.html'>interp_2D_gradBfields</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td><p></p><a href="../proc/interp_2d_gradbfields.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/interp_2d_profiles.html'>interp_2D_profiles</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td><p></p><a href="../proc/interp_2d_profiles.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/interp_3d_bfields.html'>interp_3D_bfields</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td><p>@brief Subroutine for interpolating the pre-computed, 3-D magnetic field to the particles' position.</p><a href="../proc/interp_3d_bfields.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/interp_3d_efields.html'>interp_3D_efields</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td><p>@brief Subroutine for interpolating the pre-computed 3-D electric field to the particles' position.</p><a href="../proc/interp_3d_efields.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/interp_3d_profiles.html'>interp_3D_profiles</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td><p></p><a href="../proc/interp_3d_profiles.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/interp_bmag_p.html'>interp_bmag_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/interp_collision_p.html'>interp_collision_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/interp_fields.html'>interp_fields</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td><p></p><a href="../proc/interp_fields.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/interp_fields_3d_p.html'>interp_fields_3D_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/interp_fields_p.html'>interp_fields_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/interp_focollision_p.html'>interp_FOcollision_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/interp_fofields1_p.html'>interp_FOfields1_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/interp_fofields_p.html'>interp_FOfields_p</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/interp_profiles.html'>interp_profiles</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td><p></p><a href="../proc/interp_profiles.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/intgamma.html'>IntGamma</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Function</td><td><p>@brief Extended trapezoidal rule for integrating the Gamma PDF. See Sec. 4.2 of Numerical Recipies in Fortran 77.</p></td></tr>
+			 
+			   <tr><td><a href='../proc/intitial_spatial_distribution.html'>intitial_spatial_distribution</a></td><td><a href='../module/korc_spatial_distribution.html'>korc_spatial_distribution</a></td><td>Subroutine</td><td><p></p><a href="../proc/intitial_spatial_distribution.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/intk.html'>IntK</a></td><td><a href='../module/korc_simple_equilibrium_pdf.html'>korc_simple_equilibrium_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/intk~2.html'>IntK</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/irbit1.html'>irbit1</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/irbit2.html'>irbit2</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/isave_1d_array_to_hdf5.html'>isave_1d_array_to_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/jacobi.html'>jacobi</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/jacobn.html'>jacobn</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/julday.html'>julday</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/kendl1.html'>kendl1</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/kendl2.html'>kendl2</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/kermom.html'>kermom</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/korc_abort.html'>korc_abort</a></td><td><a href='../module/korc_hpc.html'>korc_hpc</a></td><td>Subroutine</td><td><p></p><a href="../proc/korc_abort.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/ks2d1s.html'>ks2d1s</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/ks2d2s.html'>ks2d2s</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/ksone.html'>ksone</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/kstwo.html'>kstwo</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/laguer.html'>laguer</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/lfit.html'>lfit</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/linbcg.html'>linbcg</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/linmin.html'>linmin</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/lnsrch.html'>lnsrch</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/load_1d_fs_from_hdf5.html'>load_1D_FS_from_hdf5</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/load_array_from_hdf5.html'>load_array_from_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Interface</td><td><p></p><a href="../interface/load_array_from_hdf5.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/load_data_from_hdf5.html'>load_data_from_hdf5</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/load_dim_data_from_hdf5.html'>load_dim_data_from_hdf5</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p>@brief Subroutine that loads the size of the arrays having the electric and magnetic field data.
+ @details All the information of externally calculated fields must be given in a rectangular, equally spaced mesh in the <script type="math/tex">(R,\phi,Z)</script> space of cylindrical coordinates.
+ If the fields are axisymmetric, then the fields must be in a rectangular mesh on the <script type="math/tex">RZ</script>-plane.</p><a href="../proc/load_dim_data_from_hdf5.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/load_field_data_from_hdf5.html'>load_field_data_from_hdf5</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p>@brief Subroutine that loads the fields data from the HDF5 input file.</p><a href="../proc/load_field_data_from_hdf5.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/load_from_hdf5.html'>load_from_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Interface</td><td><p></p><a href="../interface/load_from_hdf5.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/load_korc_params.html'>load_korc_params</a></td><td><a href='../module/korc_initialize.html'>korc_initialize</a></td><td>Subroutine</td><td><p></p><a href="../proc/load_korc_params.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/load_params_ms.html'>load_params_ms</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/load_params_ss.html'>load_params_ss</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/load_particles_ic.html'>load_particles_ic</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td><p></p><a href="../proc/load_particles_ic.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/load_prev_iter.html'>load_prev_iter</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td><p></p><a href="../proc/load_prev_iter.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/load_prev_time.html'>load_prev_time</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td><p></p><a href="../proc/load_prev_time.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/load_profiles_data_from_hdf5.html'>load_profiles_data_from_hdf5</a></td><td><a href='../module/korc_profiles.html'>korc_profiles</a></td><td>Subroutine</td><td><p></p><a href="../proc/load_profiles_data_from_hdf5.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/load_time_stepping_params.html'>load_time_stepping_params</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td><p></p><a href="../proc/load_time_stepping_params.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/locate.html'>locate</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/log10fre.html'>log10fRE</a></td><td><a href='../module/korc_avalanche.html'>korc_avalanche</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/lop.html'>lop</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/lower_triangle.html'>lower_triangle</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/lubksb.html'>lubksb</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/ludcmp.html'>ludcmp</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/machar.html'>machar</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/masked_swap_rm.html'>masked_swap_rm</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/masked_swap_rs.html'>masked_swap_rs</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/masked_swap_rv.html'>masked_swap_rv</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/mean_f_field.html'>mean_F_field</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p></p><a href="../proc/mean_f_field.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/medfit.html'>medfit</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/memcof.html'>memcof</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/mgfas.html'>mgfas</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/mglin.html'>mglin</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/mh_gaussian_elliptic_torus.html'>MH_gaussian_elliptic_torus</a></td><td><a href='../module/korc_spatial_distribution.html'>korc_spatial_distribution</a></td><td>Subroutine</td><td><p></p><a href="../proc/mh_gaussian_elliptic_torus.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/mh_psi.html'>MH_psi</a></td><td><a href='../module/korc_spatial_distribution.html'>korc_spatial_distribution</a></td><td>Subroutine</td><td><p></p><a href="../proc/mh_psi.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/midexp.html'>midexp</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/midinf.html'>midinf</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/midpnt.html'>midpnt</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/midsql.html'>midsql</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/midsqu.html'>midsqu</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/miser.html'>miser</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/mmid.html'>mmid</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/mnbrak.html'>mnbrak</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/mnewt.html'>mnewt</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/moment.html'>moment</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/mp2dfr.html'>mp2dfr</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/mpdiv.html'>mpdiv</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/mpinv.html'>mpinv</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/mpmul.html'>mpmul</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/mppi.html'>mppi</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/mprove.html'>mprove</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/mpsqrt.html'>mpSQRT</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/mrqcof.html'>mrqcof</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/mrqmin.html'>mrqmin</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/newt.html'>newt</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/normalize_collisions_params.html'>normalize_collisions_params</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/normalize_hollmann_params.html'>normalize_Hollmann_params</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/normalize_params_ms.html'>normalize_params_ms</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/normalize_params_ss.html'>normalize_params_ss</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Subroutine</td><td><p>Calculate constant quantities used in various functions within
+ this module</p></td></tr>
+			 
+			   <tr><td><a href='../proc/normalize_variables.html'>normalize_variables</a></td><td><a href='../module/korc_units.html'>korc_units</a></td><td>Subroutine</td><td><p></p><a href="../proc/normalize_variables.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/nrerror.html'>nrerror</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/nu_d.html'>nu_D</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/nu_par.html'>nu_par</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/nu_s.html'>nu_S</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/odeint.html'>odeint</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/orthog.html'>orthog</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/outerand.html'>outerand</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/outerdiff.html'>outerdiff</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/outerdiff_d.html'>outerdiff_d</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/outerdiff_i.html'>outerdiff_i</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/outerdiff_r.html'>outerdiff_r</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/outerdiv.html'>outerdiv</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/outerprod.html'>outerprod</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/outerprod_d.html'>outerprod_d</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/outerprod_r.html'>outerprod_r</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/outersum.html'>outersum</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/p_integral.html'>P_integral</a></td><td><a href='../module/korc_simple_equilibrium_pdf.html'>korc_simple_equilibrium_pdf</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/p_integral~2.html'>P_integral</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/pade.html'>pade</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/pccheb.html'>pccheb</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/pcshft.html'>pcshft</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/pearsn.html'>pearsn</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/period.html'>period</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/plgndr.html'>plgndr</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/poidev.html'>poidev</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/polcoe.html'>polcoe</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/polcof.html'>polcof</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/poldiv.html'>poldiv</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/polin2.html'>polin2</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/polint.html'>polint</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/poly.html'>poly</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/poly_cc.html'>poly_cc</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/poly_dd.html'>poly_dd</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/poly_ddv.html'>poly_ddv</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/poly_msk_ddv.html'>poly_msk_ddv</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/poly_msk_rrv.html'>poly_msk_rrv</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/poly_rc.html'>poly_rc</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/poly_rr.html'>poly_rr</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/poly_rrv.html'>poly_rrv</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/poly_term.html'>poly_term</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/poly_term_cc.html'>poly_term_cc</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/poly_term_rr.html'>poly_term_rr</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/powell.html'>powell</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/pr.html'>PR</a></td><td><a href='../module/korc_simple_equilibrium_pdf.html'>korc_simple_equilibrium_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/pr~2.html'>PR</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/predic.html'>predic</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/prime.html'>prime</a></td><td><a href='../module/korc_hammersley_generator.html'>korc_hammersley_generator</a></td><td>Function</td><td><p>@brief For more info please visit "https://people.sc.fsu.edu/~jburkardt/f_src/hammersley/hammersley.html".
+<strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong>*</strong>*80</p><a href="../proc/prime.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/probks.html'>probks</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/psdes.html'>psdes</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/psi.html'>psi</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/psi_rot.html'>PSI_ROT</a></td><td><a href='../module/korc_spatial_distribution.html'>korc_spatial_distribution</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/psi_rot~2.html'>PSI_ROT</a></td><td><a href='../module/korc_avalanche.html'>korc_avalanche</a></td><td>Function</td><td><p>Calculates value of argument of 2D Gaussian spatial distribution with
+ with counter-clockwise rotation.</p></td></tr>
+			 
+			   <tr><td><a href='../proc/psi_rot_exp.html'>PSI_ROT_exp</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/put_diag.html'>put_diag</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/put_diag_r.html'>put_diag_r</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/put_diag_rv.html'>put_diag_rv</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/pwt.html'>pwt</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/pwtset.html'>pwtset</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/pythag.html'>pythag</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/pzextr.html'>pzextr</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/qrdcmp.html'>qrdcmp</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/qromb.html'>qromb</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/qromo.html'>qromo</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/qroot.html'>qroot</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/qrsolv.html'>qrsolv</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/qrupdt.html'>qrupdt</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/qsimp.html'>qsimp</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/qtrap.html'>qtrap</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/quadct.html'>quadct</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/quadmx.html'>quadmx</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/quadvl.html'>quadvl</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/r8mat_print.html'>r8mat_print</a></td><td><a href='../module/korc_hammersley_generator.html'>korc_hammersley_generator</a></td><td>Subroutine</td><td><p>@brief For more info please visit "https://people.sc.fsu.edu/~jburkardt/f_src/hammersley/hammersley.html".
+<strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong>*</strong>*80</p><a href="../proc/r8mat_print.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/r8mat_print_some.html'>r8mat_print_some</a></td><td><a href='../module/korc_hammersley_generator.html'>korc_hammersley_generator</a></td><td>Subroutine</td><td><p>@brief For more info please visit "https://people.sc.fsu.edu/~jburkardt/f_src/hammersley/hammersley.html".
+<strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong>*</strong>*80</p><a href="../proc/r8mat_print_some.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/rad2deg.html'>rad2deg</a></td><td><a href='../module/korc_simple_equilibrium_pdf.html'>korc_simple_equilibrium_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/rad2deg~2.html'>rad2deg</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/rad2deg~3.html'>rad2deg</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/radiation_force_p.html'>radiation_force_p</a></td><td><a href='../module/korc_ppusher.html'>korc_ppusher</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/ran.html'>ran</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/ran0.html'>ran0</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/ran1.html'>ran1</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/ran2.html'>ran2</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/ran3.html'>ran3</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/rand_int32.html'>rand_int32</a></td><td><a href='../module/korc_rnd_numbers.html'>korc_rnd_numbers</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/rand_int64.html'>rand_int64</a></td><td><a href='../module/korc_rnd_numbers.html'>korc_rnd_numbers</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/rand_real.html'>rand_real</a></td><td><a href='../module/korc_rnd_numbers.html'>korc_rnd_numbers</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/rand_real_array.html'>rand_real_array</a></td><td><a href='../module/korc_rnd_numbers.html'>korc_rnd_numbers</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/random_construct_n.html'>random_construct_N</a></td><td><a href='../module/korc_random.html'>korc_random</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/random_construct_u.html'>random_construct_U</a></td><td><a href='../module/korc_random.html'>korc_random</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/random_destroy_n.html'>random_destroy_N</a></td><td><a href='../module/korc_random.html'>korc_random</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/random_destroy_u.html'>random_destroy_U</a></td><td><a href='../module/korc_random.html'>korc_random</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/random_get_number_n.html'>random_get_number_N</a></td><td><a href='../module/korc_random.html'>korc_random</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/random_get_number_u.html'>random_get_number_U</a></td><td><a href='../module/korc_random.html'>korc_random</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/random_norm~3.html'>random_norm</a></td><td><a href='../module/korc_simple_equilibrium_pdf.html'>korc_simple_equilibrium_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/random_norm~4.html'>random_norm</a></td><td><a href='../module/korc_spatial_distribution.html'>korc_spatial_distribution</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/random_norm.html'>random_norm</a></td><td><a href='../module/korc_velocity_distribution.html'>korc_velocity_distribution</a></td><td>Function</td><td><p></p><a href="../proc/random_norm.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/random_norm~2.html'>random_norm</a></td><td><a href='../module/korc_energy_pdfs.html'>korc_energy_pdfs</a></td><td>Function</td><td><p>@brief Gaussian random number generator.
+ @details This function returns a deviate of a Gaussian distribution @f$f_G(x;\mu,\sigma) = \frac{1}{\sigma\sqrt{2\pi}} \exp{\left( -(x-\mu)^2/2\sigma^2 \right)}@f$,
+ with mean @f$\mu@f$, and standard deviation @f$\sigma@f$.</p><a href="../proc/random_norm~2.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/random_norm~5.html'>random_norm</a></td><td><a href='../module/korc_avalanche.html'>korc_avalanche</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/random_norm~6.html'>random_norm</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/rank.html'>rank</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/ratint.html'>ratint</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/ratlsq.html'>ratlsq</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/ratval.html'>ratval</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/rc.html'>rc</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/rd.html'>rd</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/read_namelist.html'>read_namelist</a></td><td><a href='../module/korc_input.html'>korc_input</a></td><td>Subroutine</td><td><a href="../proc/read_namelist.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/realft.html'>realft</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/reallocate.html'>reallocate</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/reallocate_hv.html'>reallocate_hv</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/reallocate_im.html'>reallocate_im</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/reallocate_iv.html'>reallocate_iv</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/reallocate_rm.html'>reallocate_rm</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/reallocate_rv.html'>reallocate_rv</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/recur1.html'>recur1</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/recur2.html'>recur2</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/reinit_sc_e1d.html'>reinit_SC_E1D</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/reinit_sc_e1d_fs.html'>reinit_SC_E1D_FS</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/relax.html'>relax</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/relax2.html'>relax2</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/resid.html'>resid</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/rf.html'>rf</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/rj.html'>rj</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/rk4.html'>rk4</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/rkck.html'>rkck</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/rkdumb.html'>rkdumb</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/rkqs.html'>rkqs</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/rlft2.html'>rlft2</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/rlft3.html'>rlft3</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/rload_1d_array_from_hdf5.html'>rload_1d_array_from_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/rload_2d_array_from_hdf5.html'>rload_2d_array_from_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/rload_3d_array_from_hdf5.html'>rload_3d_array_from_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/rload_from_hdf5.html'>rload_from_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/rmcoment.html'>rmcoment</a></td><td><a href='../module/korc_input.html'>korc_input</a></td><td>Subroutine</td><td><a href="../proc/rmcoment.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/rotate.html'>rotate</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/rsave_1d_array_to_hdf5.html'>rsave_1d_array_to_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/rsave_2d_array_to_hdf5.html'>rsave_2d_array_to_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/rsave_3d_array_to_hdf5.html'>rsave_3d_array_to_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/rsave_to_hdf5.html'>rsave_to_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/rsolv.html'>rsolv</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/rstrct.html'>rstrct</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/rtbis.html'>rtbis</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/rtflsp.html'>rtflsp</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/rtnewt.html'>rtnewt</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/rtsafe.html'>rtsafe</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/rtsec.html'>rtsec</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/rzextr.html'>rzextr</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/sample_distribution.html'>sample_distribution</a></td><td><a href='../module/korc_simple_equilibrium_pdf.html'>korc_simple_equilibrium_pdf</a></td><td>Subroutine</td><td><a href="../proc/sample_distribution.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/sample_distribution~3.html'>sample_distribution</a></td><td><a href='../module/korc_avalanche.html'>korc_avalanche</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/sample_distribution~2.html'>sample_distribution</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Subroutine</td><td><a href="../proc/sample_distribution~2.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/sample_gamma_distribution.html'>sample_gamma_distribution</a></td><td><a href='../module/korc_energy_pdfs.html'>korc_energy_pdfs</a></td><td>Subroutine</td><td><p>@brief Subroutine that samples a Gamma distribution representing the runaways' (marginal) energy distribution function.
+ @details This subroutine uses the Metropolis-Hastings method for sampling the Gamma distribution representing the runaways'
+ (marginal) energy distribution function. Unlike the typical Metropolis-Hasting method, after setting the boundaries of the region
+ we want to sample, we perform a sampling in a larger region that contains the original sampling area plus a buffer region.
+ After finishing the first sampling, we only keep the particles in the original sampling region, the particles in the p_buffer
+ are sampled again until all of them lie within the original sampling region. This method ensures that the boundaries are
+ well sampled.</p><a href="../proc/sample_gamma_distribution.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/sample_hollmann_distribution.html'>sample_Hollmann_distribution</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Subroutine</td><td><p>MCMC and MH algorithm perfomred on single MPI process 
+ to sample distribution function fRE_H</p></td></tr>
+			 
+			   <tr><td><a href='../proc/sample_hollmann_distribution_3d.html'>sample_Hollmann_distribution_3D</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Subroutine</td><td><p></p><a href="../proc/sample_hollmann_distribution_3d.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/sample_hollmann_distribution_3d_psi.html'>sample_Hollmann_distribution_3D_psi</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Subroutine</td><td><p></p><a href="../proc/sample_hollmann_distribution_3d_psi.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/sample_poloidal_flux.html'>sample_poloidal_flux</a></td><td><a href='../module/korc_interp.html'>korc_interp</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/save_1d_array_to_hdf5.html'>save_1d_array_to_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/save_2d_array_to_hdf5.html'>save_2d_array_to_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/save_3d_array_to_hdf5.html'>save_3d_array_to_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/save_array_to_hdf5.html'>save_array_to_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/save_avalanche_params.html'>save_avalanche_params</a></td><td><a href='../module/korc_avalanche.html'>korc_avalanche</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/save_collision_params.html'>save_collision_params</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/save_gamma_params.html'>save_gamma_params</a></td><td><a href='../module/korc_energy_pdfs.html'>korc_energy_pdfs</a></td><td>Subroutine</td><td><p>@brief Surboutine that saves the Gamma distribution parameters to the HDF5 file <i>gamma_distribution_parameters.h5</i>.</p><a href="../proc/save_gamma_params.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/save_hollmann_params.html'>save_Hollmann_params</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/save_params.html'>save_params</a></td><td><a href='../module/korc_simple_equilibrium_pdf.html'>korc_simple_equilibrium_pdf</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/save_params~2.html'>save_params</a></td><td><a href='../module/korc_experimental_pdf.html'>korc_experimental_pdf</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/save_params_ms.html'>save_params_ms</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/save_params_ss.html'>save_params_ss</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/save_restart_variables.html'>save_restart_variables</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td><p></p><a href="../proc/save_restart_variables.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/save_simulation_outputs.html'>save_simulation_outputs</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td><p></p><a href="../proc/save_simulation_outputs.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/save_simulation_parameters.html'>save_simulation_parameters</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td><p></p><a href="../proc/save_simulation_parameters.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/save_string_parameter.html'>save_string_parameter</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/save_to_hdf5.html'>save_to_hdf5</a></td><td><a href='../module/korc_hdf5.html'>korc_HDF5</a></td><td>Interface</td><td><p></p><a href="../interface/save_to_hdf5.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/savgol.html'>savgol</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/scatter_add.html'>scatter_add</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/scatter_add_d.html'>scatter_add_d</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/scatter_add_r.html'>scatter_add_r</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/scatter_max.html'>scatter_max</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/scatter_max_d.html'>scatter_max_d</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/scatter_max_r.html'>scatter_max_r</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/scrsho.html'>scrsho</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/select.html'>select</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/select_bypack.html'>select_bypack</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/select_heap.html'>select_heap</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/select_inplace.html'>select_inplace</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/set_paths.html'>set_paths</a></td><td><a href='../module/korc_hpc.html'>korc_hpc</a></td><td>Subroutine</td><td><p></p><a href="../proc/set_paths.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/set_up_particles_ic.html'>set_up_particles_ic</a></td><td><a href='../module/korc_initialize.html'>korc_initialize</a></td><td>Subroutine</td><td><p></p><a href="../proc/set_up_particles_ic.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/simplx.html'>simplx</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/simpr.html'>simpr</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/sinft.html'>sinft</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/slvsm2.html'>slvsm2</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/slvsml.html'>slvsml</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/sncndn.html'>sncndn</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/snrm.html'>snrm</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/sobseq.html'>sobseq</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/solvde.html'>solvde</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/sor.html'>sor</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/sort.html'>sort</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/sort2.html'>sort2</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/sort3.html'>sort3</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/sort_bypack.html'>sort_bypack</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/sort_byreshape.html'>sort_byreshape</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/sort_heap.html'>sort_heap</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/sort_pick.html'>sort_pick</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/sort_radix.html'>sort_radix</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/sort_shell.html'>sort_shell</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/spctrm.html'>spctrm</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/spear.html'>spear</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/sphbes.html'>sphbes</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/splie2.html'>splie2</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/splin2.html'>splin2</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/spline.html'>spline</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/splint.html'>splint</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/spong_2d.html'>Spong_2D</a></td><td><a href='../module/korc_spatial_distribution.html'>korc_spatial_distribution</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/spong_3d.html'>Spong_3D</a></td><td><a href='../module/korc_spatial_distribution.html'>korc_spatial_distribution</a></td><td>Subroutine</td><td><p></p><a href="../proc/spong_3d.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/sprsax.html'>sprsax</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/sprsdiag.html'>sprsdiag</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/sprsin.html'>sprsin</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/sprstp.html'>sprstp</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/sprstx.html'>sprstx</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/stifbs.html'>stifbs</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/stiff.html'>stiff</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/stoerm.html'>stoerm</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/svbksb.html'>svbksb</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/svdcmp.html'>svdcmp</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/svdfit.html'>svdfit</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/svdvar.html'>svdvar</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/swap.html'>swap</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/swap_c.html'>swap_c</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/swap_cm.html'>swap_cm</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/swap_cv.html'>swap_cv</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/swap_i.html'>swap_i</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/swap_r.html'>swap_r</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/swap_rv.html'>swap_rv</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/swap_z.html'>swap_z</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/swap_zm.html'>swap_zm</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/swap_zv.html'>swap_zv</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/thermal_distribution.html'>thermal_distribution</a></td><td><a href='../module/korc_velocity_distribution.html'>korc_velocity_distribution</a></td><td>Subroutine</td><td><p></p><a href="../proc/thermal_distribution.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/timestamp.html'>timestamp</a></td><td><a href='../module/korc_hammersley_generator.html'>korc_hammersley_generator</a></td><td>Subroutine</td><td><p>@brief For more info please visit "https://people.sc.fsu.edu/~jburkardt/f_src/hammersley/hammersley.html".
+<strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong><em>*</em></strong><strong>*</strong>*80</p><a href="../proc/timestamp.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/timing_korc.html'>timing_KORC</a></td><td><a href='../module/korc_hpc.html'>korc_hpc</a></td><td>Subroutine</td><td><p></p><a href="../proc/timing_korc.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/toeplz.html'>toeplz</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/torus.html'>torus</a></td><td><a href='../module/korc_spatial_distribution.html'>korc_spatial_distribution</a></td><td>Subroutine</td><td><p></p><a href="../proc/torus.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/tptest.html'>tptest</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/tqli.html'>tqli</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/trapzd.html'>trapzd</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/tred2.html'>tred2</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/tridag.html'>tridag</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/tridag_ser.html'>tridag_ser</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/ttest.html'>ttest</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/tutest.html'>tutest</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/twofft.html'>twofft</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/u_random.html'>u_random</a></td><td><a href='../module/korc_rnd_numbers.html'>korc_rnd_numbers</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/uniform.html'>uniform</a></td><td><a href='../module/korc_spatial_distribution.html'>korc_spatial_distribution</a></td><td>Subroutine</td><td><p></p><a href="../proc/uniform.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/uniform_electric_field.html'>uniform_electric_field</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p></p><a href="../proc/uniform_electric_field.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/uniform_fields.html'>uniform_fields</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p></p><a href="../proc/uniform_fields.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/uniform_magnetic_field.html'>uniform_magnetic_field</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p></p><a href="../proc/uniform_magnetic_field.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/uniform_profiles.html'>uniform_profiles</a></td><td><a href='../module/korc_profiles.html'>korc_profiles</a></td><td>Subroutine</td><td><p></p><a href="../proc/uniform_profiles.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/unit_matrix.html'>unit_matrix</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/unitvectors.html'>unitVectors</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p></p><a href="../proc/unitvectors.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../proc/unitvectors_p.html'>unitVectors_p</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/unitvectorsc.html'>unitVectorsC</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Subroutine</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/update_avalanche_params.html'>update_avalanche_params</a></td><td><a href='../module/korc_avalanche.html'>korc_avalanche</a></td><td>Subroutine</td><td><p>Updates the avalanche parameters aval_params% at each step
+ in the MCMC after the profiles are interpolated at the sampled
+ R,Z location.</p></td></tr>
+			 
+			   <tr><td><a href='../proc/upper_triangle.html'>upper_triangle</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/vabs.html'>vabs</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/vander.html'>vander</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/vegas.html'>vegas</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/voltra.html'>voltra</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/vte.html'>VTe</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td><p>Dimensionless temperature</p></td></tr>
+			 
+			   <tr><td><a href='../proc/vte_wu.html'>VTe_wu</a></td><td><a href='../module/korc_collisions.html'>korc_collisions</a></td><td>Function</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/which_fields_in_file.html'>which_fields_in_file</a></td><td><a href='../module/korc_fields.html'>korc_fields</a></td><td>Subroutine</td><td><p>@brief Subroutine that queries the HDF5 file what data are present in the HDF5 input file (sanity check).</p><a href="../proc/which_fields_in_file.html" class="pull-right"><emph>Read more&hellip;</emph></a></td></tr>
+			 
+			   <tr><td><a href='../interface/wt1.html'>wt1</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/wtn.html'>wtn</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/wwghts.html'>wwghts</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/zbrac.html'>zbrac</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/zbrak.html'>zbrak</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/zbrent.html'>zbrent</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/zrhqr.html'>zrhqr</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/zriddr.html'>zriddr</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../interface/zroots.html'>zroots</a></td><td><a href='../module/nr.html'>nr</a></td><td>Interface</td><td></td></tr>
+			 
+			   <tr><td><a href='../proc/zroots_unity.html'>zroots_unity</a></td><td><a href='../module/nrutil.html'>nrutil</a></td><td>Function</td><td></td></tr>
+			 
+			 </tbody></table>
+             
+        </div>
+      </div>
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2020 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+             on  
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> KORC-Full Orbit was developed by Matt Beidler</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

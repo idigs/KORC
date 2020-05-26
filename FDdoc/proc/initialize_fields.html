@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Kinetic Orbit Runaway electrons Code (KORC) - Full Orbit">
+    
+    <meta name="author" content="Matt Beidler" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>initialize_fields &ndash; KORC-Full Orbit</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">KORC-Full Orbit </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../page/index.html'>README</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+        
+               
+            <li><a href="../lists/types.html">Derived Types</a></li>
+        
+        
+            <li><a href="../program/main.html">Program</a></li>
+      
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../program/main.html">Program</a></li>
+
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>initialize_fields
+      <small>Subroutine</small>
+    
+    </h1>
+    
+<div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     
+     
+     
+    
+    
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title=" 1.4% of total for procedures.">296 statements</a>
+     </li> 
+     
+     
+     
+    <li><i class="fa fa-code"></i><a href="../src/korc_fields.f90"> Source File</a></li>
+     
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+    
+     <li><a href='../sourcefile/korc_fields.f90.html'>korc_fields.f90</a></li>
+    
+     <li><a href='../module/korc_fields.html'>korc_fields</a></li>
+    
+  
+     <li class="active">initialize_fields</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+  </div>
+  
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+    
+<div id="sidebar">
+  
+<h3>Contents</h3>
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../proc/initialize_fields.html#src">initialize_fields</a>
+  </div>
+</div>
+
+
+
+</div>
+
+    </div>
+    
+    <div class="col-md-9" id='text'>
+    <h2>
+public subroutine initialize_fields(params, F)
+    
+    
+   
+</h2>
+    
+  
+
+
+    
+    <p></p><div class="alert alert-info" role="alert"><h4>Note</h4><p>Subroutine that initializes the analytical or externally
+ calculated electric and magnetic fields. </p></div>
+<p>In this subroutine we load the parameters of the electric and
+ magnetic fields from the namelists 'analytical_fields_params' and
+ 'externalPlasmaModel' in the input file.
+ Sign convention in analytical fields corresponds to
+ DIII-D fields with <script type="math/tex">B_\phi<0</script> and <script type="math/tex">B_\theta<0</script>.
+ Sign convention in analytical fields corresponds to
+ DIII-D fields with <script type="math/tex">B_\phi<0</script> and <script type="math/tex">B_\theta<0</script>.</p>
+    
+
+    <h3>Arguments</h3>
+    
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-params~169"></span>type(KORC_PARAMS),</td>
+  <td>intent(inout)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>params</strong></td><td><p>Core KORC simulation parameters.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f~116"></span>type(FIELDS),</td>
+  <td>intent(out)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>F</strong></td><td><p>An instance of the KORC derived type FIELDS.</p>
+<p>Magnetic field at magnetic axis for an 'ANALYTICAL' magnetic field,
+ or the magnitude of the magnetic field for a 'UNFIROM' plasma.</p>
+<p>Plasma edge <script type="math/tex">r_{edge}</script> as measured from the magnetic axis.</p>
+<p>Radial position of the magnetic axis <script type="math/tex">R_0</script>
+</p>
+<p>Safety factor at the plasma edge.</p>
+<p>Safety factor at the magnetic axis <script type="math/tex">q_0</script>.</p>
+<p>String with information about the direction of the plasma current, 
+ 'PARALLEL'  or 'ANTI-PARALLEL' to the toroidal magnetic field.</p>
+<p>Electric field at the magnetic axis.</p>
+<p>Logical variable that specifies if the electric field is 
+ going to be used on in a given simulation.</p>
+<p>Logical variable that specifies if the magnetic field is 
+ going to be used on in a given simulation.</p>
+<p>Logical variable that specifies if the poloidal magnetic 
+ flux is going to be used on in a given simulation.</p>
+<p>Logical variable that specifies if the plasma is axisymmetric.</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+    
+    
+    
+    
+     
+    <br>
+
+    <section class="visible-xs visible-sm hidden-md">
+      
+<h3>Contents</h3>
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../proc/initialize_fields.html#src">initialize_fields</a>
+  </div>
+</div>
+
+
+
+    </section>
+    <br class="visible-xs visible-sm hidden-md">
+
+    
+
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
+
+    
+    
+    
+    <section>
+    <h2><span class="anchor" id="src"></span>Source Code</h2>
+    <div class="highlight"><pre><span></span>  <span class="k">subroutine </span><span class="n">initialize_fields</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+    <span class="c">!! @note Subroutine that initializes the analytical or externally</span>
+    <span class="c">!! calculated electric and magnetic fields. @endnote</span>
+    <span class="c">!! In this subroutine we load the parameters of the electric and</span>
+    <span class="c">!! magnetic fields from the namelists &#39;analytical_fields_params&#39; and</span>
+    <span class="c">!! &#39;externalPlasmaModel&#39; in the input file.</span>
+    <span class="k">TYPE</span><span class="p">(</span><span class="n">KORC_PARAMS</span><span class="p">),</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">INOUT</span><span class="p">)</span>  <span class="kd">::</span> <span class="n">params</span>
+    <span class="c">!! Core KORC simulation parameters.</span>
+    <span class="k">TYPE</span><span class="p">(</span><span class="n">FIELDS</span><span class="p">),</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">OUT</span><span class="p">)</span>      <span class="kd">::</span> <span class="n">F</span>
+    <span class="c">!! An instance of the KORC derived type FIELDS.</span>
+    <span class="c">!REAL(rp)                       :: Bo</span>
+    <span class="c">!! Magnetic field at magnetic axis for an &#39;ANALYTICAL&#39; magnetic field,</span>
+    <span class="c">!! or the magnitude of the magnetic field for a &#39;UNFIROM&#39; plasma.</span>
+    <span class="c">!REAL(rp)                       :: minor_radius</span>
+    <span class="c">!! Plasma edge \(r_{edge}\) as measured from the magnetic axis.</span>
+    <span class="c">!REAL(rp)                       :: major_radius</span>
+    <span class="c">!! Radial position of the magnetic axis \(R_0\)</span>
+    <span class="c">!REAL(rp)                       :: qa</span>
+    <span class="c">!! Safety factor at the plasma edge.</span>
+    <span class="c">!REAL(rp)                       :: qo</span>
+    <span class="c">!! Safety factor at the magnetic axis \(q_0\).</span>
+    <span class="c">!CHARACTER(MAX_STRING_LENGTH)   :: current_direction</span>
+    <span class="c">!! String with information about the direction of the plasma current, </span>
+    <span class="c">!! &#39;PARALLEL&#39;  or &#39;ANTI-PARALLEL&#39; to the toroidal magnetic field.</span>
+    <span class="c">!CHARACTER(MAX_STRING_LENGTH)   :: E_model</span>
+    <span class="c">!REAL(rp)                       :: Eo,E_dyn,E_pulse,E_width   </span>
+    <span class="c">!! Electric field at the magnetic axis.</span>
+    <span class="c">!LOGICAL                        :: Efield</span>
+    <span class="c">!! Logical variable that specifies if the electric field is </span>
+    <span class="c">!! going to be used on in a given simulation.</span>
+    <span class="c">!LOGICAL                        :: dBfield</span>
+    <span class="c">!LOGICAL                        :: Bfield</span>
+    <span class="c">!! Logical variable that specifies if the magnetic field is </span>
+    <span class="c">!! going to be used on in a given simulation.</span>
+    <span class="c">!LOGICAL                        :: Bflux</span>
+    <span class="c">!LOGICAL                        :: Bflux3D</span>
+    <span class="c">!LOGICAL                        :: Dim2x1t</span>
+    <span class="c">!LOGICAL                        :: E_2x1t,ReInterp_2x1t</span>
+    <span class="c">!! Logical variable that specifies if the poloidal magnetic </span>
+    <span class="c">!! flux is going to be used on in a given simulation.</span>
+    <span class="c">!LOGICAL                        :: axisymmetric_fields</span>
+    <span class="c">!! Logical variable that specifies if the plasma is axisymmetric.</span>
+    <span class="kt">INTEGER</span>                        <span class="kd">::</span> <span class="n">ii</span>
+    <span class="c">!! Iterators for creating mesh for GC model with analytic fields</span>
+    <span class="kt">INTEGER</span>                        <span class="kd">::</span> <span class="n">kk</span>
+    <span class="c">!! Iterators for creating mesh for GC model with analytic fields</span>
+    <span class="c">!INTEGER                        :: nR</span>
+    <span class="c">!! Number of mesh points in R for grid in GC model of analytical field</span>
+    <span class="c">!INTEGER                        :: nZ,nPHI</span>
+    <span class="c">!! Number of mesh points in Z for grid in GC model of analytical field</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>                       <span class="kd">::</span> <span class="n">rm</span>
+    <span class="c">!! Minor radius at each position in the grid for</span>
+    <span class="c">!! GC model of analytical field</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>                       <span class="kd">::</span> <span class="n">qr</span>
+    <span class="c">!! Safety factor at each position in the grid for</span>
+    <span class="c">!! GC model of analytical field</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>                       <span class="kd">::</span> <span class="n">theta</span>
+    <span class="c">!! Poloidal angle at each position in the grid for</span>
+    <span class="c">!! GC model of analytical field</span>
+    <span class="kt">logical</span> <span class="kd">::</span> <span class="n">test</span>
+    <span class="c">!integer :: res_double</span>
+    <span class="kt">real</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span> <span class="kd">::</span> <span class="n">RMAX</span><span class="p">,</span><span class="n">RMIN</span><span class="p">,</span><span class="n">ZMAX</span><span class="p">,</span><span class="n">ZMIN</span>
+    <span class="c">!integer :: dim_1D,ind0_2x1t</span>
+    <span class="c">!real(rp) :: dt_E_SC,Ip_exp,PSIp_lim,PSIp_0</span>
+    <span class="c">!real(rp) :: t0_2x1t</span>
+    
+
+    <span class="c">!NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&amp;</span>
+    <span class="c">!     qa,qo,Eo,current_direction,nR,nZ,nPHI,dim_1D,dt_E_SC,Ip_exp, &amp;</span>
+    <span class="c">!     E_dyn,E_pulse,E_width</span>
+    <span class="c">!NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux,Bflux3D,dBfield, &amp;</span>
+    <span class="c">!     axisymmetric_fields, Eo,E_dyn,E_pulse,E_width,res_double, &amp;</span>
+    <span class="c">!     dim_1D,dt_E_SC,Ip_exp,PSIp_lim,Dim2x1t,t0_2x1t,E_2x1t,ReInterp_2x1t, &amp;</span>
+    <span class="c">!     ind0_2x1t,PSIp_0</span>
+
+<span class="cp">#ifdef M3D_C1</span>
+    <span class="n">F</span><span class="p">%</span><span class="n">M3D_C1_B</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">F</span><span class="p">%</span><span class="n">M3D_C1_E</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+<span class="cp">#endif</span>
+    
+    <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">mpi_params</span><span class="p">%</span><span class="n">rank</span> <span class="p">.</span><span class="n">EQ</span><span class="p">.</span> <span class="mi">0</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">       write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(/,&quot;* * * * * * * * INITIALIZING FIELDS * * * * * * * *&quot;)&#39;</span><span class="p">)</span>
+    <span class="k">end if</span>
+
+<span class="c">!    SELECT CASE (TRIM(params%field_model))</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">10</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;ANALYTICAL&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="c">!    CASE(&#39;ANALYTICAL&#39;)</span>
+       <span class="c">! Load the parameters of the analytical magnetic field</span>
+       <span class="c">!open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &amp;</span>
+       <span class="c">!     status=&#39;OLD&#39;,form=&#39;formatted&#39;)</span>
+       <span class="c">!read(default_unit_open,nml=analytical_fields_params)</span>
+       <span class="c">!close(default_unit_open)</span>
+
+       <span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Bo</span> <span class="o">=</span> <span class="n">Bo</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">a</span> <span class="o">=</span> <span class="n">minor_radius</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Ro</span> <span class="o">=</span> <span class="n">major_radius</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">Ro</span> <span class="o">=</span> <span class="n">major_radius</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">Zo</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">qa</span> <span class="o">=</span> <span class="n">qa</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">qo</span> <span class="o">=</span> <span class="n">qo</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">lambda</span> <span class="o">=</span> <span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">a</span><span class="o">/</span><span class="nb">SQRT</span><span class="p">(</span><span class="n">qa</span><span class="o">/</span><span class="n">qo</span> <span class="o">-</span> <span class="mf">1.0_rp</span><span class="p">)</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Bpo</span> <span class="o">=</span> <span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">lambda</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Bo</span><span class="o">/</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">qo</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Ro</span><span class="p">)</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">current_direction</span> <span class="o">=</span> <span class="nb">TRIM</span><span class="p">(</span><span class="n">current_direction</span><span class="p">)</span>
+       <span class="k">SELECT CASE</span> <span class="p">(</span><span class="nb">TRIM</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">current_direction</span><span class="p">))</span>
+       <span class="k">CASE</span><span class="p">(</span><span class="s1">&#39;PARALLEL&#39;</span><span class="p">)</span>
+          <span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Bp_sign</span> <span class="o">=</span> <span class="mf">1.0_rp</span>
+       <span class="k">CASE</span><span class="p">(</span><span class="s1">&#39;ANTI-PARALLEL&#39;</span><span class="p">)</span>
+          <span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Bp_sign</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0_rp</span>
+       <span class="k">CASE </span><span class="n">DEFAULT</span>
+       <span class="k">END SELECT</span>
+<span class="k">       </span><span class="n">F</span><span class="p">%</span><span class="n">Eo</span> <span class="o">=</span> <span class="n">Eo</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">Bo</span> <span class="o">=</span> <span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Bo</span>
+
+       <span class="n">F</span><span class="p">%</span><span class="n">E_dyn</span> <span class="o">=</span> <span class="n">E_dyn</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">E_pulse</span> <span class="o">=</span> <span class="n">E_pulse</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">E_width</span> <span class="o">=</span> <span class="n">E_width</span>
+
+       <span class="n">F</span><span class="p">%</span><span class="n">PSIp_lim</span><span class="o">=</span><span class="n">PSIp_lim</span>
+       
+       <span class="c">!write(output_unit_write,*) E_dyn,E_pulse,E_width</span>
+
+       <span class="n">F</span><span class="p">%</span><span class="n">res_double</span><span class="o">=</span><span class="n">res_double</span>
+       
+       <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">mpi_params</span><span class="p">%</span><span class="n">rank</span> <span class="p">.</span><span class="n">EQ</span><span class="p">.</span> <span class="mi">0</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">          write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;ANALYTIC&quot;)&#39;</span><span class="p">)</span>
+          <span class="k">write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;Magnetic field: &quot;,E17.10)&#39;</span><span class="p">)</span> <span class="n">F</span><span class="p">%</span><span class="n">Bo</span>
+          <span class="k">write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;Electric field: &quot;,E17.10)&#39;</span><span class="p">)</span> <span class="n">F</span><span class="p">%</span><span class="n">Eo</span>
+
+       <span class="k">end if</span>
+
+
+<span class="k">       if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">field_eval</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;interp&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">          </span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="n">nR</span>
+          <span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">=</span> <span class="n">nPHI</span>
+          <span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">=</span> <span class="n">nZ</span>
+
+          <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">12</span><span class="p">:</span><span class="mi">14</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;PSI&#39;</span><span class="p">)</span> <span class="k">then</span>
+
+<span class="k">             </span><span class="n">F</span><span class="p">%</span><span class="n">axisymmetric_fields</span> <span class="o">=</span> <span class="p">.</span><span class="n">TRUE</span><span class="p">.</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">Bfield</span><span class="o">=</span><span class="p">.</span><span class="n">TRUE</span><span class="p">.</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">Efield</span><span class="o">=</span><span class="p">.</span><span class="n">TRUE</span><span class="p">.</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">Bflux</span><span class="o">=</span><span class="p">.</span><span class="n">TRUE</span><span class="p">.</span>
+             
+             <span class="k">call </span><span class="n">ALLOCATE_2D_FIELDS_ARRAYS</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">Bfield</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">Bflux</span><span class="p">,</span> <span class="p">&amp;</span>
+                  <span class="p">.</span><span class="n">false</span><span class="p">.,</span><span class="n">F</span><span class="p">%</span><span class="n">Efield</span><span class="p">)</span>
+
+             <span class="k">do </span><span class="n">ii</span><span class="o">=</span><span class="mi">1_idef</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span><span class="o">=</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">Ro</span><span class="o">-</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">a</span><span class="p">)</span><span class="o">+</span><span class="p">(</span><span class="n">ii</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">a</span><span class="o">/</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+             <span class="k">end do</span>
+<span class="k">             do </span><span class="n">ii</span><span class="o">=</span><span class="mi">1_idef</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+                <span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">Z</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span><span class="o">=</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">Zo</span><span class="o">-</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">a</span><span class="p">)</span><span class="o">+</span><span class="p">(</span><span class="n">ii</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">a</span><span class="o">/</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+             <span class="k">end do</span>
+
+             <span class="c">!write(6,*) F%X%R</span>
+             <span class="c">!write(6,*) F%X%Z</span>
+             
+             <span class="k">do </span><span class="n">ii</span><span class="o">=</span><span class="mi">1_idef</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">do </span><span class="n">kk</span><span class="o">=</span><span class="mi">1_idef</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+                   <span class="n">rm</span><span class="o">=</span><span class="nb">sqrt</span><span class="p">((</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span><span class="o">-</span><span class="n">F</span><span class="p">%</span><span class="n">Ro</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">Z</span><span class="p">(</span><span class="n">kk</span><span class="p">)</span><span class="o">-</span><span class="n">F</span><span class="p">%</span><span class="n">Zo</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                   <span class="n">qr</span><span class="o">=</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">qo</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="p">(</span><span class="n">rm</span><span class="o">/</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">lambda</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                   <span class="n">theta</span><span class="o">=</span><span class="n">atan2</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">Z</span><span class="p">(</span><span class="n">kk</span><span class="p">)</span><span class="o">-</span><span class="n">F</span><span class="p">%</span><span class="n">Zo</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span><span class="o">-</span><span class="n">F</span><span class="p">%</span><span class="n">Ro</span><span class="p">)</span>
+                   <span class="n">F</span><span class="p">%</span><span class="n">B_2D</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span><span class="n">kk</span><span class="p">)</span><span class="o">=</span><span class="p">(</span><span class="n">rm</span><span class="o">/</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">))</span><span class="o">*</span> <span class="p">&amp;</span>
+                        <span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Bo</span><span class="o">/</span><span class="n">qr</span><span class="p">)</span><span class="o">*</span><span class="nb">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+                   <span class="n">F</span><span class="p">%</span><span class="n">B_2D</span><span class="p">%</span><span class="n">PHI</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span><span class="n">kk</span><span class="p">)</span><span class="o">=-</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">Ro</span><span class="o">/</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">))</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Bo</span>
+                   <span class="n">F</span><span class="p">%</span><span class="n">B_2D</span><span class="p">%</span><span class="n">Z</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span><span class="n">kk</span><span class="p">)</span><span class="o">=-</span><span class="p">(</span><span class="n">rm</span><span class="o">/</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">))</span><span class="o">*</span> <span class="p">&amp;</span>
+                        <span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Bo</span><span class="o">/</span><span class="n">qr</span><span class="p">)</span><span class="o">*</span><span class="nb">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+                   <span class="n">F</span><span class="p">%</span><span class="n">E_2D</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span><span class="n">kk</span><span class="p">)</span><span class="o">=</span><span class="mf">0.0_rp</span>
+                   <span class="n">F</span><span class="p">%</span><span class="n">E_2D</span><span class="p">%</span><span class="n">PHI</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span><span class="n">kk</span><span class="p">)</span><span class="o">=-</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">Ro</span><span class="o">/</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">))</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">Eo</span>
+                   <span class="n">F</span><span class="p">%</span><span class="n">E_2D</span><span class="p">%</span><span class="n">Z</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span><span class="n">kk</span><span class="p">)</span><span class="o">=</span><span class="mf">0.0_rp</span>
+
+                   <span class="n">F</span><span class="p">%</span><span class="n">PSIp</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span><span class="n">kk</span><span class="p">)</span><span class="o">=</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">lambda</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">Bo</span><span class="o">/</span> <span class="p">&amp;</span>
+                        <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">qo</span><span class="o">*</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">Ro</span><span class="o">+</span><span class="n">rm</span><span class="o">*</span><span class="nb">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)))</span><span class="o">*</span> <span class="p">&amp;</span>
+                        <span class="nb">log</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="p">(</span><span class="n">rm</span><span class="o">/</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">lambda</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+                   <span class="c">!! Sign convention in analytical fields corresponds to</span>
+                   <span class="c">!! DIII-D fields with \(B_\phi&lt;0\) and \(B_\theta&lt;0\).</span>
+                   <span class="n">F</span><span class="p">%</span><span class="n">FLAG2D</span><span class="o">=</span><span class="mf">1.</span>
+                <span class="k">end do</span>
+<span class="k">             end do</span>
+
+<span class="k">             </span><span class="n">F</span><span class="p">%</span><span class="n">FLAG2D</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">,:)</span><span class="o">=</span><span class="mf">0.</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">FLAG2D</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">1</span><span class="p">),:)</span><span class="o">=</span><span class="mf">0.</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">FLAG2D</span><span class="p">(:,</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="mf">0.</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">FLAG2D</span><span class="p">(:,</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">=</span><span class="mf">0.</span>
+
+             <span class="k">if</span> <span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">Bflux</span><span class="p">)</span> <span class="n">F</span><span class="p">%</span><span class="n">PSIP_min</span><span class="o">=</span><span class="nb">minval</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">PSIp</span><span class="p">)</span>  
+             
+             <span class="n">F</span><span class="p">%</span><span class="n">Bfield</span><span class="o">=</span><span class="p">.</span><span class="n">FALSE</span><span class="p">.</span>
+             
+          <span class="k">else if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">12</span><span class="p">:</span><span class="mi">13</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;3D&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">             </span>
+<span class="k">             </span><span class="n">F</span><span class="p">%</span><span class="n">axisymmetric_fields</span> <span class="o">=</span> <span class="p">.</span><span class="n">FALSE</span><span class="p">.</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">Bfield</span><span class="o">=</span><span class="p">.</span><span class="n">TRUE</span><span class="p">.</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">Efield</span><span class="o">=</span><span class="p">.</span><span class="n">TRUE</span><span class="p">.</span>
+             
+             <span class="k">call </span><span class="n">ALLOCATE_3D_FIELDS_ARRAYS</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">Bfield</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">Efield</span><span class="p">,.</span><span class="n">false</span><span class="p">.)</span>
+
+             <span class="k">do </span><span class="n">ii</span><span class="o">=</span><span class="mi">1_idef</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span><span class="o">=</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">Ro</span><span class="o">-</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">a</span><span class="p">)</span><span class="o">+</span><span class="p">(</span><span class="n">ii</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">a</span><span class="o">/</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+             <span class="k">end do</span>
+<span class="k">             do </span><span class="n">ii</span><span class="o">=</span><span class="mi">1_idef</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+                <span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">PHI</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span><span class="o">=</span><span class="mf">0._rp</span><span class="o">+</span><span class="p">(</span><span class="n">ii</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">C_PI</span><span class="o">/</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+             <span class="k">end do             </span>
+<span class="k">             do </span><span class="n">ii</span><span class="o">=</span><span class="mi">1_idef</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+                <span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">Z</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span><span class="o">=</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">Zo</span><span class="o">-</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">a</span><span class="p">)</span><span class="o">+</span><span class="p">(</span><span class="n">ii</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">a</span><span class="o">/</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+             <span class="k">end do</span>
+
+             <span class="c">!write(output_unit_write,*) size(F%B_3D%R)</span>
+             
+             <span class="k">do </span><span class="n">ii</span><span class="o">=</span><span class="mi">1_idef</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">do </span><span class="n">kk</span><span class="o">=</span><span class="mi">1_idef</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+
+                   <span class="c">!write(output_unit_write,*) ii,kk</span>
+                   
+                   <span class="n">rm</span><span class="o">=</span><span class="nb">sqrt</span><span class="p">((</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span><span class="o">-</span><span class="n">F</span><span class="p">%</span><span class="n">Ro</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">Z</span><span class="p">(</span><span class="n">kk</span><span class="p">)</span><span class="o">-</span><span class="n">F</span><span class="p">%</span><span class="n">Zo</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                   <span class="n">qr</span><span class="o">=</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">qo</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="p">(</span><span class="n">rm</span><span class="o">/</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">lambda</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                   <span class="n">theta</span><span class="o">=</span><span class="n">atan2</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">Z</span><span class="p">(</span><span class="n">kk</span><span class="p">)</span><span class="o">-</span><span class="n">F</span><span class="p">%</span><span class="n">Zo</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span><span class="o">-</span><span class="n">F</span><span class="p">%</span><span class="n">Ro</span><span class="p">)</span>
+                   <span class="n">F</span><span class="p">%</span><span class="n">B_3D</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">,:,</span><span class="n">kk</span><span class="p">)</span><span class="o">=</span><span class="p">(</span><span class="n">rm</span><span class="o">/</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">))</span><span class="o">*</span> <span class="p">&amp;</span>
+                        <span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Bo</span><span class="o">/</span><span class="n">qr</span><span class="p">)</span><span class="o">*</span><span class="nb">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+                   <span class="n">F</span><span class="p">%</span><span class="n">B_3D</span><span class="p">%</span><span class="n">PHI</span><span class="p">(</span><span class="n">ii</span><span class="p">,:,</span><span class="n">kk</span><span class="p">)</span><span class="o">=-</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">Ro</span><span class="o">/</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">))</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Bo</span>
+
+                   <span class="c">!write(output_unit_write,*) F%B_3D%PHI(ii,1,kk)</span>
+                   
+                   <span class="n">F</span><span class="p">%</span><span class="n">B_3D</span><span class="p">%</span><span class="n">Z</span><span class="p">(</span><span class="n">ii</span><span class="p">,:,</span><span class="n">kk</span><span class="p">)</span><span class="o">=-</span><span class="p">(</span><span class="n">rm</span><span class="o">/</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">))</span><span class="o">*</span> <span class="p">&amp;</span>
+                        <span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Bo</span><span class="o">/</span><span class="n">qr</span><span class="p">)</span><span class="o">*</span><span class="nb">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+                   <span class="n">F</span><span class="p">%</span><span class="n">E_3D</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">,:,</span><span class="n">kk</span><span class="p">)</span><span class="o">=</span><span class="mf">0.0_rp</span>
+                   <span class="n">F</span><span class="p">%</span><span class="n">E_3D</span><span class="p">%</span><span class="n">PHI</span><span class="p">(</span><span class="n">ii</span><span class="p">,:,</span><span class="n">kk</span><span class="p">)</span><span class="o">=-</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">Ro</span><span class="o">/</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">))</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">Eo</span>
+                   <span class="n">F</span><span class="p">%</span><span class="n">E_3D</span><span class="p">%</span><span class="n">Z</span><span class="p">(</span><span class="n">ii</span><span class="p">,:,</span><span class="n">kk</span><span class="p">)</span><span class="o">=</span><span class="mf">0.0_rp</span>
+
+
+                   <span class="c">!! Sign convention in analytical fields corresponds to</span>
+                   <span class="c">!! DIII-D fields with \(B_\phi&lt;0\) and \(B_\theta&lt;0\).</span>
+                   <span class="n">F</span><span class="p">%</span><span class="n">FLAG3D</span><span class="o">=</span><span class="mf">1.</span>
+                <span class="k">end do</span>
+<span class="k">             end do</span>
+
+<span class="k">             </span><span class="n">F</span><span class="p">%</span><span class="n">FLAG3D</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">,:,:)</span><span class="o">=</span><span class="mf">0.</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">FLAG3D</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">1</span><span class="p">),:,:)</span><span class="o">=</span><span class="mf">0.</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">FLAG3D</span><span class="p">(:,:,</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="mf">0.</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">FLAG3D</span><span class="p">(:,:,</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">=</span><span class="mf">0.</span>
+
+
+
+             
+          <span class="k">end if</span>
+<span class="k">         </span>
+
+<span class="k">          if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">3</span><span class="p">:</span><span class="mi">5</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;pre&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">             if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">mpi_params</span><span class="p">%</span><span class="n">rank</span> <span class="p">.</span><span class="n">EQ</span><span class="p">.</span> <span class="mi">0</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">                write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;Initializing GC fields from analytic EM fields&quot;)&#39;</span><span class="p">)</span>
+             <span class="k">end if</span>
+
+<span class="k">             if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">12</span><span class="p">:</span><span class="mi">13</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;2D&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">                call </span><span class="n">initialize_GC_fields</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>
+             <span class="k">else if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">12</span><span class="p">:</span><span class="mi">13</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;3D&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">                call </span><span class="n">initialize_GC_fields_3D</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>
+             <span class="k">end if             </span>
+
+<span class="k">          end if</span>
+
+          <span class="c">!F%Bfield= .FALSE.</span>
+          <span class="c">!F%axisymmetric_fields = .TRUE.</span>
+          <span class="c">!F%Bflux=.TRUE.</span>
+          <span class="c">!F%Efield=.FALSE.</span>
+          
+       <span class="k">end if</span>
+
+<span class="k">       if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">SC_E</span><span class="p">)</span> <span class="k">then</span>
+
+<span class="k">          </span><span class="n">F</span><span class="p">%</span><span class="n">dim_1D</span><span class="o">=</span><span class="n">dim_1D</span>
+          <span class="n">F</span><span class="p">%</span><span class="n">dt_E_SC</span><span class="o">=</span><span class="n">dt_E_SC</span>
+          <span class="n">F</span><span class="p">%</span><span class="n">Ip_exp</span><span class="o">=</span><span class="n">Ip_exp</span>
+
+          <span class="k">ALLOCATE</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">E_SC_1D</span><span class="p">%</span><span class="n">PHI</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dim_1D</span><span class="p">))</span>
+          <span class="k">ALLOCATE</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">A1_SC_1D</span><span class="p">%</span><span class="n">PHI</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dim_1D</span><span class="p">))</span>
+          <span class="k">ALLOCATE</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">A2_SC_1D</span><span class="p">%</span><span class="n">PHI</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dim_1D</span><span class="p">))</span>
+          <span class="k">ALLOCATE</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">A3_SC_1D</span><span class="p">%</span><span class="n">PHI</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dim_1D</span><span class="p">))</span>
+          <span class="k">ALLOCATE</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">J1_SC_1D</span><span class="p">%</span><span class="n">PHI</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dim_1D</span><span class="p">))</span>
+          <span class="k">ALLOCATE</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">J2_SC_1D</span><span class="p">%</span><span class="n">PHI</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dim_1D</span><span class="p">))</span>
+          <span class="k">ALLOCATE</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">J3_SC_1D</span><span class="p">%</span><span class="n">PHI</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dim_1D</span><span class="p">))</span>          
+          <span class="k">ALLOCATE</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">r_1D</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dim_1D</span><span class="p">))</span>
+
+          <span class="n">F</span><span class="p">%</span><span class="n">E_SC_1D</span><span class="p">%</span><span class="n">PHI</span><span class="o">=</span><span class="mf">0._rp</span>
+          <span class="n">F</span><span class="p">%</span><span class="n">A1_SC_1D</span><span class="p">%</span><span class="n">PHI</span><span class="o">=</span><span class="mf">0._rp</span>
+          <span class="n">F</span><span class="p">%</span><span class="n">A2_SC_1D</span><span class="p">%</span><span class="n">PHI</span><span class="o">=</span><span class="mf">0._rp</span>
+          <span class="n">F</span><span class="p">%</span><span class="n">A3_SC_1D</span><span class="p">%</span><span class="n">PHI</span><span class="o">=</span><span class="mf">0._rp</span>
+          <span class="n">F</span><span class="p">%</span><span class="n">J1_SC_1D</span><span class="p">%</span><span class="n">PHI</span><span class="o">=</span><span class="mf">0._rp</span>
+          <span class="n">F</span><span class="p">%</span><span class="n">J2_SC_1D</span><span class="p">%</span><span class="n">PHI</span><span class="o">=</span><span class="mf">0._rp</span>
+          <span class="n">F</span><span class="p">%</span><span class="n">J3_SC_1D</span><span class="p">%</span><span class="n">PHI</span><span class="o">=</span><span class="mf">0._rp</span>          
+          <span class="n">F</span><span class="p">%</span><span class="n">r_1D</span><span class="o">=</span><span class="mf">0._rp</span>
+                    
+          <span class="k">do </span><span class="n">ii</span><span class="o">=</span><span class="mi">1_idef</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dim_1D</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">r_1D</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span><span class="o">=</span><span class="p">(</span><span class="n">ii</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">a</span><span class="o">/</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dim_1D</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+          <span class="k">end do</span>
+<span class="k">          </span>
+<span class="k">       end if</span>
+       
+<span class="c">!    CASE(&#39;EXTERNAL&#39;)</span>
+    <span class="k">else if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">8</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;EXTERNAL&#39;</span><span class="p">)</span> <span class="k">then</span>
+       <span class="c">! Load the magnetic field from an external HDF5 file</span>
+       <span class="c">!open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &amp;</span>
+       <span class="c">!     status=&#39;OLD&#39;,form=&#39;formatted&#39;)</span>
+       <span class="c">!read(default_unit_open,nml=externalPlasmaModel)</span>
+       <span class="c">!close(default_unit_open)</span>
+
+       <span class="n">F</span><span class="p">%</span><span class="n">Bfield</span> <span class="o">=</span> <span class="n">Bfield</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">dBfield</span> <span class="o">=</span> <span class="n">dBfield</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">Bflux</span> <span class="o">=</span> <span class="n">Bflux</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">Bflux3D</span> <span class="o">=</span> <span class="n">Bflux3D</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">Efield</span> <span class="o">=</span> <span class="n">Efield</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">axisymmetric_fields</span> <span class="o">=</span> <span class="n">axisymmetric_fields</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">Dim2x1t</span> <span class="o">=</span> <span class="n">Dim2x1t</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">ReInterp_2x1t</span> <span class="o">=</span> <span class="n">ReInterp_2x1t</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">t0_2x1t</span> <span class="o">=</span> <span class="n">t0_2x1t</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">ind0_2x1t</span> <span class="o">=</span> <span class="n">ind0_2x1t</span>
+
+       <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">proceed</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">          call </span><span class="n">load_prev_iter</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+          <span class="n">F</span><span class="p">%</span><span class="n">ind_2x1t</span><span class="o">=</span><span class="n">params</span><span class="p">%</span><span class="n">prev_iter_2x1t</span>
+       <span class="k">else</span>
+<span class="k">          </span><span class="n">F</span><span class="p">%</span><span class="n">ind_2x1t</span><span class="o">=</span><span class="n">F</span><span class="p">%</span><span class="n">ind0_2x1t</span>
+       <span class="k">end if</span>
+<span class="k">          </span>
+
+<span class="k">       </span><span class="n">F</span><span class="p">%</span><span class="n">E_2x1t</span> <span class="o">=</span> <span class="n">E_2x1t</span>
+       
+       <span class="n">F</span><span class="p">%</span><span class="n">E_dyn</span> <span class="o">=</span> <span class="n">E_dyn</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">E_pulse</span> <span class="o">=</span> <span class="n">E_pulse</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">E_width</span> <span class="o">=</span> <span class="n">E_width</span>
+
+       <span class="n">F</span><span class="p">%</span><span class="n">PSIp_lim</span><span class="o">=</span><span class="n">PSIp_lim</span>
+       
+       <span class="n">F</span><span class="p">%</span><span class="n">res_double</span><span class="o">=</span><span class="n">res_double</span>
+
+<span class="c">!       write(output_unit_write,&#39;(&quot;E_dyn: &quot;,E17.10)&#39;) E_dyn</span>
+<span class="c">!       write(output_unit_write,&#39;(&quot;E_pulse: &quot;,E17.10)&#39;) E_pulse</span>
+<span class="c">!       write(output_unit_write,&#39;(&quot;E_width: &quot;,E17.10)&#39;) E_width</span>
+       
+       <span class="k">call </span><span class="n">load_dim_data_from_hdf5</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+       <span class="c">!sets F%dims for 2D or 3D data</span>
+
+       <span class="c">!write(output_unit_write,*) F%dims</span>
+       
+       <span class="k">call </span><span class="n">which_fields_in_file</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">Bfield_in_file</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">Efield_in_file</span><span class="p">,</span> <span class="p">&amp;</span>
+            <span class="n">F</span><span class="p">%</span><span class="n">Bflux_in_file</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dBfield_in_file</span><span class="p">)</span>
+
+       
+       <span class="k">if</span> <span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">Bflux</span><span class="p">.</span><span class="nb">AND</span><span class="p">..</span><span class="nb">NOT</span><span class="p">.</span><span class="n">F</span><span class="p">%</span><span class="n">Bflux_in_file</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">          write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;ERROR: Magnetic flux to be used but no data in file!&quot;)&#39;</span><span class="p">)</span>
+          <span class="k">call </span><span class="n">KORC_ABORT</span><span class="p">()</span>
+       <span class="k">end if</span>
+
+<span class="k">       if</span> <span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">Bfield</span><span class="p">.</span><span class="nb">AND</span><span class="p">..</span><span class="nb">NOT</span><span class="p">.</span><span class="n">F</span><span class="p">%</span><span class="n">Bfield_in_file</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">          write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;ERROR: Magnetic field to be used but no data in file!&quot;)&#39;</span><span class="p">)</span>
+          <span class="k">call </span><span class="n">KORC_ABORT</span><span class="p">()</span>
+       <span class="k">end if</span>
+
+<span class="k">       if</span> <span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dBfield</span><span class="p">.</span><span class="nb">AND</span><span class="p">..</span><span class="nb">NOT</span><span class="p">.</span><span class="n">F</span><span class="p">%</span><span class="n">dBfield_in_file</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">          write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;ERROR: differential Magnetic field to be used &amp;</span>
+<span class="s1">               but no data in file!&quot;)&#39;</span><span class="p">)</span>
+<span class="c">!          call KORC_ABORT()</span>
+       <span class="k">end if</span>
+<span class="k">       </span>
+<span class="k">       if</span> <span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">Efield</span><span class="p">.</span><span class="nb">AND</span><span class="p">..</span><span class="nb">NOT</span><span class="p">.</span><span class="n">F</span><span class="p">%</span><span class="n">Efield_in_file</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">          if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">mpi_params</span><span class="p">%</span><span class="n">rank</span><span class="p">.</span><span class="n">EQ</span><span class="p">.</span><span class="mi">0_idef</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">             write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(/,&quot;* * * * * * * * * *  FIELDS  * * * * * * * * * *&quot;)&#39;</span><span class="p">)</span>
+             <span class="k">write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;MESSAGE: Analytical electric field will be used.&quot;)&#39;</span><span class="p">)</span>
+             <span class="k">write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;* * * * * * * * * * * * ** * * * * * * * * * * *&quot;,/)&#39;</span><span class="p">)</span>
+          <span class="k">end if</span>
+<span class="k">       end if</span>
+
+<span class="k">       if</span> <span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">axisymmetric_fields</span><span class="p">)</span> <span class="k">then</span>
+
+
+
+<span class="k">          if</span> <span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">Dim2x1t</span><span class="p">)</span> <span class="k">then</span>
+
+<span class="k">             call </span><span class="n">ALLOCATE_2D_FIELDS_ARRAYS</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">Bfield</span><span class="p">,</span> <span class="p">&amp;</span>
+                  <span class="n">F</span><span class="p">%</span><span class="n">Bflux</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dBfield</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">Efield</span><span class="p">.</span><span class="nb">AND</span><span class="p">.</span><span class="n">F</span><span class="p">%</span><span class="n">Efield_in_file</span><span class="p">)</span>
+             
+             <span class="k">call </span><span class="n">ALLOCATE_3D_FIELDS_ARRAYS</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">Bfield</span><span class="p">,</span> <span class="p">&amp;</span>
+                  <span class="n">F</span><span class="p">%</span><span class="n">Efield</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dBfield</span><span class="p">)</span>
+
+          <span class="k">else</span>
+
+<span class="k">             </span><span class="n">F</span><span class="p">%</span><span class="n">Efield_in_file</span><span class="o">=</span><span class="p">.</span><span class="n">TRUE</span><span class="p">.</span>
+
+             <span class="k">call </span><span class="n">ALLOCATE_2D_FIELDS_ARRAYS</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">Bfield</span><span class="p">,</span> <span class="p">&amp;</span>
+                  <span class="n">F</span><span class="p">%</span><span class="n">Bflux</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dBfield</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">Efield</span><span class="p">.</span><span class="nb">AND</span><span class="p">.</span><span class="n">F</span><span class="p">%</span><span class="n">Efield_in_file</span><span class="p">)</span>
+
+             <span class="n">F</span><span class="p">%</span><span class="n">Efield_in_file</span><span class="o">=</span><span class="p">.</span><span class="n">FALSE</span><span class="p">.</span>
+             
+          <span class="k">end if</span>
+
+<span class="k">       else</span>
+<span class="k">          call </span><span class="n">ALLOCATE_3D_FIELDS_ARRAYS</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">Bfield</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">Efield</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dBfield</span><span class="p">)</span>
+          
+       <span class="k">end if</span>
+       <span class="c">!allocates 2D or 3D data arrays (fields and spatial)</span>
+
+       
+       <span class="k">call </span><span class="n">load_field_data_from_hdf5</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+            
+       <span class="c">!       write(output_unit_write,*) F%PSIp</span>
+
+       <span class="c">!write(output_unit_write,*) F%E_3D%PHI(:,F%ind0_2x1t,:)</span>
+
+       
+<span class="c">!       end if</span>
+
+       <span class="k">if</span> <span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">Bflux</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">          </span><span class="n">F</span><span class="p">%</span><span class="n">PSIP_min</span><span class="o">=</span><span class="nb">minval</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">PSIp</span><span class="p">)</span>         
+
+       <span class="k">else if</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">Bflux3D</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">          </span><span class="n">F</span><span class="p">%</span><span class="n">PSIP_min</span><span class="o">=</span><span class="nb">minval</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">PSIp3D</span><span class="p">(:,</span><span class="mi">1</span><span class="p">,:))</span>
+       <span class="k">end if</span>
+
+<span class="k">          </span>
+<span class="k">       if</span> <span class="p">((.</span><span class="nb">not</span><span class="p">.</span><span class="n">F</span><span class="p">%</span><span class="n">Efield_in_file</span><span class="p">).</span><span class="nb">and</span><span class="p">.(.</span><span class="nb">not</span><span class="p">.</span><span class="n">F</span><span class="p">%</span><span class="n">Dim2x1t</span><span class="p">))</span> <span class="k">then</span>
+<span class="k">          </span><span class="n">F</span><span class="p">%</span><span class="n">Eo</span> <span class="o">=</span> <span class="n">Eo</span>
+
+          <span class="k">if</span> <span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">axisymmetric_fields</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">             </span><span class="n">F</span><span class="p">%</span><span class="n">E_2D</span><span class="p">%</span><span class="n">R</span><span class="o">=</span><span class="mf">0._rp</span>
+             <span class="k">do </span><span class="n">ii</span><span class="o">=</span><span class="mi">1_idef</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">F</span><span class="p">%</span><span class="n">E_2D</span><span class="p">%</span><span class="n">PHI</span><span class="p">(</span><span class="n">ii</span><span class="p">,:)</span><span class="o">=</span><span class="n">F</span><span class="p">%</span><span class="n">Eo</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">Ro</span><span class="o">/</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+             <span class="k">end do</span>
+<span class="k">             </span><span class="n">F</span><span class="p">%</span><span class="n">E_2D</span><span class="p">%</span><span class="n">Z</span><span class="o">=</span><span class="mf">0._rp</span>
+
+          <span class="k">else</span>
+<span class="k">             </span><span class="n">F</span><span class="p">%</span><span class="n">E_3D</span><span class="p">%</span><span class="n">R</span><span class="o">=</span><span class="mf">0._rp</span>
+             <span class="k">do </span><span class="n">ii</span><span class="o">=</span><span class="mi">1_idef</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">F</span><span class="p">%</span><span class="n">E_3D</span><span class="p">%</span><span class="n">PHI</span><span class="p">(</span><span class="n">ii</span><span class="p">,:,:)</span><span class="o">=</span><span class="n">F</span><span class="p">%</span><span class="n">Eo</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">Ro</span><span class="o">/</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+             <span class="k">end do</span>
+<span class="k">             </span><span class="n">F</span><span class="p">%</span><span class="n">E_3D</span><span class="p">%</span><span class="n">Z</span><span class="o">=</span><span class="mf">0._rp</span>
+          <span class="k">end if</span>
+<span class="k">       end if</span>
+
+<span class="k">       if</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dBfield</span><span class="p">.</span><span class="nb">and</span><span class="p">..</span><span class="nb">not</span><span class="p">.</span><span class="n">F</span><span class="p">%</span><span class="n">dBfield_in_file</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">          if</span> <span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">axisymmetric_fields</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">             </span><span class="n">F</span><span class="p">%</span><span class="n">dBdR_2D</span><span class="p">%</span><span class="n">R</span><span class="o">=</span><span class="mf">0._rp</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">dBdR_2D</span><span class="p">%</span><span class="n">PHI</span><span class="o">=</span><span class="mf">0._rp</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">dBdR_2D</span><span class="p">%</span><span class="n">Z</span><span class="o">=</span><span class="mf">0._rp</span>
+
+             <span class="n">F</span><span class="p">%</span><span class="n">dBdPHI_2D</span><span class="p">%</span><span class="n">R</span><span class="o">=</span><span class="mf">0._rp</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">dBdPHI_2D</span><span class="p">%</span><span class="n">PHI</span><span class="o">=</span><span class="mf">0._rp</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">dBdPHI_2D</span><span class="p">%</span><span class="n">Z</span><span class="o">=</span><span class="mf">0._rp</span>
+
+             <span class="n">F</span><span class="p">%</span><span class="n">dBdZ_2D</span><span class="p">%</span><span class="n">R</span><span class="o">=</span><span class="mf">0._rp</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">dBdZ_2D</span><span class="p">%</span><span class="n">PHI</span><span class="o">=</span><span class="mf">0._rp</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">dBdZ_2D</span><span class="p">%</span><span class="n">Z</span><span class="o">=</span><span class="mf">0._rp</span>
+          <span class="k">else</span>
+<span class="k">             </span><span class="n">F</span><span class="p">%</span><span class="n">dBdR_3D</span><span class="p">%</span><span class="n">R</span><span class="o">=</span><span class="mf">0._rp</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">dBdR_3D</span><span class="p">%</span><span class="n">PHI</span><span class="o">=</span><span class="mf">0._rp</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">dBdR_3D</span><span class="p">%</span><span class="n">Z</span><span class="o">=</span><span class="mf">0._rp</span>
+
+             <span class="n">F</span><span class="p">%</span><span class="n">dBdPHI_3D</span><span class="p">%</span><span class="n">R</span><span class="o">=</span><span class="mf">0._rp</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">dBdPHI_3D</span><span class="p">%</span><span class="n">PHI</span><span class="o">=</span><span class="mf">0._rp</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">dBdPHI_3D</span><span class="p">%</span><span class="n">Z</span><span class="o">=</span><span class="mf">0._rp</span>
+
+             <span class="n">F</span><span class="p">%</span><span class="n">dBdZ_3D</span><span class="p">%</span><span class="n">R</span><span class="o">=</span><span class="mf">0._rp</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">dBdZ_3D</span><span class="p">%</span><span class="n">PHI</span><span class="o">=</span><span class="mf">0._rp</span>
+             <span class="n">F</span><span class="p">%</span><span class="n">dBdZ_3D</span><span class="p">%</span><span class="n">Z</span><span class="o">=</span><span class="mf">0._rp</span>
+          <span class="k">end if         </span>
+<span class="k">       end if</span>
+<span class="k">       </span>
+<span class="k">       if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">mpi_params</span><span class="p">%</span><span class="n">rank</span> <span class="p">.</span><span class="n">EQ</span><span class="p">.</span> <span class="mi">0</span><span class="p">)</span> <span class="k">then</span>
+
+<span class="k">          write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;EXTERNAL&quot;)&#39;</span><span class="p">)</span>
+          <span class="k">write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;Magnetic field: &quot;,E17.10)&#39;</span><span class="p">)</span> <span class="n">F</span><span class="p">%</span><span class="n">Bo</span>
+          <span class="k">write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;Electric field: &quot;,E17.10)&#39;</span><span class="p">)</span> <span class="n">F</span><span class="p">%</span><span class="n">Eo</span>
+
+       <span class="k">end if</span>
+
+<span class="k">       if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">SC_E</span><span class="p">)</span> <span class="k">then</span>
+
+<span class="k">          </span><span class="n">F</span><span class="p">%</span><span class="n">dim_1D</span><span class="o">=</span><span class="n">dim_1D</span>
+          <span class="n">F</span><span class="p">%</span><span class="n">dt_E_SC</span><span class="o">=</span><span class="n">dt_E_SC</span>
+          <span class="n">F</span><span class="p">%</span><span class="n">Ip_exp</span><span class="o">=</span><span class="n">Ip_exp</span>
+
+          <span class="k">write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="o">*</span><span class="p">)</span> <span class="s1">&#39;dt_E_SC&#39;</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dt_E_SC</span><span class="p">,</span><span class="s1">&#39;Ip_exp&#39;</span><span class="p">,</span><span class="n">Ip_exp</span>
+          
+          <span class="k">call </span><span class="n">allocate_1D_FS_arrays</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+          <span class="k">call </span><span class="n">load_1D_FS_from_hdf5</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+
+<span class="c">!          write(output_unit_write,*) F%PSIP_1D</span>
+          
+       <span class="k">end if</span>
+       
+<span class="c">!       test=.true.</span>
+       
+<span class="c">!       if (F%Bflux.and.(.not.test)) then</span>
+
+<span class="c">!          call initialize_fields_interpolant(params,F)</span>
+
+<span class="c">!          F%Bfield=.TRUE.</span>
+<span class="c">!          F%Efield=.TRUE.</span>
+<span class="c">!          F%Efield_in_file=.TRUE.</span>
+
+
+<span class="c">!          RMIN=F%X%R(1)</span>
+<span class="c">!          RMAX=F%X%R(F%dims(1))</span>
+
+<span class="c">!          ZMIN=F%X%Z(1)</span>
+<span class="c">!          ZMAX=F%X%Z(F%dims(3))</span>
+
+<span class="c">!          do ii=1_idef,res_double</span>
+<span class="c">!             F%dims(1)=2*F%dims(1)-1</span>
+<span class="c">!             F%dims(3)=2*F%dims(3)-1</span>
+<span class="c">!          end do</span>
+
+<span class="c">!          if (res_double&gt;0) then</span>
+<span class="c">!             DEALLOCATE(F%X%R)</span>
+<span class="c">!             DEALLOCATE(F%X%Z)</span>
+<span class="c">!             DEALLOCATE(F%PSIp)</span>
+<span class="c">!          end if</span>
+          
+<span class="c">!          call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &amp;</span>
+<span class="c">!               F%Bflux,F%Efield.AND.F%Efield_in_file)</span>
+
+<span class="c">!          do ii=1_idef,F%dims(1)</span>
+<span class="c">!             F%X%R(ii)=RMIN+REAL(ii-1)/REAL(F%dims(1)-1)*(RMAX-RMIN)</span>
+<span class="c">!          end do</span>
+
+<span class="c">!          do ii=1_idef,F%dims(3)</span>
+<span class="c">!             F%X%Z(ii)=ZMIN+REAL(ii-1)/REAL(F%dims(3)-1)*(ZMAX-ZMIN)</span>
+<span class="c">!          end do            </span>
+          
+<span class="c">!          call calculate_initial_magnetic_field(F)</span>
+          
+<span class="c">!          F%E_2D%R=0._rp</span>
+<span class="c">!          do ii=1_idef,F%dims(1)</span>
+<span class="c">!             F%E_2D%PHI(ii,:)=F%Eo*F%Ro/F%X%R(ii)</span>
+<span class="c">!          end do</span>
+<span class="c">!          F%E_2D%Z=0._rp</span>
+          
+<span class="c">!       end if</span>
+
+       
+<span class="c">!       if (F%Bflux.and.test) then</span>
+
+<span class="c">!          F%Bfield=.TRUE.</span>
+<span class="c">!          F%Efield=.TRUE.</span>
+<span class="c">!          F%Efield_in_file=.TRUE.</span>
+            
+          
+<span class="c">!          call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &amp;</span>
+<span class="c">!               F%Bflux,F%Efield.AND.F%Efield_in_file)</span>
+
+          
+          <span class="c">! B</span>
+          <span class="c">! edge nodes at minimum R,Z</span>
+<span class="c">!          F%B_2D%Z(1,:)=-(F%PSIp(2,:)-F%PSIp(1,:))/(F%X%R(2)-F%X%R(1))/F%X%R(1)</span>
+<span class="c">!          F%B_2D%R(:,1)=(F%PSIp(:,2)-F%PSIp(:,1))/(F%X%Z(2)-F%X%Z(1))/F%X%R(:)</span>
+
+          <span class="c">! edge nodes at maximum R,Z</span>
+<span class="c">!          F%B_2D%Z(F%dims(1),:)=-(F%PSIp(F%dims(1),:)-F%PSIp(F%dims(1)-1,:))/ &amp;</span>
+<span class="c">!               (F%X%R(F%dims(1))-F%X%R(F%dims(1)-1))/F%X%R(F%dims(1))</span>
+<span class="c">!          F%B_2D%R(:,F%dims(3))=(F%PSIp(:,F%dims(3))-F%PSIp(:,F%dims(3)-1))/ &amp;</span>
+<span class="c">!               (F%X%Z(F%dims(3))-F%X%Z(F%dims(3)-1))/F%X%R(:)</span>
+
+<span class="c">!          do ii=2_idef,F%dims(1)-1</span>
+             <span class="c">! central difference over R for interior nodes for BZ</span>
+<span class="c">!             F%B_2D%Z(ii,:)=-(F%PSIp(ii+1,:)-F%PSIp(ii-1,:))/ &amp;</span>
+<span class="c">!                  (F%X%R(ii+1)-F%X%R(ii-1))/F%X%R(ii)</span>
+
+<span class="c">!          end do</span>
+<span class="c">!          do ii=2_idef,F%dims(3)-1</span>
+             <span class="c">! central difference over Z for interior nodes for BR</span>
+<span class="c">!             F%B_2D%R(:,ii)=(F%PSIp(:,ii+1)-F%PSIp(:,ii-1))/ &amp;</span>
+<span class="c">!                  (F%X%Z(ii+1)-F%X%Z(ii-1))/F%X%R(:)</span>
+<span class="c">!          end do</span>
+
+<span class="c">!          do ii=1_idef,F%dims(1)             </span>
+<span class="c">!             F%B_2D%PHI(ii,:)=-F%Bo*F%Ro/F%X%R(ii)</span>
+<span class="c">!          end do</span>
+
+<span class="c">!          F%E_2D%R=0._rp</span>
+<span class="c">!          do ii=1_idef,F%dims(1)</span>
+<span class="c">!             F%E_2D%PHI(ii,:)=F%Eo*F%Ro/F%X%R(ii)</span>
+<span class="c">!          end do</span>
+<span class="c">!          F%E_2D%Z=0._rp</span>
+
+<span class="c">!          F%Bfield=.FALSE.</span>
+          
+
+       
+       <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">mpi_params</span><span class="p">%</span><span class="n">rank</span><span class="p">.</span><span class="n">EQ</span><span class="p">.</span><span class="mi">0</span><span class="p">)</span> <span class="k">then</span>
+
+<span class="k">          if</span> <span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">axisymmetric_fields</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">             if</span> <span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">Bflux</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">                write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;PSIp(r=0)&quot;,E17.10)&#39;</span><span class="p">)</span> <span class="n">F</span><span class="p">%</span><span class="n">PSIp</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+                <span class="k">write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;BPHI(r=0)&quot;,E17.10)&#39;</span><span class="p">)</span> <span class="n">F</span><span class="p">%</span><span class="n">Bo</span>
+                <span class="k">write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;EPHI(r=0)&quot;,E17.10)&#39;</span><span class="p">)</span> <span class="n">F</span><span class="p">%</span><span class="n">Eo</span>
+             <span class="k">else if</span> <span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">Bflux3D</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">                write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;PSIp(r=0)&quot;,E17.10)&#39;</span><span class="p">)</span> <span class="n">F</span><span class="p">%</span><span class="n">PSIp3D</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+             <span class="k">else</span>
+<span class="k">                write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;BR(r=0)&quot;,E17.10)&#39;</span><span class="p">)</span> <span class="n">F</span><span class="p">%</span><span class="n">B_2D</span><span class="p">%</span><span class="n">R</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+                <span class="k">write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;BPHI(r=0)&quot;,E17.10)&#39;</span><span class="p">)</span> <span class="p">&amp;</span>
+                     <span class="n">F</span><span class="p">%</span><span class="n">B_2D</span><span class="p">%</span><span class="n">PHI</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+                <span class="k">write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;BZ(r=0)&quot;,E17.10)&#39;</span><span class="p">)</span> <span class="n">F</span><span class="p">%</span><span class="n">B_2D</span><span class="p">%</span><span class="n">Z</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+                <span class="k">write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;EPHI(r=0)&quot;,E17.10)&#39;</span><span class="p">)</span> <span class="p">&amp;</span>
+                     <span class="n">F</span><span class="p">%</span><span class="n">E_2D</span><span class="p">%</span><span class="n">PHI</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">dims</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+             <span class="k">end if</span>
+<span class="k">          end if</span>
+
+
+<span class="k">       end if</span>
+
+<span class="k">       if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">3</span><span class="p">:</span><span class="mi">5</span><span class="p">).</span><span class="n">EQ</span><span class="p">.</span><span class="s1">&#39;pre&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">          if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">mpi_params</span><span class="p">%</span><span class="n">rank</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="mi">0</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">             write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;Initializing GC fields from external EM fields&quot;)&#39;</span><span class="p">)</span>
+          <span class="k">end if</span>
+
+<span class="k">          if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">10</span><span class="p">:</span><span class="mi">12</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;2DB&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">             if</span> <span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">axisymmetric_fields</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">                call </span><span class="n">initialize_GC_fields</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>             
+             <span class="k">else             </span>
+<span class="k">                call </span><span class="n">initialize_GC_fields_3D</span><span class="p">(</span><span class="n">F</span><span class="p">)</span>
+             <span class="k">end if</span>
+<span class="k">          end if</span>
+<span class="k">       end if</span>
+
+       <span class="c">!       write(output_unit_write,&#39;(&quot;gradBR&quot;,E17.10)&#39;) F%gradB_2D%R(F%dims(1)/2,F%dims(3)/2)</span>
+       <span class="c">!       write(output_unit_write,&#39;(&quot;gradBPHI&quot;,E17.10)&#39;) F%gradB_2D%PHI(F%dims(1)/2,F%dims(3)/2)</span>
+       <span class="c">!       write(output_unit_write,&#39;(&quot;gradBZ&quot;,E17.10)&#39;) F%gradB_2D%Z(F%dims(1)/2,F%dims(3)/2)</span>
+
+    <span class="k">end if</span>
+
+<span class="k">    if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">mpi_params</span><span class="p">%</span><span class="n">rank</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="mi">0</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">       write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;* * * * * * * * * * * * * * * * * * * * * * * * *&quot;,/)&#39;</span><span class="p">)</span>
+    <span class="k">end if</span>
+<span class="k">       </span>
+<span class="k">  end subroutine </span><span class="n">initialize_fields</span>
+</pre></div>
+
+    </section>
+    <br>
+    
+    
+    </div>
+  </div>
+
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2020 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+             on  
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> KORC-Full Orbit was developed by Matt Beidler</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

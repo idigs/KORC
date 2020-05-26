@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Kinetic Orbit Runaway electrons Code (KORC) - Full Orbit">
+    
+    <meta name="author" content="Matt Beidler" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>save_simulation_outputs &ndash; KORC-Full Orbit</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">KORC-Full Orbit </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../page/index.html'>README</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+        
+               
+            <li><a href="../lists/types.html">Derived Types</a></li>
+        
+        
+            <li><a href="../program/main.html">Program</a></li>
+      
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../program/main.html">Program</a></li>
+
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>save_simulation_outputs
+      <small>Subroutine</small>
+    
+    </h1>
+    
+<div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     
+     
+     
+    
+    
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title=" 0.9% of total for procedures.">176 statements</a>
+     </li> 
+     
+     
+     
+    <li><i class="fa fa-code"></i><a href="../src/korc_HDF5.f90"> Source File</a></li>
+     
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+    
+     <li><a href='../sourcefile/korc_hdf5.f90.html'>korc_HDF5.f90</a></li>
+    
+     <li><a href='../module/korc_hdf5.html'>korc_HDF5</a></li>
+    
+  
+     <li class="active">save_simulation_outputs</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+  </div>
+  
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+    
+<div id="sidebar">
+  
+<h3>Contents</h3>
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../proc/save_simulation_outputs.html#src">save_simulation_outputs</a>
+  </div>
+</div>
+
+
+
+</div>
+
+    </div>
+    
+    <div class="col-md-9" id='text'>
+    <h2>
+public subroutine save_simulation_outputs(params, spp, F)
+    
+    
+   
+</h2>
+    
+  
+
+
+    
+    <p></p><div class="alert alert-info" role="alert"><h4>Note</h4><p>Subroutine that saves the electrons' variables specified in
+ params::outputs_list to HDF5 files. </p></div>
+<p>
+    
+
+    <h3>Arguments</h3>
+    
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-params~2"></span>type(KORC_PARAMS),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>params</strong></td><td><p>Core KORC simulation parameters.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-spp~2"></span>type(SPECIES),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>DIMENSION(:), ALLOCATABLE</td><td>::</td>
+  <td><strong>spp</strong></td><td><p>An instance of KORC's derived type SPECIES containing all
+ the information
+ of different electron species. See <a href="../module/korc_types.html">korc_types</a>.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f~2"></span>type(FIELDS),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>F</strong></td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+    
+    
+    
+    
+     
+    <br>
+
+    <section class="visible-xs visible-sm hidden-md">
+      
+<h3>Contents</h3>
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../proc/save_simulation_outputs.html#src">save_simulation_outputs</a>
+  </div>
+</div>
+
+
+
+    </section>
+    <br class="visible-xs visible-sm hidden-md">
+
+    
+
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
+
+    
+    
+    
+    <section>
+    <h2><span class="anchor" id="src"></span>Source Code</h2>
+    <div class="highlight"><pre><span></span>  <span class="k">subroutine </span><span class="n">save_simulation_outputs</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+    <span class="c">!! @note Subroutine that saves the electrons&#39; variables specified in</span>
+    <span class="c">!! params::outputs_list to HDF5 files. @endnote</span>
+    <span class="k">TYPE</span><span class="p">(</span><span class="n">KORC_PARAMS</span><span class="p">),</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">IN</span><span class="p">)</span> 				<span class="kd">::</span> <span class="n">params</span>
+    <span class="c">!! Core KORC simulation parameters.</span>
+    <span class="k">TYPE</span><span class="p">(</span><span class="n">SPECIES</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:),</span> <span class="k">ALLOCATABLE</span><span class="p">,</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">IN</span><span class="p">)</span> 	<span class="kd">::</span> <span class="n">spp</span>
+    <span class="c">!! An instance of KORC&#39;s derived type SPECIES containing all</span>
+    <span class="c">!! the information</span>
+    <span class="c">!! of different electron species. See [[korc_types]].</span>
+    <span class="k">TYPE</span><span class="p">(</span><span class="n">FIELDS</span><span class="p">),</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">IN</span><span class="p">)</span>                 <span class="kd">::</span> <span class="n">F</span>
+    <span class="kt">CHARACTER</span><span class="p">(</span><span class="n">MAX_STRING_LENGTH</span><span class="p">)</span> 				<span class="kd">::</span> <span class="n">filename</span>
+    <span class="c">!! String containing the name of the HDF5 file.</span>
+    <span class="kt">CHARACTER</span><span class="p">(</span><span class="n">MAX_STRING_LENGTH</span><span class="p">)</span> 				<span class="kd">::</span> <span class="n">gname</span>
+    <span class="c">!! String containing the group name of a set of KORC parameters.</span>
+    <span class="kt">CHARACTER</span><span class="p">(</span><span class="n">MAX_STRING_LENGTH</span><span class="p">)</span> 				<span class="kd">::</span> <span class="n">subgname</span>
+    <span class="c">!! String containing the subgroup name of a set of KORC parameters.</span>
+    <span class="kt">CHARACTER</span><span class="p">(</span><span class="n">MAX_STRING_LENGTH</span><span class="p">)</span> 				<span class="kd">::</span> <span class="n">dset</span>
+    <span class="c">!! Name of data set to be saved to file.</span>
+    <span class="kt">INTEGER</span><span class="p">(</span><span class="n">HID_T</span><span class="p">)</span> 						<span class="kd">::</span> <span class="n">h5file_id</span>
+    <span class="c">!! HDF5 file identifier.</span>
+    <span class="kt">INTEGER</span><span class="p">(</span><span class="n">HID_T</span><span class="p">)</span> 						<span class="kd">::</span> <span class="n">group_id</span>
+    <span class="c">!! HDF5 group identifier.</span>
+    <span class="kt">INTEGER</span><span class="p">(</span><span class="n">HID_T</span><span class="p">)</span> 						<span class="kd">::</span> <span class="n">subgroup_id</span>
+    <span class="c">!! HDF5 subgroup identifier.</span>
+    <span class="kt">INTEGER</span><span class="p">(</span><span class="n">HSIZE_T</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:),</span> <span class="k">ALLOCATABLE</span> 		<span class="kd">::</span> <span class="n">dims</span>
+    <span class="c">!! Dimensions of data saved to HDF5 file.</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:),</span> <span class="k">ALLOCATABLE</span> 			<span class="kd">::</span> <span class="n">rdata</span>
+    <span class="c">!! 1-D array of real data to be saved to HDF5 file.</span>
+    <span class="kt">INTEGER</span><span class="p">,</span> <span class="k">DIMENSION</span><span class="p">(:),</span> <span class="k">ALLOCATABLE</span> 				<span class="kd">::</span> <span class="n">idata</span>
+    <span class="c">!!1-D array of integer data to be saved to HDF5 file.</span>
+    <span class="kt">CHARACTER</span><span class="p">(</span><span class="n">MAX_STRING_LENGTH</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:),</span> <span class="k">ALLOCATABLE</span>       <span class="kd">::</span> <span class="n">attr_array</span>
+    <span class="c">!! An 1-D array with attributes of 1-D real or integer arrays that are</span>
+    <span class="c">!! passed to KORC interfaces of HDF5 I/O subroutines.</span>
+    <span class="kt">CHARACTER</span><span class="p">(</span><span class="n">MAX_STRING_LENGTH</span><span class="p">)</span> 				<span class="kd">::</span> <span class="n">attr</span>
+    <span class="c">!! A single attributes of real or integer data that is passed to KORC</span>
+    <span class="c">!! interfaces of HDF5 I/O subroutines.</span>
+    <span class="kt">INTEGER</span> 							<span class="kd">::</span> <span class="n">h5error</span>
+    <span class="c">!!HDF5 error status.</span>
+    <span class="kt">CHARACTER</span><span class="p">(</span><span class="mi">19</span><span class="p">)</span> 						<span class="kd">::</span> <span class="n">tmp_str</span>
+    <span class="c">!!Temporary string used to manipulate various strings.</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span> 						<span class="kd">::</span> <span class="n">units</span>
+    <span class="c">!! Temporary variable used to add physical units to electrons&#39; variables.</span>
+    <span class="kt">INTEGER</span> 						<span class="kd">::</span> <span class="n">ss</span>
+    <span class="c">!! Electron species iterator.</span>
+    <span class="kt">INTEGER</span> 						<span class="kd">::</span> <span class="n">jj</span>
+    <span class="c">!! Iterator for reading all the entried of params::outputs_list.</span>
+    <span class="kt">LOGICAL</span> 						<span class="kd">::</span> <span class="n">object_exists</span>
+    <span class="c">!! Flag determining if a certain dataset is already present in</span>
+    <span class="c">!! the HDF5 output files.</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:,:),</span> <span class="k">ALLOCATABLE</span>  <span class="kd">::</span><span class="n">YY</span>
+    <span class="c">!! Temporary variable get proper units on vars%Y(1,:) and vars%Y(3,:), which</span>
+    <span class="c">!! are lengths, while keeping vars%Y(2,:), which is an angle</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">mpi_params</span><span class="p">%</span><span class="n">rank</span> <span class="p">.</span><span class="n">EQ</span><span class="p">.</span> <span class="mi">0</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">       write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;Saving snapshot: &quot;,I15)&#39;</span><span class="p">)</span> <span class="p">&amp;</span>
+            <span class="n">params</span><span class="p">%</span><span class="n">it</span><span class="o">/</span><span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span><span class="p">)</span>
+       <span class="c">!write(output_unit_write,*) &#39;it&#39;,params%it,&#39;t_skip&#39;,params%t_skip,&#39;t_SC&#39;,params%t_it_SC</span>
+       
+    <span class="k">end if</span>
+
+<span class="k">    if</span> <span class="p">(</span><span class="n">SIZE</span><span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">outputs_list</span><span class="p">).</span><span class="n">GT</span><span class="p">.</span><span class="mi">1_idef</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">       write</span><span class="p">(</span><span class="n">tmp_str</span><span class="p">,</span><span class="s1">&#39;(I18)&#39;</span><span class="p">)</span> <span class="n">params</span><span class="p">%</span><span class="n">mpi_params</span><span class="p">%</span><span class="n">rank</span>
+       <span class="n">filename</span> <span class="o">=</span> <span class="nb">TRIM</span><span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">path_to_outputs</span><span class="p">)</span> <span class="o">//</span> <span class="s2">&quot;file_&quot;</span> <span class="p">&amp;</span>
+            <span class="o">//</span> <span class="nb">TRIM</span><span class="p">(</span><span class="nb">ADJUSTL</span><span class="p">(</span><span class="n">tmp_str</span><span class="p">))</span> <span class="o">//</span> <span class="s2">&quot;.h5&quot;</span>
+       <span class="k">call </span><span class="n">h5fopen_f</span><span class="p">(</span><span class="nb">TRIM</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="n">H5F_ACC_RDWR_F</span><span class="p">,</span> <span class="n">h5file_id</span><span class="p">,</span> <span class="n">h5error</span><span class="p">)</span>
+
+       <span class="c">! Create group &#39;it&#39;</span>
+       <span class="k">write</span><span class="p">(</span><span class="n">tmp_str</span><span class="p">,</span><span class="s1">&#39;(I18)&#39;</span><span class="p">)</span> <span class="n">params</span><span class="p">%</span><span class="n">it</span>
+       <span class="n">gname</span> <span class="o">=</span> <span class="nb">TRIM</span><span class="p">(</span><span class="nb">ADJUSTL</span><span class="p">(</span><span class="n">tmp_str</span><span class="p">))</span>
+       <span class="k">call </span><span class="n">h5lexists_f</span><span class="p">(</span><span class="n">h5file_id</span><span class="p">,</span><span class="nb">TRIM</span><span class="p">(</span><span class="n">gname</span><span class="p">),</span><span class="n">object_exists</span><span class="p">,</span><span class="n">h5error</span><span class="p">)</span>
+
+       <span class="k">if</span> <span class="p">(.</span><span class="nb">NOT</span><span class="p">.</span><span class="n">object_exists</span><span class="p">)</span> <span class="k">then</span> <span class="c">! Check if group does exist.</span>
+          <span class="k">call </span><span class="n">h5gcreate_f</span><span class="p">(</span><span class="n">h5file_id</span><span class="p">,</span> <span class="nb">TRIM</span><span class="p">(</span><span class="n">gname</span><span class="p">),</span> <span class="n">group_id</span><span class="p">,</span> <span class="n">h5error</span><span class="p">)</span>
+
+          <span class="n">dset</span> <span class="o">=</span> <span class="nb">TRIM</span><span class="p">(</span><span class="n">gname</span><span class="p">)</span> <span class="o">//</span> <span class="s2">&quot;/time&quot;</span>
+          <span class="n">attr</span> <span class="o">=</span> <span class="s2">&quot;Simulation time in secs&quot;</span>
+          <span class="k">call </span><span class="n">save_to_hdf5</span><span class="p">(</span><span class="n">h5file_id</span><span class="p">,</span><span class="n">dset</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">init_time</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="nb">time</span> <span class="p">&amp;</span>
+               <span class="o">+</span> <span class="kt">REAL</span><span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">it</span><span class="p">,</span><span class="n">rp</span><span class="p">)</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">dt</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="nb">time</span><span class="p">,</span><span class="n">attr</span><span class="p">)</span>
+          
+          <span class="k">do </span><span class="n">ss</span><span class="o">=</span><span class="mi">1_idef</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">num_species</span>
+
+             <span class="k">write</span><span class="p">(</span><span class="n">tmp_str</span><span class="p">,</span><span class="s1">&#39;(I18)&#39;</span><span class="p">)</span> <span class="n">ss</span>
+             <span class="n">subgname</span> <span class="o">=</span> <span class="s2">&quot;spp_&quot;</span> <span class="o">//</span> <span class="nb">TRIM</span><span class="p">(</span><span class="nb">ADJUSTL</span><span class="p">(</span><span class="n">tmp_str</span><span class="p">))</span>
+             <span class="k">call </span><span class="n">h5gcreate_f</span><span class="p">(</span><span class="n">group_id</span><span class="p">,</span> <span class="nb">TRIM</span><span class="p">(</span><span class="n">subgname</span><span class="p">),</span> <span class="n">subgroup_id</span><span class="p">,</span> <span class="n">h5error</span><span class="p">)</span>
+
+             <span class="k">do </span><span class="n">jj</span><span class="o">=</span><span class="mi">1_idef</span><span class="p">,</span><span class="n">SIZE</span><span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">outputs_list</span><span class="p">)</span>
+                <span class="k">SELECT CASE</span> <span class="p">(</span><span class="nb">TRIM</span><span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">outputs_list</span><span class="p">(</span><span class="n">jj</span><span class="p">)))</span>
+                <span class="k">CASE</span> <span class="p">(</span><span class="s1">&#39;X&#39;</span><span class="p">)</span>
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;X&quot;</span>
+                   <span class="n">units</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">length</span>
+                   <span class="k">call </span><span class="n">rsave_2d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="n">units</span><span class="o">*</span><span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">X</span><span class="p">)</span>
+                <span class="k">CASE</span> <span class="p">(</span><span class="s1">&#39;Y&#39;</span><span class="p">)</span>
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;Y&quot;</span>
+                   <span class="n">units</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">length</span>
+
+                   <span class="n">YY</span><span class="o">=</span><span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Y</span>
+                   <span class="n">YY</span><span class="p">(:,</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span><span class="n">units</span><span class="o">*</span><span class="n">YY</span><span class="p">(:,</span><span class="mi">1</span><span class="p">)</span>
+                   <span class="n">YY</span><span class="p">(:,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span><span class="n">units</span><span class="o">*</span><span class="n">YY</span><span class="p">(:,</span><span class="mi">3</span><span class="p">)</span>
+
+                   <span class="k">call </span><span class="n">rsave_2d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="n">YY</span><span class="p">)</span>
+
+                   <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">YY</span><span class="p">)</span>
+
+                <span class="k">CASE</span><span class="p">(</span><span class="s1">&#39;V&#39;</span><span class="p">)</span>
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;V&quot;</span>
+                   <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;FO&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">                      </span><span class="n">units</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">velocity</span>
+                      <span class="k">call </span><span class="n">rsave_2d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                           <span class="n">units</span><span class="o">*</span><span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">V</span><span class="p">)</span>
+                   <span class="k">else if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;GC&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">                      </span><span class="n">YY</span><span class="o">=</span><span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">V</span>
+
+                      <span class="n">YY</span><span class="p">(:,</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span><span class="n">YY</span><span class="p">(:,</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">mass</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">velocity</span>
+                      <span class="n">YY</span><span class="p">(:,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="n">YY</span><span class="p">(:,</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">mass</span><span class="o">*</span> <span class="p">&amp;</span>
+                           <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">velocity</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">Bo</span>
+
+                      <span class="k">call </span><span class="n">rsave_2d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                           <span class="n">YY</span><span class="p">)</span>
+                      <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">YY</span><span class="p">)</span>
+
+                   <span class="k">end if</span>
+<span class="k">                CASE</span><span class="p">(</span><span class="s1">&#39;RHS&#39;</span><span class="p">)</span>
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;RHS&quot;</span>
+                   <span class="n">YY</span><span class="o">=</span><span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">RHS</span>
+
+                   <span class="n">units</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">length</span><span class="o">/</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="nb">time</span>
+<span class="nb">                   </span><span class="n">YY</span><span class="p">(:,</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span><span class="n">YY</span><span class="p">(:,</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">units</span>
+                   <span class="n">YY</span><span class="p">(:,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="n">YY</span><span class="p">(:,</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">units</span>
+                   <span class="n">YY</span><span class="p">(:,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span><span class="n">YY</span><span class="p">(:,</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">units</span>
+                   <span class="n">units</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">mass</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">velocity</span><span class="o">/</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="nb">time</span>
+<span class="nb">                   </span><span class="n">YY</span><span class="p">(:,</span><span class="mi">4</span><span class="p">)</span><span class="o">=</span><span class="n">YY</span><span class="p">(:,</span><span class="mi">4</span><span class="p">)</span><span class="o">*</span><span class="n">units</span>
+                   <span class="n">YY</span><span class="p">(:,</span><span class="mi">5</span><span class="p">)</span><span class="o">=</span><span class="n">YY</span><span class="p">(:,</span><span class="mi">5</span><span class="p">)</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">mass</span><span class="o">*</span> <span class="p">&amp;</span>
+                           <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">velocity</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">Bo</span><span class="o">/</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="nb">time</span>
+
+<span class="nb">                   </span><span class="k">call </span><span class="n">rsave_2d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="n">YY</span><span class="p">)</span>
+                   <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">YY</span><span class="p">)</span>
+                   
+                <span class="k">CASE</span><span class="p">(</span><span class="s1">&#39;Rgc&#39;</span><span class="p">)</span>
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;Rgc&quot;</span>
+                   <span class="n">units</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">length</span>
+                   <span class="k">call </span><span class="n">rsave_2d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="n">units</span><span class="o">*</span><span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Rgc</span><span class="p">)</span>
+                <span class="k">CASE</span><span class="p">(</span><span class="s1">&#39;g&#39;</span><span class="p">)</span>
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;g&quot;</span>
+                   <span class="k">call </span><span class="n">save_1d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">g</span><span class="p">)</span>
+                <span class="k">CASE</span><span class="p">(</span><span class="s1">&#39;eta&#39;</span><span class="p">)</span>
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;eta&quot;</span>
+                   <span class="k">call </span><span class="n">save_1d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">eta</span><span class="p">)</span>
+                <span class="k">CASE</span><span class="p">(</span><span class="s1">&#39;mu&#39;</span><span class="p">)</span>
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;mu&quot;</span>
+                   <span class="n">units</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">mass</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">velocity</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">Bo</span>
+                   <span class="k">call </span><span class="n">save_1d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="n">units</span><span class="o">*</span><span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">mu</span><span class="p">)</span>
+                <span class="k">CASE</span><span class="p">(</span><span class="s1">&#39;Prad&#39;</span><span class="p">)</span>
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;Prad&quot;</span>
+                   <span class="n">units</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">mass</span><span class="o">*</span><span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">velocity</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span><span class="o">/</span> <span class="p">&amp;</span>
+                        <span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">length</span>
+                   <span class="k">call </span><span class="n">save_1d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="n">units</span><span class="o">*</span><span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Prad</span><span class="p">)</span>
+                <span class="k">CASE</span><span class="p">(</span><span class="s1">&#39;Pin&#39;</span><span class="p">)</span>
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;Pin&quot;</span>
+                   <span class="n">units</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">mass</span><span class="o">*</span><span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">velocity</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span><span class="o">/</span> <span class="p">&amp;</span>
+                        <span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">length</span>
+                   <span class="k">call </span><span class="n">save_1d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="n">units</span><span class="o">*</span><span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Pin</span><span class="p">)</span>
+                <span class="k">CASE</span><span class="p">(</span><span class="s1">&#39;flagCon&#39;</span><span class="p">)</span>
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;flagCon&quot;</span>
+                   <span class="k">call </span><span class="n">save_1d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span><span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="nb">INT</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">flagCon</span><span class="p">,</span><span class="n">idef</span><span class="p">))</span>
+                <span class="k">CASE</span><span class="p">(</span><span class="s1">&#39;flagCol&#39;</span><span class="p">)</span>
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;flagCol&quot;</span>
+                   <span class="k">call </span><span class="n">save_1d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span><span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="nb">INT</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">flagCol</span><span class="p">,</span><span class="n">idef</span><span class="p">))</span>
+                <span class="k">CASE</span><span class="p">(</span><span class="s1">&#39;B&#39;</span><span class="p">)</span>
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;B&quot;</span>
+                   <span class="n">units</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">Bo</span>
+                   <span class="k">call </span><span class="n">rsave_2d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="n">units</span><span class="o">*</span><span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">B</span><span class="p">)</span>
+                <span class="k">CASE</span><span class="p">(</span><span class="s1">&#39;gradB&#39;</span><span class="p">)</span>
+                   <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">3</span><span class="p">:</span><span class="mi">5</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;pre&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">                      </span><span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;gradB&quot;</span>
+                      <span class="n">units</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">Bo</span><span class="o">/</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">length</span>
+                      <span class="k">call </span><span class="n">rsave_2d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                           <span class="n">units</span><span class="o">*</span><span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">gradB</span><span class="p">)</span>
+                   <span class="k">end if</span>
+<span class="k">                CASE</span><span class="p">(</span><span class="s1">&#39;curlb&#39;</span><span class="p">)</span>
+                   <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">3</span><span class="p">:</span><span class="mi">5</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;pre&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">                      </span><span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;curlb&quot;</span>
+                      <span class="n">units</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">length</span>
+                      <span class="k">call </span><span class="n">rsave_2d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                           <span class="n">units</span><span class="o">*</span><span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">curlb</span><span class="p">)</span>
+                   <span class="k">end if</span>
+<span class="k">                CASE</span><span class="p">(</span><span class="s1">&#39;E&#39;</span><span class="p">)</span>
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;E&quot;</span>
+                   <span class="n">units</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">Eo</span>
+                   <span class="k">call </span><span class="n">rsave_2d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="n">units</span><span class="o">*</span><span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">E</span><span class="p">)</span>
+                   
+                <span class="k">CASE</span><span class="p">(</span><span class="s1">&#39;PSIp&#39;</span><span class="p">)</span>
+                   
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;PSIp&quot;</span>
+                   <span class="k">if</span> <span class="p">(.</span><span class="nb">not</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;M3D_C1&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">                      </span><span class="n">units</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">Bo</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">length</span><span class="o">**</span><span class="mi">2</span>
+                   <span class="k">else</span>
+<span class="k">                      </span><span class="n">units</span> <span class="o">=</span> <span class="mf">1._rp</span>
+                   <span class="k">end if</span>
+<span class="k">                   call </span><span class="n">save_1d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="n">units</span><span class="o">*</span><span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">PSI_P</span><span class="p">)</span>
+
+
+                   
+                <span class="k">CASE</span><span class="p">(</span><span class="s1">&#39;AUX&#39;</span><span class="p">)</span>
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;AUX&quot;</span>
+                   <span class="k">call </span><span class="n">save_1d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">AUX</span><span class="p">)</span>
+                <span class="k">CASE</span> <span class="p">(</span><span class="s1">&#39;ne&#39;</span><span class="p">)</span>
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;ne&quot;</span>
+                   <span class="n">units</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">density</span>
+                   <span class="k">call </span><span class="n">save_1d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="n">units</span><span class="o">*</span><span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">ne</span><span class="p">)</span>
+                <span class="k">CASE</span> <span class="p">(</span><span class="s1">&#39;Te&#39;</span><span class="p">)</span>
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;Te&quot;</span>
+                   <span class="n">units</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">temperature</span>
+                   <span class="k">call </span><span class="n">save_1d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="n">units</span><span class="o">*</span><span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Te</span><span class="o">/</span><span class="n">C_E</span><span class="p">)</span>
+                <span class="k">CASE</span> <span class="p">(</span><span class="s1">&#39;Zeff&#39;</span><span class="p">)</span>
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;Zeff&quot;</span>
+                   <span class="k">call </span><span class="n">save_1d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                        <span class="n">spp</span><span class="p">(</span><span class="n">ss</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Zeff</span><span class="p">)</span>                   
+                   
+                <span class="k">CASE</span> <span class="p">(</span><span class="s1">&#39;J_SC&#39;</span><span class="p">)</span>
+
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;J_SC&quot;</span>
+                   <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">SC_E</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">                      call </span><span class="n">save_1d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                           <span class="n">F</span><span class="p">%</span><span class="n">J1_SC_1D</span><span class="p">%</span><span class="n">PHI</span><span class="p">)</span>
+                   <span class="k">end if</span>
+
+
+<span class="k">                CASE</span> <span class="p">(</span><span class="s1">&#39;A_SC&#39;</span><span class="p">)</span>
+
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;A_SC&quot;</span>
+                   <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">SC_E</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">                      call </span><span class="n">save_1d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                           <span class="n">F</span><span class="p">%</span><span class="n">A1_SC_1D</span><span class="p">%</span><span class="n">PHI</span><span class="p">)</span>
+                   <span class="k">end if</span>
+
+<span class="k">                CASE</span> <span class="p">(</span><span class="s1">&#39;E_SC&#39;</span><span class="p">)</span>
+
+                   <span class="n">dset</span> <span class="o">=</span> <span class="s2">&quot;E_SC&quot;</span>
+                   <span class="n">units</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="n">Eo</span>
+                   <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">SC_E</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">                      call </span><span class="n">save_1d_array_to_hdf5</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">dset</span><span class="p">,</span> <span class="p">&amp;</span>
+                           <span class="n">units</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">E_SC_1D</span><span class="p">%</span><span class="n">PHI</span><span class="p">)</span>
+                   <span class="k">end if</span>
+
+<span class="k">                CASE </span><span class="n">DEFAULT</span>
+
+                   
+                <span class="k">END SELECT</span>
+<span class="k">             end do</span>
+
+<span class="k">             call </span><span class="n">h5gclose_f</span><span class="p">(</span><span class="n">subgroup_id</span><span class="p">,</span> <span class="n">h5error</span><span class="p">)</span>
+          <span class="k">end do</span>
+
+<span class="k">          call </span><span class="n">h5gclose_f</span><span class="p">(</span><span class="n">group_id</span><span class="p">,</span> <span class="n">h5error</span><span class="p">)</span>
+       <span class="k">end if</span> <span class="c">! Check if group does exist.</span>
+
+       <span class="k">call </span><span class="n">h5fclose_f</span><span class="p">(</span><span class="n">h5file_id</span><span class="p">,</span> <span class="n">h5error</span><span class="p">)</span>
+    <span class="k">end if</span>
+<span class="k">  end subroutine </span><span class="n">save_simulation_outputs</span>
+</pre></div>
+
+    </section>
+    <br>
+    
+    
+    </div>
+  </div>
+
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2020 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+             on  
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> KORC-Full Orbit was developed by Matt Beidler</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

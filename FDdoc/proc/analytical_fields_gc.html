@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Kinetic Orbit Runaway electrons Code (KORC) - Full Orbit">
+    
+    <meta name="author" content="Matt Beidler" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>analytical_fields_GC &ndash; KORC-Full Orbit</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">KORC-Full Orbit </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../page/index.html'>README</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+        
+               
+            <li><a href="../lists/types.html">Derived Types</a></li>
+        
+        
+            <li><a href="../program/main.html">Program</a></li>
+      
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../program/main.html">Program</a></li>
+
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>analytical_fields_GC
+      <small>Subroutine</small>
+    
+    </h1>
+    
+<div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     
+     
+     
+    
+    
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title=" 0.3% of total for procedures.">65 statements</a>
+     </li> 
+     
+     
+     
+    <li><i class="fa fa-code"></i><a href="../src/korc_fields.f90"> Source File</a></li>
+     
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+    
+     <li><a href='../sourcefile/korc_fields.f90.html'>korc_fields.f90</a></li>
+    
+     <li><a href='../module/korc_fields.html'>korc_fields</a></li>
+    
+  
+     <li class="active">analytical_fields_GC</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+  </div>
+  
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+    
+<div id="sidebar">
+  
+<h3>Contents</h3>
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../proc/analytical_fields_gc.html#src">analytical_fields_GC</a>
+  </div>
+</div>
+
+
+
+</div>
+
+    </div>
+    
+    <div class="col-md-9" id='text'>
+    <h2>
+private subroutine analytical_fields_GC(params, F, Y, E, B, gradB, curlB, flag, PSIp)
+    
+    
+   
+</h2>
+    
+  
+
+
+    
+
+    <h3>Arguments</h3>
+    
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-params~156"></span>type(KORC_PARAMS),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>params</strong></td><td><p>Core KORC simulation parameters.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f~96"></span>type(FIELDS),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>F</strong></td><td><p>An instance of the KORC derived type FIELDS.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-y~18"></span>real(kind=rp),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>DIMENSION(:,:), ALLOCATABLE</td><td>::</td>
+  <td><strong>Y</strong></td><td><p>Cylindrical coordinates of each particle in the simulation; 
+ Y(1,:) = <script type="math/tex">r</script>, Y(2,:) = <script type="math/tex">\theta</script>, Y(3,:) = <script type="math/tex">\zeta</script>.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-e~10"></span>real(kind=rp),</td>
+  <td>intent(inout),</td>
+  <td></td>
+  
+  <td>DIMENSION(:,:), ALLOCATABLE</td><td>::</td>
+  <td><strong>E</strong></td><td><p>Electric field components in cylindricalcoordinates; 
+ E(1,:) = <script type="math/tex">E_R</script>, E(2,:) = <script type="math/tex">E_\phi</script>, E(3,:) = <script type="math/tex">E_Z</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-b~8"></span>real(kind=rp),</td>
+  <td>intent(inout),</td>
+  <td></td>
+  
+  <td>DIMENSION(:,:), ALLOCATABLE</td><td>::</td>
+  <td><strong>B</strong></td><td><p>Magnetic field components in cylindrical coordinates; 
+ B(1,:) = <script type="math/tex">B_R</script>, B(2,:) = <script type="math/tex">B_\phi</script>, B(3,:) = <script type="math/tex">B_Z</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-gradb~5"></span>real(kind=rp),</td>
+  <td>intent(inout),</td>
+  <td></td>
+  
+  <td>DIMENSION(:,:), ALLOCATABLE</td><td>::</td>
+  <td><strong>gradB</strong></td><td><p>Gradient of magnitude of magnetic field in cylindrical coordinates; 
+ gradB(1,:) = <script type="math/tex">\nabla_R B</script>, B(2,:) = <script type="math/tex">\nabla_\phi B_</script>,
+ B(3,:) = <script type="math/tex">\nabla_Z B</script>
+</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-curlb~2"></span>real(kind=rp),</td>
+  <td>intent(inout),</td>
+  <td></td>
+  
+  <td>DIMENSION(:,:), ALLOCATABLE</td><td>::</td>
+  <td><strong>curlB</strong></td><td><p>Curl of magnetic field unit vector in cylindrical coordinates </p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-flag~25"></span>integer(kind=is),</td>
+  <td>intent(in),</td>
+  <td></td>
+  
+  <td>DIMENSION(:), ALLOCATABLE</td><td>::</td>
+  <td><strong>flag</strong></td><td><p>Flag for each particle to decide whether it is being followed (flag=T)
+ or not (flag=F).</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-psip~37"></span>real(kind=rp),</td>
+  <td>intent(inout),</td>
+  <td></td>
+  
+  <td>DIMENSION(:), ALLOCATABLE</td><td>::</td>
+  <td><strong>PSIp</strong></td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+    
+    
+    
+    
+     
+    <br>
+
+    <section class="visible-xs visible-sm hidden-md">
+      
+<h3>Contents</h3>
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../proc/analytical_fields_gc.html#src">analytical_fields_GC</a>
+  </div>
+</div>
+
+
+
+    </section>
+    <br class="visible-xs visible-sm hidden-md">
+
+    
+
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
+
+    
+    
+    
+    <section>
+    <h2><span class="anchor" id="src"></span>Source Code</h2>
+    <div class="highlight"><pre><span></span>  <span class="k">subroutine </span><span class="n">analytical_fields_GC</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">Y</span><span class="p">,</span><span class="n">E</span><span class="p">,</span><span class="n">B</span><span class="p">,</span><span class="n">gradB</span><span class="p">,</span><span class="n">curlb</span><span class="p">,</span><span class="n">flag</span><span class="p">,</span><span class="n">PSIp</span><span class="p">)</span>
+    <span class="k">TYPE</span><span class="p">(</span><span class="n">KORC_PARAMS</span><span class="p">),</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">IN</span><span class="p">)</span>      <span class="kd">::</span> <span class="n">params</span>
+    <span class="c">!! Core KORC simulation parameters.</span>
+    <span class="k">TYPE</span><span class="p">(</span><span class="n">FIELDS</span><span class="p">),</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">IN</span><span class="p">)</span>                               <span class="kd">::</span> <span class="n">F</span>
+    <span class="c">!! An instance of the KORC derived type FIELDS.</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:,:),</span> <span class="k">ALLOCATABLE</span><span class="p">,</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">IN</span><span class="p">)</span>      <span class="kd">::</span> <span class="n">Y</span>
+    <span class="c">!! Cylindrical coordinates of each particle in the simulation; </span>
+    <span class="c">!! Y(1,:) = \(r\), Y(2,:) = \(\theta\), Y(3,:) = \(\zeta\).</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:,:),</span> <span class="k">ALLOCATABLE</span><span class="p">,</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">INOUT</span><span class="p">)</span>   <span class="kd">::</span> <span class="n">B</span>
+    <span class="c">!! Magnetic field components in cylindrical coordinates; </span>
+    <span class="c">!! B(1,:) = \(B_R\), B(2,:) = \(B_\phi\), B(3,:) = \(B_Z\)</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>   <span class="kd">::</span> <span class="n">Btmp</span>
+    <span class="c">!! Placeholder for magnetic field components in cylindrical coordinates; </span>
+    <span class="c">!! B(1,:) = \(B_R\), B(2,:) = \(B_\phi\), B(3,:) = \(B_Z\)</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:,:),</span> <span class="k">ALLOCATABLE</span><span class="p">,</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">INOUT</span><span class="p">)</span>   <span class="kd">::</span> <span class="n">gradB</span>
+    <span class="c">!! Gradient of magnitude of magnetic field in cylindrical coordinates; </span>
+    <span class="c">!! gradB(1,:) = \(\nabla_R B\), B(2,:) = \(\nabla_\phi B_\),</span>
+    <span class="c">!! B(3,:) = \(\nabla_Z B\)</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:,:),</span> <span class="k">ALLOCATABLE</span><span class="p">,</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">INOUT</span><span class="p">)</span>   <span class="kd">::</span> <span class="n">curlB</span>
+    <span class="c">!! Curl of magnetic field unit vector in cylindrical coordinates </span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:,:),</span> <span class="k">ALLOCATABLE</span><span class="p">,</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">INOUT</span><span class="p">)</span>   <span class="kd">::</span> <span class="n">E</span>
+    <span class="c">!! Electric field components in cylindricalcoordinates; </span>
+    <span class="c">!! E(1,:) = \(E_R\), E(2,:) = \(E_\phi\), E(3,:) = \(E_Z\)</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:),</span> <span class="k">ALLOCATABLE</span><span class="p">,</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">INOUT</span><span class="p">)</span>   <span class="kd">::</span> <span class="n">PSIp</span>
+    <span class="kt">INTEGER</span><span class="p">(</span><span class="k">is</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:),</span> <span class="k">ALLOCATABLE</span><span class="p">,</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">IN</span><span class="p">)</span>     <span class="kd">::</span> <span class="n">flag</span>
+    <span class="c">!! Flag for each particle to decide whether it is being followed (flag=T)</span>
+    <span class="c">!! or not (flag=F).</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>                                               <span class="kd">::</span> <span class="n">Ezeta</span>
+    <span class="c">!! Toroidal electric field \(E_\zeta\).</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>                                               <span class="kd">::</span> <span class="n">Bzeta</span>
+    <span class="c">!! Toroidal magnetic field \(B_\zeta\).</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>                                               <span class="kd">::</span> <span class="n">Bp</span>
+    <span class="c">!! Poloidal magnetic field \(B_\theta(r)\).</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>                                               <span class="kd">::</span> <span class="n">eta</span>
+    <span class="c">!! Aspect ratio \(\eta\).</span>
+
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>                                               <span class="kd">::</span> <span class="n">q</span>
+    <span class="c">!! Safety profile \(q(r)\).</span>
+    <span class="kt">INTEGER</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span>                                            <span class="kd">::</span> <span class="n">pp</span> <span class="c">! Iterator(s)</span>
+    <span class="c">!! Particle iterator.</span>
+    <span class="kt">INTEGER</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span>                                            <span class="kd">::</span> <span class="n">ss</span>
+    <span class="c">!! Particle species iterator.</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>    <span class="kd">::</span>  <span class="n">dRBR</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>    <span class="kd">::</span>  <span class="n">dRBPHI</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>    <span class="kd">::</span>  <span class="n">dRBZ</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>    <span class="kd">::</span>  <span class="n">dZBR</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>    <span class="kd">::</span>  <span class="n">dZBPHI</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>    <span class="kd">::</span>  <span class="n">dZBZ</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>    <span class="kd">::</span>  <span class="n">Bmag</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>    <span class="kd">::</span>  <span class="n">dRbhatPHI</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>    <span class="kd">::</span>  <span class="n">dRbhatZ</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>    <span class="kd">::</span>  <span class="n">dZbhatR</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>    <span class="kd">::</span>  <span class="n">dZbhatPHI</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>    <span class="kd">::</span>  <span class="n">qprof</span>
+    <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>    <span class="kd">::</span>  <span class="n">rm</span><span class="p">,</span><span class="n">theta</span>
+
+
+    <span class="n">ss</span> <span class="o">=</span> <span class="n">SIZE</span><span class="p">(</span><span class="n">Y</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c">!$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,rm,Btmp,qprof,dRBR,dRBPHI, &amp;</span>
+    <span class="c">!$OMP dRBZ,dZBR,dZBPHI,dZBZ,Bmag,dRbhatPHI,dRbhatZ,dZbhatR,dZbhatPHI, &amp;</span>
+    <span class="c">!$OMP theta) &amp;</span>
+    <span class="c">!$OMP&amp; SHARED(F,Y,E,B,gradB,curlb,flag,PSIp)</span>
+    <span class="k">do </span><span class="n">pp</span><span class="o">=</span><span class="mi">1_idef</span><span class="p">,</span><span class="n">ss</span>
+       <span class="c">!       if ( flag(pp) .EQ. 1_is ) then</span>
+
+       <span class="n">rm</span><span class="o">=</span><span class="nb">sqrt</span><span class="p">((</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">-</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Ro</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">+</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+       <span class="n">theta</span><span class="o">=</span><span class="n">atan2</span><span class="p">(</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">3</span><span class="p">),(</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">-</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Ro</span><span class="p">))</span>
+       <span class="n">qprof</span> <span class="o">=</span> <span class="mf">1.0_rp</span> <span class="o">+</span> <span class="p">(</span><span class="n">rm</span><span class="o">/</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">lambda</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+
+<span class="c">!       write(output_unit_write,*) &#39;rm: &#39;,rm</span>
+<span class="c">!       write(output_unit_write,*) &#39;R0: &#39;,F%AB%Ro</span>
+<span class="c">!       write(output_unit_write,*) &#39;Y_R: &#39;,Y(pp,1)</span>
+<span class="c">!       write(output_unit_write,*) &#39;theta: &#39;,theta</span>
+       
+       <span class="n">PSIp</span><span class="p">(</span><span class="n">pp</span><span class="p">)</span><span class="o">=</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">lambda</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">Bo</span><span class="o">/</span> <span class="p">&amp;</span>
+            <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">qo</span><span class="o">*</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Ro</span><span class="o">+</span><span class="n">rm</span><span class="o">*</span><span class="nb">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)))</span><span class="o">*</span> <span class="p">&amp;</span>
+            <span class="nb">log</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="p">(</span><span class="n">rm</span><span class="o">/</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">lambda</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c">!       write(output_unit_write,*) &#39;PSIp: &#39;,PSIp(pp)</span>
+       
+       <span class="n">Btmp</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Bo</span><span class="o">*</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">qo</span><span class="o">*</span><span class="n">qprof</span><span class="o">*</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+       <span class="n">Btmp</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">=-</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Bo</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Ro</span><span class="o">/</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+       <span class="n">Btmp</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">=-</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Bo</span><span class="o">*</span><span class="p">(</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">-</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Ro</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">qo</span><span class="o">*</span><span class="n">qprof</span><span class="o">*</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span>
+
+       <span class="n">B</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="n">Btmp</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+       <span class="n">B</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="o">=</span> <span class="n">Btmp</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+       <span class="n">B</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="o">=</span> <span class="n">Btmp</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+
+       <span class="n">dRBR</span><span class="o">=-</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Bo</span><span class="o">*</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">qo</span><span class="o">*</span><span class="n">qprof</span><span class="o">*</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span><span class="o">*</span><span class="p">(</span><span class="mf">1.</span><span class="o">/</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span> <span class="p">&amp;</span>
+            <span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">-</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Ro</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">lambda</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">qprof</span><span class="p">))</span>
+       <span class="n">dRBPHI</span><span class="o">=</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Bo</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Ro</span><span class="o">/</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+       <span class="n">dRBZ</span><span class="o">=</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Bo</span><span class="o">/</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">qo</span><span class="o">*</span><span class="n">qprof</span><span class="o">*</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Ro</span><span class="o">/</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="mi">2</span><span class="o">*</span><span class="p">(</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">-</span> <span class="p">&amp;</span>
+            <span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Ro</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="o">/</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">lambda</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">qprof</span><span class="p">))</span>
+       <span class="n">dZBR</span><span class="o">=</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Bo</span><span class="o">/</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">qo</span><span class="o">*</span><span class="n">qprof</span><span class="o">*</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="mi">2</span><span class="o">*</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">/</span> <span class="p">&amp;</span>
+            <span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">lambda</span><span class="o">**</span><span class="mi">2</span><span class="o">*</span><span class="n">qprof</span><span class="p">))</span>
+       <span class="n">dZBPHI</span><span class="o">=</span><span class="mf">0._rp</span>
+       <span class="n">dZBZ</span><span class="o">=</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Bo</span><span class="o">*</span><span class="p">(</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">-</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Ro</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">qo</span><span class="o">*</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">/</span> <span class="p">&amp;</span>
+            <span class="p">((</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">lambda</span><span class="o">*</span><span class="n">qprof</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+
+       <span class="n">Bmag</span><span class="o">=</span><span class="nb">sqrt</span><span class="p">(</span><span class="n">B</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">B</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">+</span><span class="n">B</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">B</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">+</span><span class="n">B</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">B</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+
+       <span class="n">gradB</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">=</span><span class="p">(</span><span class="n">B</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">dRBR</span><span class="o">+</span><span class="n">B</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">dRBPHI</span><span class="o">+</span><span class="n">B</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">dRBZ</span><span class="p">)</span><span class="o">/</span><span class="n">Bmag</span>
+       <span class="n">gradB</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="mf">0._rp</span>
+       <span class="n">gradB</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span><span class="p">(</span><span class="n">B</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">dZBR</span><span class="o">+</span><span class="n">B</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">dZBPHI</span><span class="o">+</span><span class="n">B</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">dZBZ</span><span class="p">)</span><span class="o">/</span><span class="n">Bmag</span>
+
+       <span class="n">dRbhatPHI</span><span class="o">=</span><span class="p">(</span><span class="n">Bmag</span><span class="o">*</span><span class="n">dRBPHI</span><span class="o">-</span><span class="n">B</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">gradB</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span><span class="o">/</span><span class="n">Bmag</span><span class="o">**</span><span class="mi">2</span>
+       <span class="n">dRbhatZ</span><span class="o">=</span><span class="p">(</span><span class="n">Bmag</span><span class="o">*</span><span class="n">dRBZ</span><span class="o">-</span><span class="n">B</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">gradB</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span><span class="o">/</span><span class="n">Bmag</span><span class="o">**</span><span class="mi">2</span>
+       <span class="n">dZbhatR</span><span class="o">=</span><span class="p">(</span><span class="n">Bmag</span><span class="o">*</span><span class="n">dZBR</span><span class="o">-</span><span class="n">B</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">gradB</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span><span class="o">/</span><span class="n">Bmag</span><span class="o">**</span><span class="mi">2</span>
+       <span class="n">dZbhatPHI</span><span class="o">=</span><span class="p">(</span><span class="n">Bmag</span><span class="o">*</span><span class="n">dZBPHI</span><span class="o">-</span><span class="n">B</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">gradB</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span><span class="o">/</span><span class="n">Bmag</span><span class="o">**</span><span class="mi">2</span>
+
+       <span class="n">curlb</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="o">=-</span><span class="n">dZbhatPHI</span>
+       <span class="n">curlb</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">=</span><span class="n">dZbhatR</span><span class="o">-</span><span class="n">dRbhatZ</span>
+       <span class="n">curlb</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span><span class="o">=</span><span class="n">B</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">Bmag</span><span class="o">*</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">))</span><span class="o">+</span><span class="n">dRbhatPHI</span>          
+
+       <span class="c">!          if (abs(F%Eo) &gt; 0) then</span>
+       <span class="n">E</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+       <span class="n">E</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="o">=</span> <span class="n">F</span><span class="p">%</span><span class="n">Eo</span><span class="o">*</span><span class="n">F</span><span class="p">%</span><span class="n">AB</span><span class="p">%</span><span class="n">Ro</span><span class="o">/</span><span class="n">Y</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+       <span class="n">E</span><span class="p">(</span><span class="n">pp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+       <span class="c">!         end if</span>
+       <span class="c">!      end if</span>
+    <span class="k">end do</span>
+    <span class="c">!$OMP END PARALLEL DO</span>
+
+<span class="c">!    write(output_unit_write,*) &#39;PSIp: &#39;,PSIp(:)</span>
+<span class="c">!    write(output_unit_write,*) &#39;B_PHI: &#39;,B(:,2)</span>
+    
+  <span class="k">end subroutine </span><span class="n">analytical_fields_GC</span>
+</pre></div>
+
+    </section>
+    <br>
+    
+    
+    </div>
+  </div>
+
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2020 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+             on  
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> KORC-Full Orbit was developed by Matt Beidler</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

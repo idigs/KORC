@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Kinetic Orbit Runaway electrons Code (KORC) - Full Orbit">
+    
+    <meta name="author" content="Matt Beidler" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>main &ndash; KORC-Full Orbit</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">KORC-Full Orbit </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../page/index.html'>README</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+        
+               
+            <li><a href="../lists/types.html">Derived Types</a></li>
+        
+        
+            <li><a href="../program/main.html">Program</a></li>
+      
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../program/main.html">Program</a></li>
+
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>main
+    <small>Program</small>
+    
+    </h1>
+    
+<div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     
+     
+     
+    
+    
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title="100.0% of total for programs.">232 statements</a>
+     </li> 
+     
+     
+     
+    <li><i class="fa fa-code"></i><a href="../src/main.f90"> Source File</a></li>
+     
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+    
+     <li><a href='../sourcefile/main.f90.html'>main.f90</a></li>
+    
+  
+     <li class="active">main</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+  </div>
+  
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+    
+<div id="sidebar">
+  
+<h3>Contents</h3>
+ 
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#vars-0">Variables</a></h3></div>
+  <div id="vars-0" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../program/main.html#variable-params~179">params</a>
+      
+      <a class="list-group-item" href="../program/main.html#variable-spp~56">spp</a>
+      
+      <a class="list-group-item" href="../program/main.html#variable-f~132">F</a>
+      
+      <a class="list-group-item" href="../program/main.html#variable-p~62">P</a>
+      
+      <a class="list-group-item" href="../program/main.html#variable-it~3">it</a>
+      
+      <a class="list-group-item" href="../program/main.html#variable-mpierr">mpierr</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../program/main.html#src">main</a>
+  </div>
+</div>
+
+
+
+</div>
+
+    </div>
+    
+    <div class="col-md-9" id='text'>
+    
+  
+    <div class="panel panel-default">
+      <div class="panel-heading">
+  <h3 class="panel-title">Uses</h3>
+      </div>
+      <ul class="list-group">
+      
+      <li class="list-group-item">
+  <ul class="list-inline">
+    
+    <li><a href='../module/korc_types.html'>korc_types</a></li>
+    
+    <li><a href='../module/korc_units.html'>korc_units</a></li>
+    
+    <li><a href='../module/korc_hpc.html'>korc_hpc</a></li>
+    
+    <li><a href='../module/korc_hdf5.html'>korc_HDF5</a></li>
+    
+    <li><a href='../module/korc_fields.html'>korc_fields</a></li>
+    
+    <li><a href='../module/korc_ppusher.html'>korc_ppusher</a></li>
+    
+    <li><a href='../module/korc_interp.html'>korc_interp</a></li>
+    
+    <li><a href='../module/korc_collisions.html'>korc_collisions</a></li>
+    
+    <li><a href='../module/korc_initialize.html'>korc_initialize</a></li>
+    
+    <li><a href='../module/korc_finalize.html'>korc_finalize</a></li>
+    
+    <li><a href='../module/korc_profiles.html'>korc_profiles</a></li>
+    
+    <li><a href='../module/korc_input.html'>korc_input</a></li>
+    
+  </ul>
+      </li>
+      
+      
+      
+      </ul>
+    </div>
+    
+
+    <p></p><div class="alert alert-info" role="alert"><h4>Note</h4><p>Main function of KORC. </p></div>
+<p>The main program contains the calls to the main functions and subroutines. 
+ Also, it contains the variables that control
+ the behavior of the core of KORC and all other external/optional modules.</p>
+<h2>Order of KORC operations</h2>
+
+<h3>Communication and Timing</h3>
+
+<p><h4>1. Parallel Communications</h4></p>
+<p>Subroutine <a href="../proc/initialize_communications.html">initialize_communications</a> in <a href="../module/korc_hpc.html">korc_hpc</a> that 
+ initializes MPI and OpenMP communications.</p>
+<p><h4>2. Timers</h4></p>
+<p>Subroutine <a href="../proc/timing_korc.html">timing_KORC</a> in <a href="../module/korc_hpc.html">korc_hpc</a> that times the 
+ execution of any parallel sections of KORC.</p>
+<h3>Initialization</h3>
+
+<p><h4>1. HDF5</h4></p>
+<p>Subroutine <a href="../proc/initialize_hdf5.html">initialize_HDF5</a> in <a href="../module/korc_hdf5.html">korc_HDF5</a> that initializes
+ HDF5 library. </p>
+<p><h4>2. Initialize korc parameters</h4></p>
+<p>Subroutine <a href="../proc/initialize_korc_parameters.html">initialize_korc_parameters</a> in <a href="../module/korc_initialize.html">korc_initialize</a> that 
+ initializes paths and KORC parameters through <a href="../proc/load_korc_params.html">load_korc_params</a>
+ on MPI processes.</p>
+<p><h4>3. Initialize fields</h4></p>
+<p>Subroutine <a href="../proc/initialize_fields.html">initialize_fields</a> in <a href="../module/korc_fields.html">korc_fields</a> that initializes 
+ parameters of the EM fields, either analytically or from an external HDF5
+ file. Reads in &amp;analytical_fields_params and 
+ &amp;externalPlasmaModel namelists from input file.</p>
+<p><h4>4. Initialize Profiles</h4></p>
+<p>Subroutine <a href="../proc/initialize_profiles.html">initialize_profiles</a> in <a href="../module/korc_profiles.html">korc_profiles</a> that initializes 
+ parameters of the plasma profiles, either analytically or from an
+ external HDF5
+ file. Reads in &amp;plasmaProfiles namelist from input file.
+ Only initialized if collisions (params%collisions==T) are 
+ <h4>5. Initialize Particle Velocity Phase Space</h4></p>
+<p>Subroutine <a href="../proc/initialize_particles.html">initialize_particles</a> in <a href="../module/korc_initialize.html">korc_initialize</a> that 
+ initializes particle parameters from &amp;amplasma_species namelist, 
+ allocates arrays for individual particles, including location, velocity, 
+ local EM fields and plasma profiles, etc., and 
+ calls <a href="../proc/initial_energy_pitch_dist.html">initial_energy_pitch_dist</a> to assign particles' energy and pitch
+ angle according to the chosen distribution.</p>
+<p><h4>9. Compute Characteristic Plasma Parameters</h4></p>
+<p>Subroutine <a href="../proc/compute_charcs_plasma_params.html">compute_charcs_plasma_params</a> in <a href="../module/korc_units.html">korc_units</a> calculates
+ the characteristic plasma parameters params%cpp that are used for normalizations.
+ Also finds the maximum non-relativistic and relativistic cyclotron frequencies
+ to be used for setting the timstep for the time-evolution algorithms.</p>
+<p><h4>6. Initialize Collision Parameters</h4></p>
+<p>Subroutine <a href="../proc/initialize_collision_params.html">initialize_collision_params</a> in <a href="../module/korc_collisions.html">korc_collisions</a> that
+ initializes collision parameters for the SS (single-species) and MS
+ (multiple-species) data types, reading in namefiles from the KORC input file.
+ MS reads in namelist &amp;CollisionParamsMultipleSpecies while SS reads in
+ namelist &amp;CollisionParamsSingleSpecies.</p>
+<p><h4>10. Define Time Step</h4></p>
+<p>Subroutine <a href="../proc/define_time_step.html">define_time_step</a> in <a href="../module/korc_initialize.html">korc_initialize</a> either loads
+ time-stepping parameters for a restart, or defines new parameters based
+ on a maximum timestep
+ set by the inverse of the relativistic cyclotron frequency.</p>
+<p><h4>11. Initialize Particle Pusher</h4>    </p>
+<p><h4>12. Normalize Variables</h4></p>
+<p>Subroutine <a href="../proc/normalize_variables.html">normalize_variables</a> in <a href="../module/korc_units.html">korc_units</a> normalizes 
+ variables consistent with characteristic plasma parameters 
+ calculated in <a href="../proc/compute_charcs_plasma_params.html">compute_charcs_plasma_params</a>.</p>
+<p><h4>13. Normalize Collision Parameters </h4></p>
+<p>Subroutine <a href="../proc/normalize_collisions_params.html">normalize_collisions_params</a> in <a href="../module/korc_collisions.html">korc_collisions</a> that
+ normalizes collision parameters for the SS (single-species) and MS
+ (multiple-species) data types.</p>
+<p><h4>14. Define Collision Time Step</h4></p>
+<p>Subroutine <a href="../proc/define_collisions_time_step.html">define_collisions_time_step</a> in <a href="../module/korc_collisions.html">korc_collisions</a> that
+ sets subcycling iteration number for collisions based off of the collision
+ frequency model used.</p>
+<p><h4>15. Initialize Fields Interpolant</h4></p>
+<p>Subroutine <a href="../proc/initialize_fields_interpolant.html">initialize_fields_interpolant</a> in <a href="../module/korc_interp.html">korc_interp</a> calls
+ EZspline
+ subroutines EZspline_init for memory allocation and boundary condition
+ setup
+ and EZspline_setup to compute the necessary cubic coefficients needed
+ for subsequent
+ field interpolations. The magnetic field can be defined in terms of an
+ axisymmetric
+ scalar flux function, axisymmetric field, or 3D field, while the
+ electric field
+ can be defined as an axisymmetric or 3D field.</p>
+<p><h4>16. Initialize Profiles Interpolant</h4></p>
+<p>Subroutine <a href="../proc/initialize_profiles_interpolant.html">initialize_profiles_interpolant</a> in <a href="../module/korc_interp.html">korc_interp</a>
+ calls EZspline
+ subroutines EZlinear_init for axisymmetric (flux-surface quantities) or
+ EZspline_init for 3D profiles for memory allocation and boundary
+ condition setup
+ and EZspline_setup to compute the necessary cubic coefficients needed
+ for subsequent
+ field interpolations. 
+ Only initialized if collisions (params%collisions==T) are present for
+ ne, Te, Zeff</p>
+<p><h4>17. Set Particle Initial Conditions</h4>  </p>
+<p>Subroutine <a href="../proc/set_up_particles_ic.html">set_up_particles_ic</a> in <a href="../module/korc_initialize.html">korc_initialize</a> calls
+ subroutines to prescribe initial conditions or load them 
+ from file for a restart. Initial spatial values are prescribed with 
+ <a href="../proc/intitial_spatial_distribution.html">intitial_spatial_distribution</a> in <a href="../module/korc_spatial_distribution.html">korc_spatial_distribution</a> and 
+ initial velocity values are prescribed with <a href="../proc/initial_gyro_distribution.html">initial_gyro_distribution</a>
+ in <a href="../module/korc_velocity_distribution.html">korc_velocity_distribution</a>.</p>
+<p><h4>18. Save Simulation and Collision Parameters</h4>  </p>
+<p>Subroutines <a href="../proc/save_simulation_parameters.html">save_simulation_parameters</a> in <a href="../module/korc_hdf5.html">korc_HDF5</a> and
+ <a href="../proc/save_collision_params.html">save_collision_params</a> in <a href="../module/korc_collisions.html">korc_collisions</a> call
+ subroutines to save simulation and collision parameters.</p>
+    
+    <br>
+
+     <section class="visible-xs visible-sm hidden-md">
+       
+<h3>Contents</h3>
+ 
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title"><a data-toggle="collapse" href="#vars-1">Variables</a></h3></div>
+  <div id="vars-1" class="panel-collapse collapse">
+    <div class="list-group">
+      
+      <a class="list-group-item" href="../program/main.html#variable-params~179">params</a>
+      
+      <a class="list-group-item" href="../program/main.html#variable-spp~56">spp</a>
+      
+      <a class="list-group-item" href="../program/main.html#variable-f~132">F</a>
+      
+      <a class="list-group-item" href="../program/main.html#variable-p~62">P</a>
+      
+      <a class="list-group-item" href="../program/main.html#variable-it~3">it</a>
+      
+      <a class="list-group-item" href="../program/main.html#variable-mpierr">mpierr</a>
+      
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../program/main.html#src">main</a>
+  </div>
+</div>
+
+
+
+     </section>
+     <br class="visible-xs visible-sm hidden-md">
+
+     
+
+    
+    <section>
+    <h2>Variables</h2>
+    
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+
+<th>Attributes</th><th></th><th>Name</th><th></th><th>Initial</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-params~179"></span>type(KORC_PARAMS)</td>
+  
+  
+  <td></td><td>::</td>
+  <td><strong>params</strong></td><td></td><td></td><td><p>Contains the parameters that control the core of KORC: 
+ time steping, output list, etc.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-spp~56"></span>type(SPECIES),</td>
+  
+  
+  <td>DIMENSION(:), ALLOCATABLE</td><td>::</td>
+  <td><strong>spp</strong></td><td></td><td></td><td><p>Contains the initial parameters of each species, which 
+ can be different electrons with different
+ distribution functions.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f~132"></span>type(FIELDS)</td>
+  
+  
+  <td></td><td>::</td>
+  <td><strong>F</strong></td><td></td><td></td><td><p>and electric fields, or in the case of using 
+ external fields it contains the data used in the interpolations. 
+See <a href="../module/korc_fields.html">korc_fields</a> for details.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-p~62"></span>type(PROFILES)</td>
+  
+  
+  <td></td><td>::</td>
+  <td><strong>P</strong></td><td></td><td></td><td><p>or in the case of using external 
+ fields it contains the data used in the interpolations. 
+ See <a href="../module/korc_profiles.html">korc_profiles</a> for details.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-it~3"></span>integer(kind=ip)</td>
+  
+  
+  <td></td><td>::</td>
+  <td><strong>it</strong></td><td></td><td></td><td><p>Time iteration</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-mpierr"></span>integer</td>
+  
+  
+  <td></td><td>::</td>
+  <td><strong>mpierr</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+    </section>
+    <br>
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+
+
+    
+    
+    
+    <section>
+    <h2 id="src">Source Code</h2>
+    <div class="highlight"><pre><span></span><span class="k">program </span><span class="n">main</span>
+  <span class="c">!! @note  Main function of KORC. @endnote</span>
+  <span class="c">!! The main program contains the calls to the main functions and subroutines. </span>
+  <span class="c">!! Also, it contains the variables that control</span>
+  <span class="c">!! the behavior of the core of KORC and all other external/optional modules.</span>
+
+  <span class="k">use </span><span class="n">korc_types</span>
+  <span class="k">use </span><span class="n">korc_units</span>
+  <span class="k">use </span><span class="n">korc_hpc</span>
+  <span class="k">use </span><span class="n">korc_HDF5</span>
+  <span class="k">use </span><span class="n">korc_fields</span>
+  <span class="k">use </span><span class="n">korc_ppusher</span>
+  <span class="k">use </span><span class="n">korc_interp</span>
+  <span class="k">use </span><span class="n">korc_collisions</span>
+  <span class="k">use </span><span class="n">korc_initialize</span>
+  <span class="k">use </span><span class="n">korc_finalize</span>
+  <span class="k">use </span><span class="n">korc_profiles</span>
+  <span class="k">use </span><span class="n">korc_input</span>
+
+  <span class="k">implicit none</span>
+
+<span class="k">  TYPE</span><span class="p">(</span><span class="n">KORC_PARAMS</span><span class="p">)</span> <span class="kd">::</span> <span class="n">params</span>
+  <span class="c">!! Contains the parameters that control the core of KORC: </span>
+  <span class="c">!! time steping, output list, etc.</span>
+  <span class="k">TYPE</span><span class="p">(</span><span class="n">SPECIES</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:),</span> <span class="k">ALLOCATABLE</span> <span class="kd">::</span> <span class="n">spp</span>
+  <span class="c">!! Contains the initial parameters of each species, which </span>
+  <span class="c">!! can be different electrons with different</span>
+  <span class="c">!! distribution functions.</span>
+  <span class="k">TYPE</span><span class="p">(</span><span class="n">FIELDS</span><span class="p">)</span> <span class="kd">::</span> <span class="n">F</span>
+  <span class="c">!! F: Contains the parameters of the analytical magnetic </span>
+  <span class="c">!! and electric fields, or in the case of using </span>
+  <span class="c">!! external fields it contains the data used in the interpolations. </span>
+  <span class="c">!!See [[korc_fields(module)]] for details.</span>
+  <span class="k">TYPE</span><span class="p">(</span><span class="n">PROFILES</span><span class="p">)</span> <span class="kd">::</span> <span class="n">P</span>
+  <span class="c">!! P: Contains the parameters of the analytical plasma profiles, </span>
+  <span class="c">!! or in the case of using external </span>
+  <span class="c">!! fields it contains the data used in the interpolations. </span>
+  <span class="c">!! See [[korc_profiles(module)]] for details.</span>
+  <span class="kt">INTEGER</span><span class="p">(</span><span class="n">ip</span><span class="p">)</span> <span class="kd">::</span> <span class="n">it</span> 
+  <span class="c">!! Time iteration</span>
+    <span class="kt">INTEGER</span> 				<span class="kd">::</span> <span class="n">mpierr</span>
+
+  <span class="k">call </span><span class="n">initialize_communications</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+  <span class="c">!!&lt;h2&gt;Order of KORC operations&lt;/h2&gt;</span>
+  <span class="c">!!</span>
+  <span class="c">!!&lt;h3&gt;Communication and Timing&lt;/h3&gt;</span>
+  <span class="c">!! &lt;h4&gt;1\. Parallel Communications&lt;/h4&gt;</span>
+  <span class="c">!!</span>
+  <span class="c">!! Subroutine [[initialize_communications]] in [[korc_hpc]] that </span>
+  <span class="c">!! initializes MPI and OpenMP communications.</span>
+  
+  <span class="k">call </span><span class="n">timing_KORC</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+  <span class="c">!! &lt;h4&gt;2\. Timers&lt;/h4&gt;</span>
+  <span class="c">!!</span>
+  <span class="c">!! Subroutine [[timing_KORC]] in [[korc_hpc]] that times the </span>
+  <span class="c">!! execution of any parallel sections of KORC.</span>
+  
+  <span class="c">! * * * INITIALIZATION STAGE * * *!</span>
+
+  <span class="k">call </span><span class="n">initialize_HDF5</span><span class="p">()</span>
+  <span class="c">!!&lt;h3&gt;Initialization&lt;/h3&gt;</span>
+  <span class="c">!!</span>
+  <span class="c">!! &lt;h4&gt;1\. HDF5&lt;/h4&gt;</span>
+  <span class="c">!!</span>
+  <span class="c">!! Subroutine [[initialize_HDF5]] in [[korc_HDF5]] that initializes</span>
+  <span class="c">!! HDF5 library. </span>
+  
+  <span class="k">call </span><span class="n">initialize_korc_parameters</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+  <span class="c">!! &lt;h4&gt;2\. Initialize korc parameters&lt;/h4&gt;</span>
+  <span class="c">!!</span>
+  <span class="c">!! Subroutine [[initialize_korc_parameters]] in [[korc_initialize]] that </span>
+  <span class="c">!! initializes paths and KORC parameters through [[load_korc_params]]</span>
+  <span class="c">!! on MPI processes.</span>
+  
+  <span class="k">call </span><span class="n">initialize_fields</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+  <span class="c">!! &lt;h4&gt;3\. Initialize fields&lt;/h4&gt;</span>
+  <span class="c">!!</span>
+  <span class="c">!! Subroutine [[initialize_fields]] in [[korc_fields]] that initializes </span>
+  <span class="c">!! parameters of the EM fields, either analytically or from an external HDF5</span>
+  <span class="c">!! file. Reads in &amp;amp;analytical_fields_params and </span>
+  <span class="c">!! &amp;amp;externalPlasmaModel namelists from input file.</span>
+  
+
+  <span class="k">call </span><span class="n">initialize_profiles</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+  <span class="c">!! &lt;h4&gt;4\. Initialize Profiles&lt;/h4&gt;</span>
+  <span class="c">!! </span>
+  <span class="c">!! Subroutine [[initialize_profiles]] in [[korc_profiles]] that initializes </span>
+  <span class="c">!! parameters of the plasma profiles, either analytically or from an</span>
+  <span class="c">!! external HDF5</span>
+  <span class="c">!! file. Reads in &amp;amp;plasmaProfiles namelist from input file.</span>
+  <span class="c">!! Only initialized if collisions (params%collisions==T) are </span>
+  <span class="k">call </span><span class="n">initialize_particles</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">spp</span><span class="p">)</span> <span class="c">! Initialize particles</span>
+  <span class="c">!! &lt;h4&gt;5\. Initialize Particle Velocity Phase Space&lt;/h4&gt;</span>
+  <span class="c">!! </span>
+  <span class="c">!! Subroutine [[initialize_particles]] in [[korc_initialize]] that </span>
+  <span class="c">!! initializes particle parameters from &amp;amplasma_species namelist, </span>
+  <span class="c">!! allocates arrays for individual particles, including location, velocity, </span>
+  <span class="c">!! local EM fields and plasma profiles, etc., and </span>
+  <span class="c">!! calls [[initial_energy_pitch_dist]] to assign particles&#39; energy and pitch</span>
+  <span class="c">!! angle according to the chosen distribution.</span>
+
+<span class="c">!  write(output_unit_write,&#39;(&quot;init eta: &quot;,E17.10)&#39;) spp(1)%vars%eta</span>
+
+<span class="cp">#ifdef M3D_C1</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nb">TRIM</span><span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">)</span> <span class="p">.</span><span class="n">eq</span><span class="p">.</span> <span class="s1">&#39;M3D_C1&#39;</span><span class="p">)</span> <span class="k">then</span>
+
+<span class="k">     if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">mpi_params</span><span class="p">%</span><span class="n">rank</span> <span class="p">.</span><span class="n">EQ</span><span class="p">.</span> <span class="mi">0</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">        write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="o">*</span><span class="p">)</span> <span class="s2">&quot;* * * * INITIALIZING M3D-C1 INTERFACE * * * *&quot;</span>
+     <span class="n">endif</span>
+     
+     <span class="k">call </span><span class="n">initialize_m3d_c1</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">F</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">spp</span><span class="p">)</span>
+
+     <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">mpi_params</span><span class="p">%</span><span class="n">rank</span> <span class="p">.</span><span class="n">EQ</span><span class="p">.</span> <span class="mi">0</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">        write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="o">*</span><span class="p">)</span> <span class="s2">&quot;* * * * * * * * * * * * * * * * * * * * * * *&quot;</span>
+     <span class="n">endif</span>
+        
+  <span class="n">endif</span>
+<span class="cp">#endif  </span>
+
+  <span class="k">call </span><span class="n">compute_charcs_plasma_params</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+  <span class="c">!! &lt;h4&gt;9\. Compute Characteristic Plasma Parameters&lt;/h4&gt;</span>
+  <span class="c">!!</span>
+  <span class="c">!! Subroutine [[compute_charcs_plasma_params]] in [[korc_units]] calculates</span>
+  <span class="c">!! the characteristic plasma parameters params%cpp that are used for normalizations.</span>
+  <span class="c">!! Also finds the maximum non-relativistic and relativistic cyclotron frequencies</span>
+  <span class="c">!! to be used for setting the timstep for the time-evolution algorithms.</span>
+
+  <span class="k">call </span><span class="n">initialize_collision_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+  <span class="c">!! &lt;h4&gt;6\. Initialize Collision Parameters&lt;/h4&gt;</span>
+  <span class="c">!!</span>
+  <span class="c">!! Subroutine [[initialize_collision_params]] in [[korc_collisions]] that</span>
+  <span class="c">!! initializes collision parameters for the SS (single-species) and MS</span>
+  <span class="c">!! (multiple-species) data types, reading in namefiles from the KORC input file.</span>
+  <span class="c">!! MS reads in namelist &amp;CollisionParamsMultipleSpecies while SS reads in</span>
+  <span class="c">!! namelist &amp;CollisionParamsSingleSpecies.</span>
+  
+  <span class="k">call </span><span class="n">define_time_step</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+  <span class="c">!! &lt;h4&gt;10\. Define Time Step&lt;/h4&gt;</span>
+  <span class="c">!!</span>
+  <span class="c">!! Subroutine [[define_time_step]] in [[korc_initialize]] either loads</span>
+  <span class="c">!! time-stepping parameters for a restart, or defines new parameters based</span>
+  <span class="c">!! on a maximum timestep</span>
+  <span class="c">!! set by the inverse of the relativistic cyclotron frequency.</span>
+  
+  <span class="k">call </span><span class="n">initialize_particle_pusher</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+  <span class="c">!! &lt;h4&gt;11\. Initialize Particle Pusher&lt;/h4&gt;    </span>
+  
+  <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">SC_E</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">     call </span><span class="n">define_SC_time_step</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+  <span class="k">end if</span>
+<span class="k">     </span>
+<span class="k">  call </span><span class="n">normalize_variables</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">P</span><span class="p">)</span>
+  <span class="c">!! &lt;h4&gt;12\. Normalize Variables&lt;/h4&gt;</span>
+  <span class="c">!!</span>
+  <span class="c">!! Subroutine [[normalize_variables]] in [[korc_units]] normalizes </span>
+  <span class="c">!! variables consistent with characteristic plasma parameters </span>
+  <span class="c">!! calculated in [[compute_charcs_plasma_params]].</span>
+
+
+  
+  <span class="k">call </span><span class="n">normalize_collisions_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+  <span class="c">!! &lt;h4&gt;13\. Normalize Collision Parameters &lt;/h4&gt;</span>
+  <span class="c">!!</span>
+  <span class="c">!! Subroutine [[normalize_collisions_params]] in [[korc_collisions]] that</span>
+  <span class="c">!! normalizes collision parameters for the SS (single-species) and MS</span>
+  <span class="c">!! (multiple-species) data types.</span>
+
+  
+  <span class="k">call </span><span class="n">define_collisions_time_step</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+  <span class="c">!! &lt;h4&gt;14\. Define Collision Time Step&lt;/h4&gt;</span>
+  <span class="c">!!</span>
+  <span class="c">!! Subroutine [[define_collisions_time_step]] in [[korc_collisions]] that</span>
+  <span class="c">!! sets subcycling iteration number for collisions based off of the collision</span>
+  <span class="c">!! frequency model used.</span>
+
+  <span class="c">! *** *** *** *** *** ***   *** *** *** *** *** *** ***</span>
+  <span class="c">! *** BEYOND THIS POINT VARIABLES ARE DIMENSIONLESS ***</span>
+  <span class="c">! *** *** *** *** *** ***   *** *** *** *** *** *** ***</span>
+
+
+  
+  <span class="k">call </span><span class="n">initialize_fields_interpolant</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+  <span class="c">!! &lt;h4&gt;15\. Initialize Fields Interpolant&lt;/h4&gt;</span>
+  <span class="c">!!</span>
+  <span class="c">!! Subroutine [[initialize_fields_interpolant]] in [[korc_interp]] calls</span>
+  <span class="c">!! EZspline</span>
+  <span class="c">!! subroutines EZspline_init for memory allocation and boundary condition</span>
+  <span class="c">!! setup</span>
+  <span class="c">!! and EZspline_setup to compute the necessary cubic coefficients needed</span>
+  <span class="c">!! for subsequent</span>
+  <span class="c">!! field interpolations. The magnetic field can be defined in terms of an</span>
+  <span class="c">!! axisymmetric</span>
+  <span class="c">!! scalar flux function, axisymmetric field, or 3D field, while the</span>
+  <span class="c">!! electric field</span>
+  <span class="c">!! can be defined as an axisymmetric or 3D field.</span>
+  
+  <span class="k">call </span><span class="n">initialize_profiles_interpolant</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">P</span><span class="p">)</span>
+  <span class="c">!! &lt;h4&gt;16\. Initialize Profiles Interpolant&lt;/h4&gt;</span>
+  <span class="c">!!</span>
+  <span class="c">!! Subroutine [[initialize_profiles_interpolant]] in [[korc_interp]]</span>
+  <span class="c">!! calls EZspline</span>
+  <span class="c">!! subroutines EZlinear_init for axisymmetric (flux-surface quantities) or</span>
+  <span class="c">!! EZspline_init for 3D profiles for memory allocation and boundary</span>
+  <span class="c">!! condition setup</span>
+  <span class="c">!! and EZspline_setup to compute the necessary cubic coefficients needed</span>
+  <span class="c">!! for subsequent</span>
+  <span class="c">!! field interpolations. </span>
+  <span class="c">!! Only initialized if collisions (params%collisions==T) are present for</span>
+  <span class="c">!! ne, Te, Zeff</span>
+  
+  <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">mpi_params</span><span class="p">%</span><span class="n">rank</span> <span class="p">.</span><span class="n">EQ</span><span class="p">.</span> <span class="mi">0</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">     write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;* * * * INITIALIZING INITIAL CONDITIONS * * * *&quot;,/)&#39;</span><span class="p">)</span>
+  <span class="k">end if</span>
+<span class="k">  call </span><span class="n">set_up_particles_ic</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">P</span><span class="p">)</span>
+  
+  <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">mpi_params</span><span class="p">%</span><span class="n">rank</span> <span class="p">.</span><span class="n">EQ</span><span class="p">.</span> <span class="mi">0</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">     write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;* * * * * * * * * * * * * * * * * * * * * * * *&quot;,/)&#39;</span><span class="p">)</span>
+  <span class="k">end if</span>
+
+  
+<span class="c">!  write(output_unit_write,&#39;(&quot;post ic eta: &quot;,E17.10)&#39;) spp(1)%vars%eta</span>
+  
+  <span class="c">!! &lt;h4&gt;17\. Set Particle Initial Conditions&lt;/h4&gt;  </span>
+  <span class="c">!!</span>
+  <span class="c">!! Subroutine [[set_up_particles_ic]] in [[korc_initialize]] calls</span>
+  <span class="c">!! subroutines to prescribe initial conditions or load them </span>
+  <span class="c">!! from file for a restart. Initial spatial values are prescribed with </span>
+  <span class="c">!! [[intitial_spatial_distribution]] in [[korc_spatial_distribution]] and </span>
+  <span class="c">!! initial velocity values are prescribed with [[initial_gyro_distribution]]</span>
+  <span class="c">!! in [[korc_velocity_distribution]].</span>
+
+<span class="c">!  if (minval(spp(1)%vars%Y(:,1)).lt.1._rp/params%cpp%length) stop &#39;error with init&#39;</span>
+  
+  <span class="c">! * * * INITIALIZATION STAGE * * *</span>
+
+
+
+<span class="c">!  write(output_unit_write,&#39;(&quot;GC init eta: &quot;,E17.10)&#39;) spp(1)%vars%eta</span>
+
+  <span class="k">if</span> <span class="p">(.</span><span class="nb">NOT</span><span class="p">.(</span><span class="n">params</span><span class="p">%</span><span class="n">restart</span><span class="p">.</span><span class="nb">OR</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">proceed</span><span class="p">.</span><span class="nb">or</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">reinit</span><span class="p">))</span> <span class="k">then</span>
+<span class="k">     if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;FO&#39;</span><span class="p">)</span> <span class="k">then</span>
+
+<span class="k">        call </span><span class="n">FO_init</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">spp</span><span class="p">,.</span><span class="n">true</span><span class="p">.,.</span><span class="n">false</span><span class="p">.)</span>
+
+     <span class="k">else if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;GC&#39;</span><span class="p">)</span> <span class="k">then</span>
+
+<span class="k">        call </span><span class="n">GC_init</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">spp</span><span class="p">)</span>
+
+     <span class="k">end if</span>
+
+<span class="k">     if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">SC_E</span><span class="p">)</span> <span class="k">then</span>
+
+<span class="k">        if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;A&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">           call </span><span class="n">init_SC_E1D</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">spp</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">else if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;E&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">           call </span><span class="n">init_SC_E1D_FS</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">spp</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">end if</span>
+<span class="k">           </span>
+<span class="k">     end if</span>
+
+<span class="k">  else</span>
+
+<span class="k">     call </span><span class="n">get_fields</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">(</span><span class="mi">1</span><span class="p">)%</span><span class="n">vars</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+
+     <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">SC_E</span><span class="p">)</span> <span class="k">then</span>
+
+
+<span class="k">        if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;A&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">           call </span><span class="n">reinit_SC_E1D</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        <span class="k">else if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;E&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">           call </span><span class="n">reinit_SC_E1D_FS</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        <span class="k">end if</span>
+
+<span class="k">        </span>
+<span class="k">     </span>
+<span class="k">     end if</span>
+<span class="k">     </span>
+<span class="k">  end if</span>
+
+  <span class="c">! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !</span>
+  
+  <span class="k">call </span><span class="n">save_simulation_parameters</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">P</span><span class="p">)</span>
+
+  <span class="k">call </span><span class="n">save_collision_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+  <span class="c">!! &lt;h4&gt;18\. Save Simulation and Collision Parameters&lt;/h4&gt;  </span>
+  <span class="c">!!</span>
+  <span class="c">!! Subroutines [[save_simulation_parameters]] in [[korc_HDF5]] and</span>
+  <span class="c">!! [[save_collision_params]] in [[korc_collisions]] call</span>
+  <span class="c">!! subroutines to save simulation and collision parameters.</span>
+  
+  
+  <span class="k">if</span> <span class="p">(.</span><span class="nb">NOT</span><span class="p">.(</span><span class="n">params</span><span class="p">%</span><span class="n">restart</span><span class="p">.</span><span class="nb">OR</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">proceed</span><span class="p">))</span> <span class="k">then</span>
+<span class="k">     </span>
+<span class="k">     call </span><span class="n">save_simulation_outputs</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span> <span class="c">! Save initial condition</span>
+
+  <span class="k">end if</span>
+  
+
+  
+  <span class="c">! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !</span>
+
+<span class="c">!  write(output_unit_write,&#39;(&quot;pre ppusher loop eta: &quot;,E17.10)&#39;) spp(1)%vars%eta</span>
+  
+  <span class="k">call </span><span class="n">timing_KORC</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;FO&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;ANA&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">     call </span><span class="n">FO_init</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">spp</span><span class="p">,.</span><span class="n">false</span><span class="p">.,.</span><span class="n">true</span><span class="p">.)</span>
+     <span class="c">! Initial half-time particle push</span>
+     
+     <span class="k">do </span><span class="n">it</span><span class="o">=</span><span class="n">params</span><span class="p">%</span><span class="n">ito</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_steps</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+        <span class="k">call </span><span class="n">adv_FOeqn_top</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">spp</span><span class="p">)</span>
+
+        <span class="n">params</span><span class="p">%</span><span class="nb">time</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">init_time</span> <span class="p">&amp;</span>
+             <span class="o">+</span><span class="kt">REAL</span><span class="p">(</span><span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span><span class="p">,</span><span class="n">rp</span><span class="p">)</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">dt</span>        
+        <span class="n">params</span><span class="p">%</span><span class="n">it</span> <span class="o">=</span> <span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+
+        <span class="k">call </span><span class="n">save_simulation_outputs</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        <span class="k">call </span><span class="n">save_restart_variables</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+     <span class="k">end do</span>
+<span class="k">  end if</span>
+
+<span class="k">  if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;FO&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;EXT&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">     call </span><span class="n">FO_init</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">spp</span><span class="p">,.</span><span class="n">false</span><span class="p">.,.</span><span class="n">true</span><span class="p">.)</span>
+     <span class="c">! Initial half-time particle push</span>
+     
+     <span class="k">do </span><span class="n">it</span><span class="o">=</span><span class="n">params</span><span class="p">%</span><span class="n">ito</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_steps</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+        <span class="k">call </span><span class="n">adv_FOinterp_top</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">spp</span><span class="p">)</span>
+        
+        <span class="n">params</span><span class="p">%</span><span class="nb">time</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">init_time</span> <span class="p">&amp;</span>
+             <span class="o">+</span><span class="kt">REAL</span><span class="p">(</span><span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span><span class="p">,</span><span class="n">rp</span><span class="p">)</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">dt</span>        
+        <span class="n">params</span><span class="p">%</span><span class="n">it</span> <span class="o">=</span> <span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+
+        <span class="k">call </span><span class="n">save_simulation_outputs</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        <span class="k">call </span><span class="n">save_restart_variables</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+     <span class="k">end do</span>
+<span class="k">  end if</span>
+
+<span class="k">  if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;FO&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;M3D_C1&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">     call </span><span class="n">FO_init</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">spp</span><span class="p">,.</span><span class="n">false</span><span class="p">.,.</span><span class="n">true</span><span class="p">.)</span>
+     <span class="c">! Initial half-time particle push</span>
+     
+     <span class="k">do </span><span class="n">it</span><span class="o">=</span><span class="n">params</span><span class="p">%</span><span class="n">ito</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_steps</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+        <span class="k">call </span><span class="n">adv_FOm3dc1_top</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">spp</span><span class="p">)</span>
+        
+        <span class="n">params</span><span class="p">%</span><span class="nb">time</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">init_time</span> <span class="p">&amp;</span>
+             <span class="o">+</span><span class="kt">REAL</span><span class="p">(</span><span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span><span class="p">,</span><span class="n">rp</span><span class="p">)</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">dt</span>        
+        <span class="n">params</span><span class="p">%</span><span class="n">it</span> <span class="o">=</span> <span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+
+        <span class="k">call </span><span class="n">save_simulation_outputs</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        <span class="k">call </span><span class="n">save_restart_variables</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+     <span class="k">end do</span>
+<span class="k">  end if</span>
+<span class="k">  </span>
+<span class="k">  if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;GC&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_eval</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;eqn&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">..</span><span class="nb">not</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;M3D_C1&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">     do </span><span class="n">it</span><span class="o">=</span><span class="n">params</span><span class="p">%</span><span class="n">ito</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_steps</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">t_it_SC</span>
+        <span class="k">call </span><span class="n">adv_GCeqn_top</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">spp</span><span class="p">)</span>
+        
+        <span class="n">params</span><span class="p">%</span><span class="nb">time</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">init_time</span> <span class="p">&amp;</span>
+             <span class="o">+</span><span class="kt">REAL</span><span class="p">(</span><span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">t_it_SC</span><span class="p">,</span><span class="n">rp</span><span class="p">)</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">dt</span>        
+        <span class="n">params</span><span class="p">%</span><span class="n">it</span> <span class="o">=</span> <span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">t_it_SC</span>
+
+        <span class="k">call </span><span class="n">save_simulation_outputs</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        <span class="k">call </span><span class="n">save_restart_variables</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        
+     <span class="k">end do</span>
+<span class="k">  end if</span>
+
+<span class="k">  if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;GC&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_eval</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;interp&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span> <span class="p">&amp;</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">axisymmetric_fields</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">10</span><span class="p">:</span><span class="mi">12</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;PSI&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span> <span class="p">&amp;</span>
+       <span class="n">params</span><span class="p">%</span><span class="n">SC_E</span><span class="p">.</span><span class="nb">and</span><span class="p">..</span><span class="nb">not</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;M3D_C1&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">     do </span><span class="n">it</span><span class="o">=</span><span class="n">params</span><span class="p">%</span><span class="n">ito</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_steps</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+        <span class="k">call </span><span class="n">adv_GCinterp_psi_top_FS</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        
+        <span class="n">params</span><span class="p">%</span><span class="nb">time</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">init_time</span> <span class="p">&amp;</span>
+             <span class="o">+</span><span class="kt">REAL</span><span class="p">(</span><span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span><span class="p">,</span><span class="n">rp</span><span class="p">)</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">dt</span>        
+        <span class="n">params</span><span class="p">%</span><span class="n">it</span> <span class="o">=</span> <span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+
+        
+        <span class="k">call </span><span class="n">save_simulation_outputs</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        <span class="k">call </span><span class="n">save_restart_variables</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+     <span class="k">end do</span>
+<span class="k">  end if</span>
+
+<span class="k">  if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;GC&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_eval</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;interp&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span> <span class="p">&amp;</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">axisymmetric_fields</span><span class="p">.</span><span class="nb">and</span><span class="p">.(</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">10</span><span class="p">:</span><span class="mi">12</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;PSI&#39;</span><span class="p">.</span><span class="nb">OR</span><span class="p">.</span> <span class="p">&amp;</span>
+       <span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">12</span><span class="p">:</span><span class="mi">14</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;PSI&#39;</span><span class="p">).</span><span class="nb">and</span><span class="p">.</span> <span class="p">&amp;</span>
+       <span class="p">(.</span><span class="nb">not</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">SC_E</span><span class="p">).</span><span class="nb">and</span><span class="p">.(.</span><span class="nb">not</span><span class="p">.</span><span class="n">F</span><span class="p">%</span><span class="n">Dim2x1t</span><span class="p">).</span><span class="nb">and</span><span class="p">..</span><span class="nb">not</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;M3D_C1&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">     </span>
+<span class="k">     do </span><span class="n">it</span><span class="o">=</span><span class="n">params</span><span class="p">%</span><span class="n">ito</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_steps</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+        <span class="k">call </span><span class="n">adv_GCinterp_psi_top</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        
+        <span class="n">params</span><span class="p">%</span><span class="nb">time</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">init_time</span> <span class="p">&amp;</span>
+             <span class="o">+</span><span class="kt">REAL</span><span class="p">(</span><span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span><span class="p">,</span><span class="n">rp</span><span class="p">)</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">dt</span>        
+        <span class="n">params</span><span class="p">%</span><span class="n">it</span> <span class="o">=</span> <span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+        
+        <span class="k">call </span><span class="n">save_simulation_outputs</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        <span class="k">call </span><span class="n">save_restart_variables</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+     <span class="k">end do</span>
+<span class="k">  end if</span>
+
+<span class="k">  if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;GC&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_eval</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;interp&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span> <span class="p">&amp;</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">axisymmetric_fields</span><span class="p">.</span><span class="nb">and</span><span class="p">.(</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">10</span><span class="p">:</span><span class="mi">12</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;PSI&#39;</span><span class="p">.</span><span class="nb">OR</span><span class="p">.</span> <span class="p">&amp;</span>
+       <span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">12</span><span class="p">:</span><span class="mi">14</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;PSI&#39;</span><span class="p">).</span><span class="nb">and</span><span class="p">.</span> <span class="p">&amp;</span>
+       <span class="p">(.</span><span class="nb">not</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">SC_E</span><span class="p">).</span><span class="nb">and</span><span class="p">.</span><span class="n">F</span><span class="p">%</span><span class="n">Dim2x1t</span><span class="p">.</span><span class="nb">and</span><span class="p">.(.</span><span class="nb">not</span><span class="p">.</span><span class="n">F</span><span class="p">%</span><span class="n">ReInterp_2x1t</span><span class="p">).</span><span class="nb">and</span><span class="p">..</span><span class="nb">not</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;M3D_C1&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">     </span>
+<span class="k">     do </span><span class="n">it</span><span class="o">=</span><span class="n">params</span><span class="p">%</span><span class="n">ito</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_steps</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+        <span class="k">call </span><span class="n">adv_GCinterp_psi2x1t_top</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+
+        <span class="n">params</span><span class="p">%</span><span class="nb">time</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">init_time</span> <span class="p">&amp;</span>
+             <span class="o">+</span><span class="kt">REAL</span><span class="p">(</span><span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span><span class="p">,</span><span class="n">rp</span><span class="p">)</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">dt</span>        
+        <span class="n">params</span><span class="p">%</span><span class="n">it</span> <span class="o">=</span> <span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+
+        <span class="k">call </span><span class="n">save_simulation_outputs</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        <span class="k">call </span><span class="n">save_restart_variables</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        
+     <span class="k">end do</span>
+<span class="k">  end if</span>
+<span class="k">  </span>
+<span class="k">  if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;GC&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_eval</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;interp&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span> <span class="p">&amp;</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">axisymmetric_fields</span><span class="p">.</span><span class="nb">and</span><span class="p">.(</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">10</span><span class="p">:</span><span class="mi">12</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;PSI&#39;</span><span class="p">.</span><span class="nb">OR</span><span class="p">.</span> <span class="p">&amp;</span>
+       <span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">12</span><span class="p">:</span><span class="mi">14</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;PSI&#39;</span><span class="p">).</span><span class="nb">and</span><span class="p">.</span> <span class="p">&amp;</span>
+       <span class="p">(.</span><span class="nb">not</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">SC_E</span><span class="p">).</span><span class="nb">and</span><span class="p">.</span><span class="n">F</span><span class="p">%</span><span class="n">Dim2x1t</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span><span class="n">F</span><span class="p">%</span><span class="n">ReInterp_2x1t</span><span class="p">.</span><span class="nb">and</span><span class="p">..</span><span class="nb">not</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;M3D_C1&#39;</span><span class="p">)</span> <span class="k">then</span>
+
+<span class="k">     if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">mpi_params</span><span class="p">%</span><span class="n">rank</span> <span class="p">.</span><span class="n">EQ</span><span class="p">.</span> <span class="mi">0</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">        write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="o">*</span><span class="p">)</span> <span class="s1">&#39;time&#39;</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">PHI</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">ind_2x1t</span><span class="p">)</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="nb">time</span>
+<span class="nb">     </span><span class="k">end if</span>
+<span class="k">        </span>
+<span class="k">     do </span><span class="n">it</span><span class="o">=</span><span class="n">params</span><span class="p">%</span><span class="n">ito</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_steps</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+        <span class="k">call </span><span class="n">adv_GCinterp_psiwE_top</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+
+        <span class="n">params</span><span class="p">%</span><span class="nb">time</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">init_time</span> <span class="p">&amp;</span>
+             <span class="o">+</span><span class="kt">REAL</span><span class="p">(</span><span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span><span class="p">,</span><span class="n">rp</span><span class="p">)</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">dt</span>        
+        <span class="n">params</span><span class="p">%</span><span class="n">it</span> <span class="o">=</span> <span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+
+        <span class="k">call </span><span class="n">save_simulation_outputs</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+
+        <span class="n">F</span><span class="p">%</span><span class="n">ind_2x1t</span><span class="o">=</span><span class="n">F</span><span class="p">%</span><span class="n">ind_2x1t</span><span class="o">+</span><span class="mi">1_ip</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">mpi_params</span><span class="p">%</span><span class="n">rank</span> <span class="p">.</span><span class="n">EQ</span><span class="p">.</span> <span class="mi">0</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">           write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="o">*</span><span class="p">)</span> <span class="s1">&#39;time&#39;</span><span class="p">,</span><span class="n">F</span><span class="p">%</span><span class="n">X</span><span class="p">%</span><span class="n">PHI</span><span class="p">(</span><span class="n">F</span><span class="p">%</span><span class="n">ind_2x1t</span><span class="p">)</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">cpp</span><span class="p">%</span><span class="nb">time</span>
+<span class="nb">        </span><span class="k">end if</span>
+<span class="k">        call </span><span class="n">initialize_fields_interpolant</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+
+        <span class="k">call </span><span class="n">save_restart_variables</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        
+     <span class="k">end do</span>
+<span class="k">  end if</span>
+<span class="k">  </span>
+
+<span class="k">  if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;GC&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_eval</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;interp&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span> <span class="p">&amp;</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">axisymmetric_fields</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span><span class="n">F</span><span class="p">%</span><span class="n">dBfield</span><span class="p">.</span><span class="nb">and</span><span class="p">..</span><span class="nb">not</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;M3D_C1&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">     do </span><span class="n">it</span><span class="o">=</span><span class="n">params</span><span class="p">%</span><span class="n">ito</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_steps</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+        <span class="k">call </span><span class="n">adv_GCinterp_2DBdB_top</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        
+        <span class="n">params</span><span class="p">%</span><span class="nb">time</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">init_time</span> <span class="p">&amp;</span>
+             <span class="o">+</span><span class="kt">REAL</span><span class="p">(</span><span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span><span class="p">,</span><span class="n">rp</span><span class="p">)</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">dt</span>        
+        <span class="n">params</span><span class="p">%</span><span class="n">it</span> <span class="o">=</span> <span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+
+        <span class="k">call </span><span class="n">save_simulation_outputs</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        <span class="k">call </span><span class="n">save_restart_variables</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+     <span class="k">end do</span>
+<span class="k">  end if</span>
+<span class="k">  </span>
+<span class="k">  if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;GC&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_eval</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;interp&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span> <span class="p">&amp;</span>
+       <span class="n">F</span><span class="p">%</span><span class="n">axisymmetric_fields</span><span class="p">.</span><span class="nb">and</span><span class="p">.(</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">10</span><span class="p">:</span><span class="mi">12</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;2DB&#39;</span><span class="p">.</span><span class="nb">or</span><span class="p">.</span> <span class="p">&amp;</span>
+       <span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">12</span><span class="p">:</span><span class="mi">13</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;2D&#39;</span><span class="p">).</span><span class="nb">and</span><span class="p">..</span><span class="nb">not</span><span class="p">.(</span><span class="n">F</span><span class="p">%</span><span class="n">dBfield</span><span class="p">).</span><span class="nb">and</span><span class="p">..</span><span class="nb">not</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;M3D_C1&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">     do </span><span class="n">it</span><span class="o">=</span><span class="n">params</span><span class="p">%</span><span class="n">ito</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_steps</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+        <span class="k">call </span><span class="n">adv_GCinterp_B2D_top</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        
+        <span class="n">params</span><span class="p">%</span><span class="nb">time</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">init_time</span> <span class="p">&amp;</span>
+             <span class="o">+</span><span class="kt">REAL</span><span class="p">(</span><span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span><span class="p">,</span><span class="n">rp</span><span class="p">)</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">dt</span>        
+        <span class="n">params</span><span class="p">%</span><span class="n">it</span> <span class="o">=</span> <span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+
+        <span class="k">call </span><span class="n">save_simulation_outputs</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        <span class="k">call </span><span class="n">save_restart_variables</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+     <span class="k">end do</span>
+<span class="k">  end if</span>
+<span class="k">  </span>
+
+
+<span class="k">  if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;GC&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_eval</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;interp&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span> <span class="p">&amp;</span>
+         <span class="p">.</span><span class="nb">not</span><span class="p">.(</span><span class="n">F</span><span class="p">%</span><span class="n">axisymmetric_fields</span><span class="p">).</span><span class="nb">and</span><span class="p">.(</span><span class="n">F</span><span class="p">%</span><span class="n">dBfield</span><span class="p">).</span><span class="nb">and</span><span class="p">.</span> <span class="p">&amp;</span>
+         <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">10</span><span class="p">:</span><span class="mi">14</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;3DBdB&#39;</span><span class="p">).</span><span class="nb">and</span><span class="p">..</span><span class="nb">not</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;M3D_C1&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">     do </span><span class="n">it</span><span class="o">=</span><span class="n">params</span><span class="p">%</span><span class="n">ito</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_steps</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+        <span class="k">call </span><span class="n">adv_GCinterp_3DBdB_top</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        
+        <span class="n">params</span><span class="p">%</span><span class="nb">time</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">init_time</span> <span class="p">&amp;</span>
+             <span class="o">+</span><span class="kt">REAL</span><span class="p">(</span><span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span><span class="p">,</span><span class="n">rp</span><span class="p">)</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">dt</span>        
+        <span class="n">params</span><span class="p">%</span><span class="n">it</span> <span class="o">=</span> <span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+
+        <span class="k">call </span><span class="n">save_simulation_outputs</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        <span class="k">call </span><span class="n">save_restart_variables</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+     <span class="k">end do</span>
+<span class="k">  end if</span>
+
+<span class="k">  if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;GC&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_eval</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;interp&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span> <span class="p">&amp;</span>
+         <span class="p">.</span><span class="nb">not</span><span class="p">.(</span><span class="n">F</span><span class="p">%</span><span class="n">axisymmetric_fields</span><span class="p">).</span><span class="nb">and</span><span class="p">.(</span><span class="n">F</span><span class="p">%</span><span class="n">dBfield</span><span class="p">).</span><span class="nb">and</span><span class="p">.</span> <span class="p">&amp;</span>
+         <span class="p">.</span><span class="nb">not</span><span class="p">.(</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">(</span><span class="mi">10</span><span class="p">:</span><span class="mi">14</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;3DBdB&#39;</span><span class="p">).</span><span class="nb">and</span><span class="p">..</span><span class="nb">not</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;M3D_C1&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">     do </span><span class="n">it</span><span class="o">=</span><span class="n">params</span><span class="p">%</span><span class="n">ito</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_steps</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+        <span class="k">call </span><span class="n">adv_GCinterp_3DBdB1_top</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        
+        <span class="n">params</span><span class="p">%</span><span class="nb">time</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">init_time</span> <span class="p">&amp;</span>
+             <span class="o">+</span><span class="kt">REAL</span><span class="p">(</span><span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span><span class="p">,</span><span class="n">rp</span><span class="p">)</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">dt</span>        
+        <span class="n">params</span><span class="p">%</span><span class="n">it</span> <span class="o">=</span> <span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+
+        <span class="k">call </span><span class="n">save_simulation_outputs</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        <span class="k">call </span><span class="n">save_restart_variables</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+     <span class="k">end do</span>
+<span class="k">  end if</span>
+
+<span class="k">  if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;GC&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_eval</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;interp&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span> <span class="p">&amp;</span>
+       <span class="p">.</span><span class="nb">not</span><span class="p">.(</span><span class="n">F</span><span class="p">%</span><span class="n">axisymmetric_fields</span><span class="p">).</span><span class="nb">and</span><span class="p">..</span><span class="nb">not</span><span class="p">.(</span><span class="n">F</span><span class="p">%</span><span class="n">dBfield</span><span class="p">).</span><span class="nb">and</span><span class="p">..</span><span class="nb">not</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;M3D_C1&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">     do </span><span class="n">it</span><span class="o">=</span><span class="n">params</span><span class="p">%</span><span class="n">ito</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_steps</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+        <span class="k">call </span><span class="n">adv_GCinterp_B_top</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        
+        <span class="n">params</span><span class="p">%</span><span class="nb">time</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">init_time</span> <span class="p">&amp;</span>
+             <span class="o">+</span><span class="kt">REAL</span><span class="p">(</span><span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span><span class="p">,</span><span class="n">rp</span><span class="p">)</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">dt</span>        
+        <span class="n">params</span><span class="p">%</span><span class="n">it</span> <span class="o">=</span> <span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+
+        <span class="k">call </span><span class="n">save_simulation_outputs</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        <span class="k">call </span><span class="n">save_restart_variables</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+     <span class="k">end do</span>
+<span class="k">  end if</span>
+
+<span class="k">  if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;GC&#39;</span><span class="p">.</span><span class="nb">and</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;M3D_C1&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">     do </span><span class="n">it</span><span class="o">=</span><span class="n">params</span><span class="p">%</span><span class="n">ito</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_steps</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+        <span class="k">call </span><span class="n">adv_GCinterp_m3dc1_top</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        
+        <span class="n">params</span><span class="p">%</span><span class="nb">time</span> <span class="o">=</span> <span class="n">params</span><span class="p">%</span><span class="n">init_time</span> <span class="p">&amp;</span>
+             <span class="o">+</span><span class="kt">REAL</span><span class="p">(</span><span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">t_it_SC</span><span class="p">,</span><span class="n">rp</span><span class="p">)</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">dt</span>        
+        <span class="n">params</span><span class="p">%</span><span class="n">it</span> <span class="o">=</span> <span class="n">it</span><span class="o">-</span><span class="mi">1_ip</span><span class="o">+</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span><span class="o">*</span><span class="n">params</span><span class="p">%</span><span class="n">t_it_SC</span>
+
+        <span class="k">call </span><span class="n">save_simulation_outputs</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        <span class="k">call </span><span class="n">save_restart_variables</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
+        
+     <span class="k">end do</span>
+<span class="k">  end if</span>
+<span class="k">  </span>
+<span class="k">  call </span><span class="n">timing_KORC</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+  <span class="c">! * * * FINALIZING SIMULATION * * * </span>
+  <span class="k">call </span><span class="n">finalize_HDF5</span><span class="p">()</span>
+
+  
+  <span class="k">call </span><span class="n">finalize_interpolants</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+  
+  <span class="c">! DEALLOCATION OF VARIABLES</span>
+  <span class="k">call </span><span class="n">deallocate_variables</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">spp</span><span class="p">)</span>
+
+  
+  <span class="k">call </span><span class="n">deallocate_collisions_params</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+
+  
+  <span class="k">call </span><span class="n">finalize_communications</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+  <span class="c">! * * * FINALIZING SIMULATION * * *</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">mpi_params</span><span class="p">%</span><span class="n">rank</span> <span class="p">.</span><span class="n">EQ</span><span class="p">.</span> <span class="mi">0</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">     write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(&quot;KORC ran successfully!&quot;)&#39;</span><span class="p">)</span>
+     <span class="k">close</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">)</span>
+  <span class="k">end if</span>
+<span class="k">  </span>
+<span class="k">end program </span><span class="n">main</span>
+</pre></div>
+
+    </section>
+    
+    
+    </div>
+  </div>
+
+  
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2020 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+             on  
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> KORC-Full Orbit was developed by Matt Beidler</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>

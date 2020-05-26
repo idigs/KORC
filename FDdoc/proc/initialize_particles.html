@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+   <meta name="description" content="Kinetic Orbit Runaway electrons Code (KORC) - Full Orbit">
+    
+    <meta name="author" content="Matt Beidler" >
+    <link rel="icon" href="../favicon.png">
+
+    <title>initialize_particles &ndash; KORC-Full Orbit</title>
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/pygments.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/local.css" rel="stylesheet">
+    
+    <link  href="../tipuesearch/tipuesearch.css" rel="stylesheet">
+    
+    
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    
+    <script src="../js/jquery-2.1.3.min.js"></script>
+    <script src="../js/svg-pan-zoom.min.js"></script>
+
+  </head>
+
+  <body>
+
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="../index.html">KORC-Full Orbit </a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+        
+            <li><a href='../page/index.html'>README</a></li>
+      
+            <li class="dropdown hidden-xs visible-sm visible-md hidden-lg">
+              <a href="#" class="dropdown-toggle"
+              data-toggle="dropdown" role="button"
+              aria-haspopup="true"
+     aria-expanded="false">Contents <span class="caret"></span></a>
+        <ul class="dropdown-menu">
+          
+              
+            <li><a href="../lists/files.html">Source Files</a></li>
+        
+        
+        
+            <li><a href="../lists/modules.html">Modules</a></li>
+        
+            
+                                
+            <li><a href="../lists/procedures.html">Procedures</a></li>
+        
+               
+            <li><a href="../lists/types.html">Derived Types</a></li>
+        
+        
+            <li><a href="../program/main.html">Program</a></li>
+      
+            </ul>
+            </li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/files.html">Source Files</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/modules.html">Modules</a></li>
+
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/procedures.html">Procedures</a></li>
+
+                             
+<li class="visible-xs hidden-sm visible-lg"><a href="../lists/types.html">Derived Types</a></li>
+
+
+<li class="visible-xs hidden-sm visible-lg"><a href="../program/main.html">Program</a></li>
+
+          </ul>
+        
+        <form action="../search.html" class="navbar-form navbar-right" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" name="q" id="tipue_search_input" autocomplete="off" required>
+        </div>
+<!--
+        <button type="submit" class="btn btn-default">Submit</button>
+-->
+        </form>
+        
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+    
+  
+  <div class="row">
+    <h1>initialize_particles
+      <small>Subroutine</small>
+    
+    </h1>
+    
+<div class="row">
+  <div class="col-lg-12">
+<div class="well well-sm">
+  <ul class="list-inline" style="margin-bottom:0px;display:inline">
+     
+     
+     
+     
+    
+    
+     <li><i class="fa fa-list-ol"></i>
+       <a data-toggle="tooltip"
+    data-placement="bottom" data-html="true"
+    title=" 0.7% of total for procedures.">145 statements</a>
+     </li> 
+     
+     
+     
+    <li><i class="fa fa-code"></i><a href="../src/korc_initialize.f90"> Source File</a></li>
+     
+     
+  </ul>
+  <ol class="breadcrumb in-well text-right">
+  
+    
+     <li><a href='../sourcefile/korc_initialize.f90.html'>korc_initialize.f90</a></li>
+    
+     <li><a href='../module/korc_initialize.html'>korc_initialize</a></li>
+    
+  
+     <li class="active">initialize_particles</li>
+  </ol>
+</div>
+</div>
+</div>
+<script>
+  $(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+  })
+</script>
+
+  </div>
+  
+  <div class="row">
+    <div class="col-md-3 hidden-xs hidden-sm visible-md visible-lg">
+    
+<div id="sidebar">
+  
+<h3>Contents</h3>
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../proc/initialize_particles.html#src">initialize_particles</a>
+  </div>
+</div>
+
+
+
+</div>
+
+    </div>
+    
+    <div class="col-md-9" id='text'>
+    <h2>
+public subroutine initialize_particles(params, F, P, spp)
+    
+    
+   
+</h2>
+    
+  
+
+
+    
+    <p></p><div class="alert alert-info" role="alert"><h4>Note</h4><p>Subroutine that loads the information of the initial condition 
+ of the different particle species. This subroutine calls
+ the subroutine that generates the initial energy and pitch angle 
+ distribution functions. </p></div>
+<p>
+    
+
+    <h3>Arguments</h3>
+    
+      
+<table class="table table-striped varlist">
+<thead><tr><th>Type</th>
+<th>Intent</th><th>Optional</th>
+<th>Attributes</th><th></th><th>Name</th><th></th></thead>
+
+
+
+<tbody>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-params~132"></span>type(KORC_PARAMS),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>params</strong></td><td><p>Core KORC simulation parameters.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f~86"></span>type(FIELDS),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>F</strong></td><td><p>An instance of KORC's derived type FIELDS containing all the information 
+ about the fields used in the simulation. See <a href="../module/korc_types.html">korc_types</a>
+and <a href="../module/korc_fields.html">korc_fields</a>.</p></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-p~58"></span>type(PROFILES),</td>
+  <td>intent(inout)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>P</strong></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-spp~44"></span>type(SPECIES),</td>
+  <td>intent(out),</td>
+  <td></td>
+  
+  <td>DIMENSION(:), ALLOCATABLE</td><td>::</td>
+  <td><strong>spp</strong></td><td><p>An instance of KORC's derived type SPECIES containing all the information 
+ of different electron species. See <a href="../module/korc_types.html">korc_types</a>.</p>
+<p>Number of computational particles per MPI process 
+ used to simulate each electron species.</p>
+<p>Charge of each species.</p>
+<p>Mass of each species.</p>
+<p>Initial energy of each electron species in case of 
+ using an initial mono-energetic distribution.</p>
+<p>Initial pitch-angle of each electron species in case of 
+ using an initial mono-pitch-angle distribution.</p>
+<p>Minimum and maximum energy limits of a given initial
+ non-mono-energetic distribution.</p>
+<p>Minimum and maximum pitch-angle limits of a given initial
+ non-mono-pitch-angle distribution.</p>
+<p>Flag to decide whether a given electron is a runaway (runaway=T)
+ or not (runaway=F).</p>
+<p>String describing the type of initial spatial distribution for
+ each electron species.</p>
+<p>String describing the type of initial energy distribution for each
+ electron species.</p>
+<p>String describing the type of initial pitch-angle distribution
+ for each electron species.</p>
+<p>Radial position of the center of the electrons' initial
+ spatial distribution.</p>
+<p>Azimuthal position of the electrons' initial spatial distribution, 
+ in case of using a disk at a certain poloidal section.</p>
+<p>Height of the center of the electrons' initial spatial distribution.</p>
+<p>Minimum minor radius of the electrons' initial spatial distribution.</p>
+<p>Maximum minor radius of the electrons' initial spatial distribution.</p>
+<p>Exponential falloff or standard deviation of a non-uniform radial
+ distribution of electrons.</p>
+<p>Shear factor used to generate an initial spatial 
+ distribution with an elliptic poloidal cross section.
+ See <em>Carbajal and del-Castillo-Negrete, Nuclear Fusion,
+ submitted (2018)</em>.</p>
+<p>Variance of the first dimension of a 2D Gaussian, spatial
+ distribution function</p>
+<p>Variance of the second dimension of a 2D Gaussian, spatial
+ distribution function</p>
+<p>Angle of counter-clockwise rotation (in degrees) of 2D Gaussian
+ distribution relative to R,Z</p>
+<p>Maximum value of the argument of the 2D gaussian exponential, used for an
+ indicator function that limits the region of MH sampling</p></td>
+  
+</tr>
+
+</tbody>
+</table>
+
+    
+    
+    
+    
+     
+    <br>
+
+    <section class="visible-xs visible-sm hidden-md">
+      
+<h3>Contents</h3>
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel panel-primary">
+  <div class="panel-heading text-left"><h3 class="panel-title">Source Code</h3></div>
+  <div class="list-group">
+    <a class="list-group-item" href="../proc/initialize_particles.html#src">initialize_particles</a>
+  </div>
+</div>
+
+
+
+    </section>
+    <br class="visible-xs visible-sm hidden-md">
+
+    
+
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+
+
+    
+    
+    
+    <section>
+    <h2><span class="anchor" id="src"></span>Source Code</h2>
+    <div class="highlight"><pre><span></span>  <span class="k">subroutine </span><span class="n">initialize_particles</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">spp</span><span class="p">)</span>
+    <span class="c">!! @note Subroutine that loads the information of the initial condition </span>
+    <span class="c">!! of the different particle species. This subroutine calls</span>
+    <span class="c">!! the subroutine that generates the initial energy and pitch angle </span>
+    <span class="c">!! distribution functions. @endnote</span>
+    <span class="k">TYPE</span><span class="p">(</span><span class="n">KORC_PARAMS</span><span class="p">),</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">IN</span><span class="p">)</span> 				<span class="kd">::</span> <span class="n">params</span>
+    <span class="c">!! Core KORC simulation parameters.</span>
+    <span class="k">TYPE</span><span class="p">(</span><span class="n">FIELDS</span><span class="p">),</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">IN</span><span class="p">)</span> 					<span class="kd">::</span> <span class="n">F</span>
+    <span class="c">!! An instance of KORC&#39;s derived type FIELDS containing all the information </span>
+    <span class="c">!! about the fields used in the simulation. See [[korc_types]]</span>
+    <span class="c">!!and [[korc_fields]].</span>
+    <span class="k">TYPE</span><span class="p">(</span><span class="n">PROFILES</span><span class="p">),</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">INOUT</span><span class="p">)</span> 			<span class="kd">::</span> <span class="n">P</span>
+    <span class="k">TYPE</span><span class="p">(</span><span class="n">SPECIES</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:),</span> <span class="k">ALLOCATABLE</span><span class="p">,</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">OUT</span><span class="p">)</span> 	<span class="kd">::</span> <span class="n">spp</span>
+    <span class="c">!! An instance of KORC&#39;s derived type SPECIES containing all the information </span>
+    <span class="c">!! of different electron species. See [[korc_types]].</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE 				:: ppp</span>
+    <span class="c">!! Number of computational particles per MPI process </span>
+    <span class="c">!! used to simulate each electron species.</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE 				:: q</span>
+    <span class="c">!! Charge of each species.</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE 				:: m</span>
+    <span class="c">!! Mass of each species.</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE 				:: Eo</span>
+    <span class="c">!! Initial energy of each electron species in case of </span>
+    <span class="c">!! using an initial mono-energetic distribution.</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE 				:: etao</span>
+    <span class="c">!! Initial pitch-angle of each electron species in case of </span>
+    <span class="c">!! using an initial mono-pitch-angle distribution.</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE 				:: Eo_lims</span>
+    <span class="c">!! Minimum and maximum energy limits of a given initial</span>
+    <span class="c">!! non-mono-energetic distribution.</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE 				:: etao_lims</span>
+    <span class="c">!! Minimum and maximum pitch-angle limits of a given initial</span>
+    <span class="c">!! non-mono-pitch-angle distribution.</span>
+    <span class="c">!LOGICAL, DIMENSION(:), ALLOCATABLE 				:: runaway</span>
+    <span class="c">!! Flag to decide whether a given electron is a runaway (runaway=T)</span>
+    <span class="c">!! or not (runaway=F).</span>
+    <span class="c">!CHARACTER(MAX_STRING_LENGTH),DIMENSION(:),ALLOCATABLE  :: spatial_distribution</span>
+    <span class="c">!! String describing the type of initial spatial distribution for</span>
+    <span class="c">!! each electron species.</span>
+    <span class="c">!CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: energy_distribution</span>
+    <span class="c">!! String describing the type of initial energy distribution for each</span>
+    <span class="c">!! electron species.</span>
+    <span class="c">!CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: pitch_distribution</span>
+    <span class="c">!! String describing the type of initial pitch-angle distribution</span>
+    <span class="c">!! for each electron species.</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE 				:: Ro</span>
+    <span class="c">!! Radial position of the center of the electrons&#39; initial</span>
+    <span class="c">!! spatial distribution.</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE 				:: PHIo</span>
+    <span class="c">!! Azimuthal position of the electrons&#39; initial spatial distribution, </span>
+    <span class="c">!! in case of using a disk at a certain poloidal section.</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE 				:: Zo</span>
+    <span class="c">!! Height of the center of the electrons&#39; initial spatial distribution.</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE 				:: r_inner</span>
+    <span class="c">!! Minimum minor radius of the electrons&#39; initial spatial distribution.</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE 				:: r_outter</span>
+    <span class="c">!! Maximum minor radius of the electrons&#39; initial spatial distribution.</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE 				:: falloff_rate</span>
+    <span class="c">!! Exponential falloff or standard deviation of a non-uniform radial</span>
+    <span class="c">!! distribution of electrons.</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE 				:: shear_factor</span>
+    <span class="c">!! Shear factor used to generate an initial spatial </span>
+    <span class="c">!! distribution with an elliptic poloidal cross section.</span>
+    <span class="c">!! See &lt;em&gt;Carbajal and del-Castillo-Negrete, Nuclear Fusion,</span>
+    <span class="c">!! submitted (2018)&lt;/em&gt;.</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE                           :: sigmaR</span>
+    <span class="c">!! Variance of the first dimension of a 2D Gaussian, spatial</span>
+    <span class="c">!! distribution function</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE                           :: sigmaZ</span>
+    <span class="c">!! Variance of the second dimension of a 2D Gaussian, spatial</span>
+    <span class="c">!! distribution function</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE                          :: theta_gauss</span>
+    <span class="c">!! Angle of counter-clockwise rotation (in degrees) of 2D Gaussian</span>
+    <span class="c">!! distribution relative to R,Z</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE                          :: psi_max</span>
+    <span class="c">!! Maximum value of the argument of the 2D gaussian exponential, used for an</span>
+    <span class="c">!! indicator function that limits the region of MH sampling</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE                          :: Spong_b</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE                          :: Spong_w</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE                          :: Spong_dlam</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE                          :: dth,dgam</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE                          :: dR</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE                          :: dZ</span>
+
+    <span class="kt">INTEGER</span> 				                       	<span class="kd">::</span> <span class="n">ii</span>
+    <span class="c">!! Iterator of spp structure.</span>
+    <span class="kt">INTEGER</span> 							<span class="kd">::</span> <span class="n">mpierr</span>
+    <span class="c">!! MPI error status.</span>
+    <span class="c">!REAL(rp), DIMENSION(:), ALLOCATABLE :: Xtrace</span>
+
+    <span class="c">!NAMELIST /plasma_species/ ppp,q,m,Eo,etao,Eo_lims,etao_lims,runaway, &amp;</span>
+    <span class="c">!     spatial_distribution,energy_distribution,pitch_distribution,Ro, &amp;</span>
+    <span class="c">!     PHIo,Zo,r_inner,r_outter,falloff_rate,shear_factor,sigmaR,sigmaZ, &amp;</span>
+    <span class="c">!     theta_gauss,psi_max,Xtrace,Spong_b,Spong_w,Spong_dlam,dth,dR,dZ,dgam</span>
+
+    <span class="c">! Allocate array containing variables of particles for each species</span>
+    <span class="k">ALLOCATE</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">num_species</span><span class="p">))</span>
+
+    <span class="c">!ALLOCATE(ppp(params%num_species))</span>
+    <span class="c">!ALLOCATE(q(params%num_species))</span>
+    <span class="c">!ALLOCATE(m(params%num_species))</span>
+    <span class="c">!ALLOCATE(Eo(params%num_species))</span>
+    <span class="c">!ALLOCATE(etao(params%num_species))</span>
+    <span class="c">!ALLOCATE(Eo_lims(2_idef*params%num_species))</span>
+    <span class="c">!ALLOCATE(etao_lims(2_idef*params%num_species))</span>
+    <span class="c">!ALLOCATE(runaway(params%num_species))</span>
+    <span class="c">!ALLOCATE(spatial_distribution(params%num_species))</span>
+    <span class="c">!ALLOCATE(energy_distribution(params%num_species))</span>
+    <span class="c">!ALLOCATE(pitch_distribution(params%num_species))</span>
+    <span class="c">!ALLOCATE(Ro(params%num_species))</span>
+    <span class="c">!ALLOCATE(PHIo(params%num_species))</span>
+    <span class="c">!ALLOCATE(Zo(params%num_species))</span>
+    <span class="c">!ALLOCATE(r_inner(params%num_species))</span>
+    <span class="c">!ALLOCATE(r_outter(params%num_species))</span>
+    <span class="c">!ALLOCATE(falloff_rate(params%num_species))</span>
+    <span class="c">!ALLOCATE(shear_factor(params%num_species))</span>
+    <span class="c">!ALLOCATE(sigmaR(params%num_species))</span>
+    <span class="c">!ALLOCATE(sigmaZ(params%num_species))</span>
+    <span class="c">!ALLOCATE(theta_gauss(params%num_species))</span>
+    <span class="c">!ALLOCATE(psi_max(params%num_species))</span>
+    <span class="c">!ALLOCATE(Spong_b(params%num_species))</span>
+    <span class="c">!ALLOCATE(Spong_w(params%num_species))</span>
+    <span class="c">!ALLOCATE(Spong_dlam(params%num_species))</span>
+    <span class="c">!ALLOCATE(dth(params%num_species))</span>
+    <span class="c">!ALLOCATE(dgam(params%num_species))</span>
+    <span class="c">!ALLOCATE(dR(params%num_species))</span>
+    <span class="c">!ALLOCATE(dZ(params%num_species))</span>
+    <span class="c">!ALLOCATE(Xtrace(3_idef*params%num_species))</span>
+
+    <span class="c">!open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &amp;</span>
+    <span class="c">!     status=&#39;OLD&#39;,form=&#39;formatted&#39;)</span>
+    <span class="c">!read(default_unit_open,nml=plasma_species)</span>
+    <span class="c">!close(default_unit_open)</span>
+
+
+    <span class="k">do </span><span class="n">ii</span><span class="o">=</span><span class="mi">1_idef</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">num_species</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">runaway</span> <span class="o">=</span> <span class="n">runaway</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">spatial_distribution</span> <span class="o">=</span> <span class="nb">TRIM</span><span class="p">(</span><span class="n">spatial_distribution</span><span class="p">(</span><span class="n">ii</span><span class="p">))</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">energy_distribution</span> <span class="o">=</span> <span class="nb">TRIM</span><span class="p">(</span><span class="n">energy_distribution</span><span class="p">(</span><span class="n">ii</span><span class="p">))</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">pitch_distribution</span> <span class="o">=</span> <span class="nb">TRIM</span><span class="p">(</span><span class="n">pitch_distribution</span><span class="p">(</span><span class="n">ii</span><span class="p">))</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span><span class="o">*</span><span class="n">C_E</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">m</span> <span class="o">=</span> <span class="n">m</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span><span class="o">*</span><span class="n">C_ME</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span> <span class="o">=</span> <span class="n">ppp</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">Ro</span> <span class="o">=</span> <span class="n">Ro</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">PHIo</span> <span class="o">=</span> <span class="n">C_PI</span><span class="o">*</span><span class="n">PHIo</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span><span class="o">/</span><span class="mi">18</span><span class="mf">0.0_rp</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">Zo</span> <span class="o">=</span> <span class="n">Zo</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">r_inner</span> <span class="o">=</span> <span class="n">r_inner</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">r_outter</span> <span class="o">=</span> <span class="n">r_outter</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">falloff_rate</span> <span class="o">=</span> <span class="n">falloff_rate</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">shear_factor</span> <span class="o">=</span> <span class="n">shear_factor</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">sigmaR</span> <span class="o">=</span> <span class="n">sigmaR</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">sigmaZ</span> <span class="o">=</span> <span class="n">sigmaZ</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">theta_gauss</span> <span class="o">=</span> <span class="n">theta_gauss</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">psi_max</span> <span class="o">=</span> <span class="n">psi_max</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">Spong_w</span> <span class="o">=</span> <span class="n">Spong_w</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">Spong_b</span> <span class="o">=</span> <span class="n">Spong_b</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">Spong_dlam</span> <span class="o">=</span> <span class="n">Spong_dlam</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">dth</span> <span class="o">=</span> <span class="n">dth</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">dgam</span> <span class="o">=</span> <span class="n">dgam</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">dR</span> <span class="o">=</span> <span class="n">dR</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">dZ</span> <span class="o">=</span> <span class="n">dZ</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+
+
+       <span class="c">! * * These values can change in initial_energy_pitch_dist * * !</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">Eo</span> <span class="o">=</span> <span class="n">Eno</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span><span class="o">*</span><span class="n">C_E</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">Eo_lims</span> <span class="o">=</span> <span class="n">Eo_lims</span><span class="p">((</span><span class="n">ii</span><span class="o">-</span><span class="mi">1_idef</span><span class="p">)</span><span class="o">*</span><span class="mi">2_idef</span> <span class="o">+</span> <span class="mi">1_idef</span><span class="p">:</span><span class="mi">2_idef</span><span class="o">*</span><span class="n">ii</span><span class="p">)</span><span class="o">*</span><span class="n">C_E</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">etao</span> <span class="o">=</span> <span class="n">etao</span><span class="p">(</span><span class="n">ii</span><span class="p">)</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">etao_lims</span> <span class="o">=</span> <span class="n">etao_lims</span><span class="p">((</span><span class="n">ii</span><span class="o">-</span><span class="mi">1_idef</span><span class="p">)</span><span class="o">*</span><span class="mi">2_idef</span> <span class="o">+</span> <span class="mi">1_idef</span><span class="p">:</span><span class="mi">2_idef</span><span class="o">*</span><span class="n">ii</span><span class="p">)</span>
+       <span class="c">! * * These values can change in initial_energy_pitch_dist * * !</span>
+
+       <span class="k">if</span> <span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">spatial_distribution</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;TRACER&#39;</span><span class="p">)</span> <span class="p">&amp;</span>
+            <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">Xtrace</span> <span class="o">=</span> <span class="n">Xtrace</span><span class="p">((</span><span class="n">ii</span><span class="o">-</span><span class="mi">1_idef</span><span class="p">)</span><span class="o">*</span><span class="mi">3_idef</span> <span class="o">+</span> <span class="mi">1_idef</span><span class="p">:</span><span class="mi">3_idef</span><span class="o">*</span><span class="n">ii</span><span class="p">)</span>
+
+       <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">X</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="p">)</span>
+       <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">V</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="p">)</span>
+       <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Rgc</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="p">)</span>
+       <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Y</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="p">)</span>
+       <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">E</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="p">)</span>
+       <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">B</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="p">)</span>
+       <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">PSI_P</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">)</span> <span class="p">)</span>
+       <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">ne</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">)</span> <span class="p">)</span>
+       <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Te</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">)</span> <span class="p">)</span>
+       <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Zeff</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">)</span> <span class="p">)</span>
+       <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">g</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">)</span> <span class="p">)</span>
+       <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">eta</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">)</span> <span class="p">)</span>
+       <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">mu</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">)</span> <span class="p">)</span>
+       <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Prad</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">)</span> <span class="p">)</span>
+       <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Pin</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">)</span> <span class="p">)</span>
+       <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">flagCon</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">)</span> <span class="p">)</span>
+       <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">flagCol</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">)</span> <span class="p">)</span>
+       <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">wt</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">)</span> <span class="p">)</span>
+       <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">hint</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">))</span>
+
+       <span class="c">!     write(output_unit_write,&#39;(&quot;0 size of PSI_P: &quot;,I16)&#39;) size(spp(ii)%vars%PSI_P)</span>
+
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">X</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">V</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Rgc</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Y</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">E</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">B</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">PSI_P</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">ne</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Te</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Zeff</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">g</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">eta</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">mu</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Prad</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Pin</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">flagCon</span> <span class="o">=</span> <span class="mi">1_is</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">flagCol</span> <span class="o">=</span> <span class="mi">1_is</span>
+       <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">wt</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+
+       <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;GC&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">          ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Y0</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="p">)</span>
+          <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">V0</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">)</span> <span class="p">)</span>
+          <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">k1</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span> <span class="p">)</span>
+          <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">k2</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span> <span class="p">)</span>
+          <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">k3</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span> <span class="p">)</span>
+          <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">k4</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span> <span class="p">)</span>
+          <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">k5</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span> <span class="p">)</span>
+          <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">k6</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">,</span><span class="mi">4</span><span class="p">)</span> <span class="p">)</span>
+          <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">3</span><span class="p">:</span><span class="mi">5</span><span class="p">)</span><span class="o">==</span><span class="s1">&#39;pre&#39;</span><span class="p">.</span><span class="nb">or</span><span class="p">.</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="o">==</span><span class="s1">&#39;M3D_C1&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">             ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">gradB</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="p">)</span>
+             <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">curlb</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="p">)</span>
+
+             <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">gradB</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+             <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">curlb</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+          <span class="k">else if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">orbit_model</span><span class="p">(</span><span class="mi">3</span><span class="p">:</span><span class="mi">6</span><span class="p">)</span><span class="o">==</span><span class="s1">&#39;grad&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">             ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">BR</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="p">)</span>
+             <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">BPHI</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="p">)</span>
+             <span class="k">ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">BZ</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="p">)</span>
+
+             <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">BR</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+             <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">BPHI</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+             <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">BZ</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+          <span class="k">end if</span>
+<span class="k">          ALLOCATE</span><span class="p">(</span> <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">RHS</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">ppp</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span> <span class="p">)</span>
+
+          <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Y0</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+          <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">V0</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+          <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">k1</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+          <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">k2</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+          <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">k3</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+          <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">k4</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+          <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">k5</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+          <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">k6</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+          <span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">RHS</span> <span class="o">=</span> <span class="mf">0.0_rp</span>
+       <span class="k">end if</span>
+
+<span class="k">    end do</span>
+
+<span class="k">    </span><span class="n">P</span><span class="p">%</span><span class="n">R0_RE</span><span class="o">=</span><span class="n">spp</span><span class="p">(</span><span class="mi">1</span><span class="p">)%</span><span class="n">Ro</span>
+    <span class="n">P</span><span class="p">%</span><span class="n">Z0_RE</span><span class="o">=</span><span class="n">spp</span><span class="p">(</span><span class="mi">1</span><span class="p">)%</span><span class="n">Zo</span>
+    <span class="n">P</span><span class="p">%</span><span class="n">n_REr0</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="nb">sqrt</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="mi">1</span><span class="p">)%</span><span class="n">psi_max</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">spp</span><span class="p">(</span><span class="mi">1</span><span class="p">)%</span><span class="n">sigmaR</span><span class="o">**</span><span class="mi">2</span><span class="p">),</span> <span class="p">&amp;</span>
+         <span class="nb">sqrt</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="mi">1</span><span class="p">)%</span><span class="n">psi_max</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="n">spp</span><span class="p">(</span><span class="mi">1</span><span class="p">)%</span><span class="n">sigmaZ</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>  
+
+    <span class="k">call </span><span class="n">initial_energy_pitch_dist</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">)</span>
+
+
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">ppp</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">Eno</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">etao</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">Eo_lims</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">etao_lims</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">runaway</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">spatial_distribution</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">energy_distribution</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">pitch_distribution</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">Ro</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">PHIo</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">Zo</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">r_inner</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">r_outter</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">falloff_rate</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">shear_factor</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">sigmaR</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">sigmaZ</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">theta_gauss</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">psi_max</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">Spong_b</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">Spong_w</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">Spong_dlam</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">dth</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">dgam</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">dR</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">dZ</span><span class="p">)</span>
+    <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">Xtrace</span><span class="p">)</span>
+
+  <span class="k">end subroutine </span><span class="n">initialize_particles</span>
+</pre></div>
+
+    </section>
+    <br>
+    
+    
+    </div>
+  </div>
+
+
+    <hr>    
+    </div> <!-- /container -->
+    <footer>
+      <div class="container">
+      <div class="row">
+        <div class="col-xs-6 col-md-4"><p>&copy; 2020 
+                                          </p></div>
+        <div class="col-xs-6 col-md-4 col-md-push-4">
+          <p class="text-right">
+            Documentation generated by 
+            <a href="https://github.com/cmacmackin/ford">FORD</a>
+             on  
+          </p>
+        </div>
+        <div class="col-xs-12 col-md-4 col-md-pull-4"><p class="text-center"> KORC-Full Orbit was developed by Matt Beidler</p></div>
+      </div>
+      <br>
+      </div> <!-- /container -->    
+    </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+<!--
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+-->
+    <script src="../js/bootstrap.min.js"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="../js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- MathJax JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'AMS' } },
+        jax: ['input/TeX','input/MathML','output/HTML-CSS'],
+        extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']
+      });
+    </script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    
+    <script src="../tipuesearch/tipuesearch_content.js"></script>
+    <script src="../tipuesearch/tipuesearch_set.js"></script>
+    <script src="../tipuesearch/tipuesearch.js"></script>
+    
+    
+  </body>
+</html>
