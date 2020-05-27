@@ -823,7 +823,7 @@ contains
        ! Splitting operator for including radiation
 
        if (params%radiation) then
-          !! Calls [[radiation_force]] in [[korc_ppusher]].
+          !! Calls [[radiation_force_p]] in [[korc_ppusher]].
           call radiation_force_p(pchunk,q_cache,m_cache,U_os_X,U_os_Y,U_os_Z, &
                E_X,E_Y,E_Z,B_Z,B_Y,B_Z,Frad_X,Frad_Y,Frad_Z)
           U_RC_X(cc) = U_RC_X(cc) + a*Frad_X(cc)/q_cache
@@ -1574,7 +1574,7 @@ contains
        ! Splitting operator for including radiation
 
        if (params%radiation) then
-          !! Calls [[radiation_force]] in [[korc_ppusher]].
+          !! Calls [[radiation_force_p]] in [[korc_ppusher]].
           call radiation_force_p(pchunk,q_cache,m_cache,U_os_X,U_os_Y,U_os_Z, &
                E_X,E_Y,E_Z,B_Z,B_Y,B_Z,Frad_X,Frad_Y,Frad_Z)
           U_RC_X(cc) = U_RC_X(cc) + a*Frad_X(cc)/q_cache
@@ -1789,7 +1789,7 @@ contains
        ! Splitting operator for including radiation
 
        if (params%radiation) then
-          !! Calls [[radiation_force]] in [[korc_ppusher]].
+          !! Calls [[radiation_force_p]] in [[korc_ppusher]].
           call radiation_force_p(pchunk,q_cache,m_cache,U_os_X,U_os_Y,U_os_Z, &
                E_X,E_Y,E_Z,B_Z,B_Y,B_Z,Frad_X,Frad_Y,Frad_Z)
           U_RC_X(cc) = U_RC_X(cc) + a*Frad_X(cc)/q_cache
