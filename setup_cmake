@@ -78,6 +78,12 @@ then
 	  -DM3DC1_LIBRARIES=/usr/local/lib/libm3dc1.a	\
           -DM3D_C1_INCLUDE_PATH=/usr/local/include  \
           -DM3D_C1_LINK_FLAGS="-L/usr/local/lib -lfusionio -lm3dc1" \
+	  -DFRUIT_INCLUDE_PATH=/Users/21b/Desktop/KORC_PERIPHERALS/fruit_3.4.3/build \
+	  -DFRUIT_LINK_FLAGS="-L/Users/21b/Desktop/KORC_PERIPHERALS/fruit_3.4.3/build -lfruit" \
+	  -DFRUIT_LIBRARIES=/Users/21b/Desktop/KORC_PERIPHERALS/fruit_3.4.3/build/libfruit.a \
+	  -DKORCSRC_INCLUDE_PATH=/Users/21b/Desktop/KORC/build/modules \
+	  -DKORCSRC_LINK_FLAGS="-L/Users/21b/Desktop/KORC/build/lib -lkorcsrc" \
+	  -DKORCSRC_LIBRARIES=/Users/21b/Desktop/KORC/build/lib/libkorcsrc.a \
 
  
 #	  -DCMAKE_CXX_COMPILER=/opt/local/bin/mpic++-mpich-gcc8

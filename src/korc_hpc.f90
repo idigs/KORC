@@ -46,6 +46,8 @@ CONTAINS
     if (argn .EQ. 2_idef) then
        call get_command_argument(1,params%path_to_inputs)
        call get_command_argument(2,params%path_to_outputs)
+    else if (params%path_to_inputs.eq.'TEST') then
+       call get_command_argument(1,params%path_to_outputs)
     else
        call korc_abort()
     end if

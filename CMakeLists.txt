@@ -8,6 +8,7 @@ set (EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/build/bin)
 #  Fortran specific settings.
 set (CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -cpp")
 set (CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/build/modules)
+set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/build/lib)	
 
 #  Set definitions.
 add_definitions (-DDOUBLE_PRECISION)
@@ -40,6 +41,14 @@ if (${USE_M3D_C1})
     add_definitions (-DM3D_C1)
 endif ()
 
+#  Configure FRUIT
+include_directories (${FRUIT_INCLUDE_PATH})
+set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${FRUIT_LINK_FLAGS}")
+
+#  Configure KORCSRC
+include_directories (${KORCSRC_INCLUDE_PATH})
+set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${KORCSRC_LINK_FLAGS}")
+
 #  Add machine dependent definition for finding included scripts
 option (CORI_DIR "Use Cori directories" OFF)
 if (${CORI_DIR})
@@ -49,3 +58,4 @@ else ()
 endif ()
 
 add_subdirectory (src)
+add_subdirectory (test)	

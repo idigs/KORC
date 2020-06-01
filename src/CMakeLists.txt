@@ -36,6 +36,8 @@ list (APPEND korc_sources
 add_executable (xkorc ${korc_sources})
 set_property(TARGET xkorc PROPERTY LINKER_LANGUAGE Fortran)
 
+add_library (korcsrc STATIC ${korc_sources})
+
 target_link_libraries (xkorc ${MPI_Fortran_LIBRARIES})
 target_link_libraries (xkorc ${HDF5_LIBRARIES})
 target_link_libraries (xkorc ${EZSpline_LIBRARIES})
