@@ -503,6 +503,7 @@ CONTAINS
        ALLOCATE( spp(ii)%vars%B(spp(ii)%ppp,3) )
        ALLOCATE( spp(ii)%vars%PSI_P(spp(ii)%ppp) )
        ALLOCATE( spp(ii)%vars%ne(spp(ii)%ppp) )
+       ALLOCATE( spp(ii)%vars%nimp(spp(ii)%ppp) )
        ALLOCATE( spp(ii)%vars%Te(spp(ii)%ppp) )
        ALLOCATE( spp(ii)%vars%Zeff(spp(ii)%ppp) )
        ALLOCATE( spp(ii)%vars%g(spp(ii)%ppp) )
@@ -525,6 +526,7 @@ CONTAINS
        spp(ii)%vars%B = 0.0_rp
        spp(ii)%vars%PSI_P = 0.0_rp
        spp(ii)%vars%ne = 0.0_rp
+       spp(ii)%vars%nimp = 0.0_rp
        spp(ii)%vars%Te = 0.0_rp
        spp(ii)%vars%Zeff = 0.0_rp
        spp(ii)%vars%g = 0.0_rp

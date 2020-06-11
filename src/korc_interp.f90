@@ -4423,6 +4423,51 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
     end do
 
   end subroutine get_m3d_c1_profile_p
+
+  subroutine get_m3d_c1_imp_p(params,P,Y_R,Y_PHI,Y_Z, &
+       nimp,flag,hint)
+    TYPE(PROFILES), INTENT(IN)       :: P
+    TYPE(KORC_PARAMS), INTENT(IN)  :: params
+    REAL(rp), DIMENSION(params%pchunk), INTENT(IN)  :: Y_R,Y_PHI,Y_Z
+    REAL(rp), DIMENSION(params%pchunk), INTENT(INOUT)  :: nimp
+    INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT)  :: flag
+    TYPE(C_PTR), DIMENSION(params%pchunk), INTENT(INOUT)  :: hint
+    INTEGER (C_INT)                :: status
+    INTEGER                        :: pp,pchunk
+    REAL(rp), DIMENSION(3)         :: x
+    REAL(rp)        :: nimptmp=-1._rp
+
+    pchunk=params%pchunk
+    
+    do pp = 1,pchunk
+       if (flag(pp) .EQ. 1_is) then
+          x(1) = Y_R(pp)*params%cpp%length
+          x(2) = Y_PHI(pp)
+          x(3) = Y_Z(pp)*params%cpp%length
+
+          !write(6,*) P%M3D_C1_ne,x
+          
+          status = fio_eval_field(P%M3D_C1_nimp_1, x(1), &
+               nimptmp,hint(pp))
+
+          !write(6,*) 'nimp',nimptmp
+          
+          if (status .eq. FIO_SUCCESS) then
+
+             if(nimptmp.le.0) nimptmp=0._rp
+             
+             nimp(pp) = nimptmp/params%cpp%density
+          else if (status .eq. FIO_NO_DATA) then
+             flag(pp) = 0_is
+          else if (status .ne. FIO_SUCCESS) then
+             flag(pp) = 0_is
+             CYCLE
+          end if
+          
+       end if
+    end do
+
+  end subroutine get_m3d_c1_imp_p
   
 #endif
 

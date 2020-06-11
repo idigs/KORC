@@ -3111,7 +3111,7 @@ contains
     REAL(rp),DIMENSION(params%pchunk) :: Y_R,Y_PHI,Y_Z
     REAL(rp),DIMENSION(params%pchunk) :: B_R,B_PHI,B_Z
     REAL(rp),DIMENSION(params%pchunk) :: E_R,E_PHI,E_Z
-    REAL(rp),DIMENSION(params%pchunk) :: ne,Te,Zeff    
+    REAL(rp),DIMENSION(params%pchunk) :: ne,Te,Zeff,nimp    
     REAL(rp),DIMENSION(params%pchunk) :: V_PLL,V_MU
     REAL(rp),DIMENSION(params%pchunk) :: PSIp
     REAL(rp),DIMENSION(params%pchunk) :: curlb_R,curlb_PHI,curlb_Z
@@ -3145,7 +3145,7 @@ contains
        !$OMP& SHARED(params,ii,spp,P,F) &
        !$OMP& PRIVATE(pp,tt,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,B_R,B_PHI,B_Z, &
        !$OMP& flagCon,flagCol,E_PHI,PSIp,curlb_R,curlb_PHI,curlb_Z, &
-       !$OMP& gradB_R,gradB_PHI,gradB_Z,ne,Te,E_R,E_Z,hint)
+       !$OMP& gradB_R,gradB_PHI,gradB_Z,ne,nimp,Te,E_R,E_Z,hint)
 
        do pp=1_idef,spp(ii)%ppp,pchunk
 
@@ -3184,6 +3184,7 @@ contains
              hint(cc)=spp(ii)%vars%hint(pp-1+cc)
 
              ne(cc)=spp(ii)%vars%ne(pp-1+cc)
+             nimp(cc)=spp(ii)%vars%nimp(pp-1+cc)
              Te(cc)=spp(ii)%vars%Te(pp-1+cc)
           end do
           !$OMP END SIMD
@@ -3194,7 +3195,7 @@ contains
                   params,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,q_cache,m_cache, &
                   flagCon,flagCol, &
                   F,P,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,PSIp,curlb_R,curlb_PHI, &
-                  curlb_Z,gradB_R,gradB_PHI,gradB_Z,ne,Te,hint)
+                  curlb_Z,gradB_R,gradB_PHI,gradB_Z,ne,Te,nimp,hint)
           end do !timestep iterator
 
 
@@ -3227,6 +3228,7 @@ contains
              spp(ii)%vars%PSI_P(pp-1+cc) = PSIp(cc)
 
              spp(ii)%vars%ne(pp-1+cc) = ne(cc)
+             spp(ii)%vars%nimp(pp-1+cc) = nimp(cc)
              spp(ii)%vars%Te(pp-1+cc) = Te(cc)
 
              spp(ii)%vars%hint(pp-1+cc) = hint(cc)
@@ -5104,7 +5106,7 @@ contains
   subroutine advance_GCinterp_m3dc1_vars(vars,pp,tt,params,Y_R,Y_PHI,Y_Z, &
        V_PLL,V_MU,q_cache,m_cache,flagCon,flagCol,F,P,B_R,B_PHI,B_Z, &
        E_R,E_PHI,E_Z,PSIp,&
-       curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,ne,Te,hint)
+       curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,ne,Te,nimp,hint)
 
     USE omp_lib
     IMPLICIT NONE
@@ -5147,7 +5149,7 @@ contains
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: B_R,B_PHI,B_Z
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: E_PHI,E_R,E_Z
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: PSIp
-    REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: ne,Te
+    REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: ne,Te,nimp
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: curlb_R,curlb_PHI,curlb_Z
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: gradB_R,gradB_PHI,gradB_Z
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: V_PLL,V_MU
@@ -5505,7 +5507,7 @@ contains
     if (params%collisions) then       
 
        call include_CoulombCollisions_GCm3dc1_p(tt,params,Y_R,Y_PHI,Y_Z, &
-            V_PLL,V_MU,m_cache,flagCon,flagCol,F,P,E_PHI,ne,Te,PSIp,hint)
+            V_PLL,V_MU,m_cache,flagCon,flagCol,F,P,E_PHI,ne,Te,nimp,PSIp,hint)
 
     end if
 

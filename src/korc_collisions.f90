@@ -1602,7 +1602,7 @@ contains
   end subroutine include_CoulombCollisions_GC_p
 
   subroutine include_CoulombCollisions_GCm3dc1_p(tt,params,Y_R,Y_PHI,Y_Z, &
-       Ppll,Pmu,me,flagCon,flagCol,F,P,E_PHI,ne,Te,PSIp,hint)
+       Ppll,Pmu,me,flagCon,flagCol,F,P,E_PHI,ne,Te,nimp,PSIp,hint)
 
     TYPE(PROFILES), INTENT(IN)                                 :: P
     TYPE(FIELDS), INTENT(IN)                                   :: F
@@ -1615,7 +1615,7 @@ contains
     REAL(rp), DIMENSION(params%pchunk) :: gradB_R,gradB_PHI,gradB_Z
     REAL(rp), DIMENSION(params%pchunk) 	:: E_R,E_Z
     REAL(rp), DIMENSION(params%pchunk) 	:: E_PHI,PSIp,E_PHI0
-    REAL(rp), DIMENSION(params%pchunk), INTENT(INOUT) 	:: ne,Te
+    REAL(rp), DIMENSION(params%pchunk), INTENT(INOUT) 	:: ne,Te,nimp
     REAL(rp), DIMENSION(params%pchunk), INTENT(IN) 	:: Y_R,Y_PHI,Y_Z
     INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT)  :: flagCol
     INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT)  :: flagCon
@@ -1659,7 +1659,9 @@ contains
        call get_m3d_c1_profile_p(params,P,Y_R,Y_PHI,Y_Z, &
             ne,Te,flagCon,hint)
 
-
+       call get_m3d_c1_imp_p(params,P,Y_R,Y_PHI,Y_Z, &
+            nimp,flagCon,hint)
+       
        
        !$OMP SIMD
 !       !$OMP& aligned (pm,xi,v,Ppll,Bmag,Pmu)

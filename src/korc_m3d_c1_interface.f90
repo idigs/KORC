@@ -219,8 +219,6 @@ CONTAINS
 
   SUBROUTINE initialize_m3d_c1(params, F, P, spp)
 
-    IMPLICIT NONE
-
     TYPE(KORC_PARAMS), INTENT(INOUT)           :: params
     TYPE(FIELDS), INTENT(INOUT)                :: F
     TYPE(PROFILES), INTENT(INOUT)              :: P
@@ -270,6 +268,9 @@ CONTAINS
     status = fio_get_field(isrc, FIO_DENSITY, P%M3D_C1_ne);
     status = fio_get_field(isrc, FIO_TEMPERATURE, P%M3D_C1_te);
 
+    status = fio_set_int_option(FIO_SPECIES, FIO_MAKE_SPECIES(40, 18, 17));
+    status = fio_get_field(isrc, FIO_DENSITY, P%M3D_C1_nimp_1);
+    
     !  Hardcode Bo to one for now until a better method of determining the a
     !  characteristic magnetic field value.
     F%Bo = 1.0
@@ -293,9 +294,20 @@ CONTAINS
        write(output_unit_write,*) 'Calculate A',F%M3D_C1_A
        write(output_unit_write,*) 'Calculate n',P%M3D_C1_ne
        write(output_unit_write,*) 'Calculate T',P%M3D_C1_te
+       write(output_unit_write,*) 'Calculate nimp_1',P%M3D_C1_nimp_1
     end if
        
   END SUBROUTINE initialize_m3d_c1
+
+  FUNCTION FIO_MAKE_SPECIES(m, p, e)
+    INTEGER, INTENT(IN) :: m
+    INTEGER, INTENT(IN) :: p
+    INTEGER, INTENT(IN) :: e
+    INTEGER(C_INT) :: FIO_MAKE_SPECIES
+    
+    FIO_MAKE_SPECIES = e + p*256 + (m-p)*65536
+  END FUNCTION FIO_MAKE_SPECIES
+
 
 END MODULE korc_m3d_c1
 #endif
