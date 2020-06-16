@@ -4409,7 +4409,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
              flag(pp) = 0_is
              CYCLE
           end if
-
+          
           status = fio_eval_field(P%M3D_C1_te, x(1), &
                Tetmp,hint(pp))
 
@@ -4423,6 +4423,71 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
     end do
 
   end subroutine get_m3d_c1_profile_p
+
+  subroutine get_m3d_c1_ion_p(params,P,Y_R,Y_PHI,Y_Z, &
+       n_e,n_i,nimp,Zeff,flag,hint)
+    TYPE(PROFILES), INTENT(IN)       :: P
+    TYPE(KORC_PARAMS), INTENT(IN)  :: params
+    REAL(rp), DIMENSION(params%pchunk), INTENT(IN)  :: Y_R,Y_PHI,Y_Z
+    REAL(rp), DIMENSION(params%pchunk,params%num_impurity_species),&
+         & INTENT(INOUT)  :: nimp
+    REAL(rp), DIMENSION(params%pchunk), INTENT(INOUT)  :: n_i,Zeff
+    REAL(rp), DIMENSION(params%pchunk), INTENT(IN)  :: n_e
+    INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT)  :: flag
+    TYPE(C_PTR), DIMENSION(params%pchunk), INTENT(INOUT)  :: hint
+    INTEGER (C_INT)                :: status
+    INTEGER                        :: ii,pp,pchunk,num_imp
+    REAL(rp), DIMENSION(3)         :: x
+    REAL(rp)        :: nimptmp=-1._rp,nitmp=-1._rp
+
+    pchunk=params%pchunk
+    num_imp=params%num_impurity_species
+    
+    do pp = 1,pchunk
+       if (flag(pp) .EQ. 1_is) then
+          x(1) = Y_R(pp)*params%cpp%length
+          x(2) = modulo(Y_PHI(pp),2*C_PI)
+          x(3) = Y_Z(pp)*params%cpp%length
+
+          !write(6,*) 'X',x
+
+          do ii = 1,num_imp
+             status = fio_eval_field(P%M3D_C1_nimp(ii), x(1), &
+               nimptmp,hint(pp))
+
+!             write(6,*) P%M3D_C1_nimp(ii)
+!             write(6,*) 'nimp_',ii,nimptmp
+             
+             if (status .eq. FIO_SUCCESS) then
+
+                if(nimptmp.le.0) nimptmp=0._rp
+
+                nimp(pp,ii) = nimptmp/params%cpp%density
+             else if (status .eq. FIO_NO_DATA) then
+                flag(pp) = 0_is
+             else if (status .ne. FIO_SUCCESS) then
+                flag(pp) = 0_is
+                CYCLE
+             end if
+          end do
+
+          status = fio_eval_field(P%M3D_C1_ni, x(1), &
+               nitmp,hint(pp))
+
+          if (status .eq. FIO_SUCCESS) then
+             n_i(pp) = nitmp/params%cpp%density
+          end if
+
+          Zeff(pp)=n_i(pp)
+          do ii=1,params%num_impurity_species
+             Zeff(pp)=Zeff(pp)+nimp(pp,ii)*params%Zj(ii)**2
+          end do
+          Zeff(pp)=Zeff(pp)/n_e(pp)
+          
+       end if
+    end do
+
+  end subroutine get_m3d_c1_ion_p
   
 #endif
 

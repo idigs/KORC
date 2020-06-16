@@ -132,7 +132,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="<p> 3.4% of total for derived types.</p>Including implementation: 20 statements,  3.4% of total for derived types.">20 statements</a>
+    title="<p> 3.7% of total for derived types.</p>Including implementation: 22 statements,  3.7% of total for derived types.">22 statements</a>
      </li> 
      
      
@@ -207,9 +207,13 @@
       
       <a class="list-group-item" href="../type/params_ms.html#variable-re">re</a>
       
+      <a class="list-group-item" href="../type/params_ms.html#variable-ac">aC</a>
+      
       <a class="list-group-item" href="../type/params_ms.html#variable-ane">aNe</a>
       
       <a class="list-group-item" href="../type/params_ms.html#variable-aar">aAr</a>
+      
+      <a class="list-group-item" href="../type/params_ms.html#variable-ic">IC</a>
       
       <a class="list-group-item" href="../type/params_ms.html#variable-ine">INe</a>
       
@@ -301,9 +305,13 @@
       
       <a class="list-group-item" href="../type/params_ms.html#variable-re">re</a>
       
+      <a class="list-group-item" href="../type/params_ms.html#variable-ac">aC</a>
+      
       <a class="list-group-item" href="../type/params_ms.html#variable-ane">aNe</a>
       
       <a class="list-group-item" href="../type/params_ms.html#variable-aar">aAr</a>
+      
+      <a class="list-group-item" href="../type/params_ms.html#variable-ic">IC</a>
       
       <a class="list-group-item" href="../type/params_ms.html#variable-ine">INe</a>
       
@@ -573,6 +581,20 @@
   
 <tr>
   
+  <td><span class="anchor" id="variable-ac"></span>real(kind=rp),</td>
+  
+  <td>public,</td>
+  <td>DIMENSION(7)</td><td>::</td>
+  <td><strong>aC</strong></td><td> =</td><td>(/144._rp, 118._rp, 95._rp, 70._rp, 42._rp, 39._rp, 0._rp/)</td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
   <td><span class="anchor" id="variable-ane"></span>real(kind=rp),</td>
   
   <td>public,</td>
@@ -592,6 +614,20 @@
   <td>public,</td>
   <td>DIMENSION(19)</td><td>::</td>
   <td><strong>aAr</strong></td><td> =</td><td>(/96._rp, 90._rp, 84._rp, 78._rp, 72._rp, 65._rp, 59._rp, 53._rp, 47._rp, 44._rp, 41._rp, 38._rp, 25._rp, 32._rp, 27._rp, 21._rp, 13._rp, 13._rp, 0._rp/)</td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-ic"></span>real(kind=rp),</td>
+  
+  <td>public,</td>
+  <td>DIMENSION(7)</td><td>::</td>
+  <td><strong>IC</strong></td><td> =</td><td>(/65.9_rp, 92.6_rp, 134.8_rp, 214.2_rp, 486.2_rp, 539.5_rp, huge(1._rp)/)</td><td></td>
   
 </tr>
 
@@ -670,6 +706,8 @@
      <span class="c">! Classical electron radius</span>
 
 
+     <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span> <span class="kd">::</span> <span class="n">aC</span><span class="o">=</span><span class="p">(</span><span class="o">/</span><span class="mi">14</span><span class="mf">4._rp</span><span class="p">,</span><span class="mi">11</span><span class="mf">8._rp</span><span class="p">,</span><span class="mi">9</span><span class="mf">5._rp</span><span class="p">,</span><span class="mi">7</span><span class="mf">0._rp</span><span class="p">,</span> <span class="p">&amp;</span>
+          <span class="mi">4</span><span class="mf">2._rp</span><span class="p">,</span><span class="mi">3</span><span class="mf">9._rp</span><span class="p">,</span><span class="mf">0._rp</span><span class="o">/</span><span class="p">)</span>
      <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span> <span class="kd">::</span> <span class="n">aNe</span><span class="o">=</span><span class="p">(</span><span class="o">/</span><span class="mi">11</span><span class="mf">1._rp</span><span class="p">,</span><span class="mi">10</span><span class="mf">0._rp</span><span class="p">,</span><span class="mi">9</span><span class="mf">0._rp</span><span class="p">,</span><span class="mi">8</span><span class="mf">0._rp</span><span class="p">,</span> <span class="p">&amp;</span>
           <span class="mi">7</span><span class="mf">1._rp</span><span class="p">,</span><span class="mi">6</span><span class="mf">2._rp</span><span class="p">,</span><span class="mi">5</span><span class="mf">2._rp</span><span class="p">,</span><span class="mi">4</span><span class="mf">0._rp</span><span class="p">,</span><span class="mi">2</span><span class="mf">4._rp</span><span class="p">,</span><span class="mi">2</span><span class="mf">3._rp</span><span class="p">,</span><span class="mf">0._rp</span><span class="o">/</span><span class="p">)</span>
      <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(</span><span class="mi">19</span><span class="p">)</span> <span class="kd">::</span> <span class="n">aAr</span><span class="o">=</span><span class="p">(</span><span class="o">/</span><span class="mi">9</span><span class="mf">6._rp</span><span class="p">,</span><span class="mi">9</span><span class="mf">0._rp</span><span class="p">,</span><span class="mi">8</span><span class="mf">4._rp</span><span class="p">,</span><span class="mi">7</span><span class="mf">8._rp</span><span class="p">,</span><span class="mi">7</span><span class="mf">2._rp</span><span class="p">,</span> <span class="p">&amp;</span>
@@ -677,6 +715,8 @@
           <span class="mi">2</span><span class="mf">7._rp</span><span class="p">,</span><span class="mi">2</span><span class="mf">1._rp</span><span class="p">,</span><span class="mi">1</span><span class="mf">3._rp</span><span class="p">,</span><span class="mi">1</span><span class="mf">3._rp</span><span class="p">,</span><span class="mf">0._rp</span><span class="o">/</span><span class="p">)</span>
 
 
+     <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span> <span class="kd">::</span> <span class="n">IC</span><span class="o">=</span><span class="p">(</span><span class="o">/</span><span class="mi">6</span><span class="mf">5.9_rp</span><span class="p">,</span><span class="mi">9</span><span class="mf">2.6_rp</span><span class="p">,</span><span class="mi">13</span><span class="mf">4.8_rp</span><span class="p">,</span><span class="mi">21</span><span class="mf">4.2_rp</span><span class="p">,</span> <span class="p">&amp;</span>
+          <span class="mi">48</span><span class="mf">6.2_rp</span><span class="p">,</span><span class="mi">53</span><span class="mf">9.5_rp</span><span class="p">,</span><span class="nb">huge</span><span class="p">(</span><span class="mf">1._rp</span><span class="p">)</span><span class="o">/</span><span class="p">)</span>
      <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span> <span class="kd">::</span> <span class="n">INe</span><span class="o">=</span><span class="p">(</span><span class="o">/</span><span class="mi">13</span><span class="mf">7.2_rp</span><span class="p">,</span><span class="mi">16</span><span class="mf">5.2_rp</span><span class="p">,</span><span class="mi">19</span><span class="mf">6.9_rp</span><span class="p">,</span><span class="mi">23</span><span class="mf">5.2_rp</span><span class="p">,</span> <span class="p">&amp;</span>
           <span class="mi">28</span><span class="mf">2.8_rp</span><span class="p">,</span><span class="mi">35</span><span class="mf">2.6_rp</span><span class="p">,</span><span class="mi">47</span><span class="mf">5.0_rp</span><span class="p">,</span><span class="mi">69</span><span class="mf">6.8_rp</span><span class="p">,</span><span class="mi">140</span><span class="mf">9.2_rp</span><span class="p">,</span><span class="mi">149</span><span class="mf">8.4_rp</span><span class="p">,</span><span class="nb">huge</span><span class="p">(</span><span class="mf">1._rp</span><span class="p">)</span><span class="o">/</span><span class="p">)</span>
      <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(</span><span class="mi">19</span><span class="p">)</span> <span class="kd">::</span> <span class="n">IAr</span><span class="o">=</span><span class="p">(</span><span class="o">/</span><span class="mi">18</span><span class="mf">8.5_rp</span><span class="p">,</span><span class="mi">21</span><span class="mf">9.4_rp</span><span class="p">,</span><span class="mi">25</span><span class="mf">3.8_rp</span><span class="p">,</span><span class="mi">29</span><span class="mf">3.4_rp</span><span class="p">,</span> <span class="p">&amp;</span>

@@ -132,7 +132,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title=" 0.2% of total for procedures.">50 statements</a>
+    title=" 0.2% of total for procedures.">52 statements</a>
      </li> 
      
      
@@ -237,7 +237,7 @@ public subroutine set_paths(params)
   
 <tr>
   
-  <td><span class="anchor" id="variable-params~134"></span>type(KORC_PARAMS),</td>
+  <td><span class="anchor" id="variable-params~141"></span>type(KORC_PARAMS),</td>
   <td>intent(inout)</td>
   <td></td>
   
@@ -585,6 +585,8 @@ public subroutine set_paths(params)
     <span class="k">if</span> <span class="p">(</span><span class="n">argn</span> <span class="p">.</span><span class="n">EQ</span><span class="p">.</span> <span class="mi">2_idef</span><span class="p">)</span> <span class="k">then</span>
 <span class="k">       call </span><span class="nb">get_command_argument</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">path_to_inputs</span><span class="p">)</span>
        <span class="k">call </span><span class="nb">get_command_argument</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">path_to_outputs</span><span class="p">)</span>
+    <span class="k">else if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">path_to_inputs</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;TEST&#39;</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">       call </span><span class="nb">get_command_argument</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">path_to_outputs</span><span class="p">)</span>
     <span class="k">else</span>
 <span class="k">       call </span><span class="n">korc_abort</span><span class="p">()</span>
     <span class="k">end if</span>

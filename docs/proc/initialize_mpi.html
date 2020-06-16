@@ -238,7 +238,7 @@ public subroutine initialize_mpi(params)
   
 <tr>
   
-  <td><span class="anchor" id="variable-params~135"></span>type(KORC_PARAMS),</td>
+  <td><span class="anchor" id="variable-params~142"></span>type(KORC_PARAMS),</td>
   <td>intent(inout)</td>
   <td></td>
   
@@ -278,116 +278,116 @@ public subroutine initialize_mpi(params)
 <polygon fill="none" stroke="#000000" points="73,-209 0,-209 0,-185 73,-185 73,-209"/>
 <text text-anchor="middle" x="36.5" y="-194.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#000000">initialize_mpi</text>
 </g>
-<!-- mpi_cart_create -->
-<g id="proc~~initialize_mpi~~CallsGraph_node2" class="node">
-<title>mpi_cart_create</title>
-<polygon fill="#777777" stroke="#777777" points="198,-394 110,-394 110,-370 198,-370 198,-394"/>
-<text text-anchor="middle" x="154" y="-379.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_cart_create</text>
-</g>
-<!-- proc~initialize_mpi&#45;&gt;mpi_cart_create -->
-<g id="proc~~initialize_mpi~~CallsGraph_edge1" class="edge">
-<title>proc~initialize_mpi&#45;&gt;mpi_cart_create</title>
-<path fill="none" stroke="#000000" d="M38.8487,-209.3733C45.0991,-239.1868 64.7725,-315.8616 109,-361 110.0559,-362.0777 111.1777,-363.1061 112.3515,-364.087"/>
-<polygon fill="#000000" stroke="#000000" points="110.495,-367.059 120.7048,-369.8894 114.4885,-361.3099 110.495,-367.059"/>
-</g>
 <!-- mpi_bcast -->
-<g id="proc~~initialize_mpi~~CallsGraph_node3" class="node">
+<g id="proc~~initialize_mpi~~CallsGraph_node2" class="node">
 <title>mpi_bcast</title>
-<polygon fill="#777777" stroke="#777777" points="184,-352 124,-352 124,-328 184,-328 184,-352"/>
-<text text-anchor="middle" x="154" y="-337.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_bcast</text>
+<polygon fill="#777777" stroke="#777777" points="184,-394 124,-394 124,-370 184,-370 184,-394"/>
+<text text-anchor="middle" x="154" y="-379.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_bcast</text>
 </g>
 <!-- proc~initialize_mpi&#45;&gt;mpi_bcast -->
-<g id="proc~~initialize_mpi~~CallsGraph_edge2" class="edge">
+<g id="proc~~initialize_mpi~~CallsGraph_edge1" class="edge">
 <title>proc~initialize_mpi&#45;&gt;mpi_bcast</title>
-<path fill="none" stroke="#000000" d="M40.9617,-209.3575C50.1992,-233.4017 73.5616,-286.9253 109,-319 110.9016,-320.7211 112.969,-322.3258 115.1379,-323.8179"/>
-<polygon fill="#000000" stroke="#000000" points="113.4888,-326.9095 123.8708,-329.0228 117.0727,-320.8965 113.4888,-326.9095"/>
+<path fill="none" stroke="#000000" d="M39.3168,-209.1838C46.4778,-237.8649 67.7976,-310.6344 109,-356 111.7203,-358.9952 114.8684,-361.7388 118.211,-364.2272"/>
+<polygon fill="#000000" stroke="#000000" points="116.5125,-367.2997 126.7873,-369.8845 120.367,-361.4565 116.5125,-367.2997"/>
+</g>
+<!-- mpi_barrier -->
+<g id="proc~~initialize_mpi~~CallsGraph_node3" class="node">
+<title>mpi_barrier</title>
+<polygon fill="#777777" stroke="#777777" points="399,-293 333,-293 333,-269 399,-269 399,-293"/>
+<text text-anchor="middle" x="366" y="-278.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_barrier</text>
+</g>
+<!-- proc~initialize_mpi&#45;&gt;mpi_barrier -->
+<g id="proc~~initialize_mpi~~CallsGraph_edge2" class="edge">
+<title>proc~initialize_mpi&#45;&gt;mpi_barrier</title>
+<path fill="none" stroke="#000000" d="M39.2161,-209.2185C45.8305,-235.6661 65.5239,-297.8566 109,-323 182.1659,-365.3139 285.5286,-323.4271 335.9641,-297.7532"/>
+<polygon fill="#000000" stroke="#000000" points="337.789,-300.7488 345.0339,-293.0182 334.5494,-294.5436 337.789,-300.7488"/>
+</g>
+<!-- mpi_init -->
+<g id="proc~~initialize_mpi~~CallsGraph_node4" class="node">
+<title>mpi_init</title>
+<polygon fill="#777777" stroke="#777777" points="181,-314 127,-314 127,-290 181,-290 181,-314"/>
+<text text-anchor="middle" x="154" y="-299.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_init</text>
+</g>
+<!-- proc~initialize_mpi&#45;&gt;mpi_init -->
+<g id="proc~~initialize_mpi~~CallsGraph_edge3" class="edge">
+<title>proc~initialize_mpi&#45;&gt;mpi_init</title>
+<path fill="none" stroke="#000000" d="M44.5639,-209.2826C56.7383,-227.0498 81.3472,-260.0789 109,-281 111.7652,-283.092 114.7722,-285.045 117.8768,-286.8511"/>
+<polygon fill="#000000" stroke="#000000" points="116.2879,-289.97 126.765,-291.5452 119.5569,-283.7802 116.2879,-289.97"/>
+</g>
+<!-- mpi_abort -->
+<g id="proc~~initialize_mpi~~CallsGraph_node5" class="node">
+<title>mpi_abort</title>
+<polygon fill="#777777" stroke="#777777" points="395.5,-200 336.5,-200 336.5,-176 395.5,-176 395.5,-200"/>
+<text text-anchor="middle" x="366" y="-185.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_abort</text>
+</g>
+<!-- proc~initialize_mpi&#45;&gt;mpi_abort -->
+<g id="proc~~initialize_mpi~~CallsGraph_edge4" class="edge">
+<title>proc~initialize_mpi&#45;&gt;mpi_abort</title>
+<path fill="none" stroke="#000000" d="M51.8269,-184.8792C65.8081,-174.65 87.5067,-160.776 109,-155 184.3465,-134.7517 275.5612,-157.0862 326.5594,-173.5985"/>
+<polygon fill="#000000" stroke="#000000" points="325.6127,-176.9721 336.2062,-176.809 327.8231,-170.3302 325.6127,-176.9721"/>
+</g>
+<!-- mpi_cart_create -->
+<g id="proc~~initialize_mpi~~CallsGraph_node6" class="node">
+<title>mpi_cart_create</title>
+<polygon fill="#777777" stroke="#777777" points="198,-230 110,-230 110,-206 198,-206 198,-230"/>
+<text text-anchor="middle" x="154" y="-215.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_cart_create</text>
+</g>
+<!-- proc~initialize_mpi&#45;&gt;mpi_cart_create -->
+<g id="proc~~initialize_mpi~~CallsGraph_edge5" class="edge">
+<title>proc~initialize_mpi&#45;&gt;mpi_cart_create</title>
+<path fill="none" stroke="#000000" d="M73.0336,-203.5294C81.4525,-205.0341 90.5852,-206.6663 99.5817,-208.2742"/>
+<polygon fill="#000000" stroke="#000000" points="99.176,-211.7571 109.6359,-210.0711 100.4076,-204.8662 99.176,-211.7571"/>
 </g>
 <!-- mpi_initialized -->
-<g id="proc~~initialize_mpi~~CallsGraph_node4" class="node">
+<g id="proc~~initialize_mpi~~CallsGraph_node7" class="node">
 <title>mpi_initialized</title>
-<polygon fill="#777777" stroke="#777777" points="193,-310 115,-310 115,-286 193,-286 193,-310"/>
-<text text-anchor="middle" x="154" y="-295.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_initialized</text>
+<polygon fill="#777777" stroke="#777777" points="193,-188 115,-188 115,-164 193,-164 193,-188"/>
+<text text-anchor="middle" x="154" y="-173.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_initialized</text>
 </g>
 <!-- proc~initialize_mpi&#45;&gt;mpi_initialized -->
-<g id="proc~~initialize_mpi~~CallsGraph_edge3" class="edge">
+<g id="proc~~initialize_mpi~~CallsGraph_edge6" class="edge">
 <title>proc~initialize_mpi&#45;&gt;mpi_initialized</title>
-<path fill="none" stroke="#000000" d="M46.4066,-209.1847C59.5981,-224.925 84.167,-252.602 109,-272 112.8841,-275.034 117.1596,-277.9571 121.4825,-280.6783"/>
-<polygon fill="#000000" stroke="#000000" points="119.9322,-283.8291 130.3123,-285.9516 123.5214,-277.8193 119.9322,-283.8291"/>
+<path fill="none" stroke="#000000" d="M73.0336,-190.4706C83.0399,-188.6822 94.0545,-186.7137 104.6503,-184.82"/>
+<polygon fill="#000000" stroke="#000000" points="105.406,-188.2404 114.6342,-183.0356 104.1744,-181.3496 105.406,-188.2404"/>
 </g>
 <!-- proc~set_paths -->
-<g id="proc~~initialize_mpi~~CallsGraph_node5" class="node">
+<g id="proc~~initialize_mpi~~CallsGraph_node8" class="node">
 <title>proc~set_paths</title>
-<g id="a_proc~~initialize_mpi~~CallsGraph_node5"><a xlink:href=".././proc/set_paths.html" xlink:title="set_paths">
-<polygon fill="#d9534f" stroke="#d9534f" points="183,-146 125,-146 125,-122 183,-122 183,-146"/>
-<text text-anchor="middle" x="154" y="-131.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">set_paths</text>
+<g id="a_proc~~initialize_mpi~~CallsGraph_node8"><a xlink:href=".././proc/set_paths.html" xlink:title="set_paths">
+<polygon fill="#d9534f" stroke="#d9534f" points="183,-272 125,-272 125,-248 183,-248 183,-272"/>
+<text text-anchor="middle" x="154" y="-257.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">set_paths</text>
 </a>
 </g>
 </g>
 <!-- proc~initialize_mpi&#45;&gt;proc~set_paths -->
-<g id="proc~~initialize_mpi~~CallsGraph_edge4" class="edge">
-<title>proc~initialize_mpi&#45;&gt;proc~set_paths</title>
-<path fill="none" stroke="#000000" d="M56.2377,-184.9314C70.6687,-176.2643 90.8155,-164.4867 109,-155 111.9046,-153.4847 114.9384,-151.9566 117.9991,-150.4527"/>
-<polygon fill="#000000" stroke="#000000" points="119.6615,-153.5371 127.1593,-146.0516 116.6299,-147.2276 119.6615,-153.5371"/>
-</g>
-<!-- mpi_reduce -->
-<g id="proc~~initialize_mpi~~CallsGraph_node6" class="node">
-<title>mpi_reduce</title>
-<polygon fill="#777777" stroke="#777777" points="187.5,-230 120.5,-230 120.5,-206 187.5,-206 187.5,-230"/>
-<text text-anchor="middle" x="154" y="-215.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_reduce</text>
-</g>
-<!-- proc~initialize_mpi&#45;&gt;mpi_reduce -->
-<g id="proc~~initialize_mpi~~CallsGraph_edge5" class="edge">
-<title>proc~initialize_mpi&#45;&gt;mpi_reduce</title>
-<path fill="none" stroke="#000000" d="M73.0336,-203.5294C84.823,-205.6365 98.0122,-207.9937 110.2669,-210.1839"/>
-<polygon fill="#000000" stroke="#000000" points="109.8301,-213.6612 120.2899,-211.9752 111.0617,-206.7704 109.8301,-213.6612"/>
-</g>
-<!-- mpi_init -->
-<g id="proc~~initialize_mpi~~CallsGraph_node7" class="node">
-<title>mpi_init</title>
-<polygon fill="#777777" stroke="#777777" points="181,-188 127,-188 127,-164 181,-164 181,-188"/>
-<text text-anchor="middle" x="154" y="-173.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_init</text>
-</g>
-<!-- proc~initialize_mpi&#45;&gt;mpi_init -->
-<g id="proc~~initialize_mpi~~CallsGraph_edge6" class="edge">
-<title>proc~initialize_mpi&#45;&gt;mpi_init</title>
-<path fill="none" stroke="#000000" d="M73.0336,-190.4706C86.8841,-187.9952 102.6664,-185.1745 116.5959,-182.685"/>
-<polygon fill="#000000" stroke="#000000" points="117.5958,-186.0618 126.824,-180.857 116.3642,-179.171 117.5958,-186.0618"/>
-</g>
-<!-- mpi_abort -->
-<g id="proc~~initialize_mpi~~CallsGraph_node8" class="node">
-<title>mpi_abort</title>
-<polygon fill="#777777" stroke="#777777" points="395.5,-177 336.5,-177 336.5,-153 395.5,-153 395.5,-177"/>
-<text text-anchor="middle" x="366" y="-162.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_abort</text>
-</g>
-<!-- proc~initialize_mpi&#45;&gt;mpi_abort -->
 <g id="proc~~initialize_mpi~~CallsGraph_edge7" class="edge">
-<title>proc~initialize_mpi&#45;&gt;mpi_abort</title>
-<path fill="none" stroke="#000000" d="M51.8269,-209.1208C65.8081,-219.35 87.5067,-233.224 109,-239 147.6294,-249.3811 159.8668,-247.2819 199,-239 250.2509,-228.1536 304.8967,-200.4921 337.2154,-182.2329"/>
-<polygon fill="#000000" stroke="#000000" points="339.1799,-185.1409 346.1088,-177.1258 335.6939,-179.0706 339.1799,-185.1409"/>
+<title>proc~initialize_mpi&#45;&gt;proc~set_paths</title>
+<path fill="none" stroke="#000000" d="M56.2377,-209.0686C70.6687,-217.7357 90.8155,-229.5133 109,-239 111.9046,-240.5153 114.9384,-242.0434 117.9991,-243.5473"/>
+<polygon fill="#000000" stroke="#000000" points="116.6299,-246.7724 127.1593,-247.9484 119.6615,-240.4629 116.6299,-246.7724"/>
 </g>
 <!-- mpi_comm_size -->
 <g id="proc~~initialize_mpi~~CallsGraph_node9" class="node">
 <title>mpi_comm_size</title>
-<polygon fill="#777777" stroke="#777777" points="198,-104 110,-104 110,-80 198,-80 198,-104"/>
-<text text-anchor="middle" x="154" y="-89.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_comm_size</text>
+<polygon fill="#777777" stroke="#777777" points="198,-108 110,-108 110,-84 198,-84 198,-108"/>
+<text text-anchor="middle" x="154" y="-93.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_comm_size</text>
 </g>
 <!-- proc~initialize_mpi&#45;&gt;mpi_comm_size -->
 <g id="proc~~initialize_mpi~~CallsGraph_edge8" class="edge">
 <title>proc~initialize_mpi&#45;&gt;mpi_comm_size</title>
-<path fill="none" stroke="#000000" d="M44.5639,-184.7174C56.7383,-166.9502 81.3472,-133.9211 109,-113 110.7876,-111.6476 112.6762,-110.3533 114.627,-109.1192"/>
-<polygon fill="#000000" stroke="#000000" points="116.492,-112.085 123.4566,-104.101 113.0332,-105.9992 116.492,-112.085"/>
+<path fill="none" stroke="#000000" d="M46.4066,-184.8153C59.5981,-169.075 84.167,-141.398 109,-122 112.8841,-118.966 117.1596,-116.0429 121.4825,-113.3217"/>
+<polygon fill="#000000" stroke="#000000" points="123.5214,-116.1807 130.3123,-108.0484 119.9322,-110.1709 123.5214,-116.1807"/>
 </g>
-<!-- mpi_barrier -->
+<!-- mpi_reduce -->
 <g id="proc~~initialize_mpi~~CallsGraph_node10" class="node">
-<title>mpi_barrier</title>
-<polygon fill="#777777" stroke="#777777" points="399,-115 333,-115 333,-91 399,-91 399,-115"/>
-<text text-anchor="middle" x="366" y="-100.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_barrier</text>
+<title>mpi_reduce</title>
+<polygon fill="#777777" stroke="#777777" points="187.5,-66 120.5,-66 120.5,-42 187.5,-42 187.5,-66"/>
+<text text-anchor="middle" x="154" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_reduce</text>
 </g>
-<!-- proc~initialize_mpi&#45;&gt;mpi_barrier -->
+<!-- proc~initialize_mpi&#45;&gt;mpi_reduce -->
 <g id="proc~~initialize_mpi~~CallsGraph_edge9" class="edge">
-<title>proc~initialize_mpi&#45;&gt;mpi_barrier</title>
-<path fill="none" stroke="#000000" d="M39.2161,-184.7815C45.8305,-158.3339 65.5239,-96.1434 109,-71 180.303,-29.7635 281.1624,-63.9312 332.7641,-86.7013"/>
-<polygon fill="#000000" stroke="#000000" points="331.5535,-89.9953 342.1062,-90.9385 334.4449,-83.6204 331.5535,-89.9953"/>
+<title>proc~initialize_mpi&#45;&gt;mpi_reduce</title>
+<path fill="none" stroke="#000000" d="M40.9617,-184.6425C50.1992,-160.5983 73.5616,-107.0747 109,-75 110.2744,-73.8466 111.6232,-72.7454 113.0272,-71.6954"/>
+<polygon fill="#000000" stroke="#000000" points="115.0119,-74.5805 121.5363,-66.2328 111.2302,-68.6899 115.0119,-74.5805"/>
 </g>
 <!-- mpi_comm_rank -->
 <g id="proc~~initialize_mpi~~CallsGraph_node11" class="node">
@@ -398,35 +398,35 @@ public subroutine initialize_mpi(params)
 <!-- proc~initialize_mpi&#45;&gt;mpi_comm_rank -->
 <g id="proc~~initialize_mpi~~CallsGraph_edge10" class="edge">
 <title>proc~initialize_mpi&#45;&gt;mpi_comm_rank</title>
-<path fill="none" stroke="#000000" d="M39.3168,-184.8162C46.4778,-156.1351 67.7976,-83.3656 109,-38 111.7203,-35.0048 114.8684,-32.2612 118.211,-29.7728"/>
-<polygon fill="#000000" stroke="#000000" points="120.367,-32.5435 126.7873,-24.1155 116.5125,-26.7003 120.367,-32.5435"/>
+<path fill="none" stroke="#000000" d="M38.8487,-184.6267C45.0991,-154.8132 64.7725,-78.1384 109,-33 110.0559,-31.9223 111.1777,-30.8939 112.3515,-29.913"/>
+<polygon fill="#000000" stroke="#000000" points="114.4885,-32.6901 120.7048,-24.1106 110.495,-26.941 114.4885,-32.6901"/>
 </g>
 <!-- proc~korc_abort -->
 <g id="proc~~initialize_mpi~~CallsGraph_node12" class="node">
 <title>proc~korc_abort</title>
 <g id="a_proc~~initialize_mpi~~CallsGraph_node12"><a xlink:href=".././proc/korc_abort.html" xlink:title="korc_abort">
-<polygon fill="#d9534f" stroke="#d9534f" points="297,-146 235,-146 235,-122 297,-122 297,-146"/>
-<text text-anchor="middle" x="266" y="-131.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">korc_abort</text>
+<polygon fill="#d9534f" stroke="#d9534f" points="297,-272 235,-272 235,-248 297,-248 297,-272"/>
+<text text-anchor="middle" x="266" y="-257.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">korc_abort</text>
 </a>
 </g>
 </g>
 <!-- proc~set_paths&#45;&gt;proc~korc_abort -->
 <g id="proc~~initialize_mpi~~CallsGraph_edge11" class="edge">
 <title>proc~set_paths&#45;&gt;proc~korc_abort</title>
-<path fill="none" stroke="#000000" d="M183.1343,-134C195.7367,-134 210.718,-134 224.454,-134"/>
-<polygon fill="#000000" stroke="#000000" points="224.6552,-137.5001 234.6552,-134 224.6551,-130.5001 224.6552,-137.5001"/>
-</g>
-<!-- proc~korc_abort&#45;&gt;mpi_abort -->
-<g id="proc~~initialize_mpi~~CallsGraph_edge13" class="edge">
-<title>proc~korc_abort&#45;&gt;mpi_abort</title>
-<path fill="none" stroke="#000000" d="M297.0925,-143.6387C306.4666,-146.5447 316.8807,-149.773 326.7145,-152.8215"/>
-<polygon fill="#000000" stroke="#000000" points="325.707,-156.1734 336.2949,-155.7914 327.7797,-149.4873 325.707,-156.1734"/>
+<path fill="none" stroke="#000000" d="M183.1343,-260C195.7367,-260 210.718,-260 224.454,-260"/>
+<polygon fill="#000000" stroke="#000000" points="224.6552,-263.5001 234.6552,-260 224.6551,-256.5001 224.6552,-263.5001"/>
 </g>
 <!-- proc~korc_abort&#45;&gt;mpi_barrier -->
 <g id="proc~~initialize_mpi~~CallsGraph_edge12" class="edge">
 <title>proc~korc_abort&#45;&gt;mpi_barrier</title>
-<path fill="none" stroke="#000000" d="M297.0925,-124.3613C305.3406,-121.8044 314.3937,-118.998 323.1483,-116.284"/>
-<polygon fill="#000000" stroke="#000000" points="324.3316,-119.5816 332.8469,-113.2775 322.2589,-112.8955 324.3316,-119.5816"/>
+<path fill="none" stroke="#000000" d="M297.0925,-266.5294C305.2519,-268.2429 314.1991,-270.1218 322.8658,-271.9418"/>
+<polygon fill="#000000" stroke="#000000" points="322.341,-275.4079 332.8469,-274.0378 323.7797,-268.5573 322.341,-275.4079"/>
+</g>
+<!-- proc~korc_abort&#45;&gt;mpi_abort -->
+<g id="proc~~initialize_mpi~~CallsGraph_edge13" class="edge">
+<title>proc~korc_abort&#45;&gt;mpi_abort</title>
+<path fill="none" stroke="#000000" d="M282.9636,-247.7862C298.8623,-236.3392 322.827,-219.0846 340.9312,-206.0495"/>
+<polygon fill="#000000" stroke="#000000" points="343.2166,-208.7169 349.2869,-200.0334 339.1264,-203.0362 343.2166,-208.7169"/>
 </g>
 </g>
 </svg>

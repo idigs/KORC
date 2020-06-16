@@ -1,4 +1,5 @@
 
+
 module korc_ppusher
   !! @note Module with subroutines for advancing the particles' position and
   !! velocity in the simulations. @endnote
@@ -823,7 +824,7 @@ contains
        ! Splitting operator for including radiation
 
        if (params%radiation) then
-          !! Calls [[radiation_force]] in [[korc_ppusher]].
+          !! Calls [[radiation_force_p]] in [[korc_ppusher]].
           call radiation_force_p(pchunk,q_cache,m_cache,U_os_X,U_os_Y,U_os_Z, &
                E_X,E_Y,E_Z,B_Z,B_Y,B_Z,Frad_X,Frad_Y,Frad_Z)
           U_RC_X(cc) = U_RC_X(cc) + a*Frad_X(cc)/q_cache
@@ -1574,7 +1575,7 @@ contains
        ! Splitting operator for including radiation
 
        if (params%radiation) then
-          !! Calls [[radiation_force]] in [[korc_ppusher]].
+          !! Calls [[radiation_force_p]] in [[korc_ppusher]].
           call radiation_force_p(pchunk,q_cache,m_cache,U_os_X,U_os_Y,U_os_Z, &
                E_X,E_Y,E_Z,B_Z,B_Y,B_Z,Frad_X,Frad_Y,Frad_Z)
           U_RC_X(cc) = U_RC_X(cc) + a*Frad_X(cc)/q_cache
@@ -1789,7 +1790,7 @@ contains
        ! Splitting operator for including radiation
 
        if (params%radiation) then
-          !! Calls [[radiation_force]] in [[korc_ppusher]].
+          !! Calls [[radiation_force_p]] in [[korc_ppusher]].
           call radiation_force_p(pchunk,q_cache,m_cache,U_os_X,U_os_Y,U_os_Z, &
                E_X,E_Y,E_Z,B_Z,B_Y,B_Z,Frad_X,Frad_Y,Frad_Z)
           U_RC_X(cc) = U_RC_X(cc) + a*Frad_X(cc)/q_cache
@@ -3111,7 +3112,8 @@ contains
     REAL(rp),DIMENSION(params%pchunk) :: Y_R,Y_PHI,Y_Z
     REAL(rp),DIMENSION(params%pchunk) :: B_R,B_PHI,B_Z
     REAL(rp),DIMENSION(params%pchunk) :: E_R,E_PHI,E_Z
-    REAL(rp),DIMENSION(params%pchunk) :: ne,Te,Zeff    
+    REAL(rp),DIMENSION(params%pchunk) :: ne,Te,Zeff,ni
+    REAL(rp),DIMENSION(params%pchunk,params%num_impurity_species) :: nimp    
     REAL(rp),DIMENSION(params%pchunk) :: V_PLL,V_MU
     REAL(rp),DIMENSION(params%pchunk) :: PSIp
     REAL(rp),DIMENSION(params%pchunk) :: curlb_R,curlb_PHI,curlb_Z
@@ -3145,7 +3147,7 @@ contains
        !$OMP& SHARED(params,ii,spp,P,F) &
        !$OMP& PRIVATE(pp,tt,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,B_R,B_PHI,B_Z, &
        !$OMP& flagCon,flagCol,E_PHI,PSIp,curlb_R,curlb_PHI,curlb_Z, &
-       !$OMP& gradB_R,gradB_PHI,gradB_Z,ne,Te,E_R,E_Z,hint)
+       !$OMP& gradB_R,gradB_PHI,gradB_Z,ne,nimp,Te,Zeff,ni,E_R,E_Z,hint)
 
        do pp=1_idef,spp(ii)%ppp,pchunk
 
@@ -3184,6 +3186,8 @@ contains
              hint(cc)=spp(ii)%vars%hint(pp-1+cc)
 
              ne(cc)=spp(ii)%vars%ne(pp-1+cc)
+             ni(cc)=spp(ii)%vars%ni(pp-1+cc)
+             nimp(cc,:)=spp(ii)%vars%nimp(pp-1+cc,:)
              Te(cc)=spp(ii)%vars%Te(pp-1+cc)
           end do
           !$OMP END SIMD
@@ -3194,7 +3198,7 @@ contains
                   params,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,q_cache,m_cache, &
                   flagCon,flagCol, &
                   F,P,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,PSIp,curlb_R,curlb_PHI, &
-                  curlb_Z,gradB_R,gradB_PHI,gradB_Z,ne,Te,hint)
+                  curlb_Z,gradB_R,gradB_PHI,gradB_Z,ne,ni,Te,Zeff,nimp,hint)
           end do !timestep iterator
 
 
@@ -3227,7 +3231,10 @@ contains
              spp(ii)%vars%PSI_P(pp-1+cc) = PSIp(cc)
 
              spp(ii)%vars%ne(pp-1+cc) = ne(cc)
+             spp(ii)%vars%ni(pp-1+cc) = ni(cc)
+             spp(ii)%vars%nimp(pp-1+cc,:) = nimp(cc,:)
              spp(ii)%vars%Te(pp-1+cc) = Te(cc)
+             spp(ii)%vars%Zeff(pp-1+cc) = Zeff(cc)
 
              spp(ii)%vars%hint(pp-1+cc) = hint(cc)
           end do
@@ -5103,8 +5110,8 @@ contains
 
   subroutine advance_GCinterp_m3dc1_vars(vars,pp,tt,params,Y_R,Y_PHI,Y_Z, &
        V_PLL,V_MU,q_cache,m_cache,flagCon,flagCol,F,P,B_R,B_PHI,B_Z, &
-       E_R,E_PHI,E_Z,PSIp,&
-       curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,ne,Te,hint)
+       E_R,E_PHI,E_Z,PSIp,curlb_R,curlb_PHI,curlb_Z, &
+       gradB_R,gradB_PHI,gradB_Z,ne,ni,Te,Zeff,nimp,hint)
 
     USE omp_lib
     IMPLICIT NONE
@@ -5147,13 +5154,16 @@ contains
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: B_R,B_PHI,B_Z
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: E_PHI,E_R,E_Z
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: PSIp
-    REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: ne,Te
-    REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: curlb_R,curlb_PHI,curlb_Z
+    REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: ne,Te,ni
+    REAL(rp),DIMENSION(params%pchunk),INTENT(OUT) :: Zeff
+    REAL(rp),DIMENSION(params%pchunk,params%num_impurity_species)&
+         &,INTENT(INOUT) :: nimp
+    REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: curlb_R&
+         &,curlb_PHI,curlb_Z
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: gradB_R,gradB_PHI,gradB_Z
     REAL(rp),DIMENSION(params%pchunk),INTENT(INOUT) :: V_PLL,V_MU
     REAL(rp),DIMENSION(params%pchunk) :: RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU
     REAL(rp),DIMENSION(params%pchunk) :: V0_PLL,V0_MU
-    REAL(rp),DIMENSION(params%pchunk) :: Zeff
 
     INTEGER(is),DIMENSION(params%pchunk),intent(INOUT) :: flagCon,flagCol
     REAL(rp),intent(IN)  :: q_cache,m_cache
@@ -5204,7 +5214,7 @@ contains
     call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
-         ne,te,flagCon,hint)
+         ne,ni,nimp,Te,Zeff,flagCon,hint)
 
     !write(output_unit_write,*) 'R',Y_R(1)
     !write(output_unit_write,*) 'PHI',Y_PHI(1)
@@ -5272,7 +5282,7 @@ contains
     call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
-         ne,te,flagCon,hint)
+         ne,ni,nimp,Te,Zeff,flagCon,hint)
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5309,7 +5319,7 @@ contains
     call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
-         ne,te,flagCon,hint) 
+         ne,ni,nimp,Te,Zeff,flagCon,hint) 
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5348,7 +5358,7 @@ contains
     call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
-         ne,te,flagCon,hint)   
+         ne,ni,nimp,Te,Zeff,flagCon,hint)   
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5391,7 +5401,7 @@ contains
      call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
-         ne,te,flagCon,hint)
+         ne,ni,nimp,Te,Zeff,flagCon,hint)
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5432,7 +5442,7 @@ contains
     call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
-         ne,te,flagCon,hint)         
+         ne,ni,nimp,Te,Zeff,flagCon,hint)         
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5488,7 +5498,7 @@ contains
     call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
-         ne,te,flagCon,hint) 
+         ne,ni,nimp,Te,Zeff,flagCon,hint) 
 
     !$OMP SIMD
     do cc=1_idef,pchunk
@@ -5505,7 +5515,8 @@ contains
     if (params%collisions) then       
 
        call include_CoulombCollisions_GCm3dc1_p(tt,params,Y_R,Y_PHI,Y_Z, &
-            V_PLL,V_MU,m_cache,flagCon,flagCol,F,P,E_PHI,ne,Te,PSIp,hint)
+            V_PLL,V_MU,m_cache,flagCon,flagCol,F,P,E_PHI,ne,ni,Te,Zeff&
+            &,nimp,PSIp,hint)
 
     end if
 
@@ -8168,7 +8179,7 @@ contains
   subroutine GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
        B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
        gradB_R,gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
-       ne,Te,flag,hint)
+       ne,ni,nimp,Te,Zeff,flag,hint)
     TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
     !! Core KORC simulation parameters.
     TYPE(FIELDS), INTENT(IN)      :: F
@@ -8186,11 +8197,10 @@ contains
     REAL(rp),DIMENSION(params%pchunk),INTENT(IN) :: V_PLL,V_MU,Y_R,Y_PHI,Y_Z,curlb_PHI
     REAL(rp),DIMENSION(params%pchunk),INTENT(IN) :: PSIp
     REAL(rp),INTENT(in) :: q_cache,m_cache
-    INTEGER(ip)  :: cc,pchunk
+    INTEGER(ip)  :: cc,pchunk,ii
     INTEGER(ip),INTENT(IN)  :: tt
     REAL(rp)  :: time,re_cache,alpha_cache
-    REAL(rp), DIMENSION(params%pchunk) 			:: Zeff
-    REAL(rp), DIMENSION(params%pchunk),INTENT(OUT) 		:: ne,Te
+    REAL(rp), DIMENSION(params%pchunk),INTENT(OUT) 		:: ne,Te,ni,nimp,Zeff
     TYPE(C_PTR), DIMENSION(params%pchunk), INTENT(INOUT)  :: hint
     INTEGER(is),DIMENSION(params%pchunk),intent(INOUT) :: flag
 
@@ -8283,6 +8293,9 @@ contains
 
        call get_m3d_c1_profile_p(params,P,Y_R,Y_PHI,Y_Z, &
             ne,Te,flag,hint)
+
+       call get_m3d_c1_ion_p(params,P,Y_R,Y_PHI,Y_Z, &
+            ne,ni,nimp,Zeff,flag,hint)
           
        !$OMP SIMD
        !       !$OMP& aligned(tau_R,Bmag,RHS_PLL,V_PLL,xi,gamgc,RHS_MU,V_MU)
@@ -8294,7 +8307,7 @@ contains
                (1._rp/gamgc(cc)-gamgc(cc))
           SR_MU(cc)=-2._rp*V_MU(cc)/tau_R(cc)* &
                (gamgc(cc)*(1-xi(cc)*xi(cc))+xi(cc)*xi(cc)/gamgc(cc))
-
+          
           !Normalizations done here
           BREM_P(cc)=-4._rp*re_cache**2*ne(cc)* &
                Zeff(cc)*(Zeff(cc)+1._rp)*alpha_cache* &

@@ -132,7 +132,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="<p> 7.5% of total for derived types.</p>Including implementation: 44 statements,  7.5% of total for derived types.">44 statements</a>
+    title="<p> 7.8% of total for derived types.</p>Including implementation: 46 statements,  7.8% of total for derived types.">46 statements</a>
      </li> 
      
      
@@ -257,7 +257,11 @@
       
       <a class="list-group-item" href="../type/profiles.html#variable-m3d_c1_ne">M3D_C1_ne</a>
       
+      <a class="list-group-item" href="../type/profiles.html#variable-m3d_c1_ni">M3D_C1_ni</a>
+      
       <a class="list-group-item" href="../type/profiles.html#variable-m3d_c1_te">M3D_C1_te</a>
+      
+      <a class="list-group-item" href="../type/profiles.html#variable-m3d_c1_nimp">M3D_C1_nimp</a>
       
       <a class="list-group-item" href="../type/profiles.html#variable-m3d_c1_zeff">M3D_C1_zeff</a>
       
@@ -493,7 +497,11 @@
       
       <a class="list-group-item" href="../type/profiles.html#variable-m3d_c1_ne">M3D_C1_ne</a>
       
+      <a class="list-group-item" href="../type/profiles.html#variable-m3d_c1_ni">M3D_C1_ni</a>
+      
       <a class="list-group-item" href="../type/profiles.html#variable-m3d_c1_te">M3D_C1_te</a>
+      
+      <a class="list-group-item" href="../type/profiles.html#variable-m3d_c1_nimp">M3D_C1_nimp</a>
       
       <a class="list-group-item" href="../type/profiles.html#variable-m3d_c1_zeff">M3D_C1_zeff</a>
       
@@ -1119,11 +1127,39 @@
   
 <tr>
   
+  <td><span class="anchor" id="variable-m3d_c1_ni"></span>integer(kind=C_INT),</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>M3D_C1_ni</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
   <td><span class="anchor" id="variable-m3d_c1_te"></span>integer(kind=C_INT),</td>
   
   <td>public</td>
   <td></td><td>::</td>
   <td><strong>M3D_C1_te</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-m3d_c1_nimp"></span>integer(kind=C_INT),</td>
+  
+  <td>public,</td>
+  <td>DIMENSION(:), ALLOCATABLE</td><td>::</td>
+  <td><strong>M3D_C1_nimp</strong></td><td></td><td></td><td></td>
   
 </tr>
 
@@ -1262,7 +1298,9 @@
      <span class="c">!! Flag to indicate if the plasma profiles are axisymmetric.</span>
 <span class="cp">#ifdef M3D_C1</span>
      <span class="kt">INTEGER</span> <span class="p">(</span><span class="kt">C_INT</span><span class="p">)</span>                         <span class="kd">::</span> <span class="n">M3D_C1_ne</span>
+     <span class="kt">INTEGER</span> <span class="p">(</span><span class="kt">C_INT</span><span class="p">)</span>                         <span class="kd">::</span> <span class="n">M3D_C1_ni</span>
      <span class="kt">INTEGER</span> <span class="p">(</span><span class="kt">C_INT</span><span class="p">)</span>                         <span class="kd">::</span> <span class="n">M3D_C1_te</span>
+     <span class="kt">INTEGER</span> <span class="p">(</span><span class="kt">C_INT</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:),</span> <span class="k">ALLOCATABLE</span>  <span class="kd">::</span> <span class="n">M3D_C1_nimp</span>
      <span class="kt">INTEGER</span> <span class="p">(</span><span class="kt">C_INT</span><span class="p">)</span>                         <span class="kd">::</span> <span class="n">M3D_C1_zeff</span>
 <span class="cp">#endif</span>
   <span class="k">END TYPE </span><span class="n">PROFILES</span>

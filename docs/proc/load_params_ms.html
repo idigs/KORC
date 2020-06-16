@@ -132,7 +132,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title=" 0.2% of total for procedures.">51 statements</a>
+    title=" 0.3% of total for procedures.">61 statements</a>
      </li> 
      
      
@@ -234,8 +234,8 @@ private subroutine load_params_ms(params)
   
 <tr>
   
-  <td><span class="anchor" id="variable-params~21"></span>type(KORC_PARAMS),</td>
-  <td>intent(in)</td>
+  <td><span class="anchor" id="variable-params~27"></span>type(KORC_PARAMS),</td>
+  <td>intent(inout)</td>
   <td></td>
   
   <td></td><td>::</td>
@@ -274,27 +274,27 @@ private subroutine load_params_ms(params)
 <polygon fill="none" stroke="#000000" points="93,-45 0,-45 0,-21 93,-21 93,-45"/>
 <text text-anchor="middle" x="46.5" y="-30.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#000000">load_params_ms</text>
 </g>
-<!-- zj_mult -->
+<!-- zo_mult -->
 <g id="proc~~load_params_ms~~CallsGraph_node2" class="node">
-<title>zj_mult</title>
+<title>zo_mult</title>
 <polygon fill="#777777" stroke="#777777" points="183,-66 129,-66 129,-42 183,-42 183,-66"/>
-<text text-anchor="middle" x="156" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">zj_mult</text>
+<text text-anchor="middle" x="156" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">zo_mult</text>
 </g>
-<!-- proc~load_params_ms&#45;&gt;zj_mult -->
+<!-- proc~load_params_ms&#45;&gt;zo_mult -->
 <g id="proc~~load_params_ms~~CallsGraph_edge1" class="edge">
-<title>proc~load_params_ms&#45;&gt;zj_mult</title>
+<title>proc~load_params_ms&#45;&gt;zo_mult</title>
 <path fill="none" stroke="#000000" d="M93.2555,-41.9668C101.7568,-43.5972 110.5209,-45.278 118.704,-46.8473"/>
 <polygon fill="#000000" stroke="#000000" points="118.2148,-50.3172 128.695,-48.7634 119.5333,-43.4425 118.2148,-50.3172"/>
 </g>
-<!-- zo_mult -->
+<!-- zj_mult -->
 <g id="proc~~load_params_ms~~CallsGraph_node3" class="node">
-<title>zo_mult</title>
+<title>zj_mult</title>
 <polygon fill="#777777" stroke="#777777" points="183,-24 129,-24 129,0 183,0 183,-24"/>
-<text text-anchor="middle" x="156" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">zo_mult</text>
+<text text-anchor="middle" x="156" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">zj_mult</text>
 </g>
-<!-- proc~load_params_ms&#45;&gt;zo_mult -->
+<!-- proc~load_params_ms&#45;&gt;zj_mult -->
 <g id="proc~~load_params_ms~~CallsGraph_edge2" class="edge">
-<title>proc~load_params_ms&#45;&gt;zo_mult</title>
+<title>proc~load_params_ms&#45;&gt;zj_mult</title>
 <path fill="none" stroke="#000000" d="M93.2555,-24.0332C101.7568,-22.4028 110.5209,-20.722 118.704,-19.1527"/>
 <polygon fill="#000000" stroke="#000000" points="119.5333,-22.5575 128.695,-17.2366 118.2148,-15.6828 119.5333,-22.5575"/>
 </g>
@@ -539,7 +539,7 @@ private subroutine load_params_ms(params)
     <section>
     <h2><span class="anchor" id="src"></span>Source Code</h2>
     <div class="highlight"><pre><span></span>  <span class="k">subroutine </span><span class="n">load_params_ms</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
-    <span class="k">TYPE</span><span class="p">(</span><span class="n">KORC_PARAMS</span><span class="p">),</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">IN</span><span class="p">)</span> 	<span class="kd">::</span> <span class="n">params</span>
+    <span class="k">TYPE</span><span class="p">(</span><span class="n">KORC_PARAMS</span><span class="p">),</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">INOUT</span><span class="p">)</span> 	<span class="kd">::</span> <span class="n">params</span>
     <span class="c">!REAL(rp) 				:: Te</span>
     <span class="c">! Background electron temperature in eV</span>
     <span class="c">!REAL(rp) 				:: ne</span>
@@ -566,6 +566,7 @@ private subroutine load_params_ms(params)
     <span class="c">!close(output_unit_write)</span>
 
     <span class="n">cparams_ms</span><span class="p">%</span><span class="n">num_impurity_species</span> <span class="o">=</span> <span class="n">num_impurity_species</span>
+    <span class="n">params</span><span class="p">%</span><span class="n">num_impurity_species</span> <span class="o">=</span> <span class="n">num_impurity_species</span>
 
     <span class="k">ALLOCATE</span><span class="p">(</span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">Zj</span><span class="p">(</span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">num_impurity_species</span><span class="p">))</span>
     <span class="k">ALLOCATE</span><span class="p">(</span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">Zo</span><span class="p">(</span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">num_impurity_species</span><span class="p">))</span>
@@ -579,12 +580,25 @@ private subroutine load_params_ms(params)
     <span class="n">cparams_ms</span><span class="p">%</span><span class="n">ne</span> <span class="o">=</span> <span class="n">ne_mult</span>
     <span class="n">cparams_ms</span><span class="p">%</span><span class="n">nH</span> <span class="o">=</span> <span class="n">ne_mult</span>
 
+<span class="cp">#ifdef M3D_C1</span>
+    <span class="k">do </span><span class="n">i</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">num_impurity_species</span>
+       <span class="n">cparams_ms</span><span class="p">%</span><span class="n">Zj</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">=</span> <span class="kt">real</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">-</span><span class="mf">1._rp</span>
+       <span class="n">cparams_ms</span><span class="p">%</span><span class="n">Zo</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">=</span> <span class="n">Zo_mult</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>       
+    <span class="k">end do</span>
+<span class="k">    </span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">nz</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="n">nz_mult</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">params</span><span class="p">%</span><span class="n">Zj</span><span class="o">=</span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">Zj</span>
+<span class="cp">#else</span>
     <span class="n">cparams_ms</span><span class="p">%</span><span class="n">Zj</span> <span class="o">=</span> <span class="n">Zj_mult</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">num_impurity_species</span><span class="p">)</span>
     <span class="n">cparams_ms</span><span class="p">%</span><span class="n">Zo</span> <span class="o">=</span> <span class="n">Zo_mult</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">num_impurity_species</span><span class="p">)</span>
     <span class="n">cparams_ms</span><span class="p">%</span><span class="n">nz</span> <span class="o">=</span> <span class="n">nz_mult</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">num_impurity_species</span><span class="p">)</span>
-
+<span class="cp">#endif</span>
+    
     <span class="k">do </span><span class="n">i</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">num_impurity_species</span>
-       <span class="k">if</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">Zo</span><span class="p">(</span><span class="n">i</span><span class="p">)).</span><span class="n">eq</span><span class="p">.</span><span class="mi">10</span><span class="p">)</span> <span class="k">then</span>
+       <span class="k">if</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">Zo</span><span class="p">(</span><span class="n">i</span><span class="p">)).</span><span class="n">eq</span><span class="p">.</span><span class="mi">6</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">          </span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">IZj</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">=</span> <span class="n">C_E</span><span class="o">*</span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">IC</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">Zj</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+          <span class="n">cparams_ms</span><span class="p">%</span><span class="n">aZj</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">=</span> <span class="n">cparams_ms</span><span class="p">%</span><span class="n">aC</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">Zj</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+       <span class="k">else if</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">Zo</span><span class="p">(</span><span class="n">i</span><span class="p">)).</span><span class="n">eq</span><span class="p">.</span><span class="mi">10</span><span class="p">)</span> <span class="k">then</span>
 <span class="k">          </span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">IZj</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">=</span> <span class="n">C_E</span><span class="o">*</span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">INe</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">Zj</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
           <span class="n">cparams_ms</span><span class="p">%</span><span class="n">aZj</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">=</span> <span class="n">cparams_ms</span><span class="p">%</span><span class="n">aNe</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">Zj</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
        <span class="k">else if</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">cparams_ms</span><span class="p">%</span><span class="n">Zo</span><span class="p">(</span><span class="n">i</span><span class="p">)).</span><span class="n">eq</span><span class="p">.</span><span class="mi">18</span><span class="p">)</span> <span class="k">then</span>

@@ -22,6 +22,7 @@ MODULE korc_m3d_c1
   INTEGER (C_INT), PARAMETER :: FIO_SPECIES        = 3
 
   INTEGER (C_INT), PARAMETER :: FIO_ELECTRON       = 1
+  INTEGER (C_INT), PARAMETER :: FIO_MAIN_ION       = -1
 
   INTEGER (C_INT), PARAMETER :: FIO_DENSITY        = 102
   INTEGER (C_INT), PARAMETER :: FIO_TEMPERATURE    = 103
@@ -219,9 +220,7 @@ CONTAINS
 
   SUBROUTINE initialize_m3d_c1(params, F, P, spp)
 
-    IMPLICIT NONE
-
-    TYPE(KORC_PARAMS), INTENT(INOUT)           :: params
+    TYPE(KORC_PARAMS), INTENT(IN)           :: params
     TYPE(FIELDS), INTENT(INOUT)                :: F
     TYPE(PROFILES), INTENT(INOUT)              :: P
     TYPE(SPECIES), DIMENSION(:), INTENT(INOUT) :: spp
@@ -230,24 +229,7 @@ CONTAINS
     INTEGER                                    :: pp
     INTEGER                                    :: status
     INTEGER                                    :: isrc
-    !LOGICAL                        :: Efield
-    !LOGICAL                        :: Bfield
-    !LOGICAL                        :: Bflux,Bflux3D,dBfield
-    !LOGICAL                        :: axisymmetric_fields
-    !LOGICAL                        :: Dim2x1t,E_2x1t,ReInterp_2x1t
-    !integer :: res_double
-    !integer :: dim_1D,ind0_2x1t
-    !real(rp) :: dt_E_SC,Ip_exp,PSIp_lim,PSIp_0
-    !real(rp) :: t0_2x1t,Eo,E_dyn,E_pulse,E_width
 
-    !NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux,Bflux3D,dBfield, &
-    !     axisymmetric_fields,Eo,E_dyn,E_pulse,E_width,res_double, &
-    !     dim_1D,dt_E_SC,Ip_exp,PSIp_lim,Dim2x1t,t0_2x1t,E_2x1t,ReInterp_2x1t, &
-    !     ind0_2x1t,PSIp_0
-
-    !open(unit=default_unit_open,file=TRIM(params%path_to_inputs),status='OLD',form='formatted')
-    !read(default_unit_open,nml=externalPlasmaModel)
-    !close(default_unit_open)
 
     F%Efield = Efield
     F%PSIp_lim=PSIp_lim
@@ -270,6 +252,9 @@ CONTAINS
     status = fio_get_field(isrc, FIO_DENSITY, P%M3D_C1_ne);
     status = fio_get_field(isrc, FIO_TEMPERATURE, P%M3D_C1_te);
 
+    status = fio_set_int_option(FIO_SPECIES, FIO_MAIN_ION);
+    status = fio_get_field(isrc, FIO_DENSITY, P%M3D_C1_ni);
+    
     !  Hardcode Bo to one for now until a better method of determining the a
     !  characteristic magnetic field value.
     F%Bo = 1.0
@@ -291,11 +276,56 @@ CONTAINS
        write(output_unit_write,*) 'Calculate B',F%M3D_C1_B
        write(output_unit_write,*) 'Calculate E',F%M3D_C1_E
        write(output_unit_write,*) 'Calculate A',F%M3D_C1_A
-       write(output_unit_write,*) 'Calculate n',P%M3D_C1_ne
-       write(output_unit_write,*) 'Calculate T',P%M3D_C1_te
+       write(output_unit_write,*) 'Calculate ne',P%M3D_C1_ne
+       write(output_unit_write,*) 'Calculate Te',P%M3D_C1_te
+       write(output_unit_write,*) 'Calculate ni',P%M3D_C1_ni
     end if
        
   END SUBROUTINE initialize_m3d_c1
+  
+  SUBROUTINE initialize_m3d_c1_imp(params, P,num_imp)
+
+    TYPE(KORC_PARAMS), INTENT(IN)           :: params
+    TYPE(PROFILES), INTENT(INOUT)              :: P
+    INTEGER, INTENT(IN)				:: num_imp
+
+    INTEGER                                    :: ii
+    INTEGER                                    :: status
+    INTEGER                                    :: isrc
+
+    
+    status = fio_open_source(FIO_M3DC1_SOURCE,           &
+         TRIM(params%magnetic_field_filename)            &
+         &                         // C_NULL_CHAR, isrc)
+
+    status = fio_get_options(isrc)
+    status = fio_set_int_option(FIO_TIMESLICE, params%time_slice)
+
+    ALLOCATE(P%M3D_C1_nimp(num_imp))
+    
+    do ii=1,num_imp
+       status = fio_set_int_option(FIO_SPECIES, &
+            FIO_MAKE_SPECIES(40, 18, 18+1-ii));
+       status = fio_get_field(isrc, FIO_DENSITY, P%M3D_C1_nimp(ii));
+    end do
+
+    if (params%mpi_params%rank .EQ. 0) then
+       do ii=1,num_imp
+          write(output_unit_write,*) 'Calculate nimp_',ii,P%M3D_C1_nimp(ii)
+       end do
+    end if
+       
+  END SUBROUTINE initialize_m3d_c1_imp
+
+  FUNCTION FIO_MAKE_SPECIES(m, p, e)
+    INTEGER, INTENT(IN) :: m
+    INTEGER, INTENT(IN) :: p
+    INTEGER, INTENT(IN) :: e
+    INTEGER(C_INT) :: FIO_MAKE_SPECIES
+    
+    FIO_MAKE_SPECIES = e + p*256 + (m-p)*65536
+  END FUNCTION FIO_MAKE_SPECIES
+
 
 END MODULE korc_m3d_c1
 #endif

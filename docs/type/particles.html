@@ -132,7 +132,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="<p> 6.3% of total for derived types.</p>Including implementation: 37 statements,  6.3% of total for derived types.">37 statements</a>
+    title="<p> 6.6% of total for derived types.</p>Including implementation: 39 statements,  6.6% of total for derived types.">39 statements</a>
      </li> 
      
      
@@ -220,6 +220,10 @@
       <a class="list-group-item" href="../type/particles.html#variable-k6">k6</a>
       
       <a class="list-group-item" href="../type/particles.html#variable-ne~8">ne</a>
+      
+      <a class="list-group-item" href="../type/particles.html#variable-nimp">nimp</a>
+      
+      <a class="list-group-item" href="../type/particles.html#variable-ni">ni</a>
       
       <a class="list-group-item" href="../type/particles.html#variable-te~8">Te</a>
       
@@ -501,6 +505,10 @@ in the simulation. </p></div>
       <a class="list-group-item" href="../type/particles.html#variable-k6">k6</a>
       
       <a class="list-group-item" href="../type/particles.html#variable-ne~8">ne</a>
+      
+      <a class="list-group-item" href="../type/particles.html#variable-nimp">nimp</a>
+      
+      <a class="list-group-item" href="../type/particles.html#variable-ni">ni</a>
       
       <a class="list-group-item" href="../type/particles.html#variable-te~8">Te</a>
       
@@ -900,6 +908,34 @@ in the simulation. </p></div>
   
 <tr>
   
+  <td><span class="anchor" id="variable-nimp"></span>real(kind=rp),</td>
+  
+  <td>public,</td>
+  <td>DIMENSION(:,:), ALLOCATABLE</td><td>::</td>
+  <td><strong>nimp</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-ni"></span>real(kind=rp),</td>
+  
+  <td>public,</td>
+  <td>DIMENSION(:), ALLOCATABLE</td><td>::</td>
+  <td><strong>ni</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
   <td><span class="anchor" id="variable-te~8"></span>real(kind=rp),</td>
   
   <td>public,</td>
@@ -1154,6 +1190,8 @@ in the simulation. </p></div>
      <span class="c">!! Cash-Karp Runge-Kutta coefficient for GC orbit model</span>
      <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:),</span> <span class="k">ALLOCATABLE</span> 	<span class="kd">::</span> <span class="n">ne</span> 
      <span class="c">!! Electron density seen by each electron. dim(ne) = (1,SPECIES::ppp).</span>
+     <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:,:),</span> <span class="k">ALLOCATABLE</span> 	<span class="kd">::</span> <span class="n">nimp</span>
+     <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:),</span> <span class="k">ALLOCATABLE</span> 	<span class="kd">::</span> <span class="n">ni</span> 
      <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:),</span> <span class="k">ALLOCATABLE</span> 	<span class="kd">::</span> <span class="n">Te</span> 
      <span class="c">!! Electron temperature seen by each electron. dim(Te) = (1,SPECIES::ppp).</span>
      <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:),</span> <span class="k">ALLOCATABLE</span> 	<span class="kd">::</span> <span class="n">Zeff</span> 

@@ -454,10 +454,34 @@ public subroutine interp_FOfields1_p(pchunk, F, Y_R, Y_PHI, Y_Z, B_X, B_Y, B_Z, 
 <polygon fill="none" stroke="#000000" points="101,-84 0,-84 0,-60 101,-60 101,-84"/>
 <text text-anchor="middle" x="50.5" y="-69.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#000000">interp_FOfields1_p</text>
 </g>
-<!-- proc~calculate_magnetic_field_p -->
+<!-- ezspline_error -->
 <g id="proc~~interp_fofields1_p~~CallsGraph_node2" class="node">
+<title>ezspline_error</title>
+<polygon fill="#777777" stroke="#777777" points="407,-146 328,-146 328,-122 407,-122 407,-146"/>
+<text text-anchor="middle" x="367.5" y="-131.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">ezspline_error</text>
+</g>
+<!-- proc~interp_fofields1_p&#45;&gt;ezspline_error -->
+<g id="proc~~interp_fofields1_p~~CallsGraph_edge2" class="edge">
+<title>proc~interp_fofields1_p&#45;&gt;ezspline_error</title>
+<path fill="none" stroke="#000000" d="M70.6832,-84.0796C87.7296,-93.6547 113.1135,-106.473 137,-113 197.5415,-129.543 270.0086,-133.7168 317.3141,-134.4567"/>
+<polygon fill="#000000" stroke="#000000" points="317.5617,-137.9596 327.5995,-134.5695 317.6385,-130.96 317.5617,-137.9596"/>
+</g>
+<!-- ezspline_interp -->
+<g id="proc~~interp_fofields1_p~~CallsGraph_node3" class="node">
+<title>ezspline_interp</title>
+<polygon fill="#777777" stroke="#777777" points="409,-62 326,-62 326,-38 409,-38 409,-62"/>
+<text text-anchor="middle" x="367.5" y="-47.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">ezspline_interp</text>
+</g>
+<!-- proc~interp_fofields1_p&#45;&gt;ezspline_interp -->
+<g id="proc~~interp_fofields1_p~~CallsGraph_edge3" class="edge">
+<title>proc~interp_fofields1_p&#45;&gt;ezspline_interp</title>
+<path fill="none" stroke="#000000" d="M101.0801,-68.4897C159.7843,-64.4156 256.1023,-57.7311 315.433,-53.6135"/>
+<polygon fill="#000000" stroke="#000000" points="315.9701,-57.0847 325.7038,-52.9007 315.4854,-50.1015 315.9701,-57.0847"/>
+</g>
+<!-- proc~calculate_magnetic_field_p -->
+<g id="proc~~interp_fofields1_p~~CallsGraph_node4" class="node">
 <title>proc~calculate_magnetic_field_p</title>
-<g id="a_proc~~interp_fofields1_p~~CallsGraph_node2"><a xlink:href=".././proc/calculate_magnetic_field_p.html" xlink:title="calculate_magnetic_field_p">
+<g id="a_proc~~interp_fofields1_p~~CallsGraph_node4"><a xlink:href=".././proc/calculate_magnetic_field_p.html" xlink:title="calculate_magnetic_field_p">
 <polygon fill="#d9534f" stroke="#d9534f" points="280,-104 141,-104 141,-80 280,-80 280,-104"/>
 <text text-anchor="middle" x="210.5" y="-89.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">calculate_magnetic_field_p</text>
 </a>
@@ -470,46 +494,22 @@ public subroutine interp_FOfields1_p(pchunk, F, Y_R, Y_PHI, Y_Z, B_X, B_Y, B_Z, 
 <polygon fill="#000000" stroke="#000000" points="130.5465,-85.533 140.9034,-83.3004 131.4148,-78.587 130.5465,-85.533"/>
 </g>
 <!-- proc~check_if_in_fields_domain_p -->
-<g id="proc~~interp_fofields1_p~~CallsGraph_node3" class="node">
+<g id="proc~~interp_fofields1_p~~CallsGraph_node5" class="node">
 <title>proc~check_if_in_fields_domain_p</title>
-<g id="a_proc~~interp_fofields1_p~~CallsGraph_node3"><a xlink:href=".././proc/check_if_in_fields_domain_p.html" xlink:title="check_if_in_fields_domain_p">
+<g id="a_proc~~interp_fofields1_p~~CallsGraph_node5"><a xlink:href=".././proc/check_if_in_fields_domain_p.html" xlink:title="check_if_in_fields_domain_p">
 <polygon fill="#d9534f" stroke="#d9534f" points="284,-24 137,-24 137,0 284,0 284,-24"/>
 <text text-anchor="middle" x="210.5" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">check_if_in_fields_domain_p</text>
 </a>
 </g>
 </g>
 <!-- proc~interp_fofields1_p&#45;&gt;proc~check_if_in_fields_domain_p -->
-<g id="proc~~interp_fofields1_p~~CallsGraph_edge2" class="edge">
+<g id="proc~~interp_fofields1_p~~CallsGraph_edge4" class="edge">
 <title>proc~interp_fofields1_p&#45;&gt;proc~check_if_in_fields_domain_p</title>
 <path fill="none" stroke="#000000" d="M80.426,-59.9435C97.0377,-53.325 118.1038,-45.0535 137,-38 146.4154,-34.4855 156.5521,-30.8224 166.1997,-27.3927"/>
 <polygon fill="#000000" stroke="#000000" points="167.3783,-30.6884 175.6394,-24.0549 165.0447,-24.0888 167.3783,-30.6884"/>
 </g>
-<!-- ezspline_error -->
-<g id="proc~~interp_fofields1_p~~CallsGraph_node4" class="node">
-<title>ezspline_error</title>
-<polygon fill="#777777" stroke="#777777" points="407,-146 328,-146 328,-122 407,-122 407,-146"/>
-<text text-anchor="middle" x="367.5" y="-131.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">ezspline_error</text>
-</g>
-<!-- proc~interp_fofields1_p&#45;&gt;ezspline_error -->
-<g id="proc~~interp_fofields1_p~~CallsGraph_edge3" class="edge">
-<title>proc~interp_fofields1_p&#45;&gt;ezspline_error</title>
-<path fill="none" stroke="#000000" d="M70.6832,-84.0796C87.7296,-93.6547 113.1135,-106.473 137,-113 197.5415,-129.543 270.0086,-133.7168 317.3141,-134.4567"/>
-<polygon fill="#000000" stroke="#000000" points="317.5617,-137.9596 327.5995,-134.5695 317.6385,-130.96 317.5617,-137.9596"/>
-</g>
-<!-- ezspline_interp -->
-<g id="proc~~interp_fofields1_p~~CallsGraph_node5" class="node">
-<title>ezspline_interp</title>
-<polygon fill="#777777" stroke="#777777" points="409,-62 326,-62 326,-38 409,-38 409,-62"/>
-<text text-anchor="middle" x="367.5" y="-47.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">ezspline_interp</text>
-</g>
-<!-- proc~interp_fofields1_p&#45;&gt;ezspline_interp -->
-<g id="proc~~interp_fofields1_p~~CallsGraph_edge4" class="edge">
-<title>proc~interp_fofields1_p&#45;&gt;ezspline_interp</title>
-<path fill="none" stroke="#000000" d="M101.0801,-68.4897C159.7843,-64.4156 256.1023,-57.7311 315.433,-53.6135"/>
-<polygon fill="#000000" stroke="#000000" points="315.9701,-57.0847 325.7038,-52.9007 315.4854,-50.1015 315.9701,-57.0847"/>
-</g>
 <!-- proc~calculate_magnetic_field_p&#45;&gt;ezspline_error -->
-<g id="proc~~interp_fofields1_p~~CallsGraph_edge5" class="edge">
+<g id="proc~~interp_fofields1_p~~CallsGraph_edge6" class="edge">
 <title>proc~calculate_magnetic_field_p&#45;&gt;ezspline_error</title>
 <path fill="none" stroke="#000000" d="M255.4899,-104.0355C275.0238,-109.2611 297.9658,-115.3985 317.9828,-120.7534"/>
 <polygon fill="#000000" stroke="#000000" points="317.2826,-124.1891 327.8474,-123.3923 319.0916,-117.4268 317.2826,-124.1891"/>
@@ -527,7 +527,7 @@ public subroutine interp_FOfields1_p(pchunk, F, Y_R, Y_PHI, Y_Z, B_X, B_Y, B_Z, 
 <text text-anchor="middle" x="367.5" y="-89.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">ezspline_gradient</text>
 </g>
 <!-- proc~calculate_magnetic_field_p&#45;&gt;ezspline_gradient -->
-<g id="proc~~interp_fofields1_p~~CallsGraph_edge6" class="edge">
+<g id="proc~~interp_fofields1_p~~CallsGraph_edge5" class="edge">
 <title>proc~calculate_magnetic_field_p&#45;&gt;ezspline_gradient</title>
 <path fill="none" stroke="#000000" d="M280.2768,-92C290.0199,-92 299.9445,-92 309.4401,-92"/>
 <polygon fill="#000000" stroke="#000000" points="309.5468,-95.5001 319.5467,-92 309.5467,-88.5001 309.5468,-95.5001"/>
@@ -629,7 +629,7 @@ public subroutine interp_FOfields1_p(pchunk, F, Y_R, Y_PHI, Y_Z, B_X, B_Y, B_Z, 
 </g>
 </g>
 <!-- proc~fo_init&#45;&gt;proc~interp_fofields1_p -->
-<g id="proc~~interp_fofields1_p~~CalledByGraph_edge2" class="edge">
+<g id="proc~~interp_fofields1_p~~CalledByGraph_edge1" class="edge">
 <title>proc~fo_init&#45;&gt;proc~interp_fofields1_p</title>
 <path fill="none" stroke="#000000" d="M165.8193,-49.7503C179.3456,-47.6462 196.2565,-45.0157 212.6405,-42.467"/>
 <polygon fill="#000000" stroke="#000000" points="213.3956,-45.8918 222.7388,-40.8962 212.3196,-38.9749 213.3956,-45.8918"/>
@@ -644,7 +644,7 @@ public subroutine interp_FOfields1_p(pchunk, F, Y_R, Y_PHI, Y_Z, B_X, B_Y, B_Z, 
 </g>
 </g>
 <!-- proc~adv_fointerp_top&#45;&gt;proc~interp_fofields1_p -->
-<g id="proc~~interp_fofields1_p~~CalledByGraph_edge1" class="edge">
+<g id="proc~~interp_fofields1_p~~CalledByGraph_edge2" class="edge">
 <title>proc~adv_fointerp_top&#45;&gt;proc~interp_fofields1_p</title>
 <path fill="none" stroke="#000000" d="M187.2381,-19.5815C195.4893,-20.865 204.1467,-22.2117 212.6615,-23.5362"/>
 <polygon fill="#000000" stroke="#000000" points="212.1393,-26.997 222.5585,-25.0758 213.2153,-20.0802 212.1393,-26.997"/>

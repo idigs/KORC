@@ -132,7 +132,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title="<p> 8.9% of total for derived types.</p>Including implementation: 52 statements,  8.9% of total for derived types.">52 statements</a>
+    title="<p> 9.1% of total for derived types.</p>Including implementation: 54 statements,  9.1% of total for derived types.">54 statements</a>
      </li> 
      
      
@@ -276,6 +276,10 @@
       <a class="list-group-item" href="../type/korc_params.html#variable-zmin">zmin</a>
       
       <a class="list-group-item" href="../type/korc_params.html#variable-pchunk">pchunk</a>
+      
+      <a class="list-group-item" href="../type/korc_params.html#variable-num_impurity_species~2">num_impurity_species</a>
+      
+      <a class="list-group-item" href="../type/korc_params.html#variable-zj~2">Zj</a>
       
     </div>
   </div>
@@ -528,6 +532,10 @@
       <a class="list-group-item" href="../type/korc_params.html#variable-zmin">zmin</a>
       
       <a class="list-group-item" href="../type/korc_params.html#variable-pchunk">pchunk</a>
+      
+      <a class="list-group-item" href="../type/korc_params.html#variable-num_impurity_species~2">num_impurity_species</a>
+      
+      <a class="list-group-item" href="../type/korc_params.html#variable-zj~2">Zj</a>
       
     </div>
   </div>
@@ -1295,6 +1303,34 @@
   
 </tr>
 
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-num_impurity_species~2"></span>integer,</td>
+  
+  <td>public</td>
+  <td></td><td>::</td>
+  <td><strong>num_impurity_species</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-zj~2"></span>real(kind=rp),</td>
+  
+  <td>public,</td>
+  <td>DIMENSION(:), ALLOCATABLE</td><td>::</td>
+  <td><strong>Zj</strong></td><td></td><td></td><td></td>
+  
+</tr>
+
 </tbody>
 </table>
 
@@ -1419,6 +1455,8 @@
      <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>                     <span class="kd">::</span> <span class="n">zmin</span> <span class="c">!&lt; Minimum z for M3D-C1 fields.</span>
      <span class="kt">INTEGER</span>  <span class="kd">::</span> <span class="n">pchunk</span>
      <span class="c">!! number of particles per vectorized chunk</span>
+     <span class="kt">INTEGER</span>  <span class="kd">::</span> <span class="n">num_impurity_species</span>
+     <span class="kt">REAL</span><span class="p">(</span><span class="n">rp</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:),</span> <span class="k">ALLOCATABLE</span>        <span class="kd">::</span> <span class="n">Zj</span>
   <span class="k">END TYPE </span><span class="n">KORC_PARAMS</span>
 </pre></div>
 

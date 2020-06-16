@@ -13,7 +13,8 @@ module korc_profiles
 
   PUBLIC :: get_profiles,&
        initialize_profiles,&
-       analytical_profiles_p
+       analytical_profiles_p,&
+       DEALLOCATE_PROFILES_ARRAYS
   PRIVATE :: get_analytical_profiles,&
        uniform_profiles,&
        load_profiles_data_from_hdf5,&
@@ -830,4 +831,11 @@ CONTAINS
     ALLOCATE(P%Zeff_3D(P%dims(1),P%dims(2),P%dims(3)))
   end subroutine ALLOCATE_3D_PROFILES_ARRAYS
 
+  subroutine DEALLOCATE_PROFILES_ARRAYS(P)
+    TYPE(PROFILES), INTENT(INOUT)              :: P
+
+    if (ALLOCATED(P%M3D_C1_nimp)) DEALLOCATE(P%M3D_C1_nimp)
+
+  end subroutine DEALLOCATE_PROFILES_ARRAYS
+  
 end module korc_profiles

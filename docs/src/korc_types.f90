@@ -265,6 +265,8 @@ module korc_types
      REAL(rp)                     :: zmin !< Minimum z for M3D-C1 fields.
      INTEGER  :: pchunk
      !! number of particles per vectorized chunk
+     INTEGER  :: num_impurity_species
+     REAL(rp), DIMENSION(:), ALLOCATABLE        :: Zj
   END TYPE KORC_PARAMS
 
 
@@ -326,6 +328,8 @@ module korc_types
      !! Cash-Karp Runge-Kutta coefficient for GC orbit model
      REAL(rp), DIMENSION(:), ALLOCATABLE 	:: ne 
      !! Electron density seen by each electron. dim(ne) = (1,SPECIES::ppp).
+     REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: nimp
+     REAL(rp), DIMENSION(:), ALLOCATABLE 	:: ni 
      REAL(rp), DIMENSION(:), ALLOCATABLE 	:: Te 
      !! Electron temperature seen by each electron. dim(Te) = (1,SPECIES::ppp).
      REAL(rp), DIMENSION(:), ALLOCATABLE 	:: Zeff 
@@ -720,7 +724,9 @@ module korc_types
      !! Flag to indicate if the plasma profiles are axisymmetric.
 #ifdef M3D_C1
      INTEGER (C_INT)                         :: M3D_C1_ne
+     INTEGER (C_INT)                         :: M3D_C1_ni
      INTEGER (C_INT)                         :: M3D_C1_te
+     INTEGER (C_INT), DIMENSION(:), ALLOCATABLE  :: M3D_C1_nimp
      INTEGER (C_INT)                         :: M3D_C1_zeff
 #endif
   END TYPE PROFILES
