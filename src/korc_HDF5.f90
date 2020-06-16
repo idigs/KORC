@@ -2306,7 +2306,7 @@ CONTAINS
                 CASE ('nimp')
                    dset = "nimp"
                    units = params%cpp%density
-                   call save_1d_array_to_hdf5(subgroup_id, dset, &
+                   call save_2d_array_to_hdf5(subgroup_id, dset, &
                         units*spp(ss)%vars%nimp)
                 CASE ('Te')
                    dset = "Te"

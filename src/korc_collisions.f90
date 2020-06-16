@@ -6,6 +6,7 @@ module korc_collisions
   use korc_profiles
   use korc_fields
   use korc_input
+  use korc_m3d_c1
 
 #ifdef PARALLEL_RANDOM
 
@@ -50,6 +51,8 @@ module korc_collisions
      ! Classical electron radius
 
 
+     REAL(rp), DIMENSION(7) :: aC=(/144._rp,118._rp,95._rp,70._rp, &
+          42._rp,39._rp,0._rp/)
      REAL(rp), DIMENSION(11) :: aNe=(/111._rp,100._rp,90._rp,80._rp, &
           71._rp,62._rp,52._rp,40._rp,24._rp,23._rp,0._rp/)
      REAL(rp), DIMENSION(19) :: aAr=(/96._rp,90._rp,84._rp,78._rp,72._rp, &
@@ -57,6 +60,8 @@ module korc_collisions
           27._rp,21._rp,13._rp,13._rp,0._rp/)
 
 
+     REAL(rp), DIMENSION(7) :: IC=(/65.9_rp,92.6_rp,134.8_rp,214.2_rp, &
+          486.2_rp,539.5_rp,huge(1._rp)/)
      REAL(rp), DIMENSION(11) :: INe=(/137.2_rp,165.2_rp,196.9_rp,235.2_rp, &
           282.8_rp,352.6_rp,475.0_rp,696.8_rp,1409.2_rp,1498.4_rp,huge(1._rp)/)
      REAL(rp), DIMENSION(19) :: IAr=(/188.5_rp,219.4_rp,253.8_rp,293.4_rp, &
@@ -140,11 +145,15 @@ module korc_collisions
        CA,&
        CB_ee,&
        CB_ei,&
+       CB_ei_FIO,&
        CF,&
+       CF_FIO,&
        fun,&
        nu_S,&
+       nu_S_FIO,&
        nu_par,&
        nu_D,&
+       nu_D_FIO,&
        Gammac_wu,&
        CLog_wu,&
        VTe_wu,&
@@ -167,7 +176,7 @@ contains
 
 
   subroutine load_params_ms(params)
-    TYPE(KORC_PARAMS), INTENT(IN) 	:: params
+    TYPE(KORC_PARAMS), INTENT(INOUT) 	:: params
     !REAL(rp) 				:: Te
     ! Background electron temperature in eV
     !REAL(rp) 				:: ne
@@ -194,6 +203,7 @@ contains
     !close(output_unit_write)
 
     cparams_ms%num_impurity_species = num_impurity_species
+    params%num_impurity_species = num_impurity_species
 
     ALLOCATE(cparams_ms%Zj(cparams_ms%num_impurity_species))
     ALLOCATE(cparams_ms%Zo(cparams_ms%num_impurity_species))
@@ -207,12 +217,25 @@ contains
     cparams_ms%ne = ne_mult
     cparams_ms%nH = ne_mult
 
+#ifdef M3D_C1
+    do i=1,cparams_ms%num_impurity_species
+       cparams_ms%Zj(i) = real(i)-1._rp
+       cparams_ms%Zo(i) = Zo_mult(1)       
+    end do
+    cparams_ms%nz(1) = nz_mult(1)
+
+    params%Zj=cparams_ms%Zj
+#else
     cparams_ms%Zj = Zj_mult(1:cparams_ms%num_impurity_species)
     cparams_ms%Zo = Zo_mult(1:cparams_ms%num_impurity_species)
     cparams_ms%nz = nz_mult(1:cparams_ms%num_impurity_species)
-
+#endif
+    
     do i=1,cparams_ms%num_impurity_species
-       if (int(cparams_ms%Zo(i)).eq.10) then
+       if (int(cparams_ms%Zo(i)).eq.6) then
+          cparams_ms%IZj(i) = C_E*cparams_ms%IC(int(cparams_ms%Zj(i)+1))
+          cparams_ms%aZj(i) = cparams_ms%aC(int(cparams_ms%Zj(i)+1))
+       else if (int(cparams_ms%Zo(i)).eq.10) then
           cparams_ms%IZj(i) = C_E*cparams_ms%INe(int(cparams_ms%Zj(i)+1))
           cparams_ms%aZj(i) = cparams_ms%aNe(int(cparams_ms%Zj(i)+1))
        else if (int(cparams_ms%Zo(i)).eq.18) then
@@ -357,8 +380,11 @@ contains
   end subroutine load_params_ss
 
 
-  subroutine initialize_collision_params(params)
-    TYPE(KORC_PARAMS), INTENT(IN) :: params
+  subroutine initialize_collision_params(params,spp,P)
+    TYPE(KORC_PARAMS), INTENT(INOUT) :: params
+    TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)       :: spp
+    TYPE(PROFILES), INTENT(INOUT)  :: P
+    INTEGER 				                       	:: ii
 
     if (params%collisions) then
 
@@ -374,13 +400,26 @@ contains
           CASE ('NO_BOUND')
              call load_params_ms(params)
           CASE('HESSLOW')
-             call load_params_ms(params)
+             call load_params_ms(params)             
           CASE('ROSENBLUTH')
              call load_params_ms(params)
           CASE DEFAULT
              write(output_unit_write,'("Default case")')
           END SELECT
           
+          do ii=1_idef,params%num_species
+             ALLOCATE( spp(ii)%vars%nimp(spp(ii)%ppp, &
+                  cparams_ms%num_impurity_species) )
+             spp(ii)%vars%nimp = 0.0_rp
+          end do
+
+#ifdef M3D_C1
+          if (TRIM(params%field_model) .eq. 'M3D_C1') then     
+             call initialize_m3d_c1_imp(params, P, &
+                  cparams_ms%num_impurity_species)        
+          endif
+#endif 
+
        CASE (MODEL2)
           call load_params_ms(params)
        CASE DEFAULT
@@ -547,10 +586,16 @@ contains
     if (params%collisions) then
        E = C_ME*C_C**2 + params%minimum_particle_energy*params%cpp%energy
        v = SQRT(1.0_rp - (C_ME*C_C**2/E)**2)
+
+#ifdef M3D_C1
+       nu = (/nu_S_FIO(params,v),nu_D_FIO(params,v),nu_par(v)/)
+#else
        nu = (/nu_S(params,v),nu_D(params,v),nu_par(v)/)
+#endif
        Tau = MINVAL( 1.0_rp/nu )
 
-!       write(output_unit_write,'("collision freqencies ",F25.12)') nu
+!       write(output_unit_write,'("collision freqencies ",F25.12)') nu(3)
+!       write(6,*) nu
        
        cparams_ss%subcycling_iterations = FLOOR(cparams_ss%dTau*Tau/ &
             params%dt,ip) + 1_ip
@@ -567,6 +612,8 @@ contains
                nu(2)/params%cpp%time
           write(output_unit_write,'("Speed diffusion freqency (CA): ",E17.10)') &
                nu(3)/params%cpp%time
+
+!          write(6,*) Tau
           
           write(output_unit_write,'("The shorter collisional time in the simulations  &
                is: ",E17.10," s")') Tau*params%cpp%time
@@ -757,7 +804,6 @@ contains
     CA  = cparams_ss%Gammac*psi(x)/v
   end function CA
 
-
   function CA_SD(v,ne,Te)
     REAL(rp), INTENT(IN) 	:: v
     REAL(rp), INTENT(IN) 	:: ne
@@ -793,7 +839,7 @@ contains
     dCA_SD  = Gammacee(v,ne,Te)*((2*(gam*v)**2-1)*psi(x)+ &
          2.0_rp*x*EXP(-x**2)/SQRT(C_PI))/(gam**3*me*v**2)
   end function dCA_SD
-  
+
   function CF(params,v)
     TYPE(KORC_PARAMS), INTENT(IN) 	:: params
     REAL(rp), INTENT(IN) 	:: v
@@ -827,7 +873,32 @@ contains
     end if
     
   end function CF
+  
+  function CF_FIO(params,v)
+    TYPE(KORC_PARAMS), INTENT(IN) 	:: params
+    REAL(rp), INTENT(IN) 	:: v
+    REAL(rp) 				:: CF_FIO
+    REAL(rp) 				:: CF_temp
+    REAL(rp) 				:: x
+    INTEGER :: i
+    REAL(rp)  :: k=5._rp
 
+    x = v/cparams_ss%VTe
+    CF_FIO  = cparams_ss%Gammac*psi(x)/cparams_ss%Te
+
+    if (params%bound_electron_model.eq.'HESSLOW') then
+       CF_temp=CF_FIO
+       do i=1,1
+          CF_temp=CF_temp+CF_FIO*cparams_ms%nz(i)/cparams_ms%ne* &
+               (cparams_ms%Zo(i)-cparams_ms%Zj(i))/ &
+               CLogee(v,cparams_ss%ne,cparams_ss%Te)* &
+               (log(1+h_j(i,v)**k)/k-v**2) 
+       end do
+       CF_FIO=CF_temp
+       
+    end if
+    
+  end function CF_FIO
 
   function CF_SD(params,v,ne,Te)
     TYPE(KORC_PARAMS), INTENT(IN) 	:: params
@@ -863,6 +934,33 @@ contains
     end if
     
   end function CF_SD
+  
+  function CF_SD_FIO(params,v,ne,Te,nimp)
+    TYPE(KORC_PARAMS), INTENT(IN) 	:: params
+    REAL(rp), INTENT(IN) 	:: v
+    REAL(rp), INTENT(IN) 	:: ne
+    REAL(rp), INTENT(IN) 	:: Te
+    REAL(rp),DIMENSION(cparams_ms%num_impurity_species), INTENT(IN) 	:: nimp
+    REAL(rp) 				:: CF_SD_FIO
+    REAL(rp) 				:: CF_temp
+    REAL(rp) 				:: x
+    INTEGER :: i
+    REAL(rp)  :: k=5._rp
+
+    x = v/VTe(Te)
+    CF_SD_FIO  = Gammacee(v,ne,Te)*psi(x)/Te
+
+    if (params%bound_electron_model.eq.'HESSLOW') then
+       CF_temp=CF_SD_FIO
+       do i=1,cparams_ms%num_impurity_species
+          CF_temp=CF_temp+CF_SD_FIO*nimp(i)/ne* &
+               (cparams_ms%Zo(i)-cparams_ms%Zj(i))/ &
+               CLogee(v,ne,Te)*(log(1+h_j(i,v)**k)/k-v**2) 
+       end do
+       CF_SD_FIO=CF_temp
+    end if
+    
+  end function CF_SD_FIO
 
   function CB_ee(v)
     REAL(rp), INTENT(IN) 	:: v
@@ -908,6 +1006,32 @@ contains
     end if
     
   end function CB_ei
+  
+  function CB_ei_FIO(params,v)
+    TYPE(KORC_PARAMS), INTENT(IN) 	:: params
+    REAL(rp), INTENT(IN) 	:: v
+    REAL(rp) 				:: CB_ei_FIO
+    REAL(rp) 				:: CB_ei_temp
+    REAL(rp) 				:: x
+    INTEGER :: i
+
+    x = v/cparams_ss%VTe
+    CB_ei_FIO  = (0.5_rp*cparams_ss%Gammac/v)*(cparams_ss%Zeff* &
+         CLogei(v,cparams_ss%ne,cparams_ss%Te)/ &
+         CLogee(v,cparams_ss%ne,cparams_ss%Te))
+
+
+    if (params%bound_electron_model.eq.'HESSLOW') then
+       CB_ei_temp=CB_ei_FIO
+       do i=1,1
+          CB_ei_temp=CB_ei_temp+CB_ei_FIO*cparams_ms%nz(i)/(cparams_ms%ne* &
+               cparams_ss%Zeff*CLogei(v,cparams_ss%ne,cparams_ss%Te))* &
+               g_j(i,v)
+       end do
+       CB_ei_FIO=CB_ei_temp
+    end if
+    
+  end function CB_ei_FIO
 
   function CB_ee_SD(v,ne,Te,Zeff)
     REAL(rp), INTENT(IN) 	:: v
@@ -957,6 +1081,34 @@ contains
     end if
     
   end function CB_ei_SD
+  
+  function CB_ei_SD_FIO(params,v,ne,Te,nimp,Zeff)
+    TYPE(KORC_PARAMS), INTENT(IN) 	:: params
+    REAL(rp), INTENT(IN) 	:: v
+    REAL(rp), INTENT(IN) 	:: ne
+    REAL(rp), INTENT(IN) 	:: Te
+    REAL(rp), INTENT(IN) 	:: Zeff
+    REAL(rp), DIMENSION(cparams_ms%num_impurity_species), INTENT(IN) 	:: nimp
+    REAL(rp) 				:: CB_ei_SD_FIO
+    REAL(rp) 				:: CB_ei_temp
+    REAL(rp) 				:: x
+    INTEGER :: i
+
+    x = v/VTe(Te)
+    CB_ei_SD_FIO  = (0.5_rp*Gammacee(v,ne,Te)/v)* &
+         (Zeff*CLogei(v,ne,Te)/CLogee(v,ne,Te))
+
+    if (params%bound_electron_model.eq.'HESSLOW') then
+       CB_ei_temp=CB_ei_SD_FIO
+       do i=1,cparams_ms%num_impurity_species
+          CB_ei_temp=CB_ei_temp+CB_ei_SD_FIO*nimp(i)/(ne* &
+               Zeff*CLogei(v,ne,Te))*g_j(i,v)
+       end do
+       CB_ei_SD_FIO=CB_ei_temp
+
+    end if
+    
+  end function CB_ei_SD_FIO
 
   function nu_S(params,v)
     ! Slowing down collision frequency
@@ -971,6 +1123,20 @@ contains
     nu_S = CF(params,v)/p
         
   end function nu_S
+
+  function nu_S_FIO(params,v)
+    ! Slowing down collision frequency
+    TYPE(KORC_PARAMS), INTENT(IN) 	:: params
+    REAL(rp), INTENT(IN) 	:: v
+      ! Normalised particle speed
+    REAL(rp) 				:: nu_S_FIO
+    REAL(rp) 				:: nu_S_temp
+    REAL(rp) 				:: p
+    
+    p = v/SQRT(1.0_rp - v**2)
+    nu_S_FIO = CF_FIO(params,v)/p
+        
+  end function nu_S_FIO
 
   function h_j(i,v)
     INTEGER, INTENT(IN) 	:: i
@@ -1017,6 +1183,18 @@ contains
     p = v/SQRT(1.0_rp - v**2)
     nu_D = 2.0_rp*(CB_ee(v)+CB_ei(params,v))/p**2
   end function nu_D
+
+    function nu_D_FIO(params,v)
+    ! perpendicular diffusion (pitch angle scattering) collision frequency
+    REAL(rp), INTENT(IN) 	:: v
+    TYPE(KORC_PARAMS), INTENT(IN) 	:: params
+      ! Normalised particle speed
+    REAL(rp) 				:: nu_D_FIO
+    REAL(rp) 				:: p
+
+    p = v/SQRT(1.0_rp - v**2)
+    nu_D_FIO = 2.0_rp*(CB_ee(v)+CB_ei_FIO(params,v))/p**2
+  end function nu_D_FIO
 
 
   function nu_par(v)
@@ -1602,7 +1780,7 @@ contains
   end subroutine include_CoulombCollisions_GC_p
 
   subroutine include_CoulombCollisions_GCm3dc1_p(tt,params,Y_R,Y_PHI,Y_Z, &
-       Ppll,Pmu,me,flagCon,flagCol,F,P,E_PHI,ne,Te,nimp,PSIp,hint)
+       Ppll,Pmu,me,flagCon,flagCol,F,P,E_PHI,ne,ni,Te,Zeff,nimp,PSIp,hint)
 
     TYPE(PROFILES), INTENT(IN)                                 :: P
     TYPE(FIELDS), INTENT(IN)                                   :: F
@@ -1615,36 +1793,38 @@ contains
     REAL(rp), DIMENSION(params%pchunk) :: gradB_R,gradB_PHI,gradB_Z
     REAL(rp), DIMENSION(params%pchunk) 	:: E_R,E_Z
     REAL(rp), DIMENSION(params%pchunk) 	:: E_PHI,PSIp,E_PHI0
-    REAL(rp), DIMENSION(params%pchunk), INTENT(INOUT) 	:: ne,Te,nimp
-    REAL(rp), DIMENSION(params%pchunk), INTENT(IN) 	:: Y_R,Y_PHI,Y_Z
+    REAL(rp), DIMENSION(params%pchunk), INTENT(INOUT) 	:: ne,Te,ni
+    REAL(rp), DIMENSION(params%pchunk,params%num_impurity_species),&
+         & INTENT(INOUT) 	:: nimp
+    REAL(rp), DIMENSION(params%pchunk), INTENT(IN) 	:: Y_R,Y_PHI&
+         &,Y_Z
     INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT)  :: flagCol
     INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT)  :: flagCon
     TYPE(C_PTR), DIMENSION(params%pchunk), INTENT(INOUT)  :: hint
     REAL(rp), INTENT(IN) 			:: me
-    REAL(rp), DIMENSION(params%pchunk) 			:: Zeff
+    REAL(rp), DIMENSION(params%pchunk), INTENT(OUT) 	:: Zeff
     REAL(rp), DIMENSION(params%pchunk,2) 			:: dW
     REAL(rp), DIMENSION(params%pchunk,2) 			:: rnd1
     REAL(rp) 					:: dt,time
-    REAL(rp), DIMENSION(params%pchunk) 					:: pm
+    REAL(rp), DIMENSION(params%pchunk) 	:: pm
     REAL(rp), DIMENSION(params%pchunk)  :: dp
     REAL(rp), DIMENSION(params%pchunk)  :: xi
     REAL(rp), DIMENSION(params%pchunk)  :: dxi
     REAL(rp), DIMENSION(params%pchunk)  :: v,gam
     !! speed of particle
-    REAL(rp), DIMENSION(params%pchunk) 					:: CAL
-    REAL(rp) , DIMENSION(params%pchunk)					:: dCAL
-    REAL(rp), DIMENSION(params%pchunk) 					:: CFL
-    REAL(rp), DIMENSION(params%pchunk) 					:: CBL
+    REAL(rp), DIMENSION(params%pchunk) 	:: CAL
+    REAL(rp) , DIMENSION(params%pchunk)	:: dCAL
+    REAL(rp), DIMENSION(params%pchunk) 	:: CFL
+    REAL(rp), DIMENSION(params%pchunk) 	:: CBL
     REAL(rp), DIMENSION(params%pchunk) 	:: SC_p,SC_mu,BREM_p
     REAL(rp) 					:: kappa
-    integer :: cc,pchunk
+    integer :: cc,pchunk,ii
     integer(ip),INTENT(IN) :: tt
 
     pchunk=params%pchunk
     
     if (MODULO(params%it+tt,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
        dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt       
-       time=params%init_time+(params%it-1+tt)*params%dt
 
        call get_m3d_c1_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
             B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z, &
@@ -1659,8 +1839,8 @@ contains
        call get_m3d_c1_profile_p(params,P,Y_R,Y_PHI,Y_Z, &
             ne,Te,flagCon,hint)
 
-       call get_m3d_c1_imp_p(params,P,Y_R,Y_PHI,Y_Z, &
-            nimp,flagCon,hint)
+       call get_m3d_c1_ion_p(params,P,Y_R,Y_PHI,Y_Z, &
+            ne,ni,nimp,Zeff,flagCon,hint)
        
        
        !$OMP SIMD
@@ -1675,11 +1855,18 @@ contains
           
           v(cc) = pm(cc)/gam(cc)
           ! normalized speed (v_K=v_P/c)
-
-          Zeff(cc)=1._rp
+             
           E_PHI0(cc)=E_PHI(cc)
        end do
        !$OMP END SIMD
+
+       !write(6,*) 'R',Y_R*params%cpp%length
+       !write(6,*) 'PHI',Y_PHI
+       !write(6,*) 'Z',Y_Z*params%cpp%length
+       !write(6,*) 'ne',ne*params%cpp%density
+       !write(6,*) 'ni',ni*params%cpp%density
+       !write(6,*) 'nimp',nimp(:,1:2)*params%cpp%density
+       !write(6,*) 'Zeff',Zeff
        
        if (.not.params%FokPlan) E_PHI=0._rp
 
@@ -1713,9 +1900,9 @@ contains
           
           CAL(cc) = CA_SD(v(cc),ne(cc),Te(cc))
           dCAL(cc)= dCA_SD(v(cc),me,ne(cc),Te(cc))
-          CFL(cc) = CF_SD(params,v(cc),ne(cc),Te(cc))
+          CFL(cc) = CF_SD_FIO(params,v(cc),ne(cc),Te(cc),nimp(cc,:))
           CBL(cc) = (CB_ee_SD(v(cc),ne(cc),Te(cc),Zeff(cc))+ &
-               CB_ei_SD(params,v(cc),ne(cc),Te(cc),Zeff(cc)))
+               CB_ei_SD_FIO(params,v(cc),ne(cc),Te(cc),nimp(cc,:),Zeff(cc)))
           
           
           dp(cc)=REAL(flagCol(cc))*REAL(flagCon(cc))* &

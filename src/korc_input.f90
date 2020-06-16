@@ -52,7 +52,7 @@ module korc_input
   REAL(rp) :: rmin =  0.15
   REAL(rp) :: zmax =  1.65
   REAL(rp) :: zmin = -1.65
-  CHARACTER(50) :: outputs_list = '{X,Y,V,B,E,g,eta,flagCon,flagCol,PSIp,ne}' 
+  CHARACTER(75) :: outputs_list = '{X,Y,V,B,E,g,eta,flagCon,flagCol,PSIp,ne}' 
     ! List of outputs
     !'{X,Y,V,E,B,g,mu,eta,Prad,Pin,flagCon,flagCol,gradB,curlb,ne,Te,Zeff,PSIp}'
   LOGICAL :: HDF5_error_handling = .TRUE.

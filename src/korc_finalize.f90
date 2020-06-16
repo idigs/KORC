@@ -3,6 +3,7 @@ module korc_finalize
   !! communications and free memory.
   use korc_types
   use korc_fields
+  use korc_profiles
   use korc_hpc
 
   IMPLICIT NONE
@@ -23,7 +24,7 @@ CONTAINS
   end subroutine finalize_communications
 
 
-  subroutine deallocate_variables(params,F,spp)
+  subroutine deallocate_variables(params,F,P,spp)
     !! @note Subroutine to free allocatable simulation variables.    
     TYPE(KORC_PARAMS), INTENT(INOUT) 			:: params
     !! Core KORC simulation parameters.
@@ -31,6 +32,7 @@ CONTAINS
     !! An instance of KORC's derived type FIELDS containing all the
     !! information about the fields used in the simulation. See
     !! [[korc_types]] and [[korc_fields]].
+    TYPE(PROFILES), INTENT(INOUT)              :: P
     TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT) :: spp
     !! An instance of KORC's derived type SPECIES containing all the
     !! information of different electron species. See [[korc_types]].
@@ -48,6 +50,8 @@ CONTAINS
        DEALLOCATE(spp(ii)%vars%B)
        DEALLOCATE(spp(ii)%vars%PSI_P)
        DEALLOCATE(spp(ii)%vars%ne)
+       DEALLOCATE(spp(ii)%vars%ni)
+       DEALLOCATE(spp(ii)%vars%nimp)
        DEALLOCATE(spp(ii)%vars%Te)
        DEALLOCATE(spp(ii)%vars%Zeff)
        DEALLOCATE(spp(ii)%vars%g)
@@ -73,6 +77,7 @@ CONTAINS
     DEALLOCATE(spp)
 
     call DEALLOCATE_FIELDS_ARRAYS(F)
+    call DEALLOCATE_PROFILES_ARRAYS(P)
   end subroutine deallocate_variables
 
 end module korc_finalize
