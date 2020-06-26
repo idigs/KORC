@@ -615,6 +615,7 @@ module korc_types
      !! An M3D-C1 Electric field.
      INTEGER (C_INT)                         :: M3D_C1_A
      !! An M3D-C1 vector potential.
+     real(c_double)  ::  time0,time1
 #endif
   END TYPE FIELDS
 

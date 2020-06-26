@@ -380,13 +380,15 @@ contains
   end subroutine load_params_ss
 
 
-  subroutine initialize_collision_params(params,spp,P)
+  subroutine initialize_collision_params(params,spp,P,F)
     TYPE(KORC_PARAMS), INTENT(INOUT) :: params
     TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)       :: spp
     TYPE(PROFILES), INTENT(INOUT)  :: P
+    TYPE(FIELDS), INTENT(IN)                :: F
     INTEGER 				                       	:: ii
 
-    if (params%collisions) then
+    if (params%collisions.or.((params%field_model.eq.'M3D_C1').and. &
+         params%radiation)) then
 
        if (params%mpi_params%rank .EQ. 0) then
           write(output_unit_write,'(/,"* * * * * * * INITIALIZING COLLISIONS * * * * * * *")')
@@ -415,8 +417,8 @@ contains
 
 #ifdef M3D_C1
           if (TRIM(params%field_model) .eq. 'M3D_C1') then     
-             call initialize_m3d_c1_imp(params, P, &
-                  cparams_ms%num_impurity_species)        
+             call initialize_m3d_c1_imp(params,F,P, &
+                  cparams_ms%num_impurity_species,.true.)        
           endif
 #endif 
 

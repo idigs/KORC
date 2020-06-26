@@ -3499,7 +3499,8 @@ subroutine interp_fields(params,prtcls,F)
     end if
 #endif
   
-  if ((ALLOCATED(F%PSIp).and.F%Bflux).or.F%ReInterp_2x1t) then
+    if ((ALLOCATED(F%PSIp).and.F%Bflux).or. &
+         (F%ReInterp_2x1t.and.(.not.(params%field_model.eq.'M3D_C1')))) then
 
 !     write(output_unit_write,'("3 size of PSI_P: ",I16)') size(prtcls%PSI_P)
 

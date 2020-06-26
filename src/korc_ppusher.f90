@@ -2141,9 +2141,12 @@ contains
              spp(ii)%vars%E(pp,2)=0._rp
              spp(ii)%vars%E(pp,3)=0._rp
           end do
-          
-          call get_fields(params,spp(ii)%vars,F)        
 
+
+          !write(6,*) 'before second get fields'
+          call get_fields(params,spp(ii)%vars,F)        
+          !write(6,*) 'after second get fields'
+          
           !write(output_unit_write,*) spp(1)%vars%PSI_P
 
           !$OMP PARALLEL DO SHARED(ii,spp) PRIVATE(pp,Bmag1)
@@ -3194,6 +3197,12 @@ contains
 
 
           do tt=1_ip,params%t_skip
+
+             if (mod(tt,params%t_skip/10).eq.0) then
+                write(output_unit_write,*) 'iteration',tt
+                flush(output_unit_write)
+             endif
+             
              call advance_GCinterp_m3dc1_vars(spp(ii)%vars,pp,tt, &
                   params,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,q_cache,m_cache, &
                   flagCon,flagCol, &
