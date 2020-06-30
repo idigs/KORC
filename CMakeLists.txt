@@ -41,13 +41,7 @@ if (${USE_M3D_C1})
     add_definitions (-DM3D_C1)
 endif ()
 
-#  Configure FRUIT
-include_directories (${FRUIT_INCLUDE_PATH})
-set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${FRUIT_LINK_FLAGS}")
-
-#  Configure KORCSRC
-include_directories (${KORCSRC_INCLUDE_PATH})
-set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${KORCSRC_LINK_FLAGS}")
+add_subdirectory (src)
 
 #  Add machine dependent definition for finding included scripts
 option (CORI_DIR "Use Cori directories" OFF)
@@ -55,7 +49,17 @@ if (${CORI_DIR})
     add_definitions (-DCORI)
 else ()
     add_definitions (-DMAC)
+
+    #  Configure FRUIT
+    include_directories (${FRUIT_INCLUDE_PATH})
+    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${FRUIT_LINK_FLAGS}")
+
+    #  Configure KORCSRC
+    include_directories (${KORCSRC_INCLUDE_PATH})
+    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${KORCSRC_LINK_FLAGS}")
+
+    add_subdirectory (test)
+
 endif ()
 
-add_subdirectory (src)
-add_subdirectory (test)	
+

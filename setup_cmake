@@ -84,7 +84,7 @@ then
 	  -DKORCSRC_INCLUDE_PATH=/Users/21b/Desktop/KORC/build/modules \
 	  -DKORCSRC_LINK_FLAGS="-L/Users/21b/Desktop/KORC/build/lib -lkorcsrc" \
 	  -DKORCSRC_LIBRARIES=/Users/21b/Desktop/KORC/build/lib/libkorcsrc.a \
-
+#	  -DCORI_DIR=ON
  
 #	  -DCMAKE_CXX_COMPILER=/opt/local/bin/mpic++-mpich-gcc8
 

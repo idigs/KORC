@@ -36,7 +36,12 @@ list (APPEND korc_sources
 add_executable (xkorc ${korc_sources})
 set_property(TARGET xkorc PROPERTY LINKER_LANGUAGE Fortran)
 
-add_library (korcsrc STATIC ${korc_sources})
+option (CORI_DIR "Use Cori directories" OFF)
+if (${CORI_DIR})
+else ()
+   add_library (korcsrc STATIC ${korc_sources})
+endif ()
+
 
 target_link_libraries (xkorc ${MPI_Fortran_LIBRARIES})
 target_link_libraries (xkorc ${HDF5_LIBRARIES})
