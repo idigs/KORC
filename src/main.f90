@@ -338,7 +338,8 @@ program main
      end do
   end if
 
-  if (params%orbit_model(1:2).eq.'FO'.and.params%field_model.eq.'M3D_C1') then
+  if (params%orbit_model(1:2).eq.'FO'.and.params%field_model.eq.'M3D_C1'.and. &
+       .not.F%ReInterp_2x1t) then
      call FO_init(params,F,spp,.false.,.true.)
      ! Initial half-time particle push
      
@@ -352,6 +353,45 @@ program main
         call save_simulation_outputs(params,spp,F)
         call save_restart_variables(params,spp,F)
      end do
+  end if
+
+  if (params%orbit_model(1:2).eq.'FO'.and. &
+       params%field_model.eq.'M3D_C1'.and.F%ReInterp_2x1t) then
+     call FO_init(params,F,spp,.false.,.true.)
+     ! Initial half-time particle push
+     
+     do it=F%ind0_2x1t,params%time_slice
+
+        !write(6,*) it,F%ind0_2x1t
+        
+        if (it.gt.F%ind0_2x1t) then
+           call initialize_m3d_c1(params, F, P, spp,.false.)
+           if (params%collisions) then
+              call initialize_m3d_c1_imp(params,F,P, &
+                   params%num_impurity_species,.false.)
+           end if
+        end if
+           
+        write(output_unit_write,*) 'tskip',params%t_skip
+        flush(output_unit_write)
+
+        call adv_FOm3dc1_top(params,F,P,spp)
+               
+        params%it = params%it+params%t_skip
+        params%time = params%init_time &
+             +REAL(params%it,rp)*params%dt 
+        
+        call save_simulation_outputs(params,spp,F)
+        call save_restart_variables(params,spp,F)
+
+        F%ind_2x1t=F%ind_2x1t+1_ip
+        if (params%mpi_params%rank .EQ. 0) then
+           write(output_unit_write,*) 'KORC time ',params%time*params%cpp%time
+           flush(output_unit_write)
+        end if
+              
+     end do
+     
   end if
   
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'eqn'.and..not.params%field_model.eq.'M3D_C1') then
@@ -544,6 +584,8 @@ program main
 
      do it=F%ind0_2x1t,params%time_slice
 
+        !write(6,*) it,F%ind0_2x1t
+        
         if (it.gt.F%ind0_2x1t) then
            call initialize_m3d_c1(params, F, P, spp,.false.)
            if (params%collisions) then

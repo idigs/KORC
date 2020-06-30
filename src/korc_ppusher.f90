@@ -1036,7 +1036,7 @@ contains
 
                 call advance_FOm3dc1_vars(tt,a,q_cache,m_cache,params, &
                      X_X,X_Y,X_Z,V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z, &
-                     g,flagCon,flagCol,P,F,PSIp)
+                     g,flagCon,flagCol,P,F,PSIp,hint)
 
              end do !timestep iterator
 
@@ -1631,7 +1631,7 @@ contains
   end subroutine advance_FOinterp_vars
 
   subroutine advance_FOm3dc1_vars(tt,a,q_cache,m_cache,params,X_X,X_Y,X_Z, &
-       V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,g,flagCon,flagCol,P,F,PSIp)
+       V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,g,flagCon,flagCol,P,F,PSIp,hint)
     TYPE(KORC_PARAMS), INTENT(IN)                              :: params
     !! Core KORC simulation parameters.
     TYPE(PROFILES), INTENT(IN)                                 :: P
@@ -1694,6 +1694,7 @@ contains
     !! Chunk iterator.
 
     INTEGER(is) ,DIMENSION(params%pchunk),intent(inout)                   :: flagCon,flagCol
+    TYPE(C_PTR),DIMENSION(params%pchunk) :: hint
 
     dt=params%dt
     pchunk=params%pchunk
@@ -1808,8 +1809,8 @@ contains
 
     if (params%collisions) then
 
-       call include_CoulombCollisions_FO_p(tt,params,X_X,X_Y,X_Z, &
-            U_X,U_Y,U_Z,B_X,B_Y,B_Z,m_cache,P,F,flagCon,flagCol,PSIp)
+       call include_CoulombCollisions_FOm3dc1_p(tt,params,X_X,X_Y,X_Z, &
+            U_X,U_Y,U_Z,B_X,B_Y,B_Z,m_cache,P,F,flagCon,flagCol,PSIp,hint)
 
     end if
 
@@ -3198,10 +3199,10 @@ contains
 
           do tt=1_ip,params%t_skip
 
-             if (mod(tt,params%t_skip/10).eq.0) then
-                write(output_unit_write,*) 'iteration',tt
-                flush(output_unit_write)
-             endif
+             !if (mod(tt,params%t_skip/10).eq.0) then
+             !   write(output_unit_write,*) 'iteration',tt
+             !   flush(output_unit_write)
+             !endif
              
              call advance_GCinterp_m3dc1_vars(spp(ii)%vars,pp,tt, &
                   params,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,q_cache,m_cache, &
