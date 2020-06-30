@@ -51,7 +51,7 @@ CONTAINS
        DEALLOCATE(spp(ii)%vars%PSI_P)
        DEALLOCATE(spp(ii)%vars%ne)
        DEALLOCATE(spp(ii)%vars%ni)
-       DEALLOCATE(spp(ii)%vars%nimp)
+       if (ALLOCATED(spp(ii)%vars%nimp)) DEALLOCATE(spp(ii)%vars%nimp)
        DEALLOCATE(spp(ii)%vars%Te)
        DEALLOCATE(spp(ii)%vars%Zeff)
        DEALLOCATE(spp(ii)%vars%g)

@@ -542,9 +542,9 @@ program main
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_model.eq.'M3D_C1'.and. &
        F%ReInterp_2x1t) then
 
-     do it=0,params%time_slice
+     do it=F%ind0_2x1t,params%time_slice
 
-        if (it.gt.0) then
+        if (it.gt.F%ind0_2x1t) then
            call initialize_m3d_c1(params, F, P, spp,.false.)
            if (params%collisions) then
               call initialize_m3d_c1_imp(params,F,P, &

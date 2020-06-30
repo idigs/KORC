@@ -329,69 +329,69 @@ private subroutine sample_gamma_distribution(params, g, go)
 <polygon fill="none" stroke="#000000" points="144,-108 0,-108 0,-84 144,-84 144,-108"/>
 <text text-anchor="middle" x="72" y="-93.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#000000">sample_gamma_distribution</text>
 </g>
-<!-- mpi_bcast -->
+<!-- mpi_barrier -->
 <g id="proc~~sample_gamma_distribution~~CallsGraph_node2" class="node">
-<title>mpi_bcast</title>
-<polygon fill="#777777" stroke="#777777" points="249,-192 189,-192 189,-168 249,-168 249,-192"/>
-<text text-anchor="middle" x="219" y="-177.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_bcast</text>
+<title>mpi_barrier</title>
+<polygon fill="#777777" stroke="#777777" points="252,-192 186,-192 186,-168 252,-168 252,-192"/>
+<text text-anchor="middle" x="219" y="-177.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_barrier</text>
 </g>
-<!-- proc~sample_gamma_distribution&#45;&gt;mpi_bcast -->
+<!-- proc~sample_gamma_distribution&#45;&gt;mpi_barrier -->
 <g id="proc~~sample_gamma_distribution~~CallsGraph_edge1" class="edge">
-<title>proc~sample_gamma_distribution&#45;&gt;mpi_bcast</title>
+<title>proc~sample_gamma_distribution&#45;&gt;mpi_barrier</title>
 <path fill="none" stroke="#000000" d="M92.1846,-108.0511C113.7922,-120.8867 149.1377,-141.696 180,-159 182.3707,-160.3292 184.8302,-161.6917 187.3088,-163.0529"/>
 <polygon fill="#000000" stroke="#000000" points="185.787,-166.2095 196.2437,-167.9152 189.1331,-160.0609 185.787,-166.2095"/>
 </g>
-<!-- mpi_barrier -->
+<!-- mpi_scatter -->
 <g id="proc~~sample_gamma_distribution~~CallsGraph_node3" class="node">
-<title>mpi_barrier</title>
-<polygon fill="#777777" stroke="#777777" points="252,-150 186,-150 186,-126 252,-126 252,-150"/>
-<text text-anchor="middle" x="219" y="-135.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_barrier</text>
+<title>mpi_scatter</title>
+<polygon fill="#777777" stroke="#777777" points="252.5,-150 185.5,-150 185.5,-126 252.5,-126 252.5,-150"/>
+<text text-anchor="middle" x="219" y="-135.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_scatter</text>
 </g>
-<!-- proc~sample_gamma_distribution&#45;&gt;mpi_barrier -->
+<!-- proc~sample_gamma_distribution&#45;&gt;mpi_scatter -->
 <g id="proc~~sample_gamma_distribution~~CallsGraph_edge2" class="edge">
-<title>proc~sample_gamma_distribution&#45;&gt;mpi_barrier</title>
-<path fill="none" stroke="#000000" d="M114.1243,-108.0355C133.4864,-113.5676 156.4247,-120.1214 175.9042,-125.6869"/>
-<polygon fill="#000000" stroke="#000000" points="175.1613,-129.1147 185.7381,-128.4966 177.0844,-122.384 175.1613,-129.1147"/>
-</g>
-<!-- proc~fre -->
-<g id="proc~~sample_gamma_distribution~~CallsGraph_node4" class="node">
-<title>proc~fre</title>
-<g id="a_proc~~sample_gamma_distribution~~CallsGraph_node4"><a xlink:href=".././proc/fre.html" xlink:title="fRE">
-<polygon fill="#d94e8f" stroke="#d94e8f" points="246,-108 192,-108 192,-84 246,-84 246,-108"/>
-<text text-anchor="middle" x="219" y="-93.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">fRE</text>
-</a>
-</g>
-</g>
-<!-- proc~sample_gamma_distribution&#45;&gt;proc~fre -->
-<g id="proc~~sample_gamma_distribution~~CallsGraph_edge3" class="edge">
-<title>proc~sample_gamma_distribution&#45;&gt;proc~fre</title>
-<path fill="none" stroke="#000000" d="M144.2081,-96C157.2163,-96 170.2786,-96 181.7643,-96"/>
-<polygon fill="#000000" stroke="#000000" points="181.8224,-99.5001 191.8224,-96 181.8224,-92.5001 181.8224,-99.5001"/>
+<title>proc~sample_gamma_distribution&#45;&gt;mpi_scatter</title>
+<path fill="none" stroke="#000000" d="M114.1243,-108.0355C133.3419,-113.5263 156.0826,-120.0236 175.4675,-125.5621"/>
+<polygon fill="#000000" stroke="#000000" points="174.6855,-128.9787 185.2623,-128.3606 176.6086,-122.248 174.6855,-128.9787"/>
 </g>
 <!-- proc~random_norm~2 -->
-<g id="proc~~sample_gamma_distribution~~CallsGraph_node5" class="node">
+<g id="proc~~sample_gamma_distribution~~CallsGraph_node4" class="node">
 <title>proc~random_norm~2</title>
-<g id="a_proc~~sample_gamma_distribution~~CallsGraph_node5"><a xlink:href=".././proc/random_norm~2.html" xlink:title="random_norm">
-<polygon fill="#d94e8f" stroke="#d94e8f" points="258,-66 180,-66 180,-42 258,-42 258,-66"/>
-<text text-anchor="middle" x="219" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">random_norm</text>
+<g id="a_proc~~sample_gamma_distribution~~CallsGraph_node4"><a xlink:href=".././proc/random_norm~2.html" xlink:title="random_norm">
+<polygon fill="#d94e8f" stroke="#d94e8f" points="258,-108 180,-108 180,-84 258,-84 258,-108"/>
+<text text-anchor="middle" x="219" y="-93.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">random_norm</text>
 </a>
 </g>
 </g>
 <!-- proc~sample_gamma_distribution&#45;&gt;proc~random_norm~2 -->
-<g id="proc~~sample_gamma_distribution~~CallsGraph_edge4" class="edge">
+<g id="proc~~sample_gamma_distribution~~CallsGraph_edge3" class="edge">
 <title>proc~sample_gamma_distribution&#45;&gt;proc~random_norm~2</title>
-<path fill="none" stroke="#000000" d="M114.1243,-83.9645C131.5908,-78.9741 151.9675,-73.1521 170.0899,-67.9743"/>
-<polygon fill="#000000" stroke="#000000" points="171.2395,-71.286 179.8932,-65.1734 169.3164,-64.5553 171.2395,-71.286"/>
+<path fill="none" stroke="#000000" d="M144.2081,-96C152.8871,-96 161.5901,-96 169.8329,-96"/>
+<polygon fill="#000000" stroke="#000000" points="169.9912,-99.5001 179.9911,-96 169.9911,-92.5001 169.9912,-99.5001"/>
 </g>
-<!-- mpi_scatter -->
+<!-- mpi_bcast -->
+<g id="proc~~sample_gamma_distribution~~CallsGraph_node5" class="node">
+<title>mpi_bcast</title>
+<polygon fill="#777777" stroke="#777777" points="249,-66 189,-66 189,-42 249,-42 249,-66"/>
+<text text-anchor="middle" x="219" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_bcast</text>
+</g>
+<!-- proc~sample_gamma_distribution&#45;&gt;mpi_bcast -->
+<g id="proc~~sample_gamma_distribution~~CallsGraph_edge4" class="edge">
+<title>proc~sample_gamma_distribution&#45;&gt;mpi_bcast</title>
+<path fill="none" stroke="#000000" d="M114.1243,-83.9645C134.4462,-78.1582 158.7076,-71.2264 178.7745,-65.493"/>
+<polygon fill="#000000" stroke="#000000" points="179.8934,-68.8135 188.5471,-62.7008 177.9703,-62.0828 179.8934,-68.8135"/>
+</g>
+<!-- proc~fre -->
 <g id="proc~~sample_gamma_distribution~~CallsGraph_node6" class="node">
-<title>mpi_scatter</title>
-<polygon fill="#777777" stroke="#777777" points="252.5,-24 185.5,-24 185.5,0 252.5,0 252.5,-24"/>
-<text text-anchor="middle" x="219" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_scatter</text>
+<title>proc~fre</title>
+<g id="a_proc~~sample_gamma_distribution~~CallsGraph_node6"><a xlink:href=".././proc/fre.html" xlink:title="fRE">
+<polygon fill="#d94e8f" stroke="#d94e8f" points="246,-24 192,-24 192,0 246,0 246,-24"/>
+<text text-anchor="middle" x="219" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">fRE</text>
+</a>
 </g>
-<!-- proc~sample_gamma_distribution&#45;&gt;mpi_scatter -->
+</g>
+<!-- proc~sample_gamma_distribution&#45;&gt;proc~fre -->
 <g id="proc~~sample_gamma_distribution~~CallsGraph_edge5" class="edge">
-<title>proc~sample_gamma_distribution&#45;&gt;mpi_scatter</title>
+<title>proc~sample_gamma_distribution&#45;&gt;proc~fre</title>
 <path fill="none" stroke="#000000" d="M92.1846,-83.9489C113.7922,-71.1133 149.1377,-50.304 180,-33 182.3707,-31.6708 184.8302,-30.3083 187.3088,-28.9471"/>
 <polygon fill="#000000" stroke="#000000" points="189.1331,-31.9391 196.2437,-24.0848 185.787,-25.7905 189.1331,-31.9391"/>
 </g>
@@ -399,16 +399,16 @@ private subroutine sample_gamma_distribution(params, g, go)
 <g id="proc~~sample_gamma_distribution~~CallsGraph_node7" class="node">
 <title>proc~fgamma</title>
 <g id="a_proc~~sample_gamma_distribution~~CallsGraph_node7"><a xlink:href=".././proc/fgamma.html" xlink:title="fGamma">
-<polygon fill="#d94e8f" stroke="#d94e8f" points="348,-108 294,-108 294,-84 348,-84 348,-108"/>
-<text text-anchor="middle" x="321" y="-93.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">fGamma</text>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="348,-24 294,-24 294,0 348,0 348,-24"/>
+<text text-anchor="middle" x="321" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">fGamma</text>
 </a>
 </g>
 </g>
 <!-- proc~fre&#45;&gt;proc~fgamma -->
 <g id="proc~~sample_gamma_distribution~~CallsGraph_edge6" class="edge">
 <title>proc~fre&#45;&gt;proc~fgamma</title>
-<path fill="none" stroke="#000000" d="M246.0663,-96C257.5936,-96 271.2305,-96 283.6902,-96"/>
-<polygon fill="#000000" stroke="#000000" points="283.8072,-99.5001 293.8072,-96 283.8071,-92.5001 283.8072,-99.5001"/>
+<path fill="none" stroke="#000000" d="M246.0663,-12C257.5936,-12 271.2305,-12 283.6902,-12"/>
+<polygon fill="#000000" stroke="#000000" points="283.8072,-15.5001 293.8072,-12 283.8071,-8.5001 283.8072,-15.5001"/>
 </g>
 </g>
 </svg>

@@ -132,7 +132,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title=" 0.2% of total for procedures.">39 statements</a>
+    title=" 0.2% of total for procedures.">40 statements</a>
      </li> 
      
      
@@ -205,7 +205,7 @@
     
     <div class="col-md-9" id='text'>
     <h2>
-public subroutine initialize_collision_params(params, spp, P)
+public subroutine initialize_collision_params(params, spp, P, F)
     
     
    
@@ -273,6 +273,21 @@ public subroutine initialize_collision_params(params, spp, P)
   
 </tr>
 
+  
+  
+  
+  
+<tr>
+  
+  <td><span class="anchor" id="variable-f~5"></span>type(FIELDS),</td>
+  <td>intent(in)</td>
+  <td></td>
+  
+  <td></td><td>::</td>
+  <td><strong>F</strong></td><td></td>
+  
+</tr>
+
 </tbody>
 </table>
 
@@ -301,38 +316,38 @@ public subroutine initialize_collision_params(params, spp, P)
 <!-- proc~initialize_collision_params -->
 <g id="proc~~initialize_collision_params~~CallsGraph_node1" class="node">
 <title>proc~initialize_collision_params</title>
-<polygon fill="none" stroke="#000000" points="134,-289 0,-289 0,-265 134,-265 134,-289"/>
-<text text-anchor="middle" x="67" y="-274.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#000000">initialize_collision_params</text>
-</g>
-<!-- proc~load_params_ms -->
-<g id="proc~~initialize_collision_params~~CallsGraph_node2" class="node">
-<title>proc~load_params_ms</title>
-<g id="a_proc~~initialize_collision_params~~CallsGraph_node2"><a xlink:href=".././proc/load_params_ms.html" xlink:title="load_params_ms">
-<polygon fill="#d9534f" stroke="#d9534f" points="274.5,-390 181.5,-390 181.5,-366 274.5,-366 274.5,-390"/>
-<text text-anchor="middle" x="228" y="-375.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">load_params_ms</text>
-</a>
-</g>
-</g>
-<!-- proc~initialize_collision_params&#45;&gt;proc~load_params_ms -->
-<g id="proc~~initialize_collision_params~~CallsGraph_edge1" class="edge">
-<title>proc~initialize_collision_params&#45;&gt;proc~load_params_ms</title>
-<path fill="none" stroke="#000000" d="M86.4204,-289.183C114.706,-306.9273 167.3988,-339.9831 199.9124,-360.3798"/>
-<polygon fill="#000000" stroke="#000000" points="198.1797,-363.4245 208.5108,-365.7738 201.8996,-357.4947 198.1797,-363.4245"/>
+<polygon fill="none" stroke="#000000" points="134,-255 0,-255 0,-231 134,-231 134,-255"/>
+<text text-anchor="middle" x="67" y="-240.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#000000">initialize_collision_params</text>
 </g>
 <!-- proc~load_params_ss -->
-<g id="proc~~initialize_collision_params~~CallsGraph_node3" class="node">
+<g id="proc~~initialize_collision_params~~CallsGraph_node2" class="node">
 <title>proc~load_params_ss</title>
-<g id="a_proc~~initialize_collision_params~~CallsGraph_node3"><a xlink:href=".././proc/load_params_ss.html" xlink:title="load_params_ss">
-<polygon fill="#d9534f" stroke="#d9534f" points="273,-289 183,-289 183,-265 273,-265 273,-289"/>
-<text text-anchor="middle" x="228" y="-274.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">load_params_ss</text>
+<g id="a_proc~~initialize_collision_params~~CallsGraph_node2"><a xlink:href=".././proc/load_params_ss.html" xlink:title="load_params_ss">
+<polygon fill="#d9534f" stroke="#d9534f" points="273,-354 183,-354 183,-330 273,-330 273,-354"/>
+<text text-anchor="middle" x="228" y="-339.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">load_params_ss</text>
 </a>
 </g>
 </g>
 <!-- proc~initialize_collision_params&#45;&gt;proc~load_params_ss -->
-<g id="proc~~initialize_collision_params~~CallsGraph_edge2" class="edge">
+<g id="proc~~initialize_collision_params~~CallsGraph_edge1" class="edge">
 <title>proc~initialize_collision_params&#45;&gt;proc~load_params_ss</title>
-<path fill="none" stroke="#000000" d="M134.3456,-277C147.1362,-277 160.3822,-277 172.7445,-277"/>
-<polygon fill="#000000" stroke="#000000" points="172.8916,-280.5001 182.8916,-277 172.8915,-273.5001 172.8916,-280.5001"/>
+<path fill="none" stroke="#000000" d="M86.7418,-255.1393C114.9865,-272.5072 167.0894,-304.5456 199.5105,-324.4816"/>
+<polygon fill="#000000" stroke="#000000" points="197.745,-327.5047 208.0968,-329.7614 201.4117,-321.5418 197.745,-327.5047"/>
+</g>
+<!-- proc~load_params_ms -->
+<g id="proc~~initialize_collision_params~~CallsGraph_node3" class="node">
+<title>proc~load_params_ms</title>
+<g id="a_proc~~initialize_collision_params~~CallsGraph_node3"><a xlink:href=".././proc/load_params_ms.html" xlink:title="load_params_ms">
+<polygon fill="#d9534f" stroke="#d9534f" points="274.5,-255 181.5,-255 181.5,-231 274.5,-231 274.5,-255"/>
+<text text-anchor="middle" x="228" y="-240.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">load_params_ms</text>
+</a>
+</g>
+</g>
+<!-- proc~initialize_collision_params&#45;&gt;proc~load_params_ms -->
+<g id="proc~~initialize_collision_params~~CallsGraph_edge2" class="edge">
+<title>proc~initialize_collision_params&#45;&gt;proc~load_params_ms</title>
+<path fill="none" stroke="#000000" d="M134.3456,-243C146.6085,-243 159.2899,-243 171.2098,-243"/>
+<polygon fill="#000000" stroke="#000000" points="171.4592,-246.5001 181.4591,-243 171.4591,-239.5001 171.4592,-246.5001"/>
 </g>
 <!-- proc~initialize_m3d_c1_imp -->
 <g id="proc~~initialize_collision_params~~CallsGraph_node4" class="node">
@@ -346,122 +361,122 @@ public subroutine initialize_collision_params(params, spp, P)
 <!-- proc~initialize_collision_params&#45;&gt;proc~initialize_m3d_c1_imp -->
 <g id="proc~~initialize_collision_params~~CallsGraph_edge3" class="edge">
 <title>proc~initialize_collision_params&#45;&gt;proc~initialize_m3d_c1_imp</title>
-<path fill="none" stroke="#000000" d="M79.1012,-264.974C106.7236,-237.5231 174.6281,-170.0404 208.3464,-136.5315"/>
-<polygon fill="#000000" stroke="#000000" points="211.1325,-138.6972 215.7584,-129.1656 206.1982,-133.732 211.1325,-138.6972"/>
-</g>
-<!-- zo_mult -->
-<g id="proc~~initialize_collision_params~~CallsGraph_node6" class="node">
-<title>zo_mult</title>
-<polygon fill="#777777" stroke="#777777" points="407.5,-390 353.5,-390 353.5,-366 407.5,-366 407.5,-390"/>
-<text text-anchor="middle" x="380.5" y="-375.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">zo_mult</text>
-</g>
-<!-- proc~load_params_ms&#45;&gt;zo_mult -->
-<g id="proc~~initialize_collision_params~~CallsGraph_edge4" class="edge">
-<title>proc~load_params_ms&#45;&gt;zo_mult</title>
-<path fill="none" stroke="#000000" d="M274.5837,-378C296.5133,-378 322.3216,-378 342.9718,-378"/>
-<polygon fill="#000000" stroke="#000000" points="343.2526,-381.5001 353.2525,-378 343.2525,-374.5001 343.2526,-381.5001"/>
-</g>
-<!-- zj_mult -->
-<g id="proc~~initialize_collision_params~~CallsGraph_node7" class="node">
-<title>zj_mult</title>
-<polygon fill="#777777" stroke="#777777" points="407.5,-432 353.5,-432 353.5,-408 407.5,-408 407.5,-432"/>
-<text text-anchor="middle" x="380.5" y="-417.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">zj_mult</text>
-</g>
-<!-- proc~load_params_ms&#45;&gt;zj_mult -->
-<g id="proc~~initialize_collision_params~~CallsGraph_edge5" class="edge">
-<title>proc~load_params_ms&#45;&gt;zj_mult</title>
-<path fill="none" stroke="#000000" d="M271.7004,-390.0355C294.3428,-396.2715 321.6994,-403.8057 343.3165,-409.7593"/>
-<polygon fill="#000000" stroke="#000000" points="342.5432,-413.1766 353.1136,-412.4575 344.4019,-406.4278 342.5432,-413.1766"/>
-</g>
-<!-- proc~vte_wu -->
-<g id="proc~~initialize_collision_params~~CallsGraph_node5" class="node">
-<title>proc~vte_wu</title>
-<g id="a_proc~~initialize_collision_params~~CallsGraph_node5"><a xlink:href=".././proc/vte_wu.html" xlink:title="VTe_wu">
-<polygon fill="#d94e8f" stroke="#d94e8f" points="638.5,-272 584.5,-272 584.5,-248 638.5,-248 638.5,-272"/>
-<text text-anchor="middle" x="611.5" y="-257.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">VTe_wu</text>
-</a>
-</g>
-</g>
-<!-- proc~load_params_ss&#45;&gt;proc~vte_wu -->
-<g id="proc~~initialize_collision_params~~CallsGraph_edge6" class="edge">
-<title>proc~load_params_ss&#45;&gt;proc~vte_wu</title>
-<path fill="none" stroke="#000000" d="M269.0159,-264.9902C329.3895,-248.9143 445.6675,-224.0571 544,-239 554.1921,-240.5488 564.9631,-243.3422 574.8358,-246.3967"/>
-<polygon fill="#000000" stroke="#000000" points="573.7618,-249.7278 584.3542,-249.5017 575.9328,-243.0729 573.7618,-249.7278"/>
+<path fill="none" stroke="#000000" d="M82.4374,-230.9186C110.7343,-208.7732 171.0671,-161.5561 204.4909,-135.3984"/>
+<polygon fill="#000000" stroke="#000000" points="206.6548,-138.1494 212.3728,-129.23 202.3407,-132.6368 206.6548,-138.1494"/>
 </g>
 <!-- proc~clogei_wu -->
-<g id="proc~~initialize_collision_params~~CallsGraph_node9" class="node">
+<g id="proc~~initialize_collision_params~~CallsGraph_node7" class="node">
 <title>proc~clogei_wu</title>
-<g id="a_proc~~initialize_collision_params~~CallsGraph_node9"><a xlink:href=".././proc/clogei_wu.html" xlink:title="CLogei_wu">
-<polygon fill="#d94e8f" stroke="#d94e8f" points="542,-272 477,-272 477,-248 542,-248 542,-272"/>
-<text text-anchor="middle" x="509.5" y="-257.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">CLogei_wu</text>
+<g id="a_proc~~initialize_collision_params~~CallsGraph_node7"><a xlink:href=".././proc/clogei_wu.html" xlink:title="CLogei_wu">
+<polygon fill="#d94e8f" stroke="#d94e8f" points="542,-356 477,-356 477,-332 542,-332 542,-356"/>
+<text text-anchor="middle" x="509.5" y="-341.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">CLogei_wu</text>
 </a>
 </g>
 </g>
 <!-- proc~load_params_ss&#45;&gt;proc~clogei_wu -->
-<g id="proc~~initialize_collision_params~~CallsGraph_edge8" class="edge">
-<title>proc~load_params_ss&#45;&gt;proc~clogei_wu</title>
-<path fill="none" stroke="#000000" d="M273.2278,-274.2687C326.4442,-271.0549 414.155,-265.758 466.4214,-262.6015"/>
-<polygon fill="#000000" stroke="#000000" points="466.9255,-266.0776 476.6963,-261.981 466.5035,-259.0903 466.9255,-266.0776"/>
-</g>
-<!-- proc~clogee_wu -->
-<g id="proc~~initialize_collision_params~~CallsGraph_node12" class="node">
-<title>proc~clogee_wu</title>
-<g id="a_proc~~initialize_collision_params~~CallsGraph_node12"><a xlink:href=".././proc/clogee_wu.html" xlink:title="CLogee_wu">
-<polygon fill="#d94e8f" stroke="#d94e8f" points="544,-314 475,-314 475,-290 544,-290 544,-314"/>
-<text text-anchor="middle" x="509.5" y="-299.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">CLogee_wu</text>
-</a>
-</g>
-</g>
-<!-- proc~load_params_ss&#45;&gt;proc~clogee_wu -->
 <g id="proc~~initialize_collision_params~~CallsGraph_edge7" class="edge">
-<title>proc~load_params_ss&#45;&gt;proc~clogee_wu</title>
-<path fill="none" stroke="#000000" d="M273.2278,-281.0167C325.8268,-285.688 412.1244,-293.3521 464.588,-298.0114"/>
-<polygon fill="#000000" stroke="#000000" points="464.3392,-301.503 474.6096,-298.9014 464.9585,-294.5304 464.3392,-301.503"/>
+<title>proc~load_params_ss&#45;&gt;proc~clogei_wu</title>
+<path fill="none" stroke="#000000" d="M273.2278,-342.3213C326.4442,-342.6994 414.155,-343.3226 466.4214,-343.6939"/>
+<polygon fill="#000000" stroke="#000000" points="466.6717,-347.1957 476.6963,-343.7669 466.7215,-340.1959 466.6717,-347.1957"/>
 </g>
 <!-- proc~gammac_wu -->
-<g id="proc~~initialize_collision_params~~CallsGraph_node15" class="node">
+<g id="proc~~initialize_collision_params~~CallsGraph_node8" class="node">
 <title>proc~gammac_wu</title>
-<g id="a_proc~~initialize_collision_params~~CallsGraph_node15"><a xlink:href=".././proc/gammac_wu.html" xlink:title="Gammac_wu">
-<polygon fill="#d94e8f" stroke="#d94e8f" points="417.5,-348 343.5,-348 343.5,-324 417.5,-324 417.5,-348"/>
-<text text-anchor="middle" x="380.5" y="-333.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">Gammac_wu</text>
+<g id="a_proc~~initialize_collision_params~~CallsGraph_node8"><a xlink:href=".././proc/gammac_wu.html" xlink:title="Gammac_wu">
+<polygon fill="#d94e8f" stroke="#d94e8f" points="417.5,-432 343.5,-432 343.5,-408 417.5,-408 417.5,-432"/>
+<text text-anchor="middle" x="380.5" y="-417.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">Gammac_wu</text>
 </a>
 </g>
 </g>
 <!-- proc~load_params_ss&#45;&gt;proc~gammac_wu -->
-<g id="proc~~initialize_collision_params~~CallsGraph_edge9" class="edge">
+<g id="proc~~initialize_collision_params~~CallsGraph_edge4" class="edge">
 <title>proc~load_params_ss&#45;&gt;proc~gammac_wu</title>
-<path fill="none" stroke="#000000" d="M259.2286,-289.0819C282.5639,-298.11 314.6637,-310.5289 339.9765,-320.3221"/>
-<polygon fill="#000000" stroke="#000000" points="338.7239,-323.5902 349.3131,-323.9343 341.2497,-317.0617 338.7239,-323.5902"/>
+<path fill="none" stroke="#000000" d="M248.6306,-354.0929C267.4933,-364.9857 296.2868,-381.2041 322,-394 328.6355,-397.3021 335.7837,-400.6482 342.7272,-403.7912"/>
+<polygon fill="#000000" stroke="#000000" points="341.443,-407.0507 352.0014,-407.9281 344.2946,-400.6579 341.443,-407.0507"/>
 </g>
-<!-- interface~fio_get_field -->
-<g id="proc~~initialize_collision_params~~CallsGraph_node8" class="node">
-<title>interface~fio_get_field</title>
-<g id="a_proc~~initialize_collision_params~~CallsGraph_node8"><a xlink:href=".././interface/fio_get_field.html" xlink:title="fio_get_field">
-<polygon fill="#a7506f" stroke="#a7506f" points="415,-66 346,-66 346,-42 415,-42 415,-66"/>
-<text text-anchor="middle" x="380.5" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">fio_get_field</text>
+<!-- proc~vte_wu -->
+<g id="proc~~initialize_collision_params~~CallsGraph_node9" class="node">
+<title>proc~vte_wu</title>
+<g id="a_proc~~initialize_collision_params~~CallsGraph_node9"><a xlink:href=".././proc/vte_wu.html" xlink:title="VTe_wu">
+<polygon fill="#d94e8f" stroke="#d94e8f" points="638.5,-356 584.5,-356 584.5,-332 638.5,-332 638.5,-356"/>
+<text text-anchor="middle" x="611.5" y="-341.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">VTe_wu</text>
 </a>
 </g>
 </g>
-<!-- proc~initialize_m3d_c1_imp&#45;&gt;interface~fio_get_field -->
-<g id="proc~~initialize_collision_params~~CallsGraph_edge10" class="edge">
-<title>proc~initialize_m3d_c1_imp&#45;&gt;interface~fio_get_field</title>
-<path fill="none" stroke="#000000" d="M253.709,-104.8819C272.4766,-96.1908 298.6177,-84.4049 322,-75 326.5176,-73.1829 331.2602,-71.3539 336.0082,-69.5737"/>
-<polygon fill="#000000" stroke="#000000" points="337.5169,-72.7479 345.6911,-66.0075 335.0976,-66.1793 337.5169,-72.7479"/>
+<!-- proc~load_params_ss&#45;&gt;proc~vte_wu -->
+<g id="proc~~initialize_collision_params~~CallsGraph_edge5" class="edge">
+<title>proc~load_params_ss&#45;&gt;proc~vte_wu</title>
+<path fill="none" stroke="#000000" d="M273.0116,-333.3801C334.5481,-322.9387 448.2321,-308.4468 544,-323 554.1921,-324.5488 564.9631,-327.3422 574.8358,-330.3967"/>
+<polygon fill="#000000" stroke="#000000" points="573.7618,-333.7278 584.3542,-333.5017 575.9328,-327.0729 573.7618,-333.7278"/>
+</g>
+<!-- proc~clogee_wu -->
+<g id="proc~~initialize_collision_params~~CallsGraph_node15" class="node">
+<title>proc~clogee_wu</title>
+<g id="a_proc~~initialize_collision_params~~CallsGraph_node15"><a xlink:href=".././proc/clogee_wu.html" xlink:title="CLogee_wu">
+<polygon fill="#d94e8f" stroke="#d94e8f" points="544,-398 475,-398 475,-374 544,-374 544,-398"/>
+<text text-anchor="middle" x="509.5" y="-383.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">CLogee_wu</text>
+</a>
+</g>
+</g>
+<!-- proc~load_params_ss&#45;&gt;proc~clogee_wu -->
+<g id="proc~~initialize_collision_params~~CallsGraph_edge6" class="edge">
+<title>proc~load_params_ss&#45;&gt;proc~clogee_wu</title>
+<path fill="none" stroke="#000000" d="M273.3901,-349.9179C288.8077,-352.5562 306.1435,-355.4668 322,-358 370.7209,-365.7835 426.6753,-374.0524 464.6856,-379.5694"/>
+<polygon fill="#000000" stroke="#000000" points="464.5113,-383.0805 474.9097,-381.0498 465.5145,-376.1528 464.5113,-383.0805"/>
+</g>
+<!-- zj_mult -->
+<g id="proc~~initialize_collision_params~~CallsGraph_node10" class="node">
+<title>zj_mult</title>
+<polygon fill="#777777" stroke="#777777" points="407.5,-234 353.5,-234 353.5,-210 407.5,-210 407.5,-234"/>
+<text text-anchor="middle" x="380.5" y="-219.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">zj_mult</text>
+</g>
+<!-- proc~load_params_ms&#45;&gt;zj_mult -->
+<g id="proc~~initialize_collision_params~~CallsGraph_edge8" class="edge">
+<title>proc~load_params_ms&#45;&gt;zj_mult</title>
+<path fill="none" stroke="#000000" d="M274.5837,-236.5852C296.6139,-233.5515 322.5584,-229.9788 343.2557,-227.1287"/>
+<polygon fill="#000000" stroke="#000000" points="343.8235,-230.5836 353.2525,-225.7521 342.8685,-223.6491 343.8235,-230.5836"/>
+</g>
+<!-- zo_mult -->
+<g id="proc~~initialize_collision_params~~CallsGraph_node14" class="node">
+<title>zo_mult</title>
+<polygon fill="#777777" stroke="#777777" points="407.5,-276 353.5,-276 353.5,-252 407.5,-252 407.5,-276"/>
+<text text-anchor="middle" x="380.5" y="-261.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">zo_mult</text>
+</g>
+<!-- proc~load_params_ms&#45;&gt;zo_mult -->
+<g id="proc~~initialize_collision_params~~CallsGraph_edge9" class="edge">
+<title>proc~load_params_ms&#45;&gt;zo_mult</title>
+<path fill="none" stroke="#000000" d="M274.5837,-249.4148C296.6139,-252.4485 322.5584,-256.0212 343.2557,-258.8713"/>
+<polygon fill="#000000" stroke="#000000" points="342.8685,-262.3509 353.2525,-260.2479 343.8235,-255.4164 342.8685,-262.3509"/>
 </g>
 <!-- proc~fio_make_species -->
-<g id="proc~~initialize_collision_params~~CallsGraph_node10" class="node">
+<g id="proc~~initialize_collision_params~~CallsGraph_node5" class="node">
 <title>proc~fio_make_species</title>
-<g id="a_proc~~initialize_collision_params~~CallsGraph_node10"><a xlink:href=".././proc/fio_make_species.html" xlink:title="FIO_MAKE_SPECIES">
-<polygon fill="#d94e8f" stroke="#d94e8f" points="439,-24 322,-24 322,0 439,0 439,-24"/>
-<text text-anchor="middle" x="380.5" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">FIO_MAKE_SPECIES</text>
+<g id="a_proc~~initialize_collision_params~~CallsGraph_node5"><a xlink:href=".././proc/fio_make_species.html" xlink:title="FIO_MAKE_SPECIES">
+<polygon fill="#d94e8f" stroke="#d94e8f" points="439,-66 322,-66 322,-42 439,-42 439,-66"/>
+<text text-anchor="middle" x="380.5" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">FIO_MAKE_SPECIES</text>
 </a>
 </g>
 </g>
 <!-- proc~initialize_m3d_c1_imp&#45;&gt;proc~fio_make_species -->
-<g id="proc~~initialize_collision_params~~CallsGraph_edge11" class="edge">
+<g id="proc~~initialize_collision_params~~CallsGraph_edge10" class="edge">
 <title>proc~initialize_m3d_c1_imp&#45;&gt;proc~fio_make_species</title>
-<path fill="none" stroke="#000000" d="M238.7122,-104.8128C255.0655,-86.8642 287.9613,-53.2635 322,-33 324.9642,-31.2354 328.1004,-29.584 331.3193,-28.0451"/>
-<polygon fill="#000000" stroke="#000000" points="332.7822,-31.2254 340.5361,-24.0053 329.9721,-24.8142 332.7822,-31.2254"/>
+<path fill="none" stroke="#000000" d="M253.709,-104.8819C272.4766,-96.1908 298.6177,-84.4049 322,-75 326.5176,-73.1829 331.2602,-71.3539 336.0082,-69.5737"/>
+<polygon fill="#000000" stroke="#000000" points="337.5169,-72.7479 345.6911,-66.0075 335.0976,-66.1793 337.5169,-72.7479"/>
+</g>
+<!-- interface~fio_get_field -->
+<g id="proc~~initialize_collision_params~~CallsGraph_node6" class="node">
+<title>interface~fio_get_field</title>
+<g id="a_proc~~initialize_collision_params~~CallsGraph_node6"><a xlink:href=".././interface/fio_get_field.html" xlink:title="fio_get_field">
+<polygon fill="#a7506f" stroke="#a7506f" points="415,-24 346,-24 346,0 415,0 415,-24"/>
+<text text-anchor="middle" x="380.5" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">fio_get_field</text>
+</a>
+</g>
+</g>
+<!-- proc~initialize_m3d_c1_imp&#45;&gt;interface~fio_get_field -->
+<g id="proc~~initialize_collision_params~~CallsGraph_edge11" class="edge">
+<title>proc~initialize_m3d_c1_imp&#45;&gt;interface~fio_get_field</title>
+<path fill="none" stroke="#000000" d="M238.7122,-104.8128C255.0655,-86.8642 287.9613,-53.2635 322,-33 326.4637,-30.3427 331.3173,-27.9422 336.2563,-25.7959"/>
+<polygon fill="#000000" stroke="#000000" points="337.7982,-28.9487 345.7796,-21.9811 335.1951,-22.4507 337.7982,-28.9487"/>
 </g>
 <!-- interface~fio_open_source -->
 <g id="proc~~initialize_collision_params~~CallsGraph_node11" class="node">
@@ -473,37 +488,37 @@ public subroutine initialize_collision_params(params, spp, P)
 </g>
 </g>
 <!-- proc~initialize_m3d_c1_imp&#45;&gt;interface~fio_open_source -->
-<g id="proc~~initialize_collision_params~~CallsGraph_edge14" class="edge">
+<g id="proc~~initialize_collision_params~~CallsGraph_edge12" class="edge">
 <title>proc~initialize_m3d_c1_imp&#45;&gt;interface~fio_open_source</title>
 <path fill="none" stroke="#000000" d="M253.709,-129.1181C272.4766,-137.8092 298.6177,-149.5951 322,-159 326.5176,-160.8171 331.2602,-162.6461 336.0082,-164.4263"/>
 <polygon fill="#000000" stroke="#000000" points="335.0976,-167.8207 345.6911,-167.9925 337.5169,-161.2521 335.0976,-167.8207"/>
 </g>
 <!-- interface~fio_set_int_option -->
-<g id="proc~~initialize_collision_params~~CallsGraph_node13" class="node">
+<g id="proc~~initialize_collision_params~~CallsGraph_node12" class="node">
 <title>interface~fio_set_int_option</title>
-<g id="a_proc~~initialize_collision_params~~CallsGraph_node13"><a xlink:href=".././interface/fio_set_int_option.html" xlink:title="fio_set_int_option">
+<g id="a_proc~~initialize_collision_params~~CallsGraph_node12"><a xlink:href=".././interface/fio_set_int_option.html" xlink:title="fio_set_int_option">
 <polygon fill="#a7506f" stroke="#a7506f" points="428,-150 333,-150 333,-126 428,-126 428,-150"/>
 <text text-anchor="middle" x="380.5" y="-135.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">fio_set_int_option</text>
 </a>
 </g>
 </g>
 <!-- proc~initialize_m3d_c1_imp&#45;&gt;interface~fio_set_int_option -->
-<g id="proc~~initialize_collision_params~~CallsGraph_edge12" class="edge">
+<g id="proc~~initialize_collision_params~~CallsGraph_edge13" class="edge">
 <title>proc~initialize_m3d_c1_imp&#45;&gt;interface~fio_set_int_option</title>
 <path fill="none" stroke="#000000" d="M286.0887,-124.9991C298.1886,-126.6653 310.9362,-128.4207 323.0142,-130.0839"/>
 <polygon fill="#000000" stroke="#000000" points="322.5892,-133.5583 332.9732,-131.4553 323.5441,-126.6238 322.5892,-133.5583"/>
 </g>
 <!-- interface~fio_get_options -->
-<g id="proc~~initialize_collision_params~~CallsGraph_node14" class="node">
+<g id="proc~~initialize_collision_params~~CallsGraph_node13" class="node">
 <title>interface~fio_get_options</title>
-<g id="a_proc~~initialize_collision_params~~CallsGraph_node14"><a xlink:href=".././interface/fio_get_options.html" xlink:title="fio_get_options">
+<g id="a_proc~~initialize_collision_params~~CallsGraph_node13"><a xlink:href=".././interface/fio_get_options.html" xlink:title="fio_get_options">
 <polygon fill="#a7506f" stroke="#a7506f" points="422.5,-108 338.5,-108 338.5,-84 422.5,-84 422.5,-108"/>
 <text text-anchor="middle" x="380.5" y="-93.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">fio_get_options</text>
 </a>
 </g>
 </g>
 <!-- proc~initialize_m3d_c1_imp&#45;&gt;interface~fio_get_options -->
-<g id="proc~~initialize_collision_params~~CallsGraph_edge13" class="edge">
+<g id="proc~~initialize_collision_params~~CallsGraph_edge14" class="edge">
 <title>proc~initialize_m3d_c1_imp&#45;&gt;interface~fio_get_options</title>
 <path fill="none" stroke="#000000" d="M286.0887,-109.0009C299.9062,-107.0982 314.5685,-105.0791 328.1135,-103.2139"/>
 <polygon fill="#000000" stroke="#000000" points="328.7922,-106.6535 338.2212,-101.822 327.8372,-99.719 328.7922,-106.6535"/>
@@ -511,41 +526,41 @@ public subroutine initialize_collision_params(params, spp, P)
 <!-- proc~clogei_wu&#45;&gt;proc~vte_wu -->
 <g id="proc~~initialize_collision_params~~CallsGraph_edge15" class="edge">
 <title>proc~clogei_wu&#45;&gt;proc~vte_wu</title>
-<path fill="none" stroke="#000000" d="M542.0539,-260C552.286,-260 563.663,-260 574.1978,-260"/>
-<polygon fill="#000000" stroke="#000000" points="574.3783,-263.5001 584.3783,-260 574.3783,-256.5001 574.3783,-263.5001"/>
+<path fill="none" stroke="#000000" d="M542.0539,-344C552.286,-344 563.663,-344 574.1978,-344"/>
+<polygon fill="#000000" stroke="#000000" points="574.3783,-347.5001 584.3783,-344 574.3783,-340.5001 574.3783,-347.5001"/>
 </g>
 <!-- proc~clog0_wu -->
 <g id="proc~~initialize_collision_params~~CallsGraph_node16" class="node">
 <title>proc~clog0_wu</title>
 <g id="a_proc~~initialize_collision_params~~CallsGraph_node16"><a xlink:href=".././proc/clog0_wu.html" xlink:title="CLog0_wu">
-<polygon fill="#d94e8f" stroke="#d94e8f" points="643,-314 580,-314 580,-290 643,-290 643,-314"/>
-<text text-anchor="middle" x="611.5" y="-299.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">CLog0_wu</text>
+<polygon fill="#d94e8f" stroke="#d94e8f" points="643,-398 580,-398 580,-374 643,-374 643,-398"/>
+<text text-anchor="middle" x="611.5" y="-383.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">CLog0_wu</text>
 </a>
 </g>
 </g>
 <!-- proc~clogei_wu&#45;&gt;proc~clog0_wu -->
 <g id="proc~~initialize_collision_params~~CallsGraph_edge16" class="edge">
 <title>proc~clogei_wu&#45;&gt;proc~clog0_wu</title>
-<path fill="none" stroke="#000000" d="M538.7291,-272.0355C549.3991,-276.429 561.6342,-281.467 572.9891,-286.1426"/>
-<polygon fill="#000000" stroke="#000000" points="571.6872,-289.3915 582.2666,-289.9627 574.3525,-282.9188 571.6872,-289.3915"/>
-</g>
-<!-- proc~clogee_wu&#45;&gt;proc~vte_wu -->
-<g id="proc~~initialize_collision_params~~CallsGraph_edge17" class="edge">
-<title>proc~clogee_wu&#45;&gt;proc~vte_wu</title>
-<path fill="none" stroke="#000000" d="M538.7291,-289.9645C550.0632,-285.2975 563.1633,-279.9033 575.0986,-274.9888"/>
-<polygon fill="#000000" stroke="#000000" points="576.4506,-278.2173 584.3647,-271.1734 573.7853,-271.7445 576.4506,-278.2173"/>
-</g>
-<!-- proc~clogee_wu&#45;&gt;proc~clog0_wu -->
-<g id="proc~~initialize_collision_params~~CallsGraph_edge18" class="edge">
-<title>proc~clogee_wu&#45;&gt;proc~clog0_wu</title>
-<path fill="none" stroke="#000000" d="M544.0325,-302C552.2503,-302 561.107,-302 569.614,-302"/>
-<polygon fill="#000000" stroke="#000000" points="569.7508,-305.5001 579.7508,-302 569.7508,-298.5001 569.7508,-305.5001"/>
+<path fill="none" stroke="#000000" d="M538.7291,-356.0355C549.3991,-360.429 561.6342,-365.467 572.9891,-370.1426"/>
+<polygon fill="#000000" stroke="#000000" points="571.6872,-373.3915 582.2666,-373.9627 574.3525,-366.9188 571.6872,-373.3915"/>
 </g>
 <!-- proc~gammac_wu&#45;&gt;proc~clogee_wu -->
-<g id="proc~~initialize_collision_params~~CallsGraph_edge19" class="edge">
+<g id="proc~~initialize_collision_params~~CallsGraph_edge17" class="edge">
 <title>proc~gammac_wu&#45;&gt;proc~clogee_wu</title>
-<path fill="none" stroke="#000000" d="M417.8121,-326.1658C432.584,-322.2724 449.6845,-317.7653 465.0873,-313.7057"/>
-<polygon fill="#000000" stroke="#000000" points="466.1447,-317.0466 474.9224,-311.1135 464.3606,-310.2777 466.1447,-317.0466"/>
+<path fill="none" stroke="#000000" d="M417.8121,-410.1658C432.584,-406.2724 449.6845,-401.7653 465.0873,-397.7057"/>
+<polygon fill="#000000" stroke="#000000" points="466.1447,-401.0466 474.9224,-395.1135 464.3606,-394.2777 466.1447,-401.0466"/>
+</g>
+<!-- proc~clogee_wu&#45;&gt;proc~vte_wu -->
+<g id="proc~~initialize_collision_params~~CallsGraph_edge18" class="edge">
+<title>proc~clogee_wu&#45;&gt;proc~vte_wu</title>
+<path fill="none" stroke="#000000" d="M538.7291,-373.9645C550.0632,-369.2975 563.1633,-363.9033 575.0986,-358.9888"/>
+<polygon fill="#000000" stroke="#000000" points="576.4506,-362.2173 584.3647,-355.1734 573.7853,-355.7445 576.4506,-362.2173"/>
+</g>
+<!-- proc~clogee_wu&#45;&gt;proc~clog0_wu -->
+<g id="proc~~initialize_collision_params~~CallsGraph_edge19" class="edge">
+<title>proc~clogee_wu&#45;&gt;proc~clog0_wu</title>
+<path fill="none" stroke="#000000" d="M544.0325,-386C552.2503,-386 561.107,-386 569.614,-386"/>
+<polygon fill="#000000" stroke="#000000" points="569.7508,-389.5001 579.7508,-386 569.7508,-382.5001 569.7508,-389.5001"/>
 </g>
 </g>
 </svg>
@@ -772,13 +787,15 @@ public subroutine initialize_collision_params(params, spp, P)
     
     <section>
     <h2><span class="anchor" id="src"></span>Source Code</h2>
-    <div class="highlight"><pre><span></span>  <span class="k">subroutine </span><span class="n">initialize_collision_params</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">P</span><span class="p">)</span>
+    <div class="highlight"><pre><span></span>  <span class="k">subroutine </span><span class="n">initialize_collision_params</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">spp</span><span class="p">,</span><span class="n">P</span><span class="p">,</span><span class="n">F</span><span class="p">)</span>
     <span class="k">TYPE</span><span class="p">(</span><span class="n">KORC_PARAMS</span><span class="p">),</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">INOUT</span><span class="p">)</span> <span class="kd">::</span> <span class="n">params</span>
     <span class="k">TYPE</span><span class="p">(</span><span class="n">SPECIES</span><span class="p">),</span> <span class="k">DIMENSION</span><span class="p">(:),</span> <span class="k">ALLOCATABLE</span><span class="p">,</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">INOUT</span><span class="p">)</span>       <span class="kd">::</span> <span class="n">spp</span>
     <span class="k">TYPE</span><span class="p">(</span><span class="n">PROFILES</span><span class="p">),</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">INOUT</span><span class="p">)</span>  <span class="kd">::</span> <span class="n">P</span>
+    <span class="k">TYPE</span><span class="p">(</span><span class="n">FIELDS</span><span class="p">),</span> <span class="k">INTENT</span><span class="p">(</span><span class="n">IN</span><span class="p">)</span>                <span class="kd">::</span> <span class="n">F</span>
     <span class="kt">INTEGER</span> 				                       	<span class="kd">::</span> <span class="n">ii</span>
 
-    <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">collisions</span><span class="p">)</span> <span class="k">then</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">collisions</span><span class="p">.</span><span class="nb">or</span><span class="p">.((</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">.</span><span class="n">eq</span><span class="p">.</span><span class="s1">&#39;M3D_C1&#39;</span><span class="p">).</span><span class="nb">and</span><span class="p">.</span> <span class="p">&amp;</span>
+         <span class="n">params</span><span class="p">%</span><span class="n">radiation</span><span class="p">))</span> <span class="k">then</span>
 
 <span class="k">       if</span> <span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">mpi_params</span><span class="p">%</span><span class="n">rank</span> <span class="p">.</span><span class="n">EQ</span><span class="p">.</span> <span class="mi">0</span><span class="p">)</span> <span class="k">then</span>
 <span class="k">          write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="s1">&#39;(/,&quot;* * * * * * * INITIALIZING COLLISIONS * * * * * * *&quot;)&#39;</span><span class="p">)</span>
@@ -807,8 +824,8 @@ public subroutine initialize_collision_params(params, spp, P)
 
 <span class="cp">#ifdef M3D_C1</span>
           <span class="k">if</span> <span class="p">(</span><span class="nb">TRIM</span><span class="p">(</span><span class="n">params</span><span class="p">%</span><span class="n">field_model</span><span class="p">)</span> <span class="p">.</span><span class="n">eq</span><span class="p">.</span> <span class="s1">&#39;M3D_C1&#39;</span><span class="p">)</span> <span class="k">then     </span>
-<span class="k">             call </span><span class="n">initialize_m3d_c1_imp</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="p">&amp;</span>
-                  <span class="n">cparams_ms</span><span class="p">%</span><span class="n">num_impurity_species</span><span class="p">)</span>        
+<span class="k">             call </span><span class="n">initialize_m3d_c1_imp</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="n">F</span><span class="p">,</span><span class="n">P</span><span class="p">,</span> <span class="p">&amp;</span>
+                  <span class="n">cparams_ms</span><span class="p">%</span><span class="n">num_impurity_species</span><span class="p">,.</span><span class="n">true</span><span class="p">.)</span>        
           <span class="n">endif</span>
 <span class="cp">#endif </span>
 

@@ -95,7 +95,7 @@ CONTAINS
        write(output_unit_write,*) 'Git hash of most recent commit is: ', &
             TRIM(ctmp)
        write(output_unit_write,'(/)')      
-       CLOSE(default_unit_open)
+       CLOSE(default_unit_open,STATUS='DELETE')
 
        OPEN(UNIT=default_unit_open,FILE='git_diff.txt', &
             STATUS='OLD',POSITION='REWIND')
@@ -108,7 +108,7 @@ CONTAINS
              write(6,*) 'Error reading git_diff.txt'
              call korc_abort
           else if (read_stat.lt.0) then
-             CLOSE(default_unit_open)
+             CLOSE(default_unit_open,STATUS='DELETE')
        
              write(output_unit_write,'("* * * * * * * * * * * * * * * * *",/)')
              RETURN

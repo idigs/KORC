@@ -251,7 +251,7 @@ public subroutine deallocate_variables(params, F, P, spp)
   
 <tr>
   
-  <td><span class="anchor" id="variable-f~88"></span>type(FIELDS),</td>
+  <td><span class="anchor" id="variable-f~90"></span>type(FIELDS),</td>
   <td>intent(inout)</td>
   <td></td>
   
@@ -606,7 +606,7 @@ public subroutine deallocate_variables(params, F, P, spp)
        <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">PSI_P</span><span class="p">)</span>
        <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">ne</span><span class="p">)</span>
        <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">ni</span><span class="p">)</span>
-       <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">nimp</span><span class="p">)</span>
+       <span class="k">if</span> <span class="p">(</span><span class="nb">ALLOCATED</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">nimp</span><span class="p">))</span> <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">nimp</span><span class="p">)</span>
        <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Te</span><span class="p">)</span>
        <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">Zeff</span><span class="p">)</span>
        <span class="k">DEALLOCATE</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">%</span><span class="n">g</span><span class="p">)</span>

@@ -8,6 +8,7 @@ MODULE korc_m3d_c1
   USE, INTRINSIC :: iso_c_binding
   USE korc_types
   USE korc_input
+  USE korc_HDF5
 
   IMPLICIT NONE
 
@@ -30,6 +31,8 @@ MODULE korc_m3d_c1
   INTEGER (C_INT), PARAMETER :: FIO_ELECTRIC_FIELD = 1001
   INTEGER (C_INT), PARAMETER :: FIO_MAGNETIC_FIELD = 1003
   INTEGER (C_INT), PARAMETER :: FIO_VECTOR_POTENTIAL = 1002
+
+  INTEGER (C_INT), PARAMETER :: FIO_TIME = 7001
 
   INTERFACE
      INTEGER (C_INT) FUNCTION fio_add_field(icfield, ifield, op, fac)      &
@@ -216,36 +219,99 @@ MODULE korc_m3d_c1
      END FUNCTION fio_set_int_option
   END INTERFACE
 
+  INTERFACE
+     INTEGER (C_INT) FUNCTION fio_get_real_field_parameter(ifield, t, p) &
+          BIND(C, NAME='fio_get_real_field_parameter')
+       USE, INTRINSIC :: iso_c_binding
+
+       IMPLICIT NONE
+
+       integer(c_int), intent(in), value :: ifield, t
+       real(c_double) :: p
+     END FUNCTION fio_get_real_field_parameter
+  END INTERFACE
+
 CONTAINS
 
-  SUBROUTINE initialize_m3d_c1(params, F, P, spp)
+  SUBROUTINE initialize_m3d_c1(params, F, P, spp,init)
 
-    TYPE(KORC_PARAMS), INTENT(IN)           :: params
+    TYPE(KORC_PARAMS), INTENT(INOUT)           :: params
     TYPE(FIELDS), INTENT(INOUT)                :: F
     TYPE(PROFILES), INTENT(INOUT)              :: P
     TYPE(SPECIES), DIMENSION(:), INTENT(INOUT) :: spp
-
+    LOGICAL, INTENT(IN)  :: init
+    
     INTEGER                                    :: ii
     INTEGER                                    :: pp
     INTEGER                                    :: status
     INTEGER                                    :: isrc
+    real(c_double)  ::  time0,time1
+    INTEGER (C_INT)                         :: M3D_C1_tmp
 
 
-    F%Efield = Efield
-    F%PSIp_lim=PSIp_lim
-    F%PSIp_0=PSIp_0
-    
+    if (init) then
+       F%Efield = Efield
+       F%PSIp_lim=PSIp_lim
+       F%PSIp_0=PSIp_0
+       F%ReInterp_2x1t=ReInterp_2x1t
+
+       if (params%proceed) then
+          call load_prev_iter(params)
+          F%ind0_2x1t=params%prev_iter_2x1t+1
+       else
+          F%ind0_2x1t=ind0_2x1t
+       end if
+
+       F%ind_2x1t=F%ind0_2x1t
+       
+    end if
+
     status = fio_open_source(FIO_M3DC1_SOURCE,           &
          TRIM(params%magnetic_field_filename)            &
-         &                         // C_NULL_CHAR, isrc)
-
+         // C_NULL_CHAR, isrc)
+    
     status = fio_get_options(isrc)
-    status = fio_set_int_option(FIO_TIMESLICE, params%time_slice)
+       
 
+    if (.not.F%ReInterp_2x1t) then
+       status = fio_set_int_option(FIO_TIMESLICE, params%time_slice)
+    else
+       status = fio_set_int_option(FIO_TIMESLICE, F%ind_2x1t)
+    end if
+
+    
     status = fio_get_field(isrc, FIO_MAGNETIC_FIELD, F%M3D_C1_B)
     status = fio_get_field(isrc, FIO_ELECTRIC_FIELD, F%M3D_C1_E)
     status = fio_get_field(isrc, FIO_VECTOR_POTENTIAL, F%M3D_C1_A)
 
+    status = fio_get_real_field_parameter(F%M3D_C1_B, FIO_TIME, time0)
+
+    write(output_unit_write,*) 'FIO present time',time0
+
+    if (F%ReInterp_2x1t) then
+       status = fio_set_int_option(FIO_TIMESLICE, F%ind_2x1t+1)
+
+       status = fio_get_field(isrc, FIO_MAGNETIC_FIELD, M3D_C1_tmp)
+       
+       status = fio_get_real_field_parameter(M3D_C1_tmp, FIO_TIME, time1)
+       write(output_unit_write,*) 'FIO next time',time1
+
+       status = fio_set_int_option(FIO_TIMESLICE, F%ind_2x1t)
+
+       params%snapshot_frequency=time1-time0
+
+       !write(6,*) 'snapshot_frequency',params%snapshot_frequency
+       !write(6,*) 'dt',params%dt
+       
+       if (.not.init) then
+          
+          params%t_skip = FLOOR(params%snapshot_frequency/params%cpp%time/ &
+               params%dt,ip)
+          
+       end if
+              
+    end if    
+    
     if (.not.F%Efield) F%M3D_C1_E=-1
 
     status = fio_set_int_option(FIO_SPECIES, FIO_ELECTRON);
@@ -254,23 +320,26 @@ CONTAINS
 
     status = fio_set_int_option(FIO_SPECIES, FIO_MAIN_ION);
     status = fio_get_field(isrc, FIO_DENSITY, P%M3D_C1_ni);
-    
+
+
+    if (init) then
     !  Hardcode Bo to one for now until a better method of determining the a
     !  characteristic magnetic field value.
-    F%Bo = 1.0
-    F%Eo = 1.0
-    F%Ro = 1.0
-    F%Zo = 1.0        
+       F%Bo = 1.0
+       F%Eo = 1.0
+       F%Ro = 1.0
+       F%Zo = 1.0        
 
-    do ii = 1, params%num_species
+       do ii = 1, params%num_species
 
-       do pp = 1, spp(ii)%ppp
-          status = fio_allocate_search_hint(isrc, spp(ii)%vars%hint(pp))
-          !spp(ii)%vars%hint(pp)=c_null_ptr
+          do pp = 1, spp(ii)%ppp
+             status = fio_allocate_search_hint(isrc, spp(ii)%vars%hint(pp))
+             !spp(ii)%vars%hint(pp)=c_null_ptr
+          end do
+
+          spp(ii)%vars%cart = .false.
        end do
-
-       spp(ii)%vars%cart = .false.
-    end do
+    end if
 
     if (params%mpi_params%rank .EQ. 0) then
        write(output_unit_write,*) 'Calculate B',F%M3D_C1_B
@@ -283,29 +352,49 @@ CONTAINS
        
   END SUBROUTINE initialize_m3d_c1
   
-  SUBROUTINE initialize_m3d_c1_imp(params, P,num_imp)
+  SUBROUTINE initialize_m3d_c1_imp(params,F,P,num_imp,init)
 
     TYPE(KORC_PARAMS), INTENT(IN)           :: params
+    TYPE(FIELDS), INTENT(IN)                :: F
     TYPE(PROFILES), INTENT(INOUT)              :: P
     INTEGER, INTENT(IN)				:: num_imp
+    LOGICAL, INTENT(IN)  :: init
 
     INTEGER                                    :: ii
     INTEGER                                    :: status
     INTEGER                                    :: isrc
+    INTEGER,ALLOCATABLE,DIMENSION(:)          :: Zo
+    INTEGER  :: A,Zo1
 
-    
     status = fio_open_source(FIO_M3DC1_SOURCE,           &
          TRIM(params%magnetic_field_filename)            &
-         &                         // C_NULL_CHAR, isrc)
+         // C_NULL_CHAR, isrc)
 
     status = fio_get_options(isrc)
-    status = fio_set_int_option(FIO_TIMESLICE, params%time_slice)
+       
+    
+    if (.not.F%ReInterp_2x1t) then
+       status = fio_set_int_option(FIO_TIMESLICE, params%time_slice)
+    else
+       status = fio_set_int_option(FIO_TIMESLICE, F%ind_2x1t)
+    end if
 
-    ALLOCATE(P%M3D_C1_nimp(num_imp))
+    if (init) ALLOCATE(P%M3D_C1_nimp(num_imp))
+
+    !write(6,*) size(params%Zj)
+    !write(6,*) size(params%Zj(ubound(params%Zj)))
+    Zo=int(params%Zj(ubound(params%Zj)))
+    Zo1=Zo(1)
+
+    if (Zo1.eq.18) then
+       A=40
+    else if (Zo1.eq.6) then
+       A=12
+    end if
     
     do ii=1,num_imp
        status = fio_set_int_option(FIO_SPECIES, &
-            FIO_MAKE_SPECIES(40, 18, 18+1-ii));
+            FIO_MAKE_SPECIES(A, Zo1, Zo1+1-ii));
        status = fio_get_field(isrc, FIO_DENSITY, P%M3D_C1_nimp(ii));
     end do
 

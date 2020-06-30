@@ -245,10 +245,11 @@ CONTAINS
     call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
   end subroutine initialize_korc_parameters
 
-  subroutine define_time_step(params)
+  subroutine define_time_step(params,F)
     !! @note Subroutine that defines or loads from restart file the time
     !! stepping parameters. @endnote
     TYPE(KORC_PARAMS), INTENT(INOUT) :: params
+    TYPE(FIELDS), INTENT(INOUT) :: F
     !! Core KORC simulation parameters.
 
     if (params%restart) then
@@ -282,7 +283,7 @@ CONTAINS
        params%dt = params%dt*(2.0_rp*C_PI*params%cpp%time_r)
 
        params%t_steps = CEILING(params%simulation_time/params%dt,ip)
-
+       
        params%output_cadence = FLOOR(params%snapshot_frequency/params%dt,ip)
 
        if (params%output_cadence.EQ.0_ip) params%output_cadence = 1_ip
@@ -292,8 +293,13 @@ CONTAINS
        params%restart_output_cadence = FLOOR(params%restart_overwrite_frequency/ &
             params%dt,ip)
 
-       params%t_skip=min(params%t_steps,params%output_cadence)
-       params%t_skip=max(1_ip,params%t_skip)
+       if (.not.F%ReInterp_2x1t) then
+          params%t_skip=min(params%t_steps,params%output_cadence)
+          params%t_skip=max(1_ip,params%t_skip)
+       else
+          params%t_skip=params%output_cadence
+          params%t_skip=max(1_ip,params%t_skip)
+       end if
 
     end if
 

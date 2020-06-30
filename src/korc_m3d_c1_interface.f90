@@ -8,6 +8,7 @@ MODULE korc_m3d_c1
   USE, INTRINSIC :: iso_c_binding
   USE korc_types
   USE korc_input
+  USE korc_HDF5
 
   IMPLICIT NONE
 
@@ -253,9 +254,16 @@ CONTAINS
        F%PSIp_lim=PSIp_lim
        F%PSIp_0=PSIp_0
        F%ReInterp_2x1t=ReInterp_2x1t
-       F%ind0_2x1t=ind0_2x1t
-       F%ind_2x1t=F%ind0_2x1t
 
+       if (params%proceed) then
+          call load_prev_iter(params)
+          F%ind0_2x1t=params%prev_iter_2x1t+1
+       else
+          F%ind0_2x1t=ind0_2x1t
+       end if
+
+       F%ind_2x1t=F%ind0_2x1t
+       
     end if
 
     status = fio_open_source(FIO_M3DC1_SOURCE,           &

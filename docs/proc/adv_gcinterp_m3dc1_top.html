@@ -132,7 +132,7 @@
      <li><i class="fa fa-list-ol"></i>
        <a data-toggle="tooltip"
     data-placement="bottom" data-html="true"
-    title=" 0.5% of total for procedures.">94 statements</a>
+    title=" 0.5% of total for procedures.">98 statements</a>
      </li> 
      
      
@@ -280,7 +280,7 @@ public subroutine adv_GCinterp_m3dc1_top(params, spp, P, F)
   
 <tr>
   
-  <td><span class="anchor" id="variable-f~30"></span>type(FIELDS),</td>
+  <td><span class="anchor" id="variable-f~31"></span>type(FIELDS),</td>
   <td>intent(inout)</td>
   <td></td>
   
@@ -554,6 +554,12 @@ public subroutine adv_GCinterp_m3dc1_top(params, spp, P, F)
 
 
           <span class="k">do </span><span class="n">tt</span><span class="o">=</span><span class="mi">1_ip</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span>
+
+             <span class="k">if</span> <span class="p">(</span><span class="nb">mod</span><span class="p">(</span><span class="n">tt</span><span class="p">,</span><span class="n">params</span><span class="p">%</span><span class="n">t_skip</span><span class="o">/</span><span class="mi">10</span><span class="p">).</span><span class="n">eq</span><span class="p">.</span><span class="mi">0</span><span class="p">)</span> <span class="k">then</span>
+<span class="k">                write</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">,</span><span class="o">*</span><span class="p">)</span> <span class="s1">&#39;iteration&#39;</span><span class="p">,</span><span class="n">tt</span>
+                <span class="nb">flush</span><span class="p">(</span><span class="n">output_unit_write</span><span class="p">)</span>
+             <span class="n">endif</span>
+             
              <span class="k">call </span><span class="n">advance_GCinterp_m3dc1_vars</span><span class="p">(</span><span class="n">spp</span><span class="p">(</span><span class="n">ii</span><span class="p">)%</span><span class="n">vars</span><span class="p">,</span><span class="n">pp</span><span class="p">,</span><span class="n">tt</span><span class="p">,</span> <span class="p">&amp;</span>
                   <span class="n">params</span><span class="p">,</span><span class="n">Y_R</span><span class="p">,</span><span class="n">Y_PHI</span><span class="p">,</span><span class="n">Y_Z</span><span class="p">,</span><span class="n">V_PLL</span><span class="p">,</span><span class="n">V_MU</span><span class="p">,</span><span class="n">q_cache</span><span class="p">,</span><span class="n">m_cache</span><span class="p">,</span> <span class="p">&amp;</span>
                   <span class="n">flagCon</span><span class="p">,</span><span class="n">flagCol</span><span class="p">,</span> <span class="p">&amp;</span>

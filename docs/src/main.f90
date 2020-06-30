@@ -16,6 +16,7 @@ program main
   use korc_finalize
   use korc_profiles
   use korc_input
+  use korc_m3d_c1
 
   implicit none
 
@@ -108,7 +109,7 @@ program main
         write(output_unit_write,*) "* * * * INITIALIZING M3D-C1 INTERFACE * * * *"
      endif
      
-     call initialize_m3d_c1(params, F, P, spp)
+     call initialize_m3d_c1(params, F, P, spp,.true.)
 
      if (params%mpi_params%rank .EQ. 0) then
         write(output_unit_write,*) "* * * * * * * * * * * * * * * * * * * * * * *"
@@ -125,7 +126,7 @@ program main
   !! Also finds the maximum non-relativistic and relativistic cyclotron frequencies
   !! to be used for setting the timstep for the time-evolution algorithms.
 
-  call initialize_collision_params(params,spp,P)
+  call initialize_collision_params(params,spp,P,F)
   !! <h4>6\. Initialize Collision Parameters</h4>
   !!
   !! Subroutine [[initialize_collision_params]] in [[korc_collisions]] that
@@ -134,7 +135,7 @@ program main
   !! MS reads in namelist &CollisionParamsMultipleSpecies while SS reads in
   !! namelist &CollisionParamsSingleSpecies. 
   
-  call define_time_step(params)
+  call define_time_step(params,F)
   !! <h4>10\. Define Time Step</h4>
   !!
   !! Subroutine [[define_time_step]] in [[korc_initialize]] either loads
@@ -233,7 +234,7 @@ program main
   
   ! * * * INITIALIZATION STAGE * * *
 
-
+  flush(output_unit_write)
 
 !  write(output_unit_write,'("GC init eta: ",E17.10)') spp(1)%vars%eta
 
@@ -300,9 +301,10 @@ program main
   ! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !
 
 !  write(output_unit_write,'("pre ppusher loop eta: ",E17.10)') spp(1)%vars%eta
-  
-  call timing_KORC(params)
 
+  flush(output_unit_write)
+  call timing_KORC(params)
+  
 
   if (params%orbit_model(1:2).eq.'FO'.and.params%field_model(1:3).eq.'ANA') then
      call FO_init(params,F,spp,.false.,.true.)
@@ -522,7 +524,8 @@ program main
      end do
   end if
 
-  if (params%orbit_model(1:2).eq.'GC'.and.params%field_model.eq.'M3D_C1') then
+  if (params%orbit_model(1:2).eq.'GC'.and.params%field_model.eq.'M3D_C1'.and. &
+       .not.F%ReInterp_2x1t) then
      do it=params%ito,params%t_steps,params%t_skip
         call adv_GCinterp_m3dc1_top(params,spp,P,F)
         
@@ -533,6 +536,40 @@ program main
         call save_simulation_outputs(params,spp,F)
         call save_restart_variables(params,spp,F)
         
+     end do
+  end if
+
+  if (params%orbit_model(1:2).eq.'GC'.and.params%field_model.eq.'M3D_C1'.and. &
+       F%ReInterp_2x1t) then
+
+     do it=F%ind0_2x1t,params%time_slice
+
+        if (it.gt.0) then
+           call initialize_m3d_c1(params, F, P, spp,.false.)
+           if (params%collisions) then
+              call initialize_m3d_c1_imp(params,F,P, &
+                   params%num_impurity_species,.false.)
+           end if
+        end if
+           
+        write(output_unit_write,*) 'tskip',params%t_skip
+        flush(output_unit_write)
+        
+        call adv_GCinterp_m3dc1_top(params,spp,P,F)
+               
+        params%it = params%it+params%t_skip
+        params%time = params%init_time &
+             +REAL(params%it,rp)*params%dt 
+        
+        call save_simulation_outputs(params,spp,F)
+        call save_restart_variables(params,spp,F)
+
+        F%ind_2x1t=F%ind_2x1t+1_ip
+        if (params%mpi_params%rank .EQ. 0) then
+           write(output_unit_write,*) 'KORC time ',params%time*params%cpp%time
+           flush(output_unit_write)
+        end if
+              
      end do
   end if
   

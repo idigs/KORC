@@ -45,7 +45,7 @@ module korc_input
     ! specified in "filename".
     ! 'UNIFORM' A uniform magnetic field used to advance only electrons' 
     ! velocity.
-  CHARACTER(30) :: magnetic_field_filename = 'C1.h5'
+  CHARACTER(75) :: magnetic_field_filename = 'C1.h5'
 !  magnetic_field_filename = 'JFIT_D3D_164409_1405ms.h5'
   INTEGER :: time_slice = 000
   REAL(rp) :: rmax =  1.60
@@ -638,10 +638,21 @@ CONTAINS
     if (outputs_list(tmp:tmp).ne.'}') then
        if(params%mpi_params%rank.eq.0) then
           write(6,*) &
-               'Check that enough characters are allocated for outputs list!'
+               'Check that enough characters are allocated for&
+               & outputs list!'
        end if
        call korc_abort
-    end if    
+    end if
+
+    tmp=len(TRIM(magnetic_field_filename))
+    if (magnetic_field_filename(tmp-2:tmp).ne.'.h5') then
+       if(params%mpi_params%rank.eq.0) then
+          write(6,*) &
+               'Check that enough characters are allocated for&
+               & magnetic field filename!'
+       end if
+       call korc_abort
+    end if 
       
     end subroutine read_namelist
 

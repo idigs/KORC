@@ -815,8 +815,10 @@ CONTAINS
     call init_random_seed()
 
    ! write(output_unit_write,*) 'before get_fields'
-    
+
+    !write(6,*) 'before first get fields'
     call get_fields(params,vars,F)
+    !write(6,*) 'before second get fields'
 
     !    write(output_unit_write,'("Bx: ",E17.10)') vars%B(:,1)
     !    write(output_unit_write,'("By: ",E17.10)') vars%B(:,2)

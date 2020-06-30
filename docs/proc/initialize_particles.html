@@ -255,7 +255,7 @@ public subroutine initialize_particles(params, F, P, spp)
   
 <tr>
   
-  <td><span class="anchor" id="variable-f~86"></span>type(FIELDS),</td>
+  <td><span class="anchor" id="variable-f~88"></span>type(FIELDS),</td>
   <td>intent(in)</td>
   <td></td>
   
@@ -369,39 +369,42 @@ and <a href="../module/korc_fields.html">korc_fields</a>.</p></td>
 <polygon fill="none" stroke="#000000" points="95,-297 0,-297 0,-273 95,-273 95,-297"/>
 <text text-anchor="middle" x="47.5" y="-282.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#000000">initialize_particles</text>
 </g>
-<!-- spong_b -->
+<!-- dz -->
 <g id="proc~~initialize_particles~~CallsGraph_node2" class="node">
-<title>spong_b</title>
+<title>dz</title>
 <polygon fill="#777777" stroke="#777777" points="220.5,-570 166.5,-570 166.5,-546 220.5,-546 220.5,-570"/>
-<text text-anchor="middle" x="193.5" y="-555.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">spong_b</text>
+<text text-anchor="middle" x="193.5" y="-555.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">dz</text>
 </g>
-<!-- proc~initialize_particles&#45;&gt;spong_b -->
+<!-- proc~initialize_particles&#45;&gt;dz -->
 <g id="proc~~initialize_particles~~CallsGraph_edge1" class="edge">
-<title>proc~initialize_particles&#45;&gt;spong_b</title>
+<title>proc~initialize_particles&#45;&gt;dz</title>
 <path fill="none" stroke="#000000" d="M47.8719,-297.1974C49.7607,-337.3687 61.2409,-466.9484 131,-537 137.9539,-543.9831 147.2994,-548.6444 156.6413,-551.7558"/>
 <polygon fill="#000000" stroke="#000000" points="155.7004,-555.1269 166.2748,-554.4695 157.5984,-548.3892 155.7004,-555.1269"/>
 </g>
-<!-- zo -->
+<!-- proc~initial_energy_pitch_dist -->
 <g id="proc~~initialize_particles~~CallsGraph_node3" class="node">
-<title>zo</title>
-<polygon fill="#777777" stroke="#777777" points="220.5,-528 166.5,-528 166.5,-504 220.5,-504 220.5,-528"/>
-<text text-anchor="middle" x="193.5" y="-513.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">zo</text>
+<title>proc~initial_energy_pitch_dist</title>
+<g id="a_proc~~initialize_particles~~CallsGraph_node3"><a xlink:href=".././proc/initial_energy_pitch_dist.html" xlink:title="initial_energy_pitch_dist">
+<polygon fill="#d9534f" stroke="#d9534f" points="256,-528 131,-528 131,-504 256,-504 256,-528"/>
+<text text-anchor="middle" x="193.5" y="-513.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">initial_energy_pitch_dist</text>
+</a>
 </g>
-<!-- proc~initialize_particles&#45;&gt;zo -->
-<g id="proc~~initialize_particles~~CallsGraph_edge2" class="edge">
-<title>proc~initialize_particles&#45;&gt;zo</title>
-<path fill="none" stroke="#000000" d="M48.7929,-297.1612C53.2289,-332.8268 71.0368,-438.2077 131,-495 138.0188,-501.6476 147.2086,-506.1947 156.3731,-509.3036"/>
-<polygon fill="#000000" stroke="#000000" points="155.6251,-512.7306 166.2037,-512.144 157.5683,-506.0057 155.6251,-512.7306"/>
 </g>
-<!-- dr -->
-<g id="proc~~initialize_particles~~CallsGraph_node4" class="node">
-<title>dr</title>
-<polygon fill="#777777" stroke="#777777" points="220.5,-486 166.5,-486 166.5,-462 220.5,-462 220.5,-486"/>
-<text text-anchor="middle" x="193.5" y="-471.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">dr</text>
-</g>
-<!-- proc~initialize_particles&#45;&gt;dr -->
+<!-- proc~initialize_particles&#45;&gt;proc~initial_energy_pitch_dist -->
 <g id="proc~~initialize_particles~~CallsGraph_edge3" class="edge">
-<title>proc~initialize_particles&#45;&gt;dr</title>
+<title>proc~initialize_particles&#45;&gt;proc~initial_energy_pitch_dist</title>
+<path fill="none" stroke="#000000" d="M48.7929,-297.1612C53.2289,-332.8268 71.0368,-438.2077 131,-495 132.2856,-496.2176 133.644,-497.3647 135.0618,-498.4455"/>
+<polygon fill="#000000" stroke="#000000" points="133.4153,-501.5455 143.7366,-503.9374 137.1596,-495.6311 133.4153,-501.5455"/>
+</g>
+<!-- sigmaz -->
+<g id="proc~~initialize_particles~~CallsGraph_node4" class="node">
+<title>sigmaz</title>
+<polygon fill="#777777" stroke="#777777" points="220.5,-486 166.5,-486 166.5,-462 220.5,-462 220.5,-486"/>
+<text text-anchor="middle" x="193.5" y="-471.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">sigmaz</text>
+</g>
+<!-- proc~initialize_particles&#45;&gt;sigmaz -->
+<g id="proc~~initialize_particles~~CallsGraph_edge4" class="edge">
+<title>proc~initialize_particles&#45;&gt;sigmaz</title>
 <path fill="none" stroke="#000000" d="M50.1282,-297.1231C57.3995,-327.7912 80.6633,-409.1319 131,-453 138.2246,-459.2962 147.408,-463.7202 156.4965,-466.8232"/>
 <polygon fill="#000000" stroke="#000000" points="155.6421,-470.2203 166.2241,-469.6979 157.626,-463.5073 155.6421,-470.2203"/>
 </g>
@@ -412,145 +415,142 @@ and <a href="../module/korc_fields.html">korc_fields</a>.</p></td>
 <text text-anchor="middle" x="193.5" y="-429.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">ro</text>
 </g>
 <!-- proc~initialize_particles&#45;&gt;ro -->
-<g id="proc~~initialize_particles~~CallsGraph_edge4" class="edge">
+<g id="proc~~initialize_particles~~CallsGraph_edge5" class="edge">
 <title>proc~initialize_particles&#45;&gt;ro</title>
 <path fill="none" stroke="#000000" d="M52.3875,-297.3574C62.931,-322.4571 90.2047,-379.674 131,-411 138.5341,-416.7853 147.7511,-421.0265 156.7683,-424.1169"/>
 <polygon fill="#000000" stroke="#000000" points="155.7999,-427.4805 166.3854,-427.0371 157.8338,-420.7825 155.7999,-427.4805"/>
 </g>
-<!-- proc~initial_energy_pitch_dist -->
+<!-- xtrace -->
 <g id="proc~~initialize_particles~~CallsGraph_node6" class="node">
-<title>proc~initial_energy_pitch_dist</title>
-<g id="a_proc~~initialize_particles~~CallsGraph_node6"><a xlink:href=".././proc/initial_energy_pitch_dist.html" xlink:title="initial_energy_pitch_dist">
-<polygon fill="#d9534f" stroke="#d9534f" points="256,-402 131,-402 131,-378 256,-378 256,-402"/>
-<text text-anchor="middle" x="193.5" y="-387.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">initial_energy_pitch_dist</text>
-</a>
+<title>xtrace</title>
+<polygon fill="#777777" stroke="#777777" points="220.5,-402 166.5,-402 166.5,-378 220.5,-378 220.5,-402"/>
+<text text-anchor="middle" x="193.5" y="-387.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">xtrace</text>
 </g>
-</g>
-<!-- proc~initialize_particles&#45;&gt;proc~initial_energy_pitch_dist -->
-<g id="proc~~initialize_particles~~CallsGraph_edge5" class="edge">
-<title>proc~initialize_particles&#45;&gt;proc~initial_energy_pitch_dist</title>
-<path fill="none" stroke="#000000" d="M56.4307,-297.0452C70.4226,-315.1196 99.2183,-349.2394 131,-369 133.7705,-370.7226 136.6987,-372.3219 139.7153,-373.804"/>
-<polygon fill="#000000" stroke="#000000" points="138.4001,-377.0495 148.9603,-377.905 141.2385,-370.6507 138.4001,-377.0495"/>
-</g>
-<!-- eo_lims -->
-<g id="proc~~initialize_particles~~CallsGraph_node7" class="node">
-<title>eo_lims</title>
-<polygon fill="#777777" stroke="#777777" points="220.5,-360 166.5,-360 166.5,-336 220.5,-336 220.5,-360"/>
-<text text-anchor="middle" x="193.5" y="-345.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">eo_lims</text>
-</g>
-<!-- proc~initialize_particles&#45;&gt;eo_lims -->
+<!-- proc~initialize_particles&#45;&gt;xtrace -->
 <g id="proc~~initialize_particles~~CallsGraph_edge6" class="edge">
-<title>proc~initialize_particles&#45;&gt;eo_lims</title>
+<title>proc~initialize_particles&#45;&gt;xtrace</title>
+<path fill="none" stroke="#000000" d="M56.4307,-297.0452C70.4226,-315.1196 99.2183,-349.2394 131,-369 138.8398,-373.8745 147.9429,-377.7619 156.7353,-380.8004"/>
+<polygon fill="#000000" stroke="#000000" points="155.856,-384.1932 166.4461,-383.8776 157.9706,-377.5202 155.856,-384.1932"/>
+</g>
+<!-- zo -->
+<g id="proc~~initialize_particles~~CallsGraph_node7" class="node">
+<title>zo</title>
+<polygon fill="#777777" stroke="#777777" points="220.5,-360 166.5,-360 166.5,-336 220.5,-336 220.5,-360"/>
+<text text-anchor="middle" x="193.5" y="-345.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">zo</text>
+</g>
+<!-- proc~initialize_particles&#45;&gt;zo -->
+<g id="proc~~initialize_particles~~CallsGraph_edge7" class="edge">
+<title>proc~initialize_particles&#45;&gt;zo</title>
 <path fill="none" stroke="#000000" d="M69.4261,-297.1049C86.0385,-306.0101 109.583,-318.0686 131,-327 139.201,-330.42 148.1751,-333.6968 156.6994,-336.6028"/>
 <polygon fill="#000000" stroke="#000000" points="155.8328,-340.0028 166.4262,-339.8302 158.0372,-333.359 155.8328,-340.0028"/>
 </g>
-<!-- phio -->
+<!-- dr -->
 <g id="proc~~initialize_particles~~CallsGraph_node8" class="node">
-<title>phio</title>
+<title>dr</title>
 <polygon fill="#777777" stroke="#777777" points="220.5,-318 166.5,-318 166.5,-294 220.5,-294 220.5,-318"/>
-<text text-anchor="middle" x="193.5" y="-303.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">phio</text>
+<text text-anchor="middle" x="193.5" y="-303.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">dr</text>
 </g>
-<!-- proc~initialize_particles&#45;&gt;phio -->
-<g id="proc~~initialize_particles~~CallsGraph_edge7" class="edge">
-<title>proc~initialize_particles&#45;&gt;phio</title>
+<!-- proc~initialize_particles&#45;&gt;dr -->
+<g id="proc~~initialize_particles~~CallsGraph_edge8" class="edge">
+<title>proc~initialize_particles&#45;&gt;dr</title>
 <path fill="none" stroke="#000000" d="M95.3059,-291.8762C115.1417,-294.7293 137.8062,-297.9893 156.3593,-300.6578"/>
 <polygon fill="#000000" stroke="#000000" points="156.0802,-304.1536 166.4766,-302.1131 157.0768,-297.2249 156.0802,-304.1536"/>
 </g>
-<!-- sigmar -->
+<!-- phio -->
 <g id="proc~~initialize_particles~~CallsGraph_node9" class="node">
-<title>sigmar</title>
+<title>phio</title>
 <polygon fill="#777777" stroke="#777777" points="220.5,-276 166.5,-276 166.5,-252 220.5,-252 220.5,-276"/>
-<text text-anchor="middle" x="193.5" y="-261.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">sigmar</text>
+<text text-anchor="middle" x="193.5" y="-261.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">phio</text>
 </g>
-<!-- proc~initialize_particles&#45;&gt;sigmar -->
-<g id="proc~~initialize_particles~~CallsGraph_edge8" class="edge">
-<title>proc~initialize_particles&#45;&gt;sigmar</title>
+<!-- proc~initialize_particles&#45;&gt;phio -->
+<g id="proc~~initialize_particles~~CallsGraph_edge9" class="edge">
+<title>proc~initialize_particles&#45;&gt;phio</title>
 <path fill="none" stroke="#000000" d="M95.3059,-278.1238C115.1417,-275.2707 137.8062,-272.0107 156.3593,-269.3422"/>
 <polygon fill="#000000" stroke="#000000" points="157.0768,-272.7751 166.4766,-267.8869 156.0802,-265.8464 157.0768,-272.7751"/>
 </g>
-<!-- dz -->
+<!-- spong_b -->
 <g id="proc~~initialize_particles~~CallsGraph_node10" class="node">
-<title>dz</title>
+<title>spong_b</title>
 <polygon fill="#777777" stroke="#777777" points="220.5,-234 166.5,-234 166.5,-210 220.5,-210 220.5,-234"/>
-<text text-anchor="middle" x="193.5" y="-219.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">dz</text>
+<text text-anchor="middle" x="193.5" y="-219.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">spong_b</text>
 </g>
-<!-- proc~initialize_particles&#45;&gt;dz -->
-<g id="proc~~initialize_particles~~CallsGraph_edge9" class="edge">
-<title>proc~initialize_particles&#45;&gt;dz</title>
+<!-- proc~initialize_particles&#45;&gt;spong_b -->
+<g id="proc~~initialize_particles~~CallsGraph_edge12" class="edge">
+<title>proc~initialize_particles&#45;&gt;spong_b</title>
 <path fill="none" stroke="#000000" d="M69.4261,-272.8951C86.0385,-263.9899 109.583,-251.9314 131,-243 139.201,-239.58 148.1751,-236.3032 156.6994,-233.3972"/>
 <polygon fill="#000000" stroke="#000000" points="158.0372,-236.641 166.4262,-230.1698 155.8328,-229.9972 158.0372,-236.641"/>
 </g>
-<!-- spong_dlam -->
+<!-- eo_lims -->
 <g id="proc~~initialize_particles~~CallsGraph_node11" class="node">
-<title>spong_dlam</title>
-<polygon fill="#777777" stroke="#777777" points="228.5,-192 158.5,-192 158.5,-168 228.5,-168 228.5,-192"/>
-<text text-anchor="middle" x="193.5" y="-177.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">spong_dlam</text>
+<title>eo_lims</title>
+<polygon fill="#777777" stroke="#777777" points="220.5,-192 166.5,-192 166.5,-168 220.5,-168 220.5,-192"/>
+<text text-anchor="middle" x="193.5" y="-177.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">eo_lims</text>
 </g>
-<!-- proc~initialize_particles&#45;&gt;spong_dlam -->
+<!-- proc~initialize_particles&#45;&gt;eo_lims -->
 <g id="proc~~initialize_particles~~CallsGraph_edge10" class="edge">
-<title>proc~initialize_particles&#45;&gt;spong_dlam</title>
-<path fill="none" stroke="#000000" d="M56.4307,-272.9548C70.4226,-254.8804 99.2183,-220.7606 131,-201 136.4863,-197.5888 142.5912,-194.6611 148.7754,-192.1694"/>
-<polygon fill="#000000" stroke="#000000" points="150.3,-195.3381 158.481,-188.6059 147.8874,-188.767 150.3,-195.3381"/>
+<title>proc~initialize_particles&#45;&gt;eo_lims</title>
+<path fill="none" stroke="#000000" d="M56.4307,-272.9548C70.4226,-254.8804 99.2183,-220.7606 131,-201 138.8398,-196.1255 147.9429,-192.2381 156.7353,-189.1996"/>
+<polygon fill="#000000" stroke="#000000" points="157.9706,-192.4798 166.4461,-186.1224 155.856,-185.8068 157.9706,-192.4798"/>
 </g>
-<!-- spong_w -->
+<!-- sigmar -->
 <g id="proc~~initialize_particles~~CallsGraph_node12" class="node">
-<title>spong_w</title>
-<polygon fill="#777777" stroke="#777777" points="221,-150 166,-150 166,-126 221,-126 221,-150"/>
-<text text-anchor="middle" x="193.5" y="-135.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">spong_w</text>
+<title>sigmar</title>
+<polygon fill="#777777" stroke="#777777" points="220.5,-150 166.5,-150 166.5,-126 220.5,-126 220.5,-150"/>
+<text text-anchor="middle" x="193.5" y="-135.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">sigmar</text>
 </g>
-<!-- proc~initialize_particles&#45;&gt;spong_w -->
+<!-- proc~initialize_particles&#45;&gt;sigmar -->
 <g id="proc~~initialize_particles~~CallsGraph_edge11" class="edge">
-<title>proc~initialize_particles&#45;&gt;spong_w</title>
-<path fill="none" stroke="#000000" d="M52.3875,-272.6426C62.931,-247.5429 90.2047,-190.326 131,-159 138.322,-153.3776 147.2336,-149.2135 156.0064,-146.1469"/>
-<polygon fill="#000000" stroke="#000000" points="157.24,-149.429 165.7602,-143.1317 155.1726,-142.7413 157.24,-149.429"/>
+<title>proc~initialize_particles&#45;&gt;sigmar</title>
+<path fill="none" stroke="#000000" d="M52.3875,-272.6426C62.931,-247.5429 90.2047,-190.326 131,-159 138.5341,-153.2147 147.7511,-148.9735 156.7683,-145.8831"/>
+<polygon fill="#000000" stroke="#000000" points="157.8338,-149.2175 166.3854,-142.9629 155.7999,-142.5195 157.8338,-149.2175"/>
 </g>
-<!-- xtrace -->
+<!-- eno -->
 <g id="proc~~initialize_particles~~CallsGraph_node13" class="node">
-<title>xtrace</title>
+<title>eno</title>
 <polygon fill="#777777" stroke="#777777" points="220.5,-108 166.5,-108 166.5,-84 220.5,-84 220.5,-108"/>
-<text text-anchor="middle" x="193.5" y="-93.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">xtrace</text>
+<text text-anchor="middle" x="193.5" y="-93.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">eno</text>
 </g>
-<!-- proc~initialize_particles&#45;&gt;xtrace -->
-<g id="proc~~initialize_particles~~CallsGraph_edge12" class="edge">
-<title>proc~initialize_particles&#45;&gt;xtrace</title>
+<!-- proc~initialize_particles&#45;&gt;eno -->
+<g id="proc~~initialize_particles~~CallsGraph_edge2" class="edge">
+<title>proc~initialize_particles&#45;&gt;eno</title>
 <path fill="none" stroke="#000000" d="M50.1282,-272.8769C57.3995,-242.2088 80.6633,-160.8681 131,-117 138.2246,-110.7038 147.408,-106.2798 156.4965,-103.1768"/>
 <polygon fill="#000000" stroke="#000000" points="157.626,-106.4927 166.2241,-100.3021 155.6421,-99.7797 157.626,-106.4927"/>
 </g>
-<!-- eno -->
+<!-- spong_dlam -->
 <g id="proc~~initialize_particles~~CallsGraph_node14" class="node">
-<title>eno</title>
-<polygon fill="#777777" stroke="#777777" points="220.5,-66 166.5,-66 166.5,-42 220.5,-42 220.5,-66"/>
-<text text-anchor="middle" x="193.5" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">eno</text>
+<title>spong_dlam</title>
+<polygon fill="#777777" stroke="#777777" points="228.5,-66 158.5,-66 158.5,-42 228.5,-42 228.5,-66"/>
+<text text-anchor="middle" x="193.5" y="-51.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">spong_dlam</text>
 </g>
-<!-- proc~initialize_particles&#45;&gt;eno -->
+<!-- proc~initialize_particles&#45;&gt;spong_dlam -->
 <g id="proc~~initialize_particles~~CallsGraph_edge13" class="edge">
-<title>proc~initialize_particles&#45;&gt;eno</title>
-<path fill="none" stroke="#000000" d="M48.7929,-272.8388C53.2289,-237.1732 71.0368,-131.7923 131,-75 138.0188,-68.3524 147.2086,-63.8053 156.3731,-60.6964"/>
-<polygon fill="#000000" stroke="#000000" points="157.5683,-63.9943 166.2037,-57.856 155.6251,-57.2694 157.5683,-63.9943"/>
+<title>proc~initialize_particles&#45;&gt;spong_dlam</title>
+<path fill="none" stroke="#000000" d="M48.7929,-272.8388C53.2289,-237.1732 71.0368,-131.7923 131,-75 136.0255,-70.2403 142.164,-66.5574 148.6092,-63.7083"/>
+<polygon fill="#000000" stroke="#000000" points="150.0547,-66.9039 158.1779,-60.1022 147.5861,-60.3537 150.0547,-66.9039"/>
 </g>
-<!-- sigmaz -->
+<!-- spong_w -->
 <g id="proc~~initialize_particles~~CallsGraph_node15" class="node">
-<title>sigmaz</title>
-<polygon fill="#777777" stroke="#777777" points="220.5,-24 166.5,-24 166.5,0 220.5,0 220.5,-24"/>
-<text text-anchor="middle" x="193.5" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">sigmaz</text>
+<title>spong_w</title>
+<polygon fill="#777777" stroke="#777777" points="221,-24 166,-24 166,0 221,0 221,-24"/>
+<text text-anchor="middle" x="193.5" y="-9.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">spong_w</text>
 </g>
-<!-- proc~initialize_particles&#45;&gt;sigmaz -->
+<!-- proc~initialize_particles&#45;&gt;spong_w -->
 <g id="proc~~initialize_particles~~CallsGraph_edge14" class="edge">
-<title>proc~initialize_particles&#45;&gt;sigmaz</title>
-<path fill="none" stroke="#000000" d="M47.8719,-272.8026C49.7607,-232.6313 61.2409,-103.0516 131,-33 137.9539,-26.0169 147.2994,-21.3556 156.6413,-18.2442"/>
-<polygon fill="#000000" stroke="#000000" points="157.5984,-21.6108 166.2748,-15.5305 155.7004,-14.8731 157.5984,-21.6108"/>
+<title>proc~initialize_particles&#45;&gt;spong_w</title>
+<path fill="none" stroke="#000000" d="M47.8719,-272.8026C49.7607,-232.6313 61.2409,-103.0516 131,-33 137.8214,-26.15 146.9441,-21.5341 156.1072,-18.4238"/>
+<polygon fill="#000000" stroke="#000000" points="157.3076,-21.7208 165.9591,-15.6052 155.3821,-14.9908 157.3076,-21.7208"/>
 </g>
 <!-- mpi_barrier -->
 <g id="proc~~initialize_particles~~CallsGraph_node16" class="node">
 <title>mpi_barrier</title>
-<polygon fill="#777777" stroke="#777777" points="358,-402 292,-402 292,-378 358,-378 358,-402"/>
-<text text-anchor="middle" x="325" y="-387.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_barrier</text>
+<polygon fill="#777777" stroke="#777777" points="358,-528 292,-528 292,-504 358,-504 358,-528"/>
+<text text-anchor="middle" x="325" y="-513.6" font-family="Helvetica,sans-Serif" font-size="10.50" fill="#ffffff">mpi_barrier</text>
 </g>
 <!-- proc~initial_energy_pitch_dist&#45;&gt;mpi_barrier -->
 <g id="proc~~initialize_particles~~CallsGraph_edge15" class="edge">
 <title>proc~initial_energy_pitch_dist&#45;&gt;mpi_barrier</title>
-<path fill="none" stroke="#000000" d="M256.169,-390C264.8203,-390 273.5428,-390 281.7358,-390"/>
-<polygon fill="#000000" stroke="#000000" points="281.7852,-393.5001 291.7851,-390 281.7851,-386.5001 281.7852,-393.5001"/>
+<path fill="none" stroke="#000000" d="M256.169,-516C264.8203,-516 273.5428,-516 281.7358,-516"/>
+<polygon fill="#000000" stroke="#000000" points="281.7852,-519.5001 291.7851,-516 281.7851,-512.5001 281.7852,-519.5001"/>
 </g>
 </g>
 </svg>
