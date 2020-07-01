@@ -3470,7 +3470,8 @@ subroutine interp_fields(params,prtcls,F)
   TYPE(FIELDS), INTENT(IN)       :: F
     !! An instance of KORC's derived type FIELDS containing all the 
     !! information about the fields used in the simulation.
-    !! See [[korc_types]] and [[korc_fields]].
+  !! See [[korc_types]] and [[korc_fields]].
+  integer :: pp
   
   if (.not.params%GC_coords) call cart_to_cyl(prtcls%X,prtcls%Y)
   
@@ -3486,7 +3487,11 @@ subroutine interp_fields(params,prtcls,F)
     if (TRIM(params%field_model) .eq. 'M3D_C1') then
     
        if (F%M3D_C1_B .ge. 0) then
+
+          !write(6,*) 'interp_fields'
+          
           call get_m3d_c1_magnetic_fields(prtcls, F, params)
+          
        end if
 
        if (F%M3D_C1_E .ge. 0) then
@@ -3496,6 +3501,14 @@ subroutine interp_fields(params,prtcls,F)
        if (F%M3D_C1_A .ge. 0) then
           call get_m3d_c1_vector_potential(prtcls, F, params)
        end if
+
+       do pp=1,sizeof(prtcls%flagCon)
+          if (prtcls%flagCon(pp)==0) then
+             write(6,*) 'RE initialized outside of computational domain!!!'
+             call KORC_ABORT()
+          end if
+       end do
+       
     end if
 #endif
   

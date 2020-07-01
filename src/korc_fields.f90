@@ -887,7 +887,7 @@ CONTAINS
        !       write(output_unit_write,'("2 size of PSI_P: ",I16)') size(vars%PSI_P)
 
        call interp_fields(params,vars, F)
-
+       
 !       write(output_unit_write,'("get_fields")')
 !       write(output_unit_write,'("B_X: ",E17.10)') vars%B(:,1)
 !       write(output_unit_write,'("B_Z: ",E17.10)') vars%B(:,2)
@@ -897,7 +897,10 @@ CONTAINS
        !   call analytical_electric_field_cyl(F,vars%Y,vars%E,vars%flagCon)
        !end if
     else if (params%field_model.eq.'M3D_C1') then
+       !write(6,*) 'get_fields'
+
        call interp_fields(params,vars, F)
+
     else if (params%field_model.eq.'UNIFORM') then
 
        call uniform_fields(vars, F)

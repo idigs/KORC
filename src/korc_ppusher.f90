@@ -2166,6 +2166,9 @@ contains
 
              spp(ii)%vars%V(pp,1)=pmag*cos(deg2rad(spp(ii)%vars%eta(pp)))
 
+             !write(6,*)  'GC_init'
+             !write(6,*) spp(ii)%m,Bmag1
+             
              spp(ii)%vars%V(pp,2)=(pmag* &
                   sin(deg2rad(spp(ii)%vars%eta(pp))))**2/ &
                   (2*spp(ii)%m*Bmag1)

@@ -260,7 +260,13 @@ contains
        write(output_unit_write,'("Number of impurity species: ",I16)')& 
             cparams_ms%num_impurity_species
        do i=1,cparams_ms%num_impurity_species
-          if (cparams_ms%Zo(i).eq.10) then
+          if (cparams_ms%Zo(i).eq.6) then
+             write(output_unit_write,'("C with charge state: ",I16)') int(cparams_ms%Zj(i))
+             write(output_unit_write,'("Mean excitation energy I (eV)",E17.10)') &
+                  cparams_ms%IZj(i)/C_E
+             write(output_unit_write,'("Effective ion length scale a (a_0)",E17.10)') &
+                  cparams_ms%aZj(i)
+          else if (cparams_ms%Zo(i).eq.10) then
              write(output_unit_write,'("Ne with charge state: ",I16)') int(cparams_ms%Zj(i))
              write(output_unit_write,'("Mean excitation energy I (eV)",E17.10)') &
                   cparams_ms%IZj(i)/C_E
