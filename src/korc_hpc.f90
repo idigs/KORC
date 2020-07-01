@@ -72,9 +72,11 @@ CONTAINS
        write(output_unit_write,'(/,"* * * * * * * GIT INFO * * * * * * *")')
 
 #ifdef MAC
+       !write(6,*) 'MAC'
        call execute_command_line("/Users/21b/Desktop/KORC/src/get_git_details.sh", &
             exitstat=exei)
 #elif CORI
+       !write(6,*) 'CORI'
        call execute_command_line("/global/u1/m/mbeidler/KORC/src/get_git_details.sh", &
             exitstat=exei)
 #endif

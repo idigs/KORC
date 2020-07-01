@@ -38,8 +38,10 @@ set_property(TARGET xkorc PROPERTY LINKER_LANGUAGE Fortran)
 
 option (CORI_DIR "Use Cori directories" OFF)
 if (${CORI_DIR})
+    add_definitions (-DCORI)
 else ()
-   add_library (korcsrc STATIC ${korc_sources})
+    add_definitions (-DMAC)	
+    add_library (korcsrc STATIC ${korc_sources})
 endif ()
 
 
