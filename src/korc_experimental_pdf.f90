@@ -596,7 +596,7 @@ CONTAINS
           write(6,*) 'num_samples need to be atleast 10 but is only: ', &
                spp%ppp*params%mpi_params%nmpi
        end if
-       call korc_abort
+       call korc_abort(12)
     end if
     
     call initialize_Hollmann_params(params)
@@ -619,7 +619,7 @@ CONTAINS
           write(6,*) 'num_samples need to be atleast 10 but is only: ', &
                spp%ppp*params%mpi_params%nmpi
        end if
-       call korc_abort
+       call korc_abort(12)
     end if
     
     call initialize_Hollmann_params(params)
@@ -643,7 +643,7 @@ CONTAINS
           write(6,*) 'num_samples need to be atleast 10 but is only: ', &
                spp%ppp*params%mpi_params%nmpi
        end if
-       call korc_abort
+       call korc_abort(12)
     end if
     
     call initialize_Hollmann_params(params)

@@ -521,6 +521,8 @@ module korc_types
      TYPE(V_FIELD_2D) 				:: E_2D 
      !! KORC 2-D vector field of the pre-computed electric field.
      TYPE(V_FIELD_2D) 				:: B_2D
+     TYPE(V_FIELD_2D) 				:: B1Re_2D
+     TYPE(V_FIELD_2D) 				:: B1Im_2D
      TYPE(V_FIELD_2D) 				:: dBdR_2D
      TYPE(V_FIELD_2D) 				:: dBdPHI_2D
      TYPE(V_FIELD_2D) 				:: dBdZ_2D 
@@ -555,6 +557,7 @@ module korc_types
      REAL(rp)  :: E_width
      REAL(rp)  :: PSIP_min
      REAL(rp)  :: PSIp_lim,PSIp_0
+     REAL(rp)  :: AMP
      !! interpolated E field
      INTEGER 			:: res_double
      INTEGER, DIMENSION(3) 			:: dims 
@@ -587,7 +590,8 @@ module korc_types
      !! Flag to indicate whether a pre-computed magnetic field will be
      !! used (Bfield=T) or not (Bfield=F).
      LOGICAL 					:: Bflux
-     LOGICAL 					:: Bflux3D 
+     LOGICAL 					:: Bflux3D
+     LOGICAL 					:: B1field
      !! Flag to indicate whether a pre-computed poloidal magnetic flux will
      !! be used (Bflux=T) or not (Bflux=F).
      LOGICAL 					:: Efield 
@@ -595,7 +599,8 @@ module korc_types
      !! (Efield=T) or not (Efield=F).
      LOGICAL 					:: Bfield_in_file 
      !! Flag to indicate if a pre-computed magnetic field is in the input file.
-     LOGICAL 					:: dBfield_in_file 
+     LOGICAL 					:: dBfield_in_file
+     LOGICAL 					:: B1field_in_file 
      !! Flag to indicate if a pre-computed magnetic field is in the input file.
      LOGICAL 					:: Bflux_in_file 
      !! Flag to indicate if a pre-computed poloidal magnetic flux is in the

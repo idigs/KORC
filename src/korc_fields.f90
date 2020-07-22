@@ -681,7 +681,7 @@ CONTAINS
        end if
     else
        write(output_unit_write,'("KORC ERROR: Please enter a valid field: mean_F_field")')
-       call korc_abort()
+       call korc_abort(17)
     end if
   end subroutine mean_F_field
 
@@ -2189,6 +2189,7 @@ CONTAINS
        !close(default_unit_open)
 
        F%Bfield = Bfield
+       F%B1field = B1field
        F%dBfield = dBfield
        F%Bflux = Bflux
        F%Bflux3D = Bflux3D
@@ -2232,12 +2233,12 @@ CONTAINS
        
        if (F%Bflux.AND..NOT.F%Bflux_in_file) then
           write(output_unit_write,'("ERROR: Magnetic flux to be used but no data in file!")')
-          call KORC_ABORT()
+          call KORC_ABORT(18)
        end if
 
        if (F%Bfield.AND..NOT.F%Bfield_in_file) then
           write(output_unit_write,'("ERROR: Magnetic field to be used but no data in file!")')
-          call KORC_ABORT()
+          call KORC_ABORT(18)
        end if
 
        if (F%dBfield.AND..NOT.F%dBfield_in_file) then
@@ -2290,18 +2291,19 @@ CONTAINS
 
        !write(output_unit_write,*) F%E_3D%PHI(:,F%ind0_2x1t,:)
 
+       !write(6,*) F%B1Re_2D%R(:,200) 
        
 !       end if
 
-       if (F%Bflux) then
-          F%PSIP_min=minval(F%PSIp)         
+       if (F%Bflux.and..not.(params%field_model(10:13).eq.'MARS')) then
+          F%PSIP_min=minval(F%PSIp)          
 
        else if(F%Bflux3D) then
           F%PSIP_min=minval(F%PSIp3D(:,1,:))
        end if
 
           
-       if ((.not.F%Efield_in_file).and.(.not.F%Dim2x1t)) then
+       if ((.not.F%Efield_in_file).and.(.not.F%Dim2x1t).and.F%Efield) then
           F%Eo = Eo
 
           if (F%axisymmetric_fields) then
@@ -3043,6 +3045,19 @@ CONTAINS
        F%Eo = 0.0_rp
     end if
 
+    if (params%field_model(10:13).eq.'MARS') then
+
+       dset = '/PSIP0'
+       call load_from_hdf5(h5file_id,dset,F%PSIP_min)
+
+       dset = '/PSIPlim'
+       call load_from_hdf5(h5file_id,dset,F%PSIp_lim)
+
+       dset = '/AMP'
+       call load_from_hdf5(h5file_id,dset,F%AMP)
+       
+    end if
+    
     dset = '/Ro'
     call load_from_hdf5(h5file_id,dset,F%Ro)
 
@@ -3117,6 +3132,30 @@ CONTAINS
 
 !       F%PSIp3D=2*C_PI*(F%PSIp3D-minval(F%PSIp3D))
        
+    end if
+    
+    if (F%B1field) then
+       
+       if (F%axisymmetric_fields) then
+          
+          dset = "/ReBR"
+          call load_array_from_hdf5(h5file_id,dset,F%B1Re_2D%R)
+
+          dset = "/ReBPHI"
+          call load_array_from_hdf5(h5file_id,dset,F%B1Re_2D%PHI)
+
+          dset = "/ReBZ"
+          call load_array_from_hdf5(h5file_id,dset,F%B1Re_2D%Z)
+
+          dset = "/ImBR"
+          call load_array_from_hdf5(h5file_id,dset,F%B1Im_2D%R)
+
+          dset = "/ImBPHI"
+          call load_array_from_hdf5(h5file_id,dset,F%B1Im_2D%PHI)
+
+          dset = "/ImBZ"
+          call load_array_from_hdf5(h5file_id,dset,F%B1Im_2D%Z)
+       end if
     end if
     
     if (F%Bfield) then
@@ -3318,6 +3357,11 @@ CONTAINS
        call ALLOCATE_V_FIELD_2D(F%dBdR_2D,F%dims)
        call ALLOCATE_V_FIELD_2D(F%dBdPHI_2D,F%dims)
        call ALLOCATE_V_FIELD_2D(F%dBdZ_2D,F%dims)
+    end if
+
+    if (B1field.and.(.not.ALLOCATED(F%B1Re_2D%R))) then
+       call ALLOCATE_V_FIELD_2D(F%B1Re_2D,F%dims)
+       call ALLOCATE_V_FIELD_2D(F%B1Im_2D,F%dims)
     end if
     
     if (efield.and.(.not.ALLOCATED(F%E_2D%R))) then

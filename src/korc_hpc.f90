@@ -22,14 +22,27 @@ module korc_hpc
 
 CONTAINS
 
-  subroutine korc_abort()
+  subroutine korc_abort(errorcode)
     !! @note Subroutine that terminates the simulation. @endnote
+    INTEGER,INTENT(IN) :: errorcode
     INTEGER :: mpierr 
     !! MPI error status
 
+    !! 11: korc_hpc:set_paths
+    !! 12: korc_experimental:get_Hollmann_distribution
+    !! 13: korc_input:read_namelist
+    !! 14: korc_hpc:laod_particle_ic
+    !! 15: korc_interp:interp_fields
+    !! 16: korc_interp:interp_profiles
+    !! 17: korc_fields:mean_F_field
+    !! 18: korc_fields:initialize_fields
+    !! 19: korc_spatial_distribution:initial_spatial_distribution
+
+    flush(output_unit_write)
+    
     call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
-    call MPI_ABORT(MPI_COMM_WORLD, -2000, mpierr)
+    call MPI_ABORT(MPI_COMM_WORLD, errorcode, mpierr)
   end subroutine korc_abort
 
   subroutine set_paths(params)
@@ -49,7 +62,7 @@ CONTAINS
     else if (params%path_to_inputs.eq.'TEST') then
        call get_command_argument(1,params%path_to_outputs)
     else
-       call korc_abort()
+       call korc_abort(11)
     end if
 
     !write(6,*) TRIM(params%path_to_outputs)
@@ -83,7 +96,7 @@ CONTAINS
 
        IF (exei/=0) then
           write(6,*) 'Error executing get_git_details.sh'
-          call korc_abort
+          call korc_abort(11)
        end if
        
        OPEN(UNIT=default_unit_open,FILE='git_hash.txt', &
@@ -92,7 +105,7 @@ CONTAINS
        
        IF (read_stat/=0) then
           write(6,*) 'Error reading git_hash.txt'
-          call korc_abort
+          call korc_abort(11)
        end if
        write(output_unit_write,*) 'Git hash of most recent commit is: ', &
             TRIM(ctmp)
@@ -108,7 +121,7 @@ CONTAINS
           
           IF (read_stat.gt.0) then
              write(6,*) 'Error reading git_diff.txt'
-             call korc_abort
+             call korc_abort(11)
           else if (read_stat.lt.0) then
              CLOSE(default_unit_open,STATUS='DELETE')
        

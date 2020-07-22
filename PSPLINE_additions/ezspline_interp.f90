@@ -492,6 +492,48 @@ subroutine EZspline_interp2_FOvars_cloud_r8(spline_oBR, spline_oBPHI, &
 
 end subroutine EZspline_interp2_FOvars_cloud_r8
 
+subroutine EZspline_interp2_FOmars_cloud_r8(spline_oA, spline_oBRRe, &
+     spline_oBPHIRe, spline_oBZRe, spline_oBRIm, spline_oBPHIIm, &
+     spline_oBZIm, k, p1, p2, fA, fBRRe, fBPHIRe, fBZRe, &
+     fBRIm, fBPHIIm, fBZIm, ier)
+  use EZspline_obj
+  type(EZspline2_r8) spline_oA
+  type(EZspline2_r8) spline_oBRRe,spline_oBPHIRe,spline_oBZRe
+  type(EZspline2_r8) spline_oBRIm,spline_oBPHIIm,spline_oBZIm
+  integer, intent(in) :: k
+  real(ezspline_r8), intent(in) :: p1(k), p2(k)
+  real(ezspline_r8), intent(out):: fA(k,3)
+  real(ezspline_r8), intent(out):: fBRRe(k), fBPHIRe(k), fBZRe(k)
+  real(ezspline_r8), intent(out):: fBRIm(k), fBPHIIm(k), fBZIm(k)
+  integer, intent(out) :: ier
+  integer :: ifail
+  integer, parameter :: ictA(6) = (/1,1,1,0,0,0/)
+  integer, parameter :: ict(6) = (/1,0,0,0,0,0/)
+  integer:: iwarn = 0
+
+  ier = 0
+  ifail = 0
+
+  if( .not.EZspline_allocated(spline_oA) .or. spline_oA%isReady /= 1) then
+     ier = 94
+     return
+  endif
+
+
+  call r8vecbicub_FOmars(ictA, ict, k, p1, p2, k, fA, &
+       & fBRRe, fBPHIRe, fBZRe, fBRIm, fBPHIIm, fBZIm, &
+       & spline_oA%n1, spline_oA%x1pkg(1,1), &
+       & spline_oA%n2, spline_oA%x2pkg(1,1), &
+       & spline_oA%fspl(1,1,1), &
+       & spline_oBRRe%fspl(1,1,1), spline_oBPHIRe%fspl(1,1,1), &
+       & spline_oBZRe%fspl(1,1,1), spline_oBRIm%fspl(1,1,1), &
+       & spline_oBPHIIm%fspl(1,1,1), spline_oBZIm%fspl(1,1,1), &
+       & spline_oA%n1, iwarn, ifail)
+
+  if(ifail /= 0) ier = 97
+
+end subroutine EZspline_interp2_FOmars_cloud_r8
+
 subroutine EZspline_interp2_collision_cloud_r8(spline_oBR, spline_oBPHI, &
      spline_oBZ, spline_oER, spline_oEPHI, spline_oEZ,&
      spline_one,spline_oTe,spline_oZeff,k, p1, p2, fBR, &

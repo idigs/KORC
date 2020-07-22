@@ -174,6 +174,7 @@ module korc_input
   !! externalPlasmaModel
   !! -----------------------------------------------
   LOGICAL :: Bfield = .FALSE.
+  LOGICAL :: B1field = .FALSE.
   LOGICAL :: dBfield = .FALSE.
   LOGICAL :: axisymmetric_fields = .FALSE.
   LOGICAL :: Bflux = .FALSE.
@@ -405,7 +406,7 @@ CONTAINS
     NAMELIST /externalPlasmaModel/ Efield, Bfield, Bflux,Bflux3D,dBfield, &
          axisymmetric_fields, Eo,E_dyn,E_pulse,E_width,res_double, &
          dim_1D,dt_E_SC,Ip_exp,PSIp_lim,Dim2x1t,t0_2x1t,E_2x1t,ReInterp_2x1t, &
-         ind0_2x1t,PSIp_0
+         ind0_2x1t,PSIp_0, B1field
     NAMELIST /plasmaProfiles/ radius_profile,ne_profile,neo,n_ne,a_ne, &
          Te_profile,Teo,n_Te,a_Te,n_REr0,n_tauion,n_lamfront,n_lamback, &
          Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename,axisymmetric, &
@@ -571,11 +572,11 @@ CONTAINS
              READ(UNIT=default_unit_open,NML=SimpleEquilibriumPDF,IOSTAT=read_stat)
           CASE DEFAULT
              write(output_unit_write,*) (TRIM(ctmp)//' is an unrecognized namelist.')
-             call korc_abort
+             call korc_abort(13)
           END SELECT
           IF (read_stat/=0) then
              write(output_unit_write,*) ('Error reading namelist '//TRIM(ctmp)//'.')
-             call korc_abort
+             call korc_abort(13)
           end if
        ENDIF
     ENDDO
@@ -641,7 +642,7 @@ CONTAINS
                'Check that enough characters are allocated for&
                & outputs list!'
        end if
-       call korc_abort
+       call korc_abort(13)
     end if
 
     tmp=len(TRIM(magnetic_field_filename))
@@ -651,7 +652,7 @@ CONTAINS
                'Check that enough characters are allocated for&
                & magnetic field filename!'
        end if
-       call korc_abort
+       call korc_abort(13)
     end if 
       
     end subroutine read_namelist

@@ -1685,7 +1685,7 @@ subroutine intitial_spatial_distribution(params,spp,P,F)
                    'num_samples need to be atleast 10 but is only: ', &
                    spp(ss)%ppp*params%mpi_params%nmpi
            end if
-           call korc_abort
+           call korc_abort(19)
         end if
         
         call MH_psi(params,spp(ss),F)

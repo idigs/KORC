@@ -1834,6 +1834,16 @@ CONTAINS
              attr = "Radial position of magnetic axis"
              call save_to_hdf5(h5file_id,dset,F%Zo*params%cpp%length,attr)
 
+             dset = TRIM(gname) // "/PSIP0"
+             attr = "Poloidal flux at magnetic axis"
+             call save_to_hdf5(h5file_id,dset, &
+                  F%PSIP_min*(params%cpp%Bo*params%cpp%length**2),attr)
+
+             dset = TRIM(gname) // "/PSIPlim"
+             attr = "Poloidal flux at LCFS"
+             call save_to_hdf5(h5file_id,dset, &
+                  F%PSIp_lim*(params%cpp%Bo*params%cpp%length**2),attr)
+             
              dset = TRIM(gname) // "/Axisymmetric"
              attr = "Radial position of magnetic axis"
              if(F%axisymmetric_fields) then
@@ -1883,6 +1893,48 @@ CONTAINS
              end if
 
 
+             if (ALLOCATED(F%B1Re_2D%R)) then
+                dset = TRIM(gname) // "/BR1_Re"
+                units = params%cpp%Bo
+                call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                     units*F%B1Re_2D%R)
+             end if
+
+             if (ALLOCATED(F%B1Re_2D%PHI)) then
+                dset = TRIM(gname) // "/BPHI1_Re"
+                units = params%cpp%Bo
+                call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                     units*F%B1Re_2D%PHI)
+             end if
+
+             if (ALLOCATED(F%B1Re_2D%Z)) then
+                dset = TRIM(gname) // "/BZ1_Re"
+                units = params%cpp%Bo
+                call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                     units*F%B1Re_2D%Z)
+             end if
+
+             if (ALLOCATED(F%B1Im_2D%R)) then
+                dset = TRIM(gname) // "/BR1_Im"
+                units = params%cpp%Bo
+                call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                     units*F%B1Im_2D%R)
+             end if
+
+             if (ALLOCATED(F%B1Im_2D%PHI)) then
+                dset = TRIM(gname) // "/BPHI1_Im"
+                units = params%cpp%Bo
+                call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                     units*F%B1Im_2D%PHI)
+             end if
+
+             if (ALLOCATED(F%B1Im_2D%Z)) then
+                dset = TRIM(gname) // "/BZ1_Im"
+                units = params%cpp%Bo
+                call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                     units*F%B1Im_2D%Z)
+             end if
+             
              if (params%SC_E) then
                 dset = TRIM(gname) // "/dt_E_SC"
                 attr = "Time step for self-consistent E calculation"
@@ -1905,21 +1957,27 @@ CONTAINS
              if  (F%axisymmetric_fields.and. &
                   .not.(params%field_model(10:12).eq.'PSI')) then
 
-                dset = TRIM(gname) // "/BR"
-                units = params%cpp%Bo
-                call rsave_2d_array_to_hdf5(h5file_id, dset, &
-                     units*F%B_2D%R)
+                if (ALLOCATED(F%B_2D%R)) then
+                   dset = TRIM(gname) // "/BR"
+                   units = params%cpp%Bo
+                   call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                        units*F%B_2D%R)
+                end if
 
-                dset = TRIM(gname) // "/BPHI"
-                units = params%cpp%Bo
-                call rsave_2d_array_to_hdf5(h5file_id, dset, &
-                     units*F%B_2D%PHI)
+                if (ALLOCATED(F%B_2D%PHI)) then
+                   dset = TRIM(gname) // "/BPHI"
+                   units = params%cpp%Bo
+                   call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                        units*F%B_2D%PHI)
+                end if
 
-                dset = TRIM(gname) // "/BZ"
-                units = params%cpp%Bo
-                call rsave_2d_array_to_hdf5(h5file_id, dset, &
-                     units*F%B_2D%Z)
-
+                if (ALLOCATED(F%B_2D%Z)) then
+                   dset = TRIM(gname) // "/BZ"
+                   units = params%cpp%Bo
+                   call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                        units*F%B_2D%Z)
+                end if
+                
                 if  (params%orbit_model(3:5).EQ.'pre') then
 
                    dset = TRIM(gname) // "/gradBR"
@@ -2875,7 +2933,7 @@ CONTAINS
           if (h5error .EQ. -1) then
              write(output_unit_write,'("KORC ERROR: Something went wrong in: &
                   &load_particles_ic --> h5fopen_f")')
-             call KORC_ABORT()
+             call KORC_ABORT(14)
           end if
 
           write(tmp_str,'(I18)') ss
@@ -2903,7 +2961,7 @@ CONTAINS
           if (h5error .EQ. -1) then
              write(output_unit_write,'("KORC ERROR: Something went wrong in: &
                   &load_particles_ic --> h5fopen_f")')
-             call KORC_ABORT()
+             call KORC_ABORT(14)
           end if
 
           write(tmp_str,'(I18)') ss
@@ -2927,7 +2985,7 @@ CONTAINS
           if (h5error .EQ. -1) then
              write(output_unit_write,'("KORC ERROR: Something went wrong in: &
                   &load_particles_ic --> h5fopen_f")')
-             call KORC_ABORT()
+             call KORC_ABORT(14)
           end if
 
           write(tmp_str,'(I18)') ss
@@ -2949,7 +3007,7 @@ CONTAINS
           if (h5error .EQ. -1) then
              write(output_unit_write,'("KORC ERROR: Something went wrong in: &
                   &load_particles_ic --> h5fopen_f")')
-             call KORC_ABORT()
+             call KORC_ABORT(14)
           end if
 
           write(tmp_str,'(I18)') ss
@@ -2971,7 +3029,7 @@ CONTAINS
           if (h5error .EQ. -1) then
              write(output_unit_write,'("KORC ERROR: Something went wrong in: &
                   &load_particles_ic --> h5fopen_f")')
-             call KORC_ABORT()
+             call KORC_ABORT(14)
           end if
 
           write(tmp_str,'(I18)') ss
@@ -3000,7 +3058,7 @@ CONTAINS
           if (h5error .EQ. -1) then
              write(output_unit_write,'("KORC ERROR: Something went wrong in: &
                   &load_particles_ic --> h5fopen_f")')
-             call KORC_ABORT()
+             call KORC_ABORT(14)
           end if
 
           write(tmp_str,'(I18)') ss
