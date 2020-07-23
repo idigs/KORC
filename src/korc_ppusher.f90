@@ -3352,6 +3352,14 @@ contains
 
           if (.not.params%FokPlan) then
              do tt=1_ip,params%t_skip
+
+                if (params%t_skip.ge.10) then
+                   if (mod(tt,params%t_skip/10).eq.0) then
+                      write(output_unit_write,*) 'tt: ',tt
+                      flush(output_unit_write) 
+                   endif
+                end if
+                
                 call advance_GCinterp_psiwE_vars(spp(ii)%vars,pp,tt, &
                      params, &
                      Y_R,Y_PHI,Y_Z,V_PLL,V_MU,q_cache,m_cache,flagCon,flagCol, &

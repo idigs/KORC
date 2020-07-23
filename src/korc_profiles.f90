@@ -196,6 +196,9 @@ CONTAINS
                 CASE('RE-EVO-PSIP-G')                   
                    !flat profile placeholder, updates every timestep
                    P%ne_2D(ii,kk) = P%neo
+                CASE('RE-EVO-PSIP-G1')                   
+                   !flat profile placeholder, updates every timestep
+                   P%ne_2D(ii,kk) = P%neo
                 CASE DEFAULT
                    P%ne_2D(ii,kk) = P%neo
                 END SELECT
@@ -474,6 +477,22 @@ CONTAINS
 !       write(output_unit_write,*) 'time: ',time*params%cpp%time
        
        n0t=(ne0-n_ne)/2._rp*(tanh((time-n_tauin)/n_tauin)- &
+            tanh((time-n_shelfdelay)/n_tauout))
+       n_taut=n_psishelf*erf((time+params%dt/100._rp)/n_tauion)
+       
+       !$OMP SIMD
+       do cc=1_idef,pchunk
+          PSIp_temp(cc)=PSIp(cc)*(params%cpp%Bo*params%cpp%length**2)
+          ne(cc) = n0t*exp(-(sqrt(abs(PSIp_temp(cc)))-sqrt(abs(psiN_0)))**2._rp/ &
+               (2._rp*n_taut**2._rp))+n_ne
+       end do
+       !$OMP END SIMD
+
+    CASE('RE-EVO-PSIP-G1')
+
+!       write(output_unit_write,*) 'time: ',time*params%cpp%time
+       
+       n0t=(ne0-n_ne)/2._rp*(tanh((time-1.75*n_tauin)/n_tauin)- &
             tanh((time-n_shelfdelay)/n_tauout))
        n_taut=n_psishelf*erf((time+params%dt/100._rp)/n_tauion)
        

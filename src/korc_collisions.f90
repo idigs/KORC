@@ -217,19 +217,19 @@ contains
     cparams_ms%ne = ne_mult
     cparams_ms%nH = ne_mult
 
-#ifdef M3D_C1
-    do i=1,cparams_ms%num_impurity_species
-       cparams_ms%Zj(i) = real(i)-1._rp
-       cparams_ms%Zo(i) = Zo_mult(1)       
-    end do
-    cparams_ms%nz(1) = nz_mult(1)
+    if  (params%profile_model.eq.'M3D_C1') then
+       do i=1,cparams_ms%num_impurity_species
+          cparams_ms%Zj(i) = real(i)-1._rp
+          cparams_ms%Zo(i) = Zo_mult(1)       
+       end do
+       cparams_ms%nz(1) = nz_mult(1)
 
-    params%Zj=cparams_ms%Zj
-#else
-    cparams_ms%Zj = Zj_mult(1:cparams_ms%num_impurity_species)
-    cparams_ms%Zo = Zo_mult(1:cparams_ms%num_impurity_species)
-    cparams_ms%nz = nz_mult(1:cparams_ms%num_impurity_species)
-#endif
+       params%Zj=cparams_ms%Zj
+    else
+       cparams_ms%Zj = Zj_mult(1:cparams_ms%num_impurity_species)
+       cparams_ms%Zo = Zo_mult(1:cparams_ms%num_impurity_species)
+       cparams_ms%nz = nz_mult(1:cparams_ms%num_impurity_species)
+    endif
     
     do i=1,cparams_ms%num_impurity_species
        if (int(cparams_ms%Zo(i)).eq.6) then
@@ -595,11 +595,11 @@ contains
        E = C_ME*C_C**2 + params%minimum_particle_energy*params%cpp%energy
        v = SQRT(1.0_rp - (C_ME*C_C**2/E)**2)
 
-#ifdef M3D_C1
-       nu = (/nu_S_FIO(params,v),nu_D_FIO(params,v),nu_par(v)/)
-#else
-       nu = (/nu_S(params,v),nu_D(params,v),nu_par(v)/)
-#endif
+       if (params%profile_model.eq.'M3D_C1') then
+          nu = (/nu_S_FIO(params,v),nu_D_FIO(params,v),nu_par(v)/)
+       else
+          nu = (/nu_S(params,v),nu_D(params,v),nu_par(v)/)
+       endif
        Tau = MINVAL( 1.0_rp/nu )
 
 !       write(output_unit_write,'("collision freqencies ",F25.12)') nu(3)

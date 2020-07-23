@@ -302,9 +302,8 @@ program main
 
 !  write(output_unit_write,'("pre ppusher loop eta: ",E17.10)') spp(1)%vars%eta
 
-  flush(output_unit_write)
   call timing_KORC(params)
-  
+  flush(output_unit_write)  
 
   if (params%orbit_model(1:2).eq.'FO'.and.params%field_model(1:3).eq.'ANA') then
      call FO_init(params,F,spp,.false.,.true.)
@@ -465,7 +464,8 @@ program main
        (.not.params%SC_E).and.F%Dim2x1t.and.F%ReInterp_2x1t.and..not.params%field_model.eq.'M3D_C1') then
 
      if (params%mpi_params%rank .EQ. 0) then
-        write(output_unit_write,*) 'time',F%X%PHI(F%ind_2x1t)*params%cpp%time
+        write(output_unit_write,*) 'initial 2x1t_ind time',F%X%PHI(F%ind_2x1t)*params%cpp%time
+        flush(output_unit_write)  
      end if
         
      do it=params%ito,params%t_steps,params%t_skip
@@ -479,7 +479,9 @@ program main
 
         F%ind_2x1t=F%ind_2x1t+1_ip
         if (params%mpi_params%rank .EQ. 0) then
-           write(output_unit_write,*) 'time',F%X%PHI(F%ind_2x1t)*params%cpp%time
+           write(output_unit_write,*) 'KORC time',params%time*params%cpp%time
+           write(output_unit_write,*) '2x1t_ind time',F%X%PHI(F%ind_2x1t)*params%cpp%time
+           flush(output_unit_write)  
         end if
         call initialize_fields_interpolant(params,F)
 
