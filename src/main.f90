@@ -464,10 +464,14 @@ program main
      end do
   end if
   
-  if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
-       F%axisymmetric_fields.and.(params%field_model(10:12).eq.'PSI'.OR. &
+  if (params%orbit_model(1:2).eq.'GC'.and. &
+       params%field_eval.eq.'interp'.and. &
+       F%axisymmetric_fields.and. &
+       (params%field_model(10:12).eq.'PSI'.OR. &
        params%field_model(12:14).eq.'PSI').and. &
-       (.not.params%SC_E).and.F%Dim2x1t.and.F%ReInterp_2x1t.and..not.params%field_model.eq.'M3D_C1') then
+       (.not.params%SC_E).and. &
+       F%Dim2x1t.and.F%ReInterp_2x1t.and. &
+       .not.params%field_model.eq.'M3D_C1') then
 
      if (params%mpi_params%rank .EQ. 0) then
         write(output_unit_write,*) 'initial 2x1t_ind time',F%X%PHI(F%ind_2x1t)*params%cpp%time

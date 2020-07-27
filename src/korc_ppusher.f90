@@ -3358,18 +3358,12 @@ contains
              do tt=1_ip,params%t_skip
 
                 if (params%t_skip.ge.10) then
-                   if (mod(tt,params%t_skip/10).eq.0) then
-                      if(params%mpi_params%rank.eq.0) then
-                         write(output_unit_write,*) 'MPI rank ', &
-                              params%mpi_params%rank,'; OMP thread ', &
-                              thread_num,'; tt iteration: ',tt
-                         flush(output_unit_write)
-                      else
-                         write(6,*) 'MPI rank ', &
-                              params%mpi_params%rank,'; OMP thread ', &
-                              thread_num,'; tt iteration: ',tt
-                      end if
-                   endif
+                   if(mod(tt,params%t_skip/10).eq.0) then
+                      if((params%mpi_params%rank.eq.0).and. &
+                           thread_num.eq.0) then
+                         write(6,'("tt iteration ",I8)') tt
+                      endif
+                   end if
                 end if
                 
                 call advance_GCinterp_psiwE_vars(spp(ii)%vars,pp,tt, &
