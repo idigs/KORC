@@ -233,8 +233,10 @@ program main
 !  if (minval(spp(1)%vars%Y(:,1)).lt.1._rp/params%cpp%length) stop 'error with init'
   
   ! * * * INITIALIZATION STAGE * * *
-
-  flush(output_unit_write)
+  
+  if (params%mpi_params%rank .EQ. 0) then
+     flush(output_unit_write)
+  end if
 
 !  write(output_unit_write,'("GC init eta: ",E17.10)') spp(1)%vars%eta
 
@@ -303,7 +305,9 @@ program main
 !  write(output_unit_write,'("pre ppusher loop eta: ",E17.10)') spp(1)%vars%eta
 
   call timing_KORC(params)
-  flush(output_unit_write)  
+  if (params%mpi_params%rank .EQ. 0) then
+     flush(output_unit_write)
+  end if
 
   if (params%orbit_model(1:2).eq.'FO'.and.params%field_model(1:3).eq.'ANA') then
      call FO_init(params,F,spp,.false.,.true.)
@@ -370,9 +374,11 @@ program main
                    params%num_impurity_species,.false.)
            end if
         end if
-           
-        write(output_unit_write,*) 'tskip',params%t_skip
-        flush(output_unit_write)
+
+        if (params%mpi_params%rank .EQ. 0) then
+           write(output_unit_write,*) 'tskip',params%t_skip
+           flush(output_unit_write)
+        end if
 
         call adv_FOm3dc1_top(params,F,P,spp)
                
@@ -595,10 +601,12 @@ program main
                    params%num_impurity_species,.false.)
            end if
         end if
-           
-        write(output_unit_write,*) 'tskip',params%t_skip
-        flush(output_unit_write)
         
+        if (params%mpi_params%rank .EQ. 0) then
+           write(output_unit_write,*) 'tskip',params%t_skip
+           flush(output_unit_write)
+        end if
+           
         call adv_GCinterp_m3dc1_top(params,spp,P,F)
                
         params%it = params%it+params%t_skip

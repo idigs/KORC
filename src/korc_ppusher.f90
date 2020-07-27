@@ -3284,6 +3284,9 @@ contains
 
   subroutine adv_GCinterp_psiwE_top(params,spp,P,F)
 
+    USE omp_lib
+    IMPLICIT NONE
+    
     TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
     !! Core KORC simulation parameters.
     TYPE(PROFILES), INTENT(IN)                                 :: P
@@ -3313,8 +3316,7 @@ contains
     INTEGER(ip)                                                    :: tt
     INTEGER(ip)                                                    :: ttt
     !! time iterator.
-
-
+    INTEGER             :: thread_num
 
     do ii = 1_idef,params%num_species      
 
@@ -3328,10 +3330,12 @@ contains
        !$OMP& SHARED(params,ii,spp,P,F) &
        !$OMP& PRIVATE(pp,tt,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,B_R,B_PHI,B_Z, &
        !$OMP& flagCon,flagCol,E_PHI,PSIp,curlb_R,curlb_PHI,curlb_Z, &
-       !$OMP& gradB_R,gradB_PHI,gradB_Z,ne,E_R,E_Z)
+       !$OMP& gradB_R,gradB_PHI,gradB_Z,ne,E_R,E_Z,thread_num)
 
        do pp=1_idef,spp(ii)%ppp,pchunk
 
+          thread_num = OMP_GET_THREAD_NUM()
+          
           !          write(output_unit_write,'("pp: ",I16)') pp
 
           !$OMP SIMD
@@ -3355,8 +3359,16 @@ contains
 
                 if (params%t_skip.ge.10) then
                    if (mod(tt,params%t_skip/10).eq.0) then
-                      write(output_unit_write,*) 'tt: ',tt
-                      flush(output_unit_write) 
+                      if(params%mpi_params%rank.eq.0) then
+                         write(output_unit_write,*) 'MPI rank ', &
+                              params%mpi_params%rank,'; OMP thread ', &
+                              thread_num,'; tt iteration: ',tt
+                         flush(output_unit_write)
+                      else
+                         write(6,*) 'MPI rank ', &
+                              params%mpi_params%rank,'; OMP thread ', &
+                              thread_num,'; tt iteration: ',tt
+                      end if
                    endif
                 end if
                 
