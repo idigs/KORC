@@ -2266,14 +2266,15 @@ CONTAINS
              call ALLOCATE_3D_FIELDS_ARRAYS(params,F,F%Bfield, &
                   F%Efield,F%dBfield)
 
+          else if (params%orbit_model(1:2).eq.'FO') then
+                
+             call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
+                  .TRUE.,F%dBfield,F%Efield) 
+             
           else
 
-             F%Efield_in_file=.TRUE.
-
              call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
-                  F%Bflux,F%dBfield,F%Efield.AND.F%Efield_in_file)
-
-             F%Efield_in_file=.FALSE.
+                  F%Bflux,F%dBfield,F%Efield)             
              
           end if
 
@@ -3321,6 +3322,7 @@ CONTAINS
 
     if (bflux.and.(.not.ALLOCATED(F%PSIp))) then
        ALLOCATE(F%PSIp(F%dims(1),F%dims(3)))
+       F%PSIp=0._rp
     end if
 
     if (dbfield.and.(.not.ALLOCATED(F%dBdR_2D%R))) then

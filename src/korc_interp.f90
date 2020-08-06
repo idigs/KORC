@@ -512,8 +512,12 @@ CONTAINS
        end if
 
        ! * * * * * * * * MAGNETIC FIELD * * * * * * * * !
-       if (F%Bflux.or.F%ReInterp_2x1t) then
+       if (F%Bflux.or.F%ReInterp_2x1t.or.(params%orbit_model(1:2).eq.'FO')) then
 
+          if (params%mpi_params%rank .EQ. 0) then
+             write(output_unit_write,'("2D psi potential")')
+          end if
+          
           if(F%ReInterp_2x1t) then
 
              if (.not.(EZspline_allocated(bfield_2d%A))) then     
@@ -551,6 +555,7 @@ CONTAINS
              F%Bflux3D = .FALSE.
              
           else
+             
              if (EZspline_allocated(bfield_2d%A)) &
                   call Ezspline_free(bfield_2d%A, ezerr)
 
@@ -585,6 +590,11 @@ CONTAINS
        end if
 
        if (F%Bflux3D) then
+
+          if (params%mpi_params%rank .EQ. 0) then
+             write(output_unit_write,'("3D psi potential")')
+          end if
+          
           if(F%Dim2x1t) then
              bfield_2X1T%NR = F%dims(1)
              bfield_2X1T%NT = F%dims(2)
@@ -639,6 +649,11 @@ CONTAINS
        
        if (F%Bfield) then
           if (F%axisymmetric_fields) then
+
+             if (params%mpi_params%rank .EQ. 0) then
+                write(output_unit_write,'("2D B-field")')
+             end if
+             
              bfield_2d%NR = F%dims(1)
              bfield_2d%NZ = F%dims(3)
 
@@ -686,6 +701,11 @@ CONTAINS
              
 
              if (params%orbit_model.eq.'GCpre') then
+
+                if (params%mpi_params%rank .EQ. 0) then
+                   write(output_unit_write,'("2D aux fields")')
+                end if
+                
                 gradB_2d%NR = F%dims(1)
                 gradB_2d%NZ = F%dims(3)
 
@@ -767,7 +787,12 @@ CONTAINS
 
              fields_domain%DR = ABS(F%X%R(2) - F%X%R(1))
              fields_domain%DZ = ABS(F%X%Z(2) - F%X%Z(1))
-          else 
+          else
+
+             if (params%mpi_params%rank .EQ. 0) then
+                write(output_unit_write,'("3D B-field")')
+             end if
+             
              bfield_3d%NR = F%dims(1)
              bfield_3d%NPHI = F%dims(2)
              bfield_3d%NZ = F%dims(3)
@@ -815,6 +840,11 @@ CONTAINS
              call EZspline_error(ezerr)
 
              if (params%orbit_model.eq.'GCpre') then
+
+                if (params%mpi_params%rank .EQ. 0) then
+                   write(output_unit_write,'("3D aux fields")')
+                end if
+                
                 gradB_3d%NR = F%dims(1)
                 gradB_3d%NPHI = F%dims(2)
                 gradB_3d%NZ = F%dims(3)
@@ -915,6 +945,11 @@ CONTAINS
        
        if (F%dBfield) then
           if (F%axisymmetric_fields) then
+
+             if (params%mpi_params%rank .EQ. 0) then
+                write(output_unit_write,'("2D dB field")')
+             end if
+             
              ! dBdR
              dbdR_2d%NR = F%dims(1)
              dbdR_2d%NZ = F%dims(3)
@@ -1024,7 +1059,12 @@ CONTAINS
              call EZspline_setup(dbdZ_2d%Z, F%dBdZ_2D%Z, ezerr, .TRUE.)
              call EZspline_error(ezerr)
 
-          else 
+          else
+
+             if (params%mpi_params%rank .EQ. 0) then
+                write(output_unit_write,'("3D dB field")')
+             end if
+             
              ! dBdR
              dbdR_3d%NR = F%dims(1)
              dbdR_3d%NPHI = F%dims(2)
@@ -1223,6 +1263,11 @@ CONTAINS
 !                write(output_unit_write,'("efield_2d%PHI: ",E17.10)') efield_2d%PHI%fspl(1,:,:)
                 
              else
+
+                if (params%mpi_params%rank .EQ. 0) then
+                   write(output_unit_write,'("2D E field")')
+                end if
+                
                 efield_2d%NR = F%dims(1)
                 efield_2d%NZ = F%dims(3)
 
@@ -1261,6 +1306,11 @@ CONTAINS
 
              end if
           else
+
+             if (params%mpi_params%rank .EQ. 0) then
+                write(output_unit_write,'("3D E field")')
+             end if
+             
              efield_3d%NR = F%dims(1)
              efield_3d%NPHI = F%dims(2)
              efield_3d%NZ = F%dims(3)
@@ -2206,7 +2256,7 @@ subroutine interp_2D_curlbfields(Y,curlb,flag)
 end subroutine interp_2D_curlbfields
 
 subroutine interp_FOfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
-     E_X,E_Y,E_Z,PSIp, flag_cache)
+     E_X,E_Y,E_Z,PSIp,flag_cache)
   INTEGER, INTENT(IN)  :: pchunk
   TYPE(FIELDS), INTENT(IN)                               :: F
   REAL(rp),DIMENSION(pchunk),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
@@ -2248,8 +2298,8 @@ subroutine interp_FOfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
   
 end subroutine interp_FOfields_p
 
-subroutine interp_FOfields1_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,PSIp, &
-     flag_cache)
+subroutine interp_FOfields1_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
+     E_X,E_Y,E_Z,PSIp,flag_cache)
   INTEGER, INTENT(IN)  :: pchunk
   TYPE(FIELDS), INTENT(IN)                               :: F
   REAL(rp),DIMENSION(pchunk),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
