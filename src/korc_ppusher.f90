@@ -1,5 +1,3 @@
-
-
 module korc_ppusher
   !! @note Module with subroutines for advancing the particles' position and
   !! velocity in the simulations. @endnote
