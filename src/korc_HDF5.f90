@@ -1978,6 +1978,23 @@ CONTAINS
                         units*F%B_2D%Z)
                 end if
                 
+                if (ALLOCATED(F%E_2D%R)) then
+                   dset = TRIM(gname) // "/ER"
+                   units = params%cpp%Eo
+                   call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                        units*F%E_2D%R)
+
+                   dset = TRIM(gname) // "/EPHI"
+                   units = params%cpp%Eo
+                   call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                        units*F%E_2D%PHI)
+
+                   dset = TRIM(gname) // "/EZ"
+                   units = params%cpp%Eo
+                   call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                        units*F%E_2D%Z)
+                endif
+
                 if  (params%orbit_model(3:5).EQ.'pre') then
 
                    dset = TRIM(gname) // "/gradBR"

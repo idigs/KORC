@@ -274,13 +274,10 @@ CONTAINS
        params%restart_output_cadence = FLOOR(params%restart_overwrite_frequency/ &
             params%dt,ip)
 
-       if (.not.F%ReInterp_2x1t) then
-          params%t_skip=min(params%t_steps,params%output_cadence)
-          params%t_skip=max(1_ip,params%t_skip)
-       else
-          params%t_skip=params%output_cadence
-          params%t_skip=max(1_ip,params%t_skip)
-       end if
+
+       params%t_skip=min(params%t_steps,params%output_cadence)
+       params%t_skip=max(1_ip,params%t_skip)
+
 
     else
        params%ito = 1_ip
@@ -298,13 +295,8 @@ CONTAINS
        params%restart_output_cadence = FLOOR(params%restart_overwrite_frequency/ &
             params%dt,ip)
 
-       if (.not.F%ReInterp_2x1t) then
-          params%t_skip=min(params%t_steps,params%output_cadence)
-          params%t_skip=max(1_ip,params%t_skip)
-       else
-          params%t_skip=params%output_cadence
-          params%t_skip=max(1_ip,params%t_skip)
-       end if
+       params%t_skip=min(params%t_steps,params%output_cadence)
+       params%t_skip=max(1_ip,params%t_skip)
 
     end if
 

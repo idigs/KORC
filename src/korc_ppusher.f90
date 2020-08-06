@@ -287,10 +287,10 @@ contains
                 call analytical_fields_p(pchunk,B0,EF0,R0,q0,lam,ar, &
                      X_X,X_Y,X_Z, &
                      B_X,B_Y,B_Z,E_X,E_Y,E_Z,flagCon)
-             else if (params%orbit_model(3:5).eq.'new') then
+             else if (params%orbit_model(3:3).eq.'B') then
                 call interp_FOfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
                      E_X,E_Y,E_Z,PSIp,flagCon)
-             else if (params%orbit_model(3:5).eq.'old') then
+             else if (params%orbit_model(3:5).eq.'psi') then
                 call interp_FOfields1_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
                      E_X,E_Y,E_Z,PSIp,flagCon)
              else if (params%field_model.eq.'M3D_C1') then
@@ -523,8 +523,8 @@ contains
           if (.not.params%FokPlan) then
              do tt=1_ip,params%t_skip
 
-                call analytical_fields_p(pchunk,B0,EF0,R0,q0,lam,ar,X_X,X_Y,X_Z, &
-                     B_X,B_Y,B_Z,E_X,E_Y,E_Z,flagCon)
+                call analytical_fields_p(pchunk,B0,EF0,R0,q0,lam,ar, &
+                     X_X,X_Y,X_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flagCon)
 
                 call advance_FOeqn_vars(tt,a,q_cache,m_cache,params, &
                      X_X,X_Y,X_Z,V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z, &
@@ -1254,6 +1254,14 @@ contains
              V_Y(cc)=spp(ii)%vars%V(pp-1+cc,2)
              V_Z(cc)=spp(ii)%vars%V(pp-1+cc,3)
 
+             B_X(cc)=spp(ii)%vars%B(pp-1+cc,1)
+             B_Y(cc)=spp(ii)%vars%B(pp-1+cc,2)
+             B_Z(cc)=spp(ii)%vars%B(pp-1+cc,3)
+
+             E_X(cc)=spp(ii)%vars%E(pp-1+cc,1)
+             E_Y(cc)=spp(ii)%vars%E(pp-1+cc,2)
+             E_Z(cc)=spp(ii)%vars%E(pp-1+cc,3)
+             
              PSIp(cc)=spp(ii)%vars%PSI_P(pp-1+cc)
 
              g(cc)=spp(ii)%vars%g(pp-1+cc)
@@ -1268,10 +1276,10 @@ contains
 
                 call cart_to_cyl_p(pchunk,X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
 
-                if (params%orbit_model(3:5).eq.'new') then
+                if (params%orbit_model(3:3).eq.'B') then
                    call interp_FOfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
                         E_X,E_Y,E_Z,PSIp,flagCon)
-                else if (params%orbit_model(3:5).eq.'old') then
+                else if (params%orbit_model(3:5).eq.'psi') then
                    call interp_FOfields1_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
                         E_X,E_Y,E_Z,PSIp,flagCon)
                 end if
@@ -1292,6 +1300,10 @@ contains
                 spp(ii)%vars%X(pp-1+cc,2)=X_Y(cc)
                 spp(ii)%vars%X(pp-1+cc,3)=X_Z(cc)
 
+                spp(ii)%vars%Y(pp-1+cc,1)=Y_R(cc)
+                spp(ii)%vars%Y(pp-1+cc,2)=Y_PHI(cc)
+                spp(ii)%vars%Y(pp-1+cc,3)=Y_Z(cc)
+                
                 spp(ii)%vars%V(pp-1+cc,1)=V_X(cc)
                 spp(ii)%vars%V(pp-1+cc,2)=V_Y(cc)
                 spp(ii)%vars%V(pp-1+cc,3)=V_Z(cc)
@@ -3481,6 +3493,9 @@ contains
 
   subroutine adv_GCinterp_psiwE_top(params,spp,P,F)
 
+    USE omp_lib
+    IMPLICIT NONE
+    
     TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
     !! Core KORC simulation parameters.
     TYPE(PROFILES), INTENT(IN)                                 :: P
@@ -3510,8 +3525,7 @@ contains
     INTEGER(ip)                                                    :: tt
     INTEGER(ip)                                                    :: ttt
     !! time iterator.
-
-
+    INTEGER             :: thread_num
 
     do ii = 1_idef,params%num_species      
 
@@ -3525,10 +3539,12 @@ contains
        !$OMP& SHARED(params,ii,spp,P,F) &
        !$OMP& PRIVATE(pp,tt,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,B_R,B_PHI,B_Z, &
        !$OMP& flagCon,flagCol,E_PHI,PSIp,curlb_R,curlb_PHI,curlb_Z, &
-       !$OMP& gradB_R,gradB_PHI,gradB_Z,ne,E_R,E_Z)
+       !$OMP& gradB_R,gradB_PHI,gradB_Z,ne,E_R,E_Z,thread_num)
 
        do pp=1_idef,spp(ii)%ppp,pchunk
 
+          thread_num = OMP_GET_THREAD_NUM()
+          
           !          write(output_unit_write,'("pp: ",I16)') pp
 
           !$OMP SIMD
@@ -3549,6 +3565,16 @@ contains
 
           if (.not.params%FokPlan) then
              do tt=1_ip,params%t_skip
+
+                if (params%t_skip.ge.10) then
+                   if(mod(tt,params%t_skip/10).eq.0) then
+                      if((params%mpi_params%rank.eq.0).and. &
+                           thread_num.eq.0) then
+                         write(6,'("tt iteration ",I8)') tt
+                      endif
+                   end if
+                end if
+                
                 call advance_GCinterp_psiwE_vars(spp(ii)%vars,pp,tt, &
                      params, &
                      Y_R,Y_PHI,Y_Z,V_PLL,V_MU,q_cache,m_cache,flagCon,flagCol, &

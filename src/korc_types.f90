@@ -355,8 +355,10 @@ module korc_types
      REAL(rp), DIMENSION(:), ALLOCATABLE 	:: wt 
      !! Weight of each electron. This is used when sampling weighted
      !! PDFs and in the synthetic camera diagnostic.
+#ifdef M3D_C1
      TYPE(C_PTR), DIMENSION(:), ALLOCATABLE :: hint
      !! Hint for M3D_C1 interpolation.
+#endif
      LOGICAL                                :: cart
   END TYPE PARTICLES
 

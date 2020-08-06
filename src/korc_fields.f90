@@ -2217,7 +2217,7 @@ CONTAINS
        F%PSIp_lim=PSIp_lim
        
        F%res_double=res_double
-
+       
 !       write(output_unit_write,'("E_dyn: ",E17.10)') E_dyn
 !       write(output_unit_write,'("E_pulse: ",E17.10)') E_pulse
 !       write(output_unit_write,'("E_width: ",E17.10)') E_width
@@ -2267,14 +2267,15 @@ CONTAINS
              call ALLOCATE_3D_FIELDS_ARRAYS(params,F,F%Bfield, &
                   F%Efield,F%dBfield)
 
+          else if (params%orbit_model(1:2).eq.'FO') then
+                
+             call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
+                  .TRUE.,F%dBfield,F%Efield) 
+             
           else
 
-             F%Efield_in_file=.TRUE.
-
              call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
-                  F%Bflux,F%dBfield,F%Efield.AND.F%Efield_in_file)
-
-             F%Efield_in_file=.FALSE.
+                  F%Bflux,F%dBfield,F%Efield)             
              
           end if
 
@@ -2283,7 +2284,7 @@ CONTAINS
           
        end if
        !allocates 2D or 3D data arrays (fields and spatial)
-
+       
        
        call load_field_data_from_hdf5(params,F)
             
@@ -3001,8 +3002,7 @@ CONTAINS
        write(output_unit_write,'("KORC ERROR: Something went wrong in: load_field_data_from_hdf5 --> h5fopen_f")')
     end if
 
-
-
+    
     if (((.NOT.F%Bflux).AND.(.NOT.F%axisymmetric_fields)).OR. &
          F%Dim2x1t) then
        dset = "/PHI"
@@ -3083,23 +3083,14 @@ CONTAINS
        dset = "/FLAG"
        call load_array_from_hdf5(h5file_id,dset,F%FLAG3D)
     end if
-
+    
     if (F%Bflux) then
 
-       if (params%SC_E) then
-
-          dset = "/OSPSIp"
-          gname = 'OSPSIp'
+       write(6,*) 'SC_E: ',params%SC_E
+       write(6,*) size(F%PSIp) 
+       flush(6)
        
-          call h5lexists_f(h5file_id,TRIM(gname),Efield,h5error)
-
-          if (Efield) then
-             call load_array_from_hdf5(h5file_id,dset,F%PSIp)
-          else
-             F%PSIp = 0.0_rp
-          end if
-
-       else
+       if (.not.params%SC_E) then
 
           dset = "/PSIp"
           gname = 'PSIp'
@@ -3112,8 +3103,27 @@ CONTAINS
              F%PSIp = 0.0_rp
           end if
 
-!          F%PSIp=2*C_PI*(F%PSIp-minval(F%PSIp))
+          !          F%PSIp=2*C_PI*(F%PSIp-minval(F%PSIp))
+
+       else
+
+       write(6,*) 'SC_E: ',params%SC_E
+       flush(6)
           
+          dset = "/OSPSIp"
+          gname = 'OSPSIp'
+       
+          call h5lexists_f(h5file_id,TRIM(gname),Efield,h5error)
+
+          write(6,*) params%SC_E
+          flush(6)
+          
+          if (Efield) then
+             call load_array_from_hdf5(h5file_id,dset,F%PSIp)
+          else
+             F%PSIp = 0.0_rp
+          end if
+
        end if
        
     end if
@@ -3351,6 +3361,7 @@ CONTAINS
 
     if (bflux.and.(.not.ALLOCATED(F%PSIp))) then
        ALLOCATE(F%PSIp(F%dims(1),F%dims(3)))
+       F%PSIp=0._rp
     end if
 
     if (dbfield.and.(.not.ALLOCATED(F%dBdR_2D%R))) then

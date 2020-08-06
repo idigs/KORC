@@ -514,7 +514,7 @@ CONTAINS
        end if
 
        ! * * * * * * * * MAGNETIC FIELD * * * * * * * * !
-       if (F%Bflux.or.F%ReInterp_2x1t) then
+       if (F%Bflux.or.F%ReInterp_2x1t.or.(params%orbit_model(1:2).eq.'FO')) then
 
           write(output_unit_write,*) '2D poloidal flux function'
 
@@ -694,6 +694,10 @@ CONTAINS
        end if
        
        if (F%Bflux3D) then
+
+          if (params%mpi_params%rank .EQ. 0) then
+             write(output_unit_write,'("3D psi potential")')
+          end if
           
           if(F%Dim2x1t) then
 
@@ -1360,6 +1364,11 @@ CONTAINS
 !                write(output_unit_write,'("efield_2d%PHI: ",E17.10)') efield_2d%PHI%fspl(1,:,:)
                 
              else
+
+                if (params%mpi_params%rank .EQ. 0) then
+                   write(output_unit_write,'("2D E field")')
+                end if
+                
                 efield_2d%NR = F%dims(1)
                 efield_2d%NZ = F%dims(3)
 
@@ -2346,7 +2355,7 @@ subroutine interp_2D_curlbfields(Y,curlb,flag)
 end subroutine interp_2D_curlbfields
 
 subroutine interp_FOfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
-     E_X,E_Y,E_Z,PSIp, flag_cache)
+     E_X,E_Y,E_Z,PSIp,flag_cache)
   INTEGER, INTENT(IN)  :: pchunk
   TYPE(FIELDS), INTENT(IN)                               :: F
   REAL(rp),DIMENSION(pchunk),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
@@ -2388,8 +2397,8 @@ subroutine interp_FOfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
   
 end subroutine interp_FOfields_p
 
-subroutine interp_FOfields1_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,PSIp, &
-     flag_cache)
+subroutine interp_FOfields1_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
+     E_X,E_Y,E_Z,PSIp,flag_cache)
   INTEGER, INTENT(IN)  :: pchunk
   TYPE(FIELDS), INTENT(IN)                               :: F
   REAL(rp),DIMENSION(pchunk),INTENT(IN)   :: Y_R,Y_PHI,Y_Z

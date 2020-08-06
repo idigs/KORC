@@ -233,8 +233,10 @@ program main
 !  if (minval(spp(1)%vars%Y(:,1)).lt.1._rp/params%cpp%length) stop 'error with init'
   
   ! * * * INITIALIZATION STAGE * * *
-
-  flush(output_unit_write)
+  
+  if (params%mpi_params%rank .EQ. 0) then
+     flush(output_unit_write)
+  end if
 
 !  write(output_unit_write,'("GC init eta: ",E17.10)') spp(1)%vars%eta
 
@@ -302,9 +304,10 @@ program main
 
 !  write(output_unit_write,'("pre ppusher loop eta: ",E17.10)') spp(1)%vars%eta
 
-  flush(output_unit_write)
   call timing_KORC(params)
-  
+  if (params%mpi_params%rank .EQ. 0) then
+     flush(output_unit_write)
+  end if
 
   if (params%orbit_model(1:2).eq.'FO'.and.params%field_model(1:3).eq.'ANA') then
      call FO_init(params,F,spp,.false.,.true.)
@@ -372,9 +375,11 @@ program main
                    params%num_impurity_species,.false.)
            end if
         end if
-           
-        write(output_unit_write,*) 'tskip',params%t_skip
-        flush(output_unit_write)
+
+        if (params%mpi_params%rank .EQ. 0) then
+           write(output_unit_write,*) 'tskip',params%t_skip
+           flush(output_unit_write)
+        end if
 
         call adv_FOm3dc1_top(params,F,P,spp)
                
@@ -477,13 +482,18 @@ program main
      end do
   end if
   
-  if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
-       F%axisymmetric_fields.and.(params%field_model(10:12).eq.'PSI'.OR. &
+  if (params%orbit_model(1:2).eq.'GC'.and. &
+       params%field_eval.eq.'interp'.and. &
+       F%axisymmetric_fields.and. &
+       (params%field_model(10:12).eq.'PSI'.OR. &
        params%field_model(12:14).eq.'PSI').and. &
-       (.not.params%SC_E).and.F%Dim2x1t.and.F%ReInterp_2x1t.and..not.params%field_model.eq.'M3D_C1') then
+       (.not.params%SC_E).and. &
+       F%Dim2x1t.and.F%ReInterp_2x1t.and. &
+       .not.params%field_model.eq.'M3D_C1') then
 
      if (params%mpi_params%rank .EQ. 0) then
-        write(output_unit_write,*) 'time',F%X%PHI(F%ind_2x1t)*params%cpp%time
+        write(output_unit_write,*) 'initial 2x1t_ind time',F%X%PHI(F%ind_2x1t)*params%cpp%time
+        flush(output_unit_write)  
      end if
         
      do it=params%ito,params%t_steps,params%t_skip
@@ -497,7 +507,9 @@ program main
 
         F%ind_2x1t=F%ind_2x1t+1_ip
         if (params%mpi_params%rank .EQ. 0) then
-           write(output_unit_write,*) 'time',F%X%PHI(F%ind_2x1t)*params%cpp%time
+           write(output_unit_write,*) 'KORC time',params%time*params%cpp%time
+           write(output_unit_write,*) '2x1t_ind time',F%X%PHI(F%ind_2x1t)*params%cpp%time
+           flush(output_unit_write)  
         end if
         call initialize_fields_interpolant(params,F)
 
@@ -611,10 +623,12 @@ program main
                    params%num_impurity_species,.false.)
            end if
         end if
-           
-        write(output_unit_write,*) 'tskip',params%t_skip
-        flush(output_unit_write)
         
+        if (params%mpi_params%rank .EQ. 0) then
+           write(output_unit_write,*) 'tskip',params%t_skip
+           flush(output_unit_write)
+        end if
+           
         call adv_GCinterp_m3dc1_top(params,spp,P,F)
                
         params%it = params%it+params%t_skip
