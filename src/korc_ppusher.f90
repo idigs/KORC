@@ -1491,6 +1491,14 @@ contains
              V_Y(cc)=spp(ii)%vars%V(pp-1+cc,2)
              V_Z(cc)=spp(ii)%vars%V(pp-1+cc,3)
 
+             B_X(cc)=spp(ii)%vars%B(pp-1+cc,1)
+             B_Y(cc)=spp(ii)%vars%B(pp-1+cc,2)
+             B_Z(cc)=spp(ii)%vars%B(pp-1+cc,3)
+             
+             E_X(cc)=spp(ii)%vars%E(pp-1+cc,1)
+             E_Y(cc)=spp(ii)%vars%E(pp-1+cc,2)
+             E_Z(cc)=spp(ii)%vars%E(pp-1+cc,3)
+
              PSIp(cc)=spp(ii)%vars%PSI_P(pp-1+cc)
 
              g(cc)=spp(ii)%vars%g(pp-1+cc)
