@@ -2027,7 +2027,7 @@ CONTAINS
              F%Bflux=.TRUE.
              
              call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield,F%Bflux, &
-                  .false.,F%Efield)
+                  .false.,F%Efield,.FALSE.)
 
              do ii=1_idef,F%dims(1)
                 F%X%R(ii)=(F%Ro-F%AB%a)+(ii-1)*2*F%AB%a/(F%dims(1)-1)
@@ -2199,6 +2199,7 @@ CONTAINS
        F%ReInterp_2x1t = ReInterp_2x1t
        F%t0_2x1t = t0_2x1t
        F%ind0_2x1t = ind0_2x1t
+       F%psip_conv = psip_conv
 
        if (params%proceed) then
           call load_prev_iter(params)
@@ -2228,7 +2229,7 @@ CONTAINS
        !write(output_unit_write,*) F%dims
        
        call which_fields_in_file(params,F%Bfield_in_file,F%Efield_in_file, &
-            F%Bflux_in_file,F%dBfield_in_file)
+            F%Bflux_in_file,F%dBfield_in_file,F%B1field_in_file)
 
        
        if (F%Bflux.AND..NOT.F%Bflux_in_file) then
@@ -2241,10 +2242,15 @@ CONTAINS
           call KORC_ABORT(18)
        end if
 
+       if (F%B1field.AND..NOT.F%B1field_in_file) then
+          write(output_unit_write,'("ERROR: Magnetic perturbation field to be used but no data in file!")')
+          call KORC_ABORT(18)
+       end if
+
        if (F%dBfield.AND..NOT.F%dBfield_in_file) then
           write(output_unit_write,'("ERROR: differential Magnetic field to be used &
                but no data in file!")')
-!          call KORC_ABORT()
+          call KORC_ABORT(18)
        end if
        
        if (F%Efield.AND..NOT.F%Efield_in_file) then
@@ -2252,6 +2258,7 @@ CONTAINS
              write(output_unit_write,'(/,"* * * * * * * * * *  FIELDS  * * * * * * * * * *")')
              write(output_unit_write,'("MESSAGE: Analytical electric field will be used.")')
              write(output_unit_write,'("* * * * * * * * * * * * ** * * * * * * * * * * *",/)')
+             flush(output_unit_write)
           end if
        end if
 
@@ -2262,7 +2269,7 @@ CONTAINS
           if (F%Dim2x1t) then
 
              call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
-                  F%Bflux,F%dBfield,F%Efield.AND.F%Efield_in_file)
+                  F%Bflux,F%dBfield,F%Efield.AND.F%Efield_in_file,F%B1field)
              
              call ALLOCATE_3D_FIELDS_ARRAYS(params,F,F%Bfield, &
                   F%Efield,F%dBfield)
@@ -2270,15 +2277,20 @@ CONTAINS
           else if (params%orbit_model(1:2).eq.'FO') then
                 
              call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
-                  .TRUE.,F%dBfield,F%Efield) 
+                  .TRUE.,F%dBfield,F%Efield,F%B1field) 
              
           else
 
              call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
-                  F%Bflux,F%dBfield,F%Efield)             
+                  F%Bflux,F%dBfield,F%Efield,F%B1field)             
              
           end if
 
+       else if (params%field_model(10:13).eq.'MARS') then
+          
+          call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
+               F%Bflux,F%dBfield,F%Efield,F%B1field)   
+          
        else
           call ALLOCATE_3D_FIELDS_ARRAYS(params,F,F%Bfield,F%Efield,F%dBfield)
           
@@ -2292,7 +2304,8 @@ CONTAINS
 
        !write(output_unit_write,*) F%E_3D%PHI(:,F%ind0_2x1t,:)
 
-       !write(6,*) F%B1Re_2D%R(:,200) 
+       !write(6,*) F%B1Re_2D%R(:,200)
+       !flush(6)
        
 !       end if
 
@@ -2930,9 +2943,10 @@ CONTAINS
   !! @param group_id HDF5 group identifier.
   !! @param subgroup_id HDF5 subgroup identifier.
   !! @param h5error HDF5 error status.
-  subroutine which_fields_in_file(params,Bfield,Efield,Bflux,dBfield)
+  subroutine which_fields_in_file(params,Bfield,Efield,Bflux,dBfield,B1field)
     TYPE(KORC_PARAMS), INTENT(IN)      :: params
     LOGICAL, INTENT(OUT)               :: Bfield
+    LOGICAL, INTENT(OUT)               :: B1field
     LOGICAL, INTENT(OUT)               :: dBfield
     LOGICAL, INTENT(OUT)               :: Efield
     LOGICAL, INTENT(OUT)               :: Bflux
@@ -2962,6 +2976,9 @@ CONTAINS
 
     gname = "PSIp"
     call h5lexists_f(h5file_id,TRIM(gname),Bflux,h5error)
+
+    gname = "ReBR"
+    call h5lexists_f(h5file_id,TRIM(gname),B1field,h5error)
 
 
     call h5fclose_f(h5file_id, h5error)
@@ -3086,9 +3103,9 @@ CONTAINS
     
     if (F%Bflux) then
 
-       write(6,*) 'SC_E: ',params%SC_E
-       write(6,*) size(F%PSIp) 
-       flush(6)
+       !write(6,*) 'SC_E: ',params%SC_E
+       !write(6,*) size(F%PSIp) 
+       !flush(6)
        
        if (.not.params%SC_E) then
 
@@ -3107,8 +3124,8 @@ CONTAINS
 
        else
 
-       write(6,*) 'SC_E: ',params%SC_E
-       flush(6)
+       !write(6,*) 'SC_E: ',params%SC_E
+       !flush(6)
           
           dset = "/OSPSIp"
           gname = 'OSPSIp'
@@ -3144,9 +3161,7 @@ CONTAINS
        
     end if
     
-    if (F%B1field) then
-       
-       if (F%axisymmetric_fields) then
+    if (F%B1field) then      
           
           dset = "/ReBR"
           call load_array_from_hdf5(h5file_id,dset,F%B1Re_2D%R)
@@ -3165,7 +3180,7 @@ CONTAINS
 
           dset = "/ImBZ"
           call load_array_from_hdf5(h5file_id,dset,F%B1Im_2D%Z)
-       end if
+
     end if
     
     if (F%Bfield) then
@@ -3330,7 +3345,8 @@ CONTAINS
   end subroutine ALLOCATE_1D_FS_ARRAYS
 
 
-  subroutine ALLOCATE_2D_FIELDS_ARRAYS(params,F,bfield,bflux,dbfield,efield)
+  subroutine ALLOCATE_2D_FIELDS_ARRAYS(params,F,bfield,bflux,dbfield, &
+       efield,b1field)
     !! @note Subroutine that allocates the variables keeping the axisymmetric
     !! fields data. @endnote
     TYPE (KORC_PARAMS), INTENT(IN) 	:: params
@@ -3339,6 +3355,7 @@ CONTAINS
     !! An instance of the KORC derived type FIELDS. In this variable we keep
     !! the loaded data.
     LOGICAL, INTENT(IN)            :: bfield
+    LOGICAL, INTENT(IN)            :: b1field
     LOGICAL, INTENT(IN)            :: dbfield
     !! Logical variable that specifies if the variables that keep the magnetic
     !! field data is allocated (bfield=T) or not (bfield=F).

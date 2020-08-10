@@ -80,7 +80,10 @@ program main
   !! parameters of the EM fields, either analytically or from an external HDF5
   !! file. Reads in &amp;analytical_fields_params and 
   !! &amp;externalPlasmaModel namelists from input file.
-  
+
+  if (params%mpi_params%rank .EQ. 0) then
+     flush(output_unit_write)
+  end if
 
   call initialize_profiles(params,P,F)
   !! <h4>4\. Initialize Profiles</h4>
@@ -118,6 +121,10 @@ program main
   endif
 #endif  
 
+  if (params%mpi_params%rank .EQ. 0) then
+     flush(output_unit_write)
+  end if
+  
   call compute_charcs_plasma_params(params,spp,F)
   !! <h4>9\. Compute Characteristic Plasma Parameters</h4>
   !!
@@ -142,6 +149,10 @@ program main
   !! time-stepping parameters for a restart, or defines new parameters based
   !! on a maximum timestep
   !! set by the inverse of the relativistic cyclotron frequency.
+
+  if (params%mpi_params%rank .EQ. 0) then
+     flush(output_unit_write)
+  end if
   
   call initialize_particle_pusher(params)
   !! <h4>11\. Initialize Particle Pusher</h4>    
@@ -178,7 +189,9 @@ program main
   ! *** BEYOND THIS POINT VARIABLES ARE DIMENSIONLESS ***
   ! *** *** *** *** *** ***   *** *** *** *** *** *** ***
 
-
+  if (params%mpi_params%rank .EQ. 0) then
+     flush(output_unit_write)
+  end if
   
   call initialize_fields_interpolant(params,F)
   !! <h4>15\. Initialize Fields Interpolant</h4>

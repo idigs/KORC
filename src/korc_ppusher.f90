@@ -1,3 +1,4 @@
+
 module korc_ppusher
   !! @note Module with subroutines for advancing the particles' position and
   !! velocity in the simulations. @endnote
@@ -302,8 +303,8 @@ contains
                      PSIp,flagCon,hint)
 
              else if (params%field_model(10:13).eq.'MARS') then
-                call interp_FOfields_mars_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
-                     PSIp,flagCon)
+                call interp_FOfields_mars_p(params,pchunk,F,Y_R,Y_PHI,Y_Z, &
+                     B_X,B_Y,B_Z,PSIp,flagCon)
                 
              end if
 
@@ -1504,8 +1505,8 @@ contains
 
              call cart_to_cyl_p(pchunk,X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
 
-             call interp_FOfields_mars_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
-                  PSIp,flagCon)
+             call interp_FOfields_mars_p(params,pchunk,F,Y_R,Y_PHI,Y_Z, &
+                  B_X,B_Y,B_Z,PSIp,flagCon)
 
 
 
@@ -3564,14 +3565,14 @@ contains
           if (.not.params%FokPlan) then
              do tt=1_ip,params%t_skip
 
-                if (params%t_skip.ge.10) then
-                   if(mod(tt,params%t_skip/10).eq.0) then
-                      if((params%mpi_params%rank.eq.0).and. &
-                           thread_num.eq.0) then
-                         write(6,'("tt iteration ",I8)') tt
-                      endif
-                   end if
-                end if
+                !if (params%t_skip.ge.10) then
+                !   if(mod(tt,params%t_skip/10).eq.0) then
+                !      if((params%mpi_params%rank.eq.0).and. &
+                !           thread_num.eq.0) then
+                !         write(6,'("tt iteration ",I8)') tt
+                !      endif
+                !   end if
+                !end if
                 
                 call advance_GCinterp_psiwE_vars(spp(ii)%vars,pp,tt, &
                      params, &

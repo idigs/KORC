@@ -364,6 +364,21 @@ subroutine normalize_variables(params,spp,F,P)
              (params%cpp%Bo/params%cpp%length)
         
      end if
+
+     if (F%B1field) then
+        if (ALLOCATED(F%B1Re_2D%R)) F%B1Re_2D%R = F%B1Re_2D%R/ &
+             params%cpp%Bo
+        if (ALLOCATED(F%B1Re_2D%PHI)) F%B1Re_2D%PHI = F%B1Re_2D%PHI/ &
+             params%cpp%Bo
+        if (ALLOCATED(F%B1Re_2D%Z)) F%B1Re_2D%Z = F%B1Re_2D%Z/ &
+             params%cpp%Bo
+        if (ALLOCATED(F%B1Im_2D%R)) F%B1Im_2D%R = F%B1Im_2D%R/ &
+             params%cpp%Bo
+        if (ALLOCATED(F%B1Im_2D%PHI)) F%B1Im_2D%PHI = F%B1Im_2D%PHI/ &
+             params%cpp%Bo
+        if (ALLOCATED(F%B1Im_2D%Z)) F%B1Im_2D%Z = F%B1Im_2D%Z/ &
+             params%cpp%Bo
+     end if
      
      F%X%R = F%X%R/params%cpp%length
      ! Nothing to do for the PHI component

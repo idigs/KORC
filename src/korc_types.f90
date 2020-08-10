@@ -624,6 +624,8 @@ module korc_types
      !! An M3D-C1 vector potential.
      real(c_double)  ::  time0,time1
 #endif
+     REAL(rp)  :: psip_conv
+     
   END TYPE FIELDS
 
 

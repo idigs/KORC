@@ -2030,7 +2030,8 @@ CONTAINS
                 end if
                 
              else if ((.not.F%axisymmetric_fields).and. &
-                  .not.(params%field_model(10:12).eq.'PSI')) then
+                  .not.((params%field_model(10:12).eq.'PSI').or. &
+                  (params%field_model(10:13).eq.'MARS'))) then
 
                 dset = TRIM(gname) // "/BR"
                 units = params%cpp%Bo
