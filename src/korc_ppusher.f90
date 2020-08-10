@@ -1235,9 +1235,9 @@ contains
 
 
        !$OMP PARALLEL DO default(none) &
-       !$OMP& FIRSTPRIVATE(a,m_cache,q_cache,pchunk) &
+       !$OMP& FIRSTPRIVATE(a,m_cache,q_cache,pchunk,E0) &
        !$OMP& shared(params,ii,spp,P,F) &
-       !$OMP& PRIVATE(E0,pp,tt,Bmag,cc,X_X,X_Y,X_Z,V_X,V_Y,V_Z,B_X,B_Y,B_Z, &
+       !$OMP& PRIVATE(pp,tt,Bmag,cc,X_X,X_Y,X_Z,V_X,V_Y,V_Z,B_X,B_Y,B_Z, &
        !$OMP& E_X,E_Y,E_Z,b_unit_X,b_unit_Y,b_unit_Z,v,vpar,vperp,tmp, &
        !$OMP& cross_X,cross_Y,cross_Z,vec_X,vec_Y,vec_Z,g, &
        !$OMP& Y_R,Y_PHI,Y_Z,flagCon,flagCol,PSIp)
@@ -1473,9 +1473,9 @@ contains
 
 
        !$OMP PARALLEL DO default(none) &
-       !$OMP& FIRSTPRIVATE(a,m_cache,q_cache,pchunk) &
+       !$OMP& FIRSTPRIVATE(a,m_cache,q_cache,pchunk,E0) &
        !$OMP& shared(params,ii,spp,P,F) &
-       !$OMP& PRIVATE(E0,pp,tt,Bmag,cc,X_X,X_Y,X_Z,V_X,V_Y,V_Z,B_X,B_Y,B_Z, &
+       !$OMP& PRIVATE(pp,tt,Bmag,cc,X_X,X_Y,X_Z,V_X,V_Y,V_Z,B_X,B_Y,B_Z, &
        !$OMP& E_X,E_Y,E_Z,b_unit_X,b_unit_Y,b_unit_Z,v,vpar,vperp,tmp, &
        !$OMP& cross_X,cross_Y,cross_Z,vec_X,vec_Y,vec_Z,g, &
        !$OMP& Y_R,Y_PHI,Y_Z,flagCon,flagCol,PSIp)
@@ -1583,6 +1583,8 @@ contains
                 ! See Northrop's book (The adiabatic motion of charged
                 ! particles)
 
+
+                
                 ! Radiated power
                 tmp(cc) = q_cache**4/(6.0_rp*C_PI*E0*m_cache**2)
 
