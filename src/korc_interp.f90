@@ -3295,15 +3295,15 @@ subroutine calculate_GCfieldswE_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI
      
      Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
 
-     gradB_R(cc)=(B_R(cc)*A(cc,6)-B_Z(cc)*A(cc,4)-Bmag(cc)*Bmag(cc))/ &
-          (Y_R(cc)*Bmag(cc))
+     gradB_R(cc)=(B_R(cc)*psip_conv*A(cc,6)-B_Z(cc)*psip_conv*A(cc,4)- &
+          Bmag(cc)*Bmag(cc))/(Y_R(cc)*Bmag(cc))
      gradB_PHI(cc)=0._rp
-     gradB_Z(cc)=(B_R(cc)*A(cc,5)-B_Z(cc)*A(cc,6))/ &
+     gradB_Z(cc)=(B_R(cc)*psip_conv*A(cc,5)-B_Z(cc)*psip_conv*A(cc,6))/ &
           (Y_R(cc)*Bmag(cc))
 
      curlb_R(cc)=B_PHI(cc)*gradB_Z(cc)/(Bmag(cc)*Bmag(cc))
-     curlb_PHI(cc)=(Bmag(cc)/Y_R(cc)*(B_Z(cc)+A(cc,4)+A(cc,5))- &
-          B_R(cc)*gradB_Z(cc)+B_Z(cc)*gradB_R(cc))/ &
+     curlb_PHI(cc)=(Bmag(cc)/Y_R(cc)*(B_Z(cc)+psip_conv*A(cc,4)+ &
+          psip_conv*A(cc,5))-B_R(cc)*gradB_Z(cc)+B_Z(cc)*gradB_R(cc))/ &
           (Bmag(cc)*Bmag(cc))
      curlb_Z(cc)=-B_PHI(cc)*gradB_R(cc)/(Bmag(cc)*Bmag(cc))
 
@@ -3370,15 +3370,15 @@ subroutine calculate_GCfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
      
      Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
 
-     gradB_R(cc)=(B_R(cc)*A(cc,6)-B_Z(cc)*A(cc,4)-Bmag(cc)*Bmag(cc))/ &
-          (Y_R(cc)*Bmag(cc))
+     gradB_R(cc)=(B_R(cc)*psip_conv*A(cc,6)-B_Z(cc)*psip_conv*A(cc,4)- &
+          Bmag(cc)*Bmag(cc))/(Y_R(cc)*Bmag(cc))
      gradB_PHI(cc)=0._rp
-     gradB_Z(cc)=(B_R(cc)*A(cc,5)-B_Z(cc)*A(cc,6))/ &
+     gradB_Z(cc)=(B_R(cc)*psip_conv*A(cc,5)-B_Z(cc)*psip_conv*A(cc,6))/ &
           (Y_R(cc)*Bmag(cc))
 
      curlb_R(cc)=B_PHI(cc)*gradB_Z(cc)/(Bmag(cc)*Bmag(cc))
-     curlb_PHI(cc)=(Bmag(cc)/Y_R(cc)*(B_Z(cc)+A(cc,4)+A(cc,5))- &
-          B_R(cc)*gradB_Z(cc)+B_Z(cc)*gradB_R(cc))/ &
+     curlb_PHI(cc)=(Bmag(cc)/Y_R(cc)*(B_Z(cc)+psip_conv*A(cc,4)+ &
+          psip_conv*A(cc,5))-B_R(cc)*gradB_Z(cc)+B_Z(cc)*gradB_R(cc))/ &
           (Bmag(cc)*Bmag(cc))
      curlb_Z(cc)=-B_PHI(cc)*gradB_R(cc)/(Bmag(cc)*Bmag(cc))
 
@@ -3450,15 +3450,15 @@ subroutine calculate_GCfields_2x1t_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
      
      Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
 
-     gradB_R(cc)=(B_R(cc)*psip_conv*A(cc,7)-B_Z(cc)*psip_conv*A(cc,5)-Bmag(cc)*Bmag(cc))/ &
-          (Y_R(cc)*Bmag(cc))
+     gradB_R(cc)=(B_R(cc)*psip_conv*A(cc,7)-B_Z(cc)*psip_conv*A(cc,5)- &
+          Bmag(cc)*Bmag(cc))/(Y_R(cc)*Bmag(cc))
      gradB_PHI(cc)=0._rp
      gradB_Z(cc)=(B_R(cc)*psip_conv*A(cc,6)-B_Z(cc)*psip_conv*A(cc,7))/ &
           (Y_R(cc)*Bmag(cc))
 
      curlb_R(cc)=B_PHI(cc)*gradB_Z(cc)/(Bmag(cc)*Bmag(cc))
-     curlb_PHI(cc)=(Bmag(cc)/Y_R(cc)*(B_Z(cc)+psip_conv*A(cc,5)+psip_conv*A(cc,6))- &
-          B_R(cc)*gradB_Z(cc)+B_Z(cc)*gradB_R(cc))/ &
+     curlb_PHI(cc)=(Bmag(cc)/Y_R(cc)*(B_Z(cc)+psip_conv*A(cc,5)+ &
+          psip_conv*A(cc,6))-B_R(cc)*gradB_Z(cc)+B_Z(cc)*gradB_R(cc))/ &
           (Bmag(cc)*Bmag(cc))
      curlb_Z(cc)=-B_PHI(cc)*gradB_R(cc)/(Bmag(cc)*Bmag(cc))
 
