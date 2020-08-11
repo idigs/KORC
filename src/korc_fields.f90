@@ -2200,6 +2200,7 @@ CONTAINS
        F%t0_2x1t = t0_2x1t
        F%ind0_2x1t = ind0_2x1t
        F%psip_conv = psip_conv
+       F%MARS_AMP_Scale = MARS_AMP_Scale
 
        if (params%proceed) then
           call load_prev_iter(params)
@@ -3072,6 +3073,8 @@ CONTAINS
 
        dset = '/AMP'
        call load_from_hdf5(h5file_id,dset,F%AMP)
+
+       F%AMP=F%AMP*F%MARS_AMP_Scale
        
     end if
     

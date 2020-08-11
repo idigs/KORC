@@ -560,6 +560,7 @@ module korc_types
      REAL(rp)  :: PSIP_min
      REAL(rp)  :: PSIp_lim,PSIp_0
      REAL(rp)  :: AMP
+     REAL(rp)  :: MARS_AMP_Scale
      !! interpolated E field
      INTEGER 			:: res_double
      INTEGER, DIMENSION(3) 			:: dims 

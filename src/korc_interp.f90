@@ -514,7 +514,8 @@ CONTAINS
        end if
 
        ! * * * * * * * * MAGNETIC FIELD * * * * * * * * !
-       if (F%Bflux.or.F%ReInterp_2x1t.or.(params%orbit_model(1:2).eq.'FO')) then
+       if (F%Bflux.or.F%ReInterp_2x1t.or. &
+            ((params%orbit_model(1:2).eq.'FO').and.F%axisymmetric_fields)) then
 
           write(output_unit_write,*) '2D poloidal flux function'
 
