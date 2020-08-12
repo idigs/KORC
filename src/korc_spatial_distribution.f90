@@ -162,7 +162,7 @@ subroutine torus(params,spp)
      call random_seed(put=seed)
   end if
   call RANDOM_NUMBER(zeta)
-  zeta = C_PI/2.0_rp!*C_PI*zeta
+  zeta = 2.0_rp*C_PI*zeta
 
   !write(6,*) 'Ro',spp%Ro*params%cpp%length
   !write(6,*) 'Zo',spp%Zo*params%cpp%length
