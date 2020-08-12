@@ -50,15 +50,18 @@ if (${CORI_DIR})
 else ()
     add_definitions (-DMAC)
 
-    #  Configure FRUIT
-    include_directories (${FRUIT_INCLUDE_PATH})
-    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${FRUIT_LINK_FLAGS}")
+    if($TEST})
+	#  Configure FRUIT
+       include_directories (${FRUIT_INCLUDE_PATH})
+       set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${FRUIT_LINK_FLAGS}")
 
-    #  Configure KORCSRC
-    include_directories (${KORCSRC_INCLUDE_PATH})
-    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${KORCSRC_LINK_FLAGS}")
+       #  Configure KORCSRC
+       include_directories (${KORCSRC_INCLUDE_PATH})
+       set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${KORCSRC_LINK_FLAGS}")
 
-    add_subdirectory (test)
+       add_subdirectory (test)
+
+    endif ()		     
 
 endif ()
 

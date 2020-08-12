@@ -162,8 +162,13 @@ subroutine torus(params,spp)
      call random_seed(put=seed)
   end if
   call RANDOM_NUMBER(zeta)
-  zeta = 2.0_rp*C_PI*zeta
+  zeta = C_PI/2.0_rp!*C_PI*zeta
 
+  !write(6,*) 'Ro',spp%Ro*params%cpp%length
+  !write(6,*) 'Zo',spp%Zo*params%cpp%length
+  !write(6,*) 'r_in',spp%r_inner*params%cpp%length
+  !write(6,*) 'r_out',spp%r_outter*params%cpp%length
+  
   ! Uniform distribution on a disk at a fixed azimuthal theta
   if (.not.params%SameRandSeed) then
      call init_random_seed()
@@ -176,6 +181,9 @@ subroutine torus(params,spp)
   spp%vars%X(:,1) = ( spp%Ro + r*COS(theta) )*SIN(zeta)
   spp%vars%X(:,2) = ( spp%Ro + r*COS(theta) )*COS(zeta)
   spp%vars%X(:,3) = spp%Zo + r*SIN(theta)
+
+  !write(6,*) 'r_sam',r*params%cpp%length
+  !write(6,*) 'R_sam',sqrt(spp%vars%X(:,1)**2+spp%vars%X(:,2)**2)*params%cpp%length
 
   DEALLOCATE(theta)
   DEALLOCATE(zeta)

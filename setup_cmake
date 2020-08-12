@@ -84,6 +84,7 @@ then
 	  -DKORCSRC_INCLUDE_PATH=/Users/21b/Desktop/KORC/build/modules \
 	  -DKORCSRC_LINK_FLAGS="-L/Users/21b/Desktop/KORC/build/lib -lkorcsrc" \
 	  -DKORCSRC_LIBRARIES=/Users/21b/Desktop/KORC/build/lib/libkorcsrc.a \
+	  -DTEST=OFF \
 #	  -DCORI_DIR=ON
  
 #	  -DCMAKE_CXX_COMPILER=/opt/local/bin/mpic++-mpich-gcc8
@@ -124,7 +125,8 @@ then
 	  -DM3DC1_LIBRARIES=/\global/u1/m/mbeidler/LIBS/FIO/install/lib/libm3dc1.a	\
           -DM3D_C1_INCLUDE_PATH=/global/u1/m/mbeidler/LIBS/FIO/install/include  \
           -DM3D_C1_LINK_FLAGS="-L/global/u1/m/mbeidler/LIBS/FIO/install/lib -lfusionio -lm3dc1" \
-	  -DCORI_DIR=ON
+	  -DCORI_DIR=ON \
+    	  -DTEST=OFF \
 
     #Intel Compiler
 #          -DEZSpline_INCLUDE_PATH=/global/u1/m/mbeidler/LIBS/PSPLINES/LINUX/mod \

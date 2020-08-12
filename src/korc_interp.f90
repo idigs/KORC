@@ -918,6 +918,16 @@ CONTAINS
              call EZspline_setup(bfield_3d%R, F%B_3D%R, ezerr, .TRUE.)
              call EZspline_error(ezerr)
 
+             !write(6,'("bfield_3d%R: ",E17.10)') bfield_3d%R%fspl(1,:,:,:)
+             !do ii=1_idef,bfield_3d%R%n1
+             !   do jj=1_idef,bfield_3d%R%n3                   
+             !      write(6,'("BR_spline1 at R ",E17.10,", Z ",E17.10,": ",E17.10)') &
+             !          bfield_3d%R%x1(ii)*params%cpp%length, &
+             !          bfield_3d%R%x3(jj)*params%cpp%length, &
+             !          bfield_3d%R%fspl(1,ii,1,jj)*params%cpp%Bo
+             !  end do
+             !end do
+
              ! Initializing PHI component of interpolant
              call EZspline_init(bfield_3d%PHI, bfield_3d%NR, bfield_3d%NPHI, &
                   bfield_3d%NZ,&
@@ -2400,6 +2410,51 @@ subroutine interp_FOfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
   !$OMP END SIMD
   
 end subroutine interp_FOfields_p
+
+subroutine interp_FO3Dfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
+     E_X,E_Y,E_Z,flag_cache)
+  INTEGER, INTENT(IN)  :: pchunk
+  TYPE(FIELDS), INTENT(IN)                               :: F
+  REAL(rp),DIMENSION(pchunk),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: B_X,B_Y,B_Z
+  REAL(rp),DIMENSION(pchunk)   :: B_R,B_PHI  
+  REAL(rp),DIMENSION(pchunk),INTENT(OUT)   :: E_X,E_Y,E_Z
+  REAL(rp),DIMENSION(pchunk)   :: E_R,E_PHI
+  REAL(rp),DIMENSION(pchunk)   :: cP,sP  
+  !  INTEGER(ip) :: ezerr
+  INTEGER                                      :: cc
+  !! Particle chunk iterator.
+  INTEGER(is),DIMENSION(pchunk),INTENT(INOUT)   :: flag_cache
+
+  call check_if_in_fields_domain_p(pchunk,F,Y_R,Y_PHI,Y_Z,flag_cache)
+
+  call EZspline_interp(bfield_3d%R,bfield_3d%PHI,bfield_3d%Z,efield_3d%R, &
+       efield_3d%PHI,efield_3d%Z,pchunk,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+       E_R,E_PHI,E_Z,ezerr)
+  call EZspline_error(ezerr)
+
+  !write(6,*) 'B_R',B_R
+  !write(6,*) 'B_PHI',B_PHI
+  !write(6,*) 'B_Z',B_Z
+  
+  !$OMP SIMD
+!  !$OMP& aligned (cP,sP,B_X,B_Y,E_X,E_Y,Y_PHI,B_R,B_PHI,E_R,E_PHI)
+  do cc=1_idef,pchunk
+     cP(cc)=cos(Y_PHI(cc))
+     sP(cc)=sin(Y_PHI(cc))
+
+
+     
+     B_X(cc) = B_R(cc)*cP(cc) - B_PHI(cc)*sP(cc)
+     B_Y(cc) = B_R(cc)*sP(cc) + B_PHI(cc)*cP(cc)
+
+     E_X(cc) = E_R(cc)*cP(cc) - E_PHI(cc)*sP(cc)
+     E_Y(cc) = E_R(cc)*sP(cc) + E_PHI(cc)*cP(cc)
+
+  end do
+  !$OMP END SIMD
+  
+end subroutine interp_FO3Dfields_p
 
 subroutine interp_FOfields1_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
      E_X,E_Y,E_Z,PSIp,flag_cache)

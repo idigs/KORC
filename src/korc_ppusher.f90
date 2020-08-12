@@ -185,30 +185,14 @@ contains
 
     REAL(rp)                                      :: dt
     !! Time step used in the leapfrog step (\(\Delta t\)).
-    REAL(rp)                                                   :: Prad
-    !! Total radiated power of each particle.
 
-    REAL(rp)                                  :: Bmag1
-    !! Magnitude of the magnetic field seen by each particle .
-    REAL(rp)                                                   :: v
-    !! Speed of each particle.
-    REAL(rp)                                                   :: vpar
-    !! Parallel velocity \(v_\parallel = \mathbf{v}\cdot \hat{b}\).
-    REAL(rp)                                                   :: vperp
-    !! Perpendicular velocity \(v_\parallel = |\mathbf{v} - (\mathbf{v}\cdot
-    !! \hat{b})\hat{b}|\).
-    REAL(rp)                                                   :: tmp
-    !! Temporary variable used for various computations.
-    REAL(rp)                                                   :: a
-    !! This variable is used to simplify notation in the code, and
-    !! is given by \(a=q\Delta t/m\),
-
-    REAL(rp), DIMENSION(3)                       :: Frad
-    !! Synchrotron radiation reaction force of each particle.
-    REAL(rp), DIMENSION(3)                       :: vec
-    !! Auxiliary vector used in various computations.
-    REAL(rp), DIMENSION(3)                       :: b_unit
-    !! Unitary vector pointing along the local magnetic field \(\hat{b}\).
+    REAL(rp), DIMENSION(params%pchunk)               :: Bmag
+    REAL(rp), DIMENSION(params%pchunk)               :: b_unit_X,b_unit_Y,b_unit_Z
+    REAL(rp), DIMENSION(params%pchunk)               :: v,vpar,vperp
+    REAL(rp), DIMENSION(params%pchunk)               :: tmp
+    REAL(rp), DIMENSION(params%pchunk)               :: g
+    REAL(rp), DIMENSION(params%pchunk)               :: cross_X,cross_Y,cross_Z
+    REAL(rp), DIMENSION(params%pchunk)               :: vec_X,vec_Y,vec_Z
     INTEGER                                      :: ii
     !! Species iterator.
     INTEGER                                      :: pp
@@ -220,6 +204,7 @@ contains
     LOGICAL,intent(in) :: step   
 
     REAL(rp),DIMENSION(params%pchunk) :: X_X,X_Y,X_Z
+    REAL(rp),DIMENSION(params%pchunk) :: V_X,V_Y,V_Z
     REAL(rp),DIMENSION(params%pchunk) :: Y_R,Y_PHI,Y_Z
     REAL(rp),DIMENSION(params%pchunk) :: B_X,B_Y,B_Z
     REAL(rp),DIMENSION(params%pchunk) :: E_X,E_Y,E_Z
@@ -238,17 +223,19 @@ contains
     ar=F%AB%a
 
     do ii = 1_idef,params%num_species
-
+       
        m_cache=spp(ii)%m
        q_cache=spp(ii)%q
        
        if(output) then
 
           !$OMP PARALLEL DO default(none) &
-          !$OMP firstprivate(m_cache,q_cache,B0,EF0,lam,R0,q0,ar,pchunk) &
+          !$OMP firstprivate(E0,m_cache,q_cache,B0,EF0,lam,R0,q0,ar,pchunk) &
           !$OMP& shared(params,ii,spp,F) &
-          !$OMP& PRIVATE(pp,cc,X_X,X_Y,X_Z,B_X,B_Y,B_Z, &
-          !$OMP& E_X,E_Y,E_Z,Y_R,Y_PHI,Y_Z,flagCon,flagCol,PSIp,hint)
+          !$OMP& PRIVATE(pp,cc,X_X,X_Y,X_Z,B_X,B_Y,B_Z,V_X,V_Y,V_Z, &
+          !$OMP& E_X,E_Y,E_Z,Y_R,Y_PHI,Y_Z,flagCon,flagCol,PSIp,hint,Bmag, &
+          !$OMP& b_unit_X,b_unit_Y,b_unit_Z,v,vpar,vperp,tmp, &
+          !$OMP& cross_X,cross_Y,cross_Z,vec_X,vec_Y,vec_Z,g)
           do pp=1_idef,spp(ii)%ppp,pchunk
 
              !$OMP SIMD
@@ -257,6 +244,14 @@ contains
                 X_Y(cc)=spp(ii)%vars%X(pp-1+cc,2)
                 X_Z(cc)=spp(ii)%vars%X(pp-1+cc,3)
 
+                V_X(cc)=spp(ii)%vars%V(pp-1+cc,1)
+                V_Y(cc)=spp(ii)%vars%V(pp-1+cc,2)
+                V_Z(cc)=spp(ii)%vars%V(pp-1+cc,3)
+
+                Y_R(cc)=0._rp
+                Y_PHI(cc)=0._rp
+                Y_Z(cc)=0._rp
+                
                 B_X(cc)=0._rp
                 B_Y(cc)=0._rp
                 B_Z(cc)=0._rp
@@ -280,15 +275,19 @@ contains
                 !$OMP END SIMD
              end if
 
-             call cart_to_cyl_p(pchunk,X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
+             call cart_to_cyl_p(pchunk,X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)             
 
              if (params%field_model(1:3).eq.'ANA') then
                 call analytical_fields_p(pchunk,B0,EF0,R0,q0,lam,ar, &
-                     X_X,X_Y,X_Z, &
-                     B_X,B_Y,B_Z,E_X,E_Y,E_Z,flagCon)
-             else if (params%orbit_model(3:3).eq.'B') then
+                     X_X,X_Y,X_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flagCon)
+             else if (F%axisymmetric_fields.and. &
+                  (params%orbit_model(3:3).eq.'B')) then
                 call interp_FOfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
                      E_X,E_Y,E_Z,PSIp,flagCon)
+             else if ((.not.F%axisymmetric_fields).and. &
+                  (params%orbit_model(3:3).eq.'B')) then
+                call interp_FO3Dfields_p(pchunk,F,Y_R,Y_PHI,Y_Z, &
+                     B_X,B_Y,B_Z,E_X,E_Y,E_Z,flagCon)
              else if (params%orbit_model(3:5).eq.'psi') then
                 call interp_FOfields1_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
                      E_X,E_Y,E_Z,PSIp,flagCon)
@@ -308,7 +307,15 @@ contains
                 
              end if
 
-
+             !write(6,'("Y_R: ",E17.10)') Y_R*params%cpp%length
+             !write(6,'("Y_PHI: ",E17.10)') Y_PHI
+             !write(6,'("Y_Z: ",E17.10)') Y_Z*params%cpp%length
+             !write(6,*) 'r_sam',sqrt((Y_R-spp(ii)%Ro)**2+Y_Z**2)*params%cpp%length
+             
+             !write(6,'("B_X: ",E17.10)') B_X*params%cpp%Bo
+             !write(6,'("B_Y: ",E17.10)') B_Y*params%cpp%Bo
+             !write(6,'("B_Z: ",E17.10)') B_Z*params%cpp%Bo
+             
              !$OMP SIMD
              do cc=1_idef,pchunk
                 spp(ii)%vars%B(pp-1+cc,1) = B_X(cc)
@@ -323,6 +330,7 @@ contains
              end do
              !$OMP END SIMD
 
+
              if (params%field_model.eq.'M3D_C1') then
                 !$OMP SIMD
                 do cc=1_idef,pchunk
@@ -331,81 +339,76 @@ contains
                 !$OMP END SIMD
              end if
 
-          end do
-          !$OMP END PARALLEL DO                         
+             !$OMP SIMD
+             !          !$OMP& aligned(Bmag,B_X,B_Y,B_Z, &
+             !          !$OMP& b_unit_X,b_unit_Y,b_unit_Z,v,V_X,V_Y,V_Z,vpar, &
+             !          !$OMP& vperp,tmp,cross_X,cross_Y,cross_Z, &
+             !          !$OMP& vec_X,vec_Y,vec_Z,E_X,E_Y,E_Z)
+             do cc=1_idef,pchunk
+                !Derived output data
+                Bmag(cc) = SQRT(B_X(cc)*B_X(cc)+B_Y(cc)*B_Y(cc)+B_Z(cc)*B_Z(cc))
 
-          !! Calls [[get_fields]] in [[korc_fields]].
-          ! Interpolates fields at local particles' position and keeps in
-          ! spp%vars. Fields in (R,\(\phi\),Z) coordinates.
+                ! Parallel unit vector
+                b_unit_X(cc) = B_X(cc)/Bmag(cc)
+                b_unit_Y(cc) = B_Y(cc)/Bmag(cc)
+                b_unit_Z(cc) = B_Z(cc)/Bmag(cc)
 
-          !          write(output_unit_write,'("korc_ppusher")')
-          !          write(output_unit_write,'("B_X: ",E17.10)') spp(ii)%vars%B(:,1)
-          !          write(output_unit_write,'("B_Z: ",E17.10)') spp(ii)%vars%B(:,2)
-          !          write(output_unit_write,'("B_Y: ",E17.10)') spp(ii)%vars%B(:,3)
+                v(cc) = SQRT(V_X(cc)*V_X(cc)+V_Y(cc)*V_Y(cc)+V_Z(cc)*V_Z(cc))
+                if (v(cc).GT.korc_zero) then
+                   ! Parallel and perpendicular components of velocity
+                   vpar(cc) = (V_X(cc)*b_unit_X(cc)+V_Y(cc)*b_unit_Y(cc)+ &
+                        V_Z(cc)*b_unit_Z(cc))
 
-          !$OMP PARALLEL DO DEFAULT(none) SHARED(ii,spp) &
-          !$OMP& FIRSTPRIVATE(E0) &
-          !$OMP& PRIVATE(pp,b_unit,Bmag1,vpar,v,vperp,vec,tmp)
-          do pp=1_idef,spp(ii)%ppp
+                   vperp(cc) =  v(cc)**2 - vpar(cc)**2
+                   if ( vperp(cc) .GE. korc_zero ) then
+                      vperp(cc) = SQRT( vperp(cc) )
+                   else
+                      vperp(cc) = 0.0_rp
+                   end if
 
-             Bmag1 = SQRT(DOT_PRODUCT(spp(ii)%vars%B(pp,:), &
-                  spp(ii)%vars%B(pp,:)))
+                   ! Pitch angle
+                   spp(ii)%vars%eta(pp-1+cc) = 180.0_rp* &
+                        MODULO(ATAN2(vperp(cc),vpar(cc)),2.0_rp*C_PI)/C_PI
 
-             ! Parallel unit vector
-             b_unit = spp(ii)%vars%B(pp,:)/Bmag1
+                   ! Magnetic moment
+                   spp(ii)%vars%mu(pp-1+cc) = 0.5_rp*m_cache* &
+                        g(cc)**2*vperp(cc)**2/Bmag(cc)
+                   ! See Northrop's book (The adiabatic motion of charged
+                   ! particles)
 
-             !write(output_unit_write,*) 'X',spp(1)%vars%X
-             !write(output_unit_write,*) 'b-hat',b_unit
+                   ! Radiated power
+                   tmp(cc) = q_cache**4/(6.0_rp*C_PI*E0*m_cache**2)
 
-             v = SQRT(DOT_PRODUCT(spp(ii)%vars%V(pp,:),spp(ii)%vars%V(pp,:)))
-             if (v.GT.korc_zero) then
-                ! Parallel and perpendicular components of velocity
-                vpar = DOT_PRODUCT(spp(ii)%vars%V(pp,:), b_unit)
-                vperp =  DOT_PRODUCT(spp(ii)%vars%V(pp,:), &
-                     spp(ii)%vars%V(pp,:)) &
-                     - vpar**2
-                if ( vperp .GE. korc_zero ) then
-                   vperp = SQRT( vperp )
+                   cross_X(cc) = V_Y(cc)*B_Z(cc)-V_Z(cc)*B_Y(cc)
+                   cross_Y(cc) = V_Z(cc)*B_X(cc)-V_X(cc)*B_Z(cc)
+                   cross_Z(cc) = V_X(cc)*B_Y(cc)-V_Y(cc)*B_X(cc)
+
+                   vec_X(cc) = E_X(cc) + cross_X(cc)
+                   vec_Y(cc) = E_Y(cc) + cross_Y(cc)
+                   vec_Z(cc) = E_Z(cc) + cross_Z(cc)
+
+                   spp(ii)%vars%Prad(pp-1+cc) = tmp(cc)* &
+                        ( E_X(cc)*E_X(cc)+E_Y(cc)*E_Y(cc)+E_Z(cc)*E_Z(cc) + &
+                        cross_X(cc)*E_X(cc)+cross_Y(cc)*E_Y(cc)+ &
+                        cross_Z(cc)*E_Z(cc) + g(cc)**2* &
+                        ((E_X(cc)*V_X(cc)+E_Y(cc)*V_Y(cc)+E_Z(cc)*V_Z(cc))**2 &
+                        - vec_X(cc)*vec_X(cc)-vec_Y(cc)*vec_Y(cc)- &
+                        vec_Z(cc)*vec_Z(cc)) )
+
+                   ! Input power due to electric field
+                   spp(ii)%vars%Pin(pp-1+cc) = q_cache*(E_X(cc)*V_X(cc)+ &
+                        E_Y(cc)*V_Y(cc)+E_Z(cc)*V_Z(cc))
                 else
-                   vperp = 0.0_rp
+                   spp(ii)%vars%eta(pp-1+cc) = 0.0_rp
+                   spp(ii)%vars%mu(pp-1+cc) = 0.0_rp
+                   spp(ii)%vars%Prad(pp-1+cc) = 0.0_rp
+                   spp(ii)%vars%Pin(pp-1+cc) = 0.0_rp
                 end if
 
-                ! Pitch angle
-                spp(ii)%vars%eta(pp) = 180.0_rp*MODULO(ATAN2(vperp,vpar), &
-                     2.0_rp*C_PI)/C_PI
-
-                ! Magnetic moment
-                spp(ii)%vars%mu(pp) = 0.5_rp*spp(ii)%m* &
-                     spp(ii)%vars%g(pp)**2*vperp**2/Bmag1
-                ! See Northrop's book (The adiabatic motion of charged
-                ! particles)
-
-                ! Radiated power
-                tmp = spp(ii)%q**4/(6.0_rp*C_PI*E0*spp(ii)%m**2)
-                vec = spp(ii)%vars%E(pp,:) + cross(spp(ii)%vars%V(pp,:), &
-                     spp(ii)%vars%B(pp,:))
-
-                spp(ii)%vars%Prad(pp) = tmp*( DOT_PRODUCT(spp(ii)% &
-                     vars%E(pp,:), &
-                     spp(ii)%vars%E(pp,:)) + &
-                     DOT_PRODUCT(cross(spp(ii)%vars%V(pp,:), &
-                     spp(ii)%vars%B(pp,:)),spp(ii)%vars%E(pp,:))+ &
-                     spp(ii)%vars%g(pp)**2* &
-                     (DOT_PRODUCT(spp(ii)%vars%E(pp,:), &
-                     spp(ii)%vars%V(pp,:))**2 - DOT_PRODUCT(vec,vec)) )
-
-                ! Input power due to electric field
-                spp(ii)%vars%Pin(pp) = spp(ii)%q*DOT_PRODUCT( &
-                     spp(ii)%vars%E(pp,:),spp(ii)%vars%V(pp,:))
-             else
-                spp(ii)%vars%eta(pp) = 0.0_rp
-                spp(ii)%vars%mu(pp) = 0.0_rp
-                spp(ii)%vars%Prad(pp) = 0.0_rp
-                spp(ii)%vars%Pin(pp) = 0.0_rp
-             end if
-
-
-          end do ! loop over particles on an mpi process
+             end do
+             !$OMP END SIMD
+             
+          end do
           !$OMP END PARALLEL DO
 
        end if !(if output)
@@ -996,6 +999,10 @@ contains
              X_Y(cc)=spp(ii)%vars%X(pp-1+cc,2)
              X_Z(cc)=spp(ii)%vars%X(pp-1+cc,3)
 
+             Y_R(cc)=0._rp
+             Y_PHI(cc)=0._rp
+             Y_Z(cc)=0._rp
+
              V_X(cc)=spp(ii)%vars%V(pp-1+cc,1)
              V_Y(cc)=spp(ii)%vars%V(pp-1+cc,2)
              V_Z(cc)=spp(ii)%vars%V(pp-1+cc,3)
@@ -1249,6 +1256,10 @@ contains
              X_Y(cc)=spp(ii)%vars%X(pp-1+cc,2)
              X_Z(cc)=spp(ii)%vars%X(pp-1+cc,3)
 
+             Y_R(cc)=0._rp
+             Y_PHI(cc)=0._rp
+             Y_Z(cc)=0._rp
+
              V_X(cc)=spp(ii)%vars%V(pp-1+cc,1)
              V_Y(cc)=spp(ii)%vars%V(pp-1+cc,2)
              V_Z(cc)=spp(ii)%vars%V(pp-1+cc,3)
@@ -1275,9 +1286,14 @@ contains
 
                 call cart_to_cyl_p(pchunk,X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
 
-                if (params%orbit_model(3:3).eq.'B') then
+                if (F%axisymmetric_fields.and. &
+                     (params%orbit_model(3:3).eq.'B')) then
                    call interp_FOfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
                         E_X,E_Y,E_Z,PSIp,flagCon)
+                else if ((.not.F%axisymmetric_fields).and. &
+                     (params%orbit_model(3:3).eq.'B')) then
+                   call interp_FO3Dfields_p(pchunk,F,Y_R,Y_PHI,Y_Z, &
+                        B_X,B_Y,B_Z,E_X,E_Y,E_Z,flagCon)
                 else if (params%orbit_model(3:5).eq.'psi') then
                    call interp_FOfields1_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
                         E_X,E_Y,E_Z,PSIp,flagCon)
@@ -1487,6 +1503,10 @@ contains
              X_Y(cc)=spp(ii)%vars%X(pp-1+cc,2)
              X_Z(cc)=spp(ii)%vars%X(pp-1+cc,3)
 
+             Y_R(cc)=0._rp
+             Y_PHI(cc)=0._rp
+             Y_Z(cc)=0._rp
+             
              V_X(cc)=spp(ii)%vars%V(pp-1+cc,1)
              V_Y(cc)=spp(ii)%vars%V(pp-1+cc,2)
              V_Z(cc)=spp(ii)%vars%V(pp-1+cc,3)

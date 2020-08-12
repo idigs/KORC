@@ -40,8 +40,10 @@ option (CORI_DIR "Use Cori directories" OFF)
 if (${CORI_DIR})
     add_definitions (-DCORI)
 else ()
-    add_definitions (-DMAC)	
-    add_library (korcsrc STATIC ${korc_sources})
+    add_definitions (-DMAC)
+    if (${TEST})
+       add_library (korcsrc STATIC ${korc_sources})
+    endif ()
 endif ()
 
 

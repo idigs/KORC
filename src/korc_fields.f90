@@ -3200,6 +3200,8 @@ CONTAINS
           dset = "/BR"
           call load_array_from_hdf5(h5file_id,dset,F%B_3D%R)
 
+          !write(6,*) 'BR(25,1,:)',F%B_3D%R(25,1,:)
+
           dset = "/BPHI"
           call load_array_from_hdf5(h5file_id,dset,F%B_3D%PHI)
 

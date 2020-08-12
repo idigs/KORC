@@ -1860,17 +1860,24 @@ CONTAINS
              end if
 
              if (ALLOCATED(F%E_3D%R)) then
-                dset = TRIM(gname) // "/ER3D"
+                dset = TRIM(gname) // "/ER"
                 units = params%cpp%Eo
                 call rsave_3d_array_to_hdf5(h5file_id, dset, &
                      units*F%E_3D%R)
              end if
              
              if (ALLOCATED(F%E_3D%PHI)) then
-                dset = TRIM(gname) // "/EPHI3D"
+                dset = TRIM(gname) // "/EPHI"
                 units = params%cpp%Eo
                 call rsave_3d_array_to_hdf5(h5file_id, dset, &
                      units*F%E_3D%PHI)
+             end if
+
+             if (ALLOCATED(F%E_3D%Z)) then
+                dset = TRIM(gname) // "/EZ"
+                units = params%cpp%Eo
+                call rsave_3d_array_to_hdf5(h5file_id, dset, &
+                     units*F%E_3D%Z)
              end if
              
              if (ALLOCATED(F%PSIp3D)) then
