@@ -50,7 +50,7 @@ if (${CORI_DIR})
 else ()
     add_definitions (-DMAC)
 
-    if($TEST})
+    if(${KORC_TEST})
 	#  Configure FRUIT
        include_directories (${FRUIT_INCLUDE_PATH})
        set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${FRUIT_LINK_FLAGS}")
@@ -60,6 +60,16 @@ else ()
        set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${KORCSRC_LINK_FLAGS}")
 
        add_subdirectory (test)
+
+       enable_testing()     
+
+       add_test (NAME unit_testing
+       		 COMMAND xtest TEST_OUT
+		 WORKING_DIRECTORY build/bin)
+
+       add_test (NAME regression_test_1
+       		 COMMAND korc_regtest1.sh
+		 WORKING_DIRECTORY test/reg_tests)
 
     endif ()		     
 

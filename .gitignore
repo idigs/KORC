@@ -21,3 +21,9 @@ Makefile
 
 # ignore all .txt files
 *.txt
+
+#ignore all .h5 files
+*.h5
+
+#ignore files in OUT_TEST
+**/OUT_TEST

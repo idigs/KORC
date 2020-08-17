@@ -1,4 +1,4 @@
-module test_mpi
+module test_hpc
   use mpi
   use fruit
   use korc_types
@@ -30,7 +30,7 @@ contains
     
   end subroutine test_mpi_initialization
 
-end module test_mpi
+end module test_hpc
 
 
 

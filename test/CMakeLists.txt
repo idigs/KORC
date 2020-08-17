@@ -3,7 +3,8 @@
 set (korc_tests "")
 list (APPEND korc_tests
      korc_test.f90
-     test_mpi.f90
+     test_io.f90
+     test_hpc.f90
 )
 
 add_executable (xtest ${korc_tests})
