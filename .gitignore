@@ -27,3 +27,7 @@ Makefile
 
 #ignore files in OUT_TEST
 **/OUT_TEST
+
+# ignore CTest files
+CTestTestfile.cmake
+**/Testing
