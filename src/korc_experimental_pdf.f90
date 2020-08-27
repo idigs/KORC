@@ -817,11 +817,13 @@ CONTAINS
     fRE_H = fRE_H*feta
   END FUNCTION fRE_H
 
-  FUNCTION fRE_H_3D(F,eta,g,R,Z,R0,Z0)
+  FUNCTION fRE_H_3D(params,F,eta,g,R,Z,R0,Z0,EPHI)
+    TYPE(KORC_PARAMS), INTENT(IN) 	:: params
     TYPE(FIELDS), INTENT(IN)    :: F
     REAL(rp), INTENT(IN) 	:: eta ! pitch angle in degrees
     REAL(rp), INTENT(IN) 	:: g ! Relativistic gamma factor
     REAL(rp), INTENT(IN)  :: R,Z,R0,Z0
+    REAL(rp), INTENT(IN),optional  :: EPHI
     REAL(rp) 				:: fRE_H_3D
     REAL(rp) 				:: D
     REAL(rp) 				:: g0
@@ -832,8 +834,9 @@ CONTAINS
     REAL(rp) 				:: feta
     REAL(rp) 				:: A
     REAL(rp) 				:: rm,E_G,Z_G
+    REAL(rp) 				:: CLog0,CLogee,E_CH,k=5._rp,VTe
     INTEGER 				:: index
-
+    
     index = MINLOC(ABS(h_params%g - g),1)
     ! index of gamma supplied to function in Hollmann input gamma range
     D = h_params%g(index) - g
@@ -862,8 +865,30 @@ CONTAINS
 
     rm=sqrt((R-R0)**2+(Z-Z0)**2)
 
-    E_G=F%Ro*h_params%Eo/R
+    if(present(EPHI)) then
 
+       CLog0=14.9_rp - LOG(1E-20_rp*n_ne)/2._rp + &
+            LOG(1E-3_rp*Teo)
+       VTe=sqrt(2._rp*Teo*C_E/C_ME)
+       CLogee=CLog0+log(1+(2*(g-1)/(VTe/C_C)**2)**(k/2._rp))/k
+
+       E_CH=n_ne*C_E**3*CLogee/(4*C_PI*C_E0**2*C_ME*C_C**2)
+
+       !write(output_unit_write,*) 'gamma',g
+       !write(output_unit_write,*) 'ne',n_ne, &
+       !     'Te',Teo,'VTe',VTe
+       !write(output_unit_write,*) 'EPHI',EPHI,'CLog',CLogee,'E_CH',E_CH
+       !flush(output_unit_write)
+       
+       E_G=abs(EPHI)/E_CH
+
+       !write(output_unit_write,*) 'E_G',E_G
+       !flush(output_unit_write)
+       
+    else
+       E_G=F%Ro*h_params%Eo/R
+    endif
+       
 !    E_G=h_params%E*exp(-(rm/h_params%sigma_E)**2/2)
     Z_G=h_params%Zeff*exp(-(rm/h_params%sigma_Z)**2/2)
 
@@ -871,6 +896,9 @@ CONTAINS
     
     A = (2.0_rp*E_G/(Z_G + 1.0_rp))*(g**2 - 1.0_rp)/g
     A = A*h_params%A_fact
+
+    !write(output_unit_write,*) 'A',A
+    !flush(output_unit_write)    
 
     feta = A*EXP(-A*(1.0_rp - COS(deg2rad(eta))))/(1.0_rp - EXP(-2.0_rp*A))     ! MRC
     !	feta = 0.5_rp*A*EXP(A*COS(deg2rad(eta)))/SINH(A)                            ! MRC
@@ -1429,7 +1457,8 @@ subroutine sample_Hollmann_distribution_3D(params,spp,F)
            psi0=PSI_ROT_exp(R_buffer,spp%Ro,spp%sigmaR,Z_buffer,spp%Zo, &
                 spp%sigmaZ,theta_rad)
            
-           f0=fRE_H_3D(F,eta_buffer,G_buffer,R_buffer,Z_buffer,spp%Ro,spp%Zo)
+           f0=fRE_H_3D(params,F,eta_buffer,G_buffer,R_buffer,Z_buffer, &
+                spp%Ro,spp%Zo)
 !           f0=fRE_H(eta_buffer,G_buffer)
         end if
 
@@ -1442,7 +1471,7 @@ subroutine sample_Hollmann_distribution_3D(params,spp,F)
              spp%sigmaZ,theta_rad)       
         
                 
-        f1=fRE_H_3D(F,eta_test,G_test,R_test,Z_test,spp%Ro,spp%Zo)    
+        f1=fRE_H_3D(params,F,eta_test,G_test,R_test,Z_test,spp%Ro,spp%Zo)    
 !        f1=fRE_H(eta_test,G_test)
         
 !        write(output_unit_write,'("psi0: ",E17.10)') psi0
@@ -1549,7 +1578,7 @@ subroutine sample_Hollmann_distribution_3D(params,spp,F)
 !        write(output_unit_write,'("dZ: ",E17.10)') spp%dZ
 !        write(output_unit_write,'("N_dR: ",Z17.10)') random_norm(0.0_rp,spp%dZ)
         
-        f1=fRE_H_3D(F,eta_test,G_test,R_test,Z_test,spp%Ro,spp%Zo)            
+        f1=fRE_H_3D(params,F,eta_test,G_test,R_test,Z_test,spp%Ro,spp%Zo)            
 !        f1=fRE_H(eta_test,G_test)
         
         ratio = indicator_exp(psi1,psi_max_buff)* &
@@ -1925,14 +1954,15 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
            spp%vars%Y(1,2)=0
            spp%vars%Y(1,3)=Z_buffer
 
-           write(output_unit_write,*) 'R',R_buffer
-           write(output_unit_write,*) 'Z',Z_buffer
+           !write(output_unit_write,*) 'R',R_buffer
+           !write(output_unit_write,*) 'Z',Z_buffer
            
            call get_fields(params,spp%vars,F)
            psi0=spp%vars%PSI_P(1)
            PSIN0=(psi0-PSIP0)/(PSIp_lim-PSIP0)
            
-           f0=fRE_H_3D(F,eta_buffer,G_buffer,R_buffer,Z_buffer,spp%Ro,spp%Zo)
+           f0=fRE_H_3D(params,F,eta_buffer,G_buffer,R_buffer,Z_buffer, &
+                spp%Ro,spp%Zo,spp%vars%E(1,2)*params%cpp%Eo)
 !           f0=fRE_H(eta_buffer,G_buffer)
         end if
 
@@ -1952,12 +1982,16 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
         psi1=spp%vars%PSI_P(1)
         PSIN1=(psi1-PSIP0)/(PSIp_lim-PSIP0)
 
-        write(output_unit_write,*) 'R',R_test
-        write(output_unit_write,*) 'Z',Z_test
-        write(output_unit_write,*) 'PSI',psi1
-        write(output_unit_write,*) 'PSIN',PSIN
+        !write(output_unit_write,*) 'R',R_test*params%cpp%length
+        !write(output_unit_write,*) 'Z',Z_test*params%cpp%length
+        !write(output_unit_write,*) 'ER',spp%vars%E(1,1)*params%cpp%Eo
+        !write(output_unit_write,*) 'EPHI',spp%vars%E(1,2)*params%cpp%Eo
+        !write(output_unit_write,*) 'EZ',spp%vars%E(1,3)*params%cpp%Eo
+        !write(output_unit_write,*) 'PSI',psi1
+        !write(output_unit_write,*) 'PSIN',PSIN
                 
-        f1=fRE_H_3D(F,eta_test,G_test,R_test,Z_test,spp%Ro,spp%Zo)    
+        f1=fRE_H_3D(params,F,eta_test,G_test,R_test,Z_test,spp%Ro,spp%Zo, &
+             spp%vars%E(1,2)*params%cpp%Eo)    
 !        f1=fRE_H(eta_test,G_test)
         
 !        write(output_unit_write,'("psi0: ",E17.10)') psi0
@@ -2083,7 +2117,8 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
 !        write(output_unit_write,'("dZ: ",E17.10)') spp%dZ
 !        write(output_unit_write,'("N_dR: ",Z17.10)') random_norm(0.0_rp,spp%dZ)
         
-        f1=fRE_H_3D(F,eta_test,G_test,R_test,Z_test,spp%Ro,spp%Zo)            
+        f1=fRE_H_3D(params,F,eta_test,G_test,R_test,Z_test,spp%Ro,spp%Zo, &
+             spp%vars%E(1,2)*params%cpp%Eo)            
 !        f1=fRE_H(eta_test,G_test)
         
 !        ratio = indicator_exp(PSIN,psi_max_buff)* &
@@ -2155,6 +2190,10 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
 !     write(output_unit_write,*) 'Z_samples',Z_samples
 !     write(output_unit_write,*) 'G_samples',G_samples
 !     write(output_unit_write,*) 'eta_samples',eta_samples
+
+     if (TRIM(h_params%current_direction) .EQ. 'PARALLEL') then
+        eta_samples = 180.0_rp - eta_samples
+     end if
      
   end if
 
