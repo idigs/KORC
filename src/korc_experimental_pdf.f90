@@ -741,6 +741,7 @@ CONTAINS
     call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
     if (h5error .EQ. -1) then
        write(output_unit_write,'("KORC ERROR: Something went wrong in: load_data_from_hdf5 (korc_experimental) --> h5fopen_f")')
+       call korc_abort(20)
     end if
 
     dset = "/N"
