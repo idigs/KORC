@@ -627,7 +627,7 @@ program main
 
      do it=F%ind0_2x1t,params%time_slice
 
-        !write(6,*) it,F%ind0_2x1t
+!        write(6,*) it,F%ind0_2x1t
         
         if (it.gt.F%ind0_2x1t) then
            call initialize_m3d_c1(params, F, P, spp,.false.)

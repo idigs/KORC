@@ -286,6 +286,7 @@ CONTAINS
 
     status = fio_get_real_field_parameter(F%M3D_C1_B, FIO_TIME, time0)
 
+    write(output_unit_write,*) 'FIO present time index',F%ind_2x1t
     write(output_unit_write,*) 'FIO present time',time0
 
     if (F%ReInterp_2x1t) then
@@ -294,6 +295,7 @@ CONTAINS
        status = fio_get_field(isrc, FIO_MAGNETIC_FIELD, M3D_C1_tmp)
        
        status = fio_get_real_field_parameter(M3D_C1_tmp, FIO_TIME, time1)
+       write(output_unit_write,*) 'FIO next time index',F%ind_2x1t+1
        write(output_unit_write,*) 'FIO next time',time1
 
        status = fio_set_int_option(FIO_TIMESLICE, F%ind_2x1t)
