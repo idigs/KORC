@@ -263,12 +263,23 @@ CONTAINS
        end if
 
        F%ind_2x1t=F%ind0_2x1t
+
+       status = fio_open_source(FIO_M3DC1_SOURCE,           &
+            TRIM(params%magnetic_field_filename)            &
+            // C_NULL_CHAR, F%isrc)
+
+    else
+       status = fio_close_field(F%M3D_C1_B)
+       status = fio_close_field(F%M3D_C1_B+1)
+       status = fio_close_field(F%M3D_C1_A)
+
+       status = fio_close_field(P%M3D_C1_ne)
+       status = fio_close_field(P%M3D_C1_te)
+       status = fio_close_field(P%M3D_C1_ni)
        
     end if
 
-    status = fio_open_source(FIO_M3DC1_SOURCE,           &
-         TRIM(params%magnetic_field_filename)            &
-         // C_NULL_CHAR, isrc)
+    isrc=F%isrc
     
     status = fio_get_options(isrc)
        
@@ -368,10 +379,12 @@ CONTAINS
     INTEGER,ALLOCATABLE,DIMENSION(:)          :: Zo
     INTEGER  :: A,Zo1
 
-    status = fio_open_source(FIO_M3DC1_SOURCE,           &
-         TRIM(params%magnetic_field_filename)            &
-         // C_NULL_CHAR, isrc)
+    !status = fio_open_source(FIO_M3DC1_SOURCE,           &
+    !     TRIM(params%magnetic_field_filename)            &
+    !     // C_NULL_CHAR, isrc)
 
+    isrc=F%isrc
+    
     status = fio_get_options(isrc)
        
     
@@ -381,8 +394,14 @@ CONTAINS
        status = fio_set_int_option(FIO_TIMESLICE, F%ind_2x1t)
     end if
 
-    if (init) ALLOCATE(P%M3D_C1_nimp(num_imp))
-
+    if (init) then
+       ALLOCATE(P%M3D_C1_nimp(num_imp))
+    else
+       do ii=1,num_imp
+          status = fio_close_field(P%M3D_C1_nimp(ii))
+       end do          
+    endif
+       
     !write(6,*) size(params%Zj)
     !write(6,*) size(params%Zj(ubound(params%Zj)))
     Zo=int(params%Zj(ubound(params%Zj)))
@@ -408,6 +427,32 @@ CONTAINS
        
   END SUBROUTINE initialize_m3d_c1_imp
 
+  SUBROUTINE finalize_m3d_c1(params, F, P)
+    TYPE(KORC_PARAMS), INTENT(IN)           :: params
+    TYPE(FIELDS), INTENT(IN)                :: F
+    TYPE(PROFILES), INTENT(INOUT)              :: P
+    INTEGER                                    :: status
+    INTEGER                                    :: ii
+
+    status = fio_close_field(F%M3D_C1_B)
+    status = fio_close_field(F%M3D_C1_B+1)
+    status = fio_close_field(F%M3D_C1_A)
+
+    status = fio_close_field(P%M3D_C1_ne)
+    status = fio_close_field(P%M3D_C1_te)
+    status = fio_close_field(P%M3D_C1_ni)
+
+    if (params%collisions) then
+       do ii=1,params%num_impurity_species
+          status = fio_close_field(P%M3D_C1_nimp(ii))
+       end do
+    end if
+
+    status=fio_close_source(F%isrc)
+    
+  end SUBROUTINE FINALIZE_M3D_C1
+
+  
   FUNCTION FIO_MAKE_SPECIES(m, p, e)
     INTEGER, INTENT(IN) :: m
     INTEGER, INTENT(IN) :: p

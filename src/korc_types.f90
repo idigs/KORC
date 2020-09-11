@@ -617,6 +617,7 @@ module korc_types
      REAL(rp)  :: t0_2x1t
      INTEGER  :: ind0_2x1t,ind_2x1t
 #ifdef M3D_C1
+     INTEGER  :: isrc
      INTEGER (C_INT)                         :: M3D_C1_B
      !! An M3D-C1 magnetic field.
      INTEGER (C_INT)                         :: M3D_C1_E

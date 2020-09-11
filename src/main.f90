@@ -651,7 +651,10 @@ program main
         call save_simulation_outputs(params,spp,F)
         call save_restart_variables(params,spp,F)
 
+        !comment out for debugging only
         F%ind_2x1t=F%ind_2x1t+1_ip
+
+
         if (params%mpi_params%rank .EQ. 0) then
            write(output_unit_write,*) 'KORC time ',params%time*params%cpp%time
            flush(output_unit_write)
@@ -668,6 +671,11 @@ program main
   
   call finalize_interpolants(params)
 
+#ifdef M3D_C1
+  if (TRIM(params%field_model) .eq. 'M3D_C1') then
+     call finalize_m3d_c1(params,F,P)
+  end if
+#endif
   
   ! DEALLOCATION OF VARIABLES
   call deallocate_variables(params,F,P,spp)
