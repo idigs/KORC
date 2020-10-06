@@ -59,25 +59,25 @@ then
 #    export CXX=/opt/local/bin/mpic++-mpich-gcc8
 #    export FC=/opt/local/bin/mpif90-mpich-gcc8
 
-    export CC=/opt/local/bin/gcc-mp-8
-    export CXX=/opt/local/bin/g++-mp-8
-    export FC=/opt/local/bin/gfortran-mp-8
+    export CC=/opt/local/bin/gcc-mp-10
+    export CXX=/opt/local/bin/g++-mp-10
+    export FC=/opt/local/bin/gfortran-mp-10
 
     cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE                             \
           -DEZSpline_INCLUDE_PATH=/Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/mod \
           -DEZSpline_LINK_FLAGS="-L/Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/lib -lpspline" \
 	  -DEZSpline_LIBRARIES=/Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/lib/libpspline.a   \
-          -DCMAKE_Fortran_FLAGS="-O3 -msse2 -DHDF5_DOUBLE_PRESICION -fopenmp-simd -malign-double" \
+          -DCMAKE_Fortran_FLAGS="-O3 -msse2 -DHDF5_DOUBLE_PRESICION -fopenmp-simd -malign-double -fconvert='big-endian'" \
           -DCMAKE_C_FLAGS="-O3 -msse2 -fopenmp-simd -malign-double"  \
           -DCMAKE_CXX_FLAGS="-O3 -msse2 -fopenmp-simd -malign-double" \
 	  -DCMAKE_Fortran_FLAGS_DEBUG="-g -ffpe-trap=invalid,zero,overflow -fimplicit-none -fbacktrace  -fsanitize=address"   \
           -DCMAKE_C_FLAGS_DEBUG="-g -g3" \
     	  -DCMAKE_CXX_FLAGS_DEBUG="-g -g3" \
-	  -DUSE_M3D_C1=ON           \
-	  -DFIO_LIBRARIES=/usr/local/lib/libfusionio.a  \
-	  -DM3DC1_LIBRARIES=/usr/local/lib/libm3dc1.a	\
-          -DM3D_C1_INCLUDE_PATH=/usr/local/include  \
-          -DM3D_C1_LINK_FLAGS="-L/usr/local/lib -lfusionio -lm3dc1" \
+	  -DUSE_FIO=ON           \
+	  -DFIO_LIBRARIES=/Users/21b/Desktop/M3D-C1/FIO/install/lib/libfusionio.a  \
+	  -DM3DC1_LIBRARIES=/Users/21b/Desktop/M3D-C1/FIO/install/lib/libm3dc1.a	\
+          -DFIO_INCLUDE_PATH=/Users/21b/Desktop/M3D-C1/FIO/install/include  \
+          -DFIO_LINK_FLAGS="-L/Users/21b/Desktop/M3D-C1/FIO/install/lib -lfusionio -lm3dc1" \
 	  -DFRUIT_INCLUDE_PATH=/Users/21b/Desktop/KORC_PERIPHERALS/fruit_3.4.3/src \
 	  -DFRUIT_LINK_FLAGS="-L/Users/21b/Desktop/KORC_PERIPHERALS/fruit_3.4.3/src -lfruit" \
 	  -DFRUIT_LIBRARIES=/Users/21b/Desktop/KORC_PERIPHERALS/fruit_3.4.3/src/libfruit.a \
@@ -85,7 +85,28 @@ then
 	  -DKORCSRC_LINK_FLAGS="-L/Users/21b/Desktop/KORC/build/lib -lkorcsrc" \
 	  -DKORCSRC_LIBRARIES=/Users/21b/Desktop/KORC/build/lib/libkorcsrc.a \
 	  -DCORI_DIR=OFF \
-	  -DKORC_TEST=ON \
+	  -DKORC_TEST=OFF \
+	  -DNIMROD_INCLUDE_PATH=/Users/21b/Desktop/NIMROD/NIMUW/nimrod \
+	  -DNIMFIO_INCLUDE_PATH=/Users/21b/Desktop/NIMROD/NIMUW/nimfio \
+	  -DNIMFIO_LINK_FLAGS="-L/Users/21b/Desktop/NIMROD/NIMUW/nimfio -lnimfio" \
+	  -DNIMFIO_LIBRARIES=/Users/21b/Desktop/NIMROD/NIMUW/nimfio/libnimfio.a \
+	  -DNIMCORE_INCLUDE_PATH=/Users/21b/Desktop/NIMROD/NIMUW/nimcore \
+	  -DNIMCORE_LINK_FLAGS="-L/Users/21b/Desktop/NIMROD/NIMUW/nimcore -lnimblock -lnimbltype -lnimlocate -lnimmatrix -lnimiter -lnimpar" \
+	  -DNIMBLK_LIBRARIES=/Users/21b/Desktop/NIMROD/NIMUW/nimcore/libnimblock.a \
+	  -DNIMBTY_LIBRARIES=/Users/21b/Desktop/NIMROD/NIMUW/nimcore/libnimbltype.a \
+	  -DNIMLOC_LIBRARIES=/Users/21b/Desktop/NIMROD/NIMUW/nimcore/libnimlocate.a \
+	  -DNIMMAT_LIBRARIES=/Users/21b/Desktop/NIMROD/NIMUW/nimcore/libnimmatrix.a \
+	  -DNIMITER_LIBRARIES=/Users/21b/Desktop/NIMROD/NIMUW/nimcore/libnimiter.a \
+	  -DNIMPAR_LIBRARIES=/Users/21b/Desktop/NIMROD/NIMUW/nimcore/libnimpar.a \
+	  -DNIMLIB_INCLUDE_PATH=/Users/21b/Desktop/NIMROD/NIMUW/nimlib \
+	  -DNIMLIB_LINK_FLAGS="-L/Users/21b/Desktop/NIMROD/NIMUW/nimlib -lnimlib -lnimmpi" \
+	  -DNIMLIB_LIBRARIES=/Users/21b/Desktop/NIMROD/NIMUW/nimlib/libnimlib.a \
+	  -DNIMMPI_LIBRARIES=/Users/21b/Desktop/NIMROD/NIMUW/nimlib/libnimmpi.a \
+	  -DNIMEXT_INCLUDE_PATH=/Users/21b/Desktop/NIMROD/NIMUW/externals \
+	  -DNIMEXT_LINK_FLAGS="-L/Users/21b/Desktop/NIMROD/NIMUW/externals -llapack_dummy -lsslu_dummy -lslud_dummy" \
+	  -DNIMLAP_LIBRARIES=/Users/21b/Desktop/NIMROD/NIMUW/externals/liblapack_dummy.a \
+	  -DNIMSLU_LIBRARIES=/Users/21b/Desktop/NIMROD/NIMUW/externals/libsslu_dummy.a \
+	  -DNIMLUD_LIBRARIES=/Users/21b/Desktop/NIMROD/NIMUW/externals/libslud_dummy.a \
  
 #	  -DCMAKE_CXX_COMPILER=/opt/local/bin/mpic++-mpich-gcc8
 

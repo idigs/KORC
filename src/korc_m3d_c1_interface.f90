@@ -1,4 +1,4 @@
-#ifdef M3D_C1
+#ifdef FIO
 !*******************************************************************************
 !  @file korc_m3d_c1_interface.f90
 !  @brief Interface for the m3d_c1 interpolation library.

@@ -11,7 +11,7 @@ module korc_interp
   use EZspline_obj	! psplines module
   use EZspline		! psplines module
 
-#ifdef M3D_C1
+#ifdef FIO
   use korc_m3d_c1
 #endif
   
@@ -3852,7 +3852,7 @@ subroutine interp_fields(params,prtcls,F)
 
   !write(output_unit_write,*) 'checked domain'
 
-#ifdef M3D_C1
+#ifdef FIO
     if (TRIM(params%field_model) .eq. 'M3D_C1') then
     
        if (F%M3D_C1_B .ge. 0) then
@@ -4094,7 +4094,7 @@ subroutine interp_profiles(params,prtcls,P)
   else if (ALLOCATED(P%ne_3D)) then
      call interp_3D_profiles(prtcls%Y,prtcls%ne,prtcls%Te,prtcls%Zeff, &
           prtcls%flagCon)
-#ifdef M3D_C1
+#ifdef FIO
   else if (P%M3D_C1_ne   .ge. 0 .or.     &
        P%M3D_C1_te   .ge. 0 .or.         &
        P%M3D_C1_zeff .ge. 0) then
@@ -4193,7 +4193,7 @@ subroutine finalize_interpolants(params)
 end subroutine finalize_interpolants
 
 
-#ifdef M3D_C1
+#ifdef FIO
   !!  @note FIXME Add documentation
 subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
   USE omp_lib

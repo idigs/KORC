@@ -33,12 +33,12 @@ include_directories (${HDF5_INCLUDE_DIRS})
 include_directories (${EZSpline_INCLUDE_PATH})
 set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EZSpline_LINK_FLAGS}")
 
-#  Configure M3D_C1 interpolation
-option (USE_M3D_C1 "Use M3D_C1 interpolation support" OFF)
-if (${USE_M3D_C1})
-    include_directories (${M3D_C1_INCLUDE_PATH})
-    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${M3D_C1_LINK_FLAGS}")
-    add_definitions (-DM3D_C1)
+#  Configure FIO interpolation
+option (USE_FIO "Use FIO interpolation support" OFF)
+if (${USE_FIO})
+    include_directories (${FIO_INCLUDE_PATH} ${NIMROD_INCLUDE_PATH} ${NIMFIO_INCLUDE_PATH} ${NIMCORE_INCLUDE_PATH} ${NIMLIB_INCLUDE_PATH} ${NIMEXT_INCLUDE_PATH})
+    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${FIO_LINK_FLAGS} ${NIMFIO_LINK_FLAGS} ${NIMCORE_LINK_FLAGS} ${NIMLIB_LINK_FLAGS} ${NIMEXT_LINK_FLAGS}")
+    add_definitions (-DFIO)
 endif ()
 
 add_subdirectory (src)
