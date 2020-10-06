@@ -74,10 +74,10 @@ then
           -DCMAKE_C_FLAGS_DEBUG="-g -g3" \
     	  -DCMAKE_CXX_FLAGS_DEBUG="-g -g3" \
 	  -DUSE_FIO=ON           \
-	  -DFIO_LIBRARIES=/Users/21b/Desktop/M3D-C1/FIO/install/lib/libfusionio.a  \
-	  -DM3DC1_LIBRARIES=/Users/21b/Desktop/M3D-C1/FIO/install/lib/libm3dc1.a	\
-          -DFIO_INCLUDE_PATH=/Users/21b/Desktop/M3D-C1/FIO/install/include  \
-          -DFIO_LINK_FLAGS="-L/Users/21b/Desktop/M3D-C1/FIO/install/lib -lfusionio -lm3dc1" \
+	  -DFIO_LIBRARIES=/Users/21b/Desktop/KORC/FIO/install/lib/libfusionio.a  \
+	  -DM3DC1_LIBRARIES=/Users/21b/Desktop/KORC/FIO/install/lib/libm3dc1.a	\
+          -DFIO_INCLUDE_PATH=/Users/21b/Desktop/KORC/FIO/install/include  \
+          -DFIO_LINK_FLAGS="-L/Users/21b/Desktop/KORC/FIO/install/lib -lfusionio -lm3dc1" \
 	  -DFRUIT_INCLUDE_PATH=/Users/21b/Desktop/KORC_PERIPHERALS/fruit_3.4.3/src \
 	  -DFRUIT_LINK_FLAGS="-L/Users/21b/Desktop/KORC_PERIPHERALS/fruit_3.4.3/src -lfruit" \
 	  -DFRUIT_LIBRARIES=/Users/21b/Desktop/KORC_PERIPHERALS/fruit_3.4.3/src/libfruit.a \

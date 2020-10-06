@@ -31,3 +31,7 @@ Makefile
 # ignore CTest files
 CTestTestfile.cmake
 **/Testing
+
+#ignore FIO build and install
+/FIO/build
+/FIO/install
