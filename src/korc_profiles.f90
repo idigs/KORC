@@ -853,8 +853,10 @@ CONTAINS
   subroutine DEALLOCATE_PROFILES_ARRAYS(P)
     TYPE(PROFILES), INTENT(INOUT)              :: P
 
-    if (ALLOCATED(P%M3D_C1_nimp)) DEALLOCATE(P%M3D_C1_nimp)
-
+#ifdef FIO
+    if (ALLOCATED(P%FIO_nimp)) DEALLOCATE(P%FIO_nimp)
+#endif
+    
   end subroutine DEALLOCATE_PROFILES_ARRAYS
   
 end module korc_profiles

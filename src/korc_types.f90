@@ -618,11 +618,11 @@ module korc_types
      INTEGER  :: ind0_2x1t,ind_2x1t
 #ifdef FIO
      INTEGER  :: isrc
-     INTEGER (C_INT)                         :: M3D_C1_B
+     INTEGER (C_INT)                         :: FIO_B
      !! An M3D-C1 magnetic field.
-     INTEGER (C_INT)                         :: M3D_C1_E
+     INTEGER (C_INT)                         :: FIO_E
      !! An M3D-C1 Electric field.
-     INTEGER (C_INT)                         :: M3D_C1_A
+     INTEGER (C_INT)                         :: FIO_A
      !! An M3D-C1 vector potential.
      real(c_double)  ::  time0,time1
 #endif
@@ -735,11 +735,11 @@ module korc_types
      LOGICAL 					:: axisymmetric 
      !! Flag to indicate if the plasma profiles are axisymmetric.
 #ifdef FIO
-     INTEGER (C_INT)                         :: M3D_C1_ne
-     INTEGER (C_INT)                         :: M3D_C1_ni
-     INTEGER (C_INT)                         :: M3D_C1_te
-     INTEGER (C_INT), DIMENSION(:), ALLOCATABLE  :: M3D_C1_nimp
-     INTEGER (C_INT)                         :: M3D_C1_zeff
+     INTEGER (C_INT)                         :: FIO_ne
+     INTEGER (C_INT)                         :: FIO_ni
+     INTEGER (C_INT)                         :: FIO_te
+     INTEGER (C_INT), DIMENSION(:), ALLOCATABLE  :: FIO_nimp
+     INTEGER (C_INT)                         :: FIO_zeff
 #endif
   END TYPE PROFILES
 

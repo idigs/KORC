@@ -25,7 +25,9 @@ module korc_ppusher
        adv_FOeqn_top,&
        adv_FOinterp_top,&
        adv_FOinterp_mars_top,&
-       adv_FOm3dc1_top,&
+#ifdef FIO
+       adv_FOfio_top,&
+#endif
        advance_FOeqn_vars,&
        advance_FOinterp_vars,&
        advance_GCeqn_vars,&
@@ -267,13 +269,16 @@ contains
              end do
              !$OMP END SIMD
 
-             if (params%field_model.eq.'M3D_C1') then
+#ifdef FIO
+             if (params%field_model.eq.'M3D_C1'.or. &
+                  (params%field_model.eq.'NIMROD')) then
                 !$OMP SIMD
                 do cc=1_idef,pchunk
                    hint(cc)=spp(ii)%vars%hint(pp-1+cc)
                 end do
                 !$OMP END SIMD
              end if
+#endif
 
              call cart_to_cyl_p(pchunk,X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)             
 
@@ -291,16 +296,18 @@ contains
              else if (params%orbit_model(3:5).eq.'psi') then
                 call interp_FOfields1_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
                      E_X,E_Y,E_Z,PSIp,flagCon)
-             else if (params%field_model.eq.'M3D_C1') then
-                call get_m3d_c1_FOmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+#ifdef FIO
+             else if (params%field_model.eq.'M3D_C1'.or. &
+                  params%field_model.eq.'NIMROD') then
+                call get_fio_FOmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
                      B_X,B_Y,B_Z,flagCon,hint)
-                if (F%M3D_C1_E .ge. 0) then
-                   call get_m3d_c1_FOelectric_fields_p(params,F, &
+                if (F%FIO_E .ge. 0) then
+                   call get_fio_FOelectric_fields_p(params,F, &
                         Y_R,Y_PHI,Y_Z,E_X,E_Y,E_Z,flagCon,hint)
                 end if
-                call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
+                call get_fio_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
                      PSIp,flagCon,hint)
-
+#endif
              else if (params%field_model(10:13).eq.'MARS') then
                 call interp_FOfields_mars_p(params,pchunk,F,Y_R,Y_PHI,Y_Z, &
                      B_X,B_Y,B_Z,PSIp,flagCon)
@@ -330,14 +337,15 @@ contains
              end do
              !$OMP END SIMD
 
-
-             if (params%field_model.eq.'M3D_C1') then
+#ifdef FIO
+             if (params%field_model.eq.'M3D_C1'.or.params%field_model.eq.'NIMROD') then
                 !$OMP SIMD
                 do cc=1_idef,pchunk
                    spp(ii)%vars%hint(pp-1+cc) = hint(cc)
                 end do
                 !$OMP END SIMD
              end if
+#endif
 
              !$OMP SIMD
              !          !$OMP& aligned(Bmag,B_X,B_Y,B_Z, &
@@ -940,7 +948,8 @@ contains
 
   end subroutine advance_FP3Deqn_vars
 
-  subroutine adv_FOm3dc1_top(params,F,P,spp)  
+#ifdef FIO
+  subroutine adv_FOfio_top(params,F,P,spp)  
     TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
     !! Core KORC simulation parameters.
     TYPE(FIELDS), INTENT(IN)                                   :: F
@@ -1035,16 +1044,18 @@ contains
 
                 call cart_to_cyl_p(pchunk,X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
 
-                call get_m3d_c1_FOmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+                call get_fio_FOmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
                      B_X,B_Y,B_Z,flagCon,hint)
-                if (F%M3D_C1_E .ge. 0) then
-                   call get_m3d_c1_FOelectric_fields_p(params,F, &
+                if (F%FIO_E .ge. 0) then
+                   call get_fio_FOelectric_fields_p(params,F, &
                         Y_R,Y_PHI,Y_Z,E_X,E_Y,E_Z,flagCon,hint)
                 end if
-                call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
-                     PSIp,flagCon,hint)
+                if (F%FIO_A .ge. 0) then
+                   call get_fio_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
+                        PSIp,flagCon,hint)
+                end if
 
-                call advance_FOm3dc1_vars(tt,a,q_cache,m_cache,params, &
+                call advance_FOfio_vars(tt,a,q_cache,m_cache,params, &
                      X_X,X_Y,X_Z,V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z, &
                      g,flagCon,flagCol,P,F,PSIp,hint)
 
@@ -1052,9 +1063,11 @@ contains
 
              call cart_to_cyl_p(pchunk,X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
 
-             call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
-                  PSIp,flagCon,hint)
-
+             if (F%FIO_A .ge. 0) then
+                call get_fio_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
+                     PSIp,flagCon,hint)
+             endif
+                
              !write(output_unit_write,*) 'Yout: ',Y_R,Y_PHI,Y_Z
              !write(output_unit_write,*) 'Bout: ',B_X,B_Y,B_Z
 
@@ -1197,7 +1210,8 @@ contains
 
     end do !species iterator
 
-  end subroutine adv_FOm3dc1_top
+  end subroutine adv_FOfio_top
+#endif 
 
   subroutine adv_FOinterp_top(params,F,P,spp)  
     TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
@@ -1868,7 +1882,8 @@ contains
 
   end subroutine advance_FOinterp_vars
 
-  subroutine advance_FOm3dc1_vars(tt,a,q_cache,m_cache,params,X_X,X_Y,X_Z, &
+#ifdef FIO
+  subroutine advance_FOfio_vars(tt,a,q_cache,m_cache,params,X_X,X_Y,X_Z, &
        V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,g,flagCon,flagCol,P,F,PSIp,hint)
     TYPE(KORC_PARAMS), INTENT(IN)                              :: params
     !! Core KORC simulation parameters.
@@ -2047,7 +2062,7 @@ contains
 
     if (params%collisions) then
 
-       call include_CoulombCollisions_FOm3dc1_p(tt,params,X_X,X_Y,X_Z, &
+       call include_CoulombCollisions_FOfio_p(tt,params,X_X,X_Y,X_Z, &
             U_X,U_Y,U_Z,B_X,B_Y,B_Z,m_cache,P,F,flagCon,flagCol,PSIp,hint)
 
     end if
@@ -2082,7 +2097,8 @@ contains
     end do
     !$OMP END SIMD
 
-  end subroutine advance_FOm3dc1_vars
+  end subroutine advance_FOfio_vars
+#endif
 
   subroutine advance_FP3Dinterp_vars(params,X_X,X_Y,X_Z,V_X,V_Y,V_Z,g, &
        m_cache,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flagCon,flagCol,P,F,PSIp)    
@@ -3344,7 +3360,8 @@ contains
 
   end subroutine adv_GCinterp_psi_top
 
-  subroutine adv_GCinterp_m3dc1_top(params,spp,P,F)
+#ifdef FIO
+  subroutine adv_GCinterp_fio_top(params,spp,P,F)
 
     TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
     !! Core KORC simulation parameters.
@@ -3445,7 +3462,7 @@ contains
              !   flush(output_unit_write)
              !endif
              
-             call advance_GCinterp_m3dc1_vars(spp(ii)%vars,pp,tt, &
+             call advance_GCinterp_fio_vars(spp(ii)%vars,pp,tt, &
                   params,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,q_cache,m_cache, &
                   flagCon,flagCol, &
                   F,P,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,PSIp,curlb_R,curlb_PHI, &
@@ -3516,7 +3533,8 @@ contains
 
     end do !species iterator
 
-  end subroutine adv_GCinterp_m3dc1_top
+  end subroutine adv_GCinterp_fio_top
+#endif
 
 
 
@@ -5373,7 +5391,8 @@ contains
 
   end subroutine advance_GCinterp_psi_vars
 
-  subroutine advance_GCinterp_m3dc1_vars(vars,pp,tt,params,Y_R,Y_PHI,Y_Z, &
+#ifdef FIO
+  subroutine advance_GCinterp_fio_vars(vars,pp,tt,params,Y_R,Y_PHI,Y_Z, &
        V_PLL,V_MU,q_cache,m_cache,flagCon,flagCol,F,P,B_R,B_PHI,B_Z, &
        E_R,E_PHI,E_Z,PSIp,curlb_R,curlb_PHI,curlb_Z, &
        gradB_R,gradB_PHI,gradB_Z,ne,ni,Te,Zeff,nimp,hint)
@@ -5462,21 +5481,21 @@ contains
     !write(output_unit_write,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'MU0',V_MU(1)
 
 
-    call get_m3d_c1_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+    call get_fio_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
        B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z, &
        curlb_R,curlb_PHI,curlb_Z,flagCon,hint)
-    if (F%M3D_C1_E .ge. 0) then
-       call get_m3d_c1_GCelectric_fields_p(params,F, &
+    if (F%FIO_E .ge. 0) then
+       call get_fio_GCelectric_fields_p(params,F, &
             Y_R,Y_PHI,Y_Z,E_R,E_PHI,E_Z,flagCon,hint)
     end if
-    call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
+    call get_fio_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
          PSIp,flagCon,hint)
 
     !write(output_unit_write,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'B',B_R(1),B_PHI(1),B_Z(1)
     !write(output_unit_write,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'gradB',gradB_R(1),gradB_PHI(1)
     !write(output_unit_write,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'curlB',curlB_R(1),curlB_PHI(1),curlB_Z(1)
 
-    call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+    call GCEoM1_fio_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
          ne,ni,nimp,Te,Zeff,flagCon,hint)
@@ -5534,17 +5553,17 @@ contains
     !write(output_unit_write,*) 'MU1',V_MU(1)
 
     !    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
-    call get_m3d_c1_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+    call get_fio_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
        B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z, &
        curlb_R,curlb_PHI,curlb_Z,flagCon,hint)
-    if (F%M3D_C1_E .ge. 0) then
-       call get_m3d_c1_GCelectric_fields_p(params,F, &
+    if (F%FIO_E .ge. 0) then
+       call get_fio_GCelectric_fields_p(params,F, &
             Y_R,Y_PHI,Y_Z,E_R,E_PHI,E_Z,flagCon,hint)
     end if
-    call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
+    call get_fio_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
          PSIp,flagCon,hint)
 
-    call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+    call GCEoM1_fio_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
          ne,ni,nimp,Te,Zeff,flagCon,hint)
@@ -5571,17 +5590,17 @@ contains
     !$OMP END SIMD
 
     !    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
-    call get_m3d_c1_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+    call get_fio_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
        B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z, &
        curlb_R,curlb_PHI,curlb_Z,flagCon,hint)
-    if (F%M3D_C1_E .ge. 0) then
-       call get_m3d_c1_GCelectric_fields_p(params,F, &
+    if (F%FIO_E .ge. 0) then
+       call get_fio_GCelectric_fields_p(params,F, &
             Y_R,Y_PHI,Y_Z,E_R,E_PHI,E_Z,flagCon,hint)
     end if
-    call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
+    call get_fio_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
          PSIp,flagCon,hint)
 
-    call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+    call GCEoM1_fio_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
          ne,ni,nimp,Te,Zeff,flagCon,hint) 
@@ -5610,17 +5629,17 @@ contains
     !$OMP END SIMD
 
     !    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
-    call get_m3d_c1_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+    call get_fio_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
        B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z, &
        curlb_R,curlb_PHI,curlb_Z,flagCon,hint)
-    if (F%M3D_C1_E .ge. 0) then
-       call get_m3d_c1_GCelectric_fields_p(params,F, &
+    if (F%FIO_E .ge. 0) then
+       call get_fio_GCelectric_fields_p(params,F, &
             Y_R,Y_PHI,Y_Z,E_R,E_PHI,E_Z,flagCon,hint)
     end if
-    call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
+    call get_fio_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
          PSIp,flagCon,hint)
 
-    call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+    call GCEoM1_fio_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
          ne,ni,nimp,Te,Zeff,flagCon,hint)   
@@ -5653,17 +5672,17 @@ contains
 
 
     !    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
-    call get_m3d_c1_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+    call get_fio_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
        B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z, &
        curlb_R,curlb_PHI,curlb_Z,flagCon,hint)
-    if (F%M3D_C1_E .ge. 0) then
-       call get_m3d_c1_GCelectric_fields_p(params,F, &
+    if (F%FIO_E .ge. 0) then
+       call get_fio_GCelectric_fields_p(params,F, &
             Y_R,Y_PHI,Y_Z,E_R,E_PHI,E_Z,flagCon,hint)
     end if
-    call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
+    call get_fio_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
          PSIp,flagCon,hint)
 
-     call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+     call GCEoM1_fio_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
          ne,ni,nimp,Te,Zeff,flagCon,hint)
@@ -5695,16 +5714,16 @@ contains
     !$OMP END SIMD
 
     !    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
-    call get_m3d_c1_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+    call get_fio_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
        B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z, &
        curlb_R,curlb_PHI,curlb_Z,flagCon,hint)
-    if (F%M3D_C1_E .ge. 0) then
-       call get_m3d_c1_GCelectric_fields_p(params,F, &
+    if (F%FIO_E .ge. 0) then
+       call get_fio_GCelectric_fields_p(params,F, &
             Y_R,Y_PHI,Y_Z,E_R,E_PHI,E_Z,flagCon,hint)
     end if
-    call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
+    call get_fio_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
          PSIp,flagCon,hint)
-    call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+    call GCEoM1_fio_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
          ne,ni,nimp,Te,Zeff,flagCon,hint)         
@@ -5750,17 +5769,17 @@ contains
     end do
     !$OMP END SIMD
 
-    call get_m3d_c1_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+    call get_fio_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
        B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z, &
        curlb_R,curlb_PHI,curlb_Z,flagCon,hint)
-    if (F%M3D_C1_E .ge. 0) then
-       call get_m3d_c1_GCelectric_fields_p(params,F, &
+    if (F%FIO_E .ge. 0) then
+       call get_fio_GCelectric_fields_p(params,F, &
             Y_R,Y_PHI,Y_Z,E_R,E_PHI,E_Z,flagCon,hint)
     end if
-    call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
+    call get_fio_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
          PSIp,flagCon,hint)
 
-    call GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+    call GCEoM1_fio_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
          ne,ni,nimp,Te,Zeff,flagCon,hint) 
@@ -5779,7 +5798,7 @@ contains
     
     if (params%collisions) then       
 
-       call include_CoulombCollisions_GCm3dc1_p(tt,params,Y_R,Y_PHI,Y_Z, &
+       call include_CoulombCollisions_GCfio_p(tt,params,Y_R,Y_PHI,Y_Z, &
             V_PLL,V_MU,m_cache,flagCon,flagCol,F,P,E_PHI,ne,ni,Te,Zeff&
             &,nimp,PSIp,hint)
 
@@ -5788,8 +5807,9 @@ contains
     !write(6,*) E_PHI
 
 
-  end subroutine advance_GCinterp_m3dc1_vars
-
+  end subroutine advance_GCinterp_fio_vars
+#endif
+  
   subroutine advance_GCinterp_psiwE_vars(vars,pp,tt,params,Y_R,Y_PHI,Y_Z, &
        V_PLL,V_MU,q_cache,m_cache,flagCon,flagCol,F,P,B_R,B_PHI,B_Z,E_PHI,PSIp, &
        curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,ne)
@@ -8440,8 +8460,9 @@ contains
     !    write(output_unit_write,*) 'RHS_MU: ',RHS_MU(1)
 
   end subroutine GCEoM1_p
-  
-  subroutine GCEoM1_m3dc1_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
+
+#ifdef FIO
+  subroutine GCEoM1_fio_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
        B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
        gradB_R,gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
        ne,ni,nimp,Te,Zeff,flag,hint)
@@ -8556,10 +8577,10 @@ contains
        re_cache=C_RE/params%cpp%length
        alpha_cache=C_a
 
-       call get_m3d_c1_profile_p(params,P,Y_R,Y_PHI,Y_Z, &
+       call get_fio_profile_p(params,P,Y_R,Y_PHI,Y_Z, &
             ne,Te,flag,hint)
 
-       call get_m3d_c1_ion_p(params,P,Y_R,Y_PHI,Y_Z, &
+       call get_fio_ion_p(params,P,Y_R,Y_PHI,Y_Z, &
             ne,ni,nimp,Zeff,flag,hint)
           
        !$OMP SIMD
@@ -8625,8 +8646,9 @@ contains
     !    write(output_unit_write,*) 'RHS_PLL: ',RHS_PLL(1)
     !    write(output_unit_write,*) 'RHS_MU: ',RHS_MU(1)
 
-  end subroutine GCEoM1_m3dc1_p
-
+  end subroutine GCEoM1_fio_p
+#endif
+  
   subroutine aux_fields(pp,spp,gradB,curlb,Bmag)
     TYPE(SPECIES), INTENT(IN)    :: spp
     !! An instance of the derived type SPECIES containing all the parameters

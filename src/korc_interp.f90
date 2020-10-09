@@ -12,7 +12,7 @@ module korc_interp
   use EZspline		! psplines module
 
 #ifdef FIO
-  use korc_m3d_c1
+  use korc_fio
 #endif
   
   !$ use OMP_LIB
@@ -3853,22 +3853,23 @@ subroutine interp_fields(params,prtcls,F)
   !write(output_unit_write,*) 'checked domain'
 
 #ifdef FIO
-    if (TRIM(params%field_model) .eq. 'M3D_C1') then
+  if (TRIM(params%field_model) .eq. 'M3D_C1'.or. &
+       TRIM(params%field_model) .eq. 'NIMROD') then
     
-       if (F%M3D_C1_B .ge. 0) then
+       if (F%FIO_B .ge. 0) then
 
           !write(6,*) 'interp_fields'
           
-          call get_m3d_c1_magnetic_fields(prtcls, F, params)
+          call get_fio_magnetic_fields(prtcls, F, params)
           
        end if
 
-       if (F%M3D_C1_E .ge. 0) then
-          call get_m3d_c1_electric_fields(prtcls, F, params)
+       if (F%FIO_E .ge. 0) then
+          call get_fio_electric_fields(prtcls, F, params)
        end if
 
-       if (F%M3D_C1_A .ge. 0) then
-          call get_m3d_c1_vector_potential(prtcls, F, params)
+       if (F%FIO_A .ge. 0) then
+          call get_fio_vector_potential(prtcls, F, params)
        end if
 
        do pp=1,sizeof(prtcls%flagCon)
@@ -3876,7 +3877,7 @@ subroutine interp_fields(params,prtcls,F)
              write(6,*) 'RE initialized outside of computational domain!!!'
              call KORC_ABORT(15)
           end if
-       end do
+       end do       
        
     end if
 #endif
@@ -4095,10 +4096,11 @@ subroutine interp_profiles(params,prtcls,P)
      call interp_3D_profiles(prtcls%Y,prtcls%ne,prtcls%Te,prtcls%Zeff, &
           prtcls%flagCon)
 #ifdef FIO
-  else if (P%M3D_C1_ne   .ge. 0 .or.     &
-       P%M3D_C1_te   .ge. 0 .or.         &
-       P%M3D_C1_zeff .ge. 0) then
-     call get_m3d_c1_profile(prtcls, P, params)
+  else if (P%FIO_ne   .ge. 0 .or.     &
+       P%FIO_te   .ge. 0 .or.         &
+       P%FIO_zeff .ge. 0) then
+     call get_fio_profile(prtcls, P, params)
+
 #endif
   else
      write(output_unit_write,'("Error: NO PROFILES ALLOCATED")')
@@ -4195,7 +4197,7 @@ end subroutine finalize_interpolants
 
 #ifdef FIO
   !!  @note FIXME Add documentation
-subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
+subroutine get_fio_magnetic_fields(prtcls, F, params)
   USE omp_lib
   IMPLICIT NONE
   
@@ -4216,7 +4218,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
        do pp = 1, SIZE(prtcls%hint)
           if (prtcls%flagCon(pp) .EQ. 1_is) then
              x = prtcls%X(pp,:)*params%cpp%length
-             status = fio_eval_field(F%M3D_C1_B, x(1),   &
+             status = fio_eval_field(F%FIO_B, x(1),   &
                   prtcls%B(pp,1),                        &
                   prtcls%hint(pp))
 
@@ -4258,7 +4260,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
 
              !write(output_unit_write,*) 'thread',thread_num,'before interpolating B'
              
-             status = fio_eval_field(F%M3D_C1_B, x(1),                      &
+             status = fio_eval_field(F%FIO_B, x(1),                      &
                   Btmp(1),prtcls%hint(pp))
 
              !write(output_unit_write,*) 'thread',thread_num,'interpolated B'
@@ -4292,9 +4294,9 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
        !$OMP END PARALLEL DO
 
     end if
-  end subroutine get_m3d_c1_magnetic_fields
+  end subroutine get_fio_magnetic_fields
 
-  subroutine get_m3d_c1_FOmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+  subroutine get_fio_FOmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
        B_X,B_Y,B_Z,flag,hint)
     TYPE(FIELDS), INTENT(IN)       :: F
     TYPE(KORC_PARAMS), INTENT(IN)  :: params
@@ -4317,7 +4319,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
 
           !             prtcls%hint(pp)=c_null_ptr
 
-          status = fio_eval_field(F%M3D_C1_B, x(1),                      &
+          status = fio_eval_field(F%FIO_B, x(1),                      &
                Btmp(1),hint(pp))
 
           if (status .eq. FIO_SUCCESS) then
@@ -4335,9 +4337,9 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
        end if
     end do
 
-  end subroutine get_m3d_c1_FOmagnetic_fields_p
+  end subroutine get_fio_FOmagnetic_fields_p
 
-  subroutine get_m3d_c1_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+  subroutine get_fio_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
        B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z, &
        curlb_R,curlb_PHI,curlb_Z,flag,hint)
     TYPE(FIELDS), INTENT(IN)       :: F
@@ -4367,7 +4369,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
 
           !if (pp.eq.1) write(output_unit_write,*) 'Yinterp',x
 
-          status = fio_eval_field(F%M3D_C1_B, x(1), &
+          status = fio_eval_field(F%FIO_B, x(1), &
                Btmp(1),hint(pp))
 
           if (status .eq. FIO_SUCCESS) then
@@ -4380,7 +4382,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
 
              Bmag=sqrt(B_R(pp)*B_R(pp)+B_PHI(pp)*B_PHI(pp)+B_Z(pp)*B_Z(pp))
              
-             status = fio_eval_field_deriv(F%M3D_C1_B, x(1),dBtmp(1),hint(pp))
+             status = fio_eval_field_deriv(F%FIO_B, x(1),dBtmp(1),hint(pp))
 
              !dBRdR=dBtmp(FIO_DR_R)*(params%cpp%length/params%cpp%Bo)
              !dBPHIdR=dBtmp(FIO_DR_PHI)*(params%cpp%length/params%cpp%Bo)
@@ -4426,9 +4428,9 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
        end if
     end do
 
-  end subroutine get_m3d_c1_GCmagnetic_fields_p
+  end subroutine get_fio_GCmagnetic_fields_p
   
-  subroutine get_m3d_c1_vector_potential(prtcls, F, params)
+  subroutine get_fio_vector_potential(prtcls, F, params)
     TYPE(PARTICLES), INTENT(INOUT) :: prtcls
     TYPE(FIELDS), INTENT(IN)       :: F
     TYPE(KORC_PARAMS), INTENT(IN)  :: params
@@ -4457,9 +4459,9 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
 
           !prtcls%hint(pp)=c_null_ptr
 
-          !write(output_unit_write,*) F%M3D_C1_A,x,Atmp
+          !write(output_unit_write,*) F%FIO_A,x,Atmp
 
-          status = fio_eval_field(F%M3D_C1_A, x(1),                      &
+          status = fio_eval_field(F%FIO_A, x(1),                      &
                Atmp(1),prtcls%hint(pp))
 
           if (status .eq. FIO_SUCCESS) then
@@ -4477,9 +4479,9 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
     end do
     !$OMP END PARALLEL DO
 
-  end subroutine get_m3d_c1_vector_potential
+  end subroutine get_fio_vector_potential
   
-  subroutine get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
+  subroutine get_fio_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
        PSIp,flag,hint)
     TYPE(FIELDS), INTENT(IN)       :: F
     TYPE(KORC_PARAMS), INTENT(IN)  :: params
@@ -4504,7 +4506,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
           !             prtcls%hint(pp)=c_null_ptr
 
 
-          status = fio_eval_field(F%M3D_C1_A, x(1),                      &
+          status = fio_eval_field(F%FIO_A, x(1),                      &
                Atmp(1),hint(pp))
 
           if (status .eq. FIO_SUCCESS) then
@@ -4520,10 +4522,10 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
        end if
     end do
 
-  end subroutine get_m3d_c1_vector_potential_p
+  end subroutine get_fio_vector_potential_p
   
   !!  @note FIXME Add documentation
-  subroutine get_m3d_c1_electric_fields(prtcls, F, params)
+  subroutine get_fio_electric_fields(prtcls, F, params)
     TYPE(PARTICLES), INTENT(INOUT) :: prtcls
     TYPE(FIELDS), INTENT(IN)       :: F
     TYPE(KORC_PARAMS), INTENT(IN)  :: params
@@ -4537,7 +4539,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
        do pp = 1, SIZE(prtcls%hint)
           if (prtcls%flagCon(pp) .EQ. 1_is) then
              x = prtcls%X(pp,:)*params%cpp%length
-             status = fio_eval_field(F%M3D_C1_E, x(1),                      &
+             status = fio_eval_field(F%FIO_E, x(1),                      &
                   prtcls%E(pp,1),                        &
                   prtcls%hint(pp))
 
@@ -4563,7 +4565,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
              x(2) = prtcls%Y(pp,2)
              x(3) = prtcls%Y(pp,3)*params%cpp%length
              
-             status = fio_eval_field(F%M3D_C1_E, x(1),                      &
+             status = fio_eval_field(F%FIO_E, x(1),                      &
                   Etmp(1),prtcls%hint(pp))
 
              if (status .eq. FIO_NO_DATA) then
@@ -4589,9 +4591,9 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
        end do
        !$OMP END PARALLEL DO
     end if
-  end subroutine get_m3d_c1_electric_fields
+  end subroutine get_fio_electric_fields
 
-  subroutine get_m3d_c1_FOelectric_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+  subroutine get_fio_FOelectric_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
        E_X,E_Y,E_Z,flag,hint)
     TYPE(FIELDS), INTENT(IN)       :: F
     TYPE(KORC_PARAMS), INTENT(IN)  :: params
@@ -4615,7 +4617,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
           !             prtcls%hint(pp)=c_null_ptr
 
 
-          status = fio_eval_field(F%M3D_C1_E, x(1),                      &
+          status = fio_eval_field(F%FIO_E, x(1),                      &
                Etmp(1),hint(pp))
 
           if (status .eq. FIO_SUCCESS) then
@@ -4636,9 +4638,9 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
        end if
     end do
 
-  end subroutine get_m3d_c1_FOelectric_fields_p
+  end subroutine get_fio_FOelectric_fields_p
   
-  subroutine get_m3d_c1_GCelectric_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+  subroutine get_fio_GCelectric_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
        E_R,E_PHI,E_Z,flag,hint)
     TYPE(FIELDS), INTENT(IN)       :: F
     TYPE(KORC_PARAMS), INTENT(IN)  :: params
@@ -4659,7 +4661,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
           x(2) = Y_PHI(pp)
           x(3) = Y_Z(pp)*params%cpp%length
 
-          status = fio_eval_field(F%M3D_C1_E, x(1),                      &
+          status = fio_eval_field(F%FIO_E, x(1),                      &
                Etmp(1),hint(pp))
 
           if (status .eq. FIO_SUCCESS) then
@@ -4680,9 +4682,9 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
        end if
     end do
 
-  end subroutine get_m3d_c1_GCelectric_fields_p
+  end subroutine get_fio_GCelectric_fields_p
   
-  subroutine get_m3d_c1_profile(prtcls, P, params)
+  subroutine get_fio_profile(prtcls, P, params)
     TYPE(PARTICLES), INTENT(INOUT) :: prtcls
     TYPE(PROFILES), INTENT(IN)     :: P
     TYPE(KORC_PARAMS), INTENT(IN)  :: params
@@ -4695,7 +4697,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
        do pp = 1, SIZE(prtcls%hint)
           if (prtcls%flagCon(pp) .EQ. 1_is) then
              x = prtcls%X(pp,:)*params%cpp%length
-             status = fio_eval_field(P%M3D_C1_ne, x(1),                     &
+             status = fio_eval_field(P%FIO_ne, x(1),                     &
                   prtcls%ne(pp),                         &
                   prtcls%hint(pp))
 
@@ -4706,7 +4708,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
                 CYCLE
              end if
 
-             status = fio_eval_field(P%M3D_C1_te, x(1),                     &
+             status = fio_eval_field(P%FIO_te, x(1),                     &
                   prtcls%te(pp),                         &
                   prtcls%hint(pp))
 
@@ -4714,7 +4716,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
                 prtcls%te(pp) = 0
              end if
 
-             status = fio_eval_field(P%M3D_C1_zeff, x(1),                   &
+             status = fio_eval_field(P%FIO_zeff, x(1),                   &
                   prtcls%Zeff(pp),                       &
                   prtcls%hint(pp))
 
@@ -4731,7 +4733,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
              x(1) = prtcls%Y(1,pp)*params%cpp%length
              x(2) = prtcls%Y(2,pp)
              x(3) = prtcls%Y(3,pp)*params%cpp%length
-             status = fio_eval_field(P%M3D_C1_ne, x(1),                     &
+             status = fio_eval_field(P%FIO_ne, x(1),                     &
                   prtcls%ne(pp),                         &
                   prtcls%hint(pp))
 
@@ -4742,7 +4744,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
                 CYCLE
              end if
 
-             status = fio_eval_field(P%M3D_C1_te, x(1),                     &
+             status = fio_eval_field(P%FIO_te, x(1),                     &
                   prtcls%te(pp),                         &
                   prtcls%hint(pp))
 
@@ -4750,7 +4752,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
                 prtcls%te(pp) = 0
              end if
 
-             status = fio_eval_field(P%M3D_C1_zeff, x(1),                   &
+             status = fio_eval_field(P%FIO_zeff, x(1),                   &
                   prtcls%Zeff(pp),                       &
                   prtcls%hint(pp))
 
@@ -4761,9 +4763,9 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
        end do
        !$OMP END PARALLEL DO
     end if
-  end subroutine get_m3d_c1_profile
+  end subroutine get_fio_profile
 
-  subroutine get_m3d_c1_profile_p(params,P,Y_R,Y_PHI,Y_Z, &
+  subroutine get_fio_profile_p(params,P,Y_R,Y_PHI,Y_Z, &
        n_e,T_e,flag,hint)
     TYPE(PROFILES), INTENT(IN)       :: P
     TYPE(KORC_PARAMS), INTENT(IN)  :: params
@@ -4784,9 +4786,9 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
           x(2) = Y_PHI(pp)
           x(3) = Y_Z(pp)*params%cpp%length
 
-          !write(6,*) P%M3D_C1_ne,x
+          !write(6,*) P%FIO_ne,x
           
-          status = fio_eval_field(P%M3D_C1_ne, x(1), &
+          status = fio_eval_field(P%FIO_ne, x(1), &
                netmp,hint(pp))
           
           if (status .eq. FIO_SUCCESS) then
@@ -4798,7 +4800,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
              CYCLE
           end if
           
-          status = fio_eval_field(P%M3D_C1_te, x(1), &
+          status = fio_eval_field(P%FIO_te, x(1), &
                Tetmp,hint(pp))
 
           if (status .eq. FIO_SUCCESS) then
@@ -4810,9 +4812,9 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
        end if
     end do
 
-  end subroutine get_m3d_c1_profile_p
+  end subroutine get_fio_profile_p
 
-  subroutine get_m3d_c1_ion_p(params,P,Y_R,Y_PHI,Y_Z, &
+  subroutine get_fio_ion_p(params,P,Y_R,Y_PHI,Y_Z, &
        n_e,n_i,nimp,Zeff,flag,hint)
     TYPE(PROFILES), INTENT(IN)       :: P
     TYPE(KORC_PARAMS), INTENT(IN)  :: params
@@ -4840,10 +4842,10 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
           !write(6,*) 'X',x
 
           do ii = 1,num_imp
-             status = fio_eval_field(P%M3D_C1_nimp(ii), x(1), &
+             status = fio_eval_field(P%FIO_nimp(ii), x(1), &
                nimptmp,hint(pp))
 
-!             write(6,*) P%M3D_C1_nimp(ii)
+!             write(6,*) P%FIO_nimp(ii)
 !             write(6,*) 'nimp_',ii,nimptmp
              
              if (status .eq. FIO_SUCCESS) then
@@ -4859,7 +4861,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
              end if
           end do
 
-          status = fio_eval_field(P%M3D_C1_ni, x(1), &
+          status = fio_eval_field(P%FIO_ni, x(1), &
                nitmp,hint(pp))
 
           if (status .eq. FIO_SUCCESS) then
@@ -4875,7 +4877,7 @@ subroutine get_m3d_c1_magnetic_fields(prtcls, F, params)
        end if
     end do
 
-  end subroutine get_m3d_c1_ion_p
+  end subroutine get_fio_ion_p
   
 #endif
 

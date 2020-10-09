@@ -517,8 +517,10 @@ CONTAINS
        ALLOCATE( spp(ii)%vars%flagCon(spp(ii)%ppp) )
        ALLOCATE( spp(ii)%vars%flagCol(spp(ii)%ppp) )
        ALLOCATE( spp(ii)%vars%wt(spp(ii)%ppp) )
+#ifdef FIO
        ALLOCATE( spp(ii)%vars%hint(spp(ii)%ppp))
-
+#endif
+       
        !     write(output_unit_write,'("0 size of PSI_P: ",I16)') size(spp(ii)%vars%PSI_P)
 
        spp(ii)%vars%X = 0.0_rp

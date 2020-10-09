@@ -16,8 +16,10 @@ program main
   use korc_finalize
   use korc_profiles
   use korc_input
-  use korc_m3d_c1
-
+#ifdef FIO
+  use korc_fio
+#endif
+  
   implicit none
 
   TYPE(KORC_PARAMS) :: params
@@ -39,8 +41,8 @@ program main
   !! See [[korc_profiles(module)]] for details.
   INTEGER(ip) :: it 
   !! Time iteration
-    INTEGER 				:: mpierr
-
+  INTEGER 				:: mpierr
+    
   call initialize_communications(params)
   !!<h2>Order of KORC operations</h2>
   !!
@@ -117,7 +119,19 @@ program main
      if (params%mpi_params%rank .EQ. 0) then
         write(output_unit_write,*) "* * * * * * * * * * * * * * * * * * * * * * *"
      endif
-        
+
+  elseif (TRIM(params%field_model) .eq. 'NIMROD') THEN
+
+     if (params%mpi_params%rank .EQ. 0) then
+        write(output_unit_write,*) "* * * * INITIALIZING NIMROD INTERFACE * * * *"
+     endif
+     
+     call initialize_NIMROD(params, F, P, spp,.true.)
+
+     if (params%mpi_params%rank .EQ. 0) then
+        write(output_unit_write,*) "* * * * * * * * * * * * * * * * * * * * * * *"
+     endif
+     
   endif
 #endif  
 
@@ -355,13 +369,15 @@ program main
      end do
   end if
 
-  if (params%orbit_model(1:2).eq.'FO'.and.params%field_model.eq.'M3D_C1'.and. &
+#ifdef FIO
+  if (params%orbit_model(1:2).eq.'FO'.and. &
+       (params%field_model.eq.'M3D_C1'.or.params%field_model.eq.'NIMROD').and. &
        .not.F%ReInterp_2x1t) then
      call FO_init(params,F,spp,.false.,.true.)
      ! Initial half-time particle push
      
      do it=params%ito,params%t_steps,params%t_skip
-        call adv_FOm3dc1_top(params,F,P,spp)
+        call adv_FOfio_top(params,F,P,spp)
         
         params%time = params%init_time &
              +REAL(it-1_ip+params%t_skip,rp)*params%dt        
@@ -394,7 +410,7 @@ program main
            flush(output_unit_write)
         end if
 
-        call adv_FOm3dc1_top(params,F,P,spp)
+        call adv_FOfio_top(params,F,P,spp)
                
         params%it = params%it+params%t_skip
         params%time = params%init_time &
@@ -412,6 +428,7 @@ program main
      end do
      
   end if
+#endif
 
   if (params%orbit_model(1:2).eq.'FO'.and. &
        params%field_model(10:13).eq.'MARS') then
@@ -607,10 +624,11 @@ program main
      end do
   end if
 
+#ifdef FIO
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_model.eq.'M3D_C1'.and. &
        .not.F%ReInterp_2x1t) then
      do it=params%ito,params%t_steps,params%t_skip
-        call adv_GCinterp_m3dc1_top(params,spp,P,F)
+        call adv_GCinterp_fio_top(params,spp,P,F)
         
         params%time = params%init_time &
              +REAL(it-1_ip+params%t_skip*params%t_it_SC,rp)*params%dt        
@@ -642,7 +660,7 @@ program main
            flush(output_unit_write)
         end if
            
-        call adv_GCinterp_m3dc1_top(params,spp,P,F)
+        call adv_GCinterp_fio_top(params,spp,P,F)
                
         params%it = params%it+params%t_skip
         params%time = params%init_time &
@@ -662,6 +680,7 @@ program main
               
      end do
   end if
+#endif
   
   call timing_KORC(params)
 

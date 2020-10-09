@@ -801,10 +801,15 @@ CONTAINS
     ALLOCATE( vars%PSI_P(ppp) )
     ALLOCATE( vars%E(ppp,3) )
     ALLOCATE( vars%flagCon(ppp) )
-    ALLOCATE( vars%hint(ppp) )
 
+#ifdef FIO
+    ALLOCATE( vars%hint(ppp) )
+#endif
+    
     vars%X = Xo
+#ifdef FIO
     vars%hint = hint
+#endif
     vars%flagCon = 1_idef
     vars%B=0._rp
     vars%PSI_P=0._rp
@@ -842,8 +847,9 @@ CONTAINS
     end do
 
     !write(output_unit_write,*) 'before copying hint and flag'
-    
+#ifdef FIO
     hint = vars%hint
+#endif
     
     if (PRESENT(flag)) then
        flag = vars%flagCon
@@ -857,8 +863,10 @@ CONTAINS
     DEALLOCATE( vars%curlb )
     DEALLOCATE( vars%E )
     DEALLOCATE( vars%flagCon )
+#ifdef FIO
     DEALLOCATE( vars%hint)
-
+#endif
+    
     !write(output_unit_write,*) 'out unitVectors'
     
   end subroutine unitVectors

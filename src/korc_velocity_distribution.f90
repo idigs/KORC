@@ -356,6 +356,9 @@ CONTAINS
 
 
   subroutine gyro_distribution(params,F,spp)
+
+    USE, INTRINSIC :: iso_c_binding
+    
     !! @Note Subroutine that initializes the gyro-angle distribution 
     !! of the particles. @endnote
     !! When evolving the particles in the 6-D phase space, in addition to 
@@ -395,7 +398,8 @@ CONTAINS
     !! representing the gyro-angle.
     INTEGER 				:: jj
     !! Particle iterator.
-
+    TYPE(C_PTR), DIMENSION(:), ALLOCATABLE    :: hint
+    
     ALLOCATE(Vo(spp%ppp))
     ALLOCATE(V1(spp%ppp))
     ALLOCATE(V2(spp%ppp))
@@ -403,7 +407,13 @@ CONTAINS
     ALLOCATE(b1(spp%ppp,3))
     ALLOCATE(b2(spp%ppp,3))
     ALLOCATE(b3(spp%ppp,3))
+    ALLOCATE(hint(spp%ppp))
 
+    hint=C_NULL_PTR
+#ifdef FIO
+    hint=spp%vars%hint
+#endif
+    
     ALLOCATE( theta(spp%ppp) )
 
     ! * * * * INITIALIZE VELOCITY * * * *
@@ -421,7 +431,7 @@ CONTAINS
     V3 = Vo*SIN(C_PI*spp%vars%eta/180.0_rp)*SIN(theta)
     
     call unitVectors(params,spp%vars%X,F,b1,b2,b3,spp%vars%flagCon, &
-         spp%vars%cart,spp%vars%hint)
+         spp%vars%cart,hint)
     !! Call to subroutine [[unitVectors]] in [[korc_fields]].
 
     !write(output_unit_write,*) 'X',spp%vars%X
@@ -448,6 +458,7 @@ CONTAINS
     DEALLOCATE(b1)
     DEALLOCATE(b2)
     DEALLOCATE(b3)
+    DEALLOCATE(hint)
   end subroutine gyro_distribution
 
 

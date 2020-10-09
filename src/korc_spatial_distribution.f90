@@ -1380,8 +1380,10 @@ subroutine MH_psi(params,spp,F)
            !write(6,*) 'R',R_buffer
            !write(6,*) 'Z',Z_buffer
            
-           if (params%field_model.eq.'M3D_C1') then
-              call get_m3d_c1_vector_potential(spp%vars,F,params)
+           if (params%field_model.eq.'M3D_C1'.or.params%field_model.eq.'NIMROD') then
+#ifdef FIO
+              call get_fio_vector_potential(spp%vars,F,params)
+#endif
            else
               call get_fields(params,spp%vars,F)
            end if
@@ -1415,8 +1417,10 @@ subroutine MH_psi(params,spp,F)
         spp%vars%Y(1,2)=0._rp
         spp%vars%Y(1,3)=Z_test
 
-        if (params%field_model.eq.'M3D_C1') then
-           call get_m3d_c1_vector_potential(spp%vars,F,params)
+        if (params%field_model.eq.'M3D_C1'.or.params%field_model.eq.'NIMROD') then
+#ifdef FIO
+           call get_fio_vector_potential(spp%vars,F,params)
+#endif
         else
            call get_fields(params,spp%vars,F)
         end if
@@ -1516,8 +1520,10 @@ subroutine MH_psi(params,spp,F)
         spp%vars%Y(1,2)=0
         spp%vars%Y(1,3)=Z_test
 
-        if (params%field_model.eq.'M3D_C1') then
-           call get_m3d_c1_vector_potential(spp%vars,F,params)
+        if (params%field_model.eq.'M3D_C1'.or.params%field_model.eq.'NIMROD') then
+#ifdef FIO
+           call get_fio_vector_potential(spp%vars,F,params)
+#endif
         else
            call get_fields(params,spp%vars,F)
         end if

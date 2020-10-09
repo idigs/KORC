@@ -1,7 +1,7 @@
 #ifdef FIO
 !*******************************************************************************
 !  @file korc_fio_interface.f90
-!  @brief Interface for the m3d_c1 interpolation library.
+!  @brief Interface for the fio interpolation library.
 !*******************************************************************************
 
 MODULE korc_fio

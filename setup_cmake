@@ -59,9 +59,9 @@ then
 #    export CXX=/opt/local/bin/mpic++-mpich-gcc8
 #    export FC=/opt/local/bin/mpif90-mpich-gcc8
 
-    export CC=/opt/local/bin/gcc-mp-10
-    export CXX=/opt/local/bin/g++-mp-10
-    export FC=/opt/local/bin/gfortran-mp-10
+    export CC=/opt/local/bin/gcc-mp-8
+    export CXX=/opt/local/bin/g++-mp-8
+    export FC=/opt/local/bin/gfortran-mp-8
 
     cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE                             \
           -DEZSpline_INCLUDE_PATH=/Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/mod \
@@ -73,7 +73,7 @@ then
 	  -DCMAKE_Fortran_FLAGS_DEBUG="-g -ffpe-trap=invalid,zero,overflow -fimplicit-none -fbacktrace  -fsanitize=address"   \
           -DCMAKE_C_FLAGS_DEBUG="-g -g3" \
     	  -DCMAKE_CXX_FLAGS_DEBUG="-g -g3" \
-	  -DUSE_FIO=ON           \
+	  -DUSE_FIO=ON          \
 	  -DFIO_LIBRARIES=/Users/21b/Desktop/KORC/FIO/install/lib/libfusionio.a  \
 	  -DM3DC1_LIBRARIES=/Users/21b/Desktop/KORC/FIO/install/lib/libm3dc1.a	\
           -DFIO_INCLUDE_PATH=/Users/21b/Desktop/KORC/FIO/install/include  \
@@ -86,7 +86,6 @@ then
 	  -DKORCSRC_LIBRARIES=/Users/21b/Desktop/KORC/build/lib/libkorcsrc.a \
 	  -DCORI_DIR=OFF \
 	  -DKORC_TEST=OFF \
-	  -DNIMROD_INCLUDE_PATH=/Users/21b/Desktop/NIMROD/NIMUW/nimrod \
 	  -DNIMFIO_INCLUDE_PATH=/Users/21b/Desktop/NIMROD/NIMUW/nimfio \
 	  -DNIMFIO_LINK_FLAGS="-L/Users/21b/Desktop/NIMROD/NIMUW/nimfio -lnimfio" \
 	  -DNIMFIO_LIBRARIES=/Users/21b/Desktop/NIMROD/NIMUW/nimfio/libnimfio.a \

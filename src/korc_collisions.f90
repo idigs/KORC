@@ -6,12 +6,13 @@ module korc_collisions
   use korc_profiles
   use korc_fields
   use korc_input
-  use korc_m3d_c1
 
+#ifdef FIO
+  use korc_fio
+#endif
+  
 #ifdef PARALLEL_RANDOM
-
   use korc_random
-
 #endif
 
   IMPLICIT NONE
@@ -421,7 +422,7 @@ contains
              spp(ii)%vars%nimp = 0.0_rp
           end do
 
-#ifdef M3D_C1
+#ifdef FIO
           if (TRIM(params%field_model) .eq. 'M3D_C1') then     
              call initialize_m3d_c1_imp(params,F,P, &
                   cparams_ms%num_impurity_species,.true.)        
@@ -1525,8 +1526,8 @@ contains
     end if
   end subroutine include_CoulombCollisions_FO_p
 
-
-    subroutine include_CoulombCollisions_FOm3dc1_p(tt,params,X_X,X_Y,X_Z, &
+#ifdef FIO
+  subroutine include_CoulombCollisions_FOfio_p(tt,params,X_X,X_Y,X_Z, &
        U_X,U_Y,U_Z,B_X,B_Y,B_Z,me,P,F,flagCon,flagCol,PSIp,hint)
     !! This subroutine performs a Stochastic collision process consistent
     !! with the Fokker-Planck model for relativitic electron colliding with
@@ -1595,10 +1596,10 @@ contains
 
        call cart_to_cyl_p(pchunk,X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
 
-       call get_m3d_c1_profile_p(params,P,Y_R,Y_PHI,Y_Z, &
+       call get_fio_profile_p(params,P,Y_R,Y_PHI,Y_Z, &
             ne,Te,flagCon,hint)
 
-       call get_m3d_c1_ion_p(params,P,Y_R,Y_PHI,Y_Z, &
+       call get_fio_ion_p(params,P,Y_R,Y_PHI,Y_Z, &
             ne,ni,nimp,Zeff,flagCon,hint)
 
        !write(6,*) ne,Te,nimp,Zeff
@@ -1733,7 +1734,8 @@ contains
        end do
        
     end if
-  end subroutine include_CoulombCollisions_FOm3dc1_p
+  end subroutine include_CoulombCollisions_FOfio_p
+#endif
   
 
 
@@ -1997,7 +1999,8 @@ contains
     
   end subroutine include_CoulombCollisions_GC_p
 
-  subroutine include_CoulombCollisions_GCm3dc1_p(tt,params,Y_R,Y_PHI,Y_Z, &
+#ifdef FIO
+  subroutine include_CoulombCollisions_GCfio_p(tt,params,Y_R,Y_PHI,Y_Z, &
        Ppll,Pmu,me,flagCon,flagCol,F,P,E_PHI,ne,ni,Te,Zeff,nimp,PSIp,hint)
 
     TYPE(PROFILES), INTENT(IN)                                 :: P
@@ -2044,22 +2047,24 @@ contains
     if (MODULO(params%it+tt,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
        dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt       
 
-       call get_m3d_c1_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
+       call get_fio_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
             B_R,B_PHI,B_Z,gradB_R,gradB_PHI,gradB_Z, &
             curlb_R,curlb_PHI,curlb_Z,flagCon,hint)
-       if (F%M3D_C1_E .ge. 0) then
-          call get_m3d_c1_GCelectric_fields_p(params,F, &
+
+       if (F%FIO_E .ge. 0) then
+          call get_fio_GCelectric_fields_p(params,F, &
                Y_R,Y_PHI,Y_Z,E_R,E_PHI,E_Z,flagCon,hint)
        end if
-       call get_m3d_c1_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
+       call get_fio_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
             PSIp,flagCon,hint)
 
-       call get_m3d_c1_profile_p(params,P,Y_R,Y_PHI,Y_Z, &
+       call get_fio_profile_p(params,P,Y_R,Y_PHI,Y_Z, &
             ne,Te,flagCon,hint)
 
-       call get_m3d_c1_ion_p(params,P,Y_R,Y_PHI,Y_Z, &
+       call get_fio_ion_p(params,P,Y_R,Y_PHI,Y_Z, &
             ne,ni,nimp,Zeff,flagCon,hint)
 
+       
        !write(6,*) ne,Te,nimp,Zeff
        
        !$OMP SIMD
@@ -2233,7 +2238,8 @@ contains
        
     end if
     
-  end subroutine include_CoulombCollisions_GCm3dc1_p
+  end subroutine include_CoulombCollisions_GCfio_p
+#endif
   
   subroutine save_params_ms(params)
     TYPE(KORC_PARAMS), INTENT(IN) 			:: params
