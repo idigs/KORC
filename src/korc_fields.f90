@@ -904,7 +904,8 @@ CONTAINS
        !if (F%Efield.AND..NOT.F%Efield_in_file) then
        !   call analytical_electric_field_cyl(F,vars%Y,vars%E,vars%flagCon)
        !end if
-    else if (params%field_model.eq.'M3D_C1') then
+    else if (params%field_model.eq.'M3D_C1'.or. &
+         params%field_model.eq.'NIMROD') then
        !write(6,*) 'get_fields'
 
        call interp_fields(params,vars, F)
@@ -1966,9 +1967,9 @@ CONTAINS
     !     dim_1D,dt_E_SC,Ip_exp,PSIp_lim,Dim2x1t,t0_2x1t,E_2x1t,ReInterp_2x1t, &
     !     ind0_2x1t,PSIp_0
 
-#ifdef M3D_C1
-    F%M3D_C1_B = -1
-    F%M3D_C1_E = -1
+#ifdef FIO
+    F%FIO_B = -1
+    F%FIO_E = -1
 #endif
     
     if (params%mpi_params%rank .EQ. 0) then

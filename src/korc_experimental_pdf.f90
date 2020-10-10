@@ -1794,7 +1794,8 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
   PSIp_lim=F%PSIp_lim
   PSIp0=F%PSIP_min
 
-  if (params%field_model.eq.'M3D_C1') then
+  if (params%field_model.eq.'M3D_C1'.or. &
+       params%field_model.eq.'NIMROD') then
      min_R=params%rmin/params%cpp%length
      max_R=params%rmax/params%cpp%length
      min_Z=params%zmin/params%cpp%length

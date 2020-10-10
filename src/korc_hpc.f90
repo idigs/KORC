@@ -163,8 +163,19 @@ CONTAINS
     !! topology params::mpi_params::mpi_topo are periodic (T) or not (F).
     INTEGER :: ii
     !! Variable to iterate over different MPI processes.
+    LOGICAL :: mpiinit = .FALSE.
 
+    !call MPI_INITIALIZED(mpiinit,mpierr)
+    !write(6,*) 'initialized after',mpiinit
+    
+    
     call MPI_INIT(mpierr)
+
+    !write(6,*) 'mpi_init error code',mpierr
+    
+    !call MPI_INITIALIZED(mpiinit,mpierr)
+    !write(6,*) 'initialized after',mpiinit
+    
 
     if (mpierr .NE. MPI_SUCCESS) then
        write(6,'(/,"* * * * * * * COMMUNICATIONS * * * * * * *")')
@@ -172,12 +183,16 @@ CONTAINS
        write(6,'(/,"* * * * * * * * * ** * * * * * * * * * * *")')
        call MPI_ABORT(MPI_COMM_WORLD, -10, mpierr)
     end if
-
+    
     call MPI_INITIALIZED(mpi_process_initialized,mpierr)
 
+    !write(6,*) 'initialized after',mpi_process_initialized
+    
     call MPI_REDUCE(mpi_process_initialized,all_mpis_initialized,1, &
          MPI_LOGICAL,MPI_LAND,0,MPI_COMM_WORLD,mpierr)
 
+    !write(6,*) 'made it here 2'
+    
     call MPI_BCAST(all_mpis_initialized,1, &
          MPI_LOGICAL,0,MPI_COMM_WORLD,mpierr)
 

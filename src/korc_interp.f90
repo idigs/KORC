@@ -507,8 +507,9 @@ CONTAINS
 
     if (((params%field_model(1:8) .EQ. 'EXTERNAL').or. &
          (params%field_eval.eq.'interp')).and. &
-         (.not.params%field_model.eq.'M3D_C1')) then
-
+         (.not.params%field_model.eq.'M3D_C1'.and. &
+         .not.params%field_model.eq.'NIMROD')) then
+       
        if (params%mpi_params%rank .EQ. 0) then
           write(output_unit_write,'("* * * * INITIALIZING FIELDS INTERPOLANT * * * *")')
        end if
@@ -898,7 +899,7 @@ CONTAINS
              fields_domain%DR = ABS(F%X%R(2) - F%X%R(1))
              fields_domain%DZ = ABS(F%X%Z(2) - F%X%Z(1))
           else
-
+             
              write(output_unit_write,*) '3D magnetic field'
              
              bfield_3d%NR = F%dims(1)
@@ -1864,10 +1865,10 @@ CONTAINS
     !! all the information about the plasma profiles used in the simulation.
     !! See [[korc_types]] and [[korc_profiles]].
 
-!#ifdef M3D_C1
-!    P%M3D_C1_ne = -1
-!    P%M3D_C1_te = -1
-!    P%M3D_C1_zeff = -1
+!#ifdef FIO
+!    P%FIO_ne = -1
+!    P%FIO_te = -1
+!    P%FIO_zeff = -1
 !#endif
     
     if (params%collisions) then
@@ -3888,7 +3889,8 @@ subroutine interp_fields(params,prtcls,F)
     
     if ((ALLOCATED(F%PSIp).and.F%Bflux).or. &
          (F%ReInterp_2x1t.and.(.not.((params%field_model.eq.'M3D_C1').or. &
-         (params%field_model(10:13).eq.'MARS'))))) then
+         (params%field_model(10:13).eq.'MARS').or. &
+         (params%field_model.eq.'NIMROD'))))) then
 
 !     write(output_unit_write,'("3 size of PSI_P: ",I16)') size(prtcls%PSI_P)
 

@@ -647,7 +647,7 @@ CONTAINS
        call korc_abort(13)
     end if
 
-    write(6,*) TRIM(magnetic_field_filename),len(TRIM(magnetic_field_filename))
+    !write(6,*) TRIM(magnetic_field_filename),len(TRIM(magnetic_field_filename))
 
     tmp=len(TRIM(magnetic_field_filename))
     if (magnetic_field_filename(tmp-2:tmp).ne.'.h5'.and. &
