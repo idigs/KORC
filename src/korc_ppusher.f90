@@ -270,8 +270,8 @@ contains
              !$OMP END SIMD
 
 #ifdef FIO
-             if (params%field_model.eq.'M3D_C1'.or. &
-                  (params%field_model.eq.'NIMROD')) then
+             if (TRIM(params%field_model).eq.'M3D_C1'.or. &
+                  (TRIM(params%field_model).eq.'NIMROD')) then
                 !$OMP SIMD
                 do cc=1_idef,pchunk
                    hint(cc)=spp(ii)%vars%hint(pp-1+cc)
@@ -297,8 +297,8 @@ contains
                 call interp_FOfields1_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
                      E_X,E_Y,E_Z,PSIp,flagCon)
 #ifdef FIO
-             else if (params%field_model.eq.'M3D_C1'.or. &
-                  params%field_model.eq.'NIMROD') then
+             else if (TRIM(params%field_model).eq.'M3D_C1'.or. &
+                  TRIM(params%field_model).eq.'NIMROD') then
                 call get_fio_FOmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
                      B_X,B_Y,B_Z,flagCon,hint)
                 if (F%FIO_E .ge. 0) then
@@ -338,7 +338,8 @@ contains
              !$OMP END SIMD
 
 #ifdef FIO
-             if (params%field_model.eq.'M3D_C1'.or.params%field_model.eq.'NIMROD') then
+             if (TRIM(params%field_model).eq.'M3D_C1'.or. &
+                  TRIM(params%field_model).eq.'NIMROD') then
                 !$OMP SIMD
                 do cc=1_idef,pchunk
                    spp(ii)%vars%hint(pp-1+cc) = hint(cc)

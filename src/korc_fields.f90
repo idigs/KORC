@@ -882,6 +882,8 @@ CONTAINS
     TYPE(FIELDS), INTENT(IN)           :: F
     !! An instance of the KORC derived type FIELDS.
 
+    !write(6,*) params%field_model
+    
     if (params%field_model(1:10).eq.'ANALYTICAL') then
     !SELECT CASE (TRIM(params%field_model))
     !CASE('ANALYTICAL')
@@ -904,8 +906,8 @@ CONTAINS
        !if (F%Efield.AND..NOT.F%Efield_in_file) then
        !   call analytical_electric_field_cyl(F,vars%Y,vars%E,vars%flagCon)
        !end if
-    else if (params%field_model.eq.'M3D_C1'.or. &
-         params%field_model.eq.'NIMROD') then
+    else if (TRIM(params%field_model).eq.'M3D_C1'.or. &
+         TRIM(params%field_model).eq.'NIMROD') then
        !write(6,*) 'get_fields'
 
        call interp_fields(params,vars, F)

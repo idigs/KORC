@@ -413,21 +413,26 @@ CONTAINS
     end if
 
     isrc=F%isrc
+
+
     
     status = fio_get_options(isrc)
-       
 
-    if (.not.F%ReInterp_2x1t) then
-       status = fio_set_int_option(FIO_TIMESLICE, params%time_slice)
-    else
-       status = fio_set_int_option(FIO_TIMESLICE, F%ind_2x1t)
-    end if
+
+    !if (.not.F%ReInterp_2x1t) then
+    !   status = fio_set_int_option(FIO_TIMESLICE, params%time_slice)
+    !else
+    !   status = fio_set_int_option(FIO_TIMESLICE, F%ind_2x1t)
+    !end if
+    ! For NIMROD dump*, status=fio_get_options(isrc)=0, can't set FIO_TIMESLICE
+    ! as was the case for C1.h5 having information on multiple timeslices 
 
     
     status = fio_get_field(isrc, FIO_MAGNETIC_FIELD, F%FIO_B)
     status = fio_get_field(isrc, FIO_ELECTRIC_FIELD, F%FIO_E)
     !status = fio_get_field(isrc, FIO_VECTOR_POTENTIAL, F%FIO_A)
 
+    
     status = fio_get_real_field_parameter(F%FIO_B, FIO_TIME, time0)
 
     write(output_unit_write,*) 'FIO present time index',F%ind_2x1t
@@ -460,7 +465,10 @@ CONTAINS
     
     if (.not.F%Efield) F%FIO_E=-1
 
+    
     status = fio_set_int_option(FIO_SPECIES, FIO_ELECTRON);
+       
+    
     status = fio_get_field(isrc, FIO_DENSITY, P%FIO_ne);
     !status = fio_get_field(isrc, FIO_TEMPERATURE, P%FIO_te);
 
@@ -557,7 +565,7 @@ CONTAINS
        
   END SUBROUTINE initialize_m3d_c1_imp
 
-  SUBROUTINE finalize_m3d_c1(params, F, P)
+  SUBROUTINE finalize_fio(params, F, P)
     TYPE(KORC_PARAMS), INTENT(IN)           :: params
     TYPE(FIELDS), INTENT(IN)                :: F
     TYPE(PROFILES), INTENT(INOUT)              :: P
@@ -566,12 +574,18 @@ CONTAINS
 
     status = fio_close_field(F%FIO_B)
     status = fio_close_field(F%FIO_B+1)
-    status = fio_close_field(F%FIO_A)
-
+    if (F%FIO_A.gt.0) then
+       status = fio_close_field(F%FIO_A)
+    endif
+       
     status = fio_close_field(P%FIO_ne)
-    status = fio_close_field(P%FIO_te)
-    status = fio_close_field(P%FIO_ni)
-
+    if (P%FIO_te.gt.0) then
+       status = fio_close_field(P%FIO_te)
+    endif
+    if (P%FIO_ni.gt.0) then
+       status = fio_close_field(P%FIO_ni)
+    endif
+       
     if (params%collisions) then
        do ii=1,params%num_impurity_species
           status = fio_close_field(P%FIO_nimp(ii))
@@ -580,7 +594,7 @@ CONTAINS
 
     status=fio_close_source(F%isrc)
     
-  end SUBROUTINE FINALIZE_M3D_C1
+  end SUBROUTINE FINALIZE_FIO
 
   
   FUNCTION FIO_MAKE_SPECIES(m, p, e)

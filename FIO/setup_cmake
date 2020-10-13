@@ -7,6 +7,11 @@ MACHINE_ID=`uname -n`
 echo Configuring fusion_io for machine $MACHINE_ID
 echo
 
+if [ $# -eq 1 ]
+then
+    BUILD_TYPE=Debug
+fi
+
 echo cmake configured to generate a $BUILD_TYPE build.
 if [ "$BUILD_TYPE" == Debug ]
 then
@@ -32,6 +37,9 @@ rm -rf build/
 mkdir build
 cd build
 
+rm -f CMakeCache.txt
+rm -rf CMakeFiles
+
 if [ $MACHINE_ID == "MBP115573" ]
 then
     export CC=/opt/local/bin/gcc-mp-10
@@ -39,7 +47,14 @@ then
     export FC=/opt/local/bin/gfortran-mp-10
 
     cmake ../ \
+	  -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE                             \
 	  -DCMAKE_INSTALL_PREFIX=/Users/21b/Desktop/KORC/FIO/install \
+	  -DCMAKE_Fortran_FLAGS="-O3 -msse2 -DHDF5_DOUBLE_PRESICION -fopenmp-simd -malign-double -fconvert='big-endian'" \
+          -DCMAKE_C_FLAGS="-O3 -msse2 -fopenmp-simd -malign-double"  \
+          -DCMAKE_CXX_FLAGS="-O3 -msse2 -fopenmp-simd -malign-double" \
+	  -DCMAKE_Fortran_FLAGS_DEBUG="-g -ffpe-trap=invalid,zero,overflow -fimplicit-none -fbacktrace  -fsanitize=address"   \
+          -DCMAKE_C_FLAGS_DEBUG="-g -g3" \
+    	  -DCMAKE_CXX_FLAGS_DEBUG="-g -g3" \
 
 
 elif [ $MACHINE_ID == "cori01"   ] || \

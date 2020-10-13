@@ -371,7 +371,8 @@ program main
 
 #ifdef FIO
   if (params%orbit_model(1:2).eq.'FO'.and. &
-       (params%field_model.eq.'M3D_C1'.or.params%field_model.eq.'NIMROD').and. &
+       (TRIM(params%field_model).eq.'M3D_C1'.or. &
+       TRIM(params%field_model).eq.'NIMROD').and. &
        .not.F%ReInterp_2x1t) then
      call FO_init(params,F,spp,.false.,.true.)
      ! Initial half-time particle push
@@ -690,9 +691,10 @@ program main
   
   call finalize_interpolants(params)
 
-#ifdef M3D_C1
-  if (TRIM(params%field_model) .eq. 'M3D_C1') then
-     call finalize_m3d_c1(params,F,P)
+#ifdef FIO
+  if (TRIM(params%field_model) .eq. 'M3D_C1'.or. &
+      TRIM(params%field_model) .eq. 'NIMROD') then
+     call finalize_FIO(params,F,P)
   end if
 #endif
   

@@ -394,8 +394,8 @@ contains
     TYPE(FIELDS), INTENT(IN)                :: F
     INTEGER 				                       	:: ii
 
-    if (params%collisions.or.((params%field_model.eq.'M3D_C1'.or. &
-         params%field_model.eq.'NIMROD').and. &
+    if (params%collisions.or.((TRIM(params%field_model).eq.'M3D_C1'.or. &
+         TRIM(params%field_model).eq.'NIMROD').and. &
          params%radiation)) then
 
        if (params%mpi_params%rank .EQ. 0) then

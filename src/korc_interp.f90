@@ -507,8 +507,8 @@ CONTAINS
 
     if (((params%field_model(1:8) .EQ. 'EXTERNAL').or. &
          (params%field_eval.eq.'interp')).and. &
-         (.not.params%field_model.eq.'M3D_C1'.and. &
-         .not.params%field_model.eq.'NIMROD')) then
+         (.not.TRIM(params%field_model).eq.'M3D_C1'.and. &
+         .not.TRIM(params%field_model).eq.'NIMROD')) then
        
        if (params%mpi_params%rank .EQ. 0) then
           write(output_unit_write,'("* * * * INITIALIZING FIELDS INTERPOLANT * * * *")')
@@ -3888,9 +3888,9 @@ subroutine interp_fields(params,prtcls,F)
     end if
     
     if ((ALLOCATED(F%PSIp).and.F%Bflux).or. &
-         (F%ReInterp_2x1t.and.(.not.((params%field_model.eq.'M3D_C1').or. &
+         (F%ReInterp_2x1t.and.(.not.((TRIM(params%field_model).eq.'M3D_C1').or. &
          (params%field_model(10:13).eq.'MARS').or. &
-         (params%field_model.eq.'NIMROD'))))) then
+         (TRIM(params%field_model).eq.'NIMROD'))))) then
 
 !     write(output_unit_write,'("3 size of PSI_P: ",I16)') size(prtcls%PSI_P)
 
@@ -4256,7 +4256,7 @@ subroutine get_fio_magnetic_fields(prtcls, F, params)
 
              !prtcls%hint(pp)=c_null_ptr
              
-             !write(output_unit_write,*) 'thread',thread_num,'X',x
+             !write(6,*) 'thread',thread_num,'X',x
              
              !             prtcls%hint(pp)=c_null_ptr
 
@@ -4265,8 +4265,7 @@ subroutine get_fio_magnetic_fields(prtcls, F, params)
              status = fio_eval_field(F%FIO_B, x(1),                      &
                   Btmp(1),prtcls%hint(pp))
 
-             !write(output_unit_write,*) 'thread',thread_num,'interpolated B'
-             
+                     
              if (status .eq. FIO_NO_DATA) then
                 prtcls%B(pp,:) = 0
                 prtcls%flagCon(pp) = 0_is
