@@ -75,7 +75,7 @@ then
     module load cray-hdf5
     module unload darshan/3.1.4
     
-    cmake ../ -DCMAKE_INSTALL_PREFIX=/global/u1/m/mbeidler/LIBS/FIO/install \
+    cmake ../ -DCMAKE_INSTALL_PREFIX=/global/cfs/cdirs/m3236/build/KORC/FIO/install \
 	  -DCMAKE_PREFIX_PATH=$MPICH_DIR 
 fi
 
