@@ -58,7 +58,7 @@ add_library(fusionio
 target_compile_options(fusionio
 PRIVATE
     -fPIC
-    $<$<COMPILE_LANGUAGE:Fortran>:-fdefault-real-8 -fimplicit-none>
+    $<$<COMPILE_LANGUAGE:Fortran>:>
 )
 target_link_libraries(fusionio PUBLIC m3dc1)
 set_target_properties(fusionio
