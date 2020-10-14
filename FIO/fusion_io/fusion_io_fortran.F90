@@ -147,10 +147,10 @@ module fusion_io
 contains
 
   subroutine fio_add_field_f(icfield, ifield, iop, fac, ierr)
-    integer, intent(in) :: icfield
-    integer, intent(in) :: ifield
-    integer, intent(in) :: iop
-    real, intent(in) :: fac
+    integer(c_int), intent(in) :: icfield
+    integer(c_int), intent(in) :: ifield
+    integer(c_int), intent(in) :: iop
+    real(c_double), intent(in) :: fac
     integer, intent(out) :: ierr
     ierr = fio_add_field(icfield, ifield, iop, fac)
   end subroutine fio_add_field_f
@@ -194,10 +194,10 @@ contains
   end subroutine fio_deallocate_search_hint_f
 
   subroutine fio_eval_field_f(ifield, x, v, ierr, hint)
-    integer, intent(in) :: ifield
-    real, intent(in), dimension(*) :: x
-    real, intent(out), dimension(*) :: v
-    integer, intent(out) :: ierr
+    integer(c_int), intent(in) :: ifield
+    real(c_double), intent(in), dimension(*) :: x
+    real(c_double), intent(out), dimension(*) :: v
+    integer(c_int), intent(out) :: ierr
     type(fio_search_hint), intent(inout), optional :: hint
     if(present(hint)) then
       ierr = fio_eval_field(ifield, x, v, hint%ptr)
@@ -207,10 +207,10 @@ contains
   end subroutine fio_eval_field_f
 
   subroutine fio_eval_field_deriv_f(ifield, x, v, ierr, hint)
-    integer, intent(in) :: ifield
-    real, intent(in), dimension(*) :: x
-    real, intent(out), dimension(*) :: v
-    integer, intent(out) :: ierr
+    integer(c_int), intent(in) :: ifield
+    real(c_double), intent(in), dimension(*) :: x
+    real(c_double), intent(out), dimension(*) :: v
+    integer(c_int), intent(out) :: ierr
     type(fio_search_hint), intent(inout), optional :: hint
     if(present(hint)) then
       ierr = fio_eval_field_deriv(ifield, x, v, hint%ptr)
@@ -220,10 +220,10 @@ contains
   end subroutine fio_eval_field_deriv_f
 
   subroutine fio_eval_series_f(iseries, x, v, ierr)
-    integer, intent(in) :: iseries
-    real, intent(in) :: x
-    real, intent(out) :: v
-    integer, intent(out) :: ierr
+    integer(c_int), intent(in) :: iseries
+    real(c_double), intent(in) :: x
+    real(c_double), intent(out) :: v
+    integer(c_int), intent(out) :: ierr
     ierr = fio_eval_series(iseries, x, v)
   end subroutine fio_eval_series_f
 
@@ -247,15 +247,15 @@ contains
   end subroutine fio_get_int_parameter_f
 
   subroutine fio_get_real_parameter_f(isrc, t, p, ierr)
-    integer, intent(in) :: isrc, t
-    real, intent(out) :: p
-    integer, intent(out) :: ierr
+    integer(c_int), intent(in) :: isrc, t
+    real(c_double), intent(out) :: p
+    integer(c_int), intent(out) :: ierr
     ierr = fio_get_real_parameter(isrc, t, p)
   end subroutine fio_get_real_parameter_f
 
   subroutine fio_get_real_field_parameter_f(ifield, t, p, ierr)
-    integer, intent(in) :: ifield, t
-    real, intent(out) :: p
+    integer(c_int), intent(in) :: ifield, t
+    real(c_double), intent(out) :: p
     integer, intent(out) :: ierr
     ierr = fio_get_real_field_parameter(ifield, t, p)
   end subroutine fio_get_real_field_parameter_f
@@ -268,7 +268,7 @@ contains
 
   subroutine fio_get_series_bounds_f(iseries, tmin, tmax, ierr)
     integer, intent(in) :: iseries
-    real, intent(out) :: tmin, tmax
+    real(c_double), intent(out) :: tmin, tmax
     integer, intent(out) :: ierr
     ierr = fio_get_series_bounds(iseries, tmin, tmax)
   end subroutine fio_get_series_bounds_f

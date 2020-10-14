@@ -5,8 +5,8 @@ module fio_push
 
   type :: field_type
      real :: phi
-     real, dimension(3) :: gradphi, a
-     real, dimension(3,3) :: grada, ginv
+     real(c_double), dimension(3) :: gradphi, a
+     real(c_double), dimension(3,3) :: grada, ginv
      real, dimension(3,3,3) :: gmat1
   end type field_type
 
@@ -61,11 +61,11 @@ contains
      implicit none
 
      real, intent(in) :: t
-     real, dimension(3), intent(in) :: q
+     real(c_double), dimension(3), intent(in) :: q
      type(field_type), intent(out) :: field
 
      integer :: it, ierr
-     real :: phi(1)
+     real(c_double) :: phi(1)
 
      if(t.eq.0.) then
         it = 1
