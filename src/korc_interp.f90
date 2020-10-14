@@ -4398,13 +4398,23 @@ subroutine get_fio_magnetic_fields(prtcls, F, params)
              dBRdR=dBtmp(1)*(params%cpp%length/params%cpp%Bo)
              dBPHIdR=dBtmp(2)*(params%cpp%length/params%cpp%Bo)
              dBZdR=dBtmp(3)*(params%cpp%length/params%cpp%Bo)
-             dBRdPHI=dBtmp(4)*(params%cpp%length/params%cpp%Bo)
-             dBPHIdPHI=dBtmp(5)*(params%cpp%length/params%cpp%Bo)
-             dBZdPHI=dBtmp(6)*(params%cpp%length/params%cpp%Bo)
+             dBRdPHI=dBtmp(4)/params%cpp%Bo
+             dBPHIdPHI=dBtmp(5)/params%cpp%Bo
+             dBZdPHI=dBtmp(6)/params%cpp%Bo
              dBRdZ=dBtmp(7)*(params%cpp%length/params%cpp%Bo)
              dBPHIdZ=dBtmp(8)*(params%cpp%length/params%cpp%Bo)
              dBZdZ=dBtmp(9)*(params%cpp%length/params%cpp%Bo)
 
+             !write(6,*) 'dBRdR',dBRdR
+             !write(6,*) 'dBPHIdR',dBPHIdR
+             !write(6,*) 'dBZdR',dBZdR
+             !write(6,*) 'dBRdPHI',dBRdPHI
+             !write(6,*) 'dBPHIdPHI',dBPHIdPHI
+             !write(6,*) 'dBZdPHI',dBZdPHI
+             !write(6,*) 'dBRdZ',dBRdZ
+             !write(6,*) 'dBPHIdZ',dBPHIdZ
+             !write(6,*) 'dBZdZ',dBZdZ
+             
              gradB_R(pp)=(B_R(pp)*dBRdR+B_PHI(pp)*dBPHIdR+B_Z(pp)*dBZdR)/ &
                   Bmag
              gradB_PHI(pp)=(B_R(pp)*dBRdPHI+B_PHI(pp)*dBPHIdPHI+ &
