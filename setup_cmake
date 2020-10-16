@@ -141,14 +141,14 @@ then
           -DCMAKE_CXX_FLAGS_DEBUG="-g -traceback -Bdynamic -qopt-report=5 -qopt-report-phase=vec" \
           -DCMAKE_C_FLAGS_DEBUG="-g -traceback -Bdynamic -qopt-report=5 -qopt-report-phase=vec " \
           -DCMAKE_Fortran_FLAGS_DEBUG="-g -traceback -check all -Bdynamic -debug inline-debug-info -qopt-report=5 -qopt-report-phase=vec -qoverride-limits" \
-          -DUSE_M3D_C1=ON           \
+          -DUSE_FIO=ON           \
 	  -DFIO_LIBRARIES=/global/cfs/cdirs/m3236/build/KORC/FIO/install/lib/libfusionio.a  \
 	  -DM3DC1_LIBRARIES=/global/cfs/cdirs/m3236/build/KORC/FIO/install/lib/libm3dc1.a	\
-          -DM3D_C1_INCLUDE_PATH=/global/cfs/cdirs/m3236/build/KORC/FIO/install/include  \
-          -DM3D_C1_LINK_FLAGS="-L/global/cfs/cdirs/m3236/build/KORC/FIO/install/lib -lfusionio -lm3dc1" \
+          -DFIO_INCLUDE_PATH=/global/cfs/cdirs/m3236/build/KORC/FIO/install/include  \
+          -DFIO_LINK_FLAGS="-L/global/cfs/cdirs/m3236/build/KORC/FIO/install/lib -lfusionio -lm3dc1" \
 	  -DCORI_DIR=ON \
     	  -DKORC_TEST=OFF \
-	  -DNIMROD_INCLUDE_PATH/=/global/cfs/cdirs/m3236/build/NIMUW/nimrod \
+	  -DNIMROD_INCLUDE_PATH=/global/cfs/cdirs/m3236/build/NIMUW/nimrod \
 	  -DNIMFIO_INCLUDE_PATH=/global/cfs/cdirs/m3236/build/NIMUW/nimfio \
 	  -DNIMFIO_LINK_FLAGS="-L/global/cfs/cdirs/m3236/build/NIMUW/nimfio -lnimfio" \
 	  -DNIMFIO_LIBRARIES=/global/cfs/cdirs/m3236/build/NIMUW/nimfio/libnimfio.a \
