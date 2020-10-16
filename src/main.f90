@@ -650,7 +650,7 @@ program main
         
         if (it.gt.F%ind0_2x1t) then
            call initialize_m3d_c1(params, F, P, spp,.false.)
-           if (params%collisions) then
+           if (params%collisions.or.params%radiation) then
               call initialize_m3d_c1_imp(params,F,P, &
                    params%num_impurity_species,.false.)
            end if
