@@ -9,6 +9,7 @@ MODULE korc_fio
   USE korc_types
   USE korc_input
   USE korc_HDF5
+  USE mpi
 
   IMPLICIT NONE
 
@@ -248,8 +249,7 @@ CONTAINS
     INTEGER                                    :: isrc
     real(c_double)  ::  time0,time1
     INTEGER (C_INT)                         :: FIO_tmp
-
-
+    
     if (init) then
        F%Efield = Efield
        F%PSIp_lim=PSIp_lim
@@ -547,6 +547,8 @@ CONTAINS
 
     if (Zo1.eq.18) then
        A=40
+    else if (Zo1.eq.10) then
+       A=20
     else if (Zo1.eq.6) then
        A=12
     end if
