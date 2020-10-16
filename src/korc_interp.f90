@@ -4884,6 +4884,21 @@ subroutine get_fio_magnetic_fields(prtcls, F, params)
              Zeff(pp)=Zeff(pp)+nimp(pp,ii)*params%Zj(ii)**2
           end do
           Zeff(pp)=Zeff(pp)/n_e(pp)
+
+          if ((Zeff(pp).gt.100).or.(Zeff(pp).lt.0.01).or. &
+               (isnan(Zeff(pp)))) then
+             Zeff(pp)=1._rp
+             !write(6,*) 'Zeff is ',Zeff(pp),'!!'
+             !write(6,*) 'R:',x(1)
+             !write(6,*) 'PHI:',x(2)
+             !write(6,*) 'Z:',x(3)
+             !do ii = 1,num_imp
+             !   write(6,*) 'n_imp_',ii,':',nimp(pp,ii)
+             !end do
+             !write(6,*) 'n_e:',n_e(pp)
+             !write(6,*) 'n_i:',n_i(pp)
+             !call korc_abort(21)
+          endif
           
        end if
     end do
