@@ -8425,7 +8425,17 @@ contains
 
     end if
 
+    !$OMP SIMD
+    do cc=1_idef,pchunk 
+       if(isnan(gamgc(cc))) stop 'gamgc is a NaN'
+       if(isnan(RHS_R(cc))) stop 'RHS_R1 is a NaN'
+       if(isnan(RHS_PHI(cc))) stop 'RHS_PHI1 is a NaN'
+       if(isnan(RHS_Z(cc))) stop 'RHS_Z1 is a NaN'
+       if(isnan(RHS_PLL(cc))) stop 'RHS_PLL1 is a NaN'
+       if(isnan(RHS_MU(cc))) stop 'RHS_MU1 is a NaN'
 
+    end do
+    !$OMP END SIMD
 
     if (params%radiation.and.(params%GC_rad_model.eq.'SDE')) then
        !$OMP SIMD
@@ -8440,18 +8450,6 @@ contains
        end do
        !$OMP END SIMD
     end if
-
-    !$OMP SIMD
-    do cc=1_idef,pchunk 
-       if(isnan(gamgc(cc))) stop 'gamgc is a NaN'
-       if(isnan(RHS_R(cc))) stop 'RHS_R1 is a NaN'
-       if(isnan(RHS_PHI(cc))) stop 'RHS_PHI1 is a NaN'
-       if(isnan(RHS_Z(cc))) stop 'RHS_Z1 is a NaN'
-       if(isnan(RHS_PLL(cc))) stop 'RHS_PLL1 is a NaN'
-       if(isnan(RHS_MU(cc))) stop 'RHS_MU1 is a NaN'
-
-    end do
-    !$OMP END SIMD
 
 
     !    write(output_unit_write,*) 'RHS_R: ',RHS_R(1)
@@ -8612,7 +8610,24 @@ contains
 
     end if
 
+    !$OMP SIMD
+    do cc=1_idef,pchunk 
+       if(isnan(gamgc(cc))) then           
+          write(6,*) 'gamgc is NaN'
+          write(6,*) 'V_PLL',V_PLL(cc)
+          write(6,*) 'V_MU',V_MU(cc)
+          write(6,*) 'Bmag',Bmag(cc)
+          
+          stop 'gamgc is a NaN'
+       endif
+       if(isnan(RHS_R(cc))) stop 'RHS_R1 is a NaN'
+       if(isnan(RHS_PHI(cc))) stop 'RHS_PHI1 is a NaN'
+       if(isnan(RHS_Z(cc))) stop 'RHS_Z1 is a NaN'
+       if(isnan(RHS_PLL(cc))) stop 'RHS_PLL1 is a NaN'
+       if(isnan(RHS_MU(cc))) stop 'RHS_MU1 is a NaN'
 
+    end do
+    !$OMP END SIMD
 
     if (params%radiation.and.(params%GC_rad_model.eq.'SDE')) then
        !$OMP SIMD
@@ -8627,19 +8642,6 @@ contains
        end do
        !$OMP END SIMD
     end if
-
-    !$OMP SIMD
-    do cc=1_idef,pchunk 
-       if(isnan(gamgc(cc))) stop 'gamgc is a NaN'
-       if(isnan(RHS_R(cc))) stop 'RHS_R1 is a NaN'
-       if(isnan(RHS_PHI(cc))) stop 'RHS_PHI1 is a NaN'
-       if(isnan(RHS_Z(cc))) stop 'RHS_Z1 is a NaN'
-       if(isnan(RHS_PLL(cc))) stop 'RHS_PLL1 is a NaN'
-       if(isnan(RHS_MU(cc))) stop 'RHS_MU1 is a NaN'
-
-    end do
-    !$OMP END SIMD
-
 
     !    write(output_unit_write,*) 'RHS_R: ',RHS_R(1)
     !    write(output_unit_write,*) 'RHS_PHI: ',RHS_PHI(1)
