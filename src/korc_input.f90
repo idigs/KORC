@@ -263,6 +263,7 @@ module korc_input
     ! Impurity densities
   REAL(rp), DIMENSION(10)  :: IZj_mult = 15.7596
     ! Ionization energy of impurity in eV
+  CHARACTER :: neut_prof = 'UNIFORM'
 
   !! -----------------------------------------------
   !! AvalancheGenerationPDF
@@ -416,7 +417,7 @@ CONTAINS
     NAMELIST /CollisionParamsSingleSpecies/ Te_sing,Ti_sing,ne_sing, &
          Zeff_sing,dTau_sing
     NAMELIST /CollisionParamsMultipleSpecies/ num_impurity_species,Te_mult, &
-         ne_mult,Zo_mult,Zj_mult,nz_mult,IZj_mult
+         ne_mult,Zo_mult,Zj_mult,nz_mult,IZj_mult,neut_prof
     NAMELIST /AvalancheGenerationPDF/ max_pitch_angle_aval, &
          min_pitch_angle_aval,max_energy_aval,min_energy_aval,ne_aval, &
          Zeff_aval,Epar_aval,Te_aval,dth_aval,dp_aval,dR_aval,dZ_aval

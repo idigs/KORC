@@ -69,6 +69,8 @@ module korc_collisions
           339.1_rp,394.5_rp,463.4_rp,568.0_rp,728.0_rp,795.9_rp,879.8_rp, &
           989.9_rp,1138.1_rp,1369.5_rp,1791.2_rp,2497.0_rp,4677.2_rp, &
           4838.2_rp,huge(1._rp)/)
+
+     CHARACTER(30) :: neut_prof
      
   END TYPE PARAMS_MS
 
@@ -256,6 +258,8 @@ contains
     cparams_ms%rD = SQRT( C_E0*cparams_ms%Te/(cparams_ms%ne*C_E**2) )
     cparams_ms%re = C_RE
     cparams_ms%Ee_IZj = C_ME*C_C**2/cparams_ms%IZj
+
+    cparams_ms%neut_prof=neut_prof
     
     if (params%mpi_params%rank .EQ. 0) then
        write(output_unit_write,'("Number of impurity species: ",I16)')& 
@@ -926,7 +930,18 @@ contains
 
     if (params%bound_electron_model.eq.'HESSLOW') then
        CF_temp=CF_SD
-       do i=1,cparams_ms%num_impurity_species
+       if ((cparams_ms%Zj(1).eq.0.0).and. &
+            (neut_prof.eq.'UNIFORM')) then
+          CF_temp=CF_temp+CF_SD*cparams_ms%nz(1)/ne* &
+               (cparams_ms%Zo(1)-cparams_ms%Zj(1))/ &
+               CLogee(v,ne,Te)*(log(1+h_j(1,v)**k)/k-v**2) 
+       else
+          CF_temp=CF_temp+CF_SD*cparams_ms%nz(1)/cparams_ms%ne* &
+               (cparams_ms%Zo(1)-cparams_ms%Zj(1))/ &
+               CLogee(v,ne,Te)*(log(1+h_j(1,v)**k)/k-v**2) 
+       endif
+       
+       do i=2,cparams_ms%num_impurity_species
           CF_temp=CF_temp+CF_SD*cparams_ms%nz(i)/cparams_ms%ne* &
                (cparams_ms%Zo(i)-cparams_ms%Zj(i))/ &
                CLogee(v,ne,Te)*(log(1+h_j(i,v)**k)/k-v**2) 
@@ -1074,6 +1089,15 @@ contains
 
     if (params%bound_electron_model.eq.'HESSLOW') then
        CB_ei_temp=CB_ei_SD
+       if ((cparams_ms%Zj(1).eq.0.0).and. &
+            (neut_prof.eq.'UNIFORM')) then
+          CB_ei_temp=CB_ei_temp+CB_ei_SD*cparams_ms%nz(1)/(ne* &
+               Zeff*CLogei(v,ne,Te))*g_j(1,v)
+       else
+          CB_ei_temp=CB_ei_temp+CB_ei_SD*cparams_ms%nz(1)/(cparams_ms%ne* &
+               Zeff*CLogei(v,ne,Te))*g_j(1,v)
+       endif
+       
        do i=1,cparams_ms%num_impurity_species
           CB_ei_temp=CB_ei_temp+CB_ei_SD*cparams_ms%nz(i)/(cparams_ms%ne* &
                Zeff*CLogei(v,ne,Te))*g_j(i,v)
