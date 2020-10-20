@@ -5472,6 +5472,12 @@ contains
        V0_PLL(cc)=V_PLL(cc)
        V0_MU(cc)=V_MU(cc)
 
+       if(isnan(V0_PLL(cc)).or.isnan(V0_MU(cc))) then
+          write(6,*) 'V0_PLL',V0_PLL(cc)
+          write(6,*) 'V0_MU',V0_MU(cc)
+          stop 'V0_PLL or V0_MU is NaN'
+       endif
+       
     end do
     !$OMP END SIMD
 
@@ -5544,6 +5550,13 @@ contains
        V_PLL(cc)=V0_PLL(cc)   +a1*k1_PLL(cc)
        V_MU(cc)=V0_MU(cc)   +a1*k1_MU(cc)
 
+       if(isnan(V_PLL(cc)).or.isnan(V_MU(cc))) then
+          write(6,*) 'After 1st substep'
+          write(6,*) 'V_PLL',V_PLL(cc)
+          write(6,*) 'V_MU',V_MU(cc)
+          stop 'V_PLL or V_MU is NaN'
+       endif
+
     end do
     !$OMP END SIMD
 
@@ -5586,7 +5599,13 @@ contains
        V_PLL(cc)=V0_PLL(cc)   +a21*k1_PLL(cc)+a22*k2_PLL(cc)
        V_MU(cc)=V0_MU(cc)   +a21*k1_MU(cc)+a22*k2_MU(cc)
 
-
+       if(isnan(V_PLL(cc)).or.isnan(V_MU(cc))) then
+          write(6,*) 'After 2nd substep'
+          write(6,*) 'V_PLL',V_PLL(cc)
+          write(6,*) 'V_MU',V_MU(cc)
+          stop 'V_PLL or V_MU is NaN'
+       endif
+       
     end do
     !$OMP END SIMD
 
@@ -5625,7 +5644,13 @@ contains
        V_PLL(cc)=V0_PLL(cc)   +a31*k1_PLL(cc)+a32*k2_PLL(cc)+a33*k3_PLL(cc)
        V_MU(cc)=V0_MU(cc)   +a31*k1_MU(cc)+a32*k2_MU(cc)+a33*k3_MU(cc)
 
-
+       if(isnan(V_PLL(cc)).or.isnan(V_MU(cc))) then
+          write(6,*) 'After 3rd substep'
+          write(6,*) 'V_PLL',V_PLL(cc)
+          write(6,*) 'V_MU',V_MU(cc)
+          stop 'V_PLL or V_MU is NaN'
+       endif
+       
     end do
     !$OMP END SIMD
 
@@ -5668,6 +5693,13 @@ contains
             a43*k3_MU(cc)+a44*k4_MU(cc)
 
 
+       if(isnan(V_PLL(cc)).or.isnan(V_MU(cc))) then
+          write(6,*) 'After 4th substep'
+          write(6,*) 'V_PLL',V_PLL(cc)
+          write(6,*) 'V_MU',V_MU(cc)
+          stop 'V_PLL or V_MU is NaN'
+       endif
+       
     end do
     !$OMP END SIMD
 
@@ -5710,6 +5742,12 @@ contains
        V_MU(cc)=V0_MU(cc)   +a51*k1_MU(cc)+a52*k2_MU(cc)+ &
             a53*k3_MU(cc)+a54*k4_MU(cc)+a55*k5_MU(cc)
 
+       if(isnan(V_PLL(cc)).or.isnan(V_MU(cc))) then
+          write(6,*) 'After 5th substep'
+          write(6,*) 'V_PLL',V_PLL(cc)
+          write(6,*) 'V_MU',V_MU(cc)
+          stop 'V_PLL or V_MU is NaN'
+       endif
 
     end do
     !$OMP END SIMD
@@ -5751,7 +5789,13 @@ contains
        V_MU(cc)=V0_MU(cc)+b1*k1_MU(cc)+b2*k2_MU(cc)+ &
             b3*k3_MU(cc)+b4*k4_MU(cc)+b5*k5_MU(cc)+b6*k6_MU(cc)
 
-
+       if(isnan(V_PLL(cc)).or.isnan(V_MU(cc))) then
+          write(6,*) 'After 6th substep'
+          write(6,*) 'V_PLL',V_PLL(cc)
+          write(6,*) 'V_MU',V_MU(cc)
+          stop 'V_PLL or V_MU is NaN'
+       endif
+       
     end do
     !$OMP END SIMD
 
@@ -5807,6 +5851,16 @@ contains
 
     !write(6,*) E_PHI
 
+    !$OMP SIMD
+    do cc=1_idef,pchunk
+       if(isnan(V_PLL(cc)).or.isnan(V_MU(cc))) then
+          write(6,*) 'After collision'
+          write(6,*) 'V_PLL',V_PLL(cc)
+          write(6,*) 'V_MU',V_MU(cc)
+          stop 'V_PLL or V_MU is NaN'
+       endif
+    end do
+    !$OMP END SIMD
 
   end subroutine advance_GCinterp_fio_vars
 #endif
