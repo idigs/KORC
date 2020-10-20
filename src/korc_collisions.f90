@@ -2221,6 +2221,33 @@ contains
        end do
        !$OMP END SIMD
 
+       do cc=1_idef,pchunk
+          if(isnan(Ppll(cc)).or.isnan(Pmu(cc))) then
+             write(6,*) 'End collision'
+             write(6,*) 'Ppll',Ppll(cc)
+             write(6,*) 'Pmu',Pmu(cc)
+             write(6,*) 'Bmag',Bmag(cc)
+             write(6,*) 'pm',pm(cc)
+             write(6,*) 'xi',xi(cc)
+             write(6,*) 'dp',dp(cc)
+             write(6,*) 'dxi',dxi(cc)
+             write(6,*) 'CFL',CFL(cc)
+             write(6,*) 'CBL',CBL(cc)
+             write(6,*) 'dCAL',dCAL(cc)
+             write(6,*) 'CAL',CAL(cc)
+             write(6,*) 'v',v(cc)
+             write(6,*) 'ne',ne(cc)
+             write(6,*) 'Te',Te(cc)
+             write(6,*) 'nimp',nimp(cc,:)
+             write(6,*) 'Zeff',Zeff(cc)
+             write(6,*) 'Y_R',Y_R(cc)
+             write(6,*) 'Y_PHI',Y_PHI(cc)
+             write(6,*) 'Y_Z',Y_Z(cc)
+             
+             stop 'Pmu or Pmu is NaN'
+          endif
+       end do
+       
 !       write(output_unit_write,'("rnd1: ",E17.10)') rnd1
 !       write(output_unit_write,'("flag: ",I16)') flag
 !       write(output_unit_write,'("CA: ",E17.10)') CAL

@@ -4803,6 +4803,9 @@ subroutine get_fio_magnetic_fields(prtcls, F, params)
                netmp,hint(pp))
           
           if (status .eq. FIO_SUCCESS) then
+
+             if(netmp.le.0) netmp=1._rp
+             
              n_e(pp) = netmp/params%cpp%density
           else if (status .eq. FIO_NO_DATA) then
              flag(pp) = 0_is
@@ -4815,6 +4818,9 @@ subroutine get_fio_magnetic_fields(prtcls, F, params)
                Tetmp,hint(pp))
 
           if (status .eq. FIO_SUCCESS) then
+
+             if(Tetmp.le.0) Tetmp=0.1_rp
+             
              T_e(pp) = Tetmp/(params%cpp%temperature/C_E)
           end if
           
@@ -4861,7 +4867,7 @@ subroutine get_fio_magnetic_fields(prtcls, F, params)
              
              if (status .eq. FIO_SUCCESS) then
 
-                if(nimptmp.le.0) nimptmp=0._rp
+                if(nimptmp.le.0) nimptmp=1._rp
 
                 nimp(pp,ii) = nimptmp/params%cpp%density
              else if (status .eq. FIO_NO_DATA) then

@@ -5474,16 +5474,6 @@ contains
     end do
     !$OMP END SIMD
 
-    do cc=1_idef,pchunk
-       if(isnan(V0_PLL(cc)).or.isnan(V0_MU(cc))) then
-          write(6,*) 'V0_PLL',V0_PLL(cc)
-          write(6,*) 'V0_MU',V0_MU(cc)
-          stop 'V0_PLL or V0_MU is NaN'
-       endif
-       
-    end do
-
-
     !write(output_unit_write,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'R0',Y_R(1)
     !write(output_unit_write,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'PHI0',Y_PHI(1)
     !write(output_unit_write,*) 'MPI',params%mpi_params%rank,'OMP',thread_num,'Z0',Y_Z(1)
@@ -5555,16 +5545,6 @@ contains
     end do
     !$OMP END SIMD
     
-    do cc=1_idef,pchunk
-       if(isnan(V_PLL(cc)).or.isnan(V_MU(cc))) then
-          write(6,*) 'After 1st substep'
-          write(6,*) 'V_PLL',V_PLL(cc)
-          write(6,*) 'V_MU',V_MU(cc)
-          stop 'V_PLL or V_MU is NaN'
-       endif
-
-    end do
-
 
     !write(output_unit_write,*) 'R1',Y_R(1)
     !write(output_unit_write,*) 'PHI1',Y_PHI(1)
@@ -5607,16 +5587,6 @@ contains
     end do
     !$OMP END SIMD
 
-    do cc=1_idef,pchunk
-       if(isnan(V_PLL(cc)).or.isnan(V_MU(cc))) then
-          write(6,*) 'After 2nd substep'
-          write(6,*) 'V_PLL',V_PLL(cc)
-          write(6,*) 'V_MU',V_MU(cc)
-          stop 'V_PLL or V_MU is NaN'
-       endif
-       
-    end do
-
 
     !    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
     call get_fio_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
@@ -5654,16 +5624,6 @@ contains
        V_MU(cc)=V0_MU(cc)   +a31*k1_MU(cc)+a32*k2_MU(cc)+a33*k3_MU(cc)
     end do
     !$OMP END SIMD
-
-    do cc=1_idef,pchunk
-       if(isnan(V_PLL(cc)).or.isnan(V_MU(cc))) then
-          write(6,*) 'After 3rd substep'
-          write(6,*) 'V_PLL',V_PLL(cc)
-          write(6,*) 'V_MU',V_MU(cc)
-          stop 'V_PLL or V_MU is NaN'
-       endif
-       
-    end do
 
 
     !    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
@@ -5706,17 +5666,6 @@ contains
     end do
     !$OMP END SIMD
 
-    do cc=1_idef,pchunk
-       if(isnan(V_PLL(cc)).or.isnan(V_MU(cc))) then
-          write(6,*) 'After 4th substep'
-          write(6,*) 'V_PLL',V_PLL(cc)
-          write(6,*) 'V_MU',V_MU(cc)
-          stop 'V_PLL or V_MU is NaN'
-       endif
-       
-    end do
-
-
 
     !    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
     call get_fio_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
@@ -5758,16 +5707,6 @@ contains
     end do
     !$OMP END SIMD
 
-    do cc=1_idef,pchunk
-       if(isnan(V_PLL(cc)).or.isnan(V_MU(cc))) then
-          write(6,*) 'After 5th substep'
-          write(6,*) 'V_PLL',V_PLL(cc)
-          write(6,*) 'V_MU',V_MU(cc)
-          stop 'V_PLL or V_MU is NaN'
-       endif
-
-    end do
-
 
     !    call interp_fields_p(F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI, &
     call get_fio_GCmagnetic_fields_p(params,F,Y_R,Y_PHI,Y_Z, &
@@ -5807,15 +5746,6 @@ contains
             b3*k3_MU(cc)+b4*k4_MU(cc)+b5*k5_MU(cc)+b6*k6_MU(cc)
     end do
     !$OMP END SIMD
-
-    do cc=1_idef,pchunk
-       if(isnan(V_PLL(cc)).or.isnan(V_MU(cc))) then
-          write(6,*) 'After 6th substep'
-          write(6,*) 'V_PLL',V_PLL(cc)
-          write(6,*) 'V_MU',V_MU(cc)
-          stop 'V_PLL or V_MU is NaN'
-       endif       
-    end do
     
 
     !$OMP SIMD
@@ -5856,7 +5786,7 @@ contains
        vars%RHS(pp-1+cc,4)=RHS_PLL(cc)
        vars%RHS(pp-1+cc,5)=RHS_MU(cc)
     end do
-    !$OMP END SIMD       
+    !$OMP END SIMD
 
     !write(6,*) E_PHI
     
@@ -5867,17 +5797,6 @@ contains
             &,nimp,PSIp,hint)
 
     end if
-
-    !write(6,*) E_PHI
-
-    do cc=1_idef,pchunk
-       if(isnan(V_PLL(cc)).or.isnan(V_MU(cc))) then
-          write(6,*) 'After collision'
-          write(6,*) 'V_PLL',V_PLL(cc)
-          write(6,*) 'V_MU',V_MU(cc)
-          stop 'V_PLL or V_MU is NaN'
-       endif
-    end do
 
 
   end subroutine advance_GCinterp_fio_vars
