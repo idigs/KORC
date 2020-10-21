@@ -2222,7 +2222,8 @@ contains
        !$OMP END SIMD
 
        do cc=1_idef,pchunk
-          if(isnan(Ppll(cc)).or.isnan(Pmu(cc))) then
+          if((isnan(Ppll(cc)).or.isnan(Pmu(cc))).and. &
+             ((flagCol(cc).eq.1_is).or.(flagCon(cc).eq.1_is))) then
              write(6,*) 'End collision'
              write(6,*) 'Ppll',Ppll(cc)
              write(6,*) 'Pmu',Pmu(cc)
