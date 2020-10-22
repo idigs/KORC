@@ -3874,7 +3874,8 @@ subroutine interp_fields(params,prtcls,F)
        end if
 
        do pp=1,sizeof(prtcls%flagCon)
-          if (prtcls%flagCon(pp)==0) then
+          if (prtcls%flagCon(pp)==0.and. &
+               (.not.(params%restart.OR.params%proceed))) then
              write(6,*) 'RE initialized outside of computational domain!!!'
              call KORC_ABORT(15)
           end if

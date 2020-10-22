@@ -429,12 +429,16 @@ CONTAINS
     V1 = Vo*COS(C_PI*spp%vars%eta/180.0_rp)
     V2 = Vo*SIN(C_PI*spp%vars%eta/180.0_rp)*COS(theta)
     V3 = Vo*SIN(C_PI*spp%vars%eta/180.0_rp)*SIN(theta)
-    
+
+    !do jj=1_idef,spp%ppp
+    !   write(6,*) 'MPI',params%mpi_params%rank,'X', &
+    !        spp%vars%X(jj,:)*params%cpp%length
+    !end do
     call unitVectors(params,spp%vars%X,F,b1,b2,b3,spp%vars%flagCon, &
          spp%vars%cart,hint)
     !! Call to subroutine [[unitVectors]] in [[korc_fields]].
 
-    !write(output_unit_write,*) 'X',spp%vars%X
+    !
     !write(output_unit_write,*) 'b-hat',b1
 
     
