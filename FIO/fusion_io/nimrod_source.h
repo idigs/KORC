@@ -13,8 +13,8 @@ int nimrod_fio_dealloc();
 #endif
 
 struct nimrod_search_hint {
-  double ixy[2];
-  int iblk;
+  double ixy[2] = {-1.0, -1.0};
+  int iblk = 0;
 };
 
 class nimrod_source : public fio_source {

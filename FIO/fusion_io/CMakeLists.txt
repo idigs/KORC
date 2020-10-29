@@ -21,7 +21,9 @@ list(APPEND fusionio_headers
     ${CMAKE_CURRENT_SOURCE_DIR}/gpec_field.h
     ${CMAKE_CURRENT_SOURCE_DIR}/m3dc1_source.h
     ${CMAKE_CURRENT_SOURCE_DIR}/nimrod_source.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/nimrod_field.h    
+    ${CMAKE_CURRENT_SOURCE_DIR}/nimrod_field.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/compound_field.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/interpolate.h
 )
 list(APPEND fusionio_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/c_interface.cpp
@@ -44,10 +46,11 @@ list(APPEND fusionio_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/gato_field.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gpec_field.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/m3dc1_source.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/fortran_interface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/fusion_io_fortran.F90
     ${CMAKE_CURRENT_SOURCE_DIR}/nimrod_source.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/nimrod_field.cpp  
+    ${CMAKE_CURRENT_SOURCE_DIR}/nimrod_field.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/compound_field.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/interpolate.cpp
 )
 
 add_library(fusionio

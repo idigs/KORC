@@ -147,9 +147,9 @@ module fusion_io
 contains
 
   subroutine fio_add_field_f(icfield, ifield, iop, fac, ierr)
-    integer(c_int), intent(in) :: icfield
-    integer(c_int), intent(in) :: ifield
-    integer(c_int), intent(in) :: iop
+    integer, intent(in) :: icfield
+    integer, intent(in) :: ifield
+    integer, intent(in) :: iop
     real(c_double), intent(in) :: fac
     integer, intent(out) :: ierr
     ierr = fio_add_field(icfield, ifield, iop, fac)
@@ -194,10 +194,10 @@ contains
   end subroutine fio_deallocate_search_hint_f
 
   subroutine fio_eval_field_f(ifield, x, v, ierr, hint)
-    integer(c_int), intent(in) :: ifield
+    integer, intent(in) :: ifield
     real(c_double), intent(in), dimension(*) :: x
     real(c_double), intent(out), dimension(*) :: v
-    integer(c_int), intent(out) :: ierr
+    integer, intent(out) :: ierr
     type(fio_search_hint), intent(inout), optional :: hint
     if(present(hint)) then
       ierr = fio_eval_field(ifield, x, v, hint%ptr)
@@ -207,10 +207,10 @@ contains
   end subroutine fio_eval_field_f
 
   subroutine fio_eval_field_deriv_f(ifield, x, v, ierr, hint)
-    integer(c_int), intent(in) :: ifield
+    integer, intent(in) :: ifield
     real(c_double), intent(in), dimension(*) :: x
     real(c_double), intent(out), dimension(*) :: v
-    integer(c_int), intent(out) :: ierr
+    integer, intent(out) :: ierr
     type(fio_search_hint), intent(inout), optional :: hint
     if(present(hint)) then
       ierr = fio_eval_field_deriv(ifield, x, v, hint%ptr)
@@ -220,10 +220,10 @@ contains
   end subroutine fio_eval_field_deriv_f
 
   subroutine fio_eval_series_f(iseries, x, v, ierr)
-    integer(c_int), intent(in) :: iseries
+    integer, intent(in) :: iseries
     real(c_double), intent(in) :: x
     real(c_double), intent(out) :: v
-    integer(c_int), intent(out) :: ierr
+    integer, intent(out) :: ierr
     ierr = fio_eval_series(iseries, x, v)
   end subroutine fio_eval_series_f
 
@@ -247,14 +247,14 @@ contains
   end subroutine fio_get_int_parameter_f
 
   subroutine fio_get_real_parameter_f(isrc, t, p, ierr)
-    integer(c_int), intent(in) :: isrc, t
+    integer, intent(in) :: isrc, t
     real(c_double), intent(out) :: p
-    integer(c_int), intent(out) :: ierr
+    integer, intent(out) :: ierr
     ierr = fio_get_real_parameter(isrc, t, p)
   end subroutine fio_get_real_parameter_f
 
   subroutine fio_get_real_field_parameter_f(ifield, t, p, ierr)
-    integer(c_int), intent(in) :: ifield, t
+    integer, intent(in) :: ifield, t
     real(c_double), intent(out) :: p
     integer, intent(out) :: ierr
     ierr = fio_get_real_field_parameter(ifield, t, p)
@@ -289,7 +289,7 @@ contains
 
   subroutine fio_set_real_option_f(iopt, val, ierr)
     integer, intent(in) :: iopt
-    real, intent(in) :: val
+    real(c_double), intent(in) :: val
     integer, intent(out) :: ierr
     ierr = fio_set_real_option(iopt, val)
   end subroutine fio_set_real_option_f

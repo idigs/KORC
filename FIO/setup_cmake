@@ -42,9 +42,9 @@ rm -rf CMakeFiles
 
 if [ $MACHINE_ID == "MBP115573" ]
 then
-    export CC=/opt/local/bin/gcc-mp-10
-    export CXX=/opt/local/bin/g++-mp-10
-    export FC=/opt/local/bin/gfortran-mp-10
+    export CC=/opt/local/bin/gcc-mp-8
+    export CXX=/opt/local/bin/g++-mp-8
+    export FC=/opt/local/bin/gfortran-mp-8
 
     cmake ../ \
 	  -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE                             \
@@ -55,6 +55,8 @@ then
 	  -DCMAKE_Fortran_FLAGS_DEBUG="-g -ffpe-trap=invalid,zero,overflow -fimplicit-none -fbacktrace  -fsanitize=address"   \
           -DCMAKE_C_FLAGS_DEBUG="-g -g3" \
     	  -DCMAKE_CXX_FLAGS_DEBUG="-g -g3" \
+	  -DCMAKE_HDF5_DIR=/opt/local/bin \
+	  -DHDF5_DIR=/opt/local \
 
 
 elif [ $MACHINE_ID == "cori01"   ] || \

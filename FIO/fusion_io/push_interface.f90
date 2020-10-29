@@ -4,10 +4,10 @@ module fio_push
   implicit none
 
   type :: field_type
-     real :: phi
+     real(c_double) :: phi
      real(c_double), dimension(3) :: gradphi, a
      real(c_double), dimension(3,3) :: grada, ginv
-     real, dimension(3,3,3) :: gmat1
+     real(c_double), dimension(3,3,3) :: gmat1
   end type field_type
 
   integer, private :: isrc
@@ -20,7 +20,7 @@ contains
 
     integer, intent(in) :: itype
     character(len=*), intent(in) :: filename
-    real, intent(in) :: linfac
+    real(c_double), intent(in) :: linfac
 
     integer :: ierr
 

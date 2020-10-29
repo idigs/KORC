@@ -20,7 +20,7 @@
 #endif
 #define COMMENT(x)
 
-COMMENT(sources)
+COMMENT(     sources     )
 FIO_DEFINE_INT(FIO_GATO_SOURCE,       1)
 FIO_DEFINE_INT(FIO_GEQDSK_SOURCE,     2)
 FIO_DEFINE_INT(FIO_M3DC1_SOURCE,      3)

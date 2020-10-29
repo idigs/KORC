@@ -326,7 +326,7 @@ int m3dc1_3d_mesh::shared_nodes(const int i, const int j)
 
 void m3dc1_mesh::find_neighbors()
 {
-  //std::cerr << "Calculating M3D-C1 mesh connectivity..." << std::endl;
+  std::cerr << "Calculating M3D-C1 mesh connectivity..." << std::endl;
   nneighbors = new int[nelms];
   neighbor = new int*[nelms];
 
@@ -361,7 +361,7 @@ void m3dc1_mesh::find_neighbors()
 		<< std::endl;
     }
   }
-  //std::cerr << "Done calculating M3D-C1 mesh connectivity..." << std::endl;
+  std::cerr << "Done calculating M3D-C1 mesh connectivity..." << std::endl;
 }
 
 void m3dc1_3d_mesh::find_neighbors()
