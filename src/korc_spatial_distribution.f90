@@ -114,8 +114,55 @@ subroutine disk(params,spp)
   DEALLOCATE(r)
 end subroutine disk
 
-
 subroutine torus(params,spp)
+    TYPE(KORC_PARAMS), INTENT(IN)       :: params
+    TYPE(SPECIES), INTENT(INOUT)        :: spp
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: r
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: theta
+    REAL(rp), DIMENSION(:), ALLOCATABLE :: zeta
+
+    ALLOCATE( theta(spp%ppp) )
+    ALLOCATE( zeta(spp%ppp) )
+    ALLOCATE( r(spp%ppp) )
+
+    ! Initial condition of uniformly distributed particles on a disk in the xz-plane
+    ! A unique velocity direction
+!    call init_u_random(10986546_8)
+
+!    call init_random_seed()
+!    call RANDOM_NUMBER(theta)
+!    theta = 2.0_rp*C_PI*theta
+
+    call set_random_dist(0.0_rp, 2.0_rp*C_PI)
+    call get_randoms(theta)
+
+!    call init_random_seed()
+!    call RANDOM_NUMBER(zeta)
+!    zeta = 2.0_rp*C_PI*zeta
+
+    call get_randoms(zeta)
+!
+    ! Uniform distribution on a disk at a fixed azimuthal theta
+!    call init_random_seed()
+!    call RANDOM_NUMBER(r)
+
+    call set_random_dist(0.0_rp, 1.0_rp)
+    call get_randoms(r)
+
+    r = SQRT((spp%r_outter**2 - spp%r_inner**2)*r + spp%r_inner**2)
+
+!$OMP PARALLEL WORKSHARE
+    spp%vars%X(1,:) = ( spp%Ro + r*COS(theta) )*SIN(zeta)
+    spp%vars%X(2,:) = ( spp%Ro + r*COS(theta) )*COS(zeta)
+    spp%vars%X(3,:) = spp%Zo + r*SIN(theta)
+!$OMP END PARALLEL WORKSHARE
+
+    DEALLOCATE(theta)
+    DEALLOCATE(zeta)
+    DEALLOCATE(r)
+end subroutine torus
+
+!subroutine torus(params,spp)
   !! @note Subrotuine for generating a uniform torus/torus 
   !! shell as the initial spatial condition of a given species 
   !! of particles in the simulation.@endnote
@@ -123,46 +170,46 @@ subroutine torus(params,spp)
   !! Sampling method. This distribution follows the same radial 
   !! distribution of a uniform disk/ring distribution, see the 
   !! documentation of the [[disk]] subroutine.
-  TYPE(KORC_PARAMS), INTENT(IN) 	:: params
+!  TYPE(KORC_PARAMS), INTENT(IN) 	:: params
     !! Core KORC simulation parameters.
-  TYPE(SPECIES), INTENT(INOUT) 		:: spp
+!  TYPE(SPECIES), INTENT(INOUT) 		:: spp
     !! An instance of the derived type SPECIES 
     !! containing all the parameters and simulation variables of the 
     !! different species in the simulation.
-  REAL(rp), DIMENSION(:), ALLOCATABLE 	:: r
+!  REAL(rp), DIMENSION(:), ALLOCATABLE 	:: r
     !! Radial position of the particles \(r\).
-  REAL(rp), DIMENSION(:), ALLOCATABLE 	:: theta
+!  REAL(rp), DIMENSION(:), ALLOCATABLE 	:: theta
   !! Uniform deviates in the range \([0,2\pi]\) 
   !! representing the uniform poloidal angle \(\theta\)
   !! distribution of the particles.
-  REAL(rp), DIMENSION(:), ALLOCATABLE 	:: zeta
+!  REAL(rp), DIMENSION(:), ALLOCATABLE 	:: zeta
   !! Uniform deviates in the range \([0,2\pi]\) representing 
   !! the uniform toroidal angle \(\zeta\) distribution of the particles.
-  INTEGER,DIMENSION(33) :: seed=(/1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1/)
+!  INTEGER,DIMENSION(33) :: seed=(/1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1/)
 
-  ALLOCATE( theta(spp%ppp) )
-  ALLOCATE( zeta(spp%ppp) )
-  ALLOCATE( r(spp%ppp) )
+!  ALLOCATE( theta(spp%ppp) )
+!  ALLOCATE( zeta(spp%ppp) )
+!  ALLOCATE( r(spp%ppp) )
 
   ! Initial condition of uniformly distributed particles on a disk in the xz-plane
   ! A unique velocity direction
-  call init_u_random(10986546_8)
+!  call init_u_random(10986546_8)
 
-  if (.not.params%SameRandSeed) then
-     call init_random_seed()
-  else
-     call random_seed(put=seed)
-  end if
-  call RANDOM_NUMBER(theta)
-  theta = 2.0_rp*C_PI*theta
+!  if (.not.params%SameRandSeed) then
+!     call init_random_seed()
+!  else
+!     call random_seed(put=seed)
+!  end if
+!  call RANDOM_NUMBER(theta)
+!  theta = 2.0_rp*C_PI*theta
 
-  if (.not.params%SameRandSeed) then
-     call init_random_seed()
-  else
-     call random_seed(put=seed)
-  end if
-  call RANDOM_NUMBER(zeta)
-  zeta = 2.0_rp*C_PI*zeta
+!  if (.not.params%SameRandSeed) then
+!     call init_random_seed()
+!  else
+!     call random_seed(put=seed)
+!  end if
+!  call RANDOM_NUMBER(zeta)
+!  zeta = 2.0_rp*C_PI*zeta
 
   !write(6,*) 'Ro',spp%Ro*params%cpp%length
   !write(6,*) 'Zo',spp%Zo*params%cpp%length
@@ -170,26 +217,26 @@ subroutine torus(params,spp)
   !write(6,*) 'r_out',spp%r_outter*params%cpp%length
   
   ! Uniform distribution on a disk at a fixed azimuthal theta
-  if (.not.params%SameRandSeed) then
-     call init_random_seed()
-  else
-     call random_seed(put=seed)
-  end if
-  call RANDOM_NUMBER(r)
+!  if (.not.params%SameRandSeed) then
+!     call init_random_seed()
+!  else
+!     call random_seed(put=seed)
+!  end if
+!  call RANDOM_NUMBER(r)
 
-  r = SQRT((spp%r_outter**2 - spp%r_inner**2)*r + spp%r_inner**2)
-  spp%vars%X(:,1) = ( spp%Ro + r*COS(theta) )*SIN(zeta)
-  spp%vars%X(:,2) = ( spp%Ro + r*COS(theta) )*COS(zeta)
-  spp%vars%X(:,3) = spp%Zo + r*SIN(theta)
+!  r = SQRT((spp%r_outter**2 - spp%r_inner**2)*r + spp%r_inner**2)
+!  spp%vars%X(:,1) = ( spp%Ro + r*COS(theta) )*SIN(zeta)
+!  spp%vars%X(:,2) = ( spp%Ro + r*COS(theta) )*COS(zeta)
+!  spp%vars%X(:,3) = spp%Zo + r*SIN(theta)
 
   !write(6,*) 'r_sam',r*params%cpp%length
   !write(6,*) 'R_sam',sqrt(spp%vars%X(:,1)**2+spp%vars%X(:,2)**2)*params%cpp%length
 
-  DEALLOCATE(theta)
-  DEALLOCATE(zeta)
-  DEALLOCATE(r)
+!  DEALLOCATE(theta)
+!  DEALLOCATE(zeta)
+!  DEALLOCATE(r)
   
-end subroutine torus
+!end subroutine torus
 
 
 subroutine elliptic_torus(params,spp)
