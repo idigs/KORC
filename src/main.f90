@@ -307,6 +307,8 @@ program main
      
   end if
 
+!  write(6,*) '1Y_R',spp(1)%vars%Y(1:4,1)*params%cpp%length
+  
   ! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !
   
   call save_simulation_parameters(params,spp,F,P)
@@ -319,11 +321,11 @@ program main
   !! subroutines to save simulation and collision parameters.
   
   
-  if (.NOT.(params%restart.OR.params%proceed)) then
+  !if (.NOT.(params%restart.OR.params%proceed)) then
      
      call save_simulation_outputs(params,spp,F) ! Save initial condition
 
-  end if
+  !end if
   
 
   

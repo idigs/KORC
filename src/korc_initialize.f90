@@ -648,8 +648,7 @@ CONTAINS
     if (params%restart.OR.params%proceed.or.params%reinit) then
        call load_particles_ic(params,spp,F)
 
-       call init_random_seed()
-
+       call init_random_seed()              
     else
 
        if (params%mpi_params%rank .EQ. 0) then

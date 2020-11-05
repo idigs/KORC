@@ -129,10 +129,10 @@ subroutine torus(params,spp)
     ! A unique velocity direction
 !    call init_u_random(10986546_8)
 
-!    call init_random_seed()
+    call init_random_seed()
 !    call RANDOM_NUMBER(theta)
 !    theta = 2.0_rp*C_PI*theta
-
+    
     call set_random_dist(0.0_rp, 2.0_rp*C_PI)
     call get_randoms(theta)
 
@@ -152,9 +152,9 @@ subroutine torus(params,spp)
     r = SQRT((spp%r_outter**2 - spp%r_inner**2)*r + spp%r_inner**2)
 
 !$OMP PARALLEL WORKSHARE
-    spp%vars%X(1,:) = ( spp%Ro + r*COS(theta) )*SIN(zeta)
-    spp%vars%X(2,:) = ( spp%Ro + r*COS(theta) )*COS(zeta)
-    spp%vars%X(3,:) = spp%Zo + r*SIN(theta)
+    spp%vars%X(:,1) = ( spp%Ro + r*COS(theta) )*SIN(zeta)
+    spp%vars%X(:,2) = ( spp%Ro + r*COS(theta) )*COS(zeta)
+    spp%vars%X(:,3) = spp%Zo + r*SIN(theta)
 !$OMP END PARALLEL WORKSHARE
 
     DEALLOCATE(theta)
