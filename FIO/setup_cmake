@@ -78,8 +78,14 @@ then
     module unload darshan/3.1.4
     
     cmake ../ -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE                                          \
-	  -DCMAKE_INSTALL_PREFIX=/global/cfs/cdirs/m3236/build/KORC/FIO/install \
-	  -DCMAKE_PREFIX_PATH=$MPICH_DIR
+	  -DCMAKE_INSTALL_PREFIX=/global/cfs/cdirs/m3236/build_NIMUW/KORC/FIO/install \
+	  -DCMAKE_PREFIX_PATH=$MPICH_DIR \
+	  -DCMAKE_FORTRAN_FLAGS="convert big_endian -O3 -axMIC-AVX512,AVX -DHDF5_DOUBLE_PRESICION -vec-threshold0 -simd -qopenmp -align array64byte -assume contiguous_assumed_shape -vecabi=cmdtarget" \
+	  -DCMAKE_C_FLAGS="-O3 -axMIC-AVX512,AVX -vec-threshold0 -simd -qopenmp" \
+	  -DCCMAKE_CXX_FLAGS="-O3 -std=c++11 -axMIC-AVX512,AVX -vec-threshold0 -simd -qopenmp" \
+	  -DCMAKE_FORTRAN_FLAGS="-convert big_endian -g -traceback -check all -Bdynamic -debug inline-debug-info -qopt-report=5 -qopt-report-phase=vec -qoverride-limits -simd -qopenmp" \
+	  -DCMAKE_C_FLAGS="-g -traceback -Bdynamic -qopt-report=5 -qopt-report-phase=vec -simd -qopenmp" \
+	  -DCCMAKE_CXX_FLAGS="-g -traceback -Bdynamic -qopt-report=5 -qopt-report-phase=vec -simd -qopenmp"
 fi
 
 echo To build the code run the following commands.

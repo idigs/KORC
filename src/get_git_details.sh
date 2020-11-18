@@ -12,9 +12,9 @@ then
 elif [ ${MACHINE_ID:0:3} == "nid" ]
 then
 
-   git -C /global/u1/m/mbeidler/KORC rev-parse HEAD > git_hash.txt
+   git -C /global/cfs/cdirs/m3236/build_NIMUW/KORC rev-parse HEAD > git_hash.txt
 
-   git -C /global/u1/m/mbeidler/KORC diff HEAD > git_diff.txt
+   git -C /global/cfs/cdirs/m3236/build_NIMUW/KORC diff HEAD > git_diff.txt
     
 else
 # MACHINE_ID is new and unknown. Inform the user how to add support for this new machine.
