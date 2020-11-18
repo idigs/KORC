@@ -431,6 +431,7 @@ CONTAINS
     status = fio_get_field(isrc, FIO_MAGNETIC_FIELD, F%FIO_B)
     status = fio_get_field(isrc, FIO_ELECTRIC_FIELD, F%FIO_E)
     !status = fio_get_field(isrc, FIO_VECTOR_POTENTIAL, F%FIO_A)
+    F%FIO_A=-1
 
     
     status = fio_get_real_field_parameter(F%FIO_B, FIO_TIME, time0)

@@ -49,9 +49,9 @@ then
     cmake ../ \
 	  -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE                             \
 	  -DCMAKE_INSTALL_PREFIX=/Users/21b/Desktop/KORC/FIO/install \
-	  -DCMAKE_Fortran_FLAGS="-O3 -msse2 -DHDF5_DOUBLE_PRESICION -fopenmp-simd -malign-double -fconvert='big-endian'" \
-          -DCMAKE_C_FLAGS="-O3 -msse2 -fopenmp-simd -malign-double"  \
-          -DCMAKE_CXX_FLAGS="-O3 -msse2 -fopenmp-simd -malign-double" \
+	  -DCMAKE_Fortran_FLAGS="-O3 -msse2 -DHDF5_DOUBLE_PRESICION -fopenmp -malign-double -fconvert='big-endian'" \
+          -DCMAKE_C_FLAGS="-O3 -msse2 -fopenmp -malign-double"  \
+          -DCMAKE_CXX_FLAGS="-O3 -msse2 -fopenmp -malign-double" \
 	  -DCMAKE_Fortran_FLAGS_DEBUG="-g -ffpe-trap=invalid,zero,overflow -fimplicit-none -fbacktrace  -fsanitize=address"   \
           -DCMAKE_C_FLAGS_DEBUG="-g -g3" \
     	  -DCMAKE_CXX_FLAGS_DEBUG="-g -g3" \

@@ -67,9 +67,9 @@ then
           -DEZSpline_INCLUDE_PATH=/Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/mod \
           -DEZSpline_LINK_FLAGS="-L/Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/lib -lpspline" \
 	  -DEZSpline_LIBRARIES=/Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/lib/libpspline.a   \
-          -DCMAKE_Fortran_FLAGS="-O3 -msse2 -DHDF5_DOUBLE_PRESICION -fopenmp-simd -malign-double -fconvert='big-endian'" \
-          -DCMAKE_C_FLAGS="-O3 -msse2 -fopenmp-simd -malign-double"  \
-          -DCMAKE_CXX_FLAGS="-O3 -msse2 -fopenmp-simd -malign-double" \
+          -DCMAKE_Fortran_FLAGS="-O3 -msse2 -DHDF5_DOUBLE_PRESICION -fopenmp -malign-double -fconvert='big-endian'" \
+          -DCMAKE_C_FLAGS="-O3 -msse2 -fopenmp -malign-double"  \
+          -DCMAKE_CXX_FLAGS="-O3 -msse2 -fopenmp -malign-double" \
 	  -DCMAKE_Fortran_FLAGS_DEBUG="-g -ffpe-trap=invalid,zero,overflow -fimplicit-none -fbacktrace  -fsanitize=address"   \
           -DCMAKE_C_FLAGS_DEBUG="-g -g3" \
     	  -DCMAKE_CXX_FLAGS_DEBUG="-g -g3" \
@@ -135,7 +135,7 @@ then
           -DEZSpline_INCLUDE_PATH=/global/cfs/cdirs/m3236/build/PSPLINES/LINUX/mod \
           -DEZSpline_LINK_FLAGS="-L/global/cfs/cdirs/m3236/build/PSPLINES/LINUX/lib -lpspline" \
           -DEZSpline_LIBRARIES=/global/cfs/cdirs/m3236/build/PSPLINES/LINUX/lib/libpspline.a   \
-	  -DCMAKE_Fortran_FLAGS="-O3 -axMIC-AVX512,AVX -DHDF5_DOUBLE_PRESICION -vec-threshold0 -simd -qopenmp-simd -align array64byte -assume contiguous_assumed_shape -vecabi=cmdtarget"  \
+	  -DCMAKE_Fortran_FLAGS="-O3 -axMIC-AVX512,AVX -DHDF5_DOUBLE_PRESICION -vec-threshold0 -simd -qopenmp -align array64byte -assume contiguous_assumed_shape -vecabi=cmdtarget"  \
           -DCMAKE_C_FLAGS="-O3 -axMIC-AVX512,AVX -vec-threshold0 -simd -qopenmp"   \
           -DCMAKE_CXX_FLAGS="-O3 -std=c++11 -axMIC-AVX512,AVX -vec-threshold0 -simd -qopenmp" \
           -DCMAKE_CXX_FLAGS_DEBUG="-g -traceback -Bdynamic -qopt-report=5 -qopt-report-phase=vec" \

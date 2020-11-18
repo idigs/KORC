@@ -305,8 +305,10 @@ contains
                    call get_fio_FOelectric_fields_p(params,F, &
                         Y_R,Y_PHI,Y_Z,E_X,E_Y,E_Z,flagCon,hint)
                 end if
-                call get_fio_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
-                     PSIp,flagCon,hint)
+                if (F%FIO_A .ge. 0) then
+                   call get_fio_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
+                        PSIp,flagCon,hint)
+                end if
 #endif
              else if (params%field_model(10:13).eq.'MARS') then
                 call interp_FOfields_mars_p(params,pchunk,F,Y_R,Y_PHI,Y_Z, &
