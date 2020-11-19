@@ -9,7 +9,7 @@ then
 
    git -C /Users/21b/Desktop/KORC diff HEAD > git_diff.txt
    
-elif [ ${MACHINE_ID:0:3} == "nid" ]
+elif [ ${MACHINE_ID:0:3} == "nid" ] || [ ${MACHINE_ID:0:4} == "cori" ]
 then
 
    git -C /global/cfs/cdirs/m3236/build_NIMUW/KORC rev-parse HEAD > git_hash.txt

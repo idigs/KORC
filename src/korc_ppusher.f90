@@ -3366,6 +3366,9 @@ contains
 #ifdef FIO
   subroutine adv_GCinterp_fio_top(params,spp,P,F)
 
+    USE omp_lib
+    IMPLICIT NONE
+    
     TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
     !! Core KORC simulation parameters.
     TYPE(PROFILES), INTENT(IN)                                 :: P
@@ -3397,8 +3400,11 @@ contains
     INTEGER(ip)                                                    :: tt
     INTEGER(ip)                                                    :: ttt
     !! time iterator.
+    INTEGER             :: thread_num
 
 
+    !write(6,*) '2Y_R',spp(1)%vars%Y(1:4,1)*params%cpp%length
+    !write(6,*) '2(p/mc)',spp(1)%vars%V(1:4,1)
 
     do ii = 1_idef,params%num_species      
 
@@ -3412,10 +3418,16 @@ contains
        !$OMP& SHARED(params,ii,spp,P,F) &
        !$OMP& PRIVATE(pp,tt,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,B_R,B_PHI,B_Z, &
        !$OMP& flagCon,flagCol,E_PHI,PSIp,curlb_R,curlb_PHI,curlb_Z, &
-       !$OMP& gradB_R,gradB_PHI,gradB_Z,ne,nimp,Te,Zeff,ni,E_R,E_Z,hint)
+       !$OMP& gradB_R,gradB_PHI,gradB_Z,ne,nimp,Te,Zeff,ni,E_R,E_Z,hint, &
+       !$OMP& thread_num)
 
        do pp=1_idef,spp(ii)%ppp,pchunk
 
+          thread_num = OMP_GET_THREAD_NUM()
+
+          !write(6,*) thread_num,'3Y_R',spp(ii)%vars%Y(pp,1)*params%cpp%length
+          !write(6,*) thread_num,'3(p/mc)',spp(ii)%vars%V(pp,1)
+          
           !          write(output_unit_write,'("pp: ",I16)') pp
 
           !$OMP SIMD
@@ -3460,7 +3472,11 @@ contains
 
           do tt=1_ip,params%t_skip
 
-             !if (mod(tt,params%t_skip/10).eq.0) then
+             !write(6,*) thread_num,'4Y_R',Y_R*params%cpp%length
+             !write(6,*) thread_num,'4(p/mc)',V_PLL
+             
+             
+             !if (mod(tt,params%t_skip/100).eq.0) then
              !   write(output_unit_write,*) 'iteration',tt
              !   flush(output_unit_write)
              !endif
@@ -8458,6 +8474,10 @@ contains
        B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
        gradB_R,gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
        ne,ni,nimp,Te,Zeff,flag,hint)
+
+    USE omp_lib
+    IMPLICIT NONE
+    
     TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
     !! Core KORC simulation parameters.
     TYPE(FIELDS), INTENT(IN)      :: F
@@ -8481,9 +8501,33 @@ contains
     REAL(rp), DIMENSION(params%pchunk),INTENT(OUT) 		:: ne,Te,ni,nimp,Zeff
     TYPE(C_PTR), DIMENSION(params%pchunk), INTENT(INOUT)  :: hint
     INTEGER(is),DIMENSION(params%pchunk),intent(INOUT) :: flag
+    INTEGER             :: thread_num
 
     pchunk=params%pchunk
 
+    thread_num = OMP_GET_THREAD_NUM()
+    
+!    !$OMP SIMD
+    do cc=1_idef,pchunk 
+!       if(isnan(B_R(cc))) then
+          !write(6,*) thread_num,'0Y',Y_R(cc)*params%cpp%length,Y_PHI(cc),Y_Z(cc)*params%cpp%length
+          !write(6,*) thread_num,'0B',B_R(cc),B_PHI(cc),B_Z(cc)
+          !write(6,*) thread_num,'0E',E_R(cc),E_PHI(cc),E_Z(cc)
+          !write(6,*) thread_num,'0gradB',gradB_R(cc),gradB_PHI(cc),gradB_Z(cc)
+          !write(6,*) thread_num,'0curlb',curlb_R(cc),curlb_PHI(cc),curlb_Z(cc)
+          !write(6,*) thread_num,'0V',V_PLL(cc),V_MU(cc)
+!          write(6,*) 'Exb',Ecrossb_R(cc)
+!          write(6,*) 'bxgradB',bcrossgradB_R(cc)
+!          write(6,*) 'Bst',Bst_R(cc)
+!          write(6,*) 'bdotBst',bdotBst(cc)
+          !write(6,*) thread_num,'0gamma',gamgc(cc)
+
+!          stop 'B_R is a NaN'
+!       endif
+    end do
+!    !$OMP END SIMD
+
+    
     !$OMP SIMD
     !    !$OMP& aligned(gradB_R,gradB_PHI,gradB_Z,curlb_R,curlb_Z, &
     !    !$OMP& B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
@@ -8613,7 +8657,22 @@ contains
           
           stop 'gamgc is a NaN'
        endif
-       if(isnan(RHS_R(cc))) stop 'RHS_R1 is a NaN'
+       if(isnan(RHS_R(cc))) then
+
+          !write(6,*) thread_num,'Y',Y_R(cc)*params%cpp%length,Y_PHI(cc),Y_Z(cc)*params%cpp%length
+          !write(6,*) thread_num,'B',B_R(cc),B_PHI(cc),B_Z(cc)
+          !write(6,*) thread_num,'E',E_R(cc),E_PHI(cc),E_Z(cc)
+          !write(6,*) thread_num,'gradB',gradB_R(cc),gradB_PHI(cc),gradB_Z(cc)
+          !write(6,*) thread_num,'curlb',curlb_R(cc),curlb_PHI(cc),curlb_Z(cc)
+          !write(6,*) thread_num,'V',V_PLL(cc),V_MU(cc)
+          !write(6,*) thread_num,'Exb',Ecrossb_R(cc)
+          !write(6,*) thread_num,'bxgradB',bcrossgradB_R(cc)
+          !write(6,*) thread_num,'Bst',Bst_R(cc)
+          !write(6,*) thread_num,'bdotBst',bdotBst(cc)
+          !write(6,*) thread_num,'gamma',gamgc(cc)
+          
+          stop 'RHS_R1 is a NaN'
+       endif
        if(isnan(RHS_PHI(cc))) stop 'RHS_PHI1 is a NaN'
        if(isnan(RHS_Z(cc))) stop 'RHS_Z1 is a NaN'
        if(isnan(RHS_PLL(cc))) stop 'RHS_PLL1 is a NaN'

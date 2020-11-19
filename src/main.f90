@@ -307,6 +307,8 @@ program main
      
   end if
 
+!  write(6,*) '1Y_R',spp(1)%vars%Y(1:4,1)*params%cpp%length
+  
   ! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !
   
   call save_simulation_parameters(params,spp,F,P)
