@@ -249,6 +249,9 @@ CONTAINS
     INTEGER                                    :: isrc
     real(c_double)  ::  time0,time1
     INTEGER (C_INT)                         :: FIO_tmp
+    TYPE(C_PTR) :: hint_tmp
+    real(rp), DIMENSION(3) :: x
+    REAL(rp), DIMENSION(3)         :: Btmp
     
     if (init) then
        F%Efield = Efield
@@ -337,9 +340,15 @@ CONTAINS
 
 
     if (init) then
-    !  Hardcode Bo to one for now until a better method of determining the a
-    !  characteristic magnetic field value.
-       F%Bo = 1.0
+       hint_tmp=c_null_ptr
+       x(1)=spp(1)%Ro
+       x(2)=spp(1)%PHIo
+       x(3)=spp(1)%Zo
+
+       status = fio_eval_field(F%FIO_B, x(1),                      &
+                  Btmp(1),hint_tmp)
+       
+       F%Bo = Btmp(2)
        F%Eo = 1.0
        F%Ro = 1.0
        F%Zo = 1.0        
@@ -380,6 +389,9 @@ CONTAINS
     INTEGER                                    :: isrc
     real(c_double)  ::  time0,time1
     INTEGER (C_INT)                         :: FIO_tmp
+    TYPE(C_PTR) :: hint_tmp
+    real(rp), DIMENSION(3) :: x
+    REAL(rp), DIMENSION(3)         :: Btmp
 
 
     if (init) then
@@ -478,9 +490,15 @@ CONTAINS
 
 
     if (init) then
-    !  Hardcode Bo to one for now until a better method of determining the a
-    !  characteristic magnetic field value.
-       F%Bo = 1.0
+       hint_tmp=c_null_ptr
+       x(1)=spp(1)%Ro
+       x(2)=spp(1)%PHIo
+       x(3)=spp(1)%Zo
+
+       status = fio_eval_field(F%FIO_B, x(1),                      &
+                  Btmp(1),hint_tmp)
+       
+       F%Bo = Btmp(2)
        F%Eo = 1.0
        F%Ro = 1.0
        F%Zo = 1.0        
