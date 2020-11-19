@@ -51,7 +51,7 @@ target_link_libraries (xkorc ${MPI_Fortran_LIBRARIES})
 target_link_libraries (xkorc ${HDF5_LIBRARIES})
 target_link_libraries (xkorc ${EZSpline_LIBRARIES})
 
-if($(USE_FIO))
+if(${USE_FIO})
    target_link_libraries (xkorc ${FIO_LIBRARIES} ${M3DC1_LIBRARIES})
    target_link_libraries (xkorc ${NIMFIO_LIBRARIES} ${NIMBLK_LIBRARIES} ${NIMBTY_LIBRARIES} ${NIMLOC_LIBRARIES} ${NIMITER_LIBRARIES} ${NIMMAT_LIBRARIES} ${NIMPAR_LIBRARIES} ${NIMLIB_LIBRARIES} ${NIMMPI_LIBRARIES} ${NIMLAP_LIBRARIES} ${NIMSLU_LIBRARIES} ${NIMLUD_LIBRARIES})
 endif()
