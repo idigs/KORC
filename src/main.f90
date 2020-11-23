@@ -126,7 +126,7 @@ program main
         write(output_unit_write,*) "* * * * INITIALIZING NIMROD INTERFACE * * * *"
      endif
      
-     call initialize_NIMROD(params, F, P, spp,.true.)
+     call initialize_nimrod(params, F, P, spp,.true.)
 
      if (params%mpi_params%rank .EQ. 0) then
         write(output_unit_write,*) "* * * * * * * * * * * * * * * * * * * * * * *"
@@ -392,7 +392,9 @@ program main
   end if
 
   if (params%orbit_model(1:2).eq.'FO'.and. &
-       params%field_model.eq.'M3D_C1'.and.F%ReInterp_2x1t) then
+       (params%field_model.eq.'M3D_C1'.or. &
+       TRIM(params%field_model).eq.'NIMROD') &
+       .and.F%ReInterp_2x1t) then
      call FO_init(params,F,spp,.false.,.true.)
      ! Initial half-time particle push
      
@@ -401,10 +403,16 @@ program main
         !write(6,*) it,F%ind0_2x1t
         
         if (it.gt.F%ind0_2x1t) then
-           call initialize_m3d_c1(params, F, P, spp,.false.)
+           if (params%field_model.eq.'M3D_C1') then
+              call initialize_m3d_c1(params, F, P, spp,.false.)
+           else
+              call initialize_nimrod(params, F, P, spp,.false.)
+           end if
            if (params%collisions) then
-              call initialize_m3d_c1_imp(params,F,P, &
-                   params%num_impurity_species,.false.)
+              if (params%field_model.eq.'M3D_C1') then
+                 call initialize_m3d_c1_imp(params,F,P, &
+                      params%num_impurity_species,.false.)
+              end if
            end if
         end if
 

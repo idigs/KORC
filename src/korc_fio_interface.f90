@@ -392,6 +392,7 @@ CONTAINS
     TYPE(C_PTR) :: hint_tmp
     real(rp), DIMENSION(3) :: x
     REAL(rp), DIMENSION(3)         :: Btmp
+    CHARACTER(150) :: filename
 
 
     if (init) then
@@ -409,9 +410,10 @@ CONTAINS
 
        F%ind_2x1t=F%ind0_2x1t
 
-       status = fio_open_source(FIO_NIMROD_SOURCE,           &
-            TRIM(params%magnetic_field_filename)            &
-            // C_NULL_CHAR, F%isrc)
+       filename=TRIM(magnetic_field_directory)//TRIM(magnetic_field_filenames(F%ind_2x1t))       
+       
+       status = fio_open_source(FIO_NIMROD_SOURCE, &
+            filename // C_NULL_CHAR, F%isrc)
 
     else
        status = fio_close_field(F%FIO_B)
@@ -421,7 +423,14 @@ CONTAINS
        status = fio_close_field(P%FIO_ne)
 !       status = fio_close_field(P%FIO_te)
 !       status = fio_close_field(P%FIO_ni)
+
+       status=fio_close_source(F%isrc)
+
+       filename=TRIM(magnetic_field_directory)//TRIM(magnetic_field_filenames(F%ind_2x1t))
        
+       status = fio_open_source(FIO_NIMROD_SOURCE, &
+            filename // C_NULL_CHAR, F%isrc)       
+             
     end if
 
     isrc=F%isrc
@@ -446,21 +455,23 @@ CONTAINS
     F%FIO_A=-1
 
     
-    status = fio_get_real_field_parameter(F%FIO_B, FIO_TIME, time0)
+    !status = fio_get_real_field_parameter(F%FIO_B, FIO_TIME, time0)
+    time0=time_of_filenames(F%ind_2x1t)
 
     write(output_unit_write,*) 'FIO present time index',F%ind_2x1t
     write(output_unit_write,*) 'FIO present time',time0
 
     if (F%ReInterp_2x1t) then
-       status = fio_set_int_option(FIO_TIMESLICE, F%ind_2x1t+1)
+       !status = fio_set_int_option(FIO_TIMESLICE, F%ind_2x1t+1)
 
-       status = fio_get_field(isrc, FIO_MAGNETIC_FIELD, FIO_tmp)
+       !status = fio_get_field(isrc, FIO_MAGNETIC_FIELD, FIO_tmp)
        
-       status = fio_get_real_field_parameter(FIO_tmp, FIO_TIME, time1)
+       !status = fio_get_real_field_parameter(FIO_tmp, FIO_TIME, time1)
+       time1=time_of_filenames(F%ind_2x1t+1)
        write(output_unit_write,*) 'FIO next time index',F%ind_2x1t+1
        write(output_unit_write,*) 'FIO next time',time1
 
-       status = fio_set_int_option(FIO_TIMESLICE, F%ind_2x1t)
+       !status = fio_set_int_option(FIO_TIMESLICE, F%ind_2x1t)
 
        params%snapshot_frequency=time1-time0
 
