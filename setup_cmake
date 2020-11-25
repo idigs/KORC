@@ -132,9 +132,9 @@ then
 #    module swap PrgEnv-intel PrgEnv-gnu
     cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE                                          \
           -DCMAKE_PREFIX_PATH=$MPICH_DIR                                                 \
-          -DEZSpline_INCLUDE_PATH=/global/cfs/cdirs/m3236/build_NIMUW/PSPLINES/LINUX_INTEL/mod \
-          -DEZSpline_LINK_FLAGS="-L/global/cfs/cdirs/m3236/build_NIMUW/PSPLINES/LINUX_INTEL/lib -lpspline" \
-          -DEZSpline_LIBRARIES=/global/cfs/cdirs/m3236/build_NIMUW/PSPLINES/LINUX_INTEL/lib/libpspline.a   \
+          -DEZSpline_INCLUDE_PATH=/global/cfs/cdirs/m3236/build_M3DC1/PSPLINES/LINUX_INTEL/mod \
+          -DEZSpline_LINK_FLAGS="-L/global/cfs/cdirs/m3236/build_M3DC1/PSPLINES/LINUX_INTEL/lib -lpspline" \
+          -DEZSpline_LIBRARIES=/global/cfs/cdirs/m3236/build_M3DC1/PSPLINES/LINUX_INTEL/lib/libpspline.a   \
 	  -DCMAKE_Fortran_FLAGS="-convert big_endian -O3 -axMIC-AVX512,AVX -DHDF5_DOUBLE_PRESICION -vec-threshold0 -simd -qopenmp -align array64byte -assume contiguous_assumed_shape -vecabi=cmdtarget"  \
           -DCMAKE_C_FLAGS="-O3 -axMIC-AVX512,AVX -vec-threshold0 -simd -qopenmp"   \
           -DCMAKE_CXX_FLAGS="-O3 -std=c++11 -axMIC-AVX512,AVX -vec-threshold0 -simd -qopenmp" \
@@ -142,33 +142,33 @@ then
           -DCMAKE_C_FLAGS_DEBUG="-g -traceback -Bdynamic -qopt-report=5 -qopt-report-phase=vec -simd -qopenmp" \
           -DCMAKE_Fortran_FLAGS_DEBUG="-convert big_endian -g -traceback -check all -Bdynamic -debug inline-debug-info -qopt-report=5 -qopt-report-phase=vec -qoverride-limits -simd -qopenmp" \
           -DUSE_FIO=ON           \
-	  -DFIO_LIBRARIES=/global/cfs/cdirs/m3236/build_NIMUW/KORC/FIO/install/lib/libfusionio.a  \
-	  -DM3DC1_LIBRARIES=/global/cfs/cdirs/m3236/build_NIMUW/KORC/FIO/install/lib/libm3dc1.a	\
-          -DFIO_INCLUDE_PATH=/global/cfs/cdirs/m3236/build_NIMUW/KORC/FIO/install/include  \
-          -DFIO_LINK_FLAGS="-L/global/cfs/cdirs/m3236/build_NIMUW/KORC/FIO/install/lib -lfusionio -lm3dc1" \
+	  -DFIO_LIBRARIES=/global/cfs/cdirs/m3236/build_M3DC1/KORC/FIO/install/lib/libfusionio.a  \
+	  -DM3DC1_LIBRARIES=/global/cfs/cdirs/m3236/build_M3DC1/KORC/FIO/install/lib/libm3dc1.a	\
+          -DFIO_INCLUDE_PATH=/global/cfs/cdirs/m3236/build_M3DC1/KORC/FIO/install/include  \
+          -DFIO_LINK_FLAGS="-L/global/cfs/cdirs/m3236/build_M3DC1/KORC/FIO/install/lib -lfusionio -lm3dc1" \
 	  -DCORI_DIR=ON \
     	  -DKORC_TEST=OFF \
-	  -DNIMROD_INCLUDE_PATH=/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/nimrod \
-	  -DNIMFIO_INCLUDE_PATH=/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/nimfio \
-	  -DNIMFIO_LINK_FLAGS="-L/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/nimfio -lnimfio" \
-	  -DNIMFIO_LIBRARIES=/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/nimfio/libnimfio.a \
-	  -DNIMCORE_INCLUDE_PATH=/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/nimcore \
-	  -DNIMCORE_LINK_FLAGS="-L/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/nimcore -lnimblock -lnimbltype -lnimlocate -lnimmatrix -lnimiter -lnimpar" \
-	  -DNIMBLK_LIBRARIES=/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/nimcore/libnimblock.a \
-	  -DNIMBTY_LIBRARIES=/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/nimcore/libnimbltype.a \
-	  -DNIMLOC_LIBRARIES=/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/nimcore/libnimlocate.a \
-	  -DNIMMAT_LIBRARIES=/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/nimcore/libnimmatrix.a \
-	  -DNIMITER_LIBRARIES=/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/nimcore/libnimiter.a \
-	  -DNIMPAR_LIBRARIES=/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/nimcore/libnimpar.a \
-	  -DNIMLIB_INCLUDE_PATH=/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/nimlib \
-	  -DNIMLIB_LINK_FLAGS="-L/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/nimlib -lnimlib -lnimmpi" \
-	  -DNIMLIB_LIBRARIES=/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/nimlib/libnimlib.a \
-	  -DNIMMPI_LIBRARIES=/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/nimlib/libnimmpi.a \
-	  -DNIMEXT_INCLUDE_PATH=/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/externals \
-	  -DNIMEXT_LINK_FLAGS="-L/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/externals -llapack_dummy -lsslu_dummy -lslud_dummy" \
-	  -DNIMLAP_LIBRARIES=/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/externals/liblapack_dummy.a \
-	  -DNIMSLU_LIBRARIES=/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/externals/libsslu_dummy.a \
-	  -DNIMLUD_LIBRARIES=/global/cfs/cdirs/m3236/build_NIMUW/NIMUW/externals/libslud_dummy.a \
+	  -DNIMROD_INCLUDE_PATH=/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/nimrod \
+	  -DNIMFIO_INCLUDE_PATH=/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/nimfio \
+	  -DNIMFIO_LINK_FLAGS="-L/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/nimfio -lnimfio" \
+	  -DNIMFIO_LIBRARIES=/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/nimfio/libnimfio.a \
+	  -DNIMCORE_INCLUDE_PATH=/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/nimcore \
+	  -DNIMCORE_LINK_FLAGS="-L/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/nimcore -lnimblock -lnimbltype -lnimlocate -lnimmatrix -lnimiter -lnimpar" \
+	  -DNIMBLK_LIBRARIES=/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/nimcore/libnimblock.a \
+	  -DNIMBTY_LIBRARIES=/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/nimcore/libnimbltype.a \
+	  -DNIMLOC_LIBRARIES=/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/nimcore/libnimlocate.a \
+	  -DNIMMAT_LIBRARIES=/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/nimcore/libnimmatrix.a \
+	  -DNIMITER_LIBRARIES=/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/nimcore/libnimiter.a \
+	  -DNIMPAR_LIBRARIES=/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/nimcore/libnimpar.a \
+	  -DNIMLIB_INCLUDE_PATH=/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/nimlib \
+	  -DNIMLIB_LINK_FLAGS="-L/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/nimlib -lnimlib -lnimmpi" \
+	  -DNIMLIB_LIBRARIES=/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/nimlib/libnimlib.a \
+	  -DNIMMPI_LIBRARIES=/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/nimlib/libnimmpi.a \
+	  -DNIMEXT_INCLUDE_PATH=/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/externals \
+	  -DNIMEXT_LINK_FLAGS="-L/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/externals -llapack_dummy -lsslu_dummy -lslud_dummy" \
+	  -DNIMLAP_LIBRARIES=/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/externals/liblapack_dummy.a \
+	  -DNIMSLU_LIBRARIES=/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/externals/libsslu_dummy.a \
+	  -DNIMLUD_LIBRARIES=/global/cfs/cdirs/m3236/build_M3DC1/NIMUW/externals/libslud_dummy.a \
 
     #Intel Compiler
 #          -DEZSpline_INCLUDE_PATH=/global/u1/m/mbeidler/LIBS/PSPLINES/LINUX/mod \
