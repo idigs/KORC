@@ -8508,7 +8508,7 @@ contains
     thread_num = OMP_GET_THREAD_NUM()
     
 !    !$OMP SIMD
-    do cc=1_idef,pchunk 
+!    do cc=1_idef,pchunk 
 !       if(isnan(B_R(cc))) then
           !write(6,*) thread_num,'0Y',Y_R(cc)*params%cpp%length,Y_PHI(cc),Y_Z(cc)*params%cpp%length
           !write(6,*) thread_num,'0B',B_R(cc),B_PHI(cc),B_Z(cc)
@@ -8524,7 +8524,7 @@ contains
 
 !          stop 'B_R is a NaN'
 !       endif
-    end do
+!    end do
 !    !$OMP END SIMD
 
     
@@ -8534,9 +8534,9 @@ contains
     !    !$OMP& V_PLL,V_MU,Y_R,curlb_PHI,tau_R)
     do cc=1_idef,pchunk
 
-       ne(cc)=-1._rp
-       Te(cc)=-1._rp
-       Zeff(cc)=-1._rp
+       ne(cc)=1._rp
+       Te(cc)=1._rp
+       Zeff(cc)=1._rp
        
        Bmag(cc) = SQRT(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
        
