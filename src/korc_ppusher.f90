@@ -5516,7 +5516,7 @@ contains
     call GCEoM1_fio_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
-         ne,ni,nimp,Te,Zeff,flagCon,hint)
+         ne,ni,nimp,Te,Zeff,flagCon,flagCol,hint)
 
     !write(output_unit_write,*) 'R',Y_R(1)
     !write(output_unit_write,*) 'PHI',Y_PHI(1)
@@ -5584,7 +5584,7 @@ contains
     call GCEoM1_fio_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
-         ne,ni,nimp,Te,Zeff,flagCon,hint)
+         ne,ni,nimp,Te,Zeff,flagCon,flagCol,hint)
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5620,7 +5620,7 @@ contains
     call GCEoM1_fio_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
-         ne,ni,nimp,Te,Zeff,flagCon,hint) 
+         ne,ni,nimp,Te,Zeff,flagCon,flagCol,hint) 
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5658,7 +5658,7 @@ contains
     call GCEoM1_fio_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
-         ne,ni,nimp,Te,Zeff,flagCon,hint)   
+         ne,ni,nimp,Te,Zeff,flagCon,flagCol,hint)   
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5699,7 +5699,7 @@ contains
      call GCEoM1_fio_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
-         ne,ni,nimp,Te,Zeff,flagCon,hint)
+         ne,ni,nimp,Te,Zeff,flagCon,flagCol,hint)
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5739,7 +5739,7 @@ contains
     call GCEoM1_fio_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
-         ne,ni,nimp,Te,Zeff,flagCon,hint)         
+         ne,ni,nimp,Te,Zeff,flagCon,flagCol,hint)         
 
     !$OMP SIMD
     !    !$OMP& aligned(Y0_R,Y0_PHI,Y0_Z,V0_PLL,V0_MU,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
@@ -5794,7 +5794,7 @@ contains
     call GCEoM1_fio_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
          B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z,gradB_R, &
          gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
-         ne,ni,nimp,Te,Zeff,flagCon,hint) 
+         ne,ni,nimp,Te,Zeff,flagCon,flagCol,hint) 
 
     !$OMP SIMD
     do cc=1_idef,pchunk
@@ -8473,7 +8473,7 @@ contains
   subroutine GCEoM1_fio_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
        B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
        gradB_R,gradB_PHI,gradB_Z,V_PLL,V_MU,Y_R,Y_PHI,Y_Z,q_cache,m_cache,PSIp, &
-       ne,ni,nimp,Te,Zeff,flag,hint)
+       ne,ni,nimp,Te,Zeff,flagCon,flagCol,hint)
 
     USE omp_lib
     IMPLICIT NONE
@@ -8500,7 +8500,7 @@ contains
     REAL(rp)  :: time,re_cache,alpha_cache
     REAL(rp), DIMENSION(params%pchunk),INTENT(OUT) 		:: ne,Te,ni,nimp,Zeff
     TYPE(C_PTR), DIMENSION(params%pchunk), INTENT(INOUT)  :: hint
-    INTEGER(is),DIMENSION(params%pchunk),intent(INOUT) :: flag
+    INTEGER(is),DIMENSION(params%pchunk),intent(INOUT) :: flagCon,flagCol
     INTEGER             :: thread_num
 
     pchunk=params%pchunk
@@ -8510,17 +8510,17 @@ contains
 !    !$OMP SIMD
 !    do cc=1_idef,pchunk 
 !       if(isnan(B_R(cc))) then
-          !write(6,*) thread_num,'0Y',Y_R(cc)*params%cpp%length,Y_PHI(cc),Y_Z(cc)*params%cpp%length
-          !write(6,*) thread_num,'0B',B_R(cc),B_PHI(cc),B_Z(cc)
-          !write(6,*) thread_num,'0E',E_R(cc),E_PHI(cc),E_Z(cc)
-          !write(6,*) thread_num,'0gradB',gradB_R(cc),gradB_PHI(cc),gradB_Z(cc)
-          !write(6,*) thread_num,'0curlb',curlb_R(cc),curlb_PHI(cc),curlb_Z(cc)
-          !write(6,*) thread_num,'0V',V_PLL(cc),V_MU(cc)
+!          write(6,*) thread_num,'0Y',Y_R(cc)*params%cpp%length,Y_PHI(cc),Y_Z(cc)*params%cpp%length
+!          write(6,*) thread_num,'0B',B_R(cc),B_PHI(cc),B_Z(cc)
+!          write(6,*) thread_num,'0E',E_R(cc),E_PHI(cc),E_Z(cc)
+!          write(6,*) thread_num,'0gradB',gradB_R(cc),gradB_PHI(cc),gradB_Z(cc)
+!          write(6,*) thread_num,'0curlb',curlb_R(cc),curlb_PHI(cc),curlb_Z(cc)
+!          write(6,*) thread_num,'0V',V_PLL(cc),V_MU(cc)
 !          write(6,*) 'Exb',Ecrossb_R(cc)
 !          write(6,*) 'bxgradB',bcrossgradB_R(cc)
 !          write(6,*) 'Bst',Bst_R(cc)
 !          write(6,*) 'bdotBst',bdotBst(cc)
-          !write(6,*) thread_num,'0gamma',gamgc(cc)
+!          write(6,*) thread_num,'0gamma',gamgc(cc)
 
 !          stop 'B_R is a NaN'
 !       endif
@@ -8614,10 +8614,10 @@ contains
        alpha_cache=C_a
 
        call get_fio_profile_p(params,P,Y_R,Y_PHI,Y_Z, &
-            ne,Te,flag,hint)
+            ne,Te,flagCon,hint)
 
        call get_fio_ion_p(params,P,Y_R,Y_PHI,Y_Z, &
-            ne,ni,nimp,Zeff,flag,hint)
+            ne,ni,nimp,Zeff,flagCon,hint)
           
        !$OMP SIMD
        !       !$OMP& aligned(tau_R,Bmag,RHS_PLL,V_PLL,xi,gamgc,RHS_MU,V_MU)
@@ -8649,7 +8649,8 @@ contains
 
     !$OMP SIMD
     do cc=1_idef,pchunk 
-       if(isnan(gamgc(cc))) then           
+       if(isnan(gamgc(cc)).and. &
+            ((flagCon(cc)==1).and.(flagCol(cc)==1))) then           
           write(6,*) 'gamgc is NaN'
           write(6,*) 'V_PLL',V_PLL(cc)
           write(6,*) 'V_MU',V_MU(cc)
@@ -8657,40 +8658,74 @@ contains
           
           stop 'gamgc is a NaN'
        endif
-       if(isnan(RHS_R(cc))) then
+       if(isnan(RHS_R(cc)).and. &
+            ((flagCon(cc)==1).and.(flagCol(cc)==1))) then  
 
-          !write(6,*) thread_num,'Y',Y_R(cc)*params%cpp%length,Y_PHI(cc),Y_Z(cc)*params%cpp%length
-          !write(6,*) thread_num,'B',B_R(cc),B_PHI(cc),B_Z(cc)
-          !write(6,*) thread_num,'E',E_R(cc),E_PHI(cc),E_Z(cc)
-          !write(6,*) thread_num,'gradB',gradB_R(cc),gradB_PHI(cc),gradB_Z(cc)
-          !write(6,*) thread_num,'curlb',curlb_R(cc),curlb_PHI(cc),curlb_Z(cc)
-          !write(6,*) thread_num,'V',V_PLL(cc),V_MU(cc)
-          !write(6,*) thread_num,'Exb',Ecrossb_R(cc)
-          !write(6,*) thread_num,'bxgradB',bcrossgradB_R(cc)
-          !write(6,*) thread_num,'Bst',Bst_R(cc)
-          !write(6,*) thread_num,'bdotBst',bdotBst(cc)
-          !write(6,*) thread_num,'gamma',gamgc(cc)
+          write(6,*) thread_num,'flags',flagCon(cc),flagCol(cc)
+          write(6,*) thread_num,'Y',Y_R(cc)*params%cpp%length,Y_PHI(cc),Y_Z(cc)*params%cpp%length
+          write(6,*) thread_num,'B',B_R(cc),B_PHI(cc),B_Z(cc)
+          write(6,*) thread_num,'E',E_R(cc),E_PHI(cc),E_Z(cc)
+          write(6,*) thread_num,'gradB',gradB_R(cc),gradB_PHI(cc),gradB_Z(cc)
+          write(6,*) thread_num,'curlb',curlb_R(cc),curlb_PHI(cc),curlb_Z(cc)
+          write(6,*) thread_num,'V',V_PLL(cc),V_MU(cc)
+          write(6,*) thread_num,'Exb',Ecrossb_R(cc)
+          write(6,*) thread_num,'bxgradB',bcrossgradB_R(cc)
+          write(6,*) thread_num,'Bst',Bst_R(cc)
+          write(6,*) thread_num,'bdotBst',bdotBst(cc)
+          write(6,*) thread_num,'gamma',gamgc(cc)
           
           stop 'RHS_R1 is a NaN'
        endif
-       if(isnan(RHS_PHI(cc))) stop 'RHS_PHI1 is a NaN'
-       if(isnan(RHS_Z(cc))) stop 'RHS_Z1 is a NaN'
-       if(isnan(RHS_PLL(cc))) stop 'RHS_PLL1 is a NaN'
-       if(isnan(RHS_MU(cc))) stop 'RHS_MU1 is a NaN'
-
+       if(isnan(RHS_PHI(cc)).and. &
+            ((flagCon(cc)==1).and.(flagCol(cc)==1))) then
+          stop 'RHS_PHI1 is a NaN'
+       end if
+       if(isnan(RHS_Z(cc)).and. &
+            ((flagCon(cc)==1).and.(flagCol(cc)==1))) then
+          stop 'RHS_Z1 is a NaN'
+       endif
+       if(isnan(RHS_PLL(cc)).and. &
+            ((flagCon(cc)==1).and.(flagCol(cc)==1))) then
+          stop 'RHS_PLL1 is a NaN'
+       endif
+       if(isnan(RHS_MU(cc)).and. &
+            ((flagCon(cc)==1).and.(flagCol(cc)==1))) then
+          stop 'RHS_MU1 is a NaN'
+       endif
     end do
     !$OMP END SIMD
 
     if (params%radiation.and.(params%GC_rad_model.eq.'SDE')) then
        !$OMP SIMD
        do cc=1_idef,pchunk
-          if(isnan(ne(cc))) stop 'ne is a NaN'
-          if(isnan(Zeff(cc))) stop 'Zeff is a NaN'
-          if(isnan(BREM_P(cc))) stop 'BREM_P is a NaN'
-          if(isnan(BREM_PLL(cc))) stop 'BREM_PLL is a NaN'
-          if(isnan(BREM_MU(cc))) stop 'BREM_MU is a NaN'
-          if(isnan(SR_PLL(cc))) stop 'SR_PLL is a NaN'
-          if(isnan(SR_MU(cc))) stop 'SR_MU is a NaN'
+          if(isnan(ne(cc)).and. &
+               ((flagCon(cc)==1).and.(flagCol(cc)==1))) then
+             stop 'ne is a NaN'
+          endif
+          if(isnan(Zeff(cc)).and. &
+               ((flagCon(cc)==1).and.(flagCol(cc)==1))) then
+             stop 'Zeff is a NaN'
+          endif
+          if(isnan(BREM_P(cc)).and. &
+               ((flagCon(cc)==1).and.(flagCol(cc)==1))) then
+             stop 'BREM_P is a NaN'
+          endif
+          if(isnan(BREM_PLL(cc)).and. &
+               ((flagCon(cc)==1).and.(flagCol(cc)==1))) then
+             stop 'BREM_PLL is a NaN'
+          endif
+          if(isnan(BREM_MU(cc)).and. &
+               ((flagCon(cc)==1).and.(flagCol(cc)==1))) then
+             stop 'BREM_MU is a NaN'
+          endif
+          if(isnan(SR_PLL(cc)).and. &
+               ((flagCon(cc)==1).and.(flagCol(cc)==1))) then
+             stop 'SR_PLL is a NaN'
+          endif
+          if(isnan(SR_MU(cc)).and. &
+               ((flagCon(cc)==1).and.(flagCol(cc)==1))) then
+             stop 'SR_MU is a NaN'
+          endif
        end do
        !$OMP END SIMD
     end if
