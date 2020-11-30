@@ -254,23 +254,48 @@ CONTAINS
     REAL(rp), DIMENSION(3)         :: Btmp
     
     if (init) then
+
+       status = fio_open_source(FIO_M3DC1_SOURCE,           &
+            TRIM(params%magnetic_field_filename)            &
+            // C_NULL_CHAR, F%isrc)
+       
        F%Efield = Efield
        F%PSIp_lim=PSIp_lim
        F%PSIp_0=PSIp_0
        F%ReInterp_2x1t=ReInterp_2x1t
 
-       if (params%proceed) then
+       if (params%restart.OR.params%proceed) then
+
+          isrc=F%isrc
+          status = fio_get_options(isrc)
+          status = fio_set_int_option(FIO_TIMESLICE, ind0_2x1t)
+          status = fio_get_field(isrc, FIO_MAGNETIC_FIELD, F%FIO_B)
+          
+          hint_tmp=c_null_ptr
+          x(1)=spp(1)%Ro
+          x(2)=spp(1)%PHIo
+          x(3)=spp(1)%Zo
+
+          status = fio_eval_field(F%FIO_B, x(1),                      &
+               Btmp(1),hint_tmp)
+
+          F%Bo = Btmp(2)
+          F%Eo = 1.0
+          F%Ro = 1.0
+          F%Zo = 1.0
+
+          status = fio_close_field(F%FIO_B)
+          
           call load_prev_iter(params)
           F%ind0_2x1t=params%prev_iter_2x1t+1
+          
        else
           F%ind0_2x1t=ind0_2x1t
        end if
 
        F%ind_2x1t=F%ind0_2x1t
 
-       status = fio_open_source(FIO_M3DC1_SOURCE,           &
-            TRIM(params%magnetic_field_filename)            &
-            // C_NULL_CHAR, F%isrc)
+
 
     else
        status = fio_close_field(F%FIO_B)
@@ -340,18 +365,20 @@ CONTAINS
 
 
     if (init) then
-       hint_tmp=c_null_ptr
-       x(1)=spp(1)%Ro
-       x(2)=spp(1)%PHIo
-       x(3)=spp(1)%Zo
+       if (.NOT.(params%restart.OR.params%proceed)) then
+          hint_tmp=c_null_ptr
+          x(1)=spp(1)%Ro
+          x(2)=spp(1)%PHIo
+          x(3)=spp(1)%Zo
 
-       status = fio_eval_field(F%FIO_B, x(1),                      &
-                  Btmp(1),hint_tmp)
-       
-       F%Bo = Btmp(2)
-       F%Eo = 1.0
-       F%Ro = 1.0
-       F%Zo = 1.0        
+          status = fio_eval_field(F%FIO_B, x(1),                      &
+               Btmp(1),hint_tmp)
+
+          F%Bo = Btmp(2)
+          F%Eo = 1.0
+          F%Ro = 1.0
+          F%Zo = 1.0
+       end if
 
        do ii = 1, params%num_species
 
@@ -402,6 +429,32 @@ CONTAINS
        F%ReInterp_2x1t=ReInterp_2x1t
 
        if (params%proceed) then
+          
+          filename=TRIM(magnetic_field_directory)//TRIM(magnetic_field_filenames(ind0_2x1t))       
+       
+          status = fio_open_source(FIO_NIMROD_SOURCE, &
+               filename // C_NULL_CHAR, F%isrc)
+          
+          isrc=F%isrc
+          status = fio_get_options(isrc)
+          status = fio_get_field(isrc, FIO_MAGNETIC_FIELD, F%FIO_B)
+          
+          hint_tmp=c_null_ptr
+          x(1)=spp(1)%Ro
+          x(2)=spp(1)%PHIo
+          x(3)=spp(1)%Zo
+
+          status = fio_eval_field(F%FIO_B, x(1),                      &
+               Btmp(1),hint_tmp)
+
+          F%Bo = Btmp(2)
+          F%Eo = 1.0
+          F%Ro = 1.0
+          F%Zo = 1.0
+
+          status = fio_close_field(F%FIO_B)
+          status=fio_close_source(F%isrc)
+          
           call load_prev_iter(params)
           F%ind0_2x1t=params%prev_iter_2x1t+1
        else
@@ -411,6 +464,13 @@ CONTAINS
        F%ind_2x1t=F%ind0_2x1t
 
        filename=TRIM(magnetic_field_directory)//TRIM(magnetic_field_filenames(F%ind_2x1t))       
+
+
+       if (.not.F%ReInterp_2x1t) then
+          filename=TRIM(params%magnetic_field_filename)  
+       else
+          filename=TRIM(magnetic_field_directory)//TRIM(magnetic_field_filenames(F%ind_2x1t))  
+       end if
        
        status = fio_open_source(FIO_NIMROD_SOURCE, &
             filename // C_NULL_CHAR, F%isrc)
@@ -434,8 +494,6 @@ CONTAINS
     end if
 
     isrc=F%isrc
-
-
     
     status = fio_get_options(isrc)
 
@@ -501,18 +559,20 @@ CONTAINS
 
 
     if (init) then
-       hint_tmp=c_null_ptr
-       x(1)=spp(1)%Ro
-       x(2)=spp(1)%PHIo
-       x(3)=spp(1)%Zo
+       if (.NOT.(params%restart.OR.params%proceed)) then
+          hint_tmp=c_null_ptr
+          x(1)=spp(1)%Ro
+          x(2)=spp(1)%PHIo
+          x(3)=spp(1)%Zo
 
-       status = fio_eval_field(F%FIO_B, x(1),                      &
-                  Btmp(1),hint_tmp)
-       
-       F%Bo = Btmp(2)
-       F%Eo = 1.0
-       F%Ro = 1.0
-       F%Zo = 1.0        
+          status = fio_eval_field(F%FIO_B, x(1),                      &
+               Btmp(1),hint_tmp)
+
+          F%Bo = Btmp(2)
+          F%Eo = 1.0
+          F%Ro = 1.0
+          F%Zo = 1.0
+       end if    
 
        do ii = 1, params%num_species
 
