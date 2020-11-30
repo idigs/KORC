@@ -78,7 +78,7 @@ then
     module unload darshan/3.1.4
     
     cmake ../ -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE                                          \
-	  -DCMAKE_INSTALL_PREFIX=/global/cfs/cdirs/m3236/build_NIMUW/KORC/FIO/install \
+	  -DCMAKE_INSTALL_PREFIX=/global/cfs/cdirs/m3236/build_M3DC1/KORC/FIO/install \
 	  -DCMAKE_PREFIX_PATH=$MPICH_DIR \
 	  -DCMAKE_FORTRAN_FLAGS="convert big_endian -O3 -axMIC-AVX512,AVX -DHDF5_DOUBLE_PRESICION -vec-threshold0 -simd -qopenmp -align array64byte -assume contiguous_assumed_shape -vecabi=cmdtarget" \
 	  -DCMAKE_C_FLAGS="-O3 -axMIC-AVX512,AVX -vec-threshold0 -simd -qopenmp" \

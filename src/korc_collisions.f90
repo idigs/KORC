@@ -2223,7 +2223,7 @@ contains
 
        do cc=1_idef,pchunk
           if((isnan(Ppll(cc)).or.isnan(Pmu(cc))).and. &
-             ((flagCol(cc).eq.1_is).or.(flagCon(cc).eq.1_is))) then
+             ((flagCol(cc).eq.1_is).and.(flagCon(cc).eq.1_is))) then
              write(6,*) 'End collision'
              write(6,*) 'Ppll',Ppll(cc)
              write(6,*) 'Pmu',Pmu(cc)
@@ -2245,7 +2245,7 @@ contains
              write(6,*) 'Y_PHI',Y_PHI(cc)
              write(6,*) 'Y_Z',Y_Z(cc)
              
-             stop 'Pmu or Pmu is NaN'
+             stop 'Ppll or Pmu is NaN'
           endif
        end do
        
