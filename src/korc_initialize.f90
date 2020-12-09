@@ -265,13 +265,13 @@ CONTAINS
        params%t_steps = CEILING((params%simulation_time-params%init_time)/ &
             params%dt,ip)
 
-       params%output_cadence = FLOOR(params%snapshot_frequency/params%dt,ip)
+       params%output_cadence = CEILING(params%snapshot_frequency/params%dt,ip)
 
        if (params%output_cadence.EQ.0_ip) params%output_cadence = 1_ip
 
        params%num_snapshots = params%t_steps/params%output_cadence
 
-       params%restart_output_cadence = FLOOR(params%restart_overwrite_frequency/ &
+       params%restart_output_cadence = CEILING(params%restart_overwrite_frequency/ &
             params%dt,ip)
 
 
@@ -286,13 +286,13 @@ CONTAINS
 
        params%t_steps = CEILING(params%simulation_time/params%dt,ip)
        
-       params%output_cadence = FLOOR(params%snapshot_frequency/params%dt,ip)
+       params%output_cadence = CEILING(params%snapshot_frequency/params%dt,ip)
 
        if (params%output_cadence.EQ.0_ip) params%output_cadence = 1_ip
 
        params%num_snapshots = params%t_steps/params%output_cadence
 
-       params%restart_output_cadence = FLOOR(params%restart_overwrite_frequency/ &
+       params%restart_output_cadence = CEILING(params%restart_overwrite_frequency/ &
             params%dt,ip)
 
        params%t_skip=min(params%t_steps,params%output_cadence)

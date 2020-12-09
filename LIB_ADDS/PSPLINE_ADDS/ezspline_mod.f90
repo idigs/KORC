@@ -1446,6 +1446,16 @@ module EZspline
        real(ezspline_r8), intent(out):: fBR(k), fBPHI(k), fBZ(k)
        integer, intent(out) :: ier
      end subroutine EZspline_interp2_bmag_cloud_r8
+
+     subroutine EZspline_interp3_bmag_cloud_r8(spline_oBR, spline_oBPHI, &
+          spline_oBZ,k, p1, p2, p3, fBR, fBPHI, fBZ,ier)
+       use EZspline_obj
+       type(EZspline3_r8) spline_oBR,spline_oBPHI,spline_oBZ
+       integer, intent(in) :: k
+       real(ezspline_r8), intent(in) :: p1(k), p2(k), p3(k)
+       real(ezspline_r8), intent(out):: fBR(k), fBPHI(k), fBZ(k)
+       integer, intent(out) :: ier
+     end subroutine EZspline_interp3_bmag_cloud_r8
      
      subroutine EZspline_interp1_r8(spline_o, p1, f, ier)
        use EZspline_obj

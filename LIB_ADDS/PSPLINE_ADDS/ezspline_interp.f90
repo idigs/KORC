@@ -1540,3 +1540,36 @@ subroutine EZspline_interp3_cloud_r4(spline_o, k, p1, p2, p3, f, ier)
   if(ifail /= 0) ier = 97
 
 end subroutine EZspline_interp3_cloud_r4
+
+subroutine EZspline_interp3_bmag_cloud_r8(spline_oBR, spline_oBPHI, &
+     spline_oBZ, k, p1, p2, p3, fBR, fBPHI, fBZ, ier)
+  use EZspline_obj
+  type(EZspline3_r8) spline_oBR,spline_oBPHI,spline_oBZ
+  integer, intent(in) :: k
+  real(ezspline_r8), intent(in) :: p1(k), p2(k), p3(k)
+  real(ezspline_r8), intent(out):: fBR(k), fBPHI(k), fBZ(k)
+  integer, intent(out) :: ier
+  integer :: ifail
+  integer, parameter :: ict(6) = (/1,0,0,0,0,0/)
+  integer:: iwarn = 0
+
+  ier = 0
+  ifail = 0
+
+  if( .not.EZspline_allocated(spline_oBR) .or. spline_oBR%isReady /= 1) then
+     ier = 94
+     return
+  endif
+
+
+  call r8vectricub_bmag(ict, k, p1, p2, p3, k, fBR, fBPHI, fBZ, &
+       & spline_oBR%n1, spline_oBR%x1pkg(1,1), &
+       & spline_oBR%n2, spline_oBR%x2pkg(1,1), &
+       & spline_oBR%n3, spline_oBR%x3pkg(1,1), &
+       & spline_oBR%fspl(1,1,1,1), spline_oBPHI%fspl(1,1,1,1), &
+       & spline_oBZ%fspl(1,1,1,1), spline_oBR%n1, &
+       & spline_oBR%n2,iwarn, ifail)
+
+  if(ifail /= 0) ier = 97
+
+end subroutine EZspline_interp3_bmag_cloud_r8
