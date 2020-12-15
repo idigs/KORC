@@ -13,6 +13,10 @@ set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/build/lib)
 #  Set definitions.
 add_definitions (-DDOUBLE_PRECISION)
 add_definitions (-DPARALLEL_RANDOM)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+   add_definitions (-DDBG_CHECK)
+endif()
+
 
 #  Configure OpenMP
 find_package (OpenMP)

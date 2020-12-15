@@ -8434,6 +8434,7 @@ contains
 
     end if
 
+#if DBG_CHECK    
     !$OMP SIMD
     do cc=1_idef,pchunk 
        if(isnan(gamgc(cc))) stop 'gamgc is a NaN'
@@ -8459,7 +8460,7 @@ contains
        end do
        !$OMP END SIMD
     end if
-
+#endif
 
     !    write(output_unit_write,*) 'RHS_R: ',RHS_R(1)
     !    write(output_unit_write,*) 'RHS_PHI: ',RHS_PHI(1)
@@ -8647,6 +8648,7 @@ contains
 
     end if
 
+#if DBG_CHECK    
     !$OMP SIMD
     do cc=1_idef,pchunk 
        if(isnan(gamgc(cc)).and. &
@@ -8729,7 +8731,7 @@ contains
        end do
        !$OMP END SIMD
     end if
-
+#endif
     !    write(output_unit_write,*) 'RHS_R: ',RHS_R(1)
     !    write(output_unit_write,*) 'RHS_PHI: ',RHS_PHI(1)
     !    write(output_unit_write,*) 'RHS_Z: ',RHS_Z(1)

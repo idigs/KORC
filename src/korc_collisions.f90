@@ -2221,6 +2221,7 @@ contains
        end do
        !$OMP END SIMD
 
+#if DBG_CHECK    
        do cc=1_idef,pchunk
           if((isnan(Ppll(cc)).or.isnan(Pmu(cc))).and. &
              ((flagCol(cc).eq.1_is).and.(flagCon(cc).eq.1_is))) then
@@ -2248,6 +2249,7 @@ contains
              stop 'Ppll or Pmu is NaN'
           endif
        end do
+#endif
        
 !       write(output_unit_write,'("rnd1: ",E17.10)') rnd1
 !       write(output_unit_write,'("flag: ",I16)') flag
