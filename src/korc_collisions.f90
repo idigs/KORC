@@ -52,6 +52,7 @@ module korc_collisions
      ! Classical electron radius
 
 
+     REAL(rp), DIMENSION(2) :: aH=(/274._rp,0._rp/)
      REAL(rp), DIMENSION(7) :: aC=(/144._rp,118._rp,95._rp,70._rp, &
           42._rp,39._rp,0._rp/)
      REAL(rp), DIMENSION(11) :: aNe=(/111._rp,100._rp,90._rp,80._rp, &
@@ -61,6 +62,7 @@ module korc_collisions
           27._rp,21._rp,13._rp,13._rp,0._rp/)
 
 
+     REAL(rp), DIMENSION(2) :: IH=(/14.9916_rp,huge(1._rp)/)
      REAL(rp), DIMENSION(7) :: IC=(/65.9_rp,92.6_rp,134.8_rp,214.2_rp, &
           486.2_rp,539.5_rp,huge(1._rp)/)
      REAL(rp), DIMENSION(11) :: INe=(/137.2_rp,165.2_rp,196.9_rp,235.2_rp, &
@@ -235,7 +237,10 @@ contains
     endif
     
     do i=1,cparams_ms%num_impurity_species
-       if (int(cparams_ms%Zo(i)).eq.6) then
+       if (int(cparams_ms%Zo(i)).eq.1) then
+          cparams_ms%IZj(i) = C_E*cparams_ms%IH(int(cparams_ms%Zj(i)+1))
+          cparams_ms%aZj(i) = cparams_ms%aH(int(cparams_ms%Zj(i)+1))
+       else if (int(cparams_ms%Zo(i)).eq.6) then
           cparams_ms%IZj(i) = C_E*cparams_ms%IC(int(cparams_ms%Zj(i)+1))
           cparams_ms%aZj(i) = cparams_ms%aC(int(cparams_ms%Zj(i)+1))
        else if (int(cparams_ms%Zo(i)).eq.10) then
@@ -265,7 +270,13 @@ contains
        write(output_unit_write,'("Number of impurity species: ",I16)')& 
             cparams_ms%num_impurity_species
        do i=1,cparams_ms%num_impurity_species
-          if (cparams_ms%Zo(i).eq.6) then
+          if (cparams_ms%Zo(i).eq.1) then
+             write(output_unit_write,'("H with charge state: ",I16)') int(cparams_ms%Zj(i))
+             write(output_unit_write,'("Mean excitation energy I (eV)",E17.10)') &
+                  cparams_ms%IZj(i)/C_E
+             write(output_unit_write,'("Effective ion length scale a (a_0)",E17.10)') &
+                  cparams_ms%aZj(i)
+          else if (cparams_ms%Zo(i).eq.6) then
              write(output_unit_write,'("C with charge state: ",I16)') int(cparams_ms%Zj(i))
              write(output_unit_write,'("Mean excitation energy I (eV)",E17.10)') &
                   cparams_ms%IZj(i)/C_E
