@@ -2330,7 +2330,8 @@ CONTAINS
 
           
        if ((.not.F%Efield_in_file).and.(.not.F%Dim2x1t).and.F%Efield) then
-          F%Eo = Eo
+
+          if (F%Eo.eq.0) F%Eo = Eo
 
           if (F%axisymmetric_fields) then
              F%E_2D%R=0._rp

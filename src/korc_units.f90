@@ -197,6 +197,16 @@ subroutine normalize_variables(params,spp,F,P)
      if (ALLOCATED(P%ne_3D)) P%ne_3D = P%ne_3D/params%cpp%density
      if (ALLOCATED(P%Te_3D)) P%Te_3D = P%Te_3D/params%cpp%temperature
 
+     if (params%profile_model(10:10).eq.'H') then
+        if (ALLOCATED(P%nRE_2D)) P%nRE_2D = P%nRE_2D/params%cpp%density
+        if (ALLOCATED(P%nAr0_2D)) P%nAr0_2D = P%nAr0_2D/params%cpp%density
+        if (ALLOCATED(P%nAr1_2D)) P%nAr1_2D = P%nAr1_2D/params%cpp%density
+        if (ALLOCATED(P%nAr2_2D)) P%nAr2_2D = P%nAr2_2D/params%cpp%density
+        if (ALLOCATED(P%nAr3_2D)) P%nAr3_2D = P%nAr3_2D/params%cpp%density
+        if (ALLOCATED(P%nD_2D)) P%nD_2D = P%nD_2D/params%cpp%density
+        if (ALLOCATED(P%nD1_2D)) P%nD1_2D = P%nD1_2D/params%cpp%density
+     endif
+
   end if
   
   if (params%field_model(1:10) .EQ. 'ANALYTICAL') then

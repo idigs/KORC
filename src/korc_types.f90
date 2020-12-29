@@ -734,6 +734,14 @@ module korc_types
      !! Full path to the HDF5 file containing the pre-computed plasma profiles.
      LOGICAL 					:: axisymmetric 
      !! Flag to indicate if the plasma profiles are axisymmetric.
+     REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: nRE_2D
+     REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: nAr0_2D
+     REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: nAr1_2D
+     REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: nAr2_2D
+     REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: nAr3_2D
+     REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: nD_2D
+     REAL(rp), DIMENSION(:,:), ALLOCATABLE 	:: nD1_2D 
+     
 #ifdef FIO
      INTEGER (C_INT)                         :: FIO_ne
      INTEGER (C_INT)                         :: FIO_ni

@@ -1546,6 +1546,45 @@ CONTAINS
                 call rsave_2d_array_to_hdf5(h5file_id, dset, &
                      P%Zeff_2D)
 
+                if (params%profile_model(10:10).eq.'H') then
+                   
+                   dset = TRIM(gname) // "/nRE"
+                   units = params%cpp%density
+                   call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                        units*P%nRE_2D)
+
+                   dset = TRIM(gname) // "/nAr0"
+                   units = params%cpp%density
+                   call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                        units*P%nAr0_2D)
+
+                   dset = TRIM(gname) // "/nAr1"
+                   units = params%cpp%density
+                   call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                        units*P%nAr1_2D)
+
+                   dset = TRIM(gname) // "/nAr2"
+                   units = params%cpp%density
+                   call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                        units*P%nAr2_2D)
+
+                   dset = TRIM(gname) // "/nAr3"
+                   units = params%cpp%density
+                   call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                        units*P%nAr3_2D)
+
+                   dset = TRIM(gname) // "/nD"
+                   units = params%cpp%density
+                   call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                        units*P%nD_2D)
+
+                   dset = TRIM(gname) // "/nD1"
+                   units = params%cpp%density
+                   call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                        units*P%nD1_2D)
+                   
+                endif
+
                 DEALLOCATE(attr_array)
              else if (params%profile_model .EQ. 'UNIFORM') then
                 ! Something
