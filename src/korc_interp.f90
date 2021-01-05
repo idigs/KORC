@@ -10,7 +10,7 @@ module korc_interp
 
   use EZspline_obj	! psplines module
   use EZspline		! psplines module
-
+  
 #ifdef FIO
   use korc_fio
 #endif
@@ -177,7 +177,8 @@ module korc_interp
      TYPE(EZspline2_r8)    :: Te
      !! Interpolant of background electron temperature \(T_e(R,Z)\).
      TYPE(EZspline2_r8)    :: Zeff
-     !! Interpolant of effective charge number \(Z_{eff}(R,Z)\).
+     !! Interpolant of effective charge number \(Z_{eff}(R,Z)\)
+     TYPE(EZspline2_r8)    :: RHON
      TYPE(EZspline2_r8)    :: nRE
      TYPE(EZspline2_r8)    :: nAr0
      TYPE(EZspline2_r8)    :: nAr1
@@ -198,6 +199,26 @@ module korc_interp
      !! ends of the \(Z\) direction.
   END TYPE KORC_2D_PROFILES_INTERPOLANT
 
+  TYPE, PRIVATE :: KORC_2D_HOLLMANN_INTERPOLANT
+     !! @note Derived type containing 2-D PSPLINE interpolants for cylindrical
+     !! components of the density \(n_e(R,Z)\), temperature \(T_e(R,Z)\), and
+     !! effective charge number \(Z_{eff}(R,Z)\) profiles.
+     !! Real precision of 8 bytes. @endnote
+     TYPE(EZspline2_r8)    :: fRE_E
+     TYPE(EZspline2_r8)    :: fRE_pitch     
+
+     INTEGER               :: NE
+     !! Size of mesh containing the field data along the \(R\)-axis.
+     INTEGER               :: NRHO
+     !! Size of mesh containing the field data along the \(Z\)-axis.
+     INTEGER, DIMENSION(2) :: BCRHO = (/ 0, 0 /)
+     !! Not-a-knot boundary condition for the interpolants at both
+     !! ends of the \(R\) direction.
+     INTEGER, DIMENSION(2) :: BCE = (/ 0, 0 /)
+     !! Not-a-knot boundary condition for the interpolants at both
+     !! ends of the \(Z\) direction.
+  END TYPE KORC_2D_HOLLMANN_INTERPOLANT
+  
   
 #elif SINGLE_PRECISION
 
@@ -449,6 +470,9 @@ module korc_interp
   !! profiles.
   TYPE(KORC_3D_PROFILES_INTERPOLANT), PRIVATE    :: profiles_3d
   !! An instance of KORC_3D_PROFILES_INTERPOLANT for interpolating plasma
+  !! profiles.
+  TYPE(KORC_2D_HOLLMANN_INTERPOLANT), PRIVATE    :: hollmann_2d
+  !! An instance of KORC_2D_PROFILES_INTERPOLANT for interpolating plasma
   !! profiles.
   TYPE(KORC_INTERPOLANT_DOMAIN), PRIVATE         :: profiles_domain
   !! An instance of KORC_INTERPOLANT_DOMAIN used for interpolating plasma
@@ -1486,6 +1510,49 @@ CONTAINS
     end if
   end subroutine initialize_fields_interpolant
 
+  subroutine initialize_Hollmann_interpolant(params,Nrho,NE,rho_axis,g_axis,fRE_E,fRE_pitch)
+    !! @note Subroutine that initializes fields interpolants. @endnote
+    !! This subroutine initializes either 2-D or 3-D PSPLINE interpolants
+    !! using the data of fields in the KORC-dervied-type variable F.
+    TYPE(KORC_PARAMS), INTENT(IN)  :: params
+    !! Core KORC simulation parameters.
+    INTEGER, INTENT(IN)       :: Nrho,NE
+    REAL(rp),DIMENSION(Nrho), INTENT(IN)  :: rho_axis
+    REAL(rp),DIMENSION(NE), INTENT(IN)  :: g_axis
+    REAL(rp),DIMENSION(Nrho,NE), INTENT(IN)  :: fRE_E,fRE_pitch
+
+   
+    hollmann_2d%NRHO = Nrho    
+    hollmann_2d%NE = NE
+
+    ! initialize fRE_E
+    call EZspline_init(hollmann_2d%fRE_E,hollmann_2d%NRHO, &
+         hollmann_2d%NE,hollmann_2d%BCRHO,hollmann_2d%BCE,ezerr)
+    call EZspline_error(ezerr)
+
+    hollmann_2d%fRE_E%x1 = rho_axis
+    hollmann_2d%fRE_E%x2 = g_axis
+
+    call EZspline_setup(hollmann_2d%fRE_E, fRE_E, ezerr, .TRUE.)
+    call EZspline_error(ezerr)
+
+    
+    ! initialize fRE_pitch    
+    call EZspline_init(hollmann_2d%fRE_pitch,hollmann_2d%NRHO, &
+         hollmann_2d%NE,hollmann_2d%BCRHO,hollmann_2d%BCE,ezerr)
+    call EZspline_error(ezerr)
+
+    hollmann_2d%fRE_pitch%x1 = rho_axis
+    hollmann_2d%fRE_pitch%x2 = g_axis
+
+
+    call EZspline_setup(hollmann_2d%fRE_pitch, fRE_pitch, &
+         ezerr, .TRUE.)
+    call EZspline_error(ezerr)
+
+
+  end subroutine initialize_Hollmann_interpolant
+  
   subroutine initialize_SC1D_field_interpolant(params,F)
     !! @note Subroutine that initializes fields interpolants. @endnote
     !! This subroutine initializes either 2-D or 3-D PSPLINE interpolants
@@ -1887,6 +1954,7 @@ CONTAINS
 
              if (params%mpi_params%rank .EQ. 0) then
                 write(output_unit_write,*) '2D ne, Te, Zeff'
+                flush(output_unit_write)
              end if
 
              profiles_2d%NR = P%dims(1)
@@ -1896,8 +1964,6 @@ CONTAINS
 !             write(output_unit_write,'("NZ",I15)') profiles_2d%NR
              
              ! Initializing ne
-             !			call EZspline_init(profiles_2d%ne,profiles_2d%NR, &
-             !profiles_2d%NZ,profiles_2d%BCSR,profiles_2d%BCSZ,ezerr)
              call EZspline_init(profiles_2d%ne,profiles_2d%NR,profiles_2d%NZ, &
                   profiles_2d%BCSR,profiles_2d%BCSZ,ezerr)
              call EZspline_error(ezerr)
@@ -1908,10 +1974,7 @@ CONTAINS
              call EZspline_setup(profiles_2d%ne, P%ne_2D, ezerr, .TRUE.)
              call EZspline_error(ezerr)
 
-             
              ! Initializing Te
-             !			call EZspline_init(profiles_2d%Te,profiles_2d%NR, &
-             !profiles_2d%NZ,profiles_2d%BCSR,profiles_2d%BCSZ,ezerr)
              call EZspline_init(profiles_2d%Te,profiles_2d%NR,profiles_2d%NZ, &
                   profiles_2d%BCSR,profiles_2d%BCSZ,ezerr)
              call EZspline_error(ezerr)
@@ -1926,10 +1989,9 @@ CONTAINS
              
              call EZspline_setup(profiles_2d%Te, P%Te_2D, ezerr, .TRUE.)
              call EZspline_error(ezerr)
+
              
              ! Initializing Zeff
-             !			call EZspline_init(profiles_2d%Zeff, &
-             !profiles_2d%NR,profiles_2d%NZ,profiles_2d%BCSR,profiles_2d%BCSZ,ezerr)
              call EZspline_init(profiles_2d%Zeff,profiles_2d%NR, &
                   profiles_2d%NZ,profiles_2d%BCSR,profiles_2d%BCSZ,ezerr)
              call EZspline_error(ezerr)
@@ -1944,8 +2006,22 @@ CONTAINS
                 
                 if (params%mpi_params%rank .EQ. 0) then
                    write(output_unit_write,*) '2D Hollmann impurities'
+                   flush(output_unit_write)
                 end if
 
+                ! Initializing RHON
+                call EZspline_init(profiles_2d%RHON,profiles_2d%NR, &
+                     profiles_2d%NZ,profiles_2d%BCSR,profiles_2d%BCSZ,ezerr)
+                call EZspline_error(ezerr)
+
+                profiles_2d%RHON%x1 = P%X%R
+                profiles_2d%RHON%x2 = P%X%Z
+
+                call EZspline_setup(profiles_2d%RHON, P%RHON, ezerr, .TRUE.)
+                call EZspline_error(ezerr)
+
+                !write(output_unit_write,'("profiles_2d%RHON: ",E17.10)') profiles_2d%RHON%fspl(1,:,:)
+                
                 ! Initializing nRE
                 call EZspline_init(profiles_2d%nRE,profiles_2d%NR, &
                      profiles_2d%NZ,profiles_2d%BCSR,profiles_2d%BCSZ,ezerr)
@@ -2024,7 +2100,6 @@ CONTAINS
                 call EZspline_error(ezerr)
                 
              end if
-
              
              ALLOCATE(profiles_domain%FLAG2D(profiles_2d%NR,profiles_2d%NZ))
              profiles_domain%FLAG2D = P%FLAG2D
@@ -4001,8 +4076,8 @@ subroutine interp_fields(params,prtcls,F)
 !     write(output_unit_write,'("B_Y: ",E17.10)') prtcls%B(:,2)
 !     write(output_unit_write,'("PSI_P: ",E17.10)') prtcls%PSI_P
      
-     call calculate_magnetic_field(params,prtcls%Y,F,prtcls%B,prtcls%E, &
-          prtcls%PSI_P,prtcls%flagCon)
+       call calculate_magnetic_field(params,prtcls%Y,F,prtcls%B,prtcls%E, &
+            prtcls%PSI_P,prtcls%flagCon)
 
      !write(output_unit_write,*) 'interp PSIp'
      
@@ -4098,18 +4173,51 @@ subroutine interp_Hcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff, &
    
 end subroutine interp_Hcollision_p
 
-subroutine interp_nRE(Y_R,Y_PHI,Y_Z,nRE,flag_cache)
-  REAL(rp),DIMENSION(1),INTENT(IN)   :: Y_R,Y_PHI,Y_Z
-  REAL(rp),DIMENSION(1),INTENT(OUT)   :: nRE
-  INTEGER(is),DIMENSION(1),INTENT(INOUT)   :: flag_cache
+subroutine interp_nRE(params,Y_R,Y_PHI,Y_Z,PSIp,EPHI,ne,Te,nRE, &
+     nAr0,nAr1,nAr2,nAr3,nD,nD1,g_test,fRE_out,rho1D)
+  TYPE(KORC_PARAMS), INTENT(IN) 	:: params
+  REAL(rp),INTENT(IN)   :: Y_R,Y_PHI,Y_Z,g_test
+  REAL(rp),INTENT(OUT)   :: PSIp,EPHI,ne,Te,nRE,fRE_out
+  REAL(rp),INTENT(OUT)   :: nAr0,nAr1,nAr2,nAr3,nD,nD1
+  REAL(rp)   :: RHON
+  INTEGER(is),DIMENSION(1)   :: flag_cache
+  REAL(rp), INTENT(IN),optional  :: rho1D
 
-  call check_if_in_profiles_domain_p(1,Y_R,Y_PHI,Y_Z,flag_cache)
+  flag_cache=1_is
+  call check_if_in_profiles_domain_p(1,(/Y_R/),(/Y_PHI/),(/Y_Z/), &
+       flag_cache)
+
+  if (flag_cache(1).ne.0_is) then
+     call EZspline_interp(bfield_2d%A,efield_2d%PHI, &
+          profiles_2d%ne,profiles_2d%Te, &
+          profiles_2d%nRE,profiles_2d%nAr0,profiles_2d%nAr1, &
+          profiles_2d%nAr2,profiles_2d%nAr3,profiles_2d%nD,profiles_2d%nD1, &
+          profiles_2d%RHON,Y_R,Y_Z, &
+          PSIp,EPHI,ne,Te,nRE,nAr0,nAr1,nAr2,nAr3,nD,nD1,RHON,ezerr)
+     call EZspline_error(ezerr)
+
+     !write(6,*) 'RHON',RHON
+     
+     if ((RHON.le.1).and.(RHON.gt.0)) then
+        if(present(rho1D)) RHON=rho1D
+        
+        call EZspline_interp(hollmann_2d%fRE_E,RHON,g_test,fRE_out,ezerr)  
+        call EZspline_error(ezerr)
+        if (ezerr .NE. 0) then ! We flag the particle as lost          
+           write(6,*) 'R,Z',Y_R*params%cpp%length,Y_Z*params%cpp%length
+           write(6,*) 'RHON',RHON
+        end if
+
+     else
+        fRE_out=0._rp       
+     endif
+     
+     if (fRE_OUT.lt.0) fRE_OUT=0._rp
+  else
+     fRE_OUT=0._rp
+     nRE=0._rp
+  endif
   
-  call EZspline_interp(profiles_2d%nRE,1,Y_R,Y_Z,nRE,ezerr)
-  ! this will call PSPLINE routine EZspline_interp2_bmag_cloud_r8 as there
-  ! is the same number of entries
-  call EZspline_error(ezerr)
-   
 end subroutine interp_nRE
 
 subroutine interp_2D_profiles(Y,ne,Te,Zeff,flag)

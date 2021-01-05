@@ -323,6 +323,7 @@ module korc_input
   !! HollmannPDF
   !! -----------------------------------------------
   CHARACTER(30) :: filename_Hollmann = 'Hollmann_PDF_HR.h5' !
+  INTEGER :: rho_ind = 7
   REAL(rp) :: Eo_Hollmann = 24.56
   ! Toroidal electric field from experimental diagnostics before SPI in
   ! physical units
@@ -432,7 +433,7 @@ CONTAINS
          min_pitch_angle_Hollmann,max_energy_Hollmann, &
          min_energy_Hollmann,filename_Hollmann,Bo_Hollmann,lambda_Hollmann, &
          current_direction_Hollmann,A_fact_Hollmann,sigma_E_Hollmann, &
-         sigma_Z_Hollmann,Eo_Hollmann
+         sigma_Z_Hollmann,Eo_Hollmann,rho_ind
     NAMELIST /SimpleEquilibriumPDF/ max_pitch_angle_simple, &
          min_pitch_angle_simple,Zeff_simple,E_simple, &
          Bo_simple,lambda_simple

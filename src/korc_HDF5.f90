@@ -1547,6 +1547,10 @@ CONTAINS
                      P%Zeff_2D)
 
                 if (params%profile_model(10:10).eq.'H') then
+
+                   dset = TRIM(gname) // "/RHON"
+                   call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                        P%RHON)
                    
                    dset = TRIM(gname) // "/nRE"
                    units = params%cpp%density

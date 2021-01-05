@@ -806,6 +806,8 @@ CONTAINS
 
     if (params%profile_model(10:10).eq.'H') then
 
+       dset = "/RHON"
+       call load_array_from_hdf5(h5file_id,dset,P%RHON)
        dset = "/nRE"
        call load_array_from_hdf5(h5file_id,dset,P%nRE_2D)
        dset = "/nAr0"
@@ -846,6 +848,7 @@ CONTAINS
     ALLOCATE(P%Zeff_2D(P%dims(1),P%dims(3)))
 
     if (params%profile_model(10:10).eq.'H') then
+       ALLOCATE(P%RHON(P%dims(1),P%dims(3)))
        ALLOCATE(P%nRE_2D(P%dims(1),P%dims(3)))
        ALLOCATE(P%nAr0_2D(P%dims(1),P%dims(3)))
        ALLOCATE(P%nAr1_2D(P%dims(1),P%dims(3)))
@@ -890,6 +893,7 @@ CONTAINS
     if (ALLOCATED(P%Te_3D)) DEALLOCATE(P%Te_3D)
     if (ALLOCATED(P%Zeff_3D)) DEALLOCATE(P%Zeff_3D)
 
+    if (ALLOCATED(P%RHON)) DEALLOCATE(P%RHON)
     if (ALLOCATED(P%nRE_2D)) DEALLOCATE(P%nRE_2D)
     if (ALLOCATED(P%nAr0_2D)) DEALLOCATE(P%nAr0_2D)
     if (ALLOCATED(P%nAr1_2D)) DEALLOCATE(P%nAr1_2D)

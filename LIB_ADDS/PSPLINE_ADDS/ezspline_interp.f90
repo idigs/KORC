@@ -172,6 +172,73 @@ subroutine EZspline_interp2_r8(spline_o, p1, p2, f, ier)
 
 end subroutine EZspline_interp2_r8
 
+subroutine EZspline_interp2_GCvars_r8(spline_oBR, spline_oBPHI, &
+     spline_oBZ, spline_oER, spline_oEPHI, spline_oEZ, spline_ogradBR, &
+     spline_ogradBPHI, spline_ogradBZ, spline_ocurlbR, spline_ocurlbPHI, &
+     spline_ocurlbZ, p1, p2, fBR, fBPHI, fBZ, &
+     fER, fEPHI, fEZ, &
+     fgradBR, fgradBPHI, fgradBZ, fcurlbR, fcurlbPHI, fcurlbZ, ier)
+  use EZspline_obj
+  implicit none
+  type(EZspline2_r8) spline_oBR,spline_oBPHI,spline_oBZ
+  type(EZspline2_r8) spline_oER,spline_oEPHI,spline_oEZ
+  type(EZspline2_r8) spline_ogradBR,spline_ogradBPHI,spline_ogradBZ
+  type(EZspline2_r8) spline_ocurlbR,spline_ocurlbPHI,spline_ocurlbZ
+  real(ezspline_r8), intent(in) :: p1, p2
+  real(ezspline_r8), intent(out):: fBR, fBPHI, fBZ
+  real(ezspline_r8), intent(out):: fER, fEPHI, fEZ
+  real(ezspline_r8), intent(out):: fgradBR, fgradBPHI, fgradBZ
+  real(ezspline_r8), intent(out):: fcurlbR, fcurlbPHI, fcurlbZ
+  integer, intent(out) :: ier
+  integer ifail
+  integer, parameter :: ict(6)=(/1, 0, 0, 0, 0, 0 /)
+  real(ezspline_r8) ansrBR(1), ansrBPHI(1), ansrBZ(1)
+  real(ezspline_r8) ansrER(1), ansrEPHI(1), ansrEZ(1)
+  real(ezspline_r8) ansrgradBR(1), ansrgradBPHI(1), ansrgradBZ(1)
+  real(ezspline_r8) ansrcurlBR(1), ansrcurlBPHI(1), ansrcurlBZ(1)
+
+  ier = 0
+  ifail = 0
+  if( .not.EZspline_allocated(spline_oBR) .or. spline_oBR%isReady /= 1) then
+     ier =94
+     return
+  endif
+
+
+  call r8evbicub_GCvars(p1, p2,  &
+       &   spline_oBR%x1(1), spline_oBR%n1, &
+       &   spline_oBR%x2(1), spline_oBR%n2, &
+       &   spline_oBR%ilin1, spline_oBR%ilin2, &
+       &   spline_oBR%fspl(1,1,1), spline_oBPHI%fspl(1,1,1), &
+       &   spline_oBZ%fspl(1,1,1), &
+       &   spline_oER%fspl(1,1,1), spline_oEPHI%fspl(1,1,1), &
+       &   spline_oEZ%fspl(1,1,1), &
+       &   spline_ogradBR%fspl(1,1,1), spline_ogradBPHI%fspl(1,1,1), &
+       &   spline_ogradBZ%fspl(1,1,1), &
+       &   spline_ocurlBR%fspl(1,1,1), spline_ocurlBPHI%fspl(1,1,1), &
+       &   spline_ocurlBZ%fspl(1,1,1), &
+       &   spline_oBR%n1, &
+       &   ict, ansrBR, ansrBPHI, ansrBZ,  ansrER, ansrEPHI, ansrEZ, &
+       &   ansrgradBR, ansrgradBPHI, ansrgradBZ, ansrcurlBR, &
+       &   ansrcurlBPHI, ansrcurlBZ, ifail)
+
+  fBR=ansrBR(1)
+  fBPHI=ansrBPHI(1)
+  fBZ=ansrBZ(1)
+  fER=ansrER(1)
+  fEPHI=ansrEPHI(1)
+  fEZ=ansrEZ(1)
+  fgradBR=ansrgradBR(1)
+  fgradBPHI=ansrgradBPHI(1)
+  fgradBZ=ansrgradBZ(1)
+  fcurlBR=ansrcurlBR(1)
+  fcurlBPHI=ansrcurlBPHI(1)
+  fcurlBZ=ansrcurlBZ(1)
+
+  if(ifail /= 0) ier = 97
+
+end subroutine EZspline_interp2_GCvars_r8
+
 subroutine EZspline_interp2_array_r8(spline_o, k1, k2, p1, p2, f, ier)
   use EZspline_obj
   implicit none

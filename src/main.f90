@@ -221,6 +221,10 @@ program main
   !! scalar flux function, axisymmetric field, or 3D field, while the
   !! electric field
   !! can be defined as an axisymmetric or 3D field.
+
+  if (params%mpi_params%rank .EQ. 0) then
+     flush(output_unit_write)
+  end if
   
   call initialize_profiles_interpolant(params,P)
   !! <h4>16\. Initialize Profiles Interpolant</h4>
@@ -238,11 +242,13 @@ program main
   
   if (params%mpi_params%rank .EQ. 0) then
      write(output_unit_write,'("* * * * INITIALIZING INITIAL CONDITIONS * * * *",/)')
+     flush(output_unit_write)
   end if
   call set_up_particles_ic(params,F,spp,P)
   
   if (params%mpi_params%rank .EQ. 0) then
      write(output_unit_write,'("* * * * * * * * * * * * * * * * * * * * * * * *",/)')
+     flush(output_unit_write)
   end if
 
   
