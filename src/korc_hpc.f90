@@ -39,6 +39,7 @@ CONTAINS
     !! 19: korc_spatial_distribution:initial_spatial_distribution
     !! 20: korc_experimental_pdf:load_data_from_hdf5
     !! 21: korc_interp:get_fio_ion_p
+    !! 22: korc_fio_interface:initialize_nimrod
 
     flush(output_unit_write)
     

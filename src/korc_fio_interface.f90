@@ -420,6 +420,8 @@ CONTAINS
     real(rp), DIMENSION(3) :: x
     REAL(rp), DIMENSION(3)         :: Btmp
     CHARACTER(150) :: filename
+    INTEGER, PARAMETER :: list_file = 102
+    INTEGER :: num_files,ios
 
 
     if (init) then
@@ -427,10 +429,47 @@ CONTAINS
        F%PSIp_lim=PSIp_lim
        F%PSIp_0=PSIp_0
        F%ReInterp_2x1t=ReInterp_2x1t
+       
+       if (F%ReInterp_2x1t) then
+          params%magnetic_field_directory=magnetic_field_directory
+          params%magnetic_field_list=magnetic_field_list
 
-       if (params%proceed) then
+          filename=TRIM(params%magnetic_field_directory)//TRIM(params%magnetic_field_list)
           
-          filename=TRIM(magnetic_field_directory)//TRIM(magnetic_field_filenames(ind0_2x1t))       
+          OPEN(UNIT=list_file,FILE=filename,STATUS='OLD')
+
+          READ(UNIT=list_file,FMT='(I4)',IOSTAT=ios) num_files
+          if (ios/=0) then
+             write(6,*) 'Error reading in magnetic_file_list for initialize_nimrod'
+             call KORC_abort(22)
+          endif
+
+          !write(6,*) 'num_files',num_files
+          
+          ALLOCATE(params%magnetic_field_filenames(num_files))
+          ALLOCATE(params%time_of_filenames(num_files))
+
+          do ii=1,num_files
+             READ(UNIT=list_file,FMT='(A10,F11.9)',IOSTAT=ios) params%magnetic_field_filenames(ii),params%time_of_filenames(ii)
+
+             !write(6,*) 'ii',ii,'filename ',TRIM(params%magnetic_field_filenames(ii)), &
+             !     ' time',params%time_of_filenames(ii)
+             
+          enddo
+
+          CLOSE(UNIT=list_file)
+          
+
+          
+       endif       
+       
+       if (params%proceed) then
+
+          if (.not.F%ReInterp_2x1t) then
+             filename=TRIM(params%magnetic_field_filename)  
+          else
+             filename=TRIM(params%magnetic_field_directory)//TRIM(params%magnetic_field_filenames(ind0_2x1t))  
+          end if           
        
           status = fio_open_source(FIO_NIMROD_SOURCE, &
                filename // C_NULL_CHAR, F%isrc)
@@ -463,13 +502,10 @@ CONTAINS
 
        F%ind_2x1t=F%ind0_2x1t
 
-       filename=TRIM(magnetic_field_directory)//TRIM(magnetic_field_filenames(F%ind_2x1t))       
-
-
        if (.not.F%ReInterp_2x1t) then
           filename=TRIM(params%magnetic_field_filename)  
        else
-          filename=TRIM(magnetic_field_directory)//TRIM(magnetic_field_filenames(F%ind_2x1t))  
+          filename=TRIM(params%magnetic_field_directory)//TRIM(params%magnetic_field_filenames(F%ind_2x1t))  
        end if
        
        status = fio_open_source(FIO_NIMROD_SOURCE, &
@@ -486,7 +522,11 @@ CONTAINS
 
        status=fio_close_source(F%isrc)
 
-       filename=TRIM(magnetic_field_directory)//TRIM(magnetic_field_filenames(F%ind_2x1t))
+       if (.not.F%ReInterp_2x1t) then
+          filename=TRIM(params%magnetic_field_filename)  
+       else
+          filename=TRIM(params%magnetic_field_directory)//TRIM(params%magnetic_field_filenames(F%ind_2x1t))  
+       end if
        
        status = fio_open_source(FIO_NIMROD_SOURCE, &
             filename // C_NULL_CHAR, F%isrc)       
@@ -512,20 +552,25 @@ CONTAINS
     !status = fio_get_field(isrc, FIO_VECTOR_POTENTIAL, F%FIO_A)
     F%FIO_A=-1
 
+    !write(6,*) 'time_of_filenames',time_of_filenames
+    !write(6,*) 'ind_2x1t',F%ind_2x1t
     
-    !status = fio_get_real_field_parameter(F%FIO_B, FIO_TIME, time0)
-    time0=time_of_filenames(F%ind_2x1t)
 
-    write(output_unit_write,*) 'FIO present time index',F%ind_2x1t
-    write(output_unit_write,*) 'FIO present time',time0
 
     if (F%ReInterp_2x1t) then
+
+       !status = fio_get_real_field_parameter(F%FIO_B, FIO_TIME, time0)
+       time0=params%time_of_filenames(F%ind_2x1t)
+
+       write(output_unit_write,*) 'FIO present time index',F%ind_2x1t
+       write(output_unit_write,*) 'FIO present time',time0
+       
        !status = fio_set_int_option(FIO_TIMESLICE, F%ind_2x1t+1)
 
        !status = fio_get_field(isrc, FIO_MAGNETIC_FIELD, FIO_tmp)
        
        !status = fio_get_real_field_parameter(FIO_tmp, FIO_TIME, time1)
-       time1=time_of_filenames(F%ind_2x1t+1)
+       time1=params%time_of_filenames(F%ind_2x1t+1)
        write(output_unit_write,*) 'FIO next time index',F%ind_2x1t+1
        write(output_unit_write,*) 'FIO next time',time1
 
