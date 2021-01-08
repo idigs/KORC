@@ -233,7 +233,11 @@ module korc_types
      CHARACTER(MAX_STRING_LENGTH) :: field_model
      CHARACTER(MAX_STRING_LENGTH) :: profile_model 
      !! String with the name of the model for the fields and plasma profiles.
-     CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename 
+     CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_filename
+     CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_directory
+     CHARACTER(MAX_STRING_LENGTH) :: magnetic_field_list
+     CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: magnetic_field_filenames
+     REAL(rp), DIMENSION(:), ALLOCATABLE :: time_of_filenames
      !! String with the name of the model for the fields and plasma profiles.
      CHARACTER(MAX_STRING_LENGTH), DIMENSION(:), ALLOCATABLE :: outputs_list 
      !! List of electron variables to include in the outputs.

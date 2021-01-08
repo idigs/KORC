@@ -47,9 +47,8 @@ module korc_input
     ! velocity.
   CHARACTER(150) :: magnetic_field_filename = 'C1.h5'
   !  magnetic_field_filename = 'JFIT_D3D_164409_1405ms.h5'
-  CHARACTER(150), DIMENSION(100) ::  magnetic_field_filenames
   CHARACTER(150) ::  magnetic_field_directory
-  REAL(rp), DIMENSION(100) :: time_of_filenames
+  CHARACTER(150) ::  magnetic_field_list
   INTEGER :: time_slice = 000
   REAL(rp) :: rmax =  1.60
   REAL(rp) :: rmin =  0.15
@@ -401,8 +400,7 @@ CONTAINS
          HDF5_error_handling,orbit_model,field_eval,proceed,profile_model, &
          restart_overwrite_frequency,FokPlan,GC_rad_model,bound_electron_model,&
          FO_GC_compare,SameRandSeed,SC_E,reinit,SC_E_add,time_slice,rmax, &
-         rmin,zmax,zmin,pchunk,magnetic_field_filenames,time_of_filenames, &
-         magnetic_field_directory
+         rmin,zmax,zmin,pchunk,magnetic_field_directory,magnetic_field_list
     NAMELIST /plasma_species/ ppp,q,m,Eno,etao,Eo_lims,etao_lims,runaway, &
          spatial_distribution,energy_distribution,pitch_distribution,Ro, &
          PHIo,Zo,r_inner,r_outter,falloff_rate,shear_factor,sigmaR,sigmaZ, &
@@ -581,13 +579,7 @@ CONTAINS
              call korc_abort(13)
           END SELECT
           IF (read_stat/=0) then
-             write(output_unit_write,*) ('Error reading namelist '//TRIM(ctmp)//'.')
-             if(TRIM(ctmp).eq.'input_parameters') then
-                write(output_unit_write,*) 'Check that  &
-                     &magnetic_field_filenames is not larger than 100, &
-                     &else need to increase allocation!'
-             endif
-             
+             write(output_unit_write,*) ('Error reading namelist '//TRIM(ctmp)//'.')             
              call korc_abort(13)
           end if
        ENDIF
