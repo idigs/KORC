@@ -945,6 +945,11 @@ contains
             (neut_prof.eq.'UNIFORM')) then
           CF_temp=CF_temp+CF_SD*cparams_ms%nz(1)/ne* &
                (cparams_ms%Zo(1)-cparams_ms%Zj(1))/ &
+               CLogee(v,ne,Te)*(log(1+h_j(1,v)**k)/k-v**2)
+       else if ((cparams_ms%Zj(1).eq.0.0).and. &
+            (neut_prof.eq.'HOLLOW')) then
+          CF_temp=CF_temp+CF_SD*max(cparams_ms%nz(1)-ne,0._rp)/ne* &
+               (cparams_ms%Zo(1)-cparams_ms%Zj(1))/ &
                CLogee(v,ne,Te)*(log(1+h_j(1,v)**k)/k-v**2) 
        else
           CF_temp=CF_temp+CF_SD*cparams_ms%nz(1)/cparams_ms%ne* &
@@ -1103,6 +1108,10 @@ contains
        if ((cparams_ms%Zj(1).eq.0.0).and. &
             (neut_prof.eq.'UNIFORM')) then
           CB_ei_temp=CB_ei_temp+CB_ei_SD*cparams_ms%nz(1)/(ne* &
+               Zeff*CLogei(v,ne,Te))*g_j(1,v)
+       else if ((cparams_ms%Zj(1).eq.0.0).and. &
+            (neut_prof.eq.'HOLLOW')) then
+          CB_ei_temp=CB_ei_temp+CB_ei_SD*max(cparams_ms%nz(1)-ne,0._rp)/(ne* &
                Zeff*CLogei(v,ne,Te))*g_j(1,v)
        else
           CB_ei_temp=CB_ei_temp+CB_ei_SD*cparams_ms%nz(1)/(cparams_ms%ne* &

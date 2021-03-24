@@ -2838,7 +2838,8 @@ CONTAINS
        call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
        if (h5error .EQ. -1) then
           write(output_unit_write,'("KORC ERROR: Something went wrong in: &
-               &load_particles_ic --> h5fopen_f")')
+               &load_prev_time --> h5fopen_f")')
+          call KORC_ABORT(24)
        end if
 
        dset = "/time"
@@ -2878,7 +2879,8 @@ CONTAINS
        call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
        if (h5error .EQ. -1) then
           write(output_unit_write,'("KORC ERROR: Something went wrong in: &
-               &load_particles_ic --> h5fopen_f")')
+               &load_prev_iter --> h5fopen_f")')
+          call KORC_ABORT(23)
        end if
 
        dset = "/ind_2x1t"
