@@ -392,6 +392,7 @@ module korc_interp
      ! Separation between grid points along the azimuthal direction.
      REAL(rp)                                          :: DZ
      !! Separation between grid points along the vertical direction.
+     
   END TYPE KORC_INTERPOLANT_DOMAIN
 
 
@@ -1583,6 +1584,7 @@ CONTAINS
     !! Particle iterator.
     INTEGER(ip)                                            :: ss
     !! Species iterator.
+    REAL(rp) :: Rwall
     
     if (Y(2,1).eq.0) then
        ss=1_idef
@@ -1610,7 +1612,21 @@ CONTAINS
 
              if ((fields_domain%FLAG3D(IR,1,IZ).NE.1_is).OR. &
                   ((IR.GT.bfield_2X1T%NR).OR.(IZ.GT.bfield_2X1T%NZ))) then
-                flag(pp) = 0_is
+                if (F%Analytic_IWL.eq.'NONE') then
+                   flag(pp) = 0_is
+                else if (F%Analytic_IWL.eq.'D3D') then
+                   if ((IR.lt.floor(bfield_2d%NR/6._rp)).and. &
+                        (IZ.gt.floor(bfield_2d%NZ/5._rp)).and. &
+                        (IZ.lt.floor(4._rp*bfield_2d%NZ/5._rp))) then
+
+                      Rwall=F%circumradius*cos(C_PI/F%ntiles)/ &
+                           (cos((mod(Y(pp,2),2*C_PI/F%ntiles))-C_PI/F%ntiles))
+                      if (Y(pp,1).lt.Rwall) flag(pp) = 0_is
+
+                   else
+                      flag(pp) = 0_is
+                   endif
+                endif
                 !write(output_unit_write,'("YR:",E17.10)') Y(1,1)
                 !write(output_unit_write,'("YZ:",E17.10)') Y(1,3)
                 !write(output_unit_write,'("IR: ",I16)') IR
@@ -1641,60 +1657,50 @@ CONTAINS
           !$OMP END PARALLEL DO
        end if
     else if (ALLOCATED(fields_domain%FLAG2D)) then
-       if (F%Dim2x1t) then
-          !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,IR,IZ) &
-          !$OMP& SHARED(Y,flag,fields_domain,bfield_2d)
-          do pp=1_idef,ss
+       
+       !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,IR,IZ) &
+       !$OMP& SHARED(Y,flag,fields_domain,bfield_2d)
+       do pp=1_idef,ss
 
-             IR = INT(FLOOR((Y(pp,1)  - fields_domain%Ro + 0.5_rp* &
-                  fields_domain%DR)/fields_domain%DR) + 1.0_rp,idef)
-             IZ = INT(FLOOR((Y(pp,3)  + ABS(fields_domain%Zo) + 0.5_rp* &
-                  fields_domain%DZ)/fields_domain%DZ) + 1.0_rp,idef)
+          IR = INT(FLOOR((Y(pp,1)  - fields_domain%Ro + 0.5_rp* &
+               fields_domain%DR)/fields_domain%DR) + 1.0_rp,idef)
+          IZ = INT(FLOOR((Y(pp,3)  + ABS(fields_domain%Zo) + 0.5_rp* &
+               fields_domain%DZ)/fields_domain%DZ) + 1.0_rp,idef)
 
-             if ((IR.lt.0).or.(IZ.lt.0).or.(IR.GT. &
-                  bfield_2d%NR).OR.(IZ.GT.bfield_2d%NZ)) then
-                !write(output_unit_write,'("YR:",E17.10)') Y(1,1)
-                !write(output_unit_write,'("YZ:",E17.10)') Y(1,3)
-                !write(output_unit_write,'("IR: ",I16)') IR
-                !write(output_unit_write,'("IZ: ",I16)') IZ
-             end if
-
+          if ((IR.lt.0).or.(IZ.lt.0).or.(IR.GT. &
+               bfield_2d%NR).OR.(IZ.GT.bfield_2d%NZ)) then
+             !write(output_unit_write,'("YR:",E17.10)') Y(1,1)
+             !write(output_unit_write,'("YZ:",E17.10)') Y(1,3)
              !write(output_unit_write,'("IR: ",I16)') IR
              !write(output_unit_write,'("IZ: ",I16)') IZ
-             
-             if ((fields_domain%FLAG2D(IR,IZ).NE.1_is).OR.((IR.GT. &
-                  bfield_2d%NR).OR.(IZ.GT.bfield_2d%NZ))) then
-                !write(output_unit_write,*) 'here'
+             call KORC_ABORT(23)
+          end if
+
+          !write(output_unit_write,'("IR: ",I16)') IR
+          !write(output_unit_write,'("IZ: ",I16)') IZ
+
+          if ((fields_domain%FLAG2D(IR,IZ).NE.1_is).OR.((IR.GT. &
+               bfield_2d%NR).OR.(IZ.GT.bfield_2d%NZ))) then
+             !write(output_unit_write,*) 'here'
+             if (F%Analytic_IWL.eq.'NONE') then
                 flag(pp) = 0_is
-             end if
-          end do
-          !$OMP END PARALLEL DO
-          
-       else
-          !$OMP PARALLEL DO FIRSTPRIVATE(ss) PRIVATE(pp,IR,IZ) &
-          !$OMP& SHARED(Y,flag,fields_domain,bfield_2d)
-          do pp=1_idef,ss
+             else if (F%Analytic_IWL.eq.'D3D') then
+                if ((IR.lt.floor(bfield_2d%NR/6._rp)).and. &
+                     (IZ.gt.floor(bfield_2d%NZ/5._rp)).and. &
+                     (IZ.lt.floor(4._rp*bfield_2d%NZ/5._rp))) then
 
-             IR = INT(FLOOR((Y(pp,1)  - fields_domain%Ro + 0.5_rp* &
-                  fields_domain%DR)/fields_domain%DR) + 1.0_rp,idef)
-             IZ = INT(FLOOR((Y(pp,3)  + ABS(fields_domain%Zo) + 0.5_rp* &
-                  fields_domain%DZ)/fields_domain%DZ) + 1.0_rp,idef)
+                   Rwall=F%circumradius*cos(C_PI/F%ntiles)/ &
+                        (cos((mod(Y(pp,2),2*C_PI/F%ntiles))-C_PI/F%ntiles))
+                   if (Y(pp,1).lt.Rwall) flag(pp) = 0_is
+                      
+                else
+                   flag(pp) = 0_is
+                endif
+             endif
+          end if
+       end do
+       !$OMP END PARALLEL DO
 
-             if ((IR.lt.0).or.(IZ.lt.0).or.(IR.GT. &
-                  bfield_2d%NR).OR.(IZ.GT.bfield_2d%NZ)) then
-                !write(output_unit_write,'("YR:",E17.10)') Y(1,1)
-                !write(output_unit_write,'("YZ:",E17.10)') Y(1,3)
-                !write(output_unit_write,'("IR: ",I16)') IR
-                !write(output_unit_write,'("IZ: ",I16)') IZ
-             end if
-
-             if ((fields_domain%FLAG2D(IR,IZ).NE.1_is).OR.((IR.GT. &
-                  bfield_2d%NR).OR.(IZ.GT.bfield_2d%NZ))) then
-                flag(pp) = 0_is
-             end if
-          end do
-          !$OMP END PARALLEL DO
-       endif
     end if
   end subroutine check_if_in_fields_domain
   
@@ -1727,6 +1733,7 @@ CONTAINS
     !! Particle iterator.
     INTEGER(ip)                                            :: ss
     !! Species iterator.
+    REAL(rp) :: Rwall
 
     
 !    write(output_unit_write,'("YR:",E17.10)') Y_R
@@ -1749,8 +1756,7 @@ CONTAINS
 
              IR = INT(FLOOR((Y_R(pp)  - fields_domain%Ro + &
                   0.5_rp*fields_domain%DR)/fields_domain%DR) + 1.0_rp,idef)
-             IPHI = INT(FLOOR((Y_PHI(pp)  - fields_domain%To &
-                  + 0.5_rp*fields_domain%DT)/fields_domain%DT) + 1.0_rp,idef)
+
              IZ = INT(FLOOR((Y_Z(pp)  + ABS(fields_domain%Zo) + &
                   0.5_rp*fields_domain%DZ)/fields_domain%DZ) + 1.0_rp,idef)
 
@@ -1758,9 +1764,23 @@ CONTAINS
 !             write(output_unit_write,'("IPHI: ",I16)') IPHI
 !             write(output_unit_write,'("IZ: ",I16)') IZ
              
-             if ((fields_domain%FLAG3D(IR,IPHI,IZ).NE.1_is).OR. &
+             if ((fields_domain%FLAG3D(IR,1,IZ).NE.1_is).OR. &
                   ((IR.GT.bfield_2X1T%NR).OR.(IZ.GT.bfield_2X1T%NZ))) then
-                flag(pp) = 0_is
+                if (F%Analytic_IWL.eq.'NONE') then
+                   flag(pp) = 0_is
+                else if (F%Analytic_IWL.eq.'D3D') then
+                   if ((IR.lt.floor(bfield_2d%NR/6._rp)).and. &
+                        (IZ.gt.floor(bfield_2d%NZ/5._rp)).and. &
+                        (IZ.lt.floor(4._rp*bfield_2d%NZ/5._rp))) then
+
+                      Rwall=F%circumradius*cos(C_PI/F%ntiles)/ &
+                           (cos((mod(Y_PHI(pp),2*C_PI/F%ntiles))-C_PI/F%ntiles))
+                      if (Y_R(pp).lt.Rwall) flag(pp) = 0_is
+
+                   else
+                      flag(pp) = 0_is
+                   endif
+                endif
 
                 !write(output_unit_write,'("YR:",E17.10)') Y_R(pp)
                 !write(output_unit_write,'("YPHI:",E17.10)') Y_PHI(pp)
@@ -1843,7 +1863,21 @@ CONTAINS
           
           if ((fields_domain%FLAG2D(IR,IZ).NE.1_is).OR. &
                ((IR.GT.bfield_2d%NR).OR.(IZ.GT.bfield_2d%NZ))) then
-             flag(pp) = 0_is
+             if (F%Analytic_IWL.eq.'NONE') then
+                flag(pp) = 0_is
+             else if (F%Analytic_IWL.eq.'D3D') then
+                if ((IR.lt.floor(bfield_2d%NR/6._rp)).and. &
+                     (IZ.gt.floor(bfield_2d%NZ/5._rp)).and. &
+                     (IZ.lt.floor(4._rp*bfield_2d%NZ/5._rp))) then
+
+                   Rwall=F%circumradius*cos(C_PI/F%ntiles)/ &
+                        (cos((mod(Y_PHI(pp),2*C_PI/F%ntiles))-C_PI/F%ntiles))
+                   if (Y_R(pp).lt.Rwall) flag(pp) = 0_is
+
+                else
+                   flag(pp) = 0_is
+                endif
+             endif
 
 !             write(output_unit_write,'("Shit''s fucked.")')
           end if

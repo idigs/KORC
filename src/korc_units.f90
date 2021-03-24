@@ -156,6 +156,7 @@ subroutine normalize_variables(params,spp,F,P)
   F%E_pulse=F%E_pulse/params%cpp%time
   F%E_width=F%E_width/params%cpp%time
   F%t0_2x1t=F%t0_2x1t/params%cpp%time
+  F%circumradius=F%circumradius/params%cpp%length
 
   P%a = P%a/params%cpp%length
   P%R0 = P%R0/params%cpp%length

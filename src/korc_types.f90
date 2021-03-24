@@ -566,6 +566,9 @@ module korc_types
      REAL(rp)  :: AMP
      REAL(rp)  :: MARS_AMP_Scale
      !! interpolated E field
+     CHARACTER(30) :: Analytic_IWL
+     INTEGER :: ntiles
+     REAL(rp) :: circumradius
      INTEGER 			:: res_double
      INTEGER, DIMENSION(3) 			:: dims 
      !! Dimensions of the KORC vector field. dims=(number of grid 

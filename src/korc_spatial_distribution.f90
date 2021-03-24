@@ -1299,12 +1299,14 @@ subroutine MH_psi(params,spp,F)
   !! Previous sample of R location
   REAL(rp) 				:: Z_buffer
   !! Previous sample of Z location
+  REAL(rp) 				:: PHI_buffer
  
 
   REAL(rp) 				:: R_test
   !! Present sample of R location
   REAL(rp) 				:: Z_test
   !! Present sample of Z location
+  REAL(rp) 				:: PHI_test
 
   REAL(rp) 				:: psi_max,psi_max_buff
   REAL(rp)  :: PSIp_lim,PSIP0,PSIN,PSIN0,PSIN1,sigma,psi0,psi1
@@ -1374,6 +1376,7 @@ subroutine MH_psi(params,spp,F)
      
      R_buffer = spp%Ro
      Z_buffer = spp%Zo
+     PHI_buffer = 0._rp
 
 
      if (.not.params%SameRandSeed) then
@@ -1414,6 +1417,7 @@ subroutine MH_psi(params,spp,F)
            !eta_test = eta_buffer + get_random_mkl_N(0.0_rp,spp%dth)
            Z_test = Z_buffer + get_random_N()*spp%dZ
         end do
+        PHI_test = 2.0_rp*C_PI*get_random_U()
 
         
         ! initialize 2D gaussian argument and distribution function, or
@@ -1421,12 +1425,13 @@ subroutine MH_psi(params,spp,F)
         if (ii==1) then
 
            spp%vars%Y(1,1)=R_buffer
-           spp%vars%Y(1,2)=0
+           spp%vars%Y(1,2)=PHI_buffer
            spp%vars%Y(1,3)=Z_buffer
 
            !write(6,*) 'R',R_buffer
            !write(6,*) 'Z',Z_buffer
-           
+
+           spp%vars%flagCon(1)=1_is
            if (params%field_model.eq.'M3D_C1'.or.params%field_model.eq.'NIMROD') then
 #ifdef FIO
               call get_fio_vector_potential(spp%vars,F,params)
@@ -1434,7 +1439,6 @@ subroutine MH_psi(params,spp,F)
            else
               call get_fields(params,spp%vars,F)
            end if
-           spp%vars%flagCon=1_is
 
            !write(6,*) 'may have crashed'
 
@@ -1449,8 +1453,6 @@ subroutine MH_psi(params,spp,F)
            
            psi0=spp%vars%PSI_P(1)
            PSIN0=(psi0-PSIp0)/(PSIp_lim-PSIp0)
-
-
            
         end if
         
@@ -1461,9 +1463,10 @@ subroutine MH_psi(params,spp,F)
 !        psi1=PSI_ROT_exp(R_test,spp%Ro,spp%sigmaR,Z_test,spp%Zo, &
         !             spp%sigmaZ,theta_rad)
         spp%vars%Y(1,1)=R_test
-        spp%vars%Y(1,2)=0._rp
+        spp%vars%Y(1,2)=PHI_test
         spp%vars%Y(1,3)=Z_test
 
+        spp%vars%flagCon(1)=1_is
         if (params%field_model.eq.'M3D_C1'.or.params%field_model.eq.'NIMROD') then
 #ifdef FIO
            call get_fio_vector_potential(spp%vars,F,params)
@@ -1471,7 +1474,6 @@ subroutine MH_psi(params,spp,F)
         else
            call get_fields(params,spp%vars,F)
         end if
-        spp%vars%flagCon=1_is
         
         psi1=spp%vars%PSI_P(1)
 
@@ -1496,7 +1498,7 @@ subroutine MH_psi(params,spp,F)
         ! phase space and cylindrical coordinate Jacobian R for spatial
         ! phase space incorporated here.
 
-        ratio = indicator(PSIN1,psi_max)* &
+        ratio = real(spp%vars%flagCon(1))*indicator(PSIN1,psi_max)* &
              R_test*EXP(-PSIN1/sigma)/ &
              (R_buffer*EXP(-PSIN0/sigma))
 
@@ -1507,6 +1509,7 @@ subroutine MH_psi(params,spp,F)
            accepted=.true.
            R_buffer = R_test
            Z_buffer = Z_test
+           PHI_buffer = PHI_test
            ii = ii + 1_idef
 
            !write(output_unit_write,*) 'PSIN',PSIN1
@@ -1518,6 +1521,7 @@ subroutine MH_psi(params,spp,F)
               accepted=.true.
               R_buffer = R_test
               Z_buffer = Z_test
+              PHI_buffer = PHI_test
               ii = ii + 1_idef
 
               !write(output_unit_write,*) 'PSIN',PSIN1
@@ -1543,7 +1547,8 @@ subroutine MH_psi(params,spp,F)
         !Z_test = Z_buffer + random_norm(0.0_rp,spp%dZ)
         !Z_test = Z_buffer + get_random_mkl_N(0.0_rp,spp%dZ)
         Z_test = Z_buffer + get_random_N()*spp%dZ
-        
+
+        PHI_test = 2.0_rp*C_PI*get_random_U()
 
         do while ((R_test.GT.max_R).OR.(R_test .LT. min_R))
            !eta_test = eta_buffer + random_norm(0.0_rp,spp%dth)
@@ -1564,9 +1569,10 @@ subroutine MH_psi(params,spp,F)
 !        psi1=PSI_ROT_exp(R_test,spp%Ro,spp%sigmaR,Z_test,spp%Zo, &
 !             spp%sigmaZ,theta_rad)
         spp%vars%Y(1,1)=R_test
-        spp%vars%Y(1,2)=0
+        spp%vars%Y(1,2)=PHI_test
         spp%vars%Y(1,3)=Z_test
 
+        spp%vars%flagCon(1)=1_is
         if (params%field_model.eq.'M3D_C1'.or.params%field_model.eq.'NIMROD') then
 #ifdef FIO
            call get_fio_vector_potential(spp%vars,F,params)
@@ -1574,7 +1580,7 @@ subroutine MH_psi(params,spp,F)
         else
            call get_fields(params,spp%vars,F)
         end if
-        spp%vars%flagCon=1_is
+
         
         psi1=spp%vars%PSI_P(1)
 
@@ -1595,7 +1601,7 @@ subroutine MH_psi(params,spp,F)
         !write(output_unit_write,*) 'PSIN0',PSIN0
 
         
-        ratio = indicator(PSIN1,psi_max_buff)* &
+        ratio = real(spp%vars%flagCon(1))*indicator(PSIN1,psi_max_buff)* &
              R_test*EXP(-PSIN1/sigma)/ &
              (R_buffer*EXP(-PSIN0/sigma))
 
@@ -1605,7 +1611,8 @@ subroutine MH_psi(params,spp,F)
         if (ratio .GE. 1.0_rp) then
            accepted=.true.
            R_buffer = R_test
-           Z_buffer = Z_test                     
+           Z_buffer = Z_test
+           PHI_buffer = PHI_test                     
         else
            !call RANDOM_NUMBER(rand_unif)
            !if (rand_unif .LT. ratio) then
@@ -1614,6 +1621,7 @@ subroutine MH_psi(params,spp,F)
               accepted=.true.
               R_buffer = R_test
               Z_buffer = Z_test
+              PHI_buffer = PHI_test
            end if
         end if
 
@@ -1627,6 +1635,7 @@ subroutine MH_psi(params,spp,F)
              ACCEPTED) THEN
            R_samples(ii) = R_buffer
            Z_samples(ii) = Z_buffer
+           PHI_samples(ii) = PHI_buffer
 
 
            !write(output_unit_write,*) 'PSIN',PSIN1
@@ -1638,7 +1647,6 @@ subroutine MH_psi(params,spp,F)
            !call RANDOM_NUMBER(rand_unif)
            !PHI_samples(ii) = 2.0_rp*C_PI*rand_unif
            !PHI_samples(ii) = 2.0_rp*C_PI*get_random_mkl_U()
-           PHI_samples(ii) = 2.0_rp*C_PI*get_random_U()
            ii = ii + 1_idef 
         END IF
         

@@ -2212,6 +2212,9 @@ CONTAINS
        F%ind0_2x1t = ind0_2x1t
        F%psip_conv = psip_conv
        F%MARS_AMP_Scale = MARS_AMP_Scale
+       F%Analytic_IWL=Analytic_IWL
+       F%ntiles=ntiles
+       F%circumradius=circumradius
 
        if (params%proceed) then
           call load_prev_iter(params)
