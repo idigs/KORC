@@ -250,7 +250,8 @@ module korc_input
   REAL(rp) :: Zeff_sing = 1. 
     ! Effective atomic number
   REAL(rp) :: dTau_sing = 5.E-2
-    ! Subcycling time step in collisional time units (Tau)
+  ! Subcycling time step in collisional time units (Tau)
+  REAL(rp) :: p_therm = 1._rp
 
   !! -----------------------------------------------
   !! CollisionParamsMultipleSpecies
@@ -421,7 +422,7 @@ CONTAINS
          Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename,axisymmetric, &
          n_lamshelf,n_shelfdelay,n_tauin,n_tauout,n_shelf,psiN_0
     NAMELIST /CollisionParamsSingleSpecies/ Te_sing,Ti_sing,ne_sing, &
-         Zeff_sing,dTau_sing
+         Zeff_sing,dTau_sing,p_therm
     NAMELIST /CollisionParamsMultipleSpecies/ num_impurity_species,Te_mult, &
          ne_mult,Zo_mult,Zj_mult,nz_mult,IZj_mult,neut_prof
     NAMELIST /AvalancheGenerationPDF/ max_pitch_angle_aval, &

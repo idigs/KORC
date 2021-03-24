@@ -115,6 +115,7 @@ module korc_collisions
      REAL(rp) 			:: dTau
      ! Subcycling time step in collisional time units (Tau)
      INTEGER(ip)		:: subcycling_iterations
+     REAL(rp) :: p_therm
 
      REAL(rp), DIMENSION(3) 	:: x = (/1.0_rp,0.0_rp,0.0_rp/)
      REAL(rp), DIMENSION(3) 	:: y = (/0.0_rp,1.0_rp,0.0_rp/)
@@ -351,6 +352,7 @@ contains
     cparams_ss%ne = ne_sing
     cparams_ss%Zeff = Zeff_sing
     cparams_ss%dTau = dTau_sing
+    cparams_ss%p_therm = p_therm
 
     cparams_ss%rD = SQRT(C_E0*cparams_ss%Te/(cparams_ss%ne*C_E**2*(1.0_rp + &
          cparams_ss%Te/cparams_ss%Ti)))
@@ -601,7 +603,7 @@ contains
   subroutine define_collisions_time_step(params)
     TYPE(KORC_PARAMS), INTENT(IN) 	:: params
     INTEGER(ip) 			:: iterations
-    REAL(rp) 				:: E
+    REAL(rp) 				:: E,E_therm
     REAL(rp) 				:: v
     REAL(rp) 				:: Tau
     REAL(rp), DIMENSION(3) 		:: nu
@@ -610,6 +612,12 @@ contains
 
     if (params%collisions) then
        E = C_ME*C_C**2 + params%minimum_particle_energy*params%cpp%energy
+       E_therm=sqrt((cparams_ss%p_therm*params%cpp%mass*params%cpp%velocity* &
+            C_C)**2+(C_ME*C_C**2)**2)
+
+       write(6,'("E_min (MeV)",E17.10)') E/(10**6*C_E)
+       write(6,'("E_therm (MeV)",E17.10)') E_therm/(10**6*C_E)
+
        v = SQRT(1.0_rp - (C_ME*C_C**2/E)**2)
 
        if (params%profile_model.eq.'M3D_C1') then
@@ -2006,7 +2014,7 @@ contains
 !       write(output_unit_write,'("E_PHI_COL: ",E17.10)') E_PHI
        
        do cc=1_idef,pchunk
-          if ((pm(cc).lt.1._rp).and.flagCol(cc).eq.1_ip) then
+          if ((pm(cc).lt.cparams_ss%p_therm).and.flagCol(cc).eq.1_ip) then
 !             write(output_unit_write,'("Momentum less than zero")')
              !             stop
 !             write(output_unit_write,'("Particle not tracked at: ",E17.10," &
@@ -2275,7 +2283,7 @@ contains
 !       write(output_unit_write,'("E_PHI_COL: ",E17.10)') E_PHI
        
        do cc=1_idef,pchunk
-          if ((pm(cc).lt.1._rp).and.flagCol(cc).eq.1_ip) then
+          if ((pm(cc).lt.cparams_ss%p_therm).and.flagCol(cc).eq.1_ip) then
 !             write(output_unit_write,'("Momentum less than zero")')
              !             stop
 !             write(output_unit_write,'("Particle not tracked at: ",E17.10," &
