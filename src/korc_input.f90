@@ -265,7 +265,7 @@ module korc_input
     ! Impurity densities
   REAL(rp), DIMENSION(10)  :: IZj_mult = 15.7596
     ! Ionization energy of impurity in eV
-  CHARACTER :: neut_prof = 'UNIFORM'
+  CHARACTER(20) :: neut_prof = 'UNIFORM'
 
   !! -----------------------------------------------
   !! AvalancheGenerationPDF
