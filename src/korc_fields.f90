@@ -2216,7 +2216,7 @@ CONTAINS
        F%ntiles=ntiles
        F%circumradius=circumradius
 
-       if (params%proceed) then
+       if (params%proceed.and.F%ReInterp_2x1t) then
           call load_prev_iter(params)
           F%ind_2x1t=params%prev_iter_2x1t
        else

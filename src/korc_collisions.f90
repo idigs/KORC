@@ -615,8 +615,8 @@ contains
        E_therm=sqrt((cparams_ss%p_therm*params%cpp%mass*params%cpp%velocity* &
             C_C)**2+(C_ME*C_C**2)**2)
 
-       write(6,'("E_min (MeV)",E17.10)') E/(10**6*C_E)
-       write(6,'("E_therm (MeV)",E17.10)') E_therm/(10**6*C_E)
+       !write(6,'("E_min (MeV)",E17.10)') E/(10**6*C_E)
+       !write(6,'("E_therm (MeV)",E17.10)') E_therm/(10**6*C_E)
 
        v = SQRT(1.0_rp - (C_ME*C_C**2/E)**2)
 
