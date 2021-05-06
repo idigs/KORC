@@ -51,6 +51,10 @@ program main
   !!
   !! Subroutine [[initialize_communications]] in [[korc_hpc]] that 
   !! initializes MPI and OpenMP communications.
+
+  if (params%mpi_params%rank .EQ. 0) then
+     flush(output_unit_write)
+  end if
   
   call timing_KORC(params)
   !! <h4>2\. Timers</h4>
@@ -60,6 +64,10 @@ program main
   
   ! * * * INITIALIZATION STAGE * * *!
 
+  if (params%mpi_params%rank .EQ. 0) then
+     flush(output_unit_write)
+  end if
+  
   call initialize_HDF5()
   !!<h3>Initialization</h3>
   !!
@@ -67,6 +75,10 @@ program main
   !!
   !! Subroutine [[initialize_HDF5]] in [[korc_HDF5]] that initializes
   !! HDF5 library. 
+
+  if (params%mpi_params%rank .EQ. 0) then
+     flush(output_unit_write)
+  end if
   
   call initialize_korc_parameters(params)
   !! <h4>2\. Initialize korc parameters</h4>
@@ -74,6 +86,10 @@ program main
   !! Subroutine [[initialize_korc_parameters]] in [[korc_initialize]] that 
   !! initializes paths and KORC parameters through [[load_korc_params]]
   !! on MPI processes.
+
+  if (params%mpi_params%rank .EQ. 0) then
+     flush(output_unit_write)
+  end if
   
   call initialize_fields(params,F)
   !! <h4>3\. Initialize fields</h4>
@@ -235,6 +251,10 @@ program main
   !! field interpolations. 
   !! Only initialized if collisions (params%collisions==T) are present for
   !! ne, Te, Zeff
+
+  if (params%mpi_params%rank .EQ. 0) then
+     flush(output_unit_write)
+  end if
   
   if (params%mpi_params%rank .EQ. 0) then
      write(output_unit_write,'("* * * * INITIALIZING INITIAL CONDITIONS * * * *",/)')
@@ -355,7 +375,8 @@ program main
   end if
 
   if (params%orbit_model(1:2).eq.'FO'.and.params%field_model(1:3).eq.'EXT' &
-       .and..not.(params%field_model(10:13).eq.'MARS')) then
+       .and..not.((params%field_model(10:13).eq.'MARS').or. &
+       (params%field_model(10:14).eq.'AORSA'))) then
      call FO_init(params,F,spp,.false.,.true.)
      ! Initial half-time particle push
      
@@ -449,6 +470,23 @@ program main
      do it=params%ito,params%t_steps,params%t_skip
         call adv_FOinterp_mars_top(params,F,P,spp)
         
+        params%time = params%init_time &
+             +REAL(it-1_ip+params%t_skip,rp)*params%dt        
+        params%it = it-1_ip+params%t_skip
+
+        call save_simulation_outputs(params,spp,F)
+        call save_restart_variables(params,spp,F)
+     end do
+  end if
+
+  if (params%orbit_model(1:2).eq.'FO'.and. &
+       params%field_model(10:14).eq.'AORSA') then
+     call FO_init(params,F,spp,.false.,.true.)
+     ! Initial half-time particle push
+
+     do it=params%ito,params%t_steps,params%t_skip
+        call adv_FOinterp_aorsa_top(params,F,P,spp)
+
         params%time = params%init_time &
              +REAL(it-1_ip+params%t_skip,rp)*params%dt        
         params%it = it-1_ip+params%t_skip

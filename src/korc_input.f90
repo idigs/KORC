@@ -177,6 +177,7 @@ module korc_input
   !! -----------------------------------------------
   LOGICAL :: Bfield = .FALSE.
   LOGICAL :: B1field = .FALSE.
+  LOGICAL :: E1field = .FALSE.
   LOGICAL :: dBfield = .FALSE.
   LOGICAL :: axisymmetric_fields = .FALSE.
   LOGICAL :: Bflux = .FALSE.
@@ -195,6 +196,9 @@ module korc_input
   REAL(rp) :: PSIp_0=0.6
   REAL(rp) :: psip_conv=1.0
   REAL(rp)  :: MARS_AMP_Scale=1.0
+  REAL(rp)  :: AORSA_AMP_Scale=1.0
+  REAL(rp)  :: AORSA_freq=0.0
+  REAL(rp)  :: AORSA_nmode=0.0
   CHARACTER(30) :: Analytic_IWL='NONE'
   INTEGER :: ntiles=42
   REAL(rp) :: circumradius=1.016
@@ -416,7 +420,7 @@ CONTAINS
          axisymmetric_fields, Eo,E_dyn,E_pulse,E_width,res_double, &
          dim_1D,dt_E_SC,Ip_exp,PSIp_lim,Dim2x1t,t0_2x1t,E_2x1t,ReInterp_2x1t, &
          ind0_2x1t,PSIp_0,B1field,psip_conv,MARS_AMP_Scale,Analytic_IWL, &
-         ntiles,circumradius
+         ntiles,circumradius,AORSA_AMP_Scale,AORSA_freq,AORSA_nmode,E1field
     NAMELIST /plasmaProfiles/ radius_profile,ne_profile,neo,n_ne,a_ne, &
          Te_profile,Teo,n_Te,a_Te,n_REr0,n_tauion,n_lamfront,n_lamback, &
          Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename,axisymmetric, &

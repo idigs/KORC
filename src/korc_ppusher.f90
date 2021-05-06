@@ -25,6 +25,7 @@ module korc_ppusher
        adv_FOeqn_top,&
        adv_FOinterp_top,&
        adv_FOinterp_mars_top,&
+       adv_FOinterp_aorsa_top,&
 #ifdef FIO
        adv_FOfio_top,&
 #endif
@@ -313,6 +314,9 @@ contains
              else if (params%field_model(10:13).eq.'MARS') then
                 call interp_FOfields_mars_p(params,pchunk,F,Y_R,Y_PHI,Y_Z, &
                      B_X,B_Y,B_Z,PSIp,flagCon)
+             else if (params%field_model(10:14).eq.'AORSA') then
+                call interp_FOfields_aorsa_p(0._rp,params,pchunk,F, &
+                     Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,PSIp,flagCon)
                 
              end if
 
@@ -1462,7 +1466,7 @@ contains
     end do !species iterator
 
   end subroutine adv_FOinterp_top
-  
+
   subroutine adv_FOinterp_mars_top(params,F,P,spp)  
     TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
     !! Core KORC simulation parameters.
@@ -1669,7 +1673,216 @@ contains
     end do !species iterator
 
   end subroutine adv_FOinterp_mars_top
+  
+  subroutine adv_FOinterp_aorsa_top(params,F,P,spp)  
+    TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
+    !! Core KORC simulation parameters.
+    TYPE(FIELDS), INTENT(IN)                                   :: F
+    !! An instance of the KORC derived type FIELDS.
+    TYPE(PROFILES), INTENT(IN)                                 :: P
+    !! An instance of the KORC derived type PROFILES.
+    TYPE(SPECIES), DIMENSION(:), ALLOCATABLE, INTENT(INOUT)    :: spp
+    !! An instance of the derived type SPECIES containing all the parameters
+    !! and simulation variables of the different species in the simulation.
+    REAL(rp), DIMENSION(params%pchunk) :: Bmag
+    REAL(rp), DIMENSION(params%pchunk) :: b_unit_X,b_unit_Y,b_unit_Z
+    REAL(rp), DIMENSION(params%pchunk) :: v,vpar,vperp
+    REAL(rp), DIMENSION(params%pchunk) :: tmp
+    REAL(rp), DIMENSION(params%pchunk) :: g
+    REAL(rp), DIMENSION(params%pchunk) :: cross_X,cross_Y,cross_Z
+    REAL(rp), DIMENSION(params%pchunk) :: vec_X,vec_Y,vec_Z
+    REAL(rp), DIMENSION(params%pchunk) :: X_X,X_Y,X_Z
+    REAL(rp), DIMENSION(params%pchunk) :: Y_R,Y_PHI,Y_Z
+    REAL(rp), DIMENSION(params%pchunk) :: V_X,V_Y,V_Z
+    REAL(rp), DIMENSION(params%pchunk) :: B_X,B_Y,B_Z
+    REAL(rp), DIMENSION(params%pchunk) :: E_X,E_Y,E_Z
+    REAL(rp), DIMENSION(params%pchunk) :: PSIp
+    INTEGER(is),DIMENSION(params%pchunk) :: flagCon,flagCol
+    REAL(rp) :: a,m_cache,q_cache,time    
+    INTEGER                                                    :: ii
+    !! Species iterator.
+    INTEGER                                                    :: pp,pchunk
+    !! Particles iterator.
+    INTEGER                                                    :: cc
+    !! Chunk iterator.
+    INTEGER(ip)                                                    :: tt
+    !! time iterator.     
 
+    do ii = 1_idef,params%num_species      
+
+       pchunk=params%pchunk
+       m_cache=spp(ii)%m
+       q_cache=spp(ii)%q
+       a = q_cache*params%dt/m_cache
+
+
+       !$OMP PARALLEL DO default(none) &
+       !$OMP& FIRSTPRIVATE(a,m_cache,q_cache,pchunk,E0) &
+       !$OMP& shared(params,ii,spp,P,F) &
+       !$OMP& PRIVATE(pp,tt,Bmag,cc,X_X,X_Y,X_Z,V_X,V_Y,V_Z,B_X,B_Y,B_Z, &
+       !$OMP& E_X,E_Y,E_Z,b_unit_X,b_unit_Y,b_unit_Z,v,vpar,vperp,tmp, &
+       !$OMP& cross_X,cross_Y,cross_Z,vec_X,vec_Y,vec_Z,g, &
+       !$OMP& Y_R,Y_PHI,Y_Z,flagCon,flagCol,PSIp,time)
+       do pp=1_idef,spp(ii)%ppp,pchunk
+
+          !$OMP SIMD
+          do cc=1_idef,pchunk
+             X_X(cc)=spp(ii)%vars%X(pp-1+cc,1)
+             X_Y(cc)=spp(ii)%vars%X(pp-1+cc,2)
+             X_Z(cc)=spp(ii)%vars%X(pp-1+cc,3)
+
+             Y_R(cc)=0._rp
+             Y_PHI(cc)=0._rp
+             Y_Z(cc)=0._rp
+             
+             V_X(cc)=spp(ii)%vars%V(pp-1+cc,1)
+             V_Y(cc)=spp(ii)%vars%V(pp-1+cc,2)
+             V_Z(cc)=spp(ii)%vars%V(pp-1+cc,3)
+
+             B_X(cc)=spp(ii)%vars%B(pp-1+cc,1)
+             B_Y(cc)=spp(ii)%vars%B(pp-1+cc,2)
+             B_Z(cc)=spp(ii)%vars%B(pp-1+cc,3)
+             
+             E_X(cc)=spp(ii)%vars%E(pp-1+cc,1)
+             E_Y(cc)=spp(ii)%vars%E(pp-1+cc,2)
+             E_Z(cc)=spp(ii)%vars%E(pp-1+cc,3)
+
+             PSIp(cc)=spp(ii)%vars%PSI_P(pp-1+cc)
+
+             g(cc)=spp(ii)%vars%g(pp-1+cc)
+
+             flagCon(cc)=spp(ii)%vars%flagCon(pp-1+cc)
+             flagCol(cc)=spp(ii)%vars%flagCol(pp-1+cc)
+          end do
+          !$OMP END SIMD
+
+
+          do tt=1_ip,params%t_skip
+
+             time=(params%time+params%dt*tt)*params%cpp%time
+             
+             call cart_to_cyl_p(pchunk,X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
+
+             call interp_FOfields_aorsa_p(time,params,pchunk,F,Y_R,Y_PHI,Y_Z, &
+                  B_X,B_Y,B_Z,E_X,E_Y,E_Z,PSIp,flagCon)
+
+
+
+             !               write(output_unit_write,'("B_X: ",E17.10)') B_X(1)
+             !               write(output_unit_write,'("B_Y: ",E17.10)') B_Y(1)
+             !               write(output_unit_write,'("B_Z: ",E17.10)') B_Z(1)
+
+             call advance_FOinterp_vars(tt,a,q_cache,m_cache,params, &
+                  X_X,X_Y,X_Z,V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z, &
+                  g,flagCon,flagCol,P,F,PSIp)
+          end do !timestep iterator
+
+          !$OMP SIMD
+          do cc=1_idef,pchunk
+             spp(ii)%vars%X(pp-1+cc,1)=X_X(cc)
+             spp(ii)%vars%X(pp-1+cc,2)=X_Y(cc)
+             spp(ii)%vars%X(pp-1+cc,3)=X_Z(cc)
+
+             spp(ii)%vars%V(pp-1+cc,1)=V_X(cc)
+             spp(ii)%vars%V(pp-1+cc,2)=V_Y(cc)
+             spp(ii)%vars%V(pp-1+cc,3)=V_Z(cc)
+
+             spp(ii)%vars%g(pp-1+cc) = g(cc)
+             spp(ii)%vars%flagCon(pp-1+cc) = flagCon(cc)
+             spp(ii)%vars%flagCol(pp-1+cc) = flagCol(cc)
+
+             spp(ii)%vars%B(pp-1+cc,1) = B_X(cc)
+             spp(ii)%vars%B(pp-1+cc,2) = B_Y(cc)
+             spp(ii)%vars%B(pp-1+cc,3) = B_Z(cc)
+
+             spp(ii)%vars%E(pp-1+cc,1) = E_X(cc)
+             spp(ii)%vars%E(pp-1+cc,2) = E_Y(cc)
+             spp(ii)%vars%E(pp-1+cc,3) = E_Z(cc)
+
+             spp(ii)%vars%PSI_P(pp-1+cc) = PSIp(cc)
+          end do
+          !$OMP END SIMD
+
+
+          !$OMP SIMD
+          !          !$OMP& aligned(Bmag,B_X,B_Y,B_Z, &
+          !          !$OMP& b_unit_X,b_unit_Y,b_unit_Z,v,V_X,V_Y,V_Z,vpar, &
+          !          !$OMP& vperp,tmp,cross_X,cross_Y,cross_Z, &
+          !          !$OMP& vec_X,vec_Y,vec_Z,E_X,E_Y,E_Z)
+          do cc=1_idef,pchunk
+             !Derived output data
+             Bmag(cc) = SQRT(B_X(cc)*B_X(cc)+B_Y(cc)*B_Y(cc)+B_Z(cc)*B_Z(cc))
+
+             ! Parallel unit vector
+             b_unit_X(cc) = B_X(cc)/Bmag(cc)
+             b_unit_Y(cc) = B_Y(cc)/Bmag(cc)
+             b_unit_Z(cc) = B_Z(cc)/Bmag(cc)
+
+             v(cc) = SQRT(V_X(cc)*V_X(cc)+V_Y(cc)*V_Y(cc)+V_Z(cc)*V_Z(cc))
+             if (v(cc).GT.korc_zero) then
+                ! Parallel and perpendicular components of velocity
+                vpar(cc) = (V_X(cc)*b_unit_X(cc)+V_Y(cc)*b_unit_Y(cc)+ &
+                     V_Z(cc)*b_unit_Z(cc))
+
+                vperp(cc) =  v(cc)**2 - vpar(cc)**2
+                if ( vperp(cc) .GE. korc_zero ) then
+                   vperp(cc) = SQRT( vperp(cc) )
+                else
+                   vperp(cc) = 0.0_rp
+                end if
+
+                ! Pitch angle
+                spp(ii)%vars%eta(pp-1+cc) = 180.0_rp* &
+                     MODULO(ATAN2(vperp(cc),vpar(cc)),2.0_rp*C_PI)/C_PI
+
+                ! Magnetic moment
+                spp(ii)%vars%mu(pp-1+cc) = 0.5_rp*m_cache* &
+                     g(cc)**2*vperp(cc)**2/Bmag(cc)
+                ! See Northrop's book (The adiabatic motion of charged
+                ! particles)
+
+
+                
+                ! Radiated power
+                tmp(cc) = q_cache**4/(6.0_rp*C_PI*E0*m_cache**2)
+
+                cross_X(cc) = V_Y(cc)*B_Z(cc)-V_Z(cc)*B_Y(cc)
+                cross_Y(cc) = V_Z(cc)*B_X(cc)-V_X(cc)*B_Z(cc)
+                cross_Z(cc) = V_X(cc)*B_Y(cc)-V_Y(cc)*B_X(cc)
+
+                vec_X(cc) = E_X(cc) + cross_X(cc)
+                vec_Y(cc) = E_Y(cc) + cross_Y(cc)
+                vec_Z(cc) = E_Z(cc) + cross_Z(cc)
+
+                spp(ii)%vars%Prad(pp-1+cc) = tmp(cc)* &
+                     ( E_X(cc)*E_X(cc)+E_Y(cc)*E_Y(cc)+E_Z(cc)*E_Z(cc) + &
+                     cross_X(cc)*E_X(cc)+cross_Y(cc)*E_Y(cc)+ &
+                     cross_Z(cc)*E_Z(cc) + g(cc)**2* &
+                     ((E_X(cc)*V_X(cc)+E_Y(cc)*V_Y(cc)+E_Z(cc)*V_Z(cc))**2 &
+                     - vec_X(cc)*vec_X(cc)+vec_Y(cc)*vec_Y(cc)+ &
+                     vec_Z(cc)*vec_Z(cc)) )
+
+                ! Input power due to electric field
+                spp(ii)%vars%Pin(pp-1+cc) = q_cache*(E_X(cc)*V_X(cc)+ &
+                     E_Y(cc)*V_Y(cc)+E_Z(cc)*V_Z(cc))
+             else
+                spp(ii)%vars%eta(pp-1+cc) = 0.0_rp
+                spp(ii)%vars%mu(pp-1+cc) = 0.0_rp
+                spp(ii)%vars%Prad(pp-1+cc) = 0.0_rp
+                spp(ii)%vars%Pin(pp-1+cc) = 0.0_rp
+             end if
+
+          end do
+          !$OMP END SIMD
+
+
+       end do !particle chunk iterator
+       !$OMP END PARALLEL DO
+
+    end do !species iterator
+
+  end subroutine adv_FOinterp_aorsa_top
+  
   subroutine advance_FOinterp_vars(tt,a,q_cache,m_cache,params,X_X,X_Y,X_Z, &
        V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,g,flagCon,flagCol,P,F,PSIp)
     TYPE(KORC_PARAMS), INTENT(IN)                              :: params

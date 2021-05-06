@@ -2038,7 +2038,7 @@ CONTAINS
              F%Bflux=.TRUE.
              
              call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield,F%Bflux, &
-                  .false.,F%Efield,.FALSE.)
+                  .false.,F%Efield,.FALSE.,.FALSE.)
 
              do ii=1_idef,F%dims(1)
                 F%X%R(ii)=(F%Ro-F%AB%a)+(ii-1)*2*F%AB%a/(F%dims(1)-1)
@@ -2205,6 +2205,7 @@ CONTAINS
        F%Bflux = Bflux
        F%Bflux3D = Bflux3D
        F%Efield = Efield
+       F%E1field = E1field
        F%axisymmetric_fields = axisymmetric_fields
        F%Dim2x1t = Dim2x1t
        F%ReInterp_2x1t = ReInterp_2x1t
@@ -2215,6 +2216,9 @@ CONTAINS
        F%Analytic_IWL=Analytic_IWL
        F%ntiles=ntiles
        F%circumradius=circumradius
+       F%AORSA_AMP_Scale=AORSA_AMP_Scale
+       F%AORSA_freq=AORSA_freq
+       F%AORSA_nmode=AORSA_nmode
 
        if (params%proceed.and.F%ReInterp_2x1t) then
           call load_prev_iter(params)
@@ -2234,17 +2238,18 @@ CONTAINS
        
        F%res_double=res_double
        
-!       write(output_unit_write,'("E_dyn: ",E17.10)') E_dyn
+       !write(output_unit_write,'("E_dyn: ",E17.10)') E_dyn
 !       write(output_unit_write,'("E_pulse: ",E17.10)') E_pulse
 !       write(output_unit_write,'("E_width: ",E17.10)') E_width
        
        call load_dim_data_from_hdf5(params,F)
        !sets F%dims for 2D or 3D data
 
-       !write(output_unit_write,*) F%dims
-       
+       !write(6,*) F%dims
+              
        call which_fields_in_file(params,F%Bfield_in_file,F%Efield_in_file, &
-            F%Bflux_in_file,F%dBfield_in_file,F%B1field_in_file)
+            F%Bflux_in_file,F%dBfield_in_file,F%B1field_in_file, &
+            F%E1field_in_file)
 
        
        if (F%Bflux.AND..NOT.F%Bflux_in_file) then
@@ -2259,6 +2264,11 @@ CONTAINS
 
        if (F%B1field.AND..NOT.F%B1field_in_file) then
           write(output_unit_write,'("ERROR: Magnetic perturbation field to be used but no data in file!")')
+          call KORC_ABORT(18)
+       end if
+
+       if (F%E1field.AND..NOT.F%E1field_in_file) then
+          write(output_unit_write,'("ERROR: Electric perturbation field to be used but no data in file!")')
           call KORC_ABORT(18)
        end if
 
@@ -2284,7 +2294,8 @@ CONTAINS
           if (F%Dim2x1t) then
 
              call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
-                  F%Bflux,F%dBfield,F%Efield.AND.F%Efield_in_file,F%B1field)
+                  F%Bflux,F%dBfield,F%Efield.AND.F%Efield_in_file,F%B1field, &
+                  F%E1field)
              
              call ALLOCATE_3D_FIELDS_ARRAYS(params,F,F%Bfield, &
                   F%Efield,F%dBfield)
@@ -2292,36 +2303,39 @@ CONTAINS
           else if (params%orbit_model(1:2).eq.'FO') then
                 
              call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
-                  .TRUE.,F%dBfield,F%Efield,F%B1field) 
+                  .TRUE.,F%dBfield,F%Efield,F%B1field,F%E1field) 
              
           else
 
              call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
-                  F%Bflux,F%dBfield,F%Efield,F%B1field)             
+                  F%Bflux,F%dBfield,F%Efield,F%B1field,F%E1field)             
              
           end if
 
-       else if (params%field_model(10:13).eq.'MARS') then
+       else if ((params%field_model(10:13).eq.'MARS').OR. &
+            (params%field_model(10:14).eq.'AORSA')) then
           
           call ALLOCATE_2D_FIELDS_ARRAYS(params,F,F%Bfield, &
-               F%Bflux,F%dBfield,F%Efield,F%B1field)   
+               F%Bflux,F%dBfield,F%Efield,F%B1field,F%E1field)   
           
        else
           call ALLOCATE_3D_FIELDS_ARRAYS(params,F,F%Bfield,F%Efield,F%dBfield)
           
        end if
+
+              
        !allocates 2D or 3D data arrays (fields and spatial)
        
        
        call load_field_data_from_hdf5(params,F)
             
-       !       write(output_unit_write,*) F%PSIp
+              !write(output_unit_write,*) F%PSIp
 
        !write(output_unit_write,*) F%E_3D%PHI(:,F%ind0_2x1t,:)
 
        !write(6,*) F%B1Re_2D%R(:,200)
        !flush(6)
-       
+              
 !       end if
 
        if (F%Bflux.and..not.(params%field_model(10:13).eq.'MARS')) then
@@ -2958,10 +2972,12 @@ CONTAINS
   !! @param group_id HDF5 group identifier.
   !! @param subgroup_id HDF5 subgroup identifier.
   !! @param h5error HDF5 error status.
-  subroutine which_fields_in_file(params,Bfield,Efield,Bflux,dBfield,B1field)
+  subroutine which_fields_in_file(params,Bfield,Efield,Bflux,dBfield,B1field, &
+       E1field)
     TYPE(KORC_PARAMS), INTENT(IN)      :: params
     LOGICAL, INTENT(OUT)               :: Bfield
     LOGICAL, INTENT(OUT)               :: B1field
+    LOGICAL, INTENT(OUT)               :: E1field
     LOGICAL, INTENT(OUT)               :: dBfield
     LOGICAL, INTENT(OUT)               :: Efield
     LOGICAL, INTENT(OUT)               :: Bflux
@@ -2992,8 +3008,11 @@ CONTAINS
     gname = "PSIp"
     call h5lexists_f(h5file_id,TRIM(gname),Bflux,h5error)
 
-    gname = "ReBR"
+    gname = "ReBZ"
     call h5lexists_f(h5file_id,TRIM(gname),B1field,h5error)
+
+    gname = "ReEZ"
+    call h5lexists_f(h5file_id,TRIM(gname),E1field,h5error)
 
 
     call h5fclose_f(h5file_id, h5error)
@@ -3091,6 +3110,18 @@ CONTAINS
        F%AMP=F%AMP*F%MARS_AMP_Scale
        
     end if
+
+    if (params%field_model(10:14).eq.'AORSA') then
+
+       dset = '/PSIP0'
+       call load_from_hdf5(h5file_id,dset,F%PSIP_min)
+
+       dset = '/PSIPlim'
+       call load_from_hdf5(h5file_id,dset,F%PSIp_lim)
+
+       F%AMP=F%AORSA_AMP_Scale
+       
+    end if
     
     dset = '/Ro'
     call load_from_hdf5(h5file_id,dset,F%Ro)
@@ -3179,7 +3210,9 @@ CONTAINS
     end if
     
     if (F%B1field) then      
-          
+
+       if (params%field_model(10:13).eq.'MARS') then
+       
           dset = "/ReBR"
           call load_array_from_hdf5(h5file_id,dset,F%B1Re_2D%R)
 
@@ -3197,6 +3230,50 @@ CONTAINS
 
           dset = "/ImBZ"
           call load_array_from_hdf5(h5file_id,dset,F%B1Im_2D%Z)
+
+       else if (params%field_model(10:14).eq.'AORSA') then
+
+          dset = "/ReBX"
+          call load_array_from_hdf5(h5file_id,dset,F%B1Re_2DX%X)
+
+          dset = "/ReBY"
+          call load_array_from_hdf5(h5file_id,dset,F%B1Re_2DX%Y)
+
+          dset = "/ReBZ"
+          call load_array_from_hdf5(h5file_id,dset,F%B1Re_2DX%Z)
+
+          dset = "/ImBX"
+          call load_array_from_hdf5(h5file_id,dset,F%B1Im_2DX%X)
+
+          dset = "/ImBY"
+          call load_array_from_hdf5(h5file_id,dset,F%B1Im_2DX%Y)
+
+          dset = "/ImBZ"
+          call load_array_from_hdf5(h5file_id,dset,F%B1Im_2DX%Z)
+
+       endif
+
+    end if
+
+    if (F%E1field) then      
+       
+       dset = "/ReEX"
+       call load_array_from_hdf5(h5file_id,dset,F%E1Re_2DX%X)
+
+       dset = "/ReEY"
+       call load_array_from_hdf5(h5file_id,dset,F%E1Re_2DX%Y)
+
+       dset = "/ReEZ"
+       call load_array_from_hdf5(h5file_id,dset,F%E1Re_2DX%Z)
+
+       dset = "/ImEX"
+       call load_array_from_hdf5(h5file_id,dset,F%E1Im_2DX%X)
+
+       dset = "/ImEY"
+       call load_array_from_hdf5(h5file_id,dset,F%E1Im_2DX%Y)
+
+       dset = "/ImEZ"
+       call load_array_from_hdf5(h5file_id,dset,F%E1Im_2DX%Z)
 
     end if
     
@@ -3365,7 +3442,7 @@ CONTAINS
 
 
   subroutine ALLOCATE_2D_FIELDS_ARRAYS(params,F,bfield,bflux,dbfield, &
-       efield,b1field)
+       efield,b1field,e1field)
     !! @note Subroutine that allocates the variables keeping the axisymmetric
     !! fields data. @endnote
     TYPE (KORC_PARAMS), INTENT(IN) 	:: params
@@ -3375,6 +3452,7 @@ CONTAINS
     !! the loaded data.
     LOGICAL, INTENT(IN)            :: bfield
     LOGICAL, INTENT(IN)            :: b1field
+    LOGICAL, INTENT(IN)            :: e1field
     LOGICAL, INTENT(IN)            :: dbfield
     !! Logical variable that specifies if the variables that keep the magnetic
     !! field data is allocated (bfield=T) or not (bfield=F).
@@ -3406,10 +3484,28 @@ CONTAINS
        call ALLOCATE_V_FIELD_2D(F%dBdZ_2D,F%dims)
     end if
 
-    if (B1field.and.(.not.ALLOCATED(F%B1Re_2D%R))) then
-       call ALLOCATE_V_FIELD_2D(F%B1Re_2D,F%dims)
-       call ALLOCATE_V_FIELD_2D(F%B1Im_2D,F%dims)
-    end if
+    if (params%field_model(10:13).eq.'MARS') then
+
+       if (B1field.and.(.not.ALLOCATED(F%B1Re_2D%R))) then
+          call ALLOCATE_V_FIELD_2D(F%B1Re_2D,F%dims)
+          call ALLOCATE_V_FIELD_2D(F%B1Im_2D,F%dims)
+       end if
+       
+    else if (params%field_model(10:14).eq.'AORSA') then
+
+       if (B1field.and.(.not.ALLOCATED(F%B1Re_2DX%X))) then
+          call ALLOCATE_V_FIELD_2DX(F%B1Re_2DX,F%dims)
+          call ALLOCATE_V_FIELD_2DX(F%B1Im_2DX,F%dims)
+       end if
+
+       if (E1field.and.(.not.ALLOCATED(F%E1Re_2DX%X))) then
+          call ALLOCATE_V_FIELD_2DX(F%E1Re_2DX,F%dims)
+          call ALLOCATE_V_FIELD_2DX(F%E1Im_2DX,F%dims)
+       end if
+       
+    endif
+    
+
     
     if (efield.and.(.not.ALLOCATED(F%E_2D%R))) then
        call ALLOCATE_V_FIELD_2D(F%E_2D,F%dims)
@@ -3479,6 +3575,19 @@ CONTAINS
     ALLOCATE(F%PHI(dims(1),dims(3)))
     ALLOCATE(F%Z(dims(1),dims(3)))
   end subroutine ALLOCATE_V_FIELD_2D
+
+    !> @brief Subroutine that allocates the cartesian components of an axisymmetric field.
+  !!
+  !! @param[in,out] F Vector field to be allocated.
+  !! @param[in] dims Dimension of the mesh containing the field data.
+  subroutine ALLOCATE_V_FIELD_2DX(F,dims)
+    TYPE(V_FIELD_2DX), INTENT(INOUT)    :: F
+    INTEGER, DIMENSION(3), INTENT(IN)  :: dims
+
+    ALLOCATE(F%X(dims(1),dims(3)))
+    ALLOCATE(F%Y(dims(1),dims(3)))
+    ALLOCATE(F%Z(dims(1),dims(3)))
+  end subroutine ALLOCATE_V_FIELD_2DX
 
 
   !> @brief Subroutine that allocates the cylindrical components of a 3-D field.

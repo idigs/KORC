@@ -1361,6 +1361,49 @@ module EZspline
        real(ezspline_r8), intent(out):: fBRIm(k), fBPHIIm(k), fBZIm(k)
        integer, intent(out) :: ier
      end subroutine EZspline_interp2_FOmars_cloud_r8
+
+     subroutine EZspline_interp2_FOaorsa_cloud_r8(spline_oA, &
+          spline_oBXRe, spline_oBYRe, spline_oBZRe, &
+          spline_oBXIm, spline_oBYIm, spline_oBZIm, &
+          spline_oEXRe, spline_oEYRe, spline_oEZRe, &
+          spline_oEXIm, spline_oEYIm, spline_oEZIm, &
+          k, p1, p2, fA, fBXRe, fBYRe, fBZRe, &
+          fBXIm, fBYIm, fBZIm, fEXRe, fEYRe, fEZRe, &
+          fEXIm, fEYIm, fEZIm, ier)
+       use EZspline_obj
+       type(EZspline2_r8) spline_oA
+       type(EZspline2_r8) spline_oBXRe,spline_oBYRe,spline_oBZRe
+       type(EZspline2_r8) spline_oBXIm,spline_oBYIm,spline_oBZIm
+       type(EZspline2_r8) spline_oEXRe,spline_oEYRe,spline_oEZRe
+       type(EZspline2_r8) spline_oEXIm,spline_oEYIm,spline_oEZIm
+       integer, intent(in) :: k
+       real(ezspline_r8), intent(in) :: p1(k), p2(k)
+       real(ezspline_r8), intent(out):: fA(k,3)
+       real(ezspline_r8), intent(out):: fBXRe(k), fBYRe(k), fBZRe(k)
+       real(ezspline_r8), intent(out):: fBXIm(k), fBYIm(k), fBZIm(k)
+       real(ezspline_r8), intent(out):: fEXRe(k), fEYRe(k), fEZRe(k)
+       real(ezspline_r8), intent(out):: fEXIm(k), fEYIm(k), fEZIm(k)
+       integer, intent(out) :: ier
+     end subroutine EZspline_interp2_FOaorsa_cloud_r8
+
+     subroutine EZspline_interp2_GCvars_r8(spline_oBR, spline_oBPHI, &
+          spline_oBZ, spline_oER, spline_oEPHI, spline_oEZ, spline_ogradBR, &
+          spline_ogradBPHI, spline_ogradBZ, spline_ocurlbR, spline_ocurlbPHI, &
+          spline_ocurlbZ, p1, p2, fBR, fBPHI, fBZ, &
+          fER, fEPHI, fEZ, &
+          fgradBR, fgradBPHI, fgradBZ, fcurlbR, fcurlbPHI, fcurlbZ, ier)
+       use EZspline_obj
+       type(EZspline2_r8) spline_oBR,spline_oBPHI,spline_oBZ
+       type(EZspline2_r8) spline_oER,spline_oEPHI,spline_oEZ
+       type(EZspline2_r8) spline_ogradBR,spline_ogradBPHI,spline_ogradBZ
+       type(EZspline2_r8) spline_ocurlbR,spline_ocurlbPHI,spline_ocurlbZ
+       real(ezspline_r8), intent(in) :: p1, p2
+       real(ezspline_r8), intent(out):: fBR, fBPHI, fBZ
+       real(ezspline_r8), intent(out):: fER, fEPHI, fEZ
+       real(ezspline_r8), intent(out):: fgradBR, fgradBPHI, fgradBZ
+       real(ezspline_r8), intent(out):: fcurlbR, fcurlbPHI, fcurlbZ
+       integer, intent(out) :: ier
+     end subroutine EZspline_interp2_GCvars_r8
      
      subroutine EZspline_interp2_GCvars_cloud_r8(spline_oBR, spline_oBPHI, &
           spline_oBZ, spline_oER, spline_oEPHI, spline_oEZ, spline_ogradBR, &

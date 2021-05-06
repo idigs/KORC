@@ -70,6 +70,25 @@ module korc_types
      !! \(Z\) component of the vector field variable.
   END TYPE V_FIELD_3D
 
+  TYPE, PUBLIC :: V_FIELD_2DX
+     !! @note KORC 2-D vector field type @endnote
+     !! This KORC type represents a 2-D vector field varible in
+     !! cartesian coordinates. For example, this could be the magnetic
+     !! field in an axisymmetirc plasma, which can be written as
+     !! $$\mathbf{B}(R,Z) = B_X(R,Z)
+     !! \hat{X} + B_Y(R,Z) \hat{Y} + B_Z(R,Z) \hat{Z}.$$
+     !! All the members (components) of the V_FIELD_3D type follow the
+     !! following index convention:
+     !! (\(X\) index,\(Y\) index, \(Z\) index)
+
+     REAL(rp), DIMENSION(:,:), ALLOCATABLE :: X 
+     !! \(R\) component of the vector field variable.
+     REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Y 
+     !! \(\phi\) component of the vector field variable.
+     REAL(rp), DIMENSION(:,:), ALLOCATABLE :: Z 
+     !! \(Z\) component of the vector field variable.
+  END TYPE V_FIELD_2DX
+
   TYPE, PUBLIC :: V_FIELD_2D
      !! @note KORC 2-D vector field type @endnote
      !! This KORC type represents a 2-D vector field varible in cylindrical
@@ -529,6 +548,10 @@ module korc_types
      TYPE(V_FIELD_2D) 				:: B_2D
      TYPE(V_FIELD_2D) 				:: B1Re_2D
      TYPE(V_FIELD_2D) 				:: B1Im_2D
+     TYPE(V_FIELD_2DX) 				:: B1Re_2DX
+     TYPE(V_FIELD_2DX) 				:: E1Im_2DX
+     TYPE(V_FIELD_2DX) 				:: E1Re_2DX
+     TYPE(V_FIELD_2DX) 				:: B1Im_2DX
      TYPE(V_FIELD_2D) 				:: dBdR_2D
      TYPE(V_FIELD_2D) 				:: dBdPHI_2D
      TYPE(V_FIELD_2D) 				:: dBdZ_2D 
@@ -565,6 +588,9 @@ module korc_types
      REAL(rp)  :: PSIp_lim,PSIp_0
      REAL(rp)  :: AMP
      REAL(rp)  :: MARS_AMP_Scale
+     REAL(rp)  :: AORSA_AMP_Scale
+     REAL(rp)  :: AORSA_freq
+     REAL(rp)  :: AORSA_nmode
      !! interpolated E field
      CHARACTER(30) :: Analytic_IWL
      INTEGER :: ntiles
@@ -602,6 +628,7 @@ module korc_types
      LOGICAL 					:: Bflux
      LOGICAL 					:: Bflux3D
      LOGICAL 					:: B1field
+     LOGICAL 					:: E1field
      !! Flag to indicate whether a pre-computed poloidal magnetic flux will
      !! be used (Bflux=T) or not (Bflux=F).
      LOGICAL 					:: Efield 
@@ -610,7 +637,8 @@ module korc_types
      LOGICAL 					:: Bfield_in_file 
      !! Flag to indicate if a pre-computed magnetic field is in the input file.
      LOGICAL 					:: dBfield_in_file
-     LOGICAL 					:: B1field_in_file 
+     LOGICAL 					:: B1field_in_file
+     LOGICAL 					:: E1field_in_file 
      !! Flag to indicate if a pre-computed magnetic field is in the input file.
      LOGICAL 					:: Bflux_in_file 
      !! Flag to indicate if a pre-computed poloidal magnetic flux is in the

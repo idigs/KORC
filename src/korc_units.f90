@@ -367,18 +367,55 @@ subroutine normalize_variables(params,spp,F,P)
      end if
 
      if (F%B1field) then
-        if (ALLOCATED(F%B1Re_2D%R)) F%B1Re_2D%R = F%B1Re_2D%R/ &
-             params%cpp%Bo
-        if (ALLOCATED(F%B1Re_2D%PHI)) F%B1Re_2D%PHI = F%B1Re_2D%PHI/ &
-             params%cpp%Bo
-        if (ALLOCATED(F%B1Re_2D%Z)) F%B1Re_2D%Z = F%B1Re_2D%Z/ &
-             params%cpp%Bo
-        if (ALLOCATED(F%B1Im_2D%R)) F%B1Im_2D%R = F%B1Im_2D%R/ &
-             params%cpp%Bo
-        if (ALLOCATED(F%B1Im_2D%PHI)) F%B1Im_2D%PHI = F%B1Im_2D%PHI/ &
-             params%cpp%Bo
-        if (ALLOCATED(F%B1Im_2D%Z)) F%B1Im_2D%Z = F%B1Im_2D%Z/ &
-             params%cpp%Bo
+
+        if (params%field_model(10:13).eq.'MARS') then
+        
+           if (ALLOCATED(F%B1Re_2D%R)) F%B1Re_2D%R = F%B1Re_2D%R/ &
+                params%cpp%Bo
+           if (ALLOCATED(F%B1Re_2D%PHI)) F%B1Re_2D%PHI = F%B1Re_2D%PHI/ &
+                params%cpp%Bo
+           if (ALLOCATED(F%B1Re_2D%Z)) F%B1Re_2D%Z = F%B1Re_2D%Z/ &
+                params%cpp%Bo
+           if (ALLOCATED(F%B1Im_2D%R)) F%B1Im_2D%R = F%B1Im_2D%R/ &
+                params%cpp%Bo
+           if (ALLOCATED(F%B1Im_2D%PHI)) F%B1Im_2D%PHI = F%B1Im_2D%PHI/ &
+                params%cpp%Bo
+           if (ALLOCATED(F%B1Im_2D%Z)) F%B1Im_2D%Z = F%B1Im_2D%Z/ &
+                params%cpp%Bo
+           
+        else if (params%field_model(10:14).eq.'AORSA') then
+
+           if (ALLOCATED(F%B1Re_2DX%X)) F%B1Re_2DX%X = F%B1Re_2DX%X/ &
+                params%cpp%Bo
+           if (ALLOCATED(F%B1Re_2DX%Y)) F%B1Re_2DX%Y = F%B1Re_2DX%Y/ &
+                params%cpp%Bo
+           if (ALLOCATED(F%B1Re_2DX%Z)) F%B1Re_2DX%Z = F%B1Re_2DX%Z/ &
+                params%cpp%Bo
+           if (ALLOCATED(F%B1Im_2DX%X)) F%B1Im_2DX%X = F%B1Im_2DX%X/ &
+                params%cpp%Bo
+           if (ALLOCATED(F%B1Im_2DX%Y)) F%B1Im_2DX%Y = F%B1Im_2DX%Y/ &
+                params%cpp%Bo
+           if (ALLOCATED(F%B1Im_2DX%Z)) F%B1Im_2DX%Z = F%B1Im_2DX%Z/ &
+                params%cpp%Bo
+           
+        endif
+     end if
+
+     if (F%E1field) then
+
+        if (ALLOCATED(F%E1Re_2DX%X)) F%E1Re_2DX%X = F%E1Re_2DX%X/ &
+             params%cpp%Eo
+        if (ALLOCATED(F%E1Re_2DX%Y)) F%E1Re_2DX%Y = F%E1Re_2DX%Y/ &
+             params%cpp%Eo
+        if (ALLOCATED(F%E1Re_2DX%Z)) F%E1Re_2DX%Z = F%E1Re_2DX%Z/ &
+             params%cpp%Eo
+        if (ALLOCATED(F%E1Im_2DX%X)) F%E1Im_2DX%X = F%E1Im_2DX%X/ &
+             params%cpp%Eo
+        if (ALLOCATED(F%E1Im_2DX%Y)) F%E1Im_2DX%Y = F%E1Im_2DX%Y/ &
+             params%cpp%Eo
+        if (ALLOCATED(F%E1Im_2DX%Z)) F%E1Im_2DX%Z = F%E1Im_2DX%Z/ &
+             params%cpp%Eo
+
      end if
      
      F%X%R = F%X%R/params%cpp%length

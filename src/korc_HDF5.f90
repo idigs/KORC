@@ -1941,6 +1941,90 @@ CONTAINS
                 call rsave_2d_array_to_hdf5(h5file_id, dset, &
                      units*F%B1Im_2D%Z)
              end if
+
+             if (ALLOCATED(F%B1Re_2DX%X)) then
+                dset = TRIM(gname) // "/BX1_Re"
+                units = params%cpp%Bo
+                call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                     units*F%B1Re_2DX%X)
+             end if
+
+             if (ALLOCATED(F%B1Re_2DX%Y)) then
+                dset = TRIM(gname) // "/BY1_Re"
+                units = params%cpp%Bo
+                call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                     units*F%B1Re_2DX%Y)
+             end if
+
+             if (ALLOCATED(F%B1Re_2DX%Z)) then
+                dset = TRIM(gname) // "/BZ1_Re"
+                units = params%cpp%Bo
+                call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                     units*F%B1Re_2DX%Z)
+             endif
+
+             if (ALLOCATED(F%B1Im_2DX%X)) then
+                dset = TRIM(gname) // "/BX1_Im"
+                units = params%cpp%Bo
+                call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                     units*F%B1Im_2DX%X)
+             end if
+
+             if (ALLOCATED(F%B1Im_2DX%Y)) then
+                dset = TRIM(gname) // "/BY1_Im"
+                units = params%cpp%Bo
+                call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                     units*F%B1Im_2DX%Y)
+             end if
+
+             if (ALLOCATED(F%B1Im_2DX%Z)) then
+                dset = TRIM(gname) // "/BZ1_Im"
+                units = params%cpp%Bo
+                call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                     units*F%B1Im_2DX%Z)
+             endif
+             
+             if (ALLOCATED(F%E1Re_2DX%X)) then
+                dset = TRIM(gname) // "/EX1_Re"
+                units = params%cpp%Eo
+                call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                     units*F%E1Re_2DX%X)
+             end if
+
+             if (ALLOCATED(F%E1Re_2DX%Y)) then
+                dset = TRIM(gname) // "/EY1_Re"
+                units = params%cpp%Eo
+                call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                     units*F%E1Re_2DX%Y)
+             end if
+
+             if (ALLOCATED(F%E1Re_2DX%Z)) then
+                dset = TRIM(gname) // "/EZ1_Re"
+                units = params%cpp%Eo
+                call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                     units*F%E1Re_2DX%Z)
+             endif
+
+             if (ALLOCATED(F%E1Im_2DX%X)) then
+                dset = TRIM(gname) // "/EX1_Im"
+                units = params%cpp%Eo
+                call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                     units*F%E1Im_2DX%X)
+             end if
+
+             if (ALLOCATED(F%E1Im_2DX%Y)) then
+                dset = TRIM(gname) // "/EY1_Im"
+                units = params%cpp%Eo
+                call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                     units*F%E1Im_2DX%Y)
+             end if
+
+             if (ALLOCATED(F%E1Im_2DX%Z)) then
+                dset = TRIM(gname) // "/EZ1_Im"
+                units = params%cpp%Eo
+                call rsave_2d_array_to_hdf5(h5file_id, dset, &
+                     units*F%E1Im_2DX%Z)
+             endif
              
              if (params%SC_E) then
                 dset = TRIM(gname) // "/dt_E_SC"
@@ -2038,7 +2122,8 @@ CONTAINS
                 
              else if ((.not.F%axisymmetric_fields).and. &
                   .not.((params%field_model(10:12).eq.'PSI').or. &
-                  (params%field_model(10:13).eq.'MARS'))) then
+                  (params%field_model(10:13).eq.'MARS').or. &
+                  (params%field_model(10:14).eq.'AORSA'))) then
 
                 dset = TRIM(gname) // "/BR"
                 units = params%cpp%Bo
