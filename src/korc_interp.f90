@@ -2139,8 +2139,9 @@ CONTAINS
 !             write(output_unit_write,'("IZ: ",I16)') IZ
 !          end if
           
-          if ((fields_domain%FLAG2D(IR,IZ).NE.1_is).OR. &
-               ((IR.GT.bfield_2d%NR).OR.(IZ.GT.bfield_2d%NZ))) then
+          if ((IR.lt.0).or.(IZ.lt.0).or. &
+               ((IR.GT.bfield_2d%NR).OR.(IZ.GT.bfield_2d%NZ)).or. &
+               (fields_domain%FLAG2D(IR,IZ).NE.1_is)) then
              if (F%Analytic_IWL.eq.'NONE') then
                 flag(pp) = 0_is
              else if (F%Analytic_IWL.eq.'D3D') then
@@ -3126,8 +3127,8 @@ subroutine interp_FOfields_aorsa_p(time,params,pchunk,F,Y_R,Y_PHI,Y_Z, &
   end do
   !$OMP END SIMD
 
-  write(6,*) '(R,PHI,Z,time)',Y_R*params%cpp%length,Y_PHI, &
-       Y_Z*params%cpp%length,time
+  !write(6,*) '(R,PHI,Z,time)',Y_R*params%cpp%length,Y_PHI, &
+  !     Y_Z*params%cpp%length,time
   !write(6,*) 'psi',PSIp*params%cpp%Bo*params%cpp%length**2
   !write(6,*) 'dpsidR',A(:,2)*params%cpp%Bo*params%cpp%length
   !write(6,*) 'dpsidZ',A(:,3)*params%cpp%Bo*params%cpp%length
@@ -3135,7 +3136,7 @@ subroutine interp_FOfields_aorsa_p(time,params,pchunk,F,Y_R,Y_PHI,Y_Z, &
   !write(6,*) 'AMP',amp
   !write(6,*) 'B1Re',B1Re_R*params%cpp%Bo,B1Re_PHI*params%cpp%Bo,B1Re_Z*params%cpp%Bo
   !write(6,*) 'B1Im',B1Im_R*params%cpp%Bo,B1Im_PHI*params%cpp%Bo,B1Im_Z*params%cpp%Bo
-  write(6,*) 'B1',B1_X*params%cpp%Bo,B1_Y*params%cpp%Bo,B1_Z*params%cpp%Bo
+  !write(6,*) 'B1',B1_X*params%cpp%Bo,B1_Y*params%cpp%Bo,B1_Z*params%cpp%Bo
   !write(6,*) 'B',B_X*params%cpp%Bo,B_Y*params%cpp%Bo,B_Z*params%cpp%Bo
   
   

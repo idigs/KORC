@@ -141,7 +141,7 @@ then
           -DCMAKE_CXX_FLAGS_DEBUG="-g -traceback -Bdynamic -qopt-report=5 -qopt-report-phase=vec -simd -qopenmp" \
           -DCMAKE_C_FLAGS_DEBUG="-g -traceback -Bdynamic -qopt-report=5 -qopt-report-phase=vec -simd -qopenmp" \
           -DCMAKE_Fortran_FLAGS_DEBUG="-convert big_endian -g -traceback -check all -Bdynamic -debug inline-debug-info -qopt-report=5 -qopt-report-phase=vec -qoverride-limits -simd -qopenmp" \
-          -DUSE_FIO=ON           \
+          -DUSE_FIO=OFF           \
 	  -DFIO_LIBRARIES=/global/cfs/cdirs/m3236/build_NIMUW/KORC/FIO/install/lib/libfusionio.a  \
 	  -DM3DC1_LIBRARIES=/global/cfs/cdirs/m3236/build_NIMUW/KORC/FIO/install/lib/libm3dc1.a	\
           -DFIO_INCLUDE_PATH=/global/cfs/cdirs/m3236/build_NIMUW/KORC/FIO/install/include  \
