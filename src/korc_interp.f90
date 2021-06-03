@@ -2818,7 +2818,7 @@ subroutine interp_FOfields_mars(prtcls, F, params)
   TYPE(KORC_PARAMS), INTENT(IN)                              :: params
   TYPE(PARTICLES), INTENT(INOUT) :: prtcls
   TYPE(FIELDS), INTENT(IN)       :: F
-  REAL(rp),DIMENSION(1)   :: B_R,B_PHI,Y_R,Y_Z
+  REAL(rp),DIMENSION(1)   :: B_R,B_PHI,Y_R,Y_Z,Y_PHI
   REAL(rp),DIMENSION(1)   :: B0_R,B0_PHI,B0_Z
   REAL(rp),DIMENSION(1)   :: B1_R,B1_PHI,B1_Z
   REAL(rp),DIMENSION(1)   :: B1Re_R,B1Re_PHI,B1Re_Z
@@ -2843,12 +2843,13 @@ subroutine interp_FOfields_mars(prtcls, F, params)
 
   !$OMP PARALLEL DO &
   !$OMP& PRIVATE(pp,ezerr,A,B1Re_R,B1Re_PHI,B1Re_Z,B1Im_R,B1Im_PHI,B1Im_Z, &
-  !$OMP& B0_R,B0_PHI,B0_Z,B1_R,B1_PHI,B1_Z,cP,sP,B_R,B_PHI,Y_R,Y_Z) &
+  !$OMP& B0_R,B0_PHI,B0_Z,B1_R,B1_PHI,B1_Z,cP,sP,B_R,B_PHI,Y_R,Y_Z,Y_PHI) &
   !$OMP& FIRSTPRIVATE(psip_conv,amp) &
   !$OMP& SHARED(prtcls,F,params)
   do pp = 1,ss
 
      Y_R(1)=prtcls%Y(pp,1)
+     Y_PHI(1)=prtcls%Y(pp,2)
      Y_Z(1)=prtcls%Y(pp,3)
      
      call EZspline_interp(bfield_2d%A,b1Refield_2d%R,b1Refield_2d%PHI, &
@@ -2877,6 +2878,18 @@ subroutine interp_FOfields_mars(prtcls, F, params)
      prtcls%B(pp,1) = B_R(1)*cP(1) - B_PHI(1)*sP(1)
      prtcls%B(pp,2) = B_R(1)*sP(1) + B_PHI(1)*cP(1)
 
+     !write(6,*) '(R,PHI,Z)',Y_R*params%cpp%length,Y_PHI,Y_Z*params%cpp%length
+     !write(6,*) 'amp',amp,'cP,sP',cP,sP,'cnP,snP',cnP,snP
+     !write(6,*) 'psi',PSIp*params%cpp%Bo*params%cpp%length**2
+     !write(6,*) 'dpsidR',A(:,2)*params%cpp%Bo*params%cpp%length
+     !write(6,*) 'dpsidZ',A(:,3)*params%cpp%Bo*params%cpp%length
+     !write(6,*) 'B0',B0_R*params%cpp%Bo,B0_PHI*params%cpp%Bo,B0_Z*params%cpp%Bo
+     !write(6,*) 'AMP',amp
+     !write(6,*) 'B1Re',B1Re_R*params%cpp%Bo,B1Re_PHI*params%cpp%Bo,B1Re_Z*params%cpp%Bo
+     !write(6,*) 'B1Im',B1Im_R*params%cpp%Bo,B1Im_PHI*params%cpp%Bo,B1Im_Z*params%cpp%Bo
+     !write(6,*) 'B1',B1_R*params%cpp%Bo,B1_PHI*params%cpp%Bo,B1_Z*params%cpp%Bo
+     !write(6,*) 'B',B_R*params%cpp%Bo,B_PHI*params%cpp%Bo,prtcls%B(pp,3)*params%cpp%Bo
+     
   end do
   !$OMP END PARALLEL DO
   
