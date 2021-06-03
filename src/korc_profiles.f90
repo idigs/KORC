@@ -112,8 +112,7 @@ CONTAINS
        write(output_unit_write,'("* * * * * * * * INITIALIZING PROFILES * * * * * * * *")')
     end if
     
-    SELECT CASE (TRIM(params%profile_model))
-    CASE('ANALYTICAL')
+    if (params%profile_model(1:10).eq.'ANALYTICAL') then
        !open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
        !     status='OLD',form='formatted')
        !read(default_unit_open,nml=plasmaProfiles)
@@ -165,7 +164,7 @@ CONTAINS
           P%dims(1) = F%dims(1)
           P%dims(3) = F%dims(3)
 
-          call ALLOCATE_2D_PROFILES_ARRAYS(P)
+          call ALLOCATE_2D_PROFILES_ARRAYS(params,P)
 
           P%X%R=F%X%R
           P%X%Z=F%X%Z
@@ -228,8 +227,8 @@ CONTAINS
 
           
        end if
-       
-    CASE('EXTERNAL')
+
+    else if (params%profile_model(1:8).eq.'EXTERNAL') then
        !open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
        !     status='OLD',form='formatted')
        !read(default_unit_open,nml=plasmaProfiles)
@@ -248,16 +247,13 @@ CONTAINS
 
        if (params%mpi_params%rank .EQ. 0) then
           write(output_unit_write,'("EXTERNAL")')
-          write(output_unit_write,'("ne profile:",A20)') P%ne_profile
-          write(output_unit_write,'("Te profile: ",A20)') P%Te_profile
-          write(output_unit_write,'("Zeff profile: ",A20)') P%Zeff_profile
        end if
        
        P%filename = TRIM(filename)
        P%axisymmetric = axisymmetric
 
        call load_profiles_data_from_hdf5(params,P)
-    CASE('UNIFORM')
+    else if (params%profile_model.eq.'UNIFORM') then
        !open(unit=default_unit_open,file=TRIM(params%path_to_inputs), &
        !     status='OLD',form='formatted')
        !read(default_unit_open,nml=plasmaProfiles)
@@ -284,13 +280,9 @@ CONTAINS
 
        if (params%mpi_params%rank .EQ. 0) then
           write(output_unit_write,'("UNIFORM")')
-          write(output_unit_write,'("ne profile: ",A20)') P%ne_profile
-          write(output_unit_write,'("Te profile: ",A20)') P%Te_profile
-          write(output_unit_write,'("Zeff profile: ",A20)') P%Zeff_profile
        end if
        
-    CASE DEFAULT
-    END SELECT
+    endif
 
     if (params%mpi_params%rank .EQ. 0) then
        write(output_unit_write,'("* * * * * * * * * * * * * * * * * * * * * * * * *")')
@@ -764,7 +756,7 @@ CONTAINS
     P%dims(3) = INT(rdatum)
 
     if (P%axisymmetric) then
-       call ALLOCATE_2D_PROFILES_ARRAYS(P)
+       call ALLOCATE_2D_PROFILES_ARRAYS(params,P)
     else
        call ALLOCATE_3D_PROFILES_ARRAYS(P)
     end if
@@ -812,6 +804,27 @@ CONTAINS
        call load_array_from_hdf5(h5file_id,dset,P%Zeff_3D)
     end if
 
+    if (params%profile_model(10:10).eq.'H') then
+
+       dset = "/RHON"
+       call load_array_from_hdf5(h5file_id,dset,P%RHON)
+       dset = "/nRE"
+       call load_array_from_hdf5(h5file_id,dset,P%nRE_2D)
+       dset = "/nAr0"
+       call load_array_from_hdf5(h5file_id,dset,P%nAr0_2D)
+       dset = "/nAr1"
+       call load_array_from_hdf5(h5file_id,dset,P%nAr1_2D)
+       dset = "/nAr2"
+       call load_array_from_hdf5(h5file_id,dset,P%nAr2_2D)
+       dset = "/nAr3"
+       call load_array_from_hdf5(h5file_id,dset,P%nAr3_2D)
+       dset = "/nD"
+       call load_array_from_hdf5(h5file_id,dset,P%nD_2D)
+       dset = "/nD1"
+       call load_array_from_hdf5(h5file_id,dset,P%nD1_2D)
+       
+    end if
+   
     call h5fclose_f(h5file_id, h5error)
     if (h5error .EQ. -1) then
        write(output_unit_write,'("KORC ERROR: Something went wrong in: load_profiles_data_from_hdf5 --> h5fclose_f")')
@@ -823,7 +836,8 @@ CONTAINS
   !!
   !! @param[out] P An instance of KORC's derived type PROFILES containing all the information about the plasma profiles used in the
   !! simulation. See korc_types.f90 and korc_profiles.f90.
-  subroutine ALLOCATE_2D_PROFILES_ARRAYS(P)
+  subroutine ALLOCATE_2D_PROFILES_ARRAYS(params,P)
+    TYPE(KORC_PARAMS), INTENT(IN)  :: params
     TYPE(PROFILES), INTENT(INOUT) :: P
 
     ALLOCATE(P%X%R(P%dims(1)))
@@ -832,6 +846,18 @@ CONTAINS
     ALLOCATE(P%ne_2D(P%dims(1),P%dims(3)))
     ALLOCATE(P%Te_2D(P%dims(1),P%dims(3)))
     ALLOCATE(P%Zeff_2D(P%dims(1),P%dims(3)))
+
+    if (params%profile_model(10:10).eq.'H') then
+       ALLOCATE(P%RHON(P%dims(1),P%dims(3)))
+       ALLOCATE(P%nRE_2D(P%dims(1),P%dims(3)))
+       ALLOCATE(P%nAr0_2D(P%dims(1),P%dims(3)))
+       ALLOCATE(P%nAr1_2D(P%dims(1),P%dims(3)))
+       ALLOCATE(P%nAr2_2D(P%dims(1),P%dims(3)))
+       ALLOCATE(P%nAr3_2D(P%dims(1),P%dims(3)))
+       ALLOCATE(P%nD_2D(P%dims(1),P%dims(3)))
+       ALLOCATE(P%nD1_2D(P%dims(1),P%dims(3)))
+    end if
+    
   end subroutine ALLOCATE_2D_PROFILES_ARRAYS
 
   subroutine ALLOCATE_3D_PROFILES_ARRAYS(P)
@@ -853,6 +879,29 @@ CONTAINS
   subroutine DEALLOCATE_PROFILES_ARRAYS(P)
     TYPE(PROFILES), INTENT(INOUT)              :: P
 
+    if (ALLOCATED(P%X%R)) DEALLOCATE(P%X%R)
+    if (ALLOCATED(P%X%PHI)) DEALLOCATE(P%X%PHI)
+    if (ALLOCATED(P%X%Z)) DEALLOCATE(P%X%Z)
+
+    if (ALLOCATED(P%FLAG2D)) DEALLOCATE(P%FLAG2D)
+    if (ALLOCATED(P%FLAG3D)) DEALLOCATE(P%FLAG3D)
+
+    if (ALLOCATED(P%ne_2D)) DEALLOCATE(P%ne_2D)
+    if (ALLOCATED(P%Te_2D)) DEALLOCATE(P%Te_2D)
+    if (ALLOCATED(P%Zeff_2D)) DEALLOCATE(P%Zeff_2D)
+    if (ALLOCATED(P%ne_3D)) DEALLOCATE(P%ne_3D)
+    if (ALLOCATED(P%Te_3D)) DEALLOCATE(P%Te_3D)
+    if (ALLOCATED(P%Zeff_3D)) DEALLOCATE(P%Zeff_3D)
+
+    if (ALLOCATED(P%RHON)) DEALLOCATE(P%RHON)
+    if (ALLOCATED(P%nRE_2D)) DEALLOCATE(P%nRE_2D)
+    if (ALLOCATED(P%nAr0_2D)) DEALLOCATE(P%nAr0_2D)
+    if (ALLOCATED(P%nAr1_2D)) DEALLOCATE(P%nAr1_2D)
+    if (ALLOCATED(P%nAr2_2D)) DEALLOCATE(P%nAr2_2D)
+    if (ALLOCATED(P%nAr3_2D)) DEALLOCATE(P%nAr3_2D)
+    if (ALLOCATED(P%nD_2D)) DEALLOCATE(P%nD_2D)
+    if (ALLOCATED(P%nD1_2D)) DEALLOCATE(P%nD1_2D)
+    
 #ifdef FIO
     if (ALLOCATED(P%FIO_nimp)) DEALLOCATE(P%FIO_nimp)
 #endif

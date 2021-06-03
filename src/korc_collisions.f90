@@ -208,9 +208,15 @@ contains
     !read(output_unit_write,nml=CollisionParamsMultipleSpecies)
     !close(output_unit_write)
 
-    cparams_ms%num_impurity_species = num_impurity_species
-    params%num_impurity_species = num_impurity_species
+    if (params%profile_model(10:10).eq.'H') then
+       cparams_ms%num_impurity_species = 6
+       params%num_impurity_species = 6
+    else
+       cparams_ms%num_impurity_species = num_impurity_species
+       params%num_impurity_species = num_impurity_species
+    endif
 
+    
     ALLOCATE(cparams_ms%Zj(cparams_ms%num_impurity_species))
     ALLOCATE(cparams_ms%Zo(cparams_ms%num_impurity_species))
     ALLOCATE(cparams_ms%nz(cparams_ms%num_impurity_species))
@@ -231,32 +237,64 @@ contains
        cparams_ms%nz(1) = nz_mult(1)
 
        params%Zj=cparams_ms%Zj
+    elseif (params%profile_model(10:10).eq.'H') then
+       cparams_ms%Zj(1)=0
+       cparams_ms%Zo(1)=18
+       cparams_ms%Zj(2)=1
+       cparams_ms%Zo(2)=18
+       cparams_ms%Zj(3)=2
+       cparams_ms%Zo(3)=18
+       cparams_ms%Zj(4)=3
+       cparams_ms%Zo(4)=18
+       cparams_ms%Zj(5)=0
+       cparams_ms%Zo(5)=1
+       cparams_ms%Zj(6)=1
+       cparams_ms%Zo(6)=1
+
+       cparams_ms%nz(1) = nz_mult(1)
+
+       params%Zj=cparams_ms%Zj       
     else
        cparams_ms%Zj = Zj_mult(1:cparams_ms%num_impurity_species)
        cparams_ms%Zo = Zo_mult(1:cparams_ms%num_impurity_species)
        cparams_ms%nz = nz_mult(1:cparams_ms%num_impurity_species)
     endif
-    
-    do i=1,cparams_ms%num_impurity_species
-       if (int(cparams_ms%Zo(i)).eq.1) then
-          cparams_ms%IZj(i) = C_E*cparams_ms%IH(int(cparams_ms%Zj(i)+1))
-          cparams_ms%aZj(i) = cparams_ms%aH(int(cparams_ms%Zj(i)+1))
-       else if (int(cparams_ms%Zo(i)).eq.6) then
-          cparams_ms%IZj(i) = C_E*cparams_ms%IC(int(cparams_ms%Zj(i)+1))
-          cparams_ms%aZj(i) = cparams_ms%aC(int(cparams_ms%Zj(i)+1))
-       else if (int(cparams_ms%Zo(i)).eq.10) then
-          cparams_ms%IZj(i) = C_E*cparams_ms%INe(int(cparams_ms%Zj(i)+1))
-          cparams_ms%aZj(i) = cparams_ms%aNe(int(cparams_ms%Zj(i)+1))
-       else if (int(cparams_ms%Zo(i)).eq.18) then
-          cparams_ms%IZj(i) = C_E*cparams_ms%IAr(int(cparams_ms%Zj(i)+1))
-          cparams_ms%aZj(i) = cparams_ms%aAr(int(cparams_ms%Zj(i)+1))
-       else
-          if (params%mpi_params%rank .EQ. 0) then
-             write(output_unit_write,'("Atomic number not defined!")')
+
+    if (.not.(params%profile_model(10:10).eq.'H')) then
+       do i=1,cparams_ms%num_impurity_species
+          if (int(cparams_ms%Zo(i)).eq.1) then
+             cparams_ms%IZj(i) = C_E*cparams_ms%IH(int(cparams_ms%Zj(i)+1))
+             cparams_ms%aZj(i) = cparams_ms%aH(int(cparams_ms%Zj(i)+1))
+          else if (int(cparams_ms%Zo(i)).eq.6) then
+             cparams_ms%IZj(i) = C_E*cparams_ms%IC(int(cparams_ms%Zj(i)+1))
+             cparams_ms%aZj(i) = cparams_ms%aC(int(cparams_ms%Zj(i)+1))
+          else if (int(cparams_ms%Zo(i)).eq.10) then
+             cparams_ms%IZj(i) = C_E*cparams_ms%INe(int(cparams_ms%Zj(i)+1))
+             cparams_ms%aZj(i) = cparams_ms%aNe(int(cparams_ms%Zj(i)+1))
+          else if (int(cparams_ms%Zo(i)).eq.18) then
+             cparams_ms%IZj(i) = C_E*cparams_ms%IAr(int(cparams_ms%Zj(i)+1))
+             cparams_ms%aZj(i) = cparams_ms%aAr(int(cparams_ms%Zj(i)+1))
+          else
+             if (params%mpi_params%rank .EQ. 0) then
+                write(output_unit_write,'("Atomic number not defined!")')
+             end if
+             exit             
           end if
-          exit             
-       end if
-    end do
+       end do
+    else
+       cparams_ms%IZj(1) = C_E*cparams_ms%IAr(1)
+       cparams_ms%aZj(1) = cparams_ms%aAr(1)
+       cparams_ms%IZj(2) = C_E*cparams_ms%IAr(2)
+       cparams_ms%aZj(2) = cparams_ms%aAr(2)
+       cparams_ms%IZj(3) = C_E*cparams_ms%IAr(3)
+       cparams_ms%aZj(3) = cparams_ms%aAr(3)
+       cparams_ms%IZj(4) = C_E*cparams_ms%IAr(4)
+       cparams_ms%aZj(4) = cparams_ms%aAr(4)
+       cparams_ms%IZj(5) = C_E*cparams_ms%IH(1)
+       cparams_ms%aZj(5) = cparams_ms%aH(1)
+       cparams_ms%IZj(6) = C_E*cparams_ms%IH(2)
+       cparams_ms%aZj(6) = cparams_ms%aH(2)
+    endif
 
     cparams_ms%nef = ne_mult + sum(cparams_ms%Zj*cparams_ms%nz)
     cparams_ms%neb = (cparams_ms%Zo-cparams_ms%Zj)*cparams_ms%nz
@@ -620,7 +658,8 @@ contains
 
        v = SQRT(1.0_rp - (C_ME*C_C**2/E)**2)
 
-       if (params%profile_model.eq.'M3D_C1') then
+       if ((params%profile_model.eq.'M3D_C1').or. &
+            (params%profile_model(10:10).eq.'H')) then
           nu = (/nu_S_FIO(params,v),nu_D_FIO(params,v),nu_par(v)/)
        else
           nu = (/nu_S(params,v),nu_D(params,v),nu_par(v)/)
@@ -1811,6 +1850,8 @@ contains
     INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT) 			:: flagCon
     REAL(rp), INTENT(IN) 			:: me
     REAL(rp), DIMENSION(params%pchunk) 			:: Te,Zeff
+    REAL(rp), DIMENSION(params%pchunk) 			:: nAr0,nAr1,nAr2,nAr3
+    REAL(rp), DIMENSION(params%pchunk) 			:: nD,nD1
     REAL(rp), DIMENSION(params%pchunk,2) 			:: dW
     REAL(rp), DIMENSION(params%pchunk,2) 			:: rnd1
     REAL(rp) 					:: dt,time
@@ -1828,6 +1869,7 @@ contains
     REAL(rp) 					:: kappa
     integer :: cc,pchunk
     integer(ip),INTENT(IN) :: tt
+    REAL(rp), DIMENSION(params%pchunk,params%num_impurity_species) 	:: nimp
 
     pchunk=params%pchunk
     
@@ -1887,8 +1929,21 @@ contains
 
        if (params%profile_model(1:10).eq.'ANALYTICAL') then
           call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
-       else if (params%profile_model(1:8).eq.'EXTERNAL') then      
-          call interp_FOcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flagCon)
+       else if (params%profile_model(1:8).eq.'EXTERNAL') then
+          if (params%profile_model(10:10).eq.'H') then
+             call interp_Hcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff, &
+                  nAr0,nAr1,nAr2,nAr3,nD,nD1,flagCon)
+             do cc=1_idef,pchunk
+                nimp(cc,1)=nAr0(cc)
+                nimp(cc,2)=nAr1(cc)
+                nimp(cc,3)=nAr2(cc)
+                nimp(cc,4)=nAr3(cc)
+                nimp(cc,5)=nD(cc)
+                nimp(cc,6)=nD1(cc)
+             end do
+          else
+             call interp_FOcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flagCon)
+          endif
        end if
        
        if (.not.params%FokPlan) E_PHI=0._rp
@@ -1935,12 +1990,20 @@ contains
 
 !          write(output_unit_write,'("dW1: ",E17.10)') dW(cc,1)
 !          write(output_unit_write,'("dW2: ",E17.10)') dW(cc,2)
-          
-          CAL(cc) = CA_SD(v(cc),ne(cc),Te(cc))
-          dCAL(cc)= dCA_SD(v(cc),me,ne(cc),Te(cc))
-          CFL(cc) = CF_SD(params,v(cc),ne(cc),Te(cc))
-          CBL(cc) = (CB_ee_SD(v(cc),ne(cc),Te(cc),Zeff(cc))+ &
-               CB_ei_SD(params,v(cc),ne(cc),Te(cc),Zeff(cc)))
+
+          if (params%profile_model(10:10).eq.'H') then
+             CAL(cc) = CA_SD(v(cc),ne(cc),Te(cc))
+             dCAL(cc)= dCA_SD(v(cc),me,ne(cc),Te(cc))
+             CFL(cc) = CF_SD_FIO(params,v(cc),ne(cc),Te(cc),nimp(cc,:))
+             CBL(cc) = (CB_ee_SD(v(cc),ne(cc),Te(cc),Zeff(cc))+ &
+                  CB_ei_SD_FIO(params,v(cc),ne(cc),Te(cc),nimp(cc,:),Zeff(cc)))
+          else
+             CAL(cc) = CA_SD(v(cc),ne(cc),Te(cc))
+             dCAL(cc)= dCA_SD(v(cc),me,ne(cc),Te(cc))
+             CFL(cc) = CF_SD(params,v(cc),ne(cc),Te(cc))
+             CBL(cc) = (CB_ee_SD(v(cc),ne(cc),Te(cc),Zeff(cc))+ &
+                  CB_ei_SD(params,v(cc),ne(cc),Te(cc),Zeff(cc)))
+          endif
           
           
           dp(cc)=REAL(flagCol(cc))*REAL(flagCon(cc))* &

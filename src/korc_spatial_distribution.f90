@@ -1746,6 +1746,8 @@ subroutine intitial_spatial_distribution(params,spp,P,F)
         call get_Hollmann_distribution_3D(params,spp(ss),F)
      CASE ('HOLLMANN-3D-PSI')
         call get_Hollmann_distribution_3D_psi(params,spp(ss),F)
+     CASE ('HOLLMANN-1DTRANSPORT')
+        call get_Hollmann_distribution_1Dtransport(params,spp(ss),F)
      CASE('MH_psi')
 
         if (spp(ss)%ppp*params%mpi_params%nmpi.lt.10) then
