@@ -2726,11 +2726,11 @@ contains
     !! Logical variable that indicates if collisions are included in
     !! the simulation.
 
-    INTEGER                                                    :: ii
+    INTEGER           :: ii
     !! Species iterator.
-    INTEGER                                                    :: pp
+    INTEGER           :: pp
     !! Particles iterator.
-    INTEGER                                                    :: cc,pchunk
+    INTEGER           :: cc,pchunk,achunk
     !! Chunk iterator.
     INTEGER(ip)                                                    :: tt
     INTEGER(ip)                                                    :: ttt
@@ -2756,12 +2756,18 @@ contains
           !$OMP& shared(F,P,params,ii,spp) &
           !$OMP& PRIVATE(pp,tt,ttt,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
           !$OMP& flagCon,flagCol,B_R,B_PHI,B_Z,E_PHI,PSIp, &
-          !$OMP& Vden,Vdenave) &
+          !$OMP& Vden,Vdenave,achunk) &
           !$OMP& REDUCTION(+:VdenOMP)
           do pp=1_idef,spp(ii)%ppp,pchunk
 
+             if ((spp(ii)%ppp-pp).lt.pchunk) then
+                achunk=spp(ii)%ppp-pp+1
+             else
+                achunk=pchunk
+             end if
+             
              !$OMP SIMD
-             do cc=1_idef,pchunk
+             do cc=1_idef,achunk
                 Y_R(cc)=spp(ii)%vars%Y(pp-1+cc,1)
                 Y_PHI(cc)=spp(ii)%vars%Y(pp-1+cc,2)
                 Y_Z(cc)=spp(ii)%vars%Y(pp-1+cc,3)
@@ -2801,7 +2807,7 @@ contains
 
 
                 !$OMP SIMD
-                do cc=1_idef,pchunk
+                do cc=1_idef,achunk
                    spp(ii)%vars%Y(pp-1+cc,1)=Y_R(cc)
                    spp(ii)%vars%Y(pp-1+cc,2)=Y_PHI(cc)
                    spp(ii)%vars%Y(pp-1+cc,3)=Y_Z(cc)
@@ -2828,7 +2834,7 @@ contains
                      F,P,PSIp)
 
                 !$OMP SIMD
-                do cc=1_idef,pchunk
+                do cc=1_idef,achunk
                    spp(ii)%vars%V(pp-1+cc,1)=V_PLL(cc)
                    spp(ii)%vars%V(pp-1+cc,2)=V_MU(cc)
 
@@ -2838,11 +2844,11 @@ contains
 
              end if
 
-             call analytical_fields_Bmag_p(pchunk,F,Y_R,Y_PHI,Y_Z, &
+             call analytical_fields_Bmag_p(achunk,F,Y_R,Y_PHI,Y_Z, &
                   Bmag,E_PHI)
 
              !$OMP SIMD
-             do cc=1_idef,pchunk
+             do cc=1_idef,achunk
                 spp(ii)%vars%g(pp-1+cc)=sqrt(1+V_PLL(cc)**2+ &
                      2*V_MU(cc)*Bmag(cc)*m_cache)
 
