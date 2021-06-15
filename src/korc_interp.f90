@@ -5469,17 +5469,31 @@ subroutine get_fio_magnetic_fields(prtcls, F, params)
     INTEGER (C_INT)                :: status
     INTEGER                        :: pp
     REAL(rp), DIMENSION(3)         :: x
+    integer(ip)  ::  ss
+    REAL(rp)        :: netmp=-1._rp,Tetmp=-1._rp
+
+    if (prtcls%Y(2,1).eq.0) then
+       ss=1_idef
+    else
+       ss = SIZE(prtcls%hint)
+    end if
 
     if (prtcls%cart) then
        !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp,status,x)
-       do pp = 1, SIZE(prtcls%hint)
+       do pp = 1,ss
           if (prtcls%flagCon(pp) .EQ. 1_is) then
              x = prtcls%X(pp,:)*params%cpp%length
              status = fio_eval_field(P%FIO_ne, x(1),                     &
-                  prtcls%ne(pp),                         &
+                  netmp,                         &
                   prtcls%hint(pp))
 
-             if (status .eq. FIO_NO_DATA) then
+             if (status .eq. FIO_SUCCESS) then
+
+                if(netmp.le.0) netmp=1._rp
+
+                prtcls%ne(pp) = netmp/params%cpp%density
+                
+             else if (status .eq. FIO_NO_DATA) then
                 prtcls%ne(pp) = 0
              else if (status .ne. FIO_SUCCESS) then
                 prtcls%flagCon(pp) = 0_is
@@ -5487,16 +5501,19 @@ subroutine get_fio_magnetic_fields(prtcls, F, params)
              end if
 
              status = fio_eval_field(P%FIO_te, x(1),                     &
-                  prtcls%te(pp),                         &
+                  Tetmp,                         &
                   prtcls%hint(pp))
 
-             if (status .eq. FIO_NO_DATA) then
+             if (status .eq. FIO_SUCCESS) then
+                if(Tetmp.le.0) Tetmp=0.1_rp
+             
+                prtcls%te(pp) = Tetmp/(params%cpp%temperature/C_E)
+             else if (status .eq. FIO_NO_DATA) then
                 prtcls%te(pp) = 0
              end if
 
-             status = fio_eval_field(P%FIO_zeff, x(1),                   &
-                  prtcls%Zeff(pp),                       &
-                  prtcls%hint(pp))
+             status = fio_eval_field(P%FIO_zeff, x(1), &
+                  prtcls%Zeff(pp),prtcls%hint(pp))
 
              if (status .eq. FIO_NO_DATA) then
                 prtcls%Zeff(pp) = 1
@@ -5506,33 +5523,40 @@ subroutine get_fio_magnetic_fields(prtcls, F, params)
        !$OMP END PARALLEL DO
     else
        !$OMP PARALLEL DO DEFAULT(SHARED) PRIVATE(pp,status,x)
-       do pp = 1, SIZE(prtcls%hint)
+       do pp = 1,ss
           if (prtcls%flagCon(pp) .EQ. 1_is) then
              x(1) = prtcls%Y(1,pp)*params%cpp%length
              x(2) = prtcls%Y(2,pp)
              x(3) = prtcls%Y(3,pp)*params%cpp%length
-             status = fio_eval_field(P%FIO_ne, x(1),                     &
-                  prtcls%ne(pp),                         &
-                  prtcls%hint(pp))
+             status = fio_eval_field(P%FIO_ne, x(1), &
+                  netmp,prtcls%hint(pp))
 
-             if (status .eq. FIO_NO_DATA) then
+             if (status .eq. FIO_SUCCESS) then
+
+                if(netmp.le.0) netmp=1._rp
+
+                prtcls%ne(pp) = netmp/params%cpp%density
+                
+             else if (status .eq. FIO_NO_DATA) then
                 prtcls%ne(pp) = 0
              else if (status .ne. FIO_SUCCESS) then
                 prtcls%flagCon(pp) = 0_is
                 CYCLE
              end if
 
-             status = fio_eval_field(P%FIO_te, x(1),                     &
-                  prtcls%te(pp),                         &
-                  prtcls%hint(pp))
+             status = fio_eval_field(P%FIO_te, x(1),&
+                  tetmp,prtcls%hint(pp))
 
-             if (status .eq. FIO_NO_DATA) then
+             if (status .eq. FIO_SUCCESS) then
+                if(Tetmp.le.0) Tetmp=0.1_rp
+             
+                prtcls%te(pp) = Tetmp/(params%cpp%temperature/C_E)
+             else if (status .eq. FIO_NO_DATA) then
                 prtcls%te(pp) = 0
              end if
 
-             status = fio_eval_field(P%FIO_zeff, x(1),                   &
-                  prtcls%Zeff(pp),                       &
-                  prtcls%hint(pp))
+             status = fio_eval_field(P%FIO_zeff, x(1), &
+                  prtcls%Zeff(pp),prtcls%hint(pp))
 
              if (status .eq. FIO_NO_DATA) then
                 prtcls%Zeff(pp) = 1

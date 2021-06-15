@@ -370,9 +370,12 @@ module korc_types
      !! Instantaneous input power of each electron due to the electric
      !! field acceleration.
      INTEGER(is), DIMENSION(:), ALLOCATABLE 	:: flagCon
-     INTEGER(is), DIMENSION(:), ALLOCATABLE 	:: flagCol 
-     !! Flag for each particle to decide whether it is being followed
-     !! (flag=T) or not (flag=F).
+     !! Flag for each particle to decide whether it is contained
+     INTEGER(is), DIMENSION(:), ALLOCATABLE 	:: flagCol
+     !! Flag for each particle to decide whether it is part of the high
+     !! energy population
+     INTEGER(is), DIMENSION(:), ALLOCATABLE 	:: flagRE 
+     !! Flag for each particle to decide whether it is initialized
      REAL(rp), DIMENSION(:), ALLOCATABLE 	:: AUX 
      !! An auxiliary scalar variable for each electron.
      REAL(rp), DIMENSION(:), ALLOCATABLE 	:: wt 
@@ -433,6 +436,9 @@ module korc_types
      INTEGER 				:: ppp 
      !! Number of computational particles used to simulate each electron
      !! species.
+     INTEGER 				:: pinit 
+     !! Number of computational particles initialized for each electron species
+     !! to give room for sources of additional electrons
      REAL(rp) 				:: Ro 
      !! Radial position of the center of the electrons' initial spatial
      !! distribution.
