@@ -32,6 +32,7 @@ module korc_input
   LOGICAL :: radiation = .FALSE.
   CHARACTER(30) :: GC_rad_model='SDE'
   LOGICAL :: collisions = .FALSE.
+  LOGICAL :: LargeCollisions = .FALSE.
   CHARACTER(30) :: collisions_model = 'SINGLE_SPECIES' 
     ! Options are: 'NONE','SINGLE_SPECIES' and 'MULTIPLE_SPECIES'
   CHARACTER(30) :: bound_electron_model = 'HESSLOW' 
@@ -82,7 +83,9 @@ module korc_input
   LOGICAL, DIMENSION(:), ALLOCATABLE :: runaway 
     !! Flag to decide whether a given electron is a runaway (runaway=T)
     !! or not (runaway=F).
-  INTEGER, DIMENSION(:), ALLOCATABLE :: ppp 
+  INTEGER, DIMENSION(:), ALLOCATABLE :: ppp
+  INTEGER, DIMENSION(:), ALLOCATABLE :: pinit
+  INTEGER, DIMENSION(:), ALLOCATABLE :: pRE 
     ! Number of particles per process (mpi)
   REAL(rp), DIMENSION(:), ALLOCATABLE :: q 
     ! Electric charge
@@ -409,11 +412,13 @@ CONTAINS
          HDF5_error_handling,orbit_model,field_eval,proceed,profile_model, &
          restart_overwrite_frequency,FokPlan,GC_rad_model,bound_electron_model,&
          FO_GC_compare,SameRandSeed,SC_E,reinit,SC_E_add,time_slice,rmax, &
-         rmin,zmax,zmin,pchunk,magnetic_field_directory,magnetic_field_list
+         rmin,zmax,zmin,pchunk,magnetic_field_directory,magnetic_field_list,&
+         LargeCollisions
     NAMELIST /plasma_species/ ppp,q,m,Eno,etao,Eo_lims,etao_lims,runaway, &
          spatial_distribution,energy_distribution,pitch_distribution,Ro, &
          PHIo,Zo,r_inner,r_outter,falloff_rate,shear_factor,sigmaR,sigmaZ, &
-         theta_gauss,psi_max,Xtrace,Spong_b,Spong_w,Spong_dlam,dth,dR,dZ,dgam
+         theta_gauss,psi_max,Xtrace,Spong_b,Spong_w,Spong_dlam,dth,dR,dZ,dgam,&
+         pinit,pRE
     NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
          qa,qo,Eo,current_direction,nR,nZ,nPHI,dim_1D,dt_E_SC,Ip_exp, &
          E_dyn,E_pulse,E_width
@@ -495,6 +500,8 @@ CONTAINS
              !write(6,*) 'reading plasma_species namelist'
              ALLOCATE(runaway(num_species))
              ALLOCATE(ppp(num_species))
+             ALLOCATE(pinit(num_species))
+             ALLOCATE(pRE(num_species))
              ALLOCATE(q(num_species))
              ALLOCATE(m(num_species))
              ALLOCATE(spatial_distribution(num_species))
@@ -526,7 +533,9 @@ CONTAINS
 
              if (num_species.eq.1) then
                 runaway = .FALSE.
-                ppp =1E0
+                ppp = 1E0
+                pinit = ppp
+                pRE = ppp
                 q = -1.0 
                 m = 1.0 
                 spatial_distribution = 'TRACER'

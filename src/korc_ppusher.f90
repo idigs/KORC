@@ -2735,9 +2735,8 @@ contains
     INTEGER(ip)                                                    :: tt
     INTEGER(ip)                                                    :: ttt
     !! time iterator.
-
     real(rp),dimension(F%dim_1D) :: Vden,Vdenave,VdenOMP
-
+    INTEGER :: newREs
 
 
     do ii = 1_idef,params%num_species      
@@ -2751,115 +2750,134 @@ contains
 
           VdenOMP=0._rp
 
-          !$OMP PARALLEL DO default(none) &
-          !$OMP& FIRSTPRIVATE(E0,q_cache,m_cache,pchunk) &
-          !$OMP& shared(F,P,params,ii,spp) &
-          !$OMP& PRIVATE(pp,tt,ttt,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
-          !$OMP& flagCon,flagCol,B_R,B_PHI,B_Z,E_PHI,PSIp, &
-          !$OMP& Vden,Vdenave,achunk) &
-          !$OMP& REDUCTION(+:VdenOMP)
-          do pp=1_idef,spp(ii)%ppp,pchunk
 
-             if ((spp(ii)%ppp-pp).lt.pchunk) then
-                achunk=spp(ii)%ppp-pp+1
-             else
-                achunk=pchunk
-             end if
-             
-             !$OMP SIMD
-             do cc=1_idef,achunk
-                Y_R(cc)=spp(ii)%vars%Y(pp-1+cc,1)
-                Y_PHI(cc)=spp(ii)%vars%Y(pp-1+cc,2)
-                Y_Z(cc)=spp(ii)%vars%Y(pp-1+cc,3)
+          tt0=1_ip
+          do while (tt0.le.params%tskip)
 
-                V_PLL(cc)=spp(ii)%vars%V(pp-1+cc,1)
-                V_MU(cc)=spp(ii)%vars%V(pp-1+cc,2)
+             !$OMP PARALLEL DO default(none) &
+             !$OMP& FIRSTPRIVATE(E0,q_cache,m_cache,pchunk) &
+             !$OMP& shared(F,P,params,ii,spp) &
+             !$OMP& PRIVATE(pp,tt,tt0,ttt,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
+             !$OMP& flagCon,flagCol,B_R,B_PHI,B_Z,E_PHI,PSIp, &
+             !$OMP& Vden,Vdenave,achunk,newREs) &
+             !$OMP& REDUCTION(+:VdenOMP)
+             do pp=1_idef,spp(ii)%pRE,pchunk
 
-                PSIp(cc)=spp(ii)%vars%PSI_p(pp-1+cc)
-
-                flagCon(cc)=spp(ii)%vars%flagCon(pp-1+cc)
-                flagCol(cc)=spp(ii)%vars%flagCol(pp-1+cc)
-             end do
-             !$OMP END SIMD
-
-             if (.not.params%FokPlan) then
-                Vdenave=0._rp
-                do tt=1_ip,params%t_skip
-
-                   !                   write(output_unit_write,*) params%mpi_params%rank,'Y_R',Y_R
-
-                   call advance_GCeqn_vars(spp(ii)%vars,pp, &
-                        tt+params%t_skip*(ttt-1),params, &
-                        Y_R,Y_PHI, Y_Z,V_PLL,V_MU,flagCon,flagCol,q_cache,m_cache, &
-                        B_R,B_PHI,B_Z,F,P,PSIp,E_PHI)
-
-                   !                   write(output_unit_write,*) params%mpi_params%rank,'Y_R',Y_R
-
-                   if (params%SC_E) then                  
-                      call calculate_SC_p(params,F,B_R,B_PHI,B_Z,Y_R,Y_Z, &
-                           V_PLL,V_MU,m_cache,flagCon,flagCol,Vden)
-                      Vdenave=(Vdenave*REAL(tt-1_ip)+Vden)/REAL(tt)
-                   end if
-
-                end do !timestep iterator
-
-                VdenOMP=VdenOMP+Vdenave
-
+                if ((spp(ii)%pRE-pp).lt.pchunk) then
+                   achunk=spp(ii)%pRE-pp+1
+                else
+                   achunk=pchunk
+                end if
 
                 !$OMP SIMD
                 do cc=1_idef,achunk
-                   spp(ii)%vars%Y(pp-1+cc,1)=Y_R(cc)
-                   spp(ii)%vars%Y(pp-1+cc,2)=Y_PHI(cc)
-                   spp(ii)%vars%Y(pp-1+cc,3)=Y_Z(cc)
+                   Y_R(cc)=spp(ii)%vars%Y(pp-1+cc,1)
+                   Y_PHI(cc)=spp(ii)%vars%Y(pp-1+cc,2)
+                   Y_Z(cc)=spp(ii)%vars%Y(pp-1+cc,3)
 
-                   spp(ii)%vars%V(pp-1+cc,1)=V_PLL(cc)
-                   spp(ii)%vars%V(pp-1+cc,2)=V_MU(cc)
+                   V_PLL(cc)=spp(ii)%vars%V(pp-1+cc,1)
+                   V_MU(cc)=spp(ii)%vars%V(pp-1+cc,2)
 
-                   spp(ii)%vars%flagCon(pp-1+cc)=flagCon(cc)
-                   spp(ii)%vars%flagCol(pp-1+cc)=flagCol(cc)
+                   PSIp(cc)=spp(ii)%vars%PSI_p(pp-1+cc)
 
-                   spp(ii)%vars%B(pp-1+cc,1) = B_R(cc)
-                   spp(ii)%vars%B(pp-1+cc,2) = B_PHI(cc)
-                   spp(ii)%vars%B(pp-1+cc,3) = B_Z(cc)
-
-                   spp(ii)%vars%PSI_P(pp-1+cc) = PSIp(cc)
-                   spp(ii)%vars%E(pp-1+cc,2) = E_PHI(cc)
+                   flagCon(cc)=spp(ii)%vars%flagCon(pp-1+cc)
+                   flagCol(cc)=spp(ii)%vars%flagCol(pp-1+cc)
                 end do
                 !$OMP END SIMD
 
-             else
+                if (.not.params%FokPlan) then
+                   Vdenave=0._rp
+                   do tt=1_ip,params%t_skip
 
-                call advance_FPeqn_vars(params,Y_R,Y_PHI, &
-                     Y_Z,V_PLL,V_MU,flagCon,flagCol,m_cache, &
-                     F,P,PSIp)
+                      !                   write(output_unit_write,*) params%mpi_params%rank,'Y_R',Y_R
+
+                      call advance_GCeqn_vars(spp(ii)%vars,pp, &
+                           tt+params%t_skip*(ttt-1),params, &
+                           Y_R,Y_PHI, Y_Z,V_PLL,V_MU,flagCon,flagCol,q_cache,m_cache, &
+                           B_R,B_PHI,B_Z,F,P,PSIp,E_PHI)
+
+                      !                   write(output_unit_write,*) params%mpi_params%rank,'Y_R',Y_R
+
+                      if (params%SC_E) then                  
+                         call calculate_SC_p(params,F,B_R,B_PHI,B_Z,Y_R,Y_Z, &
+                              V_PLL,V_MU,m_cache,flagCon,flagCol,Vden)
+                         Vdenave=(Vdenave*REAL(tt-1_ip)+Vden)/REAL(tt)
+                      end if
+
+                   end do !timestep iterator
+
+                   VdenOMP=VdenOMP+Vdenave
+
+
+                   !$OMP SIMD
+                   do cc=1_idef,achunk
+                      spp(ii)%vars%Y(pp-1+cc,1)=Y_R(cc)
+                      spp(ii)%vars%Y(pp-1+cc,2)=Y_PHI(cc)
+                      spp(ii)%vars%Y(pp-1+cc,3)=Y_Z(cc)
+
+                      spp(ii)%vars%V(pp-1+cc,1)=V_PLL(cc)
+                      spp(ii)%vars%V(pp-1+cc,2)=V_MU(cc)
+
+                      spp(ii)%vars%flagCon(pp-1+cc)=flagCon(cc)
+                      spp(ii)%vars%flagCol(pp-1+cc)=flagCol(cc)
+
+                      spp(ii)%vars%B(pp-1+cc,1) = B_R(cc)
+                      spp(ii)%vars%B(pp-1+cc,2) = B_PHI(cc)
+                      spp(ii)%vars%B(pp-1+cc,3) = B_Z(cc)
+
+                      spp(ii)%vars%PSI_P(pp-1+cc) = PSIp(cc)
+                      spp(ii)%vars%E(pp-1+cc,2) = E_PHI(cc)
+                   end do
+                   !$OMP END SIMD
+
+                else
+
+
+
+                   do tt=tt0,params%t_skip
+                      call include_CoulombCollisions_GC_p(tt,params, &
+                           Y_R,Y_PHI,Y_Z,V_PLL,V_MU,m_cache,flagCon,flagCol, &
+                           F,P,E_PHI,ne,PSIp,newREs)
+
+
+
+                      if (newREs.gt.0) then
+                         tt0=tt
+
+                         exit
+                      end if
+                   end do
+
+
+                   !$OMP SIMD
+                   do cc=1_idef,achunk
+                      spp(ii)%vars%V(pp-1+cc,1)=V_PLL(cc)
+                      spp(ii)%vars%V(pp-1+cc,2)=V_MU(cc)
+
+                      spp(ii)%vars%flagCol(pp-1+cc)=flagCol(cc)
+                   end do
+                   !$OMP END SIMD
+
+
+                end if
+
+                call analytical_fields_Bmag_p(achunk,F,Y_R,Y_PHI,Y_Z, &
+                     Bmag,E_PHI)
 
                 !$OMP SIMD
                 do cc=1_idef,achunk
-                   spp(ii)%vars%V(pp-1+cc,1)=V_PLL(cc)
-                   spp(ii)%vars%V(pp-1+cc,2)=V_MU(cc)
+                   spp(ii)%vars%g(pp-1+cc)=sqrt(1+V_PLL(cc)**2+ &
+                        2*V_MU(cc)*Bmag(cc)*m_cache)
 
-                   spp(ii)%vars%flagCol(pp-1+cc)=flagCol(cc)
+                   spp(ii)%vars%eta(pp-1+cc) = rad2deg(atan2(sqrt(2*m_cache* &
+                        Bmag(cc)*spp(ii)%vars%V(pp-1+cc,2)), &
+                        spp(ii)%vars%V(pp-1+cc,1)))
                 end do
                 !$OMP END SIMD
 
-             end if
-
-             call analytical_fields_Bmag_p(achunk,F,Y_R,Y_PHI,Y_Z, &
-                  Bmag,E_PHI)
-
-             !$OMP SIMD
-             do cc=1_idef,achunk
-                spp(ii)%vars%g(pp-1+cc)=sqrt(1+V_PLL(cc)**2+ &
-                     2*V_MU(cc)*Bmag(cc)*m_cache)
-
-                spp(ii)%vars%eta(pp-1+cc) = rad2deg(atan2(sqrt(2*m_cache* &
-                     Bmag(cc)*spp(ii)%vars%V(pp-1+cc,2)), &
-                     spp(ii)%vars%V(pp-1+cc,1)))
-             end do
-             !$OMP END SIMD
-
-          end do !particle chunk iterator
-          !$OMP END PARALLEL DO
+             end do !particle chunk iterator
+             !$OMP END PARALLEL DO
+          end do
 
           if (params%SC_E) then
              call calculate_SC_E1D(params,F,VdenOMP)             
@@ -3901,10 +3919,13 @@ contains
              !$OMP END SIMD
 
           else if (params%FokPlan.and.params%collisions) then
+             
+             do tt=1_ip,params%t_skip
+                call include_CoulombCollisions_GC_p(tt,params,Y_R,Y_PHI,Y_Z, &
+                     V_PLL,V_MU,m_cache,flagCon,flagCol,F,P,E_PHI,ne,PSIp)
 
-             call advance_FPinterp_vars(params,Y_R,Y_PHI, &
-                  Y_Z,V_PLL,V_MU,m_cache,flagCon,flagCol,F,P,E_PHI,ne,PSIp)
-
+             end do
+             
              !$OMP SIMD
              do cc=1_idef,pchunk
                 spp(ii)%vars%V(pp-1+cc,1)=V_PLL(cc)
@@ -3920,7 +3941,7 @@ contains
 
           else
              do tt=1_ip,params%t_skip
-                call calculate_GCfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                call calculate_GCfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z,&
                      E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
                      gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp)
              end do

@@ -467,6 +467,8 @@ CONTAINS
        spp(ii)%q = q(ii)*C_E
        spp(ii)%m = m(ii)*C_ME
        spp(ii)%ppp = ppp(ii)
+       spp(ii)%pinit = pinit(ii)
+       spp(ii)%pRE = pinit(ii)
 
        spp(ii)%Ro = Ro(ii)
        spp(ii)%PHIo = C_PI*PHIo(ii)/180.0_rp
@@ -516,6 +518,7 @@ CONTAINS
        ALLOCATE( spp(ii)%vars%Pin(spp(ii)%ppp) )
        ALLOCATE( spp(ii)%vars%flagCon(spp(ii)%ppp) )
        ALLOCATE( spp(ii)%vars%flagCol(spp(ii)%ppp) )
+       ALLOCATE( spp(ii)%vars%flagRE(spp(ii)%ppp) )
        ALLOCATE( spp(ii)%vars%wt(spp(ii)%ppp) )
 #ifdef FIO
        ALLOCATE( spp(ii)%vars%hint(spp(ii)%ppp))
@@ -541,6 +544,7 @@ CONTAINS
        spp(ii)%vars%Pin = 0.0_rp
        spp(ii)%vars%flagCon = 1_is
        spp(ii)%vars%flagCol = 1_is
+       spp(ii)%vars%flagRE(1:spp(ii)%pinit) = 1_is
        spp(ii)%vars%wt = 0.0_rp
 
        if (params%orbit_model(1:2).eq.'GC') then
@@ -593,6 +597,8 @@ CONTAINS
 
 
     DEALLOCATE(ppp)
+    DEALLOCATE(pinit)
+    DEALLOCATE(pRE)
     DEALLOCATE(q)
     DEALLOCATE(m)
     DEALLOCATE(Eno)

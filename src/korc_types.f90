@@ -244,6 +244,7 @@ module korc_types
      LOGICAL 			:: collisions 
      !! Flag to indicate if collisionsare included (collisions=T) or not
      !! (collisions=F).
+     LOGICAL 			:: LargeCollisions 
      CHARACTER(MAX_STRING_LENGTH) :: GC_rad_model
      CHARACTER(MAX_STRING_LENGTH) :: collisions_model 
      !! String with the name of the collisions model to be used in the
@@ -439,6 +440,7 @@ module korc_types
      INTEGER 				:: pinit 
      !! Number of computational particles initialized for each electron species
      !! to give room for sources of additional electrons
+     INTEGER 				:: pRE 
      REAL(rp) 				:: Ro 
      !! Radial position of the center of the electrons' initial spatial
      !! distribution.

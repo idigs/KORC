@@ -139,7 +139,9 @@ module korc_collisions
        include_CoulombCollisions_GC_p,&
        include_CoulombCollisions_FO_p,&
        check_collisions_params,&
-       define_collisions_time_step
+       define_collisions_time_step,&
+       large_angle_source,&
+       large_angle_sample
   PRIVATE :: load_params_ms,&
        load_params_ss,&
        normalize_params_ms,&
@@ -1832,7 +1834,7 @@ contains
 
 
   subroutine include_CoulombCollisions_GC_p(tt,params,Y_R,Y_PHI,Y_Z, &
-       Ppll,Pmu,me,flagCon,flagCol,F,P,E_PHI,ne,PSIp)
+       Ppll,Pmu,me,flagCon,flagCol,F,P,E_PHI,ne,PSIp,newREs)
 
     TYPE(PROFILES), INTENT(IN)                                 :: P
     TYPE(FIELDS), INTENT(IN)                                   :: F
@@ -1870,7 +1872,9 @@ contains
     integer :: cc,pchunk
     integer(ip),INTENT(IN) :: tt
     REAL(rp), DIMENSION(params%pchunk,params%num_impurity_species) 	:: nimp
+    integer :: INTENT(OUT) :: newREs=0
 
+    
     pchunk=params%pchunk
     
     if (MODULO(params%it+tt,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
@@ -2067,9 +2071,6 @@ contains
 !                  time*params%cpp%time, dxi(cc)
           endif
 
-          ! Transform P,xi to p_pll,mu
-          Ppll(cc)=pm(cc)*xi(cc)
-          Pmu(cc)=(pm(cc)*pm(cc)-Ppll(cc)*Ppll(cc))/(2*me*Bmag(cc))
        end do
        !$OMP END SIMD
 
@@ -2111,7 +2112,21 @@ contains
 !          write(output_unit_write,'("CB: ",E17.10)') CBL(1)
 !       end if
 
-       call large_angle_source(params)
+       if (params%LargeCollisions) then
+
+          call large_angle_source(params,pm,xi,newREs)
+
+          call large_angle_sample(params)
+          
+       endif
+
+       !$OMP SIMD
+       do cc=1_idef,pchunk  
+          ! Transform P,xi to p_pll,mu
+          Ppll(cc)=pm(cc)*xi(cc)
+          Pmu(cc)=(pm(cc)*pm(cc)-Ppll(cc)*Ppll(cc))/(2*me*Bmag(cc))
+       end do
+       !$OMP END SIMD
        
     end if
     
@@ -2389,11 +2404,25 @@ contains
   end subroutine include_CoulombCollisions_GCfio_p
 #endif
 
-  subroutine large_angle_source(params)
+  subroutine large_angle_source(params,pm,xi,newREs)
+    TYPE(KORC_PARAMS), INTENT(IN) 			:: params
+    REAL(rp), INTENT(IN), DIMENSION(params%pchunk)  :: pm,xi
+    INTEGER, INTENT(OUT) :: newREs
+    REAL(rp), DIMENSION(params%pchunk)  :: gam
+
+    do cc=1_idef,pchunk
+       gam(cc) = sqrt(1+pm(cc)*pm(cc))
+       
+       cosgam(cc)=sqrt()
+    end do
+    
+  end subroutine large_angle_source
+
+  subroutine large_angle_sample(params)
     TYPE(KORC_PARAMS), INTENT(IN) 			:: params
 
     
-  end subroutine large_angle_source
+  end subroutine large_angle_source 
   
   subroutine save_params_ms(params)
     TYPE(KORC_PARAMS), INTENT(IN) 			:: params
