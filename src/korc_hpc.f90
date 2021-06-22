@@ -94,7 +94,7 @@ CONTAINS
             exitstat=exei)
 #elif CORI
        !write(6,*) 'CORI'
-       call execute_command_line("/global/cfs/cdirs/m3236/build_NIMUW/KORC/src/get_git_details.sh", &
+       call execute_command_line("/global/cfs/cdirs/m3236/build_all/KORC/src/get_git_details.sh", &
             exitstat=exei)
 #endif
 

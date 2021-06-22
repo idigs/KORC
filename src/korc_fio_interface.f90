@@ -393,7 +393,9 @@ CONTAINS
 
     if (params%mpi_params%rank .EQ. 0) then
        write(output_unit_write,*) 'Calculate B',F%FIO_B
+       write(output_unit_write,'("Magnetic field: ",E17.10)') F%Bo
        write(output_unit_write,*) 'Calculate E',F%FIO_E
+       write(output_unit_write,'("Electric field: ",E17.10)') F%Eo
        write(output_unit_write,*) 'Calculate A',F%FIO_A
        write(output_unit_write,*) 'Calculate ne',P%FIO_ne
        write(output_unit_write,*) 'Calculate Te',P%FIO_te
