@@ -657,6 +657,15 @@ CONTAINS
     if (params%restart.OR.params%proceed.or.params%reinit) then
        call load_particles_ic(params,spp,F)
 
+       if(params%LargeCollisions) then
+          do ii=1_idef,params%num_species
+             spp(ii)%pRE=int(sum(float(spp(ii)%vars%flagRE)))
+          end do
+       end if
+
+       !write(6,*) 'flagRE',spp(1)%vars%flagRE
+       !write(6,*) 'pRE',spp(1)%pRE
+       
        call init_random_seed()              
     else
 
