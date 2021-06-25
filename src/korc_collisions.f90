@@ -115,8 +115,10 @@ module korc_collisions
      REAL(rp) 			:: dTau
      ! Subcycling time step in collisional time units (Tau)
      INTEGER(ip)		:: subcycling_iterations
-     REAL(rp) :: p_therm
-
+     REAL(rp) :: p_therm,gam_therm
+     LOGICAL :: ConserveLA,sample_test
+     CHARACTER(30) :: Clog_model
+     
      REAL(rp), DIMENSION(3) 	:: x = (/1.0_rp,0.0_rp,0.0_rp/)
      REAL(rp), DIMENSION(3) 	:: y = (/0.0_rp,1.0_rp,0.0_rp/)
      REAL(rp), DIMENSION(3) 	:: z = (/0.0_rp,0.0_rp,1.0_rp/)
@@ -137,11 +139,11 @@ module korc_collisions
        deallocate_collisions_params,&
        save_collision_params,&    
        include_CoulombCollisions_GC_p,&
+       include_CoulombCollisionsLA_GC_p,&
        include_CoulombCollisions_FO_p,&
        check_collisions_params,&
        define_collisions_time_step,&
-       large_angle_source,&
-       large_angle_sample
+       large_angle_source
   PRIVATE :: load_params_ms,&
        load_params_ss,&
        normalize_params_ms,&
@@ -393,7 +395,12 @@ contains
     cparams_ss%Zeff = Zeff_sing
     cparams_ss%dTau = dTau_sing
     cparams_ss%p_therm = p_therm
+    cparams_ss%ConserveLA = ConserveLA
+    cparams_ss%sample_test = sample_test
+    cparams_ss%Clog_model = Clog_model
 
+    cparams_ss%gam_therm = sqrt(1+p_therm*p_therm)
+    
     cparams_ss%rD = SQRT(C_E0*cparams_ss%Te/(cparams_ss%ne*C_E**2*(1.0_rp + &
          cparams_ss%Te/cparams_ss%Ti)))
 
@@ -414,8 +421,7 @@ contains
     cparams_ss%ED = cparams_ss%ne*C_E**3*cparams_ss%CoulombLogee/ &
          (4.0_rp*C_PI*C_E0**2*cparams_ss%Te)
 
-    cparams_ss%taur=6*C_PI*C_E0*(C_ME*C_C)**3/(C_E**4*params%cpp%Bo**2* &
-         params%cpp%time)
+    cparams_ss%taur=6*C_PI*C_E0*(C_ME*C_C)**3/(C_E**4*params%cpp%Bo**2)
     
     !	ALLOCATE(cparams_ss%rnd_num(3,cparams_ss%rnd_dim))
     !	call RANDOM_NUMBER(cparams_ss%rnd_num)
@@ -450,6 +456,7 @@ contains
     TYPE(PROFILES), INTENT(INOUT)  :: P
     TYPE(FIELDS), INTENT(IN)                :: F
     INTEGER 				                       	:: ii
+    REAL(rp) :: p_crit,gam_crit
 
     if (params%collisions.or.((TRIM(params%field_model).eq.'M3D_C1'.or. &
          TRIM(params%field_model).eq.'NIMROD').and. &
@@ -492,6 +499,41 @@ contains
        CASE DEFAULT
           write(output_unit_write,'("Default case")')
        END SELECT
+
+
+
+       if (params%LargeCollisions) then
+
+       if (params%mpi_params%rank .EQ. 0) then
+          write(output_unit_write,'(/,"* * * * * * * LARGE ANGLE COLLISIONS * * * * * * *")')
+       end if
+          
+          if (TRIM(params%field_model) .eq. 'ANALYTICAL') then     
+             p_crit=1/sqrt(F%Eo/cparams_ss%Ec-1._rp)
+          else
+             write(6,*) 'Need to set p_crit!'
+             call korc_abort(25)
+          end if
+
+             
+          gam_crit=sqrt(1+p_crit*p_crit)
+          
+          cparams_ss%gam_therm=(gam_crit+1._rp)/2._rp
+          cparams_ss%p_therm=sqrt(cparams_ss%gam_therm*cparams_ss%gam_therm-1)
+
+          !write(6,*) p_crit,gam_crit,cparams_ss%p_therm,cparams_ss%gam_therm
+
+          
+          
+          if (params%mpi_params%rank .EQ. 0) then
+             write(output_unit_write,*) 'p_crit/(me*c) is: ',p_crit
+             write(output_unit_write,*) 'gam_therm is: ',cparams_ss%gam_therm
+             write(output_unit_write,*) 'E_CH is: ',cparams_ss%Ec,'V/m'
+             write(output_unit_write,*) 'tau_c,rel is: ',cparams_ss%Tau,'s'
+             write(output_unit_write,'("* * * * * * * * * * * * * * * * * * * * * * * * * *",/)')
+          end if
+          
+       end if
 
        if (params%mpi_params%rank .EQ. 0) then
           write(output_unit_write,'("* * * * * * * * * * * * * * * * * * * * * * * * * *",/)')
@@ -658,8 +700,16 @@ contains
        !write(6,'("E_min (MeV)",E17.10)') E/(10**6*C_E)
        !write(6,'("E_therm (MeV)",E17.10)') E_therm/(10**6*C_E)
 
-       v = SQRT(1.0_rp - (C_ME*C_C**2/E)**2)
+       if (.not.params%LargeCollisions) then
+          v = SQRT(1.0_rp - (C_ME*C_C**2/E)**2)
+          !write(6,*) 'v_min',v
+       else
+          v = SQRT(1.0_rp - (C_ME*C_C**2/E_therm)**2)
+          !write(6,*) 'v_therm',v
+       end if
 
+
+       
        if ((params%profile_model.eq.'M3D_C1').or. &
             (params%profile_model(10:10).eq.'H')) then
           nu = (/nu_S_FIO(params,v),nu_D_FIO(params,v),nu_par(v)/)
@@ -778,10 +828,21 @@ contains
     REAL(rp), INTENT(IN) 	:: Te ! In Joules
     REAL(rp) 				:: CLogee_wu
     REAL(rp)  :: k=5._rp
-    
-    CLogee_wu = CLog0_wu(ne,Te)+ &
-         log(1+(2*(params%minimum_particle_g-1)/ &
-         (VTe_wu(Te)/C_C)**2)**(k/2._rp))/k
+
+    if (cparams_ss%Clog_model.eq.'HESSLOW') then
+       CLogee_wu = CLog0_wu(ne,Te)+ &
+            log(1+(2*(params%minimum_particle_g-1)/ &
+            (VTe_wu(Te)/C_C)**2)**(k/2._rp))/k
+
+    else if (cparams_ss%Clog_model.eq.'CONSTANT') then
+       CLogee_wu = 20._rp
+
+    else if (cparams_ss%Clog_model.eq.'MCDEVITT') then
+       CLogee_wu = CLog0_wu(ne,Te)+ &
+            log(1+(2*(params%minimum_particle_g-1)/ &
+            (VTe_wu(Te)/C_C)**2)**(k/2._rp))/k
+    end if
+       
   end function CLogee_wu
 
   function CLogei_wu(params,ne,Te)
@@ -796,9 +857,13 @@ contains
     REAL(rp)  :: p
 
     p=sqrt(params%minimum_particle_g**2-1)
-    
-    CLogei_wu = CLog0_wu(ne,Te)+ &
-         log(1+(2*p/(VTe_wu(Te)/C_C))**k)/k
+
+    if (cparams_ss%Clog_model.eq.'CONSTANT') then
+       CLogei_wu = 20._rp
+    else
+       CLogei_wu = CLog0_wu(ne,Te)+ &
+            log(1+(2*p/(VTe_wu(Te)/C_C))**k)/k
+    end if
   end function CLogei_wu
   
   function CLog(ne,Te) ! Dimensionless ne and Te
@@ -828,11 +893,23 @@ contains
     REAL(rp) 				:: CLogee
     REAL(rp)  :: k=5._rp
     REAL(rp)  :: gam
+    REAL(rp) :: gam_therm
 
     gam=1/sqrt(1-v**2)
+    gam_therm=cparams_ss%gam_therm
     
-    CLogee = CLog0(ne,Te)+ &
-         log(1+(2*(gam-1)/VTe(Te)**2)**(k/2._rp))/k
+    if (cparams_ss%Clog_model.eq.'HESSLOW') then
+       CLogee = CLog0(ne,Te)+ &
+            log(1+(2*(gam-1)/VTe(Te)**2)**(k/2._rp))/k
+       
+    else if (cparams_ss%Clog_model.eq.'CONSTANT') then
+       CLogee = 20._rp
+       
+    else if (cparams_ss%Clog_model.eq.'MCDEVITT') then
+       CLogee = CLog0(ne,Te)+ &
+            log(1+(2*(gam-1)/VTe(Te)**2)**(k/2._rp))/k+ &
+            log(sqrt(2*(gam_therm-1._rp)/(gam-1._rp)))
+    end if
 
 !    write(output_unit_write,*) gam,CLogee
   end function CLogee
@@ -849,8 +926,13 @@ contains
 
     gam=1/sqrt(1-v**2)
     p=gam*v
-    
-    CLogei = CLog0(ne,Te)+log(1+(2*p/VTe(Te))**k)/k
+
+    if (cparams_ss%Clog_model.eq.'CONSTANT') then
+       CLogei = 20._rp
+    else       
+       CLogei = CLog0(ne,Te)+log(1+(2*p/VTe(Te))**k)/k
+    end if
+       
   end function CLogei
   
   function delta(Te)
@@ -1483,7 +1565,7 @@ contains
        call cart_to_cyl_p(pchunk,X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
 
        if (params%profile_model(1:10).eq.'ANALYTICAL') then
-          call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
+          call analytical_profiles_p(pchunk,time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
        else  if (params%profile_model(1:8).eq.'EXTERNAL') then          
           call interp_FOcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flagCon)
        end if
@@ -1831,10 +1913,8 @@ contains
   end subroutine include_CoulombCollisions_FOfio_p
 #endif
   
-
-
   subroutine include_CoulombCollisions_GC_p(tt,params,Y_R,Y_PHI,Y_Z, &
-       Ppll,Pmu,me,flagCon,flagCol,F,P,E_PHI,ne,PSIp,newREs)
+       Ppll,Pmu,me,flagCon,flagCol,F,P,E_PHI,ne,PSIp)
 
     TYPE(PROFILES), INTENT(IN)                                 :: P
     TYPE(FIELDS), INTENT(IN)                                   :: F
@@ -1848,8 +1928,8 @@ contains
     REAL(rp), DIMENSION(params%pchunk) 	:: E_R,E_Z
     REAL(rp), DIMENSION(params%pchunk), INTENT(OUT) 	:: E_PHI,ne,PSIp
     REAL(rp), DIMENSION(params%pchunk), INTENT(IN) 			:: Y_R,Y_PHI,Y_Z
-    INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT) 			:: flagCol
-    INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT) 			:: flagCon
+    INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT) 	:: flagCol
+    INTEGER(is), DIMENSION(params%pchunk), INTENT(INOUT) 	:: flagCon
     REAL(rp), INTENT(IN) 			:: me
     REAL(rp), DIMENSION(params%pchunk) 			:: Te,Zeff
     REAL(rp), DIMENSION(params%pchunk) 			:: nAr0,nAr1,nAr2,nAr3
@@ -1872,8 +1952,6 @@ contains
     integer :: cc,pchunk
     integer(ip),INTENT(IN) :: tt
     REAL(rp), DIMENSION(params%pchunk,params%num_impurity_species) 	:: nimp
-    integer :: INTENT(OUT) :: newREs=0
-
     
     pchunk=params%pchunk
     
@@ -1932,7 +2010,7 @@ contains
 
 
        if (params%profile_model(1:10).eq.'ANALYTICAL') then
-          call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
+          call analytical_profiles_p(pchunk,time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
        else if (params%profile_model(1:8).eq.'EXTERNAL') then
           if (params%profile_model(10:10).eq.'H') then
              call interp_Hcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff, &
@@ -2057,7 +2135,10 @@ contains
 
           pm(cc)=pm(cc)+dp(cc)
           xi(cc)=xi(cc)+dxi(cc)
+       end do
+       !$OMP END SIMD
 
+       do cc=1_idef,pchunk 
 !          if (pm(cc)<0) pm(cc)=-pm(cc)
 
           ! Keep xi between [-1,1]
@@ -2072,7 +2153,15 @@ contains
           endif
 
        end do
+
+       !$OMP SIMD
+       do cc=1_idef,pchunk  
+          ! Transform P,xi to p_pll,mu
+          Ppll(cc)=pm(cc)*xi(cc)
+          Pmu(cc)=(pm(cc)*pm(cc)-Ppll(cc)*Ppll(cc))/(2*me*Bmag(cc))
+       end do
        !$OMP END SIMD
+
 
 !       write(output_unit_write,'("rnd1: ",E17.10)') rnd1
 !       write(output_unit_write,'("flag: ",I16)') flag
@@ -2112,16 +2201,302 @@ contains
 !          write(output_unit_write,'("CB: ",E17.10)') CBL(1)
 !       end if
 
-       if (params%LargeCollisions) then
+       
+    end if
+    
+  end subroutine include_CoulombCollisions_GC_p
 
-          call large_angle_source(params,pm,xi,newREs)
+  subroutine include_CoulombCollisionsLA_GC_p(spp,achunk,tt,params,Y_R,Y_PHI,Y_Z, &
+       Ppll,Pmu,me,flagCon,flagCol,F,P,E_PHI,ne,PSIp)
 
-          call large_angle_sample(params)
+    TYPE(SPECIES), INTENT(INOUT)    :: spp
+    TYPE(PROFILES), INTENT(IN)                                 :: P
+    TYPE(FIELDS), INTENT(IN)                                   :: F
+    TYPE(KORC_PARAMS), INTENT(INOUT) 		:: params
+    INTEGER, INTENT(IN) :: achunk
+    REAL(rp), DIMENSION(achunk), INTENT(INOUT) 	:: Ppll
+    REAL(rp), DIMENSION(achunk), INTENT(INOUT) 	:: Pmu
+    REAL(rp), DIMENSION(achunk) 			:: Bmag
+    REAL(rp), DIMENSION(achunk) 	:: B_R,B_PHI,B_Z
+    REAL(rp), DIMENSION(achunk) :: curlb_R,curlb_PHI,curlb_Z
+    REAL(rp), DIMENSION(achunk) :: gradB_R,gradB_PHI,gradB_Z
+    REAL(rp), DIMENSION(achunk) 	:: E_R,E_Z
+    REAL(rp), DIMENSION(achunk), INTENT(OUT) 	:: E_PHI,ne,PSIp
+    REAL(rp), DIMENSION(achunk), INTENT(IN) 			:: Y_R,Y_PHI,Y_Z
+    INTEGER(is), DIMENSION(achunk), INTENT(INOUT) 	:: flagCol
+    INTEGER(is), DIMENSION(achunk), INTENT(INOUT) 	:: flagCon
+    REAL(rp), INTENT(IN) 			:: me
+    REAL(rp), DIMENSION(achunk) 			:: Te,Zeff
+    REAL(rp), DIMENSION(achunk) 			:: nAr0,nAr1,nAr2,nAr3
+    REAL(rp), DIMENSION(achunk) 			:: nD,nD1
+    REAL(rp), DIMENSION(achunk,2) 			:: dW
+    REAL(rp), DIMENSION(achunk,2) 			:: rnd1
+    REAL(rp) 					:: dt,time
+    REAL(rp), DIMENSION(achunk) 					:: pm
+    REAL(rp), DIMENSION(achunk)  					:: dp
+    REAL(rp), DIMENSION(achunk)  					:: xi
+    REAL(rp), DIMENSION(achunk)  					:: dxi
+    REAL(rp), DIMENSION(achunk)  					:: v,gam
+    !! speed of particle
+    REAL(rp), DIMENSION(achunk) 					:: CAL
+    REAL(rp) , DIMENSION(achunk)					:: dCAL
+    REAL(rp), DIMENSION(achunk) 					:: CFL
+    REAL(rp), DIMENSION(achunk) 					:: CBL
+    REAL(rp), DIMENSION(achunk) 	:: SC_p,SC_mu,BREM_p
+    REAL(rp) 					:: kappa
+    integer :: cc
+    integer(ip),INTENT(IN) :: tt
+    REAL(rp), DIMENSION(achunk,params%num_impurity_species) 	:: nimp
+  
+    
+    if (MODULO(params%it+tt,cparams_ss%subcycling_iterations) .EQ. 0_ip) then
+       dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt       
+       time=params%init_time+(params%it-1+tt)*params%dt
+
+
+       if (params%field_eval.eq.'eqn') then
+          call analytical_fields_GC_p(achunk,F,Y_R,Y_PHI, &
+               Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+               gradB_R,gradB_PHI,gradB_Z,PSIp)          
+       else if (params%field_eval.eq.'interp') then
+          if (F%axisymmetric_fields) then
+             if (F%Bflux) then
+                if (.not.params%SC_E) then
+                   call calculate_GCfields_p(achunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                        E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+                        gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp)
+                else
+                   call calculate_GCfields_p_FS(achunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                        E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+                        gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp)
+                end if
+
+             else if (F%ReInterp_2x1t) then
+                call calculate_GCfieldswE_p(achunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                     E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+                     gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp)
+             else if (F%Bflux3D) then
+                call calculate_GCfields_2x1t_p(achunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                     E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+                     gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp,time)
+             else if (F%dBfield) then
+                call calculate_2DBdBfields_p(achunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                     E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+                     gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp)
+             else
+                call interp_fields_p(achunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                     E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+                     gradB_R,gradB_PHI,gradB_Z,flagCon)
+             end if
+          else
+             if (F%dBfield) then
+                call calculate_2DBdBfields_p(achunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                     E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+                     gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp)
+             else
+                call interp_fields_3D_p(achunk,F,Y_R,Y_PHI,Y_Z,B_R,B_PHI,B_Z, &
+                     E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
+                     gradB_R,gradB_PHI,gradB_Z,flagCon)
+             end if
+          endif
+          call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
+       end if
+
+
+       if (params%profile_model(1:10).eq.'ANALYTICAL') then
+          call analytical_profiles_p(achunk,time,params,Y_R,Y_Z,P,F, &
+               ne,Te,Zeff,PSIp)
+       else if (params%profile_model(1:8).eq.'EXTERNAL') then
+          if (params%profile_model(10:10).eq.'H') then
+             call interp_Hcollision_p(achunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff, &
+                  nAr0,nAr1,nAr2,nAr3,nD,nD1,flagCon)
+             do cc=1_idef,achunk
+                nimp(cc,1)=nAr0(cc)
+                nimp(cc,2)=nAr1(cc)
+                nimp(cc,3)=nAr2(cc)
+                nimp(cc,4)=nAr3(cc)
+                nimp(cc,5)=nD(cc)
+                nimp(cc,6)=nD1(cc)
+             end do
+          else
+             call interp_FOcollision_p(achunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flagCon)
+          endif
+       end if
+       
+       if (.not.params%FokPlan) E_PHI=0._rp
+       
+       !$OMP SIMD
+!       !$OMP& aligned (pm,xi,v,Ppll,Bmag,Pmu)
+       do cc=1_idef,achunk
+          Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
+          ! Transform p_pll,mu to P,eta
+          pm(cc) = SQRT(Ppll(cc)*Ppll(cc)+2*me*Bmag(cc)*Pmu(cc))
+          xi(cc) = Ppll(cc)/pm(cc)
+
+          gam(cc) = sqrt(1+pm(cc)*pm(cc))
           
-       endif
+          v(cc) = pm(cc)/gam(cc)
+          ! normalized speed (v_K=v_P/c)
+       end do
+       !$OMP END SIMD
+
+!       write(output_unit_write,'("ne: "E17.10)') ne
+!       write(output_unit_write,'("Te: "E17.10)') Te
+!       write(output_unit_write,'("Bmag: "E17.10)') Bmag                
+!       write(output_unit_write,'("v: ",E17.10)') v
+!       write(output_unit_write,'("xi: ",E17.10)') xi
+       !       write(output_unit_write,'("size(E_PHI_GC): ",I16)') size(E_PHI)
+
 
        !$OMP SIMD
-       do cc=1_idef,pchunk  
+!       !$OMP& aligned(rnd1,dW,CAL,dCAL,CFL,CBL,v,ne,Te,Zeff,dp, &
+!       !$OMP& flagCon,flagCol,dxi,xi,pm,Ppll,Pmu,Bmag)
+       do cc=1_idef,achunk
+       
+#ifdef PARALLEL_RANDOM
+          rnd1(cc,1) = get_random()
+          rnd1(cc,2) = get_random()
+          !       rnd1(:,1) = get_random_mkl()
+          !       rnd1(:,2) = get_random_mkl()
+#else
+          call RANDOM_NUMBER(rnd1)
+#endif
+          
+          dW(cc,1) = SQRT(3*dt)*(-1+2*rnd1(cc,1))     
+          dW(cc,2) = SQRT(3*dt)*(-1+2*rnd1(cc,2))     
+
+!          write(output_unit_write,'("dW1: ",E17.10)') dW(cc,1)
+!          write(output_unit_write,'("dW2: ",E17.10)') dW(cc,2)
+
+          if (params%profile_model(10:10).eq.'H') then
+             CAL(cc) = CA_SD(v(cc),ne(cc),Te(cc))
+             dCAL(cc)= dCA_SD(v(cc),me,ne(cc),Te(cc))
+             CFL(cc) = CF_SD_FIO(params,v(cc),ne(cc),Te(cc),nimp(cc,:))
+             CBL(cc) = (CB_ee_SD(v(cc),ne(cc),Te(cc),Zeff(cc))+ &
+                  CB_ei_SD_FIO(params,v(cc),ne(cc),Te(cc),nimp(cc,:),Zeff(cc)))
+          else
+             CAL(cc) = CA_SD(v(cc),ne(cc),Te(cc))
+             dCAL(cc)= dCA_SD(v(cc),me,ne(cc),Te(cc))
+             CFL(cc) = CF_SD(params,v(cc),ne(cc),Te(cc))
+             CBL(cc) = (CB_ee_SD(v(cc),ne(cc),Te(cc),Zeff(cc))+ &
+                  CB_ei_SD(params,v(cc),ne(cc),Te(cc),Zeff(cc)))
+          endif
+          
+          if(.not.cparams_ss%sample_test) then
+             dp(cc)=REAL(flagCol(cc))*REAL(flagCon(cc))* &
+                  ((-CFL(cc)+dCAL(cc)+E_PHI(cc)*xi(cc))*dt+ &
+                  sqrt(2.0_rp*CAL(cc))*dW(cc,1))
+
+             dxi(cc)=REAL(flagCol(cc))*REAL(flagCon(cc))* &
+                  ((-2*xi(cc)*CBL(cc)/(pm(cc)*pm(cc))+ &
+                  E_PHI(cc)*(1-xi(cc)*xi(cc))/pm(cc))*dt- &
+                  sqrt(2.0_rp*CBL(cc)*(1-xi(cc)*xi(cc)))/pm(cc)*dW(cc,2))
+
+          else
+             dp(cc)=0._rp
+             dxi(cc)=0._rp
+          end if
+             
+!          write(output_unit_write,'("dp: ",E17.10)') dp(cc)
+!          write(output_unit_write,'("dxi: ",E17.10)') dxi(cc)
+
+       end do
+       !$OMP END SIMD
+          
+       if (params%FokPlan.and.params%radiation) then
+          if(params%GC_rad_model.eq.'SDE') then
+
+             !$OMP SIMD
+             do cc=1_idef,achunk
+
+                SC_p(cc)=-gam(cc)*pm(cc)*(1-xi(cc)*xi(cc))/ &
+                     (cparams_ss%taur/Bmag(cc)**2)
+                SC_mu(cc)=xi(cc)*(1-xi(cc)*xi(cc))/ &
+                     ((cparams_ss%taur/Bmag(cc)**2)*gam(cc))
+
+                kappa=2._rp*C_PI*C_RE**2._rp*C_ME*C_C**2._rp
+                BREM_p(cc)=-2._rp*ne(cc)*kappa*Zeff(cc)*(Zeff(cc)+1._rp)* &
+                     C_a/C_PI*(gam(cc)-1._rp)*(log(2._rp*gam(cc))-1._rp/3._rp)
+
+
+                dp(cc)=dp(cc)+(SC_p(cc)+BREM_p(cc))*dt* &
+                     REAL(flagCol(cc))*REAL(flagCon(cc))
+                dxi(cc)=dxi(cc)+(SC_mu(cc))*dt* &
+                     REAL(flagCol(cc))*REAL(flagCon(cc))
+
+             end do
+             !$OMP END SIMD
+
+          end if
+       end if
+
+       !$OMP SIMD
+       do cc=1_idef,achunk  
+
+          pm(cc)=pm(cc)+dp(cc)
+          xi(cc)=xi(cc)+dxi(cc)
+       end do
+       !$OMP END SIMD
+
+       do cc=1_idef,achunk  
+!          if (pm(cc)<0) pm(cc)=-pm(cc)
+
+          ! Keep xi between [-1,1]
+          if (xi(cc)>1) then
+!             write(output_unit_write,'("High xi at: ",E17.10," with dxi: ",E17.10)') &
+!                  time*params%cpp%time, dxi(cc)
+             xi(cc)=1-mod(xi(cc),1._rp)
+          else if (xi(cc)<-1) then
+             xi(cc)=-1-mod(xi(cc),-1._rp)
+!             write(output_unit_write,'("Low xi at: ",E17.10," with dxi: ",E17.10)') &
+!                  time*params%cpp%time, dxi(cc)
+          endif
+
+          if ((pm(cc).lt.cparams_ss%p_therm).and.flagCol(cc).eq.1_ip) then
+!             write(output_unit_write,'("Momentum less than zero")')
+             !             stop
+!             write(output_unit_write,'("Particle not tracked at: ",E17.10," &
+!                  & with xi: ",E17.10)') time*params%cpp%time, xi(cc)
+             flagCol(cc)=0_ip
+          end if
+          
+       end do
+
+
+!       write(output_unit_write,'("rnd1: ",E17.10)') rnd1
+!       write(output_unit_write,'("flag: ",I16)') flag
+!       write(output_unit_write,'("CA: ",E17.10)') CAL
+!       write(output_unit_write,'("dCA: ",E17.10)') dCAL
+!       write(output_unit_write,'("CF ",E17.10)') CFL
+!       write(output_unit_write,'("CB: ",E17.10)') CBL
+!       write(output_unit_write,'("dp: ",E17.10)') dp
+!       write(output_unit_write,'("dxi: ",E17.10)') dxi
+!       write(output_unit_write,'("Ppll: ",E17.10)') Ppll
+!      write(output_unit_write,'("Pmu: ",E17.10)') Pmu
+!       write(output_unit_write,'("E_PHI_COL: ",E17.10)') E_PHI
+       
+
+!       if (tt .EQ. 1_ip) then
+!          write(output_unit_write,'("dp_rad: ",E17.10)') &
+!               -gam(1)*pm(1)*(1-xi(1)*xi(1))/ &
+!               (cparams_ss%taur/Bmag(1)**2)*dt
+!          write(output_unit_write,'("dxi_rad: ",E17.10)') &
+!               xi(1)*(1-xi(1)*xi(1))/ &
+!               ((cparams_ss%taur/Bmag(1)**2)*gam(1))*dt
+!       end if
+       
+!       if (tt .EQ. 1_ip) then
+!          write(output_unit_write,'("CA: ",E17.10)') CAL(1)
+!          write(output_unit_write,'("dCA: ",E17.10)') dCAL(1)
+!          write(output_unit_write,'("CF ",E17.10)') CFL(1)
+!          write(output_unit_write,'("CB: ",E17.10)') CBL(1)
+!       end if
+
+       call large_angle_source(spp,params,achunk,Y_R,Y_PHI,Y_Z, &
+            pm,xi,ne,Te,Bmag,me)
+
+       !$OMP SIMD
+       do cc=1_idef,achunk  
           ! Transform P,xi to p_pll,mu
           Ppll(cc)=pm(cc)*xi(cc)
           Pmu(cc)=(pm(cc)*pm(cc)-Ppll(cc)*Ppll(cc))/(2*me*Bmag(cc))
@@ -2130,7 +2505,7 @@ contains
        
     end if
     
-  end subroutine include_CoulombCollisions_GC_p
+  end subroutine include_CoulombCollisionsLA_GC_p
 
 #ifdef FIO
   subroutine include_CoulombCollisions_GCfio_p(tt,params,Y_R,Y_PHI,Y_Z, &
@@ -2404,25 +2779,280 @@ contains
   end subroutine include_CoulombCollisions_GCfio_p
 #endif
 
-  subroutine large_angle_source(params,pm,xi,newREs)
+  subroutine large_angle_source(spp,params,achunk,Y_R,Y_PHI,Y_Z, &
+       pm,xi,ne,Te,Bmag,me)
+    TYPE(SPECIES), INTENT(INOUT)    :: spp
     TYPE(KORC_PARAMS), INTENT(IN) 			:: params
-    REAL(rp), INTENT(IN), DIMENSION(params%pchunk)  :: pm,xi
-    INTEGER, INTENT(OUT) :: newREs
-    REAL(rp), DIMENSION(params%pchunk)  :: gam
+    INTEGER, INTENT(IN) :: achunk
+    REAL(rp), INTENT(INOUT), DIMENSION(achunk)  :: pm,xi
+    REAL(rp), INTENT(IN), DIMENSION(achunk)  :: Y_R,Y_PHI,Y_Z,ne,Te,Bmag
+    REAL(rp), INTENT(IN)  :: me
+    REAL(rp), DIMENSION(achunk)  :: gam,prob0,prob1
+    REAL(rp) :: gam_therm,p_therm,gammax=200._rp,dt,gamsecmax,psecmax,ptrial
+    REAL(rp) :: gamtrial,cosgam1,xirad,xip,xim,xitrial,sinsq1,cossq1,pitchprob1
+    REAL(rp) :: dsigdgam1,S_LAmax,S_LA1,tmppm,gamvth
+    INTEGER, parameter :: ngam1=100, neta1=100
+    INTEGER :: ii,jj,cc,seciter
+    REAL(rp), DIMENSION(ngam1) :: gam1,pm1,tmpgam1,tmpcosgam,tmpdsigdgam,tmpsecthreshgam,probtmp,intpitchprob
+    REAL(rp), DIMENSION(ngam1-1) :: dpm1
+    REAL(rp), DIMENSION(neta1) :: eta1,tmpsinsq,tmpcossq
+    REAL(rp), DIMENSION(neta1-1) :: deta1
+    REAL(rp), DIMENSION(ngam1,neta1) :: cosgam,sinsq,cossq,tmpcossq1,pitchprob,dsigdgam,secthreshgam,pm11,gam11,eta11,S_LA,pitchrad
+    LOGICAL :: accepted
 
-    do cc=1_idef,pchunk
-       gam(cc) = sqrt(1+pm(cc)*pm(cc))
-       
-       cosgam(cc)=sqrt()
+    dt = REAL(cparams_ss%subcycling_iterations,rp)*params%dt*params%cpp%time
+
+    p_therm=cparams_ss%p_therm
+    gam_therm=cparams_ss%gam_therm
+
+    !! Generating 1D and 2D ranges for secondary RE distribution
+    
+    do ii=1,ngam1
+       tmpgam1(ii)=log10(log10(gam_therm))+ &
+            (log10(log10(gammax))-log10(log10(gam_therm)))* &
+            REAL(ii-1)/REAL(ngam1-1)
     end do
+    gam1=10**(10**(tmpgam1))
+
+    !write(6,*) 'gam_therm,gammax',gam_therm,gammax
+    !write(6,*) 'tmpgam1',tmpgam1
+    !write(6,*) 'gam1',gam1
+
+    
+    pm1=sqrt(gam1**2-1)
+
+    do ii=1,ngam1-1
+       dpm1(ii)=pm1(ii+1)-pm1(ii)
+    end do
+
+    do ii=1,neta1
+       eta1(ii)=C_PI*(ii-1)/(neta1-1)
+    end do
+
+    !write(6,*) 'eta1',eta1
+    
+    do ii=1,neta1-1
+       deta1(ii)=eta1(ii+1)-eta1(ii)
+    end do 
+
+    do ii=1,neta1
+       pm11(:,ii)=pm1
+       gam11(:,ii)=gam1
+    end do
+
+    do ii=1,ngam1
+       eta11(ii,:)=eta1
+    end do
+    
+    !$OMP SIMD
+    do cc=1_idef,achunk
+       gam(cc) = sqrt(1+pm(cc)*pm(cc))
+
+#ifdef PARALLEL_RANDOM
+       prob0(cc) = get_random()
+#else
+       call RANDOM_NUMBER(prob0)
+#endif
+       
+    end do
+    !$OMP END SIMD
+
+    !! For each primary RE, calculating probability to generate a secondary RE
+    
+    do cc=1_idef,achunk
+       tmpcosgam=sqrt(((gam(cc)+1)*(gam1-1))/((gam(cc)-1)*(gam1+1)))
+       tmpdsigdgam=2*C_PI*C_RE**2/(gam(cc)**2-1)* &
+            (((gam(cc)-1)**2*gam(cc)**2)/((gam1-1)**2*(gam(cc)-gam1)**2)- &
+            (2*gam(cc)**2+2*gam(cc)-1)/((gam1-1)*(gam(cc)-gam1))+1)
+       tmpsecthreshgam=1._rp
+       where(gam1.gt.(gam(cc)+1)/2._rp) tmpsecthreshgam=0._rp
+
+       !write(6,*) 'tmpcosgam',tmpcosgam
+       !write(6,*) 'tmpdsigdgam',tmpdsigdgam
+       !write(6,*) 'tmpsecthreshgam',tmpsecthreshgam
+       
+       
+       do ii=1,neta1
+          cosgam(:,ii)=tmpcosgam
+          dsigdgam(:,ii)=tmpdsigdgam
+          secthreshgam(:,ii)=tmpsecthreshgam
+       end do
+
+       !if (cc.eq.1) then
+          !write(6,*) cosgam
+       !end if
+       
+       tmpsinsq=(1-xi(cc)**2)*sin(eta1)**2
+       tmpcossq=xi(cc)*cos(eta1)
+
+       do ii=1,ngam1
+          sinsq(ii,:)=tmpsinsq
+          tmpcossq1(ii,:)=tmpcossq
+       end do
+
+       !if (cc.eq.1) then
+          !write(6,*) sinsq
+       !end if
+       
+       cossq=(cosgam-tmpcossq1)**2
+
+       pitchrad=sinsq-cossq
+       where(pitchrad.lt.0) pitchrad=tiny(0._rp)
+
+       !if (cc.eq.1) then
+          !write(6,*) cossq
+          !write(6,*) 'sinsq-cossq',sqrt(sinsq-cossq)
+          !write(6,*) 'pitchrad',pitchrad
+       !end if
+       
+       pitchprob=1/(C_PI*sqrt(pitchrad))
+
+       where(pitchprob.eq.1/(C_PI*sqrt(tiny(0._rp)))) pitchprob=0._rp
+
+       !if (cc.eq.1) then
+          !write(6,*) 'pitchprob',pitchprob
+       !end if
+       
+       S_LA=ne(cc)*params%cpp%density*C_C/(2*C_PI)* &
+            (pm11/gam11)*(pm(cc)/gam(cc))* &
+            pitchprob*dsigdgam*secthreshgam
+
+       !! Saving maximum secondary RE source for use in rejection-acceptance
+       !! sampling algorithm 
+       S_LAmax=maxval(S_LA)
+       
+       S_LA=S_LA*sin(eta11)
+
+       !! Trapezoidal integration of secondary RE source to find probabilty
+       
+       do ii=1,ngam1
+          probtmp(ii)=S_LA(ii,1)*deta1(1)/2+S_LA(ii,neta1)*deta1(neta1-1)/2
+          !intpitchprob(ii)=pitchprob(ii,1)*sin(eta1(1))*deta1(1)/2+ &
+          !     pitchprob(ii,neta1)*sin(eta1(neta1))*deta1(neta1-1)/2
+          do jj=2,neta1-1
+             probtmp(ii)=probtmp(ii)+S_LA(ii,jj)*(deta1(jj)+deta1(jj-1))/2
+          !   intpitchprob(ii)=intpitchprob(ii)+ &
+          !        pitchprob(ii,jj)*sin(eta1(jj))*(deta1(jj)+deta1(jj-1))/2
+          end do
+       end do
+
+       prob1(cc)=probtmp(1)*dpm1(1)/2+probtmp(ngam1)*dpm1(ngam1-1)/2
+       do jj=2,ngam1-1
+          prob1(cc)=prob1(cc)+probtmp(jj)*(dpm1(jj)+dpm1(jj-1))/2
+       end do
+
+       !write(6,*) 'intpitchprob',intpitchprob
+       
+       prob1(cc)=prob1(cc)*dt*2*C_PI
+
+       if (ISNAN(prob1(cc))) then
+          write(6,*) 'NaN probability from secondary RE source'
+          call korc_abort(24)
+       end if
+
+       if (prob1(cc).gt.1._rp) then
+          write(6,*) 'Multiple secondary REs generated in a collisional time step'
+          call korc_abort(24)
+       end if
+
+       !write(6,*) 'gam',gam(cc),'xi',xi(cc)
+       !write(6,*) 'prob1',prob1(cc),'prob0',prob0(cc),'dt',dt
+       
+       if (prob1(cc).gt.prob0(cc)) then
+
+          !! If secondary RE generated, begin acceptance-rejection sampling
+          !! algorithm
+          
+          !write(6,*) 'secondary RE from ',prob1,prob0
+          
+          accepted=.false.
+
+          gamsecmax=(gam(cc)+1)/2
+          psecmax=sqrt(gamsecmax**2-1)
+
+          seciter=0
+          do while (.not.accepted)
+
+             ptrial=p_therm+(psecmax-p_therm)*get_random()
+             gamtrial=sqrt(1+ptrial*ptrial)
+
+             cosgam1=sqrt(((gam(cc)+1)*(gamtrial-1))/((gam(cc)-1)*(gamtrial+1)))
+
+             xirad=sqrt((cosgam1*xi(cc))**2-(xi(cc)**2+cosgam1**2-1))
+
+             if (isnan(xirad)) then
+                write(6,*) 'Sample not in allowable region of phase space'
+                call korc_abort(24)
+             end if
+
+             xip=cosgam1*xi(cc)+xirad
+             xim=cosgam1*xi(cc)-xirad
+
+             xitrial=xim+(xip-xim)*get_random()
+
+             sinsq1=(1-xi(cc)*xi(cc))*(1-xitrial*xitrial)
+             cossq1=(cosgam1-xi(cc)*xitrial)**2
+             pitchprob1=1/(C_PI*sqrt(sinsq1-cossq1))
+
+             !if (isnan(pitchprob1)) cycle
+
+             dsigdgam1=2*C_PI*C_RE**2/(gam(cc)**2-1)* &
+                  (((gam(cc)-1)**2*gam(cc)**2)/ &
+                  ((gamtrial-1)**2*(gam(cc)-gamtrial)**2)- &
+                  (2*gam(cc)**2+2*gam(cc)-1)/ &
+                  ((gamtrial-1)*(gam(cc)-gamtrial))+1)
+
+             S_LA1=ne(cc)*params%cpp%density*C_C/(2*C_PI)* &
+                  (ptrial/gamtrial)*(pm(cc)/gam(cc))* &
+                  pitchprob1*dsigdgam1
+
+             if (S_LA1/S_LAmax.gt.get_random()) accepted=.true.
+
+             seciter=seciter+1
+
+             !if (mod(seciter,100).eq.0) then
+             !   write(6,*) 'iteration',seciter
+             !end if
+             
+          end do
+
+          !! Write secondary RE degrees of freedom to particle derived type
+          
+          !$OMP ATOMIC UPDATE
+          spp%pRE=spp%pRE+1
+          !$OMP ATOMIC WRITE
+          spp%vars%flagRE(spp%pRE)=1
+          !$OMP ATOMIC WRITE
+          spp%vars%V(spp%pRE,1)=ptrial*xitrial
+          !$OMP ATOMIC WRITE
+          spp%vars%V(spp%pRE,2)=ptrial*ptrial*(1-xitrial*xitrial)/ &
+               (2*me*Bmag(cc))
+          !$OMP ATOMIC WRITE
+          spp%vars%Y(spp%pRE,1)=Y_R(cc)
+          !$OMP ATOMIC WRITE
+          spp%vars%Y(spp%pRE,2)=Y_PHI(cc)
+          !$OMP ATOMIC WRITE
+          spp%vars%Y(spp%pRE,3)=Y_Z(cc)
+
+          !! Write changes to primary RE degrees of freedom to temporary
+          !! arrays for passing back out to particle derived type
+          
+          if (cparams_ss%ConserveLA) then
+             tmppm=pm(cc)
+             gamvth=1/sqrt(1-2*Te(cc))
+             gam(cc)=gam(cc)-gamtrial+gamvth
+             pm(cc)=sqrt(gam(cc)*gam(cc)-1)
+             xi(cc)=(tmppm*xi(cc)-ptrial*xitrial)/pm(cc)
+          end if
+          
+       end if
+       
+    end do
+
+
     
   end subroutine large_angle_source
 
-  subroutine large_angle_sample(params)
-    TYPE(KORC_PARAMS), INTENT(IN) 			:: params
-
-    
-  end subroutine large_angle_source 
   
   subroutine save_params_ms(params)
     TYPE(KORC_PARAMS), INTENT(IN) 			:: params
@@ -2594,6 +3224,11 @@ contains
        units = (params%cpp%mass**2*params%cpp%velocity**3)/params%cpp%time
        call save_to_hdf5(h5file_id,dset,units*cparams_ss%Gammac,attr)
 
+       dset = TRIM(gname) // "/Tau_rad"
+       attr = "Synchroton damping time in s"
+       units = params%cpp%time
+       call save_to_hdf5(h5file_id,dset,units*cparams_ss%taur,attr)
+       
        dset = TRIM(gname) // "/Tau"
        attr = "Relativistic collisional time in s"
        units = params%cpp%time

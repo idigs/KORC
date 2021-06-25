@@ -2717,10 +2717,10 @@ contains
     REAL(rp), DIMENSION(params%pchunk)               :: Bmag
     REAL(rp),DIMENSION(params%pchunk) :: Y_R,Y_PHI,Y_Z
     REAL(rp),DIMENSION(params%pchunk) :: B_R,B_PHI,B_Z,E_PHI
-    REAL(rp),DIMENSION(params%pchunk) :: PSIp
+    REAL(rp),DIMENSION(params%pchunk) :: PSIp,ne
     REAL(rp),DIMENSION(params%pchunk) :: V_PLL,V_MU
     REAL(rp) :: B0,EF0,R0,q0,lam,ar,m_cache,q_cache,ne0,Te0,Zeff0
-    INTEGER(is),DIMENSION(params%pchunk)  :: flagCon,flagCol
+    INTEGER(is),DIMENSION(params%pchunk)  :: flagCon,flagCol,flagRE
 
     LOGICAL                                                    :: ss_collisions
     !! Logical variable that indicates if collisions are included in
@@ -2750,27 +2750,20 @@ contains
 
           VdenOMP=0._rp
 
-
-          tt0=1_ip
-          do while (tt0.le.params%tskip)
+          if(.not.params%LargeCollisions) then
 
              !$OMP PARALLEL DO default(none) &
              !$OMP& FIRSTPRIVATE(E0,q_cache,m_cache,pchunk) &
              !$OMP& shared(F,P,params,ii,spp) &
-             !$OMP& PRIVATE(pp,tt,tt0,ttt,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
-             !$OMP& flagCon,flagCol,B_R,B_PHI,B_Z,E_PHI,PSIp, &
-             !$OMP& Vden,Vdenave,achunk,newREs) &
+             !$OMP& PRIVATE(pp,tt,ttt,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
+             !$OMP& flagCon,flagCol,B_R,B_PHI,B_Z,E_PHI,PSIp,ne, &
+             !$OMP& Vden,Vdenave) &
              !$OMP& REDUCTION(+:VdenOMP)
-             do pp=1_idef,spp(ii)%pRE,pchunk
+             do pp=1_idef,spp(ii)%ppp,pchunk
 
-                if ((spp(ii)%pRE-pp).lt.pchunk) then
-                   achunk=spp(ii)%pRE-pp+1
-                else
-                   achunk=pchunk
-                end if
 
                 !$OMP SIMD
-                do cc=1_idef,achunk
+                do cc=1_idef,pchunk
                    Y_R(cc)=spp(ii)%vars%Y(pp-1+cc,1)
                    Y_PHI(cc)=spp(ii)%vars%Y(pp-1+cc,2)
                    Y_Z(cc)=spp(ii)%vars%Y(pp-1+cc,3)
@@ -2779,6 +2772,7 @@ contains
                    V_MU(cc)=spp(ii)%vars%V(pp-1+cc,2)
 
                    PSIp(cc)=spp(ii)%vars%PSI_p(pp-1+cc)
+                   ne(cc)=spp(ii)%vars%ne(pp-1+cc)
 
                    flagCon(cc)=spp(ii)%vars%flagCon(pp-1+cc)
                    flagCol(cc)=spp(ii)%vars%flagCol(pp-1+cc)
@@ -2810,7 +2804,7 @@ contains
 
 
                    !$OMP SIMD
-                   do cc=1_idef,achunk
+                   do cc=1_idef,pchunk
                       spp(ii)%vars%Y(pp-1+cc,1)=Y_R(cc)
                       spp(ii)%vars%Y(pp-1+cc,2)=Y_PHI(cc)
                       spp(ii)%vars%Y(pp-1+cc,3)=Y_Z(cc)
@@ -2832,40 +2826,41 @@ contains
 
                 else
 
+                   do tt=1_ip,params%t_skip
 
 
-                   do tt=tt0,params%t_skip
+                      !if (mod(tt,50).eq.0) then
+                      !write(output_unit_write,*) 'iteration',tt
+                      !flush(output_unit_write)
+                      !endif
+
+                      
                       call include_CoulombCollisions_GC_p(tt,params, &
                            Y_R,Y_PHI,Y_Z,V_PLL,V_MU,m_cache,flagCon,flagCol, &
-                           F,P,E_PHI,ne,PSIp,newREs)
+                           F,P,E_PHI,ne,PSIp)
 
-
-
-                      if (newREs.gt.0) then
-                         tt0=tt
-
-                         exit
-                      end if
                    end do
 
 
                    !$OMP SIMD
-                   do cc=1_idef,achunk
+                   do cc=1_idef,pchunk
                       spp(ii)%vars%V(pp-1+cc,1)=V_PLL(cc)
                       spp(ii)%vars%V(pp-1+cc,2)=V_MU(cc)
 
                       spp(ii)%vars%flagCol(pp-1+cc)=flagCol(cc)
+
+                      spp(ii)%vars%ne(pp-1+cc) = ne(cc)
                    end do
                    !$OMP END SIMD
 
 
                 end if
 
-                call analytical_fields_Bmag_p(achunk,F,Y_R,Y_PHI,Y_Z, &
+                call analytical_fields_Bmag_p(pchunk,F,Y_R,Y_PHI,Y_Z, &
                      Bmag,E_PHI)
 
                 !$OMP SIMD
-                do cc=1_idef,achunk
+                do cc=1_idef,pchunk
                    spp(ii)%vars%g(pp-1+cc)=sqrt(1+V_PLL(cc)**2+ &
                         2*V_MU(cc)*Bmag(cc)*m_cache)
 
@@ -2877,13 +2872,232 @@ contains
 
              end do !particle chunk iterator
              !$OMP END PARALLEL DO
-          end do
 
-          if (params%SC_E) then
-             call calculate_SC_E1D(params,F,VdenOMP)             
-          end if
+          else if (params%LargeCollisions.and.sample_test) then
+
+             do tt=1_ip,params%t_skip
+
+                !$OMP PARALLEL DO default(none) &
+                !$OMP& FIRSTPRIVATE(m_cache,pchunk) &
+                !$OMP& shared(F,P,params,ii,spp,tt) &
+                !$OMP& PRIVATE(pp,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
+                !$OMP& flagCon,flagCol,B_R,B_PHI,B_Z,E_PHI,PSIp,ne, &
+                !$OMP& achunk)
+                do pp=1_idef,spp(ii)%pinit,pchunk
+
+                   if ((spp(ii)%pRE-pp).lt.pchunk) then
+                      achunk=spp(ii)%pRE-pp+1
+                   else
+                      achunk=pchunk
+                   end if
+
+                   !$OMP SIMD
+                   do cc=1_idef,achunk
+                      Y_R(cc)=spp(ii)%vars%Y(pp-1+cc,1)
+                      Y_PHI(cc)=spp(ii)%vars%Y(pp-1+cc,2)
+                      Y_Z(cc)=spp(ii)%vars%Y(pp-1+cc,3)
+
+                      V_PLL(cc)=spp(ii)%vars%V(pp-1+cc,1)
+                      V_MU(cc)=spp(ii)%vars%V(pp-1+cc,2)
+
+                      PSIp(cc)=spp(ii)%vars%PSI_p(pp-1+cc)
+                      ne(cc)=spp(ii)%vars%ne(pp-1+cc)
+
+                      flagCon(cc)=spp(ii)%vars%flagCon(pp-1+cc)
+                      flagCol(cc)=spp(ii)%vars%flagCol(pp-1+cc)
+                   end do
+                   !$OMP END SIMD
+
+                   if (params%FokPlan) then
+
+                      !if (mod(tt,50).eq.0) then
+                      !write(6,*) 'particle',pp,'iteration',tt, &
+                      !     ' of',params%t_skip
+                      !flush(6)
+                      !endif
+                      
+                      call include_CoulombCollisionsLA_GC_p(spp(ii),achunk, &
+                           tt,params,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,m_cache, &
+                           flagCon,flagCol,F,P,E_PHI,ne,PSIp)
+
+                   end if
+
+                   !$OMP SIMD
+                   do cc=1_idef,achunk
+                      spp(ii)%vars%V(pp-1+cc,1)=V_PLL(cc)
+                      spp(ii)%vars%V(pp-1+cc,2)=V_MU(cc)
+
+                      spp(ii)%vars%ne(pp-1+cc)=ne(cc)
+
+                      spp(ii)%vars%flagCol(pp-1+cc)=flagCol(cc)
+                   end do
+                   !$OMP END SIMD
+                   
+                end do !particle chunk iterator
+                !$OMP END PARALLEL DO
+
+             end do
+
+             !$OMP PARALLEL DO default(none) &
+             !$OMP& FIRSTPRIVATE(m_cache,pchunk) &
+             !$OMP& shared(F,ii,spp) &
+             !$OMP& PRIVATE(pp,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,achunk,E_PHI)
+             do pp=1_idef,spp(ii)%pRE,pchunk
+
+                if ((spp(ii)%pRE-pp).lt.pchunk) then
+                   achunk=spp(ii)%pRE-pp+1
+                else
+                   achunk=pchunk
+                end if
+
+                !$OMP SIMD
+                do cc=1_idef,achunk
+                   Y_R(cc)=spp(ii)%vars%Y(pp-1+cc,1)
+                   Y_PHI(cc)=spp(ii)%vars%Y(pp-1+cc,2)
+                   Y_Z(cc)=spp(ii)%vars%Y(pp-1+cc,3)
+                end do
+                !$OMP END SIMD
+
+                !write(6,*) 'Y_R',Y_R
+                
+                call analytical_fields_Bmag_p(achunk,F,Y_R,Y_PHI,Y_Z, &
+                     Bmag,E_PHI)                
+
+                !$OMP SIMD
+                do cc=1_idef,achunk
+                   V_PLL(cc)=spp(ii)%vars%V(pp-1+cc,1)
+                   V_MU(cc)=spp(ii)%vars%V(pp-1+cc,2)
+                   
+                   spp(ii)%vars%g(pp-1+cc)=sqrt(1+V_PLL(cc)**2+ &
+                        2*V_MU(cc)*Bmag(cc)*m_cache)
+
+                   spp(ii)%vars%eta(pp-1+cc) = rad2deg(atan2(sqrt(2*m_cache* &
+                        Bmag(cc)*spp(ii)%vars%V(pp-1+cc,2)), &
+                        spp(ii)%vars%V(pp-1+cc,1)))
+                end do
+                !$OMP END SIMD
+
+             end do !particle chunk iterator
+             !$OMP END PARALLEL DO
+
+          else
+
+             do tt=1_ip,params%t_skip
+
+                !$OMP PARALLEL DO default(none) &
+                !$OMP& FIRSTPRIVATE(m_cache,pchunk) &
+                !$OMP& shared(F,P,params,ii,spp,tt) &
+                !$OMP& PRIVATE(pp,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
+                !$OMP& flagCon,flagCol,B_R,B_PHI,B_Z,E_PHI,PSIp,ne, &
+                !$OMP& achunk)
+                do pp=1_idef,spp(ii)%pRE,pchunk
+
+                   if ((spp(ii)%pRE-pp).lt.pchunk) then
+                      achunk=spp(ii)%pRE-pp+1
+                   else
+                      achunk=pchunk
+                   end if
+
+                   !$OMP SIMD
+                   do cc=1_idef,achunk
+                      Y_R(cc)=spp(ii)%vars%Y(pp-1+cc,1)
+                      Y_PHI(cc)=spp(ii)%vars%Y(pp-1+cc,2)
+                      Y_Z(cc)=spp(ii)%vars%Y(pp-1+cc,3)
+
+                      V_PLL(cc)=spp(ii)%vars%V(pp-1+cc,1)
+                      V_MU(cc)=spp(ii)%vars%V(pp-1+cc,2)
+
+                      PSIp(cc)=spp(ii)%vars%PSI_p(pp-1+cc)
+                      ne(cc)=spp(ii)%vars%ne(pp-1+cc)
+
+                      flagCon(cc)=spp(ii)%vars%flagCon(pp-1+cc)
+                      flagCol(cc)=spp(ii)%vars%flagCol(pp-1+cc)
+                   end do
+                   !$OMP END SIMD
+
+                   if (params%FokPlan) then
+
+                      !if (mod(tt,50).eq.0) then
+                      !write(6,*) 'particle',pp,'iteration',tt, &
+                      !     ' of',params%t_skip
+                      !flush(6)
+                      !endif
+                      
+                      call include_CoulombCollisionsLA_GC_p(spp(ii),achunk, &
+                           tt,params,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,m_cache, &
+                           flagCon,flagCol,F,P,E_PHI,ne,PSIp)
+
+                   end if
+
+                   !$OMP SIMD
+                   do cc=1_idef,achunk
+                      spp(ii)%vars%V(pp-1+cc,1)=V_PLL(cc)
+                      spp(ii)%vars%V(pp-1+cc,2)=V_MU(cc)
+
+                      spp(ii)%vars%ne(pp-1+cc)=ne(cc)
+
+                      spp(ii)%vars%flagCol(pp-1+cc)=flagCol(cc)
+                   end do
+                   !$OMP END SIMD
+                   
+                end do !particle chunk iterator
+                !$OMP END PARALLEL DO
+
+             end do
+
+             !$OMP PARALLEL DO default(none) &
+             !$OMP& FIRSTPRIVATE(m_cache,pchunk) &
+             !$OMP& shared(F,ii,spp) &
+             !$OMP& PRIVATE(pp,Bmag,cc,Y_R,Y_PHI,Y_Z,V_PLL,V_MU,achunk,E_PHI)
+             do pp=1_idef,spp(ii)%pRE,pchunk
+
+                if ((spp(ii)%pRE-pp).lt.pchunk) then
+                   achunk=spp(ii)%pRE-pp+1
+                else
+                   achunk=pchunk
+                end if
+
+                !$OMP SIMD
+                do cc=1_idef,achunk
+                   Y_R(cc)=spp(ii)%vars%Y(pp-1+cc,1)
+                   Y_PHI(cc)=spp(ii)%vars%Y(pp-1+cc,2)
+                   Y_Z(cc)=spp(ii)%vars%Y(pp-1+cc,3)
+                end do
+                !$OMP END SIMD
+
+                !write(6,*) 'Y_R',Y_R
+                
+                call analytical_fields_Bmag_p(achunk,F,Y_R,Y_PHI,Y_Z, &
+                     Bmag,E_PHI)                
+
+                !$OMP SIMD
+                do cc=1_idef,achunk
+                   V_PLL(cc)=spp(ii)%vars%V(pp-1+cc,1)
+                   V_MU(cc)=spp(ii)%vars%V(pp-1+cc,2)
+                   
+                   spp(ii)%vars%g(pp-1+cc)=sqrt(1+V_PLL(cc)**2+ &
+                        2*V_MU(cc)*Bmag(cc)*m_cache)
+
+                   spp(ii)%vars%eta(pp-1+cc) = rad2deg(atan2(sqrt(2*m_cache* &
+                        Bmag(cc)*spp(ii)%vars%V(pp-1+cc,2)), &
+                        spp(ii)%vars%V(pp-1+cc,1)))
+                end do
+                !$OMP END SIMD
+
+             end do !particle chunk iterator
+             !$OMP END PARALLEL DO
+             
+          endif
+
+          
 
        end do
+
+       if (params%SC_E) then
+          call calculate_SC_E1D(params,F,VdenOMP)             
+       end if
+
+
 
     end do !species iterator
 
@@ -3204,9 +3418,10 @@ contains
     end if
 
     if (params%collisions) then
-
-       call include_CoulombCollisions_GC_p(tt,params,Y_R,Y_PHI,Y_Z, &
-            V_PLL,V_MU,m_cache,flagCon,flagCol,F,P,E_PHI,ne,PSIp)
+       
+       call include_CoulombCollisions_GC_p(tt,params, &
+            Y_R,Y_PHI,Y_Z,V_PLL,V_MU,m_cache,flagCon,flagCol, &
+            F,P,E_PHI,ne,PSIp)
 
     end if
 
@@ -8649,7 +8864,7 @@ contains
        time=params%init_time+(params%it-1+tt)*params%dt
 
        if (params%profile_model(1:10).eq.'ANALYTICAL') then
-          call analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
+          call analytical_profiles_p(pchunk,time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
        else
           call interp_FOcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag_cache)
        endif

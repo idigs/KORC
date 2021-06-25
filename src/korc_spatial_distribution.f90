@@ -1833,7 +1833,7 @@ subroutine FIO_therm(params,spp,F,P)
      vth0=sqrt(2*spp%vars%te(1))
 
      V_buffer = vth0
-     min_V=0._rp!6.8e-2*V_buffer
+     min_V=6.8e-2*V_buffer
      max_V=V_buffer*5._rp
      XI_buffer=0._rp
 

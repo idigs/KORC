@@ -84,9 +84,7 @@ module korc_input
     !! Flag to decide whether a given electron is a runaway (runaway=T)
     !! or not (runaway=F).
   INTEGER, DIMENSION(:), ALLOCATABLE :: ppp
-  INTEGER, DIMENSION(:), ALLOCATABLE :: pinit
-  INTEGER, DIMENSION(:), ALLOCATABLE :: pRE 
-    ! Number of particles per process (mpi)
+  INTEGER, DIMENSION(:), ALLOCATABLE :: pinit    ! Number of particles per process (mpi)
   REAL(rp), DIMENSION(:), ALLOCATABLE :: q 
     ! Electric charge
   REAL(rp), DIMENSION(:), ALLOCATABLE :: m 
@@ -259,6 +257,9 @@ module korc_input
   REAL(rp) :: dTau_sing = 5.E-2
   ! Subcycling time step in collisional time units (Tau)
   REAL(rp) :: p_therm = 1._rp
+  LOGICAL :: ConserveLA = .TRUE.
+  CHARACTER(30) :: Clog_model = 'HESSLOW'
+  LOGICAL :: sample_test  = .FALSE.
 
   !! -----------------------------------------------
   !! CollisionParamsMultipleSpecies
@@ -418,7 +419,7 @@ CONTAINS
          spatial_distribution,energy_distribution,pitch_distribution,Ro, &
          PHIo,Zo,r_inner,r_outter,falloff_rate,shear_factor,sigmaR,sigmaZ, &
          theta_gauss,psi_max,Xtrace,Spong_b,Spong_w,Spong_dlam,dth,dR,dZ,dgam,&
-         pinit,pRE
+         pinit
     NAMELIST /analytical_fields_params/ Bo,minor_radius,major_radius,&
          qa,qo,Eo,current_direction,nR,nZ,nPHI,dim_1D,dt_E_SC,Ip_exp, &
          E_dyn,E_pulse,E_width
@@ -432,7 +433,7 @@ CONTAINS
          Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename,axisymmetric, &
          n_lamshelf,n_shelfdelay,n_tauin,n_tauout,n_shelf,psiN_0
     NAMELIST /CollisionParamsSingleSpecies/ Te_sing,Ti_sing,ne_sing, &
-         Zeff_sing,dTau_sing,p_therm
+         Zeff_sing,dTau_sing,p_therm,ConserveLA,Clog_model,sample_test
     NAMELIST /CollisionParamsMultipleSpecies/ num_impurity_species,Te_mult, &
          ne_mult,Zo_mult,Zj_mult,nz_mult,IZj_mult,neut_prof
     NAMELIST /AvalancheGenerationPDF/ max_pitch_angle_aval, &
@@ -501,7 +502,6 @@ CONTAINS
              ALLOCATE(runaway(num_species))
              ALLOCATE(ppp(num_species))
              ALLOCATE(pinit(num_species))
-             ALLOCATE(pRE(num_species))
              ALLOCATE(q(num_species))
              ALLOCATE(m(num_species))
              ALLOCATE(spatial_distribution(num_species))
@@ -535,7 +535,6 @@ CONTAINS
                 runaway = .FALSE.
                 ppp = 1E0
                 pinit = ppp
-                pRE = ppp
                 q = -1.0 
                 m = 1.0 
                 spatial_distribution = 'TRACER'

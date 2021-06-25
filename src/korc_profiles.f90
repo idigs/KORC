@@ -309,10 +309,11 @@ CONTAINS
     vars%Zeff = P%Zeffo
   end subroutine uniform_profiles
 
-  subroutine analytical_profiles_p(time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
+  subroutine analytical_profiles_p(pchunk,time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
     !! @note Subroutine that calculates the analytical plasma profiles at
     !! the particles' position. @endnote
     TYPE(KORC_PARAMS), INTENT(IN)                           :: params
+    INTEGER, INTENT(IN)                             :: pchunk
     REAL(rp), DIMENSION(params%pchunk), INTENT(IN)  :: Y_R,Y_Z,PSIp
     REAL(rp), INTENT(IN)  :: time
     TYPE(PROFILES), INTENT(IN)                         :: P
@@ -326,7 +327,7 @@ CONTAINS
     !! Backgroun temperature density seen by simulated particles.
     REAL(rp), DIMENSION(params%pchunk),INTENT(OUT) :: Zeff
     !! Effective atomic charge seen by simulated particles.
-    INTEGER(ip)                                        :: cc,pchunk
+    INTEGER(ip)                                        :: cc
     !! Particle iterator.
     REAL(rp) :: R0,Z0,a,ne0,n_ne,Te0,n_Te,Zeff0
     REAL(rp) :: R0_RE,Z0_RE,sigmaR_RE,sigmaZ_RE,psimax_RE
@@ -336,8 +337,6 @@ CONTAINS
     REAL(rp) :: n0t,n_taut
     REAL(rp) :: PSIp0,PSIp_lim,psiN_0
     REAL(rp), DIMENSION(params%pchunk) :: r_a,rm,rm_RE,PSIpN,PSIp_temp
-
-    pchunk=params%pchunk
     
     R0=P%R0
     Z0=P%Z0

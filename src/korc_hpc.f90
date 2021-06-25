@@ -41,6 +41,8 @@ CONTAINS
     !! 21: korc_interp:get_fio_ion_p
     !! 22: korc_fio_interface:initialize_nimrod
     !! 23: korc_interp:check_if_in_fields_domain
+    !! 24: korc_collisions:large_angle_source
+    !! 25: korc_collisions: initialize_collision_params
 
     flush(output_unit_write)
     
@@ -94,7 +96,7 @@ CONTAINS
             exitstat=exei)
 #elif CORI
        !write(6,*) 'CORI'
-       call execute_command_line("/global/cfs/cdirs/m3236/build_M3DC1/KORC/src/get_git_details.sh", &
+       call execute_command_line("/global/cfs/cdirs/m3236/build_all/KORC/src/get_git_details.sh", &
             exitstat=exei)
 #endif
 

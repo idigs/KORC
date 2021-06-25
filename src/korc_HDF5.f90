@@ -2467,6 +2467,10 @@ CONTAINS
                    dset = "flagCol"
                    call save_1d_array_to_hdf5(subgroup_id,dset, &
                         INT(spp(ss)%vars%flagCol,idef))
+                CASE('flagRE')
+                   dset = "flagRE"
+                   call save_1d_array_to_hdf5(subgroup_id,dset, &
+                        INT(spp(ss)%vars%flagRE,idef))
                 CASE('B')
                    dset = "B"
                    units = params%cpp%Bo

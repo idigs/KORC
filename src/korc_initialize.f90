@@ -140,6 +140,7 @@ CONTAINS
          (C_ME*C_C**2) ! Minimum value of relativistic gamma factor
     params%radiation = radiation
     params%collisions = collisions
+    params%LargeCollisions = LargeCollisions
     params%collisions_model = TRIM(collisions_model)
     params%bound_electron_model = TRIM(bound_electron_model)
     params%GC_rad_model = TRIM(GC_rad_model)
@@ -545,6 +546,9 @@ CONTAINS
        spp(ii)%vars%flagCon = 1_is
        spp(ii)%vars%flagCol = 1_is
        spp(ii)%vars%flagRE(1:spp(ii)%pinit) = 1_is
+       if (spp(ii)%pinit.lt.spp(ii)%ppp) then
+          spp(ii)%vars%flagRE(spp(ii)%pinit+1:spp(ii)%ppp) = 0_is
+       endif
        spp(ii)%vars%wt = 0.0_rp
 
        if (params%orbit_model(1:2).eq.'GC') then
@@ -598,7 +602,6 @@ CONTAINS
 
     DEALLOCATE(ppp)
     DEALLOCATE(pinit)
-    DEALLOCATE(pRE)
     DEALLOCATE(q)
     DEALLOCATE(m)
     DEALLOCATE(Eno)

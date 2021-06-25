@@ -512,6 +512,10 @@ program main
 
         call save_simulation_outputs(params,spp,F)
         call save_restart_variables(params,spp,F)
+
+        if (params%mpi_params%rank .EQ. 0) then
+           flush(output_unit_write)
+        end if
         
      end do
   end if
@@ -691,8 +695,13 @@ program main
 
         call save_simulation_outputs(params,spp,F)
         call save_restart_variables(params,spp,F)
+
+        if (params%mpi_params%rank .EQ. 0) then
+           flush(output_unit_write)
+        end if
         
      end do
+     
   end if
 
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_model.eq.'M3D_C1'.and. &
