@@ -222,11 +222,15 @@ module korc_types
      !! "simulation_time".
      INTEGER(ip) 			:: t_skip
      INTEGER(ip) 			:: t_it_SC=1_ip 
-     INTEGER(ip) 			:: output_cadence 
+     INTEGER(ip) 			:: output_cadence
+     INTEGER(ip) 			:: coll_per_dump
+     INTEGER(ip) 			:: orbits_per_coll
+     REAL(rp) 			:: coll_per_dump_dt
      !! Time iteration offset used to decide when the outputs are generated.
      INTEGER(ip) 			:: restart_output_cadence 
      !! Time iteration offset used to decide when the restart files are
      !! generated.
+     INTEGER(ip) 			:: coll_cadence 
      INTEGER(ip) 			:: num_snapshots 
      !! Number of snapshots in time for generating the output files.
      INTEGER 			:: num_species 

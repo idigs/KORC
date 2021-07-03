@@ -163,7 +163,7 @@ program main
   !! Also finds the maximum non-relativistic and relativistic cyclotron frequencies
   !! to be used for setting the timstep for the time-evolution algorithms.
 
-  call initialize_collision_params(params,spp,P,F)
+  call initialize_collision_params(params,spp,P,F,.true.)
   !! <h4>6\. Initialize Collision Parameters</h4>
   !!
   !! Subroutine [[initialize_collision_params]] in [[korc_collisions]] that
@@ -208,7 +208,7 @@ program main
   !! (multiple-species) data types.
 
   
-  call define_collisions_time_step(params)
+  call define_collisions_time_step(params,F,.true.)
   !! <h4>14\. Define Collision Time Step</h4>
   !!
   !! Subroutine [[define_collisions_time_step]] in [[korc_collisions]] that
@@ -602,6 +602,11 @@ program main
         end if
         call initialize_fields_interpolant(params,F)
 
+        if (params%LargeCollisions) then
+           call initialize_collision_params(params,spp,P,F,.false.)
+           call define_collisions_time_step(params,F,.false.)
+        end if
+        
         call save_restart_variables(params,spp,F)
         
      end do
