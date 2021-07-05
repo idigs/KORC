@@ -644,6 +644,9 @@ contains
                    write(output_unit_write,*) 'E_CH is: ',cparams_ss%Ec*params%cpp%Eo,'V/m'
                 end if
                 write(output_unit_write,*) 'No secondary REs will be calculated in this interval'
+                write(output_unit_write,*) 'p_therm from initial or last time interval used'
+                write(output_unit_write,*) 'to calculate collision time scales'
+                
                 write(output_unit_write,'("* * * * * * * * * * * * * * * * * * * * * * * * * *",/)')
              end if
              
