@@ -4208,6 +4208,9 @@ contains
 
           do tt=1_ip,params%coll_per_dump
 
+             !if (modulo(tt,params%coll_per_dump/10).eq.0) &
+             !     write(6,*) 'Coll step',tt
+             
              !$OMP PARALLEL DO default(none) &
              !$OMP& FIRSTPRIVATE(q_cache,m_cache,pchunk) &
              !$OMP& SHARED(params,ii,spp,P,F) &
@@ -4253,6 +4256,10 @@ contains
                 !end if
 
                 do ttt=1_ip,params%orbits_per_coll
+
+                   !if (modulo(ttt,params%orbits_per_coll/10).eq.0) &
+                   !     write(6,*) 'Orbit step',ttt
+                   
                    call advance_GCinterp_psiwE_vars(spp(ii)%vars,achunk, &
                         pp,tt,params,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
                         q_cache,m_cache,flagCon,flagCol, &

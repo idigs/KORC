@@ -593,12 +593,12 @@ program main
         params%it = it-1_ip+params%t_skip
 
         call save_simulation_outputs(params,spp,F)
+        call save_restart_variables(params,spp,F)
 
         F%ind_2x1t=F%ind_2x1t+1_ip
         if (params%mpi_params%rank .EQ. 0) then
            write(output_unit_write,*) 'KORC time',params%time*params%cpp%time
            write(output_unit_write,*) '2x1t_ind time',F%X%PHI(F%ind_2x1t)*params%cpp%time
-           flush(output_unit_write)  
         end if
         call initialize_fields_interpolant(params,F)
 
@@ -607,7 +607,9 @@ program main
            call define_collisions_time_step(params,F,.false.)
         end if
         
-        call save_restart_variables(params,spp,F)
+        if (params%mpi_params%rank .EQ. 0) then
+           flush(output_unit_write)  
+        end if
         
      end do
   end if

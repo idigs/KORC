@@ -543,9 +543,18 @@ contains
                   F%FLAG3D(:,F%ind_2x1t,:))
 
              cparams_ss%avalanche=.TRUE.
-             if ((abs(maxEinterp).lt.cparams_ss%Ec).and. &
-                  (abs(minEinterp).lt.cparams_ss%Ec)) &
-                  cparams_ss%avalanche=.FALSE.               
+             if (TRIM(params%collisions_model).eq.'NO_BOUND') then
+                if ((abs(maxEinterp).lt.cparams_ss%Ec).and. &
+                     (abs(minEinterp).lt.cparams_ss%Ec)) &
+                     cparams_ss%avalanche=.FALSE.
+             else
+                if ((abs(maxEinterp).lt.cparams_ms%Ec).and. &
+                     (abs(minEinterp).lt.cparams_ms%Ec)) &
+                     cparams_ss%avalanche=.FALSE.                
+             end if
+
+             !write(6,*) 'maxEinterp',maxEinterp,'minEinterp',minEinterp, &
+             !     'E_c',cparams_ms%Ec,cparams_ss%avalanche
              
              if (cparams_ss%avalanche) then
 
@@ -553,8 +562,6 @@ contains
                    if (TRIM(params%collisions_model).eq.'NO_BOUND') then
                       p_crit=1/sqrt(maxEinterp/cparams_ss%Ec-1._rp)
                    else
-
-                      !write(6,*) 'maxEinterp',maxEinterp,'E_c',cparams_ms%Ec
 
                       p_crit=1/sqrt(maxEinterp/cparams_ms%Ec-1._rp)
                    end if
@@ -587,13 +594,31 @@ contains
              if (params%mpi_params%rank .EQ. 0) then
                 write(output_unit_write,*) 'p_crit/(me*c) is: ',p_crit
                 write(output_unit_write,*) 'gam_therm is: ',cparams_ss%gam_therm
-                if (abs(maxEinterp).gt.abs(minEinterp)) then
-                   write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp,'V/m'
+                if(.not.init) then
+                   if (abs(maxEinterp).gt.abs(minEinterp)) then
+                      write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp*params%cpp%Eo,'V/m'
+                   else
+                      write(output_unit_write,*) 'Maximum E_PHI : ',minEinterp*params%cpp%Eo,'V/m'
+                   end if
+
+                   if (TRIM(params%collisions_model).eq.'NO_BOUND') then
+                      write(output_unit_write,*) 'E_CH is: ',cparams_ss%Ec*params%cpp%Eo,'V/m'
+                   else
+                      write(output_unit_write,*) 'E_CH is: ',cparams_ms%Ec*params%cpp%Eo,'V/m'
+                   end if
                 else
-                   write(output_unit_write,*) 'Maximum E_PHI : ',minEinterp,'V/m'
+                   if (abs(maxEinterp).gt.abs(minEinterp)) then
+                      write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp,'V/m'
+                   else
+                      write(output_unit_write,*) 'Maximum E_PHI : ',minEinterp,'V/m'
+                   end if
+
+                   if (TRIM(params%collisions_model).eq.'NO_BOUND') then
+                      write(output_unit_write,*) 'E_CH is: ',cparams_ss%Ec,'V/m'
+                   else
+                      write(output_unit_write,*) 'E_CH is: ',cparams_ms%Ec,'V/m'
+                   end if
                 end if
-                
-                write(output_unit_write,*) 'E_CH is: ',cparams_ss%Ec,'V/m'
                 write(output_unit_write,*) 'tau_c,rel is: ',cparams_ss%Tau,'s'
                 write(output_unit_write,'("* * * * * * * * * * * * * * * * * * * * * * * * * *",/)')
              end if
@@ -601,12 +626,23 @@ contains
           else
 
              if (params%mpi_params%rank .EQ. 0) then
-                if (abs(maxEinterp).gt.abs(minEinterp)) then
-                   write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp,'V/m'
+                if(.not.init) then
+                   if (abs(maxEinterp).gt.abs(minEinterp)) then
+                      write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp,'V/m'
+                   else
+                      write(output_unit_write,*) 'Maximum E_PHI : ',minEinterp,'V/m'
+                   end if
+
+                   write(output_unit_write,*) 'E_CH is: ',cparams_ss%Ec,'V/m'
                 else
-                   write(output_unit_write,*) 'Maximum E_PHI : ',minEinterp,'V/m'
+                   if (abs(maxEinterp).gt.abs(minEinterp)) then
+                      write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp*params%cpp%Eo,'V/m'
+                   else
+                      write(output_unit_write,*) 'Maximum E_PHI : ',minEinterp*params%cpp%Eo,'V/m'
+                   end if
+
+                   write(output_unit_write,*) 'E_CH is: ',cparams_ss%Ec*params%cpp%Eo,'V/m'
                 end if
-                write(output_unit_write,*) 'E_CH is: ',cparams_ss%Ec,'V/m'
                 write(output_unit_write,*) 'No secondary REs will be calculated in this interval'
                 write(output_unit_write,'("* * * * * * * * * * * * * * * * * * * * * * * * * *",/)')
              end if
