@@ -593,7 +593,6 @@ program main
         params%it = it-1_ip+params%t_skip
 
         call save_simulation_outputs(params,spp,F)
-        call save_restart_variables(params,spp,F)
 
         F%ind_2x1t=F%ind_2x1t+1_ip
         if (params%mpi_params%rank .EQ. 0) then
@@ -606,6 +605,8 @@ program main
            call initialize_collision_params(params,spp,P,F,.false.)
            call define_collisions_time_step(params,F,.false.)
         end if
+
+        call save_restart_variables(params,spp,F)
         
         if (params%mpi_params%rank .EQ. 0) then
            flush(output_unit_write)  
