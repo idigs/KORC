@@ -606,6 +606,7 @@ contains
                    else
                       write(output_unit_write,*) 'E_CH is: ',cparams_ms%Ec*params%cpp%Eo,'V/m'
                    end if
+                   write(output_unit_write,*) 'tau_c,rel is: ',cparams_ss%Tau*params%cpp%time,'s'
                 else
                    if (abs(maxEinterp).gt.abs(minEinterp)) then
                       write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp,'V/m'
@@ -618,8 +619,8 @@ contains
                    else
                       write(output_unit_write,*) 'E_CH is: ',cparams_ms%Ec,'V/m'
                    end if
-                end if
-                write(output_unit_write,*) 'tau_c,rel is: ',cparams_ss%Tau,'s'
+                   write(output_unit_write,*) 'tau_c,rel is: ',cparams_ss%Tau,'s'
+                end if                
                 write(output_unit_write,'("* * * * * * * * * * * * * * * * * * * * * * * * * *",/)')
              end if
 
