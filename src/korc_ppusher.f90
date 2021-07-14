@@ -4311,7 +4311,7 @@ contains
              !$OMP PARALLEL DO default(none) &
              !$OMP& FIRSTPRIVATE(m_cache,pchunk) &
              !$OMP& SHARED(ii,spp) &
-             !$OMP& PRIVATE(pp,Bmag,cc,V_PLL,V_MU, &
+             !$OMP& PRIVATE(pp,Bmag,cc, &
              !$OMP& B_R,B_PHI,B_Z,achunk)
 
              do pp=1_idef,spp(ii)%pRE,pchunk
@@ -4331,8 +4331,8 @@ contains
                    Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+ &
                         B_Z(cc)*B_Z(cc))
 
-                   spp(ii)%vars%g(pp-1+cc)=sqrt(1+V_PLL(cc)**2+ &
-                        2*V_MU(cc)*Bmag(cc))
+                   spp(ii)%vars%g(pp-1+cc)=sqrt(1+spp(ii)%vars%V(pp-1+cc,1)**2 &
+                        +2*spp(ii)%vars%V(pp-1+cc,2)*Bmag(cc))
 
                    spp(ii)%vars%eta(pp-1+cc) = atan2(sqrt(2*m_cache*Bmag(cc)* &
                         spp(ii)%vars%V(pp-1+cc,2)),spp(ii)%vars%V(pp-1+cc,1))* &
