@@ -31,7 +31,7 @@ CONTAINS
     !! 11: korc_hpc:set_paths
     !! 12: korc_experimental:get_Hollmann_distribution
     !! 13: korc_input:read_namelist
-    !! 14: korc_hpc:laod_particle_ic
+    !! 14: korc_hpc:load_particle_ic
     !! 15: korc_interp:interp_fields
     !! 16: korc_interp:interp_profiles
     !! 17: korc_fields:mean_F_field
@@ -46,7 +46,7 @@ CONTAINS
 
     flush(output_unit_write)
     
-    call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+    !call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
     call MPI_ABORT(MPI_COMM_WORLD, errorcode, mpierr)
   end subroutine korc_abort

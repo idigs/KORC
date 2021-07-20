@@ -452,8 +452,10 @@ CONTAINS
           ALLOCATE(params%time_of_filenames(num_files))
 
           do ii=1,num_files
-             READ(UNIT=list_file,FMT='(A10,F11.9)',IOSTAT=ios) params%magnetic_field_filenames(ii),params%time_of_filenames(ii)
+             READ(UNIT=list_file,FMT='(A15,F12.10)',IOSTAT=ios) params%magnetic_field_filenames(ii),params%time_of_filenames(ii)
 
+             params%magnetic_field_filenames(ii)=ADJUSTL(params%magnetic_field_filenames(ii))
+             
              !write(6,*) 'ii',ii,'filename ',TRIM(params%magnetic_field_filenames(ii)), &
              !     ' time',params%time_of_filenames(ii)
              
@@ -465,7 +467,7 @@ CONTAINS
           
        endif       
        
-       if (params%proceed) then
+       if (params%restart.or.params%proceed) then
 
           if (.not.F%ReInterp_2x1t) then
              filename=TRIM(params%magnetic_field_filename)  
