@@ -2,7 +2,7 @@ format longE
 
 %% reading in data
 
-filein='/Users/21b/Desktop/NIMROD/MST_BCornille/dump_files/sawtooth-rmpm3/nimrod.out';
+filein='/rmp_m3/nimrod.out';
 fileID = fopen(filein);
 strings = textscan(fileID,'%s');
 fclose(fileID);
@@ -51,7 +51,7 @@ if ifwrite==1
     fileID = fopen(fileout,'w');
     fprintf(fileID,'%i \n',size(times1,2));
     for ii=1:size(times1,2)
-        fprintf(fileID,'%10s %10.9f\n',times1{1,ii},times1{2,ii});
+        fprintf(fileID,'%15s %11.10f\n',times1{1,ii},times1{2,ii});
     end
     fclose(fileID);
         

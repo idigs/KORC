@@ -153,6 +153,7 @@ CONTAINS
     if (h5error .EQ. -1) then
        write(output_unit_write,'("KORC ERROR: Something went wrong in: iload_from_hdf5 &
             --> h5dopen_f")')
+       call KORC_ABORT(14)
     end if
 
     call h5dread_f(dset_id, H5T_NATIVE_INTEGER, idatum, dims, h5error)
@@ -160,12 +161,14 @@ CONTAINS
     if (h5error .EQ. -1) then
        write(output_unit_write,'("KORC ERROR: Something went wrong in: iload_from_hdf5 &
             --> h5dread_f")')
+       call KORC_ABORT(14)
     end if
 
     call h5dclose_f(dset_id, h5error)
     if (h5error .EQ. -1) then
        write(output_unit_write,'("KORC ERROR: Something went wrong in: iload_from_hdf5 &
             --> h5dclose_f")')
+       call KORC_ABORT(14)
     end if
 
     if (PRESENT(attr)) then
@@ -217,12 +220,14 @@ CONTAINS
     if (h5error .EQ. -1) then
        write(output_unit_write,'("KORC ERROR: Something went wrong in: rload_from_hdf5 &
             --> h5dopen_f")')
+       call KORC_ABORT(14)
     end if
 
     call h5dread_f(dset_id, H5T_NATIVE_REAL, raw_datum, dims, h5error)
     if (h5error .EQ. -1) then
        write(output_unit_write,'("KORC ERROR: Something went wrong in: rload_from_hdf5 &
             --> h5dread_f")')
+       call KORC_ABORT(14)
     end if
     rdatum = REAL(raw_datum,rp)
 
@@ -230,6 +235,7 @@ CONTAINS
     if (h5error .EQ. -1) then
        write(output_unit_write,'("KORC ERROR: Something went wrong in: rload_from_hdf5 &
             --> h5dclose_f")')
+       call KORC_ABORT(14)
     end if
 
     if (PRESENT(attr)) then
@@ -286,17 +292,20 @@ CONTAINS
     call h5dopen_f(h5file_id, TRIM(dset), dset_id, h5error)
     if (h5error .EQ. -1) then
        write(output_unit_write,'("KORC ERROR: Something went wrong in: rload_from_hdf5 --> h5dopen_f")')
+       call KORC_ABORT(14)
     end if
 
     call h5dread_f(dset_id, H5T_NATIVE_REAL, raw_data, dims, h5error)
     if (h5error .EQ. -1) then
        write(output_unit_write,'("KORC ERROR: Something went wrong in: rload_from_hdf5 --> h5dread_f")')
+       call KORC_ABORT(14)
     end if
     rdata = REAL(raw_data,rp)
 
     call h5dclose_f(dset_id, h5error)
     if (h5error .EQ. -1) then
        write(output_unit_write,'("KORC ERROR: Something went wrong in: rload_from_hdf5 --> h5dclose_f")')
+       call KORC_ABORT(14)
     end if
 
     DEALLOCATE( raw_data )
@@ -351,17 +360,20 @@ CONTAINS
     call h5dopen_f(h5file_id, TRIM(dset), dset_id, h5error)
     if (h5error .EQ. -1) then
        write(output_unit_write,'("KORC ERROR: Something went wrong in: rload_from_hdf5 --> h5dopen_f")')
+       call KORC_ABORT(14)
     end if
 
     call h5dread_f(dset_id, H5T_NATIVE_REAL, raw_data, dims, h5error)
     if (h5error .EQ. -1) then
        write(output_unit_write,'("KORC ERROR: Something went wrong in: rload_from_hdf5 --> h5dread_f")')
+       call KORC_ABORT(14)
     end if
     rdata = REAL(raw_data,rp)
 
     call h5dclose_f(dset_id, h5error)
     if (h5error .EQ. -1) then
        write(output_unit_write,'("KORC ERROR: Something went wrong in: rload_from_hdf5 --> h5dclose_f")')
+       call KORC_ABORT(14)
     end if
 
     DEALLOCATE( raw_data )
@@ -416,17 +428,20 @@ CONTAINS
     call h5dopen_f(h5file_id, TRIM(dset), dset_id, h5error)
     if (h5error .EQ. -1) then
        write(output_unit_write,'("KORC ERROR: Something went wrong in: rload_from_hdf5 --> h5dopen_f")')
+       call KORC_ABORT(14)
     end if
 
     call h5dread_f(dset_id, H5T_NATIVE_REAL, raw_data, dims, h5error)
     if (h5error .EQ. -1) then
        write(output_unit_write,'("KORC ERROR: Something went wrong in: rload_from_hdf5 --> h5dread_f")')
+       call KORC_ABORT(14)
     end if
     rdata = REAL(raw_data,rp)
 
     call h5dclose_f(dset_id, h5error)
     if (h5error .EQ. -1) then
        write(output_unit_write,'("KORC ERROR: Something went wrong in: rload_from_hdf5 --> h5dclose_f")')
+       call KORC_ABORT(14)
     end if
 
     DEALLOCATE( raw_data )
@@ -2886,6 +2901,7 @@ CONTAINS
        if (h5error .EQ. -1) then
           write(output_unit_write,'("KORC ERROR: Something went wrong in: &
                &load_particles_ic --> h5fopen_f")')
+          call KORC_ABORT(14)
        end if
 
        dset = "/it"
@@ -2967,7 +2983,7 @@ CONTAINS
        if (h5error .EQ. -1) then
           write(output_unit_write,'("KORC ERROR: Something went wrong in: &
                &load_prev_time --> h5fopen_f")')
-          call KORC_ABORT(24)
+          call KORC_ABORT(14)
        end if
 
        dset = "/time"
@@ -3008,7 +3024,7 @@ CONTAINS
        if (h5error .EQ. -1) then
           write(output_unit_write,'("KORC ERROR: Something went wrong in: &
                &load_prev_iter --> h5fopen_f")')
-          call KORC_ABORT(23)
+          call KORC_ABORT(14)
        end if
 
        dset = "/ind_2x1t"
