@@ -2387,10 +2387,10 @@ contains
     REAL(rp), DIMENSION(achunk,2) 			:: dW
     REAL(rp), DIMENSION(achunk,2) 			:: rnd1
     REAL(rp) 					:: dt,time
-    REAL(rp), DIMENSION(achunk) 					:: pm
-    REAL(rp), DIMENSION(achunk)  					:: dp
-    REAL(rp), DIMENSION(achunk)  					:: xi
-    REAL(rp), DIMENSION(achunk)  					:: dxi
+    REAL(rp), DIMENSION(achunk) 	:: pm,pm0
+    REAL(rp), DIMENSION(achunk)  	:: dp
+    REAL(rp), DIMENSION(achunk)  	:: xi,xi0
+    REAL(rp), DIMENSION(achunk)  	:: dxi
     REAL(rp), DIMENSION(achunk)  					:: v,gam
     !! speed of particle
     REAL(rp), DIMENSION(achunk) 					:: CAL
@@ -2492,8 +2492,10 @@ contains
        Bmag(cc)=sqrt(B_R(cc)*B_R(cc)+B_PHI(cc)*B_PHI(cc)+B_Z(cc)*B_Z(cc))
        ! Transform p_pll,mu to P,eta
        pm(cc) = SQRT(Ppll(cc)*Ppll(cc)+2*me*Bmag(cc)*Pmu(cc))
+       pm0(cc)=pm(cc)
        xi(cc) = Ppll(cc)/pm(cc)
-
+       xi0(cc)=xi(cc)
+       
        gam(cc) = sqrt(1+pm(cc)*pm(cc))
 
        v(cc) = pm(cc)/gam(cc)
@@ -2653,8 +2655,23 @@ contains
     !          write(output_unit_write,'("CB: ",E17.10)') CBL(1)
     !       end if
 
-    if (cparams_ss%avalanche) then 
+#if DBG_CHECK    
+    do cc=1_idef,achunk  
+       if (ISNAN(xi(cc)).or.(abs(xi(cc)).gt.1._rp)) then
+          write(6,*) 'xi is NaN or >1 before LAC'
+          write(6,*) 'p0,xi0',pm0(cc),xi0(cc)
+          write(6,*) 'p,xi',pm(cc),xi(cc)
+          write(6,*) 'dp,dxi',dp(cc),dxi(cc)
+          write(6,*) 'CBL',CBL(cc)
+          write(6,*) 'v,ne,Te,Zeff',v(cc),ne(cc)*params%cpp%density,Te(cc)*params%cpp%temperature,Zeff(cc)
+          write(6,*) 'ppll,pmu,Bmag',Ppll(cc),Pmu(cc),Bmag(cc)
+          call korc_abort(24)
+       end if
+    end do
+# endif
     
+    if (cparams_ss%avalanche) then 
+       
        if (params%bound_electron_model.eq.'NO_BOUND') then
           ntot=ne
        else if (params%bound_electron_model.eq.'HESSLOW') then
@@ -2667,6 +2684,20 @@ contains
 
     end if
 
+#if DBG_CHECK    
+    do cc=1_idef,achunk  
+       if (ISNAN(xi(cc)).or.(abs(xi(cc)).gt.1._rp)) then
+          write(6,*) 'xi is NaN or >1 after LAC'
+          write(6,*) 'p0,xi0',pm0(cc),xi0(cc)
+          write(6,*) 'p,xi',pm(cc),xi(cc)
+          write(6,*) 'dp,dxi',dp(cc),dxi(cc)
+          write(6,*) 'CBL',CBL(cc)
+          write(6,*) 'v,ne,Te,Zeff',v(cc),ne(cc)*params%cpp%density,Te(cc)*params%cpp%temperature,Zeff(cc)
+          call korc_abort(24)
+       end if
+    end do
+# endif
+    
     !$OMP SIMD
     do cc=1_idef,achunk  
        ! Transform P,xi to p_pll,mu
@@ -2675,6 +2706,16 @@ contains
     end do
     !$OMP END SIMD
 
+#if DBG_CHECK    
+    do cc=1_idef,achunk
+       if (Pmu(cc).lt.0._rp) then
+          write(6,*) 'mu is negative'
+          write(6,*) 'p,xi',pm(cc),xi(cc)
+          write(6,*) 'V_PLL,V_MU',Ppll(cc),Pmu(cc)
+          call korc_abort(24)
+       endif
+    end do
+#endif
 
 
   end subroutine include_CoulombCollisionsLA_GC_p
@@ -3124,6 +3165,8 @@ contains
 
        if (ISNAN(prob1(cc))) then
           write(6,*) 'NaN probability from secondary RE source'
+          !write(6,*) 'p,xi',pm(cc),xi(cc)
+          !write(6,*) 'pitchprob',pitchprob
           call korc_abort(24)
        end if
 
@@ -3210,9 +3253,20 @@ contains
           spp%vars%Y(spp%pRE,2)=Y_PHI(cc)
           !$OMP ATOMIC WRITE
           spp%vars%Y(spp%pRE,3)=Y_Z(cc)
-
+          
           !! Write changes to primary RE degrees of freedom to temporary
           !! arrays for passing back out to particle derived type
+
+#if DBG_CHECK    
+          if (spp%vars%V(spp%pRE,2).lt.0._rp) then
+             write(6,*) 'mu is negative for secondary'
+             write(6,*) 'ppll,mu',spp%vars%V(spp%pRE,1),spp%vars%V(spp%pRE,2)
+             write(6,*) 'pm,xi',ptrial,xitrial
+             write(6,*) 'xim,xip',xim,xip
+             write(6,*) 'ptherm,psecmax',p_therm,psecmax
+             call korc_abort(24)
+          end if
+# endif
           
           if (cparams_ss%ConserveLA) then
              tmppm=pm(cc)
@@ -3220,6 +3274,12 @@ contains
              gam(cc)=gam(cc)-gamtrial+gamvth
              pm(cc)=sqrt(gam(cc)*gam(cc)-1)
              xi(cc)=(tmppm*xi(cc)-ptrial*xitrial)/pm(cc)
+          end if
+
+          if (spp%pRE.eq.spp%ppp) then
+             write(output_unit_write,*) 'All REs allocated on proc',params%mpi_params%rank
+             flush(output_unit_write)
+             call korc_abort(24)
           end if
           
        end if
