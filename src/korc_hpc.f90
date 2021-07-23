@@ -31,7 +31,7 @@ CONTAINS
     !! 11: korc_hpc:set_paths
     !! 12: korc_experimental:get_Hollmann_distribution
     !! 13: korc_input:read_namelist
-    !! 14: korc_hpc:laod_particle_ic
+    !! 14: korc_hpc:load_particle_ic
     !! 15: korc_interp:interp_fields
     !! 16: korc_interp:interp_profiles
     !! 17: korc_fields:mean_F_field
@@ -42,11 +42,11 @@ CONTAINS
     !! 22: korc_fio_interface:initialize_nimrod
     !! 23: korc_interp:check_if_in_fields_domain
     !! 24: korc_collisions:large_angle_source
-    !! 25: korc_collisions: initialize_collision_params
+    !! 25: korc_ppusher
 
     flush(output_unit_write)
     
-    call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+    !call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
 
     call MPI_ABORT(MPI_COMM_WORLD, errorcode, mpierr)
   end subroutine korc_abort
@@ -96,7 +96,7 @@ CONTAINS
             exitstat=exei)
 #elif CORI
        !write(6,*) 'CORI'
-       call execute_command_line("/global/cfs/cdirs/m3236/build_all/KORC/src/get_git_details.sh", &
+       call execute_command_line("/global/cfs/cdirs/m3236/build_unstable/KORC/src/get_git_details.sh", &
             exitstat=exei)
 #endif
 

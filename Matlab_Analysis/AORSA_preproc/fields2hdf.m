@@ -43,7 +43,7 @@ if ~isempty(PHI)
     
     dsetname = '/Z';
     h5create(outputfile,dsetname,dims(3))
-    h5write(outputfile,dsetname',Z)
+    h5write(outputfile,dsetname,Z)
 else
     dims = [NR,NZ];
     
@@ -53,7 +53,7 @@ else
     
     dsetname = '/Z';
     h5create(outputfile,dsetname,dims(2))
-    h5write(outputfile,dsetname',Z)
+    h5write(outputfile,dsetname,Z)
 end
 
 dsetname = '/NR';
