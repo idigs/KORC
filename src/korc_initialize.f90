@@ -255,10 +255,11 @@ CONTAINS
 
     if (params%restart) then
        call load_time_stepping_params(params)
-
+       
     else if (params%proceed) then
+       
        call load_prev_time(params)
-
+       
        params%ito = 1_ip
 
        params%dt = params%dt*(2.0_rp*C_PI*params%cpp%time_r)

@@ -123,6 +123,7 @@ program main
 
 !  write(output_unit_write,'("init eta: ",E17.10)') spp(1)%vars%eta
 
+  
 #ifdef FIO
   if (TRIM(params%field_model) .eq. 'M3D_C1') then
 
@@ -180,6 +181,7 @@ program main
   !! on a maximum timestep
   !! set by the inverse of the relativistic cyclotron frequency.
 
+  
   if (params%mpi_params%rank .EQ. 0) then
      flush(output_unit_write)
   end if

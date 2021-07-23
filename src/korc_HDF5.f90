@@ -2716,6 +2716,10 @@ CONTAINS
           attr = "ReInterp_2x1t iteration"
           call save_to_hdf5(h5file_id,dset,F%ind_2x1t,attr)
        end if
+
+       dset = "num_mpi"
+       attr = "Number of mpi nodes used in simulation"
+       call save_to_hdf5(h5file_id,dset,params%mpi_params%nmpi,attr)
        
     end if
 
@@ -3008,10 +3012,23 @@ CONTAINS
        dset = "/time"
        call load_from_hdf5(h5file_id,dset,params%init_time)      
 
+       dset = "/num_mpi"
+       call load_from_hdf5(h5file_id,dset,real_number)
+       params%mpi_params%nmpi_prev = INT(real_number,ip)
+       
        call h5fclose_f(h5file_id, h5error)
     end if
-
+    
     CALL MPI_BCAST(params%init_time,1,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+    
+    CALL MPI_BCAST(params%mpi_params%nmpi_prev,1,MPI_INTEGER8,0, &
+         MPI_COMM_WORLD,mpierr)
+
+    ! Not sure why, but params%mpi_params%rank is reset to zero in the above
+    ! call to MPI_BCAST (but not other mpi_params values). Added the following
+    ! MPI_COMM_RANK to reintialize
+    call MPI_COMM_RANK(MPI_COMM_WORLD, params%mpi_params%rank, mpierr)
+    
 
   end subroutine load_prev_time
 
@@ -3067,13 +3084,13 @@ CONTAINS
     !! An instance of KORC's derived type SPECIES containing all the
     !! information of different electron species. See korc_types.f90.
     TYPE(FIELDS), INTENT(INOUT) 			:: F
-    REAL(rp), DIMENSION(:), ALLOCATABLE 		:: X_send_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE 		:: X_send_buffer,X_send_buffer_tmp
     !! Temporary buffer used by MPI for scattering the electrons' position
     !! to different MPI processes.
     REAL(rp), DIMENSION(:), ALLOCATABLE 		:: X_receive_buffer
     !! Temporary buffer used by MPI for scattering the electrons' position
     !! among MPI processes.
-    REAL(rp), DIMENSION(:), ALLOCATABLE 		:: V_send_buffer
+    REAL(rp), DIMENSION(:), ALLOCATABLE 		:: V_send_buffer,V_send_buffer_tmp
     !! Temporary buffer used by MPI for scattering the electrons' velocity
     !! among MPI processes.
     REAL(rp), DIMENSION(:), ALLOCATABLE 		:: V_receive_buffer
@@ -3104,20 +3121,35 @@ CONTAINS
     !! HDF5 error status.
     INTEGER 						:: mpierr
     !! Electron species iterator.
-    INTEGER 						:: ss
+    INTEGER 						:: ss,ii
     !! MPI error status.
-
+    INTEGER  :: recieve_num,send_num
+    
     do ss=1_idef,params%num_species
-       ALLOCATE(X_send_buffer(3*spp(ss)%ppp*params%mpi_params%nmpi))
-       ALLOCATE(X_receive_buffer(3*spp(ss)%ppp))
+       
+       if (mod(spp(ss)%ppp,params%mpi_params%nmpi/ &
+            params%mpi_params%nmpi_prev).ne.0) then
+          write(output_unit_write,'("ppp must be divisible by factor increase in MPI nodes")')
+          call KORC_ABORT(14)
+       endif
 
-       ALLOCATE(V_send_buffer(3*spp(ss)%ppp*params%mpi_params%nmpi))
-       ALLOCATE(V_receive_buffer(3*spp(ss)%ppp))
+       send_num=spp(ss)%ppp*params%mpi_params%nmpi_prev
+       recieve_num=spp(ss)%ppp*params%mpi_params%nmpi_prev/ &
+            params%mpi_params%nmpi
+       
+       ALLOCATE(X_send_buffer(3*send_num))
+       ALLOCATE(X_send_buffer_tmp(3*send_num))
+       ALLOCATE(X_receive_buffer(3*recieve_num))
 
-       ALLOCATE(AUX_send_buffer(spp(ss)%ppp*params%mpi_params%nmpi))
-       ALLOCATE(AUX_receive_buffer(spp(ss)%ppp))
+       ALLOCATE(V_send_buffer(3*send_num))
+       ALLOCATE(V_send_buffer_tmp(3*send_num))
+       ALLOCATE(V_receive_buffer(3*recieve_num))
+
+       ALLOCATE(AUX_send_buffer(send_num))
+       ALLOCATE(AUX_receive_buffer(recieve_num))
        
        if (params%mpi_params%rank.EQ.0_idef) then
+          
           filename = TRIM(params%path_to_outputs) // "restart_file.h5"
           call h5fopen_f(filename, H5F_ACC_RDONLY_F, h5file_id, h5error)
           if (h5error .EQ. -1) then
@@ -3132,17 +3164,53 @@ CONTAINS
           call load_array_from_hdf5(h5file_id,dset,X_send_buffer)
 
           call h5fclose_f(h5file_id, h5error)
+
+          !write(6,*) 'shape of X_send_buffer',shape(X_send_buffer)
+          !write(6,*) 'X_send_buffer',X_send_buffer
+          !write(6,*) 'recieve_num',recieve_num
+
+          
+          do ii=0_idef,params%mpi_params%nmpi/ &
+               params%mpi_params%nmpi_prev-1_idef
+             
+             X_send_buffer_tmp(recieve_num*(3*ii)+1:recieve_num*(3*ii+1))= &
+                  X_send_buffer(recieve_num*ii+1:recieve_num*(ii+1))
+
+             X_send_buffer_tmp(recieve_num*(3*ii+1)+1:recieve_num*(3*ii+2))= &
+                  X_send_buffer(spp(ss)%ppp+recieve_num*ii+1: &
+                  spp(ss)%ppp+recieve_num*(ii+1))
+
+             X_send_buffer_tmp(recieve_num*(3*ii+2)+1:recieve_num*(3*ii+3))= &
+                  X_send_buffer(2*spp(ss)%ppp+recieve_num*ii+1: &
+                  2*spp(ss)%ppp+recieve_num*(ii+1))
+          end do
+
+          !write(6,*) 'X_send_buffer_tmp',X_send_buffer_tmp
+
+          
        end if
 
        X_receive_buffer = 0.0_rp
-       CALL MPI_SCATTER(X_send_buffer,3*spp(ss)%ppp,MPI_REAL8, &
-            X_receive_buffer,3*spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+       CALL MPI_SCATTER(X_send_buffer_tmp,3*recieve_num,MPI_REAL8, &
+            X_receive_buffer,3*recieve_num,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
        if (params%orbit_model(1:2).EQ.'FO') then  
-          spp(ss)%vars%X = RESHAPE(X_receive_buffer,(/spp(ss)%ppp,3/))
-       else if (params%orbit_model(1:2).EQ.'GC') then
-          spp(ss)%vars%Y = RESHAPE(X_receive_buffer,(/spp(ss)%ppp,3/))
+          spp(ss)%vars%X(1:recieve_num,:) = &
+               RESHAPE(X_receive_buffer,(/recieve_num,3/))
+          !set dummy values for new particles, so EZspline doesn't throw errors
 
-          spp(ss)%vars%Y(:,2)=modulo(spp(ss)%vars%Y(:,2),2*C_PI)          
+          do ii=1_idef,spp(ss)%ppp-recieve_num
+             spp(ss)%vars%X(recieve_num+ii,:)=spp(ss)%vars%X(1,:)
+          end do
+          
+       else if (params%orbit_model(1:2).EQ.'GC') then
+          spp(ss)%vars%Y(1:recieve_num,:) = &
+               RESHAPE(X_receive_buffer,(/recieve_num,3/))
+
+          do ii=1_idef,spp(ss)%ppp-recieve_num
+             spp(ss)%vars%Y(recieve_num+ii,:)=spp(ss)%vars%Y(1,:)
+          end do
+          
+          spp(ss)%vars%Y(:,2)=modulo(spp(ss)%vars%Y(:,2),2*C_PI)
        end if
 
        if (params%mpi_params%rank.EQ.0_idef) then
@@ -3160,14 +3228,30 @@ CONTAINS
           call load_array_from_hdf5(h5file_id,dset,V_send_buffer)
 
           call h5fclose_f(h5file_id, h5error)
+
+          do ii=0_idef,params%mpi_params%nmpi/ &
+               params%mpi_params%nmpi_prev-1_idef
+             
+             V_send_buffer_tmp(recieve_num*(3*ii)+1:recieve_num*(3*ii+1))= &
+                  V_send_buffer(recieve_num*ii+1:recieve_num*(ii+1))
+
+             V_send_buffer_tmp(recieve_num*(3*ii+1)+1:recieve_num*(3*ii+2))= &
+                  V_send_buffer(spp(ss)%ppp+recieve_num*ii+1: &
+                  spp(ss)%ppp+recieve_num*(ii+1))
+
+             V_send_buffer_tmp(recieve_num*(3*ii+2)+1:recieve_num*(3*ii+3))= &
+                  V_send_buffer(2*spp(ss)%ppp+recieve_num*ii+1: &
+                  2*spp(ss)%ppp+recieve_num*(ii+1))
+          end do
+          
        end if
 
        
 
        V_receive_buffer = 0.0_rp
-       CALL MPI_SCATTER(V_send_buffer,3*spp(ss)%ppp,MPI_REAL8, &
-            V_receive_buffer,3*spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
-       spp(ss)%vars%V = RESHAPE(V_receive_buffer,(/spp(ss)%ppp,3/))
+       CALL MPI_SCATTER(V_send_buffer_tmp,3*recieve_num,MPI_REAL8, &
+            V_receive_buffer,3*recieve_num,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+       spp(ss)%vars%V(1:recieve_num,:) = RESHAPE(V_receive_buffer,(/recieve_num,3/))
 
        if (params%mpi_params%rank.EQ.0_idef) then
           filename = TRIM(params%path_to_outputs) // "restart_file.h5"
@@ -3187,9 +3271,9 @@ CONTAINS
        end if
 
        AUX_receive_buffer = 0.0_rp
-       CALL MPI_SCATTER(AUX_send_buffer,spp(ss)%ppp,MPI_REAL8, &
-            AUX_receive_buffer,spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
-       spp(ss)%vars%flagCon = INT(AUX_receive_buffer,is)
+       CALL MPI_SCATTER(AUX_send_buffer,recieve_num,MPI_REAL8, &
+            AUX_receive_buffer,recieve_num,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+       spp(ss)%vars%flagCon(1:recieve_num) = INT(AUX_receive_buffer,is)
 
        if (params%mpi_params%rank.EQ.0_idef) then
           filename = TRIM(params%path_to_outputs) // "restart_file.h5"
@@ -3209,9 +3293,9 @@ CONTAINS
        end if
 
        AUX_receive_buffer = 0.0_rp
-       CALL MPI_SCATTER(AUX_send_buffer,spp(ss)%ppp,MPI_REAL8, &
-            AUX_receive_buffer,spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
-       spp(ss)%vars%flagCol = INT(AUX_receive_buffer,is)
+       CALL MPI_SCATTER(AUX_send_buffer,recieve_num,MPI_REAL8, &
+            AUX_receive_buffer,recieve_num,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+       spp(ss)%vars%flagCol(1:recieve_num) = INT(AUX_receive_buffer,is)
 
        if (params%mpi_params%rank.EQ.0_idef) then
           filename = TRIM(params%path_to_outputs) // "restart_file.h5"
@@ -3231,9 +3315,9 @@ CONTAINS
        end if
 
        AUX_receive_buffer = 0.0_rp
-       CALL MPI_SCATTER(AUX_send_buffer,spp(ss)%ppp,MPI_REAL8, &
-            AUX_receive_buffer,spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
-       spp(ss)%vars%flagRE = INT(AUX_receive_buffer,is)
+       CALL MPI_SCATTER(AUX_send_buffer,recieve_num,MPI_REAL8, &
+            AUX_receive_buffer,recieve_num,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+       spp(ss)%vars%flagRE(1:recieve_num) = INT(AUX_receive_buffer,is)
        
        if (params%mpi_params%rank.EQ.0_idef) then
           filename = TRIM(params%path_to_outputs) // "restart_file.h5"
@@ -3253,9 +3337,9 @@ CONTAINS
        end if
 
        AUX_receive_buffer = 0.0_rp
-       CALL MPI_SCATTER(AUX_send_buffer,spp(ss)%ppp,MPI_REAL8, &
-            AUX_receive_buffer,spp(ss)%ppp,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
-       spp(ss)%vars%g = AUX_receive_buffer
+       CALL MPI_SCATTER(AUX_send_buffer,recieve_num,MPI_REAL8, &
+            AUX_receive_buffer,recieve_num,MPI_REAL8,0,MPI_COMM_WORLD,mpierr)
+       spp(ss)%vars%g(1:recieve_num) = AUX_receive_buffer
 
        if (params%SC_E) then
           
@@ -3320,6 +3404,43 @@ CONTAINS
        params%GC_coords=.TRUE.
     end if
 
+#if DBG_CHECK    
+    call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+    
+    if (params%mpi_params%rank.eq.0_idef) then
+       write(6,*) 'mpi',params%mpi_params%rank,'Y_R',spp(1)%vars%Y(:,1),'Y_PHI',spp(1)%vars%Y(:,2),'Y_Z',spp(1)%vars%Y(:,3)
+       write(6,*) 'V_PLL',spp(1)%vars%V(:,1),'V_MU',spp(1)%vars%V(:,2)
+       write(6,*) 'flagCon',spp(1)%vars%flagCon,'flagCol',spp(1)%vars%flagCol,'flagRE',spp(1)%vars%flagRE
+    end if
+
+    call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+    
+    if (params%mpi_params%rank.eq.1_idef) then
+       write(6,*) 'mpi',params%mpi_params%rank,'Y_R',spp(1)%vars%Y(:,1),'Y_PHI',spp(1)%vars%Y(:,2),'Y_Z',spp(1)%vars%Y(:,3)
+       write(6,*) 'V_PLL',spp(1)%vars%V(:,1),'V_MU',spp(1)%vars%V(:,2)
+       write(6,*) 'flagCon',spp(1)%vars%flagCon,'flagCol',spp(1)%vars%flagCol,'flagRE',spp(1)%vars%flagRE
+    end if
+
+    call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+    
+    if (params%mpi_params%rank.eq.2_idef) then
+       write(6,*) 'mpi',params%mpi_params%rank,'Y_R',spp(1)%vars%Y(:,1),'Y_PHI',spp(1)%vars%Y(:,2),'Y_Z',spp(1)%vars%Y(:,3)
+       write(6,*) 'V_PLL',spp(1)%vars%V(:,1),'V_MU',spp(1)%vars%V(:,2)
+       write(6,*) 'flagCon',spp(1)%vars%flagCon,'flagCol',spp(1)%vars%flagCol,'flagRE',spp(1)%vars%flagRE
+    end if
+
+    call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+    
+    if (params%mpi_params%rank.eq.3_idef) then
+       write(6,*) 'mpi',params%mpi_params%rank,'Y_R',spp(1)%vars%Y(:,1),'Y_PHI',spp(1)%vars%Y(:,2),'Y_Z',spp(1)%vars%Y(:,3)
+       write(6,*) 'V_PLL',spp(1)%vars%V(:,1),'V_MU',spp(1)%vars%V(:,2)
+       write(6,*) 'flagCon',spp(1)%vars%flagCon,'flagCol',spp(1)%vars%flagCol,'flagRE',spp(1)%vars%flagRE
+    end if
+
+    call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
+#endif
+
+    
   end subroutine load_particles_ic
 
 end module korc_HDF5

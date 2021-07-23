@@ -133,6 +133,7 @@ module korc_types
      !! @note KORC derived type to keep relevant MPI parameters. @endnote
      INTEGER :: nmpi 
      !! Number of MPI processes.
+     INTEGER :: nmpi_prev 
      INTEGER :: rank 
      !! Rank in WORLD COMMON communicator.
      INTEGER :: rank_topo 

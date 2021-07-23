@@ -263,6 +263,7 @@ CONTAINS
           write(output_unit_write,'(/,"  Number of MPI processes: ",I5)') params%mpi_params%nmpi
           write(output_unit_write,'(/,"* * * * * * * * * * * * * * * * * *")')
        end if
+
     else
        if (params%mpi_params%rank.EQ.0) then
           write(6,'(/,"* * * * * * * COMMUNICATIONS * * * * * * *")')
