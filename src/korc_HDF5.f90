@@ -3121,7 +3121,7 @@ CONTAINS
     !! HDF5 error status.
     INTEGER 						:: mpierr
     !! Electron species iterator.
-    INTEGER 						:: ss,ii
+    INTEGER 						:: ss,ii,jj
     !! MPI error status.
     INTEGER  :: recieve_num,send_num
     
@@ -3169,23 +3169,32 @@ CONTAINS
           !write(6,*) 'X_send_buffer',X_send_buffer
           !write(6,*) 'recieve_num',recieve_num
 
-          
-          do ii=0_idef,params%mpi_params%nmpi/ &
-               params%mpi_params%nmpi_prev-1_idef
-             
-             X_send_buffer_tmp(recieve_num*(3*ii)+1:recieve_num*(3*ii+1))= &
-                  X_send_buffer(recieve_num*ii+1:recieve_num*(ii+1))
 
-             X_send_buffer_tmp(recieve_num*(3*ii+1)+1:recieve_num*(3*ii+2))= &
-                  X_send_buffer(spp(ss)%ppp+recieve_num*ii+1: &
-                  spp(ss)%ppp+recieve_num*(ii+1))
+          do jj=0_idef,params%mpi_params%nmpi_prev-1_idef
+             do ii=0_idef,params%mpi_params%nmpi/ &
+                  params%mpi_params%nmpi_prev-1_idef
 
-             X_send_buffer_tmp(recieve_num*(3*ii+2)+1:recieve_num*(3*ii+3))= &
-                  X_send_buffer(2*spp(ss)%ppp+recieve_num*ii+1: &
-                  2*spp(ss)%ppp+recieve_num*(ii+1))
+                X_send_buffer_tmp(jj*spp(ss)%ppp*3+recieve_num*(3*ii)+1: &
+                     jj*spp(ss)%ppp*3+recieve_num*(3*ii+1))= &
+                     X_send_buffer(jj*spp(ss)%ppp*3+recieve_num*ii+1: &
+                     jj*spp(ss)%ppp*3+recieve_num*(ii+1))
+
+                X_send_buffer_tmp(jj*spp(ss)%ppp*3+recieve_num*(3*ii+1)+1: &
+                     jj*spp(ss)%ppp*3+recieve_num*(3*ii+2))=&
+                     X_send_buffer(spp(ss)%ppp*(3*jj+1)+recieve_num*ii+1: &
+                     spp(ss)%ppp*(3*jj+1)+recieve_num*(ii+1))
+
+                X_send_buffer_tmp(jj*spp(ss)%ppp*3+recieve_num*(3*ii+2)+1: &
+                     jj*spp(ss)%ppp*3+recieve_num*(3*ii+3))=&
+                     X_send_buffer(spp(ss)%ppp*(3*jj+2)+recieve_num*ii+1: &
+                     spp(ss)%ppp*(3*jj+2)+recieve_num*(ii+1))
+             end do
           end do
 
-          !write(6,*) 'X_send_buffer_tmp',X_send_buffer_tmp
+#if DBG_CHECK
+          write(6,*) 'X_send_buffer',X_send_buffer
+          write(6,*) 'X_send_buffer_tmp',X_send_buffer_tmp
+#endif
 
           
        end if
@@ -3229,20 +3238,32 @@ CONTAINS
 
           call h5fclose_f(h5file_id, h5error)
 
-          do ii=0_idef,params%mpi_params%nmpi/ &
-               params%mpi_params%nmpi_prev-1_idef
-             
-             V_send_buffer_tmp(recieve_num*(3*ii)+1:recieve_num*(3*ii+1))= &
-                  V_send_buffer(recieve_num*ii+1:recieve_num*(ii+1))
+          do jj=0_idef,params%mpi_params%nmpi_prev-1_idef
+             do ii=0_idef,params%mpi_params%nmpi/ &
+                  params%mpi_params%nmpi_prev-1_idef
 
-             V_send_buffer_tmp(recieve_num*(3*ii+1)+1:recieve_num*(3*ii+2))= &
-                  V_send_buffer(spp(ss)%ppp+recieve_num*ii+1: &
-                  spp(ss)%ppp+recieve_num*(ii+1))
+                V_send_buffer_tmp(jj*spp(ss)%ppp*3+recieve_num*(3*ii)+1: &
+                     jj*spp(ss)%ppp*3+recieve_num*(3*ii+1))= &
+                     V_send_buffer(jj*spp(ss)%ppp*3+recieve_num*ii+1: &
+                     jj*spp(ss)%ppp*3+recieve_num*(ii+1))
 
-             V_send_buffer_tmp(recieve_num*(3*ii+2)+1:recieve_num*(3*ii+3))= &
-                  V_send_buffer(2*spp(ss)%ppp+recieve_num*ii+1: &
-                  2*spp(ss)%ppp+recieve_num*(ii+1))
+                V_send_buffer_tmp(jj*spp(ss)%ppp*3+recieve_num*(3*ii+1)+1: &
+                     jj*spp(ss)%ppp*3+recieve_num*(3*ii+2))=&
+                     V_send_buffer(spp(ss)%ppp*(3*jj+1)+recieve_num*ii+1: &
+                     spp(ss)%ppp*(3*jj+1)+recieve_num*(ii+1))
+
+                V_send_buffer_tmp(jj*spp(ss)%ppp*3+recieve_num*(3*ii+2)+1: &
+                     jj*spp(ss)%ppp*3+recieve_num*(3*ii+3))=&
+                     V_send_buffer(spp(ss)%ppp*(3*jj+2)+recieve_num*ii+1: &
+                     spp(ss)%ppp*(3*jj+2)+recieve_num*(ii+1))
+             end do
           end do
+
+
+#if DBG_CHECK
+          write(6,*) 'V_send_buffer',V_send_buffer
+          write(6,*) 'V_send_buffer_tmp',V_send_buffer_tmp
+#endif
           
        end if
 
@@ -3408,33 +3429,57 @@ CONTAINS
     call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
     
     if (params%mpi_params%rank.eq.0_idef) then
-       write(6,*) 'mpi',params%mpi_params%rank,'Y_R',spp(1)%vars%Y(:,1),'Y_PHI',spp(1)%vars%Y(:,2),'Y_Z',spp(1)%vars%Y(:,3)
-       write(6,*) 'V_PLL',spp(1)%vars%V(:,1),'V_MU',spp(1)%vars%V(:,2)
-       write(6,*) 'flagCon',spp(1)%vars%flagCon,'flagCol',spp(1)%vars%flagCol,'flagRE',spp(1)%vars%flagRE
+       write(6,*) 'mpi',params%mpi_params%rank
+       write(6,*) 'Y_R',spp(1)%vars%Y(:,1)
+       write(6,*) 'Y_PHI',spp(1)%vars%Y(:,2)
+       write(6,*) 'Y_Z',spp(1)%vars%Y(:,3)
+       write(6,*) 'V_PLL',spp(1)%vars%V(:,1)
+       write(6,*) 'V_MU',spp(1)%vars%V(:,2)
+       write(6,*) 'flagCon',spp(1)%vars%flagCon
+       write(6,*) 'flagCol',spp(1)%vars%flagCol
+       write(6,*) 'flagRE',spp(1)%vars%flagRE
     end if
 
     call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
     
     if (params%mpi_params%rank.eq.1_idef) then
-       write(6,*) 'mpi',params%mpi_params%rank,'Y_R',spp(1)%vars%Y(:,1),'Y_PHI',spp(1)%vars%Y(:,2),'Y_Z',spp(1)%vars%Y(:,3)
-       write(6,*) 'V_PLL',spp(1)%vars%V(:,1),'V_MU',spp(1)%vars%V(:,2)
-       write(6,*) 'flagCon',spp(1)%vars%flagCon,'flagCol',spp(1)%vars%flagCol,'flagRE',spp(1)%vars%flagRE
+       write(6,*) 'mpi',params%mpi_params%rank
+       write(6,*) 'Y_R',spp(1)%vars%Y(:,1)
+       write(6,*) 'Y_PHI',spp(1)%vars%Y(:,2)
+       write(6,*) 'Y_Z',spp(1)%vars%Y(:,3)
+       write(6,*) 'V_PLL',spp(1)%vars%V(:,1)
+       write(6,*) 'V_MU',spp(1)%vars%V(:,2)
+       write(6,*) 'flagCon',spp(1)%vars%flagCon
+       write(6,*) 'flagCol',spp(1)%vars%flagCol
+       write(6,*) 'flagRE',spp(1)%vars%flagRE
     end if
 
     call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
     
     if (params%mpi_params%rank.eq.2_idef) then
-       write(6,*) 'mpi',params%mpi_params%rank,'Y_R',spp(1)%vars%Y(:,1),'Y_PHI',spp(1)%vars%Y(:,2),'Y_Z',spp(1)%vars%Y(:,3)
-       write(6,*) 'V_PLL',spp(1)%vars%V(:,1),'V_MU',spp(1)%vars%V(:,2)
-       write(6,*) 'flagCon',spp(1)%vars%flagCon,'flagCol',spp(1)%vars%flagCol,'flagRE',spp(1)%vars%flagRE
+       write(6,*) 'mpi',params%mpi_params%rank
+       write(6,*) 'Y_R',spp(1)%vars%Y(:,1)
+       write(6,*) 'Y_PHI',spp(1)%vars%Y(:,2)
+       write(6,*) 'Y_Z',spp(1)%vars%Y(:,3)
+       write(6,*) 'V_PLL',spp(1)%vars%V(:,1)
+       write(6,*) 'V_MU',spp(1)%vars%V(:,2)
+       write(6,*) 'flagCon',spp(1)%vars%flagCon
+       write(6,*) 'flagCol',spp(1)%vars%flagCol
+       write(6,*) 'flagRE',spp(1)%vars%flagRE
     end if
 
     call MPI_BARRIER(MPI_COMM_WORLD,mpierr)
     
     if (params%mpi_params%rank.eq.3_idef) then
-       write(6,*) 'mpi',params%mpi_params%rank,'Y_R',spp(1)%vars%Y(:,1),'Y_PHI',spp(1)%vars%Y(:,2),'Y_Z',spp(1)%vars%Y(:,3)
-       write(6,*) 'V_PLL',spp(1)%vars%V(:,1),'V_MU',spp(1)%vars%V(:,2)
-       write(6,*) 'flagCon',spp(1)%vars%flagCon,'flagCol',spp(1)%vars%flagCol,'flagRE',spp(1)%vars%flagRE
+       write(6,*) 'mpi',params%mpi_params%rank
+       write(6,*) 'Y_R',spp(1)%vars%Y(:,1)
+       write(6,*) 'Y_PHI',spp(1)%vars%Y(:,2)
+       write(6,*) 'Y_Z',spp(1)%vars%Y(:,3)
+       write(6,*) 'V_PLL',spp(1)%vars%V(:,1)
+       write(6,*) 'V_MU',spp(1)%vars%V(:,2)
+       write(6,*) 'flagCon',spp(1)%vars%flagCon
+       write(6,*) 'flagCol',spp(1)%vars%flagCol
+       write(6,*) 'flagRE',spp(1)%vars%flagRE
     end if
 
     call MPI_BARRIER(MPI_COMM_WORLD,mpierr)

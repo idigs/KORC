@@ -1535,10 +1535,13 @@ subroutine MH_psi(params,spp,F)
      do while (ii .LE. nsamples)
 
 !        write(output_unit_write,'("sample:",I15)') ii
-        
-       if (modulo(ii,nsamples/10).eq.0) then
+
+#if DBG_CHECK        
+#else
+        if (modulo(ii,nsamples/10).eq.0) then
            write(output_unit_write,'("Sample: ",I10)') ii
         end if
+#endif
         
         !R_test = R_buffer + random_norm(0.0_rp,spp%dR)
         !R_test = R_buffer + get_random_mkl_N(0.0_rp,spp%dR)
@@ -2226,6 +2229,8 @@ subroutine intitial_spatial_distribution(params,spp,P,F)
         call get_Hollmann_distribution_1Dtransport(params,spp(ss),F)
      CASE('MH_psi')
 
+#if DBG_CHECK        
+#else
         if (spp(ss)%ppp*params%mpi_params%nmpi.lt.10) then
            if(params%mpi_params%rank.eq.0) then
               write(6,*) &
@@ -2234,6 +2239,7 @@ subroutine intitial_spatial_distribution(params,spp,P,F)
            end if
            call korc_abort(19)
         end if
+#endif
         
         call MH_psi(params,spp(ss),F)
      CASE('FIO_therm')
