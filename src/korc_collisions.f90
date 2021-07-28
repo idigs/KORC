@@ -483,7 +483,7 @@ contains
                 if (.not.(P%ne_profile(1:6).eq.'RE-EVO')) then
                    cparams_ms%Ec_min=cparams_ms%Ec
                 else
-                   cparams_ms%Ec_min=cparams_ms%Ec*P%neo/cparams_ss%ne
+                   cparams_ms%Ec_min=cparams_ms%Ec*P%n_ne/cparams_ss%ne
                 endif
                 
              CASE('HESSLOW')
@@ -495,7 +495,7 @@ contains
                 if (.not.(P%ne_profile(1:6).eq.'RE-EVO')) then
                    cparams_ms%Ec_min=cparams_ms%Ec
                 else
-                   cparams_ms%Ec_min=cparams_ms%Ec*P%neo/cparams_ss%ne
+                   cparams_ms%Ec_min=cparams_ms%Ec*P%n_ne/cparams_ss%ne
                 end if
                 
              CASE('ROSENBLUTH')
@@ -507,7 +507,7 @@ contains
                 if (.not.(P%ne_profile(1:6).eq.'RE-EVO')) then
                    cparams_ms%Ec_min=cparams_ms%Ec
                 else
-                   cparams_ms%Ec_min=cparams_ms%Ec*P%neo/cparams_ss%ne
+                   cparams_ms%Ec_min=cparams_ms%Ec*P%n_ne/cparams_ss%ne
                 end if
                 
              CASE DEFAULT
