@@ -481,9 +481,9 @@ contains
 
                 cparams_ms%Ec=cparams_ss%Ec
                 if (.not.(P%ne_profile(1:6).eq.'RE-EVO')) then
-                   cparams_ms%Ec_min=cparams_ss%Ec
+                   cparams_ms%Ec_min=cparams_ms%Ec
                 else
-                   cparams_ms%Ec_min=cparams_ss%Ec*P%neo/cparams_ss%ne
+                   cparams_ms%Ec_min=cparams_ms%Ec*P%neo/cparams_ss%ne
                 endif
                 
              CASE('HESSLOW')
@@ -492,6 +492,11 @@ contains
                 cparams_ms%Ec=cparams_ss%Ec* &
                      (1._rp+sum((cparams_ms%Zo-cparams_ms%Zj)* &
                      cparams_ms%nz)/cparams_ss%ne)
+                if (.not.(P%ne_profile(1:6).eq.'RE-EVO')) then
+                   cparams_ms%Ec_min=cparams_ms%Ec
+                else
+                   cparams_ms%Ec_min=cparams_ms%Ec*P%neo/cparams_ss%ne
+                end if
                 
              CASE('ROSENBLUTH')
                 call load_params_ms(params)
@@ -499,6 +504,11 @@ contains
                 cparams_ms%Ec=cparams_ss%Ec* &
                      (1._rp+sum((cparams_ms%Zo-cparams_ms%Zj)* &
                      cparams_ms%nz)/cparams_ss%ne)
+                if (.not.(P%ne_profile(1:6).eq.'RE-EVO')) then
+                   cparams_ms%Ec_min=cparams_ms%Ec
+                else
+                   cparams_ms%Ec_min=cparams_ms%Ec*P%neo/cparams_ss%ne
+                end if
                 
              CASE DEFAULT
                 write(output_unit_write,'("Default case")')
@@ -536,7 +546,7 @@ contains
              if (TRIM(params%collisions_model).eq.'NO_BOUND') then
                 p_crit=1/sqrt(F%Eo/cparams_ss%Ec-1._rp)
              else
-                p_crit=1/sqrt(F%Eo/cparams_ms%Ec-1._rp)
+                p_crit=1/sqrt(F%Eo/cparams_ms%Ec_min-1._rp)
              end if
           else if ((TRIM(params%field_model) .eq. 'EXTERNAL-PSI') &
                .AND.(F%ReInterp_2x1t)) then
@@ -553,13 +563,13 @@ contains
                      (abs(minEinterp).lt.cparams_ss%Ec)) &
                      cparams_ss%avalanche=.FALSE.
              else
-                if ((abs(maxEinterp).lt.cparams_ms%Ec).and. &
-                     (abs(minEinterp).lt.cparams_ms%Ec)) &
+                if ((abs(maxEinterp).lt.cparams_ms%Ec_min).and. &
+                     (abs(minEinterp).lt.cparams_ms%Ec_min)) &
                      cparams_ss%avalanche=.FALSE.                
              end if
 
              !write(6,*) 'maxEinterp',maxEinterp,'minEinterp',minEinterp, &
-             !     'E_c',cparams_ms%Ec,cparams_ss%avalanche
+             !     'E_c',cparams_ms%Ec_min,cparams_ss%avalanche
              
              if (cparams_ss%avalanche) then
 
@@ -568,13 +578,13 @@ contains
                       p_crit=1/sqrt(maxEinterp/cparams_ss%Ec-1._rp)
                    else
 
-                      p_crit=1/sqrt(maxEinterp/cparams_ms%Ec-1._rp)
+                      p_crit=1/sqrt(maxEinterp/cparams_ms%Ec_min-1._rp)
                    end if
                 else
                    if (TRIM(params%collisions_model).eq.'NO_BOUND') then
                       p_crit=1/sqrt(-minEinterp/cparams_ss%Ec-1._rp)
                    else
-                      p_crit=1/sqrt(-minEinterp/cparams_ms%Ec-1._rp)
+                      p_crit=1/sqrt(-minEinterp/cparams_ms%Ec_min-1._rp)
                    end if
                 end if
 
@@ -609,7 +619,7 @@ contains
                    if (TRIM(params%collisions_model).eq.'NO_BOUND') then
                       write(output_unit_write,*) 'E_CH is: ',cparams_ss%Ec*params%cpp%Eo,'V/m'
                    else
-                      write(output_unit_write,*) 'E_CH is: ',cparams_ms%Ec*params%cpp%Eo,'V/m'
+                      write(output_unit_write,*) 'E_CH is: ',cparams_ms%Ec_min*params%cpp%Eo,'V/m'
                    end if
                    write(output_unit_write,*) 'tau_c,rel is: ',cparams_ss%Tau*params%cpp%time,'s'
                 else
@@ -622,7 +632,7 @@ contains
                    if (TRIM(params%collisions_model).eq.'NO_BOUND') then
                       write(output_unit_write,*) 'E_CH is: ',cparams_ss%Ec,'V/m'
                    else
-                      write(output_unit_write,*) 'E_CH is: ',cparams_ms%Ec,'V/m'
+                      write(output_unit_write,*) 'E_CH is: ',cparams_ms%Ec_min,'V/m'
                    end if
                    write(output_unit_write,*) 'tau_c,rel is: ',cparams_ss%Tau,'s'
                 end if                
@@ -634,12 +644,17 @@ contains
              if (params%mpi_params%rank .EQ. 0) then
                 if(.not.init) then
                    if (abs(maxEinterp).gt.abs(minEinterp)) then
-                      write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp,'V/m'
+                      write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp*params%cpp%Eo,'V/m'
                    else
-                      write(output_unit_write,*) 'Maximum E_PHI : ',minEinterp,'V/m'
+                      write(output_unit_write,*) 'Maximum E_PHI : ',minEinterp*params%cpp%Eo,'V/m'
                    end if
 
-                   write(output_unit_write,*) 'E_CH is: ',cparams_ss%Ec,'V/m'
+                   if (TRIM(params%collisions_model).eq.'NO_BOUND') then
+                      write(output_unit_write,*) 'E_CH is: ',cparams_ss%Ec*params%cpp%Eo,'V/m'
+                   else
+                      write(output_unit_write,*) 'E_CH is: ',cparams_ms%Ec_min*params%cpp%Eo,'V/m'
+                   end if
+                   
                 else
                    if (abs(maxEinterp).gt.abs(minEinterp)) then
                       write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp*params%cpp%Eo,'V/m'
@@ -647,7 +662,11 @@ contains
                       write(output_unit_write,*) 'Maximum E_PHI : ',minEinterp*params%cpp%Eo,'V/m'
                    end if
 
-                   write(output_unit_write,*) 'E_CH is: ',cparams_ss%Ec*params%cpp%Eo,'V/m'
+                   if (TRIM(params%collisions_model).eq.'NO_BOUND') then
+                      write(output_unit_write,*) 'E_CH is: ',cparams_ss%Ec*params%cpp%Eo,'V/m'
+                   else
+                      write(output_unit_write,*) 'E_CH is: ',cparams_ms%Ec_min*params%cpp%Eo,'V/m'
+                   end if
                 end if
                 write(output_unit_write,*) 'No secondary REs will be calculated in this interval'
                 write(output_unit_write,*) 'p_therm from initial or last time interval used'
@@ -685,6 +704,7 @@ contains
     cparams_ms%rD = cparams_ms%rD/params%cpp%length
     cparams_ms%re = cparams_ms%re/params%cpp%length
     cparams_ms%Ec = cparams_ms%Ec/params%cpp%Eo
+    cparams_ms%Ec_min = cparams_ms%Ec_min/params%cpp%Eo
   end subroutine normalize_params_ms
 
 
