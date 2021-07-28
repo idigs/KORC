@@ -73,7 +73,7 @@ module korc_collisions
           4838.2_rp,huge(1._rp)/)
 
      CHARACTER(30) :: neut_prof
-     REAL(rp) 			:: Ec
+     REAL(rp) 			:: Ec,Ec_min
      ! Critical electric field
      
   END TYPE PARAMS_MS
@@ -480,6 +480,11 @@ contains
                 call load_params_ms(params)
 
                 cparams_ms%Ec=cparams_ss%Ec
+                if (.not.(P%ne_profile(1:6).eq.'RE-EVO')) then
+                   cparams_ms%Ec_min=cparams_ss%Ec
+                else
+                   cparams_ms%Ec_min=cparams_ss%Ec*P%neo/cparams_ss%ne
+                endif
                 
              CASE('HESSLOW')
                 call load_params_ms(params)
@@ -2680,7 +2685,7 @@ contains
        end if
 
        call large_angle_source(spp,params,achunk,F,Y_R,Y_PHI,Y_Z, &
-            pm,xi,ntot,Te,Bmag,me)
+            pm,xi,ntot,Te,Bmag,me,flagCol,flagCon)
 
     end if
 
@@ -2993,13 +2998,14 @@ contains
 #endif
 
   subroutine large_angle_source(spp,params,achunk,F,Y_R,Y_PHI,Y_Z, &
-       pm,xi,ne,Te,Bmag,me)
+       pm,xi,ne,Te,Bmag,me,flagCol,flagCon)
     TYPE(SPECIES), INTENT(INOUT)    :: spp
     TYPE(KORC_PARAMS), INTENT(IN) 			:: params
     TYPE(FIELDS), INTENT(IN)                                   :: F
     INTEGER, INTENT(IN) :: achunk
     REAL(rp), INTENT(INOUT), DIMENSION(achunk)  :: pm,xi
     REAL(rp), INTENT(IN), DIMENSION(achunk)  :: Y_R,Y_PHI,Y_Z,ne,Te,Bmag
+    INTEGER(is), INTENT(IN), DIMENSION(achunk)  :: flagCol,flagCon
     REAL(rp), INTENT(IN)  :: me
     REAL(rp), DIMENSION(achunk)  :: gam,prob0,prob1
     REAL(rp) :: gam_therm,p_therm,gammax=200._rp,dt,gamsecmax,psecmax,ptrial
@@ -3161,7 +3167,7 @@ contains
 
        !write(6,*) 'intpitchprob',intpitchprob
        
-       prob1(cc)=prob1(cc)*dt*2*C_PI
+       prob1(cc)=prob1(cc)*dt*2*C_PI*REAL(flagCol(cc))*REAL(flagCon(cc))
 
        if (ISNAN(prob1(cc))) then
           write(6,*) 'NaN probability from secondary RE source'
@@ -3277,8 +3283,7 @@ contains
           end if
 
           if (spp%pRE.eq.spp%ppp) then
-             write(output_unit_write,*) 'All REs allocated on proc',params%mpi_params%rank
-             flush(output_unit_write)
+             write(6,*) 'All REs allocated on proc',params%mpi_params%rank
              call korc_abort(24)
           end if
           
