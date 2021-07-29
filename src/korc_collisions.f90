@@ -712,6 +712,8 @@ contains
     cparams_ms%re = cparams_ms%re/params%cpp%length
     cparams_ms%Ec = cparams_ms%Ec/params%cpp%Eo
     cparams_ms%Ec_min = cparams_ms%Ec_min/params%cpp%Eo
+    cparams_ms%Gammac_min = cparams_ms%Gammac_min*params%cpp%time/ &
+         (params%cpp%mass**2*params%cpp%velocity**3)
   end subroutine normalize_params_ms
 
 
@@ -746,6 +748,7 @@ contains
     
     cparams_ss%P%a = cparams_ss%P%a/params%cpp%length
     cparams_ss%P%neo = cparams_ss%P%neo/params%cpp%density
+    cparams_ss%P%n_ne = cparams_ss%P%n_ne/params%cpp%density
     cparams_ss%P%Teo = cparams_ss%P%Teo/params%cpp%temperature
   end subroutine normalize_params_ss
 
@@ -873,8 +876,9 @@ contains
        endif
        Tau = MINVAL( 1.0_rp/nu )
 
+       
 !       write(output_unit_write,'("collision freqencies ",F25.12)') nu(3)
-!       write(6,*) nu
+       write(6,*) nu/params%cpp%time
        
        cparams_ss%subcycling_iterations = FLOOR(cparams_ss%dTau*Tau/ &
             params%dt,ip) + 1_ip
