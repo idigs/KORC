@@ -50,6 +50,7 @@ module korc_collisions
      ! Debye length
      REAL(rp) 					:: re
      ! Classical electron radius
+     REAL(rp) 					:: Gammac_min
 
 
      REAL(rp), DIMENSION(2) :: aH=(/274._rp,0._rp/)
@@ -75,6 +76,7 @@ module korc_collisions
      CHARACTER(30) :: neut_prof
      REAL(rp) 			:: Ec,Ec_min
      ! Critical electric field
+     LOGICAL  :: LargeCollisions
      
   END TYPE PARAMS_MS
 
@@ -310,6 +312,9 @@ contains
     cparams_ms%Ee_IZj = C_ME*C_C**2/cparams_ms%IZj
 
     cparams_ms%neut_prof=neut_prof
+
+    cparams_ms%Gammac_min = Gammac_wu(params,cparams_ss%P%n_ne,cparams_ss%Te)
+    cparams_ms%LargeCollisions = LargeCollisions
     
     if (params%mpi_params%rank .EQ. 0) then
        write(output_unit_write,'("Number of impurity species: ",I16)')& 
@@ -414,7 +419,6 @@ contains
     cparams_ss%delta = cparams_ss%VTe/C_C
     cparams_ss%Gammaco = C_E**4/(4.0_rp*C_PI*C_E0**2)
     cparams_ss%Gammac = Gammac_wu(params,cparams_ss%ne,cparams_ss%Te)
-
     
     cparams_ss%Tauc = C_ME**2*cparams_ss%VTe**3/cparams_ss%Gammac
     cparams_ss%Tau = C_ME**2*C_C**3/cparams_ss%Gammac
@@ -483,7 +487,8 @@ contains
                 if (.not.(P%ne_profile(1:6).eq.'RE-EVO')) then
                    cparams_ms%Ec_min=cparams_ms%Ec
                 else
-                   cparams_ms%Ec_min=cparams_ms%Ec*P%n_ne/cparams_ss%ne
+                   cparams_ms%Ec_min=cparams_ms%Ec* &
+                        cparams_ms%Gammac_min/cparams_ss%Gammac
                 endif
                 
              CASE('HESSLOW')
@@ -495,7 +500,8 @@ contains
                 if (.not.(P%ne_profile(1:6).eq.'RE-EVO')) then
                    cparams_ms%Ec_min=cparams_ms%Ec
                 else
-                   cparams_ms%Ec_min=cparams_ms%Ec*P%n_ne/cparams_ss%ne
+                   cparams_ms%Ec_min=cparams_ms%Ec* &
+                        cparams_ms%Gammac_min/cparams_ss%Gammac
                 end if
                 
              CASE('ROSENBLUTH')
@@ -507,7 +513,8 @@ contains
                 if (.not.(P%ne_profile(1:6).eq.'RE-EVO')) then
                    cparams_ms%Ec_min=cparams_ms%Ec
                 else
-                   cparams_ms%Ec_min=cparams_ms%Ec*P%n_ne/cparams_ss%ne
+                   cparams_ms%Ec_min=cparams_ms%Ec* &
+                        cparams_ms%Gammac_min/cparams_ss%Gammac
                 end if
                 
              CASE DEFAULT
@@ -1137,7 +1144,13 @@ contains
     REAL(rp) 				:: x
 
     x = v/cparams_ss%VTe
-    CA  = cparams_ss%Gammac*psi(x)/v
+
+    if ((.not.cparams_ms%LargeCollisions).or. &
+         (.not.(cparams_ss%P%ne_profile(1:6).eq.'RE-EVO'))) then
+       CA  = cparams_ss%Gammac*psi(x)/v
+    else
+       CA  = cparams_ms%Gammac_min*psi(x)/v
+    endif
   end function CA
 
   function CA_SD(v,ne,Te)
@@ -1186,15 +1199,29 @@ contains
     REAL(rp)  :: k=5._rp
 
     x = v/cparams_ss%VTe
-    CF  = cparams_ss%Gammac*psi(x)/cparams_ss%Te
+
+    if ((.not.cparams_ms%LargeCollisions).or. &
+         (.not.(cparams_ss%P%ne_profile(1:6).eq.'RE-EVO'))) then
+       CF  = cparams_ss%Gammac*psi(x)/cparams_ss%Te
+    else
+       CF  = cparams_ms%Gammac_min*psi(x)/cparams_ss%Te
+    endif
 
     if (params%bound_electron_model.eq.'HESSLOW') then
        CF_temp=CF
        do i=1,cparams_ms%num_impurity_species
-          CF_temp=CF_temp+CF*cparams_ms%nz(i)/cparams_ms%ne* &
-               (cparams_ms%Zo(i)-cparams_ms%Zj(i))/ &
-               CLogee(v,cparams_ss%ne,cparams_ss%Te)* &
-               (log(1+h_j(i,v)**k)/k-v**2) 
+          if ((.not.cparams_ms%LargeCollisions).or. &
+               (.not.(cparams_ss%P%ne_profile(1:6).eq.'RE-EVO'))) then
+             CF_temp=CF_temp+CF*cparams_ms%nz(i)/cparams_ms%ne* &
+                  (cparams_ms%Zo(i)-cparams_ms%Zj(i))/ &
+                  CLogee(v,cparams_ss%ne,cparams_ss%Te)* &
+                  (log(1+h_j(i,v)**k)/k-v**2)
+          else
+             CF_temp=CF_temp+CF*cparams_ms%nz(i)/cparams_ms%ne* &
+                  (cparams_ms%Zo(i)-cparams_ms%Zj(i))/ &
+                  CLogee(v,cparams_ss%P%n_ne,cparams_ss%Te)* &
+                  (log(1+h_j(i,v)**k)/k-v**2)
+          end if
        end do
        CF=CF_temp
        
@@ -1320,8 +1347,17 @@ contains
     REAL(rp) 				:: x
 
     x = v/cparams_ss%VTe
-    CB_ee  = (0.5_rp*cparams_ss%Gammac/v)*(ERF(x) - &
-         psi(x) + 0.5_rp*cparams_ss%delta**4*x**2 )
+
+    if ((.not.cparams_ms%LargeCollisions).or. &
+         (.not.(cparams_ss%P%ne_profile(1:6).eq.'RE-EVO'))) then
+       CB_ee  = (0.5_rp*cparams_ss%Gammac/v)*(ERF(x) - &
+            psi(x) + 0.5_rp*cparams_ss%delta**4*x**2 )
+    else
+       CB_ee  = (0.5_rp*cparams_ms%Gammac_min/v)*(ERF(x) - &
+            psi(x) + 0.5_rp*cparams_ss%delta**4*x**2 )
+    endif
+    
+
   end function CB_ee
 
   function CB_ei(params,v)
@@ -1333,17 +1369,31 @@ contains
     INTEGER :: i
 
     x = v/cparams_ss%VTe
-    CB_ei  = (0.5_rp*cparams_ss%Gammac/v)*(cparams_ss%Zeff* &
-         CLogei(v,cparams_ss%ne,cparams_ss%Te)/ &
-         CLogee(v,cparams_ss%ne,cparams_ss%Te))
+    if ((.not.cparams_ms%LargeCollisions).or. &
+         (.not.(cparams_ss%P%ne_profile(1:6).eq.'RE-EVO'))) then
+       CB_ei  = (0.5_rp*cparams_ss%Gammac/v)*(cparams_ss%Zeff* &
+            CLogei(v,cparams_ss%ne,cparams_ss%Te)/ &
+            CLogee(v,cparams_ss%ne,cparams_ss%Te))
+    else
+       CB_ei  = (0.5_rp*cparams_ms%Gammac_min/v)*(cparams_ss%Zeff* &
+            CLogei(v,cparams_ss%P%n_ne,cparams_ss%Te)/ &
+            CLogee(v,cparams_ss%P%n_ne,cparams_ss%Te))
+    end if
 
 
     if (params%bound_electron_model.eq.'HESSLOW') then
        CB_ei_temp=CB_ei
        do i=1,cparams_ms%num_impurity_species
-          CB_ei_temp=CB_ei_temp+CB_ei*cparams_ms%nz(i)/(cparams_ms%ne* &
-               cparams_ss%Zeff*CLogei(v,cparams_ss%ne,cparams_ss%Te))* &
-               g_j(i,v)
+          if ((.not.cparams_ms%LargeCollisions).or. &
+               (.not.(cparams_ss%P%ne_profile(1:6).eq.'RE-EVO'))) then
+             CB_ei_temp=CB_ei_temp+CB_ei*cparams_ms%nz(i)/(cparams_ms%ne* &
+                  cparams_ss%Zeff*CLogei(v,cparams_ss%ne,cparams_ss%Te))* &
+                  g_j(i,v)
+          else
+             CB_ei_temp=CB_ei_temp+CB_ei*cparams_ms%nz(i)/(cparams_ms%ne* &
+                  cparams_ss%Zeff*CLogei(v,cparams_ss%P%n_ne,cparams_ss%Te))* &
+                  g_j(i,v)
+          end if
        end do
        CB_ei=CB_ei_temp
        
