@@ -119,9 +119,10 @@ module korc_collisions
      REAL(rp) 			:: dTau
      ! Subcycling time step in collisional time units (Tau)
      INTEGER(ip)		:: subcycling_iterations
-     REAL(rp) :: p_therm,gam_therm,coll_per_dump_dt
+     REAL(rp) :: coll_per_dump_dt
+     REAL(rp) :: p_min,p_crit,p_therm,gam_min,gam_crit,gam_therm
      LOGICAL :: ConserveLA,sample_test,avalanche
-     CHARACTER(30) :: Clog_model
+     CHARACTER(30) :: Clog_model,min_secRE
      
      REAL(rp), DIMENSION(3) 	:: x = (/1.0_rp,0.0_rp,0.0_rp/)
      REAL(rp), DIMENSION(3) 	:: y = (/0.0_rp,1.0_rp,0.0_rp/)
@@ -405,8 +406,11 @@ contains
     cparams_ss%ConserveLA = ConserveLA
     cparams_ss%sample_test = sample_test
     cparams_ss%Clog_model = Clog_model
+    cparams_ss%min_secRE = min_secRE
 
     cparams_ss%gam_therm = sqrt(1+p_therm*p_therm)
+    cparams_ss%gam_min = cparams_ss%gam_therm
+    cparams_ss%p_min = cparams_ss%p_therm
     
     cparams_ss%rD = SQRT(C_E0*cparams_ss%Te/(cparams_ss%ne*C_E**2*(1.0_rp + &
          cparams_ss%Te/cparams_ss%Ti)))
@@ -604,18 +608,32 @@ contains
 
           if (cparams_ss%avalanche) then
 
+             cparams_ss%p_crit=p_crit
+             
              gam_crit=sqrt(1+p_crit*p_crit)
+
+             cparams_ss%gam_crit=gam_crit
 
              cparams_ss%gam_therm=(gam_crit+1._rp)/2._rp
              cparams_ss%p_therm=sqrt(cparams_ss%gam_therm*cparams_ss%gam_therm-1)
 
+             if(cparams_ss%min_secRE.eq.'THERM') then
+                cparams_ss%p_min=cparams_ss%p_therm
+                cparams_ss%gam_min=cparams_ss%gam_therm
+             else
+                cparams_ss%p_min=p_crit
+                cparams_ss%gam_min=gam_crit
+             end if
+             
              !write(6,*) p_crit,gam_crit,cparams_ss%p_therm,cparams_ss%gam_therm
 
 
 
              if (params%mpi_params%rank .EQ. 0) then
+                write(output_unit_write,*) 'Minimum energy of secondary RE is',&
+                     cparams_ss%min_secRE
                 write(output_unit_write,*) 'p_crit/(me*c) is: ',p_crit
-                write(output_unit_write,*) 'gam_therm is: ',cparams_ss%gam_therm
+                write(output_unit_write,*) 'gam_min is: ',cparams_ss%gam_min
                 if(.not.init) then
                    if (abs(maxEinterp).gt.abs(minEinterp)) then
                       write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp*params%cpp%Eo,'V/m'
@@ -676,7 +694,7 @@ contains
                    end if
                 end if
                 write(output_unit_write,*) 'No secondary REs will be calculated in this interval'
-                write(output_unit_write,*) 'p_therm from initial or last time interval used'
+                write(output_unit_write,*) 'p_min from initial or last time interval used'
                 write(output_unit_write,*) 'to calculate collision time scales'
                 
                 write(output_unit_write,'("* * * * * * * * * * * * * * * * * * * * * * * * * *",/)')
@@ -843,7 +861,7 @@ contains
     TYPE(FIELDS), INTENT(IN) :: F
     LOGICAL, INTENT(IN)  :: init
     INTEGER(ip) 			:: iterations
-    REAL(rp) 				:: E,E_therm
+    REAL(rp) 				:: E,E_min
     REAL(rp) 				:: v
     REAL(rp) 				:: Tau
     REAL(rp), DIMENSION(3) 		:: nu
@@ -852,17 +870,17 @@ contains
 
     if (params%collisions) then
        E = C_ME*C_C**2 + params%minimum_particle_energy*params%cpp%energy
-       E_therm=sqrt((cparams_ss%p_therm*params%cpp%mass*params%cpp%velocity* &
+       E_min=sqrt((cparams_ss%p_min*params%cpp%mass*params%cpp%velocity* &
             C_C)**2+(C_ME*C_C**2)**2)
 
        !write(6,'("E_min (MeV)",E17.10)') E/(10**6*C_E)
-       !write(6,'("E_therm (MeV)",E17.10)') E_therm/(10**6*C_E)
+       !write(6,'("E_min (MeV)",E17.10)') E_min/(10**6*C_E)
 
        if (.not.params%LargeCollisions) then
           v = SQRT(1.0_rp - (C_ME*C_C**2/E)**2)
           !write(6,*) 'v_min',v
        else
-          v = SQRT(1.0_rp - (C_ME*C_C**2/E_therm)**2)
+          v = SQRT(1.0_rp - (C_ME*C_C**2/E_min)**2)
           !write(6,*) 'v_therm',v
        end if
 
@@ -2410,7 +2428,7 @@ contains
 !       write(output_unit_write,'("E_PHI_COL: ",E17.10)') E_PHI
        
        do cc=1_idef,pchunk
-          if ((pm(cc).lt.cparams_ss%p_therm).and.flagCol(cc).eq.1_ip) then
+          if ((pm(cc).lt.cparams_ss%p_min).and.flagCol(cc).eq.1_ip) then
 !             write(output_unit_write,'("Momentum less than zero")')
              !             stop
 !             write(output_unit_write,'("Particle not tracked at: ",E17.10," &
@@ -2694,7 +2712,7 @@ contains
           !                  time*params%cpp%time, dxi(cc)
        endif
 
-       if ((pm(cc).lt.cparams_ss%p_therm).and.flagCol(cc).eq.1_ip) then
+       if ((pm(cc).lt.cparams_ss%p_min).and.flagCol(cc).eq.1_ip) then
           !             write(output_unit_write,'("Momentum less than zero")')
           !             stop
           !             write(output_unit_write,'("Particle not tracked at: ",E17.10," &
@@ -3039,7 +3057,7 @@ contains
 !       write(output_unit_write,'("E_PHI_COL: ",E17.10)') E_PHI
        
        do cc=1_idef,pchunk
-          if ((pm(cc).lt.cparams_ss%p_therm).and.flagCol(cc).eq.1_ip) then
+          if ((pm(cc).lt.cparams_ss%p_min).and.flagCol(cc).eq.1_ip) then
 !             write(output_unit_write,'("Momentum less than zero")')
              !             stop
 !             write(output_unit_write,'("Particle not tracked at: ",E17.10," &
@@ -3082,7 +3100,7 @@ contains
     INTEGER(is), INTENT(IN), DIMENSION(achunk)  :: flagCol,flagCon
     REAL(rp), INTENT(IN)  :: me
     REAL(rp), DIMENSION(achunk)  :: gam,prob0,prob1
-    REAL(rp) :: gam_therm,p_therm,gammax=200._rp,dt,gamsecmax,psecmax,ptrial
+    REAL(rp) :: gam_min,p_min,gammax=200._rp,dt,gamsecmax,psecmax,ptrial
     REAL(rp) :: gamtrial,cosgam1,xirad,xip,xim,xitrial,sinsq1,cossq1,pitchprob1
     REAL(rp) :: dsigdgam1,S_LAmax,S_LA1,tmppm,gamvth
     INTEGER, parameter :: ngam1=100, neta1=100
@@ -3099,20 +3117,20 @@ contains
     else
        dt=cparams_ss%coll_per_dump_dt*params%cpp%time
     end if
-       
-    p_therm=cparams_ss%p_therm
-    gam_therm=cparams_ss%gam_therm
+
+       p_min=cparams_ss%p_min
+       gam_min=cparams_ss%gam_min
 
     !! Generating 1D and 2D ranges for secondary RE distribution
     
     do ii=1,ngam1
-       tmpgam1(ii)=log10(log10(gam_therm))+ &
-            (log10(log10(gammax))-log10(log10(gam_therm)))* &
+       tmpgam1(ii)=log10(log10(gam_min))+ &
+            (log10(log10(gammax))-log10(log10(gam_min)))* &
             REAL(ii-1)/REAL(ngam1-1)
     end do
     gam1=10**(10**(tmpgam1))
 
-    !write(6,*) 'gam_therm,gammax',gam_therm,gammax
+    !write(6,*) 'gam_min,gammax',gam_min,gammax
     !write(6,*) 'tmpgam1',tmpgam1
     !write(6,*) 'gam1',gam1
 
@@ -3273,7 +3291,7 @@ contains
           seciter=0
           do while (.not.accepted)
 
-             ptrial=p_therm+(psecmax-p_therm)*get_random()
+             ptrial=p_min+(psecmax-p_min)*get_random()
              gamtrial=sqrt(1+ptrial*ptrial)
 
              cosgam1=sqrt(((gam(cc)+1)*(gamtrial-1))/((gam(cc)-1)*(gamtrial+1)))
@@ -3343,7 +3361,7 @@ contains
              write(6,*) 'ppll,mu',spp%vars%V(spp%pRE,1),spp%vars%V(spp%pRE,2)
              write(6,*) 'pm,xi',ptrial,xitrial
              write(6,*) 'xim,xip',xim,xip
-             write(6,*) 'ptherm,psecmax',p_therm,psecmax
+             write(6,*) 'pmin,psecmax',p_min,psecmax
              call korc_abort(24)
           end if
 # endif

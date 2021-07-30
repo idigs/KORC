@@ -259,6 +259,7 @@ module korc_input
   REAL(rp) :: p_therm = 1._rp
   LOGICAL :: ConserveLA = .TRUE.
   CHARACTER(30) :: Clog_model = 'HESSLOW'
+  CHARACTER(30) :: min_secRE = 'CRIT'
   LOGICAL :: sample_test  = .FALSE.
 
   !! -----------------------------------------------
@@ -433,7 +434,8 @@ CONTAINS
          Zeff_profile,Zeffo,n_Zeff,a_Zeff,filename,axisymmetric, &
          n_lamshelf,n_shelfdelay,n_tauin,n_tauout,n_shelf,psiN_0
     NAMELIST /CollisionParamsSingleSpecies/ Te_sing,Ti_sing,ne_sing, &
-         Zeff_sing,dTau_sing,p_therm,ConserveLA,Clog_model,sample_test
+         Zeff_sing,dTau_sing,p_therm,ConserveLA,Clog_model,sample_test,&
+         min_secRE
     NAMELIST /CollisionParamsMultipleSpecies/ num_impurity_species,Te_mult, &
          ne_mult,Zo_mult,Zj_mult,nz_mult,IZj_mult,neut_prof
     NAMELIST /AvalancheGenerationPDF/ max_pitch_angle_aval, &
