@@ -355,7 +355,6 @@ program main
 
   end if
   
-
   
   ! * * * SAVING INITIAL CONDITION AND VARIOUS SIMULATION PARAMETERS * * * !
 

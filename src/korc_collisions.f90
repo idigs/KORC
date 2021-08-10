@@ -896,7 +896,7 @@ contains
 
        
 !       write(output_unit_write,'("collision freqencies ",F25.12)') nu(3)
-       write(6,*) nu/params%cpp%time
+       !write(6,*) nu/params%cpp%time
        
        cparams_ss%subcycling_iterations = FLOOR(cparams_ss%dTau*Tau/ &
             params%dt,ip) + 1_ip
@@ -1102,10 +1102,10 @@ contains
     REAL(rp) 				:: CLogee
     REAL(rp)  :: k=5._rp
     REAL(rp)  :: gam
-    REAL(rp) :: gam_therm
+    REAL(rp) :: gam_min
 
     gam=1/sqrt(1-v**2)
-    gam_therm=cparams_ss%gam_therm
+    gam_min=cparams_ss%gam_min
     
     if (cparams_ss%Clog_model.eq.'HESSLOW') then
        CLogee = CLog0(ne,Te)+ &
@@ -1117,7 +1117,7 @@ contains
     else if (cparams_ss%Clog_model.eq.'MCDEVITT') then
        CLogee = CLog0(ne,Te)+ &
             log(1+(2*(gam-1)/VTe(Te)**2)**(k/2._rp))/k+ &
-            log(sqrt(2*(gam_therm-1._rp)/(gam-1._rp)))
+            log(sqrt(2*(gam_min-1._rp)/(gam-1._rp)))
     end if
 
 !    write(output_unit_write,*) gam,CLogee
@@ -2472,7 +2472,7 @@ contains
     REAL(rp), DIMENSION(achunk) 	:: B_R,B_PHI,B_Z
     REAL(rp), DIMENSION(achunk) :: curlb_R,curlb_PHI,curlb_Z
     REAL(rp), DIMENSION(achunk) :: gradB_R,gradB_PHI,gradB_Z,ntot
-    REAL(rp), DIMENSION(achunk) 	:: E_R,E_Z
+    REAL(rp), DIMENSION(achunk) 	:: E_R,E_Z,E_PHI_LAC
     REAL(rp), DIMENSION(achunk), INTENT(OUT) 	:: E_PHI,ne,PSIp
     REAL(rp), DIMENSION(achunk), INTENT(IN) 			:: Y_R,Y_PHI,Y_Z
     INTEGER(is), DIMENSION(achunk), INTENT(INOUT) 	:: flagCol
@@ -2581,6 +2581,7 @@ contains
        endif
     end if
 
+    E_PHI_LAC=E_PHI
     if (.not.params%FokPlan) E_PHI=0._rp
 
     !$OMP SIMD
@@ -2777,7 +2778,7 @@ contains
        end if
 
        call large_angle_source(spp,params,achunk,F,Y_R,Y_PHI,Y_Z, &
-            pm,xi,ntot,Te,Bmag,me,flagCol,flagCon)
+            pm,xi,ne,ntot,Te,Bmag,E_PHI_LAC,me,flagCol,flagCon)
 
     end if
 
@@ -3090,19 +3091,21 @@ contains
 #endif
 
   subroutine large_angle_source(spp,params,achunk,F,Y_R,Y_PHI,Y_Z, &
-       pm,xi,ne,Te,Bmag,me,flagCol,flagCon)
+       pm,xi,ne,netot,Te,Bmag,E_PHI,me,flagCol,flagCon)
     TYPE(SPECIES), INTENT(INOUT)    :: spp
     TYPE(KORC_PARAMS), INTENT(IN) 			:: params
     TYPE(FIELDS), INTENT(IN)                                   :: F
     INTEGER, INTENT(IN) :: achunk
     REAL(rp), INTENT(INOUT), DIMENSION(achunk)  :: pm,xi
-    REAL(rp), INTENT(IN), DIMENSION(achunk)  :: Y_R,Y_PHI,Y_Z,ne,Te,Bmag
+    REAL(rp), INTENT(IN), DIMENSION(achunk)  :: Y_R,Y_PHI,Y_Z
+    REAL(rp), INTENT(IN), DIMENSION(achunk)  :: ne,netot,Te
+    REAL(rp), INTENT(IN), DIMENSION(achunk)  :: Bmag,E_PHI
     INTEGER(is), INTENT(IN), DIMENSION(achunk)  :: flagCol,flagCon
     REAL(rp), INTENT(IN)  :: me
     REAL(rp), DIMENSION(achunk)  :: gam,prob0,prob1
     REAL(rp) :: gam_min,p_min,gammax=200._rp,dt,gamsecmax,psecmax,ptrial
     REAL(rp) :: gamtrial,cosgam1,xirad,xip,xim,xitrial,sinsq1,cossq1,pitchprob1
-    REAL(rp) :: dsigdgam1,S_LAmax,S_LA1,tmppm,gamvth
+    REAL(rp) :: dsigdgam1,S_LAmax,S_LA1,tmppm,gamvth,vmin,E_C,p_c,gam_c
     INTEGER, parameter :: ngam1=100, neta1=100
     INTEGER :: ii,jj,cc,seciter
     REAL(rp), DIMENSION(ngam1) :: gam1,pm1,tmpgam1,tmpcosgam,tmpdsigdgam,tmpsecthreshgam,probtmp,intpitchprob
@@ -3117,52 +3120,10 @@ contains
     else
        dt=cparams_ss%coll_per_dump_dt*params%cpp%time
     end if
-
-       p_min=cparams_ss%p_min
-       gam_min=cparams_ss%gam_min
-
-    !! Generating 1D and 2D ranges for secondary RE distribution
-    
-    do ii=1,ngam1
-       tmpgam1(ii)=log10(log10(gam_min))+ &
-            (log10(log10(gammax))-log10(log10(gam_min)))* &
-            REAL(ii-1)/REAL(ngam1-1)
-    end do
-    gam1=10**(10**(tmpgam1))
-
-    !write(6,*) 'gam_min,gammax',gam_min,gammax
-    !write(6,*) 'tmpgam1',tmpgam1
-    !write(6,*) 'gam1',gam1
-
-    
-    pm1=sqrt(gam1**2-1)
-
-    do ii=1,ngam1-1
-       dpm1(ii)=pm1(ii+1)-pm1(ii)
-    end do
-
-    do ii=1,neta1
-       eta1(ii)=C_PI*(ii-1)/(neta1-1)
-    end do
-
-    !write(6,*) 'eta1',eta1
-    
-    do ii=1,neta1-1
-       deta1(ii)=eta1(ii+1)-eta1(ii)
-    end do 
-
-    do ii=1,neta1
-       pm11(:,ii)=pm1
-       gam11(:,ii)=gam1
-    end do
-
-    do ii=1,ngam1
-       eta11(ii,:)=eta1
-    end do
     
     !$OMP SIMD
     do cc=1_idef,achunk
-       gam(cc) = sqrt(1+pm(cc)*pm(cc))
+       gam(cc) = sqrt(1+pm(cc)*pm(cc))       
 
 #ifdef PARALLEL_RANDOM
        prob0(cc) = get_random()
@@ -3173,9 +3134,76 @@ contains
     end do
     !$OMP END SIMD
 
+    vmin=sqrt(1-1/cparams_ss%gam_min**2)
+    
     !! For each primary RE, calculating probability to generate a secondary RE
     
     do cc=1_idef,achunk
+
+       E_C=Gammacee(vmin,netot(cc),Te(cc))
+
+       !write(6,*) 'E',E_PHI*params%cpp%Eo
+       !write(6,*) 'E_C',E_C*params%cpp%Eo
+       !write(6,*) 'E_c,min',cparams_ms%Ec_min*params%cpp%Eo
+       !write(6,*) 'ne',ne(cc)*params%cpp%density
+       !write(6,*) 'netot',netot(cc)*params%cpp%density
+       !write(6,*) 'Te',Te(cc)*params%cpp%temperature
+       !write(6,*) 'Clog',CLogee_wu(params,ne(cc)*params%cpp%density,Te(cc)*params%cpp%temperature)
+       
+       p_c=1/sqrt(E_PHI(cc)/E_C-1)
+       gam_c=sqrt(1+p_c**2)
+
+       if(cparams_ss%min_secRE.eq.'THERM') then
+          gam_min=(gam_c+1)/2
+          p_min=sqrt(gam_min**2-1)
+       else
+          gam_min=gam_c
+          p_min=p_c
+       end if
+       
+       !write(6,*) 'p_c',p_c
+       !write(6,*) 'p_min',p_min
+       
+       !! Generating 1D and 2D ranges for secondary RE distribution
+
+       do ii=1,ngam1
+          tmpgam1(ii)=log10(log10(gam_min))+ &
+               (log10(log10(gammax))-log10(log10(gam_min)))* &
+               REAL(ii-1)/REAL(ngam1-1)
+       end do
+       gam1=10**(10**(tmpgam1))
+
+       !write(6,*) 'gam_min,gammax',gam_min,gammax
+       !write(6,*) 'tmpgam1',tmpgam1
+       !write(6,*) 'gam1',gam1
+
+
+       pm1=sqrt(gam1**2-1)
+
+       do ii=1,ngam1-1
+          dpm1(ii)=pm1(ii+1)-pm1(ii)
+       end do
+
+       do ii=1,neta1
+          eta1(ii)=C_PI*(ii-1)/(neta1-1)
+       end do
+
+       !write(6,*) 'eta1',eta1
+
+       do ii=1,neta1-1
+          deta1(ii)=eta1(ii+1)-eta1(ii)
+       end do
+
+       do ii=1,neta1
+          pm11(:,ii)=pm1
+          gam11(:,ii)=gam1
+       end do
+
+       do ii=1,ngam1
+          eta11(ii,:)=eta1
+       end do
+
+       
        tmpcosgam=sqrt(((gam(cc)+1)*(gam1-1))/((gam(cc)-1)*(gam1+1)))
        tmpdsigdgam=2*C_PI*C_RE**2/(gam(cc)**2-1)* &
             (((gam(cc)-1)**2*gam(cc)**2)/((gam1-1)**2*(gam(cc)-gam1)**2)- &
@@ -3229,7 +3257,7 @@ contains
           !write(6,*) 'pitchprob',pitchprob
        !end if
        
-       S_LA=ne(cc)*params%cpp%density*C_C/(2*C_PI)* &
+       S_LA=netot(cc)*params%cpp%density*C_C/(2*C_PI)* &
             (pm11/gam11)*(pm(cc)/gam(cc))* &
             pitchprob*dsigdgam*secthreshgam
 
@@ -3320,7 +3348,7 @@ contains
                   (2*gam(cc)**2+2*gam(cc)-1)/ &
                   ((gamtrial-1)*(gam(cc)-gamtrial))+1)
 
-             S_LA1=ne(cc)*params%cpp%density*C_C/(2*C_PI)* &
+             S_LA1=netot(cc)*params%cpp%density*C_C/(2*C_PI)* &
                   (ptrial/gamtrial)*(pm(cc)/gam(cc))* &
                   pitchprob1*dsigdgam1
 
