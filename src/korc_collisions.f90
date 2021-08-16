@@ -3149,6 +3149,8 @@ contains
        !write(6,*) 'netot',netot(cc)*params%cpp%density
        !write(6,*) 'Te',Te(cc)*params%cpp%temperature
        !write(6,*) 'Clog',CLogee_wu(params,ne(cc)*params%cpp%density,Te(cc)*params%cpp%temperature)
+
+       if (E_C.gt.abs(E_PHI(cc))) cycle
        
        p_c=1/sqrt(abs(E_PHI(cc))/E_C-1)
        gam_c=sqrt(1+p_c**2)
@@ -3293,9 +3295,9 @@ contains
           write(6,*) 'NaN probability from secondary RE source'
           write(6,*) 'p,xi',pm(cc),xi(cc)
           write(6,*) 'gam_min,gammax',gam_min,gammax
-          write(6,*) 'E',E_PHI*params%cpp%Eo
+          write(6,*) 'E',E_PHI(cc)*params%cpp%Eo
           write(6,*) 'E_C',E_C*params%cpp%Eo
-          write(6,*) 'pitchprob',pitchprob
+          !write(6,*) 'pitchprob',pitchprob
           call korc_abort(24)
        end if
 
