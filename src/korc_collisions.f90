@@ -1501,7 +1501,7 @@ contains
                Zeff*CLogei(v,ne,Te))*g_j(1,v)
        endif
        
-       do i=1,cparams_ms%num_impurity_species
+       do i=2,cparams_ms%num_impurity_species
           CB_ei_temp=CB_ei_temp+CB_ei_SD*cparams_ms%nz(i)/(cparams_ms%ne* &
                Zeff*CLogei(v,ne,Te))*g_j(i,v)
        end do
@@ -2496,7 +2496,7 @@ contains
     REAL(rp), DIMENSION(achunk) 					:: CBL
     REAL(rp), DIMENSION(achunk) 	:: SC_p,SC_mu,BREM_p
     REAL(rp) 					:: kappa
-    integer :: cc
+    integer :: cc,ii
     integer(ip),INTENT(IN) :: tt
     REAL(rp), DIMENSION(achunk,params%num_impurity_species) 	:: nimp
   
@@ -2770,11 +2770,27 @@ contains
     
     if (cparams_ss%avalanche) then 
        
-       if (params%bound_electron_model.eq.'NO_BOUND') then
-          ntot=ne
-       else if (params%bound_electron_model.eq.'HESSLOW') then
-          ntot=ne*(1._rp+sum((cparams_ms%Zo-cparams_ms%Zj)*cparams_ms%nz) &
-               /cparams_ms%ne)
+       ntot=ne
+       if (params%bound_electron_model.eq.'HESSLOW') then          
+          
+          if ((cparams_ms%Zj(1).eq.0.0).and. &
+               (neut_prof.eq.'UNIFORM')) then
+             ntot=ntot+cparams_ms%nz(1)* &
+                  (cparams_ms%Zo(1)-cparams_ms%Zj(1))
+          else if ((cparams_ms%Zj(1).eq.0.0).and. &
+               (neut_prof.eq.'HOLLOW')) then
+             ntot=ntot+max(cparams_ms%nz(1)-ne,0._rp)* &
+                  (cparams_ms%Zo(1)-cparams_ms%Zj(1))
+          else
+             ntot=ntot+ne*cparams_ms%nz(1)/cparams_ms%ne* &
+                  (cparams_ms%Zo(1)-cparams_ms%Zj(1))
+          endif
+
+          do ii=2,cparams_ms%num_impurity_species
+             ntot=ntot+ne*cparams_ms%nz(ii)/cparams_ms%ne* &
+                  (cparams_ms%Zo(ii)-cparams_ms%Zj(ii))
+          end do
+          
        end if
 
        call large_angle_source(spp,params,achunk,F,Y_R,Y_PHI,Y_Z, &
