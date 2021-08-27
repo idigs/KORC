@@ -237,7 +237,7 @@ CONTAINS
     REAL(rp)    ::  qprof
     REAL(rp)    ::  rm,theta
 
-    !    write(output_unit_write,'("Y: ",E17.10)') Y
+    write(output_unit_write,'("Y: ",E17.10)') Y
 
     ss = SIZE(Y,1)
 
@@ -252,6 +252,11 @@ CONTAINS
        theta=atan2(Y(pp,3),(Y(pp,1)-F%AB%Ro))
        qprof = 1.0_rp + (rm/F%AB%lambda)**2
 
+!       write(output_unit_write,*) 'rm: ',rm
+!       write(output_unit_write,*) 'R0: ',F%AB%Ro
+!       write(output_unit_write,*) 'Y_R: ',Y(pp,1)
+!       write(output_unit_write,*) 'theta: ',theta
+       
        PSIp(pp)=Y(pp,1)*F%AB%lambda**2*F%Bo/ &
             (2*F%AB%qo*(F%AB%Ro+rm*cos(theta)))* &
             log(1+(rm/F%AB%lambda)**2)
@@ -301,6 +306,9 @@ CONTAINS
        !      end if
     end do
     !$OMP END PARALLEL DO
+
+    write(output_unit_write,'("B: ",E17.10)') B
+    
   end subroutine analytical_fields_GC_init
 
   subroutine analytical_fields_GC(params,F,Y,E,B,gradB,curlb,flag,PSIp)
@@ -825,13 +833,14 @@ CONTAINS
     call get_fields(params,vars,F)
     !write(6,*) 'before second get fields'
 
-    !    write(output_unit_write,'("Bx: ",E17.10)') vars%B(:,1)
-    !    write(output_unit_write,'("By: ",E17.10)') vars%B(:,2)
-    !    write(output_unit_write,'("Bz: ",E17.10)') vars%B(:,3)
+    write(output_unit_write,'("Bx: ",E17.10)') vars%B(:,1)
+    write(output_unit_write,'("By: ",E17.10)') vars%B(:,2)
+    write(output_unit_write,'("Bz: ",E17.10)') vars%B(:,3)
 
-    !write(output_unit_write,*) 'before b1,b2,b3 calculation'
+        !write(output_unit_write,*) 'before b1,b2,b3 calculation'
     
     do ii=1_idef,ppp
+       write(6,*) 'ii',ii
        if ( vars%flagCon(ii) .EQ. 1_idef ) then
           b1(ii,:) = vars%B(ii,:)/sqrt(vars%B(ii,1)*vars%B(ii,1)+ &
                vars%B(ii,2)*vars%B(ii,2)+vars%B(ii,3)*vars%B(ii,3))

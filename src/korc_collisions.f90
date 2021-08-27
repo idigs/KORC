@@ -554,11 +554,26 @@ contains
 
           if (TRIM(params%field_model) .eq. 'ANALYTICAL') then
 
+             cparams_ss%avalanche=.TRUE.
              if (TRIM(params%collisions_model).eq.'NO_BOUND') then
-                p_crit=1/sqrt(F%Eo/cparams_ss%Ec-1._rp)
+                if (abs(F%Eo).lt.cparams_ss%Ec) then
+                   cparams_ss%avalanche=.FALSE.
+                end if
              else
-                p_crit=1/sqrt(F%Eo/cparams_ms%Ec_min-1._rp)
+                if (abs(F%Eo).lt.cparams_ms%Ec_min) then
+                   cparams_ss%avalanche=.FALSE.
+                end if             
              end if
+             
+             if (cparams_ss%avalanche) then
+
+                if (TRIM(params%collisions_model).eq.'NO_BOUND') then
+                   p_crit=1/sqrt(F%Eo/cparams_ss%Ec-1._rp)
+                else
+                   p_crit=1/sqrt(F%Eo/cparams_ms%Ec_min-1._rp)
+                end if
+             end if
+             
           else if ((TRIM(params%field_model) .eq. 'EXTERNAL-PSI') &
                .AND.(F%ReInterp_2x1t)) then
 
@@ -630,16 +645,21 @@ contains
 
 
              if (params%mpi_params%rank .EQ. 0) then
-                write(output_unit_write,*) 'Minimum energy of secondary RE is',&
+                write(output_unit_write,*) 'Minimum energy of secondary RE is ',&
                      cparams_ss%min_secRE
                 write(output_unit_write,*) 'p_crit/(me*c) is: ',p_crit
                 write(output_unit_write,*) 'gam_min is: ',cparams_ss%gam_min
                 if(.not.init) then
-                   if (abs(maxEinterp).gt.abs(minEinterp)) then
-                      write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp*params%cpp%Eo,'V/m'
-                   else
-                      write(output_unit_write,*) 'Maximum E_PHI : ',minEinterp*params%cpp%Eo,'V/m'
-                   end if
+                   if (TRIM(params%field_model) .eq. 'ANALYTICAL') then
+                         write(output_unit_write,*) 'Maximum E_PHI : ',F%Eo*params%cpp%Eo,'V/m'
+                   else if ((TRIM(params%field_model) .eq. 'EXTERNAL-PSI') &
+                        .AND.(F%ReInterp_2x1t)) then
+                      if (abs(maxEinterp).gt.abs(minEinterp)) then
+                         write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp*params%cpp%Eo,'V/m'
+                      else
+                         write(output_unit_write,*) 'Maximum E_PHI : ',minEinterp*params%cpp%Eo,'V/m'
+                      end if
+                   endif
 
                    if (TRIM(params%collisions_model).eq.'NO_BOUND') then
                       write(output_unit_write,*) 'E_CH is: ',cparams_ss%Ec*params%cpp%Eo,'V/m'
@@ -648,10 +668,15 @@ contains
                    end if
                    write(output_unit_write,*) 'tau_c,rel is: ',cparams_ss%Tau*params%cpp%time,'s'
                 else
-                   if (abs(maxEinterp).gt.abs(minEinterp)) then
-                      write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp,'V/m'
-                   else
-                      write(output_unit_write,*) 'Maximum E_PHI : ',minEinterp,'V/m'
+                   if (TRIM(params%field_model) .eq. 'ANALYTICAL') then
+                      write(output_unit_write,*) 'Maximum E_PHI : ',F%Eo,'V/m'
+                   else if ((TRIM(params%field_model) .eq. 'EXTERNAL-PSI') &
+                        .AND.(F%ReInterp_2x1t)) then
+                      if (abs(maxEinterp).gt.abs(minEinterp)) then
+                         write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp,'V/m'
+                      else
+                         write(output_unit_write,*) 'Maximum E_PHI : ',minEinterp,'V/m'
+                      end if
                    end if
 
                    if (TRIM(params%collisions_model).eq.'NO_BOUND') then
@@ -668,10 +693,15 @@ contains
 
              if (params%mpi_params%rank .EQ. 0) then
                 if(.not.init) then
-                   if (abs(maxEinterp).gt.abs(minEinterp)) then
-                      write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp*params%cpp%Eo,'V/m'
-                   else
-                      write(output_unit_write,*) 'Maximum E_PHI : ',minEinterp*params%cpp%Eo,'V/m'
+                   if (TRIM(params%field_model) .eq. 'ANALYTICAL') then
+                      write(output_unit_write,*) 'Maximum E_PHI : ',F%Eo*params%cpp%Eo,'V/m'
+                   else if ((TRIM(params%field_model) .eq. 'EXTERNAL-PSI') &
+                        .AND.(F%ReInterp_2x1t)) then
+                      if (abs(maxEinterp).gt.abs(minEinterp)) then
+                         write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp*params%cpp%Eo,'V/m'
+                      else
+                         write(output_unit_write,*) 'Maximum E_PHI : ',minEinterp*params%cpp%Eo,'V/m'
+                      end if
                    end if
 
                    if (TRIM(params%collisions_model).eq.'NO_BOUND') then
@@ -681,14 +711,19 @@ contains
                    end if
                    
                 else
-                   if (abs(maxEinterp).gt.abs(minEinterp)) then
-                      write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp*params%cpp%Eo,'V/m'
-                   else
-                      write(output_unit_write,*) 'Maximum E_PHI : ',minEinterp*params%cpp%Eo,'V/m'
+                   if (TRIM(params%field_model) .eq. 'ANALYTICAL') then
+                      write(output_unit_write,*) 'Maximum E_PHI : ',F%Eo,'V/m'
+                   else if ((TRIM(params%field_model) .eq. 'EXTERNAL-PSI') &
+                        .AND.(F%ReInterp_2x1t)) then
+                      if (abs(maxEinterp).gt.abs(minEinterp)) then
+                         write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp*params%cpp%Eo,'V/m'
+                      else
+                         write(output_unit_write,*) 'Maximum E_PHI : ',minEinterp*params%cpp%Eo,'V/m'
+                      end if
                    end if
 
                    if (TRIM(params%collisions_model).eq.'NO_BOUND') then
-                      write(output_unit_write,*) 'E_CH is: ',cparams_ss%Ec*params%cpp%Eo,'V/m'
+                         write(output_unit_write,*) 'E_CH is: ',cparams_ss%Ec*params%cpp%Eo,'V/m'
                    else
                       write(output_unit_write,*) 'E_CH is: ',cparams_ms%Ec_min*params%cpp%Eo,'V/m'
                    end if

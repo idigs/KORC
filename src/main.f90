@@ -110,7 +110,12 @@ program main
   !! parameters of the plasma profiles, either analytically or from an
   !! external HDF5
   !! file. Reads in &amp;plasmaProfiles namelist from input file.
-  !! Only initialized if collisions (params%collisions==T) are 
+  !! Only initialized if collisions (params%collisions==T) are
+
+  if (params%mpi_params%rank .EQ. 0) then
+     flush(output_unit_write)
+  end if
+  
   call initialize_particles(params,F,P,spp) ! Initialize particles
   !! <h4>5\. Initialize Particle Velocity Phase Space</h4>
   !! 
@@ -511,7 +516,7 @@ program main
              +REAL(it-1_ip+params%t_skip*params%t_it_SC,rp)*params%dt        
         params%it = it-1_ip+params%t_skip*params%t_it_SC
 
-        call save_simulation_outputs(params,spp,F)
+        call save_simulation_outputs(params,spp,F)        
         call save_restart_variables(params,spp,F)
 
         if (params%mpi_params%rank .EQ. 0) then
