@@ -554,6 +554,10 @@ contains
 
           if (TRIM(params%field_model) .eq. 'ANALYTICAL') then
 
+             !write(6,*) 'Eo',F%Eo
+             !write(6,*) 'Ec',cparams_ss%Ec
+             !write(6,*) 'Ec_min',cparams_ms%Ec_min
+             
              cparams_ss%avalanche=.TRUE.
              if (TRIM(params%collisions_model).eq.'NO_BOUND') then
                 if (abs(F%Eo).lt.cparams_ss%Ec) then
@@ -716,16 +720,16 @@ contains
                    else if ((TRIM(params%field_model) .eq. 'EXTERNAL-PSI') &
                         .AND.(F%ReInterp_2x1t)) then
                       if (abs(maxEinterp).gt.abs(minEinterp)) then
-                         write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp*params%cpp%Eo,'V/m'
+                         write(output_unit_write,*) 'Maximum E_PHI : ',maxEinterp,'V/m'
                       else
-                         write(output_unit_write,*) 'Maximum E_PHI : ',minEinterp*params%cpp%Eo,'V/m'
+                         write(output_unit_write,*) 'Maximum E_PHI : ',minEinterp,'V/m'
                       end if
                    end if
 
                    if (TRIM(params%collisions_model).eq.'NO_BOUND') then
-                         write(output_unit_write,*) 'E_CH is: ',cparams_ss%Ec*params%cpp%Eo,'V/m'
+                         write(output_unit_write,*) 'E_CH is: ',cparams_ss%Ec,'V/m'
                    else
-                      write(output_unit_write,*) 'E_CH is: ',cparams_ms%Ec_min*params%cpp%Eo,'V/m'
+                      write(output_unit_write,*) 'E_CH is: ',cparams_ms%Ec_min,'V/m'
                    end if
                 end if
                 write(output_unit_write,*) 'No secondary REs will be calculated in this interval'

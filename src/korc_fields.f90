@@ -307,7 +307,7 @@ CONTAINS
     end do
     !$OMP END PARALLEL DO
 
-    write(output_unit_write,'("B: ",E17.10)') B
+    !write(output_unit_write,'("B: ",E17.10)') B
     
   end subroutine analytical_fields_GC_init
 
