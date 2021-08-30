@@ -237,7 +237,7 @@ CONTAINS
     REAL(rp)    ::  qprof
     REAL(rp)    ::  rm,theta
 
-    write(output_unit_write,'("Y: ",E17.10)') Y
+    !write(output_unit_write,'("Y: ",E17.10)') Y
 
     ss = SIZE(Y,1)
 
@@ -796,6 +796,7 @@ CONTAINS
     INTEGER                                                            :: ppp
     !! Number of particles.
     LOGICAL :: cart
+    REAL(rp), DIMENSION(3) ::b1tmp,b2tmp,b3tmp,tmpvec
 
 !    write(output_unit_write,*) 'in unitVector'
     
@@ -833,26 +834,31 @@ CONTAINS
     call get_fields(params,vars,F)
     !write(6,*) 'before second get fields'
 
-    write(output_unit_write,'("Bx: ",E17.10)') vars%B(:,1)
-    write(output_unit_write,'("By: ",E17.10)') vars%B(:,2)
-    write(output_unit_write,'("Bz: ",E17.10)') vars%B(:,3)
+    !write(output_unit_write,'("Bx: ",E17.10)') vars%B(:,1)
+    !write(output_unit_write,'("By: ",E17.10)') vars%B(:,2)
+    !write(output_unit_write,'("Bz: ",E17.10)') vars%B(:,3)
 
         !write(output_unit_write,*) 'before b1,b2,b3 calculation'
+
+    tmpvec=(/1.0_rp,1.0_rp,1.0_rp/)
     
     do ii=1_idef,ppp
-       write(6,*) 'ii',ii
+       !write(6,*) 'ii',ii
        if ( vars%flagCon(ii) .EQ. 1_idef ) then
-          b1(ii,:) = vars%B(ii,:)/sqrt(vars%B(ii,1)*vars%B(ii,1)+ &
+          b1tmp = vars%B(ii,:)/sqrt(vars%B(ii,1)*vars%B(ii,1)+ &
                vars%B(ii,2)*vars%B(ii,2)+vars%B(ii,3)*vars%B(ii,3))
 
-          b2(ii,:) = cross(b1(ii,:),(/0.0_rp,0.0_rp,1.0_rp/))
-          b2(ii,:) = b2(ii,:)/sqrt(b2(ii,1)*b2(ii,1)+b2(ii,2)*b2(ii,2)+ &
-               b2(ii,3)*b2(ii,3))
+          b2tmp = cross(b1tmp,tmpvec)
+          b2tmp = b2tmp/sqrt(b2tmp(1)*b2tmp(1)+b2tmp(2)*b2tmp(2)+ &
+               b2tmp(3)*b2tmp(3))
 
-          b3(ii,:) = cross(b1(ii,:),b2(ii,:))
-          b3(ii,:) = b3(ii,:)/sqrt(b3(ii,1)*b3(ii,1)+b3(ii,2)*b3(ii,2)+ &
-               b3(ii,3)*b3(ii,3))
+          b3tmp = cross(b1tmp,b2tmp)
+          b3tmp = b3tmp/sqrt(b3tmp(1)*b3tmp(1)+b3tmp(2)*b3tmp(2)+ &
+               b3tmp(3)*b3tmp(3))
        end if
+       b1(ii,:)=b1tmp
+       b2(ii,:)=b2tmp
+       b3(ii,:)=b3tmp
     end do
 
     !write(output_unit_write,*) 'before copying hint and flag'
