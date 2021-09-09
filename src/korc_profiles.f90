@@ -386,7 +386,19 @@ CONTAINS
           ne(cc) = ne0
        end do
        !$OMP END SIMD
+    CASE('FLAT-RAMP')
+       !$OMP SIMD
+       do cc=1_idef,pchunk
+          ne(cc) = n_ne+(ne0-n_ne)*time/n_tauion
+       end do
+       !$OMP END SIMD
 
+    CASE('TANH-RAMP')
+       !$OMP SIMD
+       do cc=1_idef,pchunk
+          ne(cc) = n_ne+(ne0-n_ne)/2*(tanh((time-n_shelfdelay)/n_tauion)+1._rp)
+       end do
+       !$OMP END SIMD
     CASE('SPONG')
        !$OMP SIMD
        do cc=1_idef,pchunk

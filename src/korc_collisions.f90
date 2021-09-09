@@ -572,9 +572,9 @@ contains
              if (cparams_ss%avalanche) then
 
                 if (TRIM(params%collisions_model).eq.'NO_BOUND') then
-                   p_crit=1/sqrt(F%Eo/cparams_ss%Ec-1._rp)
+                   p_crit=1/sqrt(abs(F%Eo)/cparams_ss%Ec-1._rp)
                 else
-                   p_crit=1/sqrt(F%Eo/cparams_ms%Ec_min-1._rp)
+                   p_crit=1/sqrt(abs(F%Eo)/cparams_ms%Ec_min-1._rp)
                 end if
              end if
              
@@ -3559,6 +3559,11 @@ contains
        units = params%cpp%length
        call save_to_hdf5(h5file_id,dset,units*cparams_ms%re,attr)
 
+       dset = TRIM(gname) // "/Ec"
+       attr = "Critical electric field with impurities"
+       units = params%cpp%Eo
+       call save_to_hdf5(h5file_id,dset,units*cparams_ms%Ec_min,attr)
+       
        DEALLOCATE(attr_array)
 
        call h5gclose_f(group_id, h5error)
