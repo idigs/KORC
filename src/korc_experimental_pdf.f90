@@ -682,7 +682,9 @@ CONTAINS
 
     call normalize_Hollmann_params(params)
 
+#ifdef PSPLINE
     call sample_Hollmann_distribution_1Dtransport(params,spp,F)
+#endif
 
   END SUBROUTINE get_Hollmann_distribution_1Dtransport
 
@@ -737,11 +739,11 @@ CONTAINS
     ! 1D range of gamma based on energy range from Hollmann input file
 
     if (ALLOCATED(h_params%rho_axis)) then
-       
+#ifdef PSPLINE
        call initialize_Hollmann_interpolant(params,h_params%Nrho, &
             h_params%NE,h_params%rho_axis,h_params%g,h_params%fRE_E_2D, &
             h_params%fRE_pitch_2D)
-
+#endif
     endif
     
     h_params%max_g = MAXVAL(h_params%g)
@@ -2384,6 +2386,7 @@ subroutine sample_Hollmann_distribution_3D_psi(params,spp,F)
   
 end subroutine sample_Hollmann_distribution_3D_psi
 
+#ifdef PSPLINE
 subroutine sample_Hollmann_distribution_1Dtransport(params,spp,F)
   !! @note Subroutine that generates a 2D Gaussian distribution in an 
   !! elliptic torus as the initial spatial condition of a given particle 
@@ -2917,6 +2920,7 @@ subroutine sample_Hollmann_distribution_1Dtransport(params,spp,F)
   end if
   
 end subroutine sample_Hollmann_distribution_1Dtransport
+#endif
 
   SUBROUTINE save_params(params)
     TYPE(KORC_PARAMS), INTENT(IN) :: params

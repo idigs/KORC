@@ -933,6 +933,7 @@ CONTAINS
     end if
   end subroutine get_fields
 
+
   subroutine calculate_SC_E1D(params,F,Vden)
 
     TYPE(FIELDS), INTENT(INOUT)                 :: F
@@ -1040,7 +1041,9 @@ CONTAINS
     
     F%E_SC_1D%PHI=F%E_SC_1D%PHI/params%cpp%Eo
 
+#ifdef PSPLINE
     call initialize_SC1D_field_interpolant(params,F)
+#endif
     
   end subroutine calculate_SC_E1D
   
@@ -1138,7 +1141,9 @@ CONTAINS
     
     F%E_SC_1D%PHI=F%E_SC_1D%PHI/params%cpp%Eo
 
+#ifdef PSPLINE
     call initialize_SC1D_field_interpolant_FS(params,F)
+#endif
     
   end subroutine calculate_SC_E1D_FS
 
@@ -1522,7 +1527,9 @@ CONTAINS
     
     F%E_SC_1D%PHI=F%E_SC_1D%PHI/params%cpp%Eo
 
+#ifdef PSPLINE
     call initialize_SC1D_field_interpolant(params,F)
+#endif
     
   end subroutine init_SC_E1D
   
@@ -1680,7 +1687,9 @@ CONTAINS
     
     F%E_SC_1D%PHI=F%E_SC_1D%PHI/params%cpp%Eo
 
+#ifdef PSPLINE
     call initialize_SC1D_field_interpolant_FS(params,F)
+#endif
     
   end subroutine init_SC_E1D_FS
 
@@ -1802,7 +1811,9 @@ CONTAINS
     
     F%E_SC_1D%PHI=F%E_SC_1D%PHI/params%cpp%Eo
 
+#ifdef PSPLINE
     call initialize_SC1D_field_interpolant(params,F)
+#endif
     
   end subroutine reinit_SC_E1D
   
@@ -1901,7 +1912,9 @@ CONTAINS
     
     F%E_SC_1D%PHI=F%E_SC_1D%PHI/params%cpp%Eo
 
+#ifdef PSPLINE
     call initialize_SC1D_field_interpolant_FS(params,F)
+#endif
     
   end subroutine reinit_SC_E1D_FS
   

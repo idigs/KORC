@@ -64,6 +64,7 @@ then
     export FC=/opt/local/bin/gfortran-mp-8
 
     cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE                             \
+	  -DUSE_PSPLINE=OFF          \
           -DEZSpline_INCLUDE_PATH=/Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/mod \
           -DEZSpline_LINK_FLAGS="-L/Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/lib -lpspline" \
 	  -DEZSpline_LIBRARIES=/Users/21b/Desktop/KORC_PERIPHERALS/PSPLINES/pspline/MAC/lib/libpspline.a   \
@@ -73,7 +74,7 @@ then
 	  -DCMAKE_Fortran_FLAGS_DEBUG="-g -ffpe-trap=invalid,zero,overflow -fimplicit-none -fbacktrace  -fsanitize=address"   \
           -DCMAKE_C_FLAGS_DEBUG="-g -g3" \
     	  -DCMAKE_CXX_FLAGS_DEBUG="-g -g3" \
-	  -DUSE_FIO=ON          \
+	  -DUSE_FIO=OFF          \
 	  -DFIO_LIBRARIES=/Users/21b/Desktop/KORC/FIO/install/lib/libfusionio.a  \
 	  -DM3DC1_LIBRARIES=/Users/21b/Desktop/KORC/FIO/install/lib/libm3dc1.a	\
           -DFIO_INCLUDE_PATH=/Users/21b/Desktop/KORC/FIO/install/include  \

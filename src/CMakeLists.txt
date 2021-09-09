@@ -49,7 +49,10 @@ endif ()
 
 target_link_libraries (xkorc ${MPI_Fortran_LIBRARIES})
 target_link_libraries (xkorc ${HDF5_LIBRARIES})
-target_link_libraries (xkorc ${EZSpline_LIBRARIES})
+
+if (${USE_PSPLINE})
+   target_link_libraries (xkorc ${EZSpline_LIBRARIES})
+endif()
 
 if(${USE_FIO})
    target_link_libraries (xkorc ${FIO_LIBRARIES} ${M3DC1_LIBRARIES})

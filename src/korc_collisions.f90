@@ -1857,8 +1857,10 @@ contains
 
        if (params%profile_model(1:10).eq.'ANALYTICAL') then
           call analytical_profiles_p(pchunk,time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
-       else  if (params%profile_model(1:8).eq.'EXTERNAL') then          
+       else  if (params%profile_model(1:8).eq.'EXTERNAL') then
+#ifdef PSPLINE
           call interp_FOcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flagCon)
+#endif
        end if
           
        !$OMP SIMD
@@ -2256,6 +2258,7 @@ contains
                Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
                gradB_R,gradB_PHI,gradB_Z,PSIp)          
        else if (params%field_eval.eq.'interp') then
+#ifdef PSPLINE
           if (F%axisymmetric_fields) then
              if (F%Bflux) then
                 if (.not.params%SC_E) then
@@ -2297,12 +2300,14 @@ contains
              end if
           endif
           call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
+#endif
        end if
 
 
        if (params%profile_model(1:10).eq.'ANALYTICAL') then
           call analytical_profiles_p(pchunk,time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
        else if (params%profile_model(1:8).eq.'EXTERNAL') then
+#ifdef PSPLINE
           if (params%profile_model(10:10).eq.'H') then
              call interp_Hcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff, &
                   nAr0,nAr1,nAr2,nAr3,nD,nD1,flagCon)
@@ -2317,6 +2322,7 @@ contains
           else
              call interp_FOcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flagCon)
           endif
+#endif
        end if
        
        if (.not.params%FokPlan) E_PHI=0._rp
@@ -2556,6 +2562,7 @@ contains
             Y_Z,B_R,B_PHI,B_Z,E_R,E_PHI,E_Z,curlb_R,curlb_PHI,curlb_Z, &
             gradB_R,gradB_PHI,gradB_Z,PSIp)          
     else if (params%field_eval.eq.'interp') then
+#ifdef PSPLINE
        if (F%axisymmetric_fields) then
           if (F%Bflux) then
              if (.not.params%SC_E) then
@@ -2596,6 +2603,7 @@ contains
                   gradB_R,gradB_PHI,gradB_Z,flagCon)
           end if
        endif
+#endif
        if(.not.F%ReInterp_2x1t) call add_analytical_E_p(params,tt,F,E_PHI,Y_R)
     end if
 
@@ -2604,6 +2612,7 @@ contains
        call analytical_profiles_p(achunk,time,params,Y_R,Y_Z,P,F, &
             ne,Te,Zeff,PSIp)
     else if (params%profile_model(1:8).eq.'EXTERNAL') then
+#ifdef PSPLINE
        if (params%profile_model(10:10).eq.'H') then
           call interp_Hcollision_p(achunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff, &
                nAr0,nAr1,nAr2,nAr3,nD,nD1,flagCon)
@@ -2618,6 +2627,7 @@ contains
        else
           call interp_FOcollision_p(achunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flagCon)
        endif
+#endif
     end if
 
     E_PHI_LAC=E_PHI

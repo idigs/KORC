@@ -229,7 +229,8 @@ program main
   if (params%mpi_params%rank .EQ. 0) then
      flush(output_unit_write)
   end if
-  
+
+#ifdef PSPLINE
   call initialize_fields_interpolant(params,F)
   !! <h4>15\. Initialize Fields Interpolant</h4>
   !!
@@ -250,6 +251,7 @@ program main
   end if
   
   call initialize_profiles_interpolant(params,P)
+#endif
   !! <h4>16\. Initialize Profiles Interpolant</h4>
   !!
   !! Subroutine [[initialize_profiles_interpolant]] in [[korc_interp]]
@@ -386,6 +388,7 @@ program main
      end do
   end if
 
+#ifdef PSPLINE
   if (params%orbit_model(1:2).eq.'FO'.and.params%field_model(1:3).eq.'EXT' &
        .and..not.((params%field_model(10:13).eq.'MARS').or. &
        (params%field_model(10:14).eq.'AORSA'))) then
@@ -403,6 +406,7 @@ program main
         call save_restart_variables(params,spp,F)
      end do
   end if
+#endif
 
 #ifdef FIO
   if (params%orbit_model(1:2).eq.'FO'.and. &
@@ -474,6 +478,7 @@ program main
   end if
 #endif
 
+#ifdef PSPLINE
   if (params%orbit_model(1:2).eq.'FO'.and. &
        params%field_model(10:13).eq.'MARS') then
      call FO_init(params,F,spp,.false.,.true.)
@@ -507,6 +512,7 @@ program main
         call save_restart_variables(params,spp,F)
      end do
   end if
+#endif
   
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'eqn'.and..not.params%field_model.eq.'M3D_C1') then
      do it=params%ito,params%t_steps,params%t_skip*params%t_it_SC
@@ -526,6 +532,7 @@ program main
      end do
   end if
 
+#ifdef PSPLINE
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_eval.eq.'interp'.and. &
        F%axisymmetric_fields.and.params%field_model(10:12).eq.'PSI'.and. &
        params%SC_E.and..not.params%field_model.eq.'M3D_C1') then
@@ -696,6 +703,7 @@ program main
         call save_restart_variables(params,spp,F)
      end do
   end if
+#endif
 
 #ifdef FIO
   if (params%orbit_model(1:2).eq.'GC'.and.params%field_model.eq.'M3D_C1'.and. &
@@ -765,9 +773,10 @@ program main
   ! * * * FINALIZING SIMULATION * * * 
   call finalize_HDF5()
 
-  
+#ifdef PSPLINE
   call finalize_interpolants(params)
-
+#endif
+  
 #ifdef FIO
   if (TRIM(params%field_model) .eq. 'M3D_C1'.or. &
       TRIM(params%field_model) .eq. 'NIMROD') then

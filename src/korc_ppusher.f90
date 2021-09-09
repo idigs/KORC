@@ -22,21 +22,18 @@ module korc_ppusher
        GCEoM1_p,&
        aux_fields
   PUBLIC :: initialize_particle_pusher,&
-       adv_FOeqn_top,&
-       adv_FOinterp_top,&
-       adv_FOinterp_mars_top,&
-       adv_FOinterp_aorsa_top,&
+       GC_init,&
+       FO_init,&
 #ifdef FIO
        adv_FOfio_top,&
 #endif
-       advance_FOeqn_vars,&
+#ifdef PSPLINE
+       adv_FOinterp_top,&
+       adv_FOinterp_mars_top,&
+       adv_FOinterp_aorsa_top,&
        advance_FOinterp_vars,&
-       advance_GCeqn_vars,&
        advance_GCinterp_psi_vars,&
        advance_GCinterp_B_vars,&
-       GC_init,&
-       FO_init,&
-       adv_GCeqn_top,&
        adv_GCinterp_psi_top,&
        adv_GCinterp_psiwE_top,&
        adv_GCinterp_psi2x1t_top,&
@@ -45,7 +42,12 @@ module korc_ppusher
        adv_GCinterp_B2D_top,&
        adv_GCinterp_2DBdB_top,&
        adv_GCinterp_3DBdB_top,&
-       adv_GCinterp_3DBdB1_top
+       adv_GCinterp_3DBdB1_top,&
+#endif
+       adv_FOeqn_top,&
+       advance_FOeqn_vars,&
+       adv_GCeqn_top,&
+       advance_GCeqn_vars
 
 contains
 
@@ -286,6 +288,7 @@ contains
              if (params%field_model(1:3).eq.'ANA') then
                 call analytical_fields_p(pchunk,B0,EF0,R0,q0,lam,ar, &
                      X_X,X_Y,X_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flagCon)
+#ifdef PSPLINE
              else if (F%axisymmetric_fields.and. &
                   (params%orbit_model(3:3).eq.'B')) then
                 call interp_FOfields_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
@@ -297,6 +300,13 @@ contains
              else if (params%orbit_model(3:5).eq.'psi') then
                 call interp_FOfields1_p(pchunk,F,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z, &
                      E_X,E_Y,E_Z,PSIp,flagCon)
+             else if (params%field_model(10:13).eq.'MARS') then
+                call interp_FOfields_mars_p(params,pchunk,F,Y_R,Y_PHI,Y_Z, &
+                     B_X,B_Y,B_Z,PSIp,flagCon)
+             else if (params%field_model(10:14).eq.'AORSA') then
+                call interp_FOfields_aorsa_p(0._rp,params,pchunk,F, &
+                     Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,PSIp,flagCon)
+#endif
 #ifdef FIO
              else if (TRIM(params%field_model).eq.'M3D_C1'.or. &
                   TRIM(params%field_model).eq.'NIMROD') then
@@ -310,14 +320,7 @@ contains
                    call get_fio_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
                         PSIp,flagCon,hint)
                 end if
-#endif
-             else if (params%field_model(10:13).eq.'MARS') then
-                call interp_FOfields_mars_p(params,pchunk,F,Y_R,Y_PHI,Y_Z, &
-                     B_X,B_Y,B_Z,PSIp,flagCon)
-             else if (params%field_model(10:14).eq.'AORSA') then
-                call interp_FOfields_aorsa_p(0._rp,params,pchunk,F, &
-                     Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,PSIp,flagCon)
-                
+#endif                
              end if
 
              !write(6,'("Y_R: ",E17.10)') Y_R*params%cpp%length
@@ -1220,6 +1223,7 @@ contains
   end subroutine adv_FOfio_top
 #endif 
 
+#ifdef PSPLINE
   subroutine adv_FOinterp_top(params,F,P,spp)  
     TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
     !! Core KORC simulation parameters.
@@ -2097,7 +2101,8 @@ contains
     !$OMP END SIMD
 
   end subroutine advance_FOinterp_vars
-
+#endif
+  
 #ifdef FIO
   subroutine advance_FOfio_vars(tt,a,q_cache,m_cache,params,X_X,X_Y,X_Z, &
        V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,g,flagCon,flagCol,P,F,PSIp,hint)
@@ -3176,7 +3181,9 @@ contains
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
     if (params%SC_E_add) then
+#ifdef PSPLINE
        call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+#endif
     end if
 
     !    write(output_unit_write,'("ER:",E17.10)') E_R
@@ -3224,7 +3231,9 @@ contains
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
     if (params%SC_E_add) then
+#ifdef PSPLINE
        call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+#endif
     end if
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
@@ -3257,7 +3266,9 @@ contains
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
     if (params%SC_E_add) then
+#ifdef PSPLINE
        call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+#endif
     end if
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
@@ -3290,7 +3301,9 @@ contains
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
     if (params%SC_E_add) then
+#ifdef PSPLINE
        call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+#endif
     end if
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
@@ -3326,7 +3339,9 @@ contains
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
     if (params%SC_E_add) then
+#ifdef PSPLINE
        call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+#endif
     end if
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
@@ -3362,7 +3377,9 @@ contains
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
     if (params%SC_E_add) then
+#ifdef PSPLINE
        call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+#endif
     end if
 
     call GCEoM_p(params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,B_R,B_PHI, &
@@ -3414,7 +3431,9 @@ contains
          gradB_R,gradB_PHI,gradB_Z,PSIp)
 
     if (params%SC_E_add) then
+#ifdef PSPLINE
        call add_interp_SCE_p(params,F,Y_R,Y_PHI,Y_Z,E_PHI)
+#endif
     end if
 
     if (params%collisions) then
@@ -3457,6 +3476,7 @@ contains
 
   end subroutine advance_FPeqn_vars
 
+#ifdef PSPLINE
   subroutine adv_GCinterp_psi_top_FS(params,spp,P,F)
 
     TYPE(KORC_PARAMS), INTENT(INOUT)                           :: params
@@ -3814,6 +3834,7 @@ contains
     end do !species iterator
 
   end subroutine adv_GCinterp_psi_top
+#endif
 
 #ifdef FIO
   subroutine adv_GCinterp_fio_top(params,spp,P,F)
@@ -4008,7 +4029,7 @@ contains
 #endif
 
 
-
+#ifdef PSPLINE
   subroutine adv_GCinterp_psiwE_top(params,spp,P,F)
 
     USE omp_lib
@@ -6089,6 +6110,7 @@ contains
 
 
   end subroutine advance_GCinterp_psi_vars
+#endif
 
 #ifdef FIO
   subroutine advance_GCinterp_fio_vars(vars,pp,tt,params,Y_R,Y_PHI,Y_Z, &
@@ -6499,7 +6521,8 @@ contains
 
   end subroutine advance_GCinterp_fio_vars
 #endif
-  
+
+#ifdef PSPLINE
   subroutine advance_GCinterp_psiwE_vars(vars,pchunk,pp,tt,params,Y_R,Y_PHI,Y_Z, &
        V_PLL,V_MU,q_cache,m_cache,flagCon,flagCol,F,P,B_R,B_PHI,B_Z,E_PHI,PSIp, &
        curlb_R,curlb_PHI,curlb_Z,gradB_R,gradB_PHI,gradB_Z,ne)
@@ -8821,6 +8844,7 @@ contains
 
 
   end subroutine advance_GCinterp_B_vars
+#endif
 
   subroutine advance_FPinterp_vars(params,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
        m_cache,flagCon,flagCol,F,P,E_PHI,ne,PSIp)    
@@ -9052,7 +9076,9 @@ contains
        if (params%profile_model(1:10).eq.'ANALYTICAL') then
           call analytical_profiles_p(pchunk,time,params,Y_R,Y_Z,P,F,ne,Te,Zeff,PSIp)
        else
+#ifdef PSPLINE
           call interp_FOcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag_cache)
+#endif
        endif
 
        !write(6,*) 'Y: ',Y_R,Y_PHI,Y_Z

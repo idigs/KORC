@@ -34,8 +34,12 @@ find_package (HDF5 REQUIRED COMPONENTS Fortran)
 include_directories (${HDF5_INCLUDE_DIRS})
 
 #  Configure EZspline
-include_directories (${EZSpline_INCLUDE_PATH})
-set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EZSpline_LINK_FLAGS}")
+option (USE_PSPLINE "Use PSPLINE interpolation" OFF)
+if (${USE_PSPLINE})
+   include_directories (${EZSpline_INCLUDE_PATH})
+   set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EZSpline_LINK_FLAGS}")
+   add_definitions (-DPSPLINE)
+endif ()
 
 #  Configure FIO interpolation
 option (USE_FIO "Use FIO interpolation support" OFF)

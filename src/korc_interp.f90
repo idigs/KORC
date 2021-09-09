@@ -8,8 +8,10 @@ module korc_interp
   use korc_rnd_numbers
   use korc_hpc
 
+#ifdef PSPLINE
   use EZspline_obj	! psplines module
   use EZspline		! psplines module
+#endif
   
 #ifdef FIO
   use korc_fio
@@ -19,7 +21,7 @@ module korc_interp
 
   IMPLICIT NONE
 
-
+#ifdef PSPLINE
 #ifdef DOUBLE_PRECISION
 
 
@@ -413,7 +415,6 @@ module korc_interp
 #endif
 
 
-
   TYPE, PRIVATE :: KORC_INTERPOLANT_DOMAIN
      !! @note Derived type containing 2-D and 3-D arrays with the information of
      !! the spatial domain where the fields and profiles are known.
@@ -447,7 +448,6 @@ module korc_interp
      !! Separation between grid points along the vertical direction.
      
   END TYPE KORC_INTERPOLANT_DOMAIN
-
 
   TYPE(KORC_2D_FIELDS_INTERPOLANT), PRIVATE      :: bfield_2d
   !! An instance of KORC_2D_FIELDS_INTERPOLANT for interpolating
@@ -510,7 +510,12 @@ module korc_interp
   INTEGER                                        :: ezerr
   !! Error status during PSPLINE interpolations.
 
+#endif
 
+#ifdef PSPLINE
+  PUBLIC :: interp_fields
+
+#elseif
   PUBLIC :: interp_fields,&
        interp_fields_p,&
        interp_fields_3D_p,&
@@ -550,10 +555,11 @@ module korc_interp
        interp_2D_gradBfields,&
        interp_2D_curlbfields,&
        gradient_2D_Bfields
+#endif
 
 CONTAINS
 
-
+#ifdef PSPLINE
   subroutine initialize_fields_interpolant(params,F)
     !! @note Subroutine that initializes fields interpolants. @endnote
     !! This subroutine initializes either 2-D or 3-D PSPLINE interpolants
@@ -4517,7 +4523,7 @@ subroutine interp_3D_efields(params,Y,E,flag)
   !$OMP END PARALLEL DO
   DEALLOCATE(F)
 end subroutine interp_3D_efields
-
+#endif
 
 subroutine interp_fields(params,prtcls,F)
   !! @note Subroutine that works as an interface for calling the 
@@ -4538,76 +4544,79 @@ subroutine interp_fields(params,prtcls,F)
 !  write(output_unit_write,'("BR: ",E17.10)') prtcls%BR(:,1)
 !  write(output_unit_write,'("Y: ",E17.10)') prtcls%X(2,1)
 !  write(output_unit_write,'("Z: ",E17.10)') prtcls%X(3,1)
-  
-  call check_if_in_fields_domain(F,prtcls%Y, prtcls%flagCon)
 
+#ifdef PSPLINE
+  call check_if_in_fields_domain(F,prtcls%Y, prtcls%flagCon)
+#endif
+  
   !write(output_unit_write,*) 'checked domain'
 
 #ifdef FIO
   if (TRIM(params%field_model) .eq. 'M3D_C1'.or. &
        TRIM(params%field_model) .eq. 'NIMROD') then
-    
-       if (F%FIO_B .ge. 0) then
 
-          !write(6,*) 'interp_fields'
-          
-          call get_fio_magnetic_fields(prtcls, F, params)
-          
-       end if
+     if (F%FIO_B .ge. 0) then
 
-       if (F%FIO_E .ge. 0) then
-          call get_fio_electric_fields(prtcls, F, params)
-       end if
+        !write(6,*) 'interp_fields'
 
-       if (F%FIO_A .ge. 0) then
-          call get_fio_vector_potential(prtcls, F, params)
-       end if
+        call get_fio_magnetic_fields(prtcls, F, params)
 
-       do pp=1,sizeof(prtcls%flagCon)
-          if (prtcls%flagCon(pp)==0.and. &
-               (.not.(params%restart.OR.params%proceed))) then
-             write(6,*) 'RE initialized outside of computational domain!!!'
-             call KORC_ABORT(15)
-          end if
-       end do       
-       
-    end if
+     end if
+
+     if (F%FIO_E .ge. 0) then
+        call get_fio_electric_fields(prtcls, F, params)
+     end if
+
+     if (F%FIO_A .ge. 0) then
+        call get_fio_vector_potential(prtcls, F, params)
+     end if
+
+     do pp=1,sizeof(prtcls%flagCon)
+        if (prtcls%flagCon(pp)==0.and. &
+             (.not.(params%restart.OR.params%proceed))) then
+           write(6,*) 'RE initialized outside of computational domain!!!'
+           call KORC_ABORT(15)
+        end if
+     end do
+
+  end if
 #endif
 
-    if (params%field_model(10:13).eq.'MARS') then
-       call interp_FOfields_mars(prtcls, F, params)
-    end if
+#ifdef PSPLINE
+  if (params%field_model(10:13).eq.'MARS') then
+     call interp_FOfields_mars(prtcls, F, params)
+  end if
 
-    if (params%field_model(10:14).eq.'AORSA') then
-       call interp_FOfields_aorsa(prtcls, F, params)
-    end if
-    
-    if ((ALLOCATED(F%PSIp).and.F%Bflux).or. &
-         (F%ReInterp_2x1t.and.(.not.((TRIM(params%field_model).eq.'M3D_C1').or. &
-         (params%field_model(10:13).eq.'MARS').or. &
-         (TRIM(params%field_model).eq.'NIMROD'))))) then
+  if (params%field_model(10:14).eq.'AORSA') then
+     call interp_FOfields_aorsa(prtcls, F, params)
+  end if
 
-!     write(output_unit_write,'("3 size of PSI_P: ",I16)') size(prtcls%PSI_P)
+  if ((ALLOCATED(F%PSIp).and.F%Bflux).or. &
+       (F%ReInterp_2x1t.and.(.not.((TRIM(params%field_model).eq.'M3D_C1').or. &
+       (params%field_model(10:13).eq.'MARS').or. &
+       (TRIM(params%field_model).eq.'NIMROD'))))) then
 
-!     write(output_unit_write,'("B_X: ",E17.10)') prtcls%B(:,1)
-!     write(output_unit_write,'("B_Z: ",E17.10)') prtcls%B(:,3)
-!     write(output_unit_write,'("B_Y: ",E17.10)') prtcls%B(:,2)
-!     write(output_unit_write,'("PSI_P: ",E17.10)') prtcls%PSI_P
-     
-       call calculate_magnetic_field(params,prtcls%Y,F,prtcls%B,prtcls%E, &
-            prtcls%PSI_P,prtcls%flagCon)
+     !     write(output_unit_write,'("3 size of PSI_P: ",I16)') size(prtcls%PSI_P)
+
+     !     write(output_unit_write,'("B_X: ",E17.10)') prtcls%B(:,1)
+     !     write(output_unit_write,'("B_Z: ",E17.10)') prtcls%B(:,3)
+     !     write(output_unit_write,'("B_Y: ",E17.10)') prtcls%B(:,2)
+     !     write(output_unit_write,'("PSI_P: ",E17.10)') prtcls%PSI_P
+
+     call calculate_magnetic_field(params,prtcls%Y,F,prtcls%B,prtcls%E, &
+          prtcls%PSI_P,prtcls%flagCon)
 
      !write(output_unit_write,*) 'interp PSIp'
-     
-!     write(output_unit_write,'("interp_fields")')
-!     write(output_unit_write,'("B_X: ",E17.10)') prtcls%B(:,1)
-!     write(output_unit_write,'("B_Z: ",E17.10)') prtcls%B(:,3)
-!     write(output_unit_write,'("B_Y: ",E17.10)') prtcls%B(:,2)
+
+     !     write(output_unit_write,'("interp_fields")')
+     !     write(output_unit_write,'("B_X: ",E17.10)') prtcls%B(:,1)
+     !     write(output_unit_write,'("B_Z: ",E17.10)') prtcls%B(:,3)
+     !     write(output_unit_write,'("B_Y: ",E17.10)') prtcls%B(:,2)
 
   end if
 
   if (ALLOCATED(F%PSIp3D).and.F%Bflux3D) then
-
+     
 !     write(output_unit_write,'("3 size of PSI_P: ",I16)') size(prtcls%PSI_P)
 
 !     write(output_unit_write,'("B_X: ",E17.10)') prtcls%B(:,1)
@@ -4662,9 +4671,11 @@ subroutine interp_fields(params,prtcls,F)
      call gradient_2D_bfields(prtcls%Y,prtcls%BR,prtcls%BPHI, &
           prtcls%BZ,prtcls%flagCon)
   end if
+#endif
   
 end subroutine interp_fields
 
+#ifdef PSPLINE
 subroutine interp_Hcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff, &
      nAr0,nAr1,nAr2,nAr3,nD,nD1,flag_cache)
   INTEGER, INTENT(IN)  :: pchunk
@@ -4835,6 +4846,7 @@ subroutine interp_3D_profiles(Y,ne,Te,Zeff,flag)
   end do
   !$OMP END PARALLEL DO
 end subroutine interp_3D_profiles
+#endif
 
 
 subroutine interp_profiles(params,prtcls,P)
@@ -4854,16 +4866,19 @@ subroutine interp_profiles(params,prtcls,P)
   if (.not.params%GC_coords) call cart_to_cyl(prtcls%X,prtcls%X)
   
   !write(output_unit_write,'("Also R_buffer: ",E17.10)') prtcls%Y(1,1)  
-
+#ifdef PSPLINE
   call check_if_in_profiles_domain(prtcls%Y, prtcls%flagCon)
-
+#endif
+  
   if (ALLOCATED(P%ne_2D)) then
+#ifdef PSPLINE
 !     write(output_unit_write,'("Also R_buffer: ",E17.10)') prtcls%X(1,1)
      call interp_2D_profiles(prtcls%Y,prtcls%ne,prtcls%Te,prtcls%Zeff, &
           prtcls%flagCon)
   else if (ALLOCATED(P%ne_3D)) then
      call interp_3D_profiles(prtcls%Y,prtcls%ne,prtcls%Te,prtcls%Zeff, &
           prtcls%flagCon)
+#endif
 #ifdef FIO
   else if (P%FIO_ne   .ge. 0 .or.     &
        P%FIO_te   .ge. 0 .or.         &
@@ -4878,6 +4893,7 @@ subroutine interp_profiles(params,prtcls,P)
 end subroutine interp_profiles
 
 
+#ifdef PSPLINE
 !> @brief Subroutine that frees memory allocated for PSPLINE interpolants.
 !!
 !! @param[in] params Core KORC simulation parameters.
@@ -4962,7 +4978,7 @@ subroutine finalize_interpolants(params)
      end if
   end if
 end subroutine finalize_interpolants
-
+#endif
 
 #ifdef FIO
   !!  @note FIXME Add documentation
