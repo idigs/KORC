@@ -30,12 +30,12 @@ module korc_interp
      !! cylindrical components of vector fields
      !! \(\mathbf{F}(R,\phi,Z) = F_R\hat{e}_R + F_\phi\hat{e}_phi + 
      !! F_Z\hat{e}_Z\). Real precision of 8 bytes. @endnote
-     TYPE(EZspline3_r8)    :: A     !! Interpolant of a scalar field \(A(R,Z)\).
-     TYPE(EZspline3_r8)    :: R		
+     TYPE(EZspline3)    :: A     !! Interpolant of a scalar field \(A(R,Z)\).
+     TYPE(EZspline3)    :: R		
      !! Interpolant of \(F_R(R,\phi,Z)\).
-     TYPE(EZspline3_r8)    :: PHI	
+     TYPE(EZspline3)    :: PHI	
      !! Interpolant of \(F_\phi(R,\phi,Z)\).
-     TYPE(EZspline3_r8)    :: Z		
+     TYPE(EZspline3)    :: Z		
      !! Interpolant of \(F_Z(R,\phi,Z)\).
      
      INTEGER               :: NR 
@@ -60,13 +60,13 @@ module korc_interp
      !! cylindrical components of vector fields
      !! \(\mathbf{F}(R,\phi,Z) = F_R\hat{e}_R + F_\phi\hat{e}_phi + 
      !! F_Z\hat{e}_Z\). Real precision of 8 bytes. @endnote
-     TYPE(EZspline3_r8)    :: A
+     TYPE(EZspline3)    :: A
      !! Interpolant of a scalar field \(A(R,Z)\).
-     TYPE(EZspline3_r8)    :: R		
+     TYPE(EZspline3)    :: R		
      !! Interpolant of \(F_R(R,\phi,Z)\).
-     TYPE(EZspline3_r8)    :: T	
+     TYPE(EZspline3)    :: T	
      !! Interpolant of \(F_\phi(R,\phi,Z)\).
-     TYPE(EZspline3_r8)    :: Z		
+     TYPE(EZspline3)    :: Z		
      !! Interpolant of \(F_Z(R,\phi,Z)\).
      
      INTEGER               :: NR 
@@ -91,13 +91,13 @@ module korc_interp
      !! cylindrical components of vector fields \(\mathbf{F}(R,Z) =
      !! F_R\hat{e}_R + F_\phi\hat{e}_phi+ F_Z\hat{e}_Z\).
      !! Real precision of 8 bytes. @endnote
-     TYPE(EZspline2_r8)    :: A
+     TYPE(EZspline2)    :: A
      !! Interpolant of a scalar field \(A(R,Z)\).
-     TYPE(EZspline2_r8)    :: X
+     TYPE(EZspline2)    :: X
      !! Interpolant of \(F_X(R,Z)\).
-     TYPE(EZspline2_r8)    :: Y
+     TYPE(EZspline2)    :: Y
      !! Interpolant of \(F_Y(R,Z)\).
-     TYPE(EZspline2_r8)    :: Z
+     TYPE(EZspline2)    :: Z
      !! Interpolant of \(F_Z(R,Z)\).
      
      INTEGER               :: NR
@@ -117,13 +117,13 @@ module korc_interp
      !! cylindrical components of vector fields \(\mathbf{F}(R,Z) =
      !! F_R\hat{e}_R + F_\phi\hat{e}_phi+ F_Z\hat{e}_Z\).
      !! Real precision of 8 bytes. @endnote
-     TYPE(EZspline2_r8)    :: A
+     TYPE(EZspline2)    :: A
      !! Interpolant of a scalar field \(A(R,Z)\).
-     TYPE(EZspline2_r8)    :: R
+     TYPE(EZspline2)    :: R
      !! Interpolant of \(F_R(R,Z)\).
-     TYPE(EZspline2_r8)    :: PHI
+     TYPE(EZspline2)    :: PHI
      !! Interpolant of \(F_\phi(R,Z)\).
-     TYPE(EZspline2_r8)    :: Z
+     TYPE(EZspline2)    :: Z
      !! Interpolant of \(F_Z(R,Z)\).
      
      INTEGER               :: NR
@@ -143,13 +143,13 @@ module korc_interp
      !! cylindrical components of vector fields \(\mathbf{F}(R,Z) =
      !! F_R\hat{e}_R + F_\phi\hat{e}_phi+ F_Z\hat{e}_Z\).
      !! Real precision of 8 bytes. @endnote
-     TYPE(EZspline1_r8)    :: A
+     TYPE(EZspline1)    :: A
      !! Interpolant of a scalar field \(A(R,Z)\).
-     TYPE(EZspline1_r8)    :: R
+     TYPE(EZspline1)    :: R
      !! Interpolant of \(F_R(R,Z)\).
-     TYPE(EZspline1_r8)    :: PHI
+     TYPE(EZspline1)    :: PHI
      !! Interpolant of \(F_\phi(R,Z)\).
-     TYPE(EZspline1_r8)    :: Z
+     TYPE(EZspline1)    :: Z
      !! Interpolant of \(F_Z(R,Z)\).
      
      INTEGER               :: Nrm
@@ -169,11 +169,11 @@ module korc_interp
      !! components of the density \(n_e(R,\phi,Z)\),
      !! temperature \(T_e(R,\phi,Z)\), and effective charge number
      !! \(Z_{eff}(R,\phi,Z)\) profiles. Real precision of 8 bytes. @endnote
-     TYPE(EZspline3_r8)    :: ne
+     TYPE(EZspline3)    :: ne
      !! Interpolant of background electron density \(n_e(R,\phi,Z)\).
-     TYPE(EZspline3_r8)    :: Te
+     TYPE(EZspline3)    :: Te
      !! Interpolant of background electron temperature \(T_e(R,\phi,Z)\).
-     TYPE(EZspline3_r8)    :: Zeff
+     TYPE(EZspline3)    :: Zeff
      !! Interpolant of effective charge number \(Z_{eff}(R,\phi,Z)\).
 
      INTEGER               :: NR
@@ -199,20 +199,20 @@ module korc_interp
      !! components of the density \(n_e(R,Z)\), temperature \(T_e(R,Z)\), and
      !! effective charge number \(Z_{eff}(R,Z)\) profiles.
      !! Real precision of 8 bytes. @endnote
-     TYPE(EZspline2_r8)    :: ne
+     TYPE(EZspline2)    :: ne
      !! Interpolant of background electron density \(n_e(R,Z)\).
-     TYPE(EZspline2_r8)    :: Te
+     TYPE(EZspline2)    :: Te
      !! Interpolant of background electron temperature \(T_e(R,Z)\).
-     TYPE(EZspline2_r8)    :: Zeff
+     TYPE(EZspline2)    :: Zeff
      !! Interpolant of effective charge number \(Z_{eff}(R,Z)\)
-     TYPE(EZspline2_r8)    :: RHON
-     TYPE(EZspline2_r8)    :: nRE
-     TYPE(EZspline2_r8)    :: nAr0
-     TYPE(EZspline2_r8)    :: nAr1
-     TYPE(EZspline2_r8)    :: nAr2
-     TYPE(EZspline2_r8)    :: nAr3
-     TYPE(EZspline2_r8)    :: nD
-     TYPE(EZspline2_r8)    :: nD1
+     TYPE(EZspline2)    :: RHON
+     TYPE(EZspline2)    :: nRE
+     TYPE(EZspline2)    :: nAr0
+     TYPE(EZspline2)    :: nAr1
+     TYPE(EZspline2)    :: nAr2
+     TYPE(EZspline2)    :: nAr3
+     TYPE(EZspline2)    :: nD
+     TYPE(EZspline2)    :: nD1
      
      INTEGER               :: NR
      !! Size of mesh containing the field data along the \(R\)-axis.
@@ -231,8 +231,8 @@ module korc_interp
      !! components of the density \(n_e(R,Z)\), temperature \(T_e(R,Z)\), and
      !! effective charge number \(Z_{eff}(R,Z)\) profiles.
      !! Real precision of 8 bytes. @endnote
-     TYPE(EZspline2_r8)    :: fRE_E
-     TYPE(EZspline2_r8)    :: fRE_pitch     
+     TYPE(EZspline2)    :: fRE_E
+     TYPE(EZspline2)    :: fRE_pitch     
 
      INTEGER               :: NE
      !! Size of mesh containing the field data along the \(R\)-axis.
@@ -512,10 +512,9 @@ module korc_interp
 
 #endif
 
-#ifdef PSPLINE
-  PUBLIC :: interp_fields
 
-#elseif
+
+#ifdef PSPLINE
   PUBLIC :: interp_fields,&
        interp_fields_p,&
        interp_fields_3D_p,&
@@ -555,6 +554,9 @@ module korc_interp
        interp_2D_gradBfields,&
        interp_2D_curlbfields,&
        gradient_2D_Bfields
+#else
+  PUBLIC :: interp_fields 
+
 #endif
 
 CONTAINS
@@ -3352,7 +3354,7 @@ subroutine interp_FOcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flag_cache)
   
   call EZspline_interp(profiles_2d%ne,profiles_2d%Te, &
        profiles_2d%Zeff,pchunk,Y_R,Y_Z,ne,Te,Zeff,ezerr)
-  ! this will call PSPLINE routine EZspline_interp2_bmag_cloud_r8 as there
+  ! this will call PSPLINE routine EZspline_interp2_bmag_cloud as there
   ! is the same number of entries
   call EZspline_error(ezerr)
  
@@ -4696,7 +4698,7 @@ subroutine interp_Hcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff, &
        profiles_2d%nAr0,profiles_2d%nAr1,profiles_2d%nAr2,profiles_2d%nAr3, &
        profiles_2d%nD,profiles_2d%nD1,pchunk,Y_R,Y_Z,ne,Te,Zeff, &
        nAr0,nAr1,nAr2,nAr3,nD,nD1,ezerr)
-  ! this will call PSPLINE routine EZspline_interp2_bmag_cloud_r8 as there
+  ! this will call PSPLINE routine EZspline_interp2_bmag_cloud as there
   ! is the same number of entries
   call EZspline_error(ezerr)
    
