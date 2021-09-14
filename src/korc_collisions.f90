@@ -3170,7 +3170,7 @@ contains
     REAL(rp), DIMENSION(achunk)  :: gam,prob0,prob1
     REAL(rp) :: gam_min,p_min,gammax=200._rp,dt,gamsecmax,psecmax,ptrial
     REAL(rp) :: gamtrial,cosgam1,xirad,xip,xim,xitrial,sinsq1,cossq1,pitchprob1
-    REAL(rp) :: dsigdgam1,S_LAmax,S_LA1,tmppm,gamvth,vmin,E_C,p_c,gam_c
+    REAL(rp) :: dsigdgam1,S_LAmax,S_LA1,tmppm,gamvth,vmin,E_C,p_c,gam_c,pRE
     INTEGER, parameter :: ngam1=100, neta1=100
     INTEGER :: ii,jj,cc,seciter
     REAL(rp), DIMENSION(ngam1) :: gam1,pm1,tmpgam1,tmpcosgam,tmpdsigdgam,tmpsecthreshgam,probtmp,intpitchprob
@@ -3472,7 +3472,10 @@ contains
              xi(cc)=(tmppm*xi(cc)-ptrial*xitrial)/pm(cc)
           end if
 
-          if (spp%pRE.eq.spp%ppp) then
+          !$OMP ATOMIC READ
+          pRE=spp%pRE
+          
+          if (pRE.eq.spp%ppp) then
              write(6,*) 'All REs allocated on proc',params%mpi_params%rank
              call korc_abort(24)
           end if
