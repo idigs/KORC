@@ -980,7 +980,7 @@ contains
                   num_collisions_in_simulation
           end if
 
-          if (params%LargeCollisions.and.F%ReInterp_2x1t) then
+          if (params%LargeCollisions) then
 
              write(output_unit_write,'("Number of collision steps per dump step: ",I16)') params%coll_per_dump
 
