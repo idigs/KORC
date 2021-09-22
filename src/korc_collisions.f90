@@ -944,16 +944,15 @@ contains
        if (params%LargeCollisions) then
           params%coll_per_dump=params%t_skip/params%coll_cadence + 1_ip
 
-          cparams_ss%coll_per_dump_dt=params%dt*float(params%t_skip/ &
-               params%coll_per_dump)
+          cparams_ss%coll_per_dump_dt=params%dt*FLOAT(params%t_skip)/FLOAT(params%coll_per_dump)
 
           params%coll_per_dump_dt=cparams_ss%coll_per_dump_dt
 
           params%orbits_per_coll=floor(cparams_ss%coll_per_dump_dt/ &
                params%dt)+1_ip
 
-          params%dt=cparams_ss%coll_per_dump_dt/float(params%orbits_per_coll)
-
+          params%dt=cparams_ss%coll_per_dump_dt/float(params%orbits_per_coll)         
+          
        end if
        
        if (init) num_collisions_in_simulation = params%simulation_time/Tau
@@ -3208,10 +3207,10 @@ contains
        E_C=Gammacee(vmin,netot(cc),Te(cc))
 
        !write(6,*) 'E',E_PHI*params%cpp%Eo
-       write(6,*) 'E_C',E_C*params%cpp%Eo
-       write(6,*) 'E_c,min',cparams_ms%Ec_min*params%cpp%Eo
-       write(6,*) 'ne',ne(cc)*params%cpp%density
-       write(6,*) 'netot',netot(cc)*params%cpp%density
+       !write(6,*) 'E_C',E_C*params%cpp%Eo
+       !write(6,*) 'E_c,min',cparams_ms%Ec_min*params%cpp%Eo
+       !write(6,*) 'ne',ne(cc)*params%cpp%density
+       !write(6,*) 'netot',netot(cc)*params%cpp%density
        !write(6,*) 'Te',Te(cc)*params%cpp%temperature
        !write(6,*) 'Clog',CLogee_wu(params,ne(cc)*params%cpp%density,Te(cc)*params%cpp%temperature)
 
@@ -3228,8 +3227,8 @@ contains
           p_min=p_c
        end if
        
-       write(6,*) 'p_c',p_c
-       write(6,*) 'p_min',p_min
+       !write(6,*) 'p_c',p_c
+       !write(6,*) 'p_min',p_min
        
        !! Generating 1D and 2D ranges for secondary RE distribution
 
