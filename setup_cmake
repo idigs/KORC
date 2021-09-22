@@ -133,6 +133,7 @@ then
 #    module swap PrgEnv-intel PrgEnv-gnu
     cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE                                          \
           -DCMAKE_PREFIX_PATH=$MPICH_DIR                                                 \
+	  -DUSE_PSPLINE=ON          \
           -DEZSpline_INCLUDE_PATH=/global/cfs/cdirs/m3236/build_unstable/PSPLINES/LINUX_INTEL/mod \
           -DEZSpline_LINK_FLAGS="-L/global/cfs/cdirs/m3236/build_unstable/PSPLINES/LINUX_INTEL/lib -lpspline" \
           -DEZSpline_LIBRARIES=/global/cfs/cdirs/m3236/build_unstable/PSPLINES/LINUX_INTEL/lib/libpspline.a   \

@@ -515,7 +515,7 @@ module korc_interp
 #ifdef PSPLINE
   PUBLIC :: interp_fields
 
-#elseif
+#else
   PUBLIC :: interp_fields,&
        interp_fields_p,&
        interp_fields_3D_p,&
