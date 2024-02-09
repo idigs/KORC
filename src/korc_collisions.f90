@@ -1853,7 +1853,7 @@ end subroutine unitVectors_p
 subroutine check_collisions_params(spp)
 #ifdef PARALLEL_RANDOM
     USE omp_lib
-#endif PARALLEL_RANDOM
+#endif
     TYPE(SPECIES), INTENT(IN) :: spp
     INTEGER aux
 
@@ -1864,7 +1864,7 @@ subroutine check_collisions_params(spp)
        cparams_ss%rnd_num = get_random()
 #else
        call RANDOM_NUMBER(cparams_ss%rnd_num)
-#endif PARALLEL_RANDOM
+#endif
        cparams_ss%rnd_num_count = 1_idef
     end if
 end subroutine check_collisions_params
@@ -2223,8 +2223,7 @@ subroutine include_CoulombCollisions_FOfio_p(tt,params,X_X,X_Y,X_Z, &
           rnd1(cc,3) = get_random()
 #else
           call RANDOM_NUMBER(rnd1)
-#endif PARALLEL_RANDOM
-
+#endif
           dW(cc,1) = SQRT(3*dt)*(-1+2*rnd1(cc,1))
           dW(cc,2) = SQRT(3*dt)*(-1+2*rnd1(cc,2))
           dW(cc,3) = SQRT(3*dt)*(-1+2*rnd1(cc,3))
@@ -2298,7 +2297,7 @@ subroutine include_CoulombCollisions_FOfio_p(tt,params,X_X,X_Y,X_Z, &
     end if
 end subroutine include_CoulombCollisions_FOfio_p
 
-#endif FIO
+#endif
 
 subroutine include_CoulombCollisions_GC_p(tt,params,Y_R,Y_PHI,Y_Z, &
    Ppll,Pmu,me,flagCon,flagCol,F,P,E_PHI,ne,PSIp)
@@ -2370,7 +2369,7 @@ subroutine include_CoulombCollisions_GC_p(tt,params,Y_R,Y_PHI,Y_Z, &
             end if
          endif
          call add_analytical_E_p(params,tt,F,E_PHI,Y_R,Y_Z)
-#endif PSPLINE
+#endif
       end if
 
 
@@ -2392,7 +2391,7 @@ subroutine include_CoulombCollisions_GC_p(tt,params,Y_R,Y_PHI,Y_Z, &
          else
             call interp_FOcollision_p(pchunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flagCon)
          endif
-#endif PSPLINE
+#endif
       end if
 
       E_PHI_tmp=E_PHI
@@ -2433,7 +2432,7 @@ subroutine include_CoulombCollisions_GC_p(tt,params,Y_R,Y_PHI,Y_Z, &
           !       rnd1(:,2) = get_random_mkl()
 #else
           call RANDOM_NUMBER(rnd1)
-#endif PARALLEL_RANDOM
+#endif
 
           dW(cc,1) = SQRT(3*dt)*(-1+2*rnd1(cc,1))
           dW(cc,2) = SQRT(3*dt)*(-1+2*rnd1(cc,2))
@@ -2649,7 +2648,7 @@ subroutine include_CoulombCollisionsLA_GC_p(spp,achunk,tt,params, &
                gradB_R,gradB_PHI,gradB_Z,flagCon,PSIp,time)
          end if
       endif
-#endif PSPLINE
+#endif
       if(.not.F%ReInterp_2x1t) call add_analytical_E_p(params,tt,F,E_PHI,Y_R,Y_Z)
    end if
 
@@ -2673,7 +2672,7 @@ subroutine include_CoulombCollisionsLA_GC_p(spp,achunk,tt,params, &
       else
          call interp_FOcollision_p(achunk,Y_R,Y_PHI,Y_Z,ne,Te,Zeff,flagCon)
       endif
-#endif PSPLINE
+#endif
    end if
 
    E_PHI_LAC=E_PHI
@@ -2716,7 +2715,7 @@ subroutine include_CoulombCollisionsLA_GC_p(spp,achunk,tt,params, &
       !       rnd1(:,2) = get_random_mkl()
 #else
       call RANDOM_NUMBER(rnd1)
-#endif PARALLEL_RANDOM
+#endif
 
       dW(cc,1) = SQRT(3*dt)*(-1+2*rnd1(cc,1))
       dW(cc,2) = SQRT(3*dt)*(-1+2*rnd1(cc,2))
@@ -2823,7 +2822,7 @@ subroutine include_CoulombCollisionsLA_GC_p(spp,achunk,tt,params, &
          call korc_abort(24)
       endif
    end do
-#endif DBG_CHECK
+#endif
 
    !$OMP SIMD
    do cc=1_idef,achunk
@@ -2894,7 +2893,7 @@ subroutine include_CoulombCollisionsLA_GC_p(spp,achunk,tt,params, &
       if (IEEE_IS_NAN(xi(cc)).or.(abs(xi(cc)).gt.1._rp)) then
 #else
       if (ISNAN(xi(cc)).or.(abs(xi(cc)).gt.1._rp)) then
-#endif __NVCOMPILER 
+#endif 
          write(6,*) 'xi is NaN or >1 before LAC'
          write(6,*) 'p0,xi0',pm0(cc),xi0(cc)
          write(6,*) 'p,xi',pm(cc),xi(cc)
@@ -2906,7 +2905,7 @@ subroutine include_CoulombCollisionsLA_GC_p(spp,achunk,tt,params, &
       end if
 
    end do
-#endif DBG_CHECK
+#endif 
 
    if (cparams_ss%avalanche) then
 
@@ -2990,7 +2989,7 @@ subroutine include_CoulombCollisionsLA_GC_p(spp,achunk,tt,params, &
             call korc_abort(24)
          endif
       end do
-#endif DBG_CHECK
+#endif
 
    end if
 
@@ -3000,7 +2999,7 @@ subroutine include_CoulombCollisionsLA_GC_p(spp,achunk,tt,params, &
       if (IEEE_IS_NAN(xi(cc)).or.(abs(xi(cc)).gt.1._rp)) then
 #else
       if (ISNAN(xi(cc)).or.(abs(xi(cc)).gt.1._rp)) then
-#endif __NVCOMPILER 
+#endif
          write(6,*) 'xi is NaN or >1 after LAC'
          write(6,*) 'p0,xi0',pm0(cc),xi0(cc)
          write(6,*) 'p,xi',pm(cc),xi(cc)
@@ -3010,7 +3009,7 @@ subroutine include_CoulombCollisionsLA_GC_p(spp,achunk,tt,params, &
          call korc_abort(24)
       end if
    end do
-#endif DBG_CHECK
+#endif
 
    !$OMP SIMD
    do cc=1_idef,achunk
@@ -3029,7 +3028,7 @@ subroutine include_CoulombCollisionsLA_GC_p(spp,achunk,tt,params, &
          call korc_abort(24)
       endif
    end do
-#endif DBG_CHECK
+#endif
 
     E_PHI=E_PHI_LAC
 
@@ -3150,7 +3149,7 @@ subroutine include_CoulombCollisions_GCfio_p(tt,params,Y_R,Y_PHI,Y_Z, &
           !       rnd1(:,2) = get_random_mkl()
 #else
           call RANDOM_NUMBER(rnd1)
-#endif PARALLEL_RANDOM
+#endif
 
           dW(cc,1) = SQRT(3*dt)*(-1+2*rnd1(cc,1))
           dW(cc,2) = SQRT(3*dt)*(-1+2*rnd1(cc,2))
@@ -3240,7 +3239,7 @@ subroutine include_CoulombCollisions_GCfio_p(tt,params,Y_R,Y_PHI,Y_Z, &
 #else
          if((isnan(Ppll(cc)).or.isnan(Pmu(cc))).and. &
             ((flagCol(cc).eq.1_is).and.(flagCon(cc).eq.1_is))) then
-#endif  __NVCOMPILER
+#endif  _
              write(6,*) 'End collision'
              write(6,*) 'Ppll',Ppll(cc)
              write(6,*) 'Pmu',Pmu(cc)
@@ -3265,7 +3264,7 @@ subroutine include_CoulombCollisions_GCfio_p(tt,params,Y_R,Y_PHI,Y_Z, &
              stop 'Ppll or Pmu is NaN'
           endif
        end do
-#endif DBG_CHECK
+#endif
 
    !       write(output_unit_write,'("rnd1: ",E17.10)') rnd1
    !       write(output_unit_write,'("flag: ",I16)') flag

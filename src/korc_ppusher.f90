@@ -281,7 +281,7 @@ subroutine FO_init(params,F,spp,output,step)
           end do
           !$OMP END SIMD
         end if
-#endif FIO
+#endif
 
         call cart_to_cyl_p(pchunk,X_X,X_Y,X_Z,Y_R,Y_PHI,Y_Z)
 
@@ -309,7 +309,7 @@ subroutine FO_init(params,F,spp,output,step)
         else if (params%field_model(10:14).eq.'AORSA') then
           call interp_FOfields_aorsa_p(0._rp,params,pchunk,F, &
             Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,PSIp,flagCon)
-#endif PSPLINE
+#endif
 #ifdef FIO
         else if (TRIM(params%field_model).eq.'M3D_C1'.or. &
           TRIM(params%field_model).eq.'NIMROD') then
@@ -323,7 +323,7 @@ subroutine FO_init(params,F,spp,output,step)
             call get_fio_vector_potential_p(params,F,Y_R,Y_PHI,Y_Z, &
               PSIp,flagCon,hint)
           end if
-#endif FIO
+#endif
         end if
 
         !$OMP SIMD
@@ -349,7 +349,7 @@ subroutine FO_init(params,F,spp,output,step)
           end do
           !$OMP END SIMD
         end if
-#endif FIO
+#endif
 
         !$OMP SIMD
         do cc=1_idef,pchunk
@@ -386,13 +386,13 @@ subroutine FO_init(params,F,spp,output,step)
             eta_tmp=180.0_rp/C_PI* &
               ACOS((B_X(cc)*V_X(cc)+B_Y(cc)*V_Y(cc)+B_Z(cc)*V_Z(cc))/(Bmag(cc)*v(cc)))
 
-            if ((eta_tmp.gt.20._rp).or. &
-              ((spp(ii)%vars%eta(pp-1+cc)-eta_tmp)/spp(ii)%vars%eta(pp-1+cc).gt.0.01)) then 
-                write(6,*) 'abberation',pp
-                write(6,*) pp,spp(ii)%vars%eta(pp-1+cc),eta_tmp,'B', &
-                  spp(ii)%vars%B(pp-1+cc,:),'PSI_P',spp(ii)%vars%PSI_P(pp-1+cc)
+            !if ((eta_tmp.gt.20._rp).or. &
+            !  ((spp(ii)%vars%eta(pp-1+cc)-eta_tmp)/spp(ii)%vars%eta(pp-1+cc).gt.0.01)) then 
+            !    write(6,*) 'abberation',pp
+            !    write(6,*) pp,spp(ii)%vars%eta(pp-1+cc),eta_tmp,'B', &
+            !      spp(ii)%vars%B(pp-1+cc,:),'PSI_P',spp(ii)%vars%PSI_P(pp-1+cc)
   
-            endif  
+            !endif  
 
             spp(ii)%vars%eta(pp-1+cc) = eta_tmp 
 
@@ -764,7 +764,7 @@ subroutine FO_init_mars_ACC(params,F,spp,output,step)
           psip_conv,amp,phase,Bo,Ro,Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,PSIp)
 
 
-#endif PSPLINE
+#endif
 
         spp(ii)%vars%B(pp,1) = B_X
         spp(ii)%vars%B(pp,2) = B_Y
@@ -985,7 +985,7 @@ subroutine FO_init_aorsa_ACC(params,F,spp,output,step)
           Y_R,Y_PHI,Y_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,PSIp)
 
 
-#endif PSPLINE
+#endif
 
         spp(ii)%vars%B(pp,1) = B_X
         spp(ii)%vars%B(pp,2) = B_Y
@@ -2065,7 +2065,7 @@ subroutine adv_FOfio_top(params,F,P,spp)
 
 end subroutine adv_FOfio_top
 
-#endif FIO
+#endif
 
 #ifdef PSPLINE
 
@@ -3359,7 +3359,7 @@ subroutine advance_FOinterp_vars(tt,a,q_cache,m_cache,params,X_X,X_Y,X_Z, &
 
 end subroutine advance_FOinterp_vars
 
-#endif PSPLINE
+#endif
 
 subroutine advance_FO_vars_ACC(dt,tt,a,q_cache,m_cache,X_X,X_Y,X_Z, &
   V_X,V_Y,V_Z,B_X,B_Y,B_Z,E_X,E_Y,E_Z,g,flagCon,flagCol)
@@ -3750,7 +3750,7 @@ subroutine advance_FOfio_vars(tt,a,q_cache,m_cache,params,X_X,X_Y,X_Z, &
 
 end subroutine advance_FOfio_vars
 
-#endif FIO
+#endif
 
 subroutine advance_FP3Dinterp_vars(params,X_X,X_Y,X_Z,V_X,V_Y,V_Z,g, &
        m_cache,B_X,B_Y,B_Z,E_X,E_Y,E_Z,flagCon,flagCol,P,F,PSIp)
@@ -5181,7 +5181,7 @@ subroutine adv_GCinterp_psi_top(params,spp,P,F)
 
 end subroutine adv_GCinterp_psi_top
 
-#endif PSPLINE
+#endif
 
 #ifdef FIO
 
@@ -5375,7 +5375,7 @@ subroutine adv_GCinterp_fio_top(params,spp,P,F)
 
 end subroutine adv_GCinterp_fio_top
 
-#endif FIO
+#endif
 
 
 #ifdef PSPLINE
@@ -5663,7 +5663,7 @@ subroutine adv_GCinterp_psiwE_top(params,spp,P,F)
                       call korc_abort(25)
                    endif
                 end do
-#endif DBG_CHECK
+#endif
 
                 !if (params%t_skip.ge.10) then
                 !   if(mod(tt,params%t_skip/10).eq.0) then
@@ -5733,7 +5733,7 @@ subroutine adv_GCinterp_psiwE_top(params,spp,P,F)
                 if((params%mpi_params%rank.eq.6).and.(pp.eq.1)) then
                    write(6,*) 'before loop save:ppll',V_PLL,'mu',V_MU
                 end if
-#endif DBG_CHECK
+#endif
 
                 !$OMP SIMD
                 do cc=1_idef,achunk
@@ -5777,7 +5777,7 @@ subroutine adv_GCinterp_psiwE_top(params,spp,P,F)
           !         write(6,*) 'after loop save 1:ppll',spp(ii)%vars%V(1:8,1),'mu',spp(ii)%vars%V(1:8,2)
           !         write(6,*) 'after loop save 1:R',spp(ii)%vars%Y(1:8,1),'PHI',spp(ii)%vars%Y(1:8,2),'Z',spp(ii)%vars%Y(1:8,3)
           !      end if
-#endif DBG_CHECK
+#endif
 
              end do !particle chunk iterator
              !$OMP END PARALLEL DO
@@ -5787,7 +5787,7 @@ subroutine adv_GCinterp_psiwE_top(params,spp,P,F)
           !      write(6,*) 'after loop save 2:ppll',spp(ii)%vars%V(1:8,1),'mu',spp(ii)%vars%V(1:8,2)
           !      write(6,*) 'after loop save 2:R',spp(ii)%vars%Y(1:8,1),'PHI',spp(ii)%vars%Y(1:8,2),'Z',spp(ii)%vars%Y(1:8,3)
           !   end if
-#endif DBG_CHECK
+#endif
 
           end do !timestep iterator
 
@@ -6459,10 +6459,10 @@ subroutine advance_GCinterp_psi_vars(pchunk,spp,pp,tt,params,Y_R,Y_PHI,Y_Z, &
        spp%vars%RHS(pp-1+cc,5)=RHS_MU(cc)
     end do
     !$OMP END SIMD
-#endif DBG_CHECK
+#endif
 end subroutine advance_GCinterp_psi_vars
 
-#endif PSPLINE
+#endif
 
 #ifdef FIO
 
@@ -6874,7 +6874,7 @@ subroutine advance_GCinterp_fio_vars(vars,pp,tt,params,Y_R,Y_PHI,Y_Z, &
 
 end subroutine advance_GCinterp_fio_vars
 
-#endif FIO
+#endif
 
 #ifdef PSPLINE
 
@@ -7284,7 +7284,7 @@ subroutine advance_GCinterp_psiwE_vars(spp,pchunk,pp,tt,params,Y_R,Y_PHI,Y_Z, &
        spp%vars%RHS(pp-1+cc,5)=RHS_MU(cc)
     end do
     !$OMP END SIMD
-#endif DBG_CHECK
+#endif
 end subroutine advance_GCinterp_psiwE_vars
 
 FUNCTION fRE_BMC(Nr_a,r_a,nRE,rm)
@@ -7716,7 +7716,7 @@ subroutine advance_GCinterp_psi2x1t_vars(vars,pp,tt,params,Y_R,Y_PHI,Y_Z, &
 
 end subroutine advance_GCinterp_psi2x1t_vars
 
-#endif PSPLINE
+#endif
 
 subroutine advance_FPinterp_vars(params,Y_R,Y_PHI,Y_Z,V_PLL,V_MU, &
      m_cache,flagCon,flagCol,F,P,E_PHI,ne,PSIp)
@@ -8342,6 +8342,6 @@ subroutine GCEoM1_fio_p(tt,P,F,params,RHS_R,RHS_PHI,RHS_Z,RHS_PLL,RHS_MU, &
 
 end subroutine GCEoM1_fio_p
 
-#endif FIO
+#endif
 
 end module korc_ppusher

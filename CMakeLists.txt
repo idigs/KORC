@@ -2,6 +2,8 @@ cmake_minimum_required (VERSION 3.5)
 
 project (korc_proj C CXX Fortran)
 
+message(STATUS "CMake system name is ${CMAKE_SYSTEM_NAME}")
+
 #  Set directories to build all binary files.
 set (EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/build/bin)
 

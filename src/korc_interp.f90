@@ -318,7 +318,7 @@ TYPE(KORC_INTERPOLANT_DOMAIN)      :: profiles_domain
 INTEGER                                        :: ezerr
 !! Error status during PSPLINE interpolations.
 
-#endif PSPLINE
+#endif
 
 #ifdef PSPLINE
 PUBLIC :: interp_fields,&
@@ -1757,7 +1757,7 @@ subroutine check_if_in_LCFS(F,Y,inLCFS)
          !write(6,'("IZ: ",I16)') IZ
          !call KORC_ABORT(23)
       end if
-#endif DBG_CHECK
+#endif
 
       !write(output_unit_write,'("IR: ",I16)') IR
       !write(output_unit_write,'("IZ: ",I16)') IZ
@@ -3535,7 +3535,7 @@ subroutine interp_3D_efields(params,Y,E,flag)
    DEALLOCATE(F)
 end subroutine interp_3D_efields
 
-#endif PSPLINE
+#endif
 
 subroutine interp_fields(params,prtcls,F)
   !! @note Subroutine that works as an interface for calling the
@@ -3561,7 +3561,7 @@ subroutine interp_fields(params,prtcls,F)
    call check_if_in_fields_domain(F,prtcls%Y, prtcls%flagCon)
 
    if (F%useLCFS) call check_if_in_LCFS(F,prtcls%Y, prtcls%initLCFS)
-#endif PSPLINE
+#endif
 #ifdef FIO
   if (TRIM(params%field_model) .eq. 'M3D_C1'.or. &
       TRIM(params%field_model) .eq. 'NIMROD') then
@@ -3591,7 +3591,7 @@ subroutine interp_fields(params,prtcls,F)
     end do
 
   end if
-#endif FIO
+#endif
 #ifdef PSPLINE
   if (params%field_model(10:13).eq.'MARS') then
     call interp_FOfields_mars(prtcls, F, params)
@@ -3667,7 +3667,7 @@ subroutine interp_fields(params,prtcls,F)
   !     write(output_unit_write,*) 'interpolated efield'
   end if
 
-#endif PSPLINE
+#endif
 end subroutine interp_fields
 
 #ifdef PSPLINE
