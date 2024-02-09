@@ -19,7 +19,7 @@ cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE \
       -DKORC_TEST=OFF \
       -DCMAKE_Fortran_FLAGS="-O3 -DHDF5_DOUBLE_PRESICION -fopenmp" \
       -DCMAKE_C_FLAGS="-O3 -fopenmp"  \
-      -DCMAKE_CXX_FLAGS="-O3 -fopenm" \
+      -DCMAKE_CXX_FLAGS="-O3 -fopenmp" \
       -DCMAKE_Fortran_FLAGS_DEBUG="-g -ffpe-trap=invalid,zero,overflow -fbacktrace -Werror" \
       -DCMAKE_C_FLAGS_DEBUG="-g" \
       -DCMAKE_CXX_FLAGS_DEBUG="-g"
