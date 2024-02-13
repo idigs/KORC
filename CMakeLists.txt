@@ -60,35 +60,33 @@ endif ()
 add_subdirectory (src)
 
 #  Add machine dependent definition for finding included scripts
-option (CORI_DIR "Use Cori directories" OFF)
-if (${CORI_DIR})
-    add_definitions (-DCORI)
-else ()
-    add_definitions (-DMAC)
+add_definitions (-DMAC)
 
-    if(${KORC_TEST})
-	#  Configure FRUIT
-       include_directories (${FRUIT_INCLUDE_PATH})
-       set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${FRUIT_LINK_FLAGS}")
+if(1)
+#  Configure FRUIT
+    include_directories (${FRUIT_INCLUDE_PATH})
+    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${FRUIT_LINK_FLAGS}")
 
-       #  Configure KORCSRC
-       include_directories (${KORCSRC_INCLUDE_PATH})
-       set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${KORCSRC_LINK_FLAGS}")
+    #  Configure KORCSRC
+    include_directories (${KORCSRC_INCLUDE_PATH})
+    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${KORCSRC_LINK_FLAGS}")
 
-       add_subdirectory (test)
+    add_subdirectory (test)
 
-       enable_testing()     
+    enable_testing()     
 
-       add_test (NAME unit_testing
-       		 COMMAND xtest TEST_OUT
-		 WORKING_DIRECTORY build/bin)
+    add_test (NAME unit_testing
+              COMMAND xtest TEST_OUT
+		      WORKING_DIRECTORY build/bin
+    )
 
-       add_test (NAME regression_test_1
-       		 COMMAND korc_regtest1.sh
-		 WORKING_DIRECTORY test/reg_tests)
+    add_test (NAME regression_test_1
+              COMMAND korc_regtest1.sh
+              WORKING_DIRECTORY test/reg_tests
+    )
 
-    endif ()		     
+endif ()		     
 
-endif ()
+
 
 

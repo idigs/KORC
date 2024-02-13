@@ -26,8 +26,10 @@ list (APPEND korc_sources
     korc_fio_interface.f90
     korc_input.f90
     korc_pspline.f90
-    main.f90
 )
+
+korc_sources
+main.f90
 
 add_executable (xkorc ${korc_sources})
 set_property(TARGET xkorc PROPERTY LINKER_LANGUAGE Fortran)
