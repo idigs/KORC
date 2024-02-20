@@ -28,10 +28,16 @@ list (APPEND korc_sources
     korc_pspline.f90
 )
 
-korc_sources
-main.f90
+set(korc_main "")
+list(APPEND korc_main
+	    main.f90
+)
 
-add_executable (xkorc ${korc_sources})
+add_library(korc_lib ${korc_sources})
+set_property(TARGET korc_lib PROPERTY LINKER_LANGUAGE Fortran)
+
+add_executable (xkorc ${korc_main})
+target_link_libraries(xkorc korc_lib)
 set_property(TARGET xkorc PROPERTY LINKER_LANGUAGE Fortran)
 
 option (CORI_DIR "Use Cori directories" OFF)
