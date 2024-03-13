@@ -6,11 +6,13 @@ MODULE korc_random
   USE korc_types
   !    use mkl_vsl_type
   !    use mkl_vsl
+  USE korc_hpc, ONLY : get_thread_number, get_max_threads
 
   IMPLICIT NONE
 
   TYPE(C_PTR), DIMENSION(:), ALLOCATABLE , PRIVATE :: states
-  TYPE(C_PTR),  PRIVATE :: state
+  TYPE(C_PTR),  PRIVATE :: state_u
+  TYPE(C_PTR),  PRIVATE :: state_n
   !    TYPE(VSL_STREAM_STATE), PRIVATE :: stream
 
   INTERFACE
@@ -103,77 +105,96 @@ MODULE korc_random
   END INTERFACE
   
   PUBLIC :: initialize_random
+  PUBLIC :: finalize_random
 
 CONTAINS
 
   SUBROUTINE initialize_random(seed)
-    USE omp_lib
     IMPLICIT NONE
 
     INTEGER, INTENT(IN) :: seed
     INTEGER             :: num_threads
     INTEGER             :: thread_num
 
-    num_threads = OMP_GET_MAX_THREADS()
+    num_threads = get_max_threads()
     IF (.NOT. ALLOCATED(states)) THEN
        ALLOCATE(states(0:num_threads - 1))
     END IF
 
     !$OMP PARALLEL PRIVATE(thread_num)
-    thread_num = OMP_GET_THREAD_NUM()
+    thread_num = get_thread_number()
     states(thread_num) = random_construct_U(seed + thread_num)
     !$OMP END PARALLEL
   END SUBROUTINE initialize_random
 
+  SUBROUTINE finalize_random
+    IMPLICIT NONE
+
+    INTEGER             :: thread_num
+
+    !$OMP PARALLEL PRIVATE(thread_num)
+    thread_num = get_thread_number()
+    CALL random_destroy_U(states(thread_num))
+    !$OMP END PARALLEL
+
+    DEALLOCATE (states)
+  END SUBROUTINE
+
   SUBROUTINE initialize_random_U(seed)
-    USE omp_lib
     IMPLICIT NONE
 
     INTEGER, INTENT(IN) :: seed
 
-    state = random_construct_U(seed)
+    state_u = random_construct_U(seed)
 
   END SUBROUTINE initialize_random_U
 
+  SUBROUTINE finalize_random_U
+    IMPLICIT NONE
+
+    CALL random_destroy_U(state_u)
+  END SUBROUTINE
+
   SUBROUTINE initialize_random_N(seed)
-    USE omp_lib
     IMPLICIT NONE
 
     INTEGER, INTENT(IN) :: seed
 
-    state = random_construct_N(seed)
+    state_n = random_construct_N(seed)
 
   END SUBROUTINE initialize_random_N
-  
+
+  SUBROUTINE finalize_random_N
+    IMPLICIT NONE
+
+    CALL random_destroy_N(state_n)
+  END SUBROUTINE
+
   FUNCTION get_random()
-    USE omp_lib
     IMPLICIT NONE
 
     REAL(rp)            :: get_random
 
-    get_random = random_get_number(states(OMP_GET_THREAD_NUM()))
+    get_random = random_get_number(states(get_thread_number()))
   END FUNCTION get_random
 
   FUNCTION get_random_U()
-    USE omp_lib
     IMPLICIT NONE
 
     REAL(rp)            :: get_random_U
 
-    get_random_U = random_get_number_U(state)
+    get_random_U = random_get_number_U(state_u)
   END FUNCTION get_random_U
 
   FUNCTION get_random_N()
-    USE omp_lib
     IMPLICIT NONE
 
     REAL(rp)            :: get_random_N
 
-    get_random_N = random_get_number_N(state)
+    get_random_N = random_get_number_N(state_n)
   END FUNCTION get_random_N
 
   SUBROUTINE get_randoms(nums)
-    USE omp_lib
     IMPLICIT NONE
 
     REAL(rp), DIMENSION(:), INTENT(OUT) :: nums
@@ -188,14 +209,13 @@ CONTAINS
   END SUBROUTINE get_randoms
 
   SUBROUTINE set_random_dist(low, high)
-    USE omp_lib
     IMPLICIT NONE
 
     REAL(rp), INTENT(IN) :: low
     REAL(rp), INTENT(IN) :: high
 
     !$OMP PARALLEL DEFAULT(SHARED)
-    CALL random_set_dist(states(OMP_GET_THREAD_NUM()), low, high)
+    CALL random_set_dist(states(get_thread_number()), low, high)
     !$OMP END PARALLEL
 
   END SUBROUTINE set_random_dist

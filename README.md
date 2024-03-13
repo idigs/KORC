@@ -1,6 +1,6 @@
 
 # KORC
-
+[![CI-CPU](https://github.com/ORNL-Fusion/KORC/actions/workflows/spack.yml/badge.svg)](https://github.com/ORNL-Fusion/KORC/actions/workflows/spack.yml)
 
  the Kinetic Orbit Runaway electrons Code (KORC) follows relativistic electrons in general electric and magnetic fields under the full Lorentz force, collisions, and radiation losses.
 
@@ -36,6 +36,7 @@ Spack provides an easy way to setup the gfortran compiler toolchain and other de
 [KORC] [user@localhost KORC]$ spack install --no-cache --add cmake %gcc@13.1.0
 [KORC] [user@localhost KORC]$ spack load cmake %gcc@13.1.0
 
+[KORC] [user@localhost KORC]$ spack concretize -f
 [KORC] [user@localhost KORC]$ spack install --no-cache --add hdf5+fortran+mpi %gcc@13.1.0
 [KORC] [user@localhost KORC]$ spack load hdf5+fortran+mpi %gcc@13.1.0
 ```
