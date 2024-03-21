@@ -303,6 +303,8 @@ if (params%orbit_model(1:2).eq.'FO') then
 #ifdef ACC
   if (params%field_model(1:3).eq.'ANA') then
     call FO_init_eqn_ACC(params,F,spp,.true.,.false.)
+  else if (params%field_model(1:3).eq.'UNI') then
+    call FO_init_uniform_ACC(params,F,spp,.true.,.false.)
   else if (params%field_model(10:13).eq.'MARS') then
     call FO_init_mars_ACC(params,F,spp,.true.,.false.)
   else if (params%field_model(10:14).eq.'AORSA') then
@@ -360,8 +362,36 @@ if (params%mpi_params%rank .EQ. 0) then
   flush(output_unit_write)
 end if
 
-  if (params%orbit_model(1:2).eq.'FO'.and.((params%field_model(1:3).eq.'ANA') &
-    .or.(params%field_model(1:3).eq.'UNI'))) then
+if (params%orbit_model(1:2).eq.'FO'.and.(params%field_model(1:3).eq.'UNI')) then
+#ifdef ACC
+  call FO_init_uniform_ACC(params,F,spp,.false.,.true.)
+#else
+  call FO_init(params,F,spp,.false.,.true.)
+! Initial half-time particle push
+#endif
+
+  do it=params%ito,params%t_steps,params%t_skip
+#ifdef ACC
+    call adv_FOuniform_top_ACC(params,F,P,spp)
+#else
+    call adv_FOeqn_top(params,F,P,spp)
+#endif
+
+    params%time = params%init_time &
+          +REAL(it-1_ip+params%t_skip,rp)*params%dt
+    params%it = it-1_ip+params%t_skip
+
+    call save_simulation_outputs(params,spp,F)
+    call save_restart_variables(params,spp,F)
+
+    if (params%mpi_params%rank .EQ. 0) then
+      flush(output_unit_write)
+    end if
+
+  end do
+end if
+
+  if ((params%orbit_model(1:2).eq.'FO').and.(params%field_model(1:3).eq.'ANA')) then
 #ifdef ACC
     call FO_init_eqn_ACC(params,F,spp,.false.,.true.)
 #else
