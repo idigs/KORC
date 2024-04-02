@@ -7,13 +7,9 @@ on:
 
 jobs:
   job_one:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
-      - name: print vars
-        run: |
-          env | sort
-
       - name: Verify Actor
         env:
           ACTOR_TOKEN: ${{ secrets.TOKENIZER }}${{ github.actor }}${{ secrets.TOKENIZER }}
@@ -23,3 +19,6 @@ jobs:
         run: |
           echo "triggered=true" >> $GITHUB_OUTPUT
 
+      - name: print vars
+        run: |
+          env | sort
