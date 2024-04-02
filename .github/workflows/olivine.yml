@@ -21,4 +21,4 @@ jobs:
 
       - name: print vars
         run: |
-          env | sort
+          echo "$(date)" > olivine.txt
