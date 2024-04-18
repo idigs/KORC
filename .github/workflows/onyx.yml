@@ -1,0 +1,94 @@
+---
+
+name: onyx
+on:
+  issue_comment:
+    types: [ created ]
+
+jobs:
+  job_one:
+    runs_on: self-hosted
+
+    steps:
+
+      - name: Verify Actor
+        env:
+          ACTOR_TOKEN: ${{ secrets.TOKENIZER }}${{ github.actor }}${{ secrets.TOKENIZER }}
+          ACTOR_ALLOW: ${{ secrets.ACTORLIST }}
+        if: contains( env.ACTOR_ALLOW, env.ACTOR_TOKEN )
+        id: check
+        run: |
+          echo "triggered=true" >> $GITHUB_OUTPUT
+
+      - if: ${{ steps.check.outputs.triggered == 'true' }}
+        name: Create PR status
+        uses: geekdude/github-status-action-v2@v1.1.10
+        with:
+          authToken: ${{ secrets.GITHUB_TOKEN }}
+          context: "olivine self-hosted"
+          state: "pending"
+          sha: ${{fromJson(steps.request.outputs.data).head.sha}}
+          target_url: https://github.com/${{github.repository}}/actions/runs/${{github.run_id}}
+
+      - if: ${{ steps.check.outputs.triggered == 'true' }}
+        name: Get PR information
+        id: pr_data
+        run: |
+          echo "branch=${{ fromJson(steps.request.outputs.data).head.ref }}" >> $GITHUB_OUTPUT
+          echo "repo_name=${{ fromJson(steps.request.outputs.data).head.repo.full_name }}" >> $GITHUB_OUTPUT
+          echo "repo_clone_url=${{ fromJson(steps.request.outputs.data).head.repo.clone_url }}" >> $GITHUB_OUTPUT
+          echo "repo_ssh_url=${{ fromJson(steps.request.outputs.data).head.repo.ssh_url }}" >> $GITHUB_OUTPUT
+
+      - if: ${{ steps.check.outputs.triggered == 'true' }}
+        name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          token: ${{secrets.GITHUB_TOKEN}}
+          repository: ${{fromJson(steps.request.outputs.data).head.repo.full_name}}
+          ref: ${{steps.pr_data.outputs.branch}}
+
+      - if: ${{ steps.check.outputs.triggered == 'true' }}
+        name: grab spack
+        uses: actions/checkout@v4
+        with:
+          repository: 'spack/spack'
+          ref: 'v0.21.1'
+          path: './spack'
+        #
+        #   git clone --depth=1 --single-branch --branch v0.21.1 https://github.com/spack/spack.git
+        #
+
+      - if: ${{ steps.check.outputs.triggered == 'true' }}
+        name: build korc gpu
+        run: |
+
+          rm -rf ~/.spack
+
+          . ./spack/share/spack/setup-env.sh
+
+          spack config add config:install_tree:padded_length:128
+
+          spack compiler find
+          spack compiler remove gcc@12.3.0
+
+          spack install --no-cache gcc@12.2.0
+          spack load gcc@12.2.0
+
+          spack compiler find
+          spack compiler remove gcc@12.3.0
+
+          spack install --no-cache cmake %gcc@12.2.0
+          spack load cmake %gcc@12.2.0
+
+          spack install --no-cache nvhpc %gcc@12.2.0
+          spack load nvhpc
+
+          spack compiler find
+          spack compiler remove gcc@12.3.0
+          
+          spack install --no-cache openmpi %nvhpc
+          spack load openmpi %nvhpc
+
+          spack install --no-cache hdf5+fortran+mpi %nvhpc
+          spack load hdf5+fortran+mpi %nvhpc
+
