@@ -15,7 +15,7 @@ if [ ! -f D3D_191366_1762ms_MARS.h5 ]; then
   ln -s $1/D3D_191366_1762ms_MARS.h5 D3D_191366_1762ms_MARS.h5
 fi
 
-./xkorc $INPUT_FILE $OUT_DIR/
+mpirun -np -1 ./xkorc $INPUT_FILE $OUT_DIR/
 
 h5diff -r -d 0.007 $OUT_DIR/file_0.h5 $1/file_0.h5
 

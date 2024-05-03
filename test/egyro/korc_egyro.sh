@@ -11,7 +11,7 @@ OUT_DIR="egyro_test"
 mkdir -p $OUT_DIR
 
 #assumes binary directory ../KORC/build/bin was added to path
-./xkorc $INPUT_FILE $OUT_DIR/
+mpirun -np 1 ./xkorc $INPUT_FILE $OUT_DIR/
 
 h5diff -r -d 0.000001 $OUT_DIR/file_0.h5 $1/file_0.h5
 
