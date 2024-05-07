@@ -83,6 +83,13 @@ jobs:
 
           cd ./KORC
           ./build.sh
+
+      - name: CTEST
+        run: |
+          pwd
+          tree -L 2
+
+          cd ./KORC
           cd ./build && ctest --output-on-failure
 
       - name: Show Cache
