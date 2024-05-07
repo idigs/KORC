@@ -17,6 +17,8 @@ target_link_libraries (xtest
                        fruit
 )
 
+message(STATUS "MPIEXEC_EXECUTABLE: ${MPIEXEC_EXECUTABLE}")
+
 set_property(TARGET xtest PROPERTY LINKER_LANGUAGE Fortran)
 
 add_test (NAME egyro_test
