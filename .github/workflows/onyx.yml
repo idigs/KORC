@@ -6,6 +6,7 @@ on:
     types: [ created ]
 
 jobs:
+
   job_verify_actor:
     runs-on: ubuntu-latest
     steps:
