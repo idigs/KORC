@@ -26,13 +26,65 @@ jobs:
       allowed: ${{ steps.verify_actor.outputs.allowed }}
 
 
-  job_build:
+  job_setup_spack:
     runs-on: self-hosted
-    needs: job_verify_actor
+    needs: [ job_verify_actor ]
     steps:
-      - name: show status 
+      - name: show actor status
         run: |
           echo "${{ needs.job_verify_actor.outputs.allowed == 'true' }}"
 
+      - name: check existing spack install
+        id: check_spack
+        run: |
+          [[ -d ${{ github.workspace }}/spack ]] && echo "exist=true" >> $GITHUB_OUTPUT
+
+      - if: ${{ steps.check_spack.outputs.exist != 'true' }}
+        name: grab spack
+        uses: actions/checkout@v4
+        with:
+          repository: 'spack/spack'
+          ref: 'v0.21.1'
+          path: './spack'
+        #
+        #   git clone --depth=1 --single-branch --branch v0.21.1 https://github.com/spack/spack.git
+        #
+
+      - if: ${{ steps.check_spack.outputs.exist != 'true' }}
+        name: spack install
+        run: |
+          . ./spack/share/spack/setup-env.sh
+
+          spack config add config:install_tree:padded_length:128
+
+          spack compiler find
+          spack compiler remove gcc@12.3.0
+
+          spack install nvhpc+mpi@23.9
+          spack load    nvhpc+mpi@23.9
+
+          spack compiler find
+          spack compiler remove gcc@12.3.0
+
+          spack install hdf5+fortran %nvhpc@23.9
+          spack load    hdf5+fortran %nvhpc@23.9
+
+          spack gc -y
 
 
+  job_build_gpu:
+    runs-on: self-hosted
+    needs: [ job_verify_actor, job_setup_spack ]
+    steps:
+      - name: spack load
+        run: |
+          . ./spack/share/spack/setup-env.sh
+          spack load    hdf5+fortran %nvhpc@23.9
+
+      - name: build korc
+        run: |
+          ./build.sh
+
+      - name: ctest
+        run: |
+          cd ./build && ctest --output-on-failure
