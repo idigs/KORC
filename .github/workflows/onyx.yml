@@ -37,7 +37,9 @@ jobs:
       - name: check existing spack install
         id: check_spack
         run: |
-          [[ -d ${{ github.workspace }}/spack ]] && echo "exist=true" >> $GITHUB_OUTPUT
+          if [[ -d ${{ github.workspace }}/spack ]]; then
+            echo "exist=true" >> $GITHUB_OUTPUT
+          fi
 
       - if: ${{ steps.check_spack.outputs.exist != 'true' }}
         name: grab spack
@@ -88,3 +90,4 @@ jobs:
       - name: ctest
         run: |
           cd ./build && ctest --output-on-failure
+
