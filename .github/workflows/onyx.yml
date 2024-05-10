@@ -17,12 +17,17 @@ jobs:
         if: contains( env.ACTOR_ALLOW, env.ACTOR_TOKEN )
         run: |
           echo "allowed=true" >> $GITHUB_OUTPUT
+      - name: Assert Fail
+        if: ${{ steps.verify_actor.outputs.allowed != 'true' }}
+        run: |
+          echo "Actor '${{ github.actor }}' not allowed"
+          exit 1
     outputs:
       allowed: ${{ steps.verify_actor.outputs.allowed }}
 
 
   job_build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: job_verify_actor
     steps:
       - name: show status 
