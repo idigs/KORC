@@ -64,28 +64,15 @@ jobs:
           env -0 | while IFS='' read -d '' line ; do printf '%s\t: %s\n' "${line%%=*}" "${line#*=}" | expand -t 30 | sed ':a;N;$!ba;s/\n/ /g'; done | LC_COLLATE=C sort -b > ./env_out.txt
 
       - if: ${{ steps.check.outputs.triggered == 'true' }}
-        name: spack cache
-        id: spack-cache
-        uses: actions/cache@v3
-        with:
-          key: spack-cache-onyx-1
-          path: |
-            ./spack
-            ~/.spack
-
-      - if: |
-            ${{ steps.spack-cache.outputs.cache-hit != 'true' }} &&
-            ${{ steps.check.outputs.triggered == 'true' }}
         name: grab spack
         uses: actions/checkout@v4
         with:
           repository: 'spack/spack'
           ref: 'v0.21.1'
-          path: './spack'
+          path: '${{ github.workspace }}/spack'
         #
         #   git clone --depth=1 --single-branch --branch v0.21.1 https://github.com/spack/spack.git
         #
-
 
       - if: ${{ steps.check.outputs.triggered == 'true' }}
         name: Build KORC CPU (inert)
