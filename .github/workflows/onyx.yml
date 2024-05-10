@@ -69,7 +69,7 @@ jobs:
         with:
           repository: 'spack/spack'
           ref: 'v0.21.1'
-          path: '${{ github.workspace }}/spack'
+          path: '${{ runner.workspace }}/spack'
         #
         #   git clone --depth=1 --single-branch --branch v0.21.1 https://github.com/spack/spack.git
         #
