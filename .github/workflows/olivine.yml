@@ -1,9 +1,7 @@
 ---
 
 name: olivine
-on:
-  issue_comment:
-    types: [ created ]
+#on: { issue_comment: { types: [ created ] } }
 
 jobs:
   job_one:
