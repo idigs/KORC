@@ -6,6 +6,7 @@ on:
     types: [ created ]
 
 jobs:
+
   job_verify_actor:
     runs-on: ubuntu-latest
     steps:
@@ -78,6 +79,12 @@ jobs:
     runs-on: self-hosted
     needs: [ job_verify_actor, job_setup_spack ]
     steps:
+
+      - name: grab main project
+        uses: actions/checkout@v4
+        with:
+          path: './KORC'
+
       - name: spack load
         run: |
           . ./spack/share/spack/setup-env.sh
