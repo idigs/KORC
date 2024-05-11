@@ -94,7 +94,13 @@ jobs:
         run: |
           cd ./KORC && ./build.sh
 
+
+  job_test_gpu:
+    runs-on: self-hosted
+    needs: [ job_verify_actor, job_setup_spack, job_build_gpu ]
+    steps:
+
       - name: ctest
         run: |
-          cd ./build && ctest --output-on-failure
+          cd ./KORC/build && ctest --output-on-failure
 
