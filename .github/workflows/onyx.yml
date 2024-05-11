@@ -128,7 +128,7 @@ jobs:
           make -j VERBOSE=1
 
 
-  job_test_gpu:
+  job_test_cpu:
     runs-on: self-hosted
     needs: [ job_verify_actor, job_build_cpu ]
     steps:
