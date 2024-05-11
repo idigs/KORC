@@ -27,6 +27,20 @@ jobs:
       allowed: ${{ steps.verify_actor.outputs.allowed }}
 
 
+  job_build_cpu:
+    runs-on: self-hosted
+    needs: [ job_verify_actor ]
+    steps:
+      - name: grab main project
+        uses: actions/checkout@v4
+        with:
+          path: './KORC'
+
+      - name: build korc
+        run: |
+          cd ./KORC && ./build.sh
+
+
   job_setup_spack:
     runs-on: self-hosted
     needs: [ job_verify_actor ]
@@ -79,7 +93,6 @@ jobs:
     runs-on: self-hosted
     needs: [ job_verify_actor, job_setup_spack ]
     steps:
-
       - name: grab main project
         uses: actions/checkout@v4
         with:
@@ -117,10 +130,20 @@ jobs:
 
   job_test_gpu:
     runs-on: self-hosted
-    needs: [ job_verify_actor, job_setup_spack, job_build_gpu ]
+    needs: [ job_verify_actor, job_build_cpu ]
     steps:
-
       - name: ctest
         run: |
           cd ./KORC/build && ctest --output-on-failure
+
+
+  job_test_gpu:
+    runs-on: self-hosted
+    needs: [ job_verify_actor, job_setup_spack, job_build_gpu ]
+    steps:
+      - name: ctest
+        run: |
+          cd ./KORC/build && ctest --output-on-failure
+
+
 
