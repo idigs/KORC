@@ -96,5 +96,5 @@ jobs:
 
       - name: ctest
         run: |
-          cd ./build && ctest --output-on-failure
+          cd ./KORC/build && ctest --output-on-failure
 
