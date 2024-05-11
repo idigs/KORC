@@ -92,7 +92,7 @@ jobs:
 
       - name: build korc
         run: |
-          ./build.sh
+          cd ./KORC && ./build.sh
 
       - name: ctest
         run: |
