@@ -20,3 +20,4 @@ cmake -DCMAKE_BUILD_TYPE:String=$BUILD_TYPE \
       -DCMAKE_CXX_FLAGS_DEBUG="-g3" ../
 
 make -j VERBOSE=1
+
