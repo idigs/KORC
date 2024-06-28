@@ -11,12 +11,11 @@ jobs:
       matrix:
 
         platform:
-          - macos-latest
           - ubuntu-latest
           - self-hosted
 
         toolchain:
-          - nvhpc-openacc
+          - nvhpc
           - gfortran
 
         mpi:
