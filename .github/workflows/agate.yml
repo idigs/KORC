@@ -1,0 +1,38 @@
+---
+
+name: agate
+on:
+  workflow_dispatch:
+
+jobs:
+
+  job_driver:
+    strategy:
+      matrix:
+
+        hardware:
+          - cpu
+          - gpu
+
+        platform:
+          - macos-latest
+          - ubuntu-latest
+          - self-hosted
+
+        toolchain:
+          - nvhpc-openacc
+          - gfortran
+
+        mpi_impl:
+          - mpich_cray
+          - mpich_intel
+          - openmpi
+          - none
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: build
+        run: echo
+  
+
+      
