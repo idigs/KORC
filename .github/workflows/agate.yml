@@ -6,7 +6,7 @@ on:
 
 jobs:
 
-  job_driver:
+  job_matrix:
     strategy:
       matrix:
 
@@ -19,17 +19,14 @@ jobs:
           - nvhpc-openacc
           - gfortran
 
-        mpi_impl:
-          - mpich_cray
-          - mpich_intel
+        mpi:
+          - mpich
           - openmpi
-          - NoMPI
 
     uses: ./.github/workflows/agave.yml
     with:
       platform:   ${{ matrix.platform }}
       toolchain:  ${{ matrix.toolchain }}
-      mpi_impl:   ${{ matrix.mpi_impl }}
+      mpi_impl:   ${{ matrix.mpi }}
 
 
-      
