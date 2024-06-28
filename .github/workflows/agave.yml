@@ -1,18 +1,18 @@
 ---
 
 name: agave
-  on:
-    workflow_call:
-      inputs:
-        platform:
-          required: true
-          type: string
-        toolchain:
-          required: true
-          type: string
-        mpi_impl:
-          required: true
-          type: string
+on:
+  workflow_call:
+    inputs:
+      platform:
+        required: true
+        type: string
+      toolchain:
+        required: true
+        type: string
+      mpi_impl:
+        required: true
+        type: string
 
 jobs:
   job_build:
