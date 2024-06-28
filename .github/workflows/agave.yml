@@ -1,0 +1,27 @@
+---
+
+name: agave
+  on:
+    workflow_call:
+      inputs:
+        platform:
+          required: true
+          type: string
+        toolchain:
+          required: true
+          type: string
+        mpi_impl:
+          required: true
+          type: string
+
+jobs:
+  job_build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ${{ inputs.platform }}, ${{ inputs.toolchain }}, ${{ inputs.mpi_impl }}
+
+  job_test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo ${{ inputs.platform }}, ${{ inputs.toolchain }}, ${{ inputs.mpi_impl }}
+

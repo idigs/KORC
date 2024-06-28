@@ -10,10 +10,6 @@ jobs:
     strategy:
       matrix:
 
-        hardware:
-          - cpu
-          - gpu
-
         platform:
           - macos-latest
           - ubuntu-latest
@@ -27,12 +23,13 @@ jobs:
           - mpich_cray
           - mpich_intel
           - openmpi
-          - none
+          - NoMPI
 
-    runs-on: ubuntu-latest
-    steps:
-      - name: build
-        run: echo
-  
+    uses: ./.github/workflows/agave.yml
+    with:
+      platform:   ${{ matrix.platform }}
+      toolchain:  ${{ matrix.toolchain }}
+      mpi_impl:   ${{ matrix.mpi_impl }}
+
 
       
