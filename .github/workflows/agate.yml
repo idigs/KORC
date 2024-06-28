@@ -11,7 +11,7 @@ jobs:
       matrix:
 
         platform:
-          - ubuntu-latest
+          - ubuntu-22.04
           - self-hosted
 
         toolchain:
