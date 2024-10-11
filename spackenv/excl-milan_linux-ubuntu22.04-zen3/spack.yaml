@@ -5,9 +5,14 @@
 spack:
   # add package specs to the `specs` list
   specs:
+  - nvhpc@24.5
   - hdf5%nvhpc@24.5+fortran~mpi
 
-  view: false
+  view:
+    default:
+      root: views/default
+      select: ['%nvhpc@24.5']
+
   concretizer:
     unify: true
   config:
@@ -43,3 +48,11 @@ spack:
       modules: []
       environment: {}
       extra_rpaths: []
+
+  packages:
+    nvhpc:
+      buildable: false
+      externals:
+        - spec: nvhpc@24.5
+          modules:
+            - nvhpc-hpcx/24.5
