@@ -9,7 +9,7 @@ spack:
 
   view: false
   concretizer:
-    unify: true
+    unify: false
   config:
     install_tree:
       padded_length: 128
